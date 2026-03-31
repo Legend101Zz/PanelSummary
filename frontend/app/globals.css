@@ -1,0 +1,460 @@
+/* ═══════════════════════════════════════════════════════════════
+   PANELSUMMARY — DESIGN SYSTEM
+   "Ink & Paper" — A living manga world
+   ═══════════════════════════════════════════════════════════════
+
+   FONT STACK:
+   Display  → "Dela Gothic One"    — impact headers, manga-native
+   Body     → "Outfit"             — geometric, warm, NOT Inter
+   Label    → "DotGothic16"        — pixel terminal, retro-game
+   Bubble   → "Boogaloo"           — comic speech, playful round
+
+   COLOR SYSTEM:
+   Inspired by the inside of a shonen manga volume —
+   deep ink blacks with printing-press warmth, occasional
+   vivid color breaks like cover page moments.
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Dela+Gothic+One&family=DotGothic16&family=Boogaloo&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── ROOT VARIABLES ─────────────────────────────────────────── */
+:root {
+  /* Core palette — ink with subtle violet undertone */
+  --bg:         #0F0E17;   /* page bg — deep ink, slight violet */
+  --surface:    #17161F;   /* panel background */
+  --surface-2:  #1F1E28;   /* elevated surfaces */
+  --border:     #2E2C3F;   /* default border */
+  --border-2:   #3D3B54;   /* hover border */
+
+  /* Content — paper warm tones */
+  --paper:      #F2E8D5;   /* aged paper — inverted sections */
+  --paper-2:    #E8D8BF;   /* slightly darker paper */
+  --ink-on-paper: #1A1825; /* text on paper */
+
+  /* Accents — vivid cover-page moments */
+  --red:        #E8191A;   /* battle red, CTA, alerts */
+  --red-dim:    #B31213;
+  --red-glow:   rgba(232, 25, 26, 0.25);
+  --amber:      #F5A623;   /* energy, gold, highlights */
+  --amber-dim:  #C47D10;
+  --amber-glow: rgba(245, 166, 35, 0.2);
+  --teal:       #00BFA5;   /* status, success, cool accent */
+  --blue:       #3D7BFF;   /* links, info */
+
+  /* Text hierarchy */
+  --text-1:  #F0EEE8;   /* primary — warm near-white */
+  --text-2:  #A8A6C0;   /* secondary */
+  --text-3:  #5E5C78;   /* muted */
+
+  /* Typography */
+  --font-display: "Dela Gothic One", sans-serif;
+  --font-body:    "Outfit", sans-serif;
+  --font-label:   "DotGothic16", monospace;
+  --font-bubble:  "Boogaloo", cursive;
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring:   cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Panel borders (manga-style thick outline) */
+  --panel-border-width: 2px;
+  --panel-border-color: var(--border);
+  --panel-radius: 1px;   /* manga panels are nearly square-cornered */
+}
+
+/* ── RESET ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--amber-dim); }
+
+/* ══════════════════════════════════════════════════════════════
+   MANGA PANEL SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.panel {
+  border: var(--panel-border-width) solid var(--panel-border-color);
+  border-radius: var(--panel-radius);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel--glow-red {
+  border-color: var(--red);
+  box-shadow: 0 0 24px var(--red-glow), inset 0 0 40px rgba(232,25,26,0.04);
+}
+
+.panel--glow-amber {
+  border-color: var(--amber);
+  box-shadow: 0 0 24px var(--amber-glow), inset 0 0 40px rgba(245,166,35,0.04);
+}
+
+/* Panel type label badge — top-left corner */
+.panel-label {
+  position: absolute;
+  top: 0; left: 0;
+  font-family: var(--font-label);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+/* Chapter number badge */
+.chapter-badge {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chapter-badge::before {
+  content: "";
+  display: inline-block;
+  width: 16px; height: 2px;
+  background: var(--amber);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SPEECH BUBBLE SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.bubble {
+  font-family: var(--font-bubble);
+  font-size: 15px;
+  line-height: 1.4;
+  position: relative;
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 18px;
+  max-width: 320px;
+}
+
+.bubble--speech {
+  background: #fff;
+  color: #1A1825;
+  border: 2px solid #1A1825;
+}
+.bubble--speech::after {
+  content: "";
+  position: absolute;
+  bottom: -13px; left: 22px;
+  border: 8px solid transparent;
+  border-top-color: #1A1825;
+}
+.bubble--speech::before {
+  content: "";
+  position: absolute;
+  bottom: -10px; left: 23px;
+  border: 7px solid transparent;
+  border-top-color: #fff;
+  z-index: 1;
+}
+
+.bubble--thought {
+  background: rgba(255,255,255,0.9);
+  color: #1A1825;
+  border: 2px dashed #888;
+  border-radius: 50%;
+  padding: 12px 20px;
+  font-style: italic;
+}
+
+.bubble--narrator {
+  background: #1A1825;
+  color: var(--amber);
+  border: 2px solid var(--amber);
+  border-radius: 3px;
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SPEED LINES — SVG-backed, performance-safe
+   ══════════════════════════════════════════════════════════════ */
+
+.speed-lines {
+  pointer-events: none;
+  position: absolute; inset: 0;
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 130%,
+    transparent 0deg,
+    rgba(245,166,35,0.035) 0.4deg,
+    transparent 0.8deg
+  );
+}
+
+.speed-lines--red {
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 130%,
+    transparent 0deg,
+    rgba(232,25,26,0.04) 0.4deg,
+    transparent 0.8deg
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HALFTONE TEXTURE
+   ══════════════════════════════════════════════════════════════ */
+
+.halftone {
+  pointer-events: none;
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(245,166,35,0.07) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.halftone--paper {
+  background-image: radial-gradient(circle, rgba(26,24,37,0.08) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TYPOGRAPHY UTILITIES
+   ══════════════════════════════════════════════════════════════ */
+
+.font-display  { font-family: var(--font-display); }
+.font-body     { font-family: var(--font-body); }
+.font-label    { font-family: var(--font-label); }
+.font-bubble   { font-family: var(--font-bubble); }
+
+/* Big impact text */
+.text-hero {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 12vw, 9rem);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  color: var(--text-1);
+}
+
+.text-chapter {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, var(--amber) 0%, var(--red) 60%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-label {
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INTERACTIVE ELEMENTS
+   ══════════════════════════════════════════════════════════════ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: #fff;
+  background: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 4px 4px 0 var(--red-dim);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover {
+  box-shadow: 2px 2px 0 var(--red-dim);
+  transform: translate(2px, 2px);
+}
+.btn-primary:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 26px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--amber);
+  background: transparent;
+  border: 2px solid var(--amber);
+  box-shadow: 4px 4px 0 rgba(245,166,35,0.3);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  box-shadow: 2px 2px 0 rgba(245,166,35,0.3);
+  transform: translate(2px, 2px);
+  background: rgba(245,166,35,0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MANGA GRID — comic panel layout helpers
+   ══════════════════════════════════════════════════════════════ */
+
+.manga-grid { display: grid; gap: 3px; }
+.manga-grid--2col { grid-template-columns: 1fr 1fr; }
+.manga-grid--3col { grid-template-columns: 1fr 1fr 1fr; }
+.manga-grid--asym { grid-template-columns: 2fr 1fr; }
+.manga-grid--asym-r { grid-template-columns: 1fr 2fr; }
+
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ══════════════════════════════════════════════════════════════ */
+
+.nav-link {
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+}
+.nav-link:hover, .nav-link--active {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   REEL SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+.reel-feed {
+  height: 100dvh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.reel-slide {
+  height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SKELETON / LOADING
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UPLOAD ZONE
+   ══════════════════════════════════════════════════════════════ */
+
+.drop-zone {
+  border: 2px dashed var(--border-2);
+  transition: all 0.25s var(--ease-out-expo);
+  cursor: pointer;
+}
+.drop-zone:hover, .drop-zone--over {
+  border-color: var(--amber);
+  border-style: solid;
+  background: rgba(245,166,35,0.04);
+  box-shadow: 0 0 40px var(--amber-glow);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESS BAR — manga XP fill style
+   ══════════════════════════════════════════════════════════════ */
+
+.xp-bar {
+  height: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--red));
+  box-shadow: 0 0 8px var(--amber-glow);
+  transition: width 0.4s var(--ease-out-expo);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAGE SECTION TRANSITIONS
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes panel-crack-in {
+  0%   { clip-path: inset(0 50% 0 50%); opacity: 0; }
+  100% { clip-path: inset(0 0% 0 0%); opacity: 1; }
+}
+.panel-crack-in { animation: panel-crack-in 0.5s var(--ease-out-expo) forwards; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 12px var(--amber-glow); }
+  50% { box-shadow: 0 0 28px var(--amber-glow); }
+}
+.pulse-amber { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* ══════════════════════════════════════════════════════════════
+   PAPER SECTION (inverted — light bg)
+   ══════════════════════════════════════════════════════════════ */
+
+.section-paper {
+  background: var(--paper);
+  color: var(--ink-on-paper);
+}
+.section-paper .text-label { color: rgba(26,24,37,0.4); }

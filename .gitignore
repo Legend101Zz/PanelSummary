@@ -1,0 +1,27 @@
+# Secrets — NEVER commit these
+.env
+.env.local
+.env*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Node
+node_modules/
+.next/
+.swc/
+out/
+
+# Docker volumes data
+mongo_data/
+uploads/
+
+# OS
+.DS_Store
+*.log

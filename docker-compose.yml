@@ -1,0 +1,88 @@
+version: "3.9"
+
+# WHAT THIS FILE DOES:
+# docker-compose.yml is like a recipe card. It tells Docker "run these 4 services together".
+# Run it with: docker-compose up --build
+# Stop it with: docker-compose down
+
+services:
+  # ============================================================
+  # MONGODB — our main database
+  # Stores: books, summaries, manga panels, reel scripts
+  # ============================================================
+  mongo:
+    image: mongo:7.0
+    container_name: panelsummary_mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"     # port 27017 on your Mac = port 27017 inside container
+    volumes:
+      - mongo_data:/data/db   # saves data even when container restarts
+    environment:
+      MONGO_INITDB_DATABASE: panelsummary
+
+  # ============================================================
+  # REDIS — job queue + cache
+  # Stores: background job status, cached results
+  # ============================================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: panelsummary_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  # ============================================================
+  # FASTAPI BACKEND — our Python API server
+  # Handles: HTTP requests, PDF upload, status polling
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: panelsummary_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app           # live code reload during development
+      - pdf_uploads:/tmp/uploads # shared folder for uploaded PDFs
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - REDIS_URL=redis://redis:6379
+      - CORS_ORIGINS=http://localhost:3000
+      - SECRET_KEY=dev-secret-change-in-production
+    depends_on:
+      - mongo
+      - redis
+
+  # ============================================================
+  # CELERY WORKER — background job processor
+  # Handles: PDF parsing (slow), LLM calls (async)
+  # WHY SEPARATE: keeps the API server fast and responsive
+  # ============================================================
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: panelsummary_worker
+    restart: unless-stopped
+    command: celery -A app.celery_worker worker --loglevel=info --concurrency=2
+    volumes:
+      - ./backend:/app
+      - pdf_uploads:/tmp/uploads
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=dev-secret-change-in-production
+    depends_on:
+      - mongo
+      - redis
+
+# ============================================================
+# VOLUMES — persistent storage that survives container restarts
+# ============================================================
+volumes:
+  mongo_data:
+  pdf_uploads:
