@@ -133,18 +133,24 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
     <div className="fixed inset-0 flex flex-col" style={{ background: "#0F0E17" }}>
       <LivingPanelStyles />
 
-      {/* Minimal header — ink on dark surface */}
-      <div
-        className="flex items-center justify-between px-4 py-2 z-30"
-        style={{ background: "#17161F", borderBottom: "1px solid #2E2C3F" }}
+      {/* ─── HEADER ─── */}
+      <header
+        className="flex items-center justify-between px-4 z-30"
+        style={{
+          background: "#17161F",
+          borderBottom: "1px solid #2E2C3F",
+          height: 40,
+          minHeight: 40,
+          flexShrink: 0,
+        }}
       >
-        <div className="flex items-center gap-2">
+        {/* Left: branding */}
+        <div className="flex items-center gap-3" style={{ minWidth: 120 }}>
           <span style={{
-            fontFamily: "var(--font-label)",
-            fontSize: 9,
+            fontFamily: "var(--font-display)",
+            fontSize: 13,
             color: "#F5A623",
-            letterSpacing: "0.15em",
-            textTransform: "uppercase" as const,
+            letterSpacing: "0.08em",
           }}>
             Living Manga
           </span>
@@ -152,48 +158,52 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
             <span style={{
               fontSize: 8,
               fontFamily: "var(--font-label)",
-              color: "#A8A6C0",
+              color: "#A8A6C060",
               background: "#1F1E28",
-              padding: "2px 6px",
+              padding: "1px 5px",
               borderRadius: 2,
               border: "1px solid #2E2C3F",
+              letterSpacing: "0.1em",
             }}>
               DEMO
             </span>
           )}
         </div>
 
+        {/* Center: narrative beat */}
         <span style={{
           fontFamily: "var(--font-body)",
           fontSize: 11,
-          color: "#A8A6C080",
-          maxWidth: "40%",
+          color: "#A8A6C060",
+          flex: 1,
           textAlign: "center" as const,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap" as const,
+          padding: "0 12px",
         }}>
           {currentDSL?.meta?.narrative_beat || ""}
         </span>
 
-        <div className="flex items-center gap-2">
-          <span style={{ color: "#5E5C78", fontSize: 9, fontFamily: "var(--font-label)" }}>
-            {panelIdx + 1} / {totalPanels}
+        {/* Right: page / act counters */}
+        <div className="flex items-center gap-3" style={{ minWidth: 120, justifyContent: "flex-end" }}>
+          <span style={{ color: "#5E5C78", fontSize: 11, fontFamily: "var(--font-label)" }}>
+            {panelIdx + 1}<span style={{ color: "#5E5C7840" }}> / {totalPanels}</span>
           </span>
           {actInfo.total > 1 && (
             <span style={{
-              color: "#5E5C78",
-              fontSize: 8,
+              color: "#A8A6C060",
+              fontSize: 9,
               fontFamily: "var(--font-label)",
               border: "1px solid #2E2C3F",
-              padding: "1px 4px",
+              padding: "2px 6px",
               borderRadius: 2,
             }}>
-              act {actInfo.current}/{actInfo.total}
+              ACT {actInfo.current}/{actInfo.total}
             </span>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Main area: panel + navigation edges */}
       <div className="flex-1 flex items-stretch min-h-0">
@@ -275,20 +285,25 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* Footer */}
-      <div
-        className="flex items-center justify-between px-4 py-1"
-        style={{ borderTop: "1px solid #2E2C3F", background: "#17161F" }}
+      <footer
+        className="flex items-center justify-center px-4"
+        style={{
+          borderTop: "1px solid #2E2C3F",
+          background: "#17161F",
+          height: 24,
+          minHeight: 24,
+          flexShrink: 0,
+        }}
       >
-        <span style={{ color: "#5E5C7850", fontSize: 7, fontFamily: "var(--font-label)" }}>
-          {currentDSL ? `${currentDSL.acts?.length || 0} acts · ${currentDSL.meta?.content_type || ""}` : ""}
+        <span style={{
+          color: "#5E5C7830",
+          fontSize: 8,
+          fontFamily: "var(--font-label)",
+          letterSpacing: "0.15em",
+        }}>
+          TAP PANEL → NEXT ACT &nbsp;·&nbsp; ← → → NAVIGATE PAGES
         </span>
-        <span style={{ color: "#5E5C7830", fontSize: 7, fontFamily: "var(--font-label)", letterSpacing: "0.15em" }}>
-          TAP PANEL TO ADVANCE · ARROWS TO NAVIGATE
-        </span>
-        <span style={{ color: "#5E5C7850", fontSize: 7, fontFamily: "var(--font-label)" }}>
-          {currentDSL?.meta?.panel_id || ""}
-        </span>
-      </div>
+      </footer>
     </div>
   );
 }

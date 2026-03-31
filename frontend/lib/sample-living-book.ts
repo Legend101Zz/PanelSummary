@@ -116,17 +116,17 @@ export const PANEL_02_HABIT_LOOP: LivingPanelDSL = {
         },
         {
           id: "hana", type: "sprite",
-          x: "18%", y: "55%", opacity: 0,
+          x: "15%", y: "65%", opacity: 0,
           props: { character: "Hana", expression: "curious", facing: "right", size: 56 },
         },
         {
           id: "ryo", type: "sprite",
-          x: "70%", y: "52%", opacity: 0,
+          x: "75%", y: "62%", opacity: 0,
           props: { character: "Ryo", expression: "wise", facing: "left", size: 60 },
         },
         {
           id: "b-hana", type: "speech_bubble",
-          x: "8%", y: "15%", opacity: 0,
+          x: "5%", y: "8%", opacity: 0,
           props: {
             text: "I keep trying to build good habits but they never stick...",
             character: "Hana",
@@ -134,12 +134,12 @@ export const PANEL_02_HABIT_LOOP: LivingPanelDSL = {
             tailDirection: "bottom",
             typewriter: true,
             typewriterSpeed: 35,
-            maxWidth: 220,
+            maxWidth: 200,
           },
         },
         {
           id: "b-ryo", type: "speech_bubble",
-          x: "52%", y: "10%", opacity: 0,
+          x: "50%", y: "6%", opacity: 0,
           props: {
             text: "That's because you're thinking about the habit. Think about the system.",
             character: "Ryo",
@@ -147,16 +147,16 @@ export const PANEL_02_HABIT_LOOP: LivingPanelDSL = {
             tailDirection: "bottom",
             typewriter: true,
             typewriterSpeed: 30,
-            maxWidth: 230,
+            maxWidth: 210,
           },
         },
       ],
       cells: [],
       timeline: [
-        { at: 200, target: "hana", animate: { opacity: [0, 1], x: ["12%", "18%"] }, duration: 500 },
-        { at: 400, target: "ryo", animate: { opacity: [0, 1], x: ["76%", "70%"] }, duration: 500 },
-        { at: 800, target: "b-hana", animate: { opacity: [0, 1], typewriter: true }, duration: 2000 },
-        { at: 3500, target: "b-ryo", animate: { opacity: [0, 1], typewriter: true }, duration: 2200 },
+        { at: 200, target: "hana", animate: { opacity: [0, 1], x: ["10%", "15%"] }, duration: 500 },
+        { at: 400, target: "ryo", animate: { opacity: [0, 1], x: ["80%", "75%"] }, duration: 500 },
+        { at: 800, target: "b-hana", animate: { opacity: [0, 1], typewriter: true }, duration: 1800 },
+        { at: 3200, target: "b-ryo", animate: { opacity: [0, 1], typewriter: true }, duration: 2000 },
       ],
     },
 
@@ -300,134 +300,184 @@ export const PANEL_02_HABIT_LOOP: LivingPanelDSL = {
 };
 
 // ============================================================
-// PAGE 3: IDENTITY SHIFT
-// The core thesis — you don't rise to your goals,
-// you fall to the level of your systems.
+// PAGE 3: IDENTITY SHIFT (with CUT LAYOUT!)
+// A manga page divided by cuts into 3 panels.
+// Panel 1 (top-left wide): The wrong approach
+// Panel 2 (top-right narrow): Confusion face
+// Panel 3 (bottom full): The revelation
 // ============================================================
 
 export const PANEL_03_IDENTITY: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#1A1825", mood: "dark" },
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
   acts: [
     {
-      id: "the-wrong-way",
-      duration_ms: 4000,
-      layout: { type: "full" },
+      id: "identity-cuts",
+      duration_ms: 6000,
+      layout: {
+        type: "cuts",
+        cuts: [
+          { direction: "h", position: 0.55, angle: 1.5, target: 0 },   // horizontal cut → top & bottom
+          { direction: "v", position: 0.65, angle: -1, target: 0 },    // vertical cut on top → left & right
+        ],
+        gap: 5,
+        borderWidth: 2.5,
+        stagger_ms: 250,
+      },
       layers: [
         {
-          id: "bg-dark", type: "background", opacity: 1,
-          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "halftone", patternOpacity: 0.04 },
-        },
-        {
-          id: "wrong-label", type: "text",
-          x: "10%", y: "12%", opacity: 0,
-          props: {
-            content: "THE WRONG WAY",
-            fontSize: "0.65rem",
-            fontFamily: "label",
-            color: "#E8191A60",
-            letterSpacing: "0.15em",
-          },
-        },
-        {
-          id: "wrong-text", type: "text",
-          x: "10%", y: "35%", opacity: 0,
-          props: {
-            content: "\"I want to lose 20 pounds.\"",
-            fontSize: "clamp(1.1rem, 3vw, 1.8rem)",
-            fontFamily: "display",
-            color: "#E8191A",
-            typewriter: true,
-            typewriterSpeed: 40,
-          },
-        },
-        {
-          id: "strikethrough", type: "shape",
-          x: "10%", y: "42%", opacity: 0,
-          width: 340, height: 3,
-          props: { shape: "rect", fill: "#E8191A60", stroke: "none", strokeWidth: 0 },
-        },
-        {
-          id: "wrong-sub", type: "text",
-          x: "10%", y: "55%", opacity: 0,
-          props: {
-            content: "Goals focus on outcomes.\nOutcomes are temporary.",
-            fontSize: "0.85rem",
-            fontFamily: "body",
-            color: "#A8A6C080",
-            lineHeight: 1.6,
-          },
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 160, pattern: "manga_screen", patternOpacity: 0.04 },
         },
       ],
-      cells: [],
-      timeline: [
-        { at: 200, target: "wrong-label", animate: { opacity: [0, 1] }, duration: 300 },
-        { at: 500, target: "wrong-text", animate: { opacity: [0, 1], typewriter: true }, duration: 1500 },
-        { at: 2200, target: "strikethrough", animate: { opacity: [0, 0.6] }, duration: 200 },
-        { at: 2600, target: "wrong-sub", animate: { opacity: [0, 1] }, duration: 500 },
-      ],
-    },
+      cells: [
+        // Panel 1 (top-left, wide): The wrong way
+        {
+          id: "cell-wrong",
+          position: "0",
+          style: { background: "#1A1825", border: "none" },
+          layers: [
+            {
+              id: "wrong-bg", type: "background", opacity: 1,
+              props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "halftone", patternOpacity: 0.05 },
+            },
+            {
+              id: "wrong-label", type: "text",
+              x: "8%", y: "12%", opacity: 0,
+              props: {
+                content: "THE WRONG WAY",
+                fontSize: "0.55rem",
+                fontFamily: "label",
+                color: "#E8191A60",
+                letterSpacing: "0.15em",
+              },
+            },
+            {
+              id: "wrong-quote", type: "text",
+              x: "8%", y: "35%", opacity: 0,
+              props: {
+                content: "\"I want to\nlose weight.\"",
+                fontSize: "clamp(0.9rem, 2.5vw, 1.4rem)",
+                fontFamily: "display",
+                color: "#E8191A",
+                lineHeight: 1.3,
+                typewriter: true,
+                typewriterSpeed: 40,
+              },
+            },
+            {
+              id: "strike", type: "shape",
+              x: "8%", y: "55%", opacity: 0,
+              width: 200, height: 2,
+              props: { shape: "rect", fill: "#E8191A50", stroke: "none", strokeWidth: 0 },
+            },
+            {
+              id: "wrong-sub", type: "text",
+              x: "8%", y: "68%", opacity: 0,
+              props: {
+                content: "Outcome-based.",
+                fontSize: "0.7rem",
+                fontFamily: "body",
+                color: "#A8A6C060",
+              },
+            },
+          ],
+          timeline: [
+            { at: 300, target: "wrong-label", animate: { opacity: [0, 1] }, duration: 300 },
+            { at: 500, target: "wrong-quote", animate: { opacity: [0, 1], typewriter: true }, duration: 1200 },
+            { at: 1900, target: "strike", animate: { opacity: [0, 0.6] }, duration: 200 },
+            { at: 2200, target: "wrong-sub", animate: { opacity: [0, 1] }, duration: 300 },
+          ],
+        },
 
-    // ACT 2: The right way
-    {
-      id: "the-right-way",
-      duration_ms: 5000,
-      transition_in: { type: "fade", duration_ms: 500 },
-      layout: { type: "full" },
-      layers: [
+        // Panel 2 (top-right, narrow): Character reaction
         {
-          id: "bg-paper", type: "background", opacity: 1,
-          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 180, pattern: "manga_screen", patternOpacity: 0.05 },
+          id: "cell-reaction",
+          position: "1",
+          style: { background: "#EDE0CC" },
+          layers: [
+            {
+              id: "react-char", type: "sprite",
+              x: "30%", y: "35%", opacity: 0,
+              props: { character: "Hana", expression: "thoughtful", size: 48 },
+            },
+            {
+              id: "react-thought", type: "speech_bubble",
+              x: "10%", y: "70%", opacity: 0,
+              props: {
+                text: "But that's what everyone says...",
+                style: "thought",
+                tailDirection: "top",
+                maxWidth: 150,
+              },
+            },
+          ],
+          timeline: [
+            { at: 1000, target: "react-char", animate: { opacity: [0, 1] }, duration: 400 },
+            { at: 2500, target: "react-thought", animate: { opacity: [0, 1] }, duration: 400 },
+          ],
         },
+
+        // Panel 3 (bottom full): The revelation
         {
-          id: "right-label", type: "text",
-          x: "10%", y: "12%", opacity: 0,
-          props: {
-            content: "THE RIGHT WAY",
-            fontSize: "0.65rem",
-            fontFamily: "label",
-            color: "#1A182560",
-            letterSpacing: "0.15em",
-          },
-        },
-        {
-          id: "right-text", type: "text",
-          x: "10%", y: "30%", opacity: 0,
-          props: {
-            content: "\"I am the type of person\nwho takes care of their body.\"",
-            fontSize: "clamp(1.2rem, 3.5vw, 2rem)",
-            fontFamily: "display",
-            color: "#1A1825",
-            lineHeight: 1.4,
-            typewriter: true,
-            typewriterSpeed: 40,
-          },
-        },
-        {
-          id: "right-sub", type: "text",
-          x: "10%", y: "60%", opacity: 0,
-          props: {
-            content: "Identity drives behavior.\nBehavior reinforces identity.\nThis is how real change happens.",
-            fontSize: "0.85rem",
-            fontFamily: "body",
-            color: "#1A182570",
-            lineHeight: 1.7,
-          },
-        },
-        {
-          id: "ink-accent", type: "shape",
-          x: "8%", y: "28%", opacity: 0,
-          width: 3, height: 100,
-          props: { shape: "rect", fill: "#1A1825", stroke: "none", strokeWidth: 0 },
+          id: "cell-right",
+          position: "2",
+          style: { background: "#F2E8D5" },
+          layers: [
+            {
+              id: "right-bg", type: "background", opacity: 1,
+              props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 0, pattern: "crosshatch", patternOpacity: 0.04 },
+            },
+            {
+              id: "right-label", type: "text",
+              x: "5%", y: "12%", opacity: 0,
+              props: {
+                content: "THE RIGHT WAY",
+                fontSize: "0.55rem",
+                fontFamily: "label",
+                color: "#1A182560",
+                letterSpacing: "0.15em",
+              },
+            },
+            {
+              id: "ink-bar", type: "shape",
+              x: "4%", y: "25%", opacity: 0,
+              width: 3, height: 60,
+              props: { shape: "rect", fill: "#1A1825", stroke: "none", strokeWidth: 0 },
+            },
+            {
+              id: "right-quote", type: "text",
+              x: "6%", y: "30%", opacity: 0,
+              props: {
+                content: "\"I am someone who takes care of their body.\"",
+                fontSize: "clamp(1rem, 3vw, 1.6rem)",
+                fontFamily: "display",
+                color: "#1A1825",
+                maxWidth: "90%",
+                lineHeight: 1.3,
+              },
+            },
+            {
+              id: "right-sub", type: "text",
+              x: "6%", y: "70%", opacity: 0,
+              props: {
+                content: "Identity-based. The habit follows the person you become.",
+                fontSize: "0.75rem",
+                fontFamily: "body",
+                color: "#1A182560",
+                maxWidth: "80%",
+              },
+            },
+          ],
+          timeline: [
+            { at: 3000, target: "right-label", animate: { opacity: [0, 1] }, duration: 300 },
+            { at: 3000, target: "ink-bar", animate: { opacity: [0, 0.6] }, duration: 300 },
+            { at: 3300, target: "right-quote", animate: { opacity: [0, 1] }, duration: 500 },
+            { at: 4200, target: "right-sub", animate: { opacity: [0, 1] }, duration: 400 },
+          ],
         },
       ],
-      cells: [],
-      timeline: [
-        { at: 200, target: "right-label", animate: { opacity: [0, 1] }, duration: 300 },
-        { at: 200, target: "ink-accent", animate: { opacity: [0, 0.6] }, duration: 300 },
-        { at: 400, target: "right-text", animate: { opacity: [0, 1], typewriter: true }, duration: 2500 },
-        { at: 3200, target: "right-sub", animate: { opacity: [0, 1] }, duration: 600 },
-      ],
+      timeline: [],
     },
   ],
   meta: {
@@ -435,7 +485,7 @@ export const PANEL_03_IDENTITY: LivingPanelDSL = {
     chapter_index: 2,
     content_type: "concept",
     narrative_beat: "Identity-based habits are the foundation",
-    duration_ms: 9000,
+    duration_ms: 6000,
   },
 };
 
@@ -543,17 +593,17 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
         },
         {
           id: "hana", type: "sprite",
-          x: "18%", y: "58%", opacity: 0,
+          x: "15%", y: "68%", opacity: 0,
           props: { character: "Hana", expression: "curious", facing: "right", size: 52 },
         },
         {
           id: "ryo", type: "sprite",
-          x: "72%", y: "55%", opacity: 0,
+          x: "78%", y: "65%", opacity: 0,
           props: { character: "Ryo", expression: "wise", facing: "left", size: 56 },
         },
         {
           id: "b1", type: "speech_bubble",
-          x: "6%", y: "10%", opacity: 0,
+          x: "4%", y: "5%", opacity: 0,
           props: {
             text: "How do I start reading more?",
             character: "Hana",
@@ -566,7 +616,7 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
         },
         {
           id: "b2", type: "speech_bubble",
-          x: "50%", y: "12%", opacity: 0,
+          x: "48%", y: "5%", opacity: 0,
           props: {
             text: "Read one page.",
             character: "Ryo",
@@ -579,7 +629,7 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
         },
         {
           id: "b3", type: "speech_bubble",
-          x: "6%", y: "35%", opacity: 0,
+          x: "4%", y: "30%", opacity: 0,
           props: {
             text: "Just... one?",
             character: "Hana",
@@ -592,7 +642,7 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
         },
         {
           id: "b4", type: "speech_bubble",
-          x: "48%", y: "32%", opacity: 0,
+          x: "42%", y: "28%", opacity: 0,
           props: {
             text: "A habit must be established before it can be improved. Two minutes. That's all.",
             character: "Ryo",

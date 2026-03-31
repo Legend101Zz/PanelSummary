@@ -1,136 +1,178 @@
 """
-living_panel_prompts.py — LLM Prompts for Living Panel DSL Generation
-=======================================================================
-These prompts instruct the LLM to generate structured DSL JSON that
-the Living Panel Engine can interpret and render as animated,
-interactive manga panels.
-
-KEY DESIGN DECISIONS:
-1. Constrained output schema (LLM must produce exact JSON shape)
-2. Preset-based approach (LLM picks from known animation types)
-3. Character consistency via manga bible injection
-4. Budget awareness (no images unless splash panel)
+living_panel_prompts.py — LLM Prompts for Living Panel DSL v2.0
+=================================================================
+Prompts for generating act-based Living Panel DSL with:
+- Cut-based manga layouts
+- Ink-on-paper aesthetic
+- Character silhouettes
+- Screentone / crosshatch effects
+- User-controlled act progression
 """
 
 from app.models import SummaryStyle
 
 
-STYLE_ANIMATION_GUIDANCE = {
+STYLE_GUIDANCE = {
     SummaryStyle.MANGA: """
-Animation style: HIGH ENERGY. Fast entrances (200-400ms), dramatic zooms,
-speed lines on splash panels, shake effects on reveals.
-Use impact_burst and speed_lines effects generously.
-Dialogue should feel punchy — short typewriter speeds (25-35ms).
-Mood presets: dramatic-dark, intense-red, neon-cyberpunk.
+STYLE: MANGA — High energy, dramatic pacing.
+- Fast reveals (200-400ms), speed lines on splash panels
+- Use cuts with slight angles (1-2 degrees) for dynamic layouts
+- Dialogue: punchy typewriter speed (25-35ms)
+- Use screentone and crosshatch patterns for depth
+- Ink on paper colors: cream backgrounds (#F2E8D5), black ink (#1A1825)
+- Red accent (#E8191A) for emphasis moments
 """,
     SummaryStyle.NOIR: """
-Animation style: SLOW AND MOODY. Slow fades (800-1200ms), minimal movement.
-Vignette effects on every panel. No speed lines. Smoke particles.
-Dialogue types: mostly "whisper" and "narrator" styles.
-Typewriter speed: slow (50-70ms) for brooding atmosphere.
-Mood presets: dramatic-dark, cool-mystery.
+STYLE: NOIR — Slow, moody, atmospheric.
+- Slow fades (800-1200ms), heavy vignette
+- Dark backgrounds with halftone patterns
+- Dialogue: mostly whisper/narrator, slow typewriter (50-70ms)
+- Minimal cuts — prefer full layouts with layered text
 """,
     SummaryStyle.MINIMALIST: """
-Animation style: PRECISE AND CLEAN. Medium timing (400-600ms).
-No particle effects. Use shape layers for clean geometric elements.
-Typography is the star — use large font sizes and bold text layers.
-Mood presets: dramatic-dark (but with lighter colors).
+STYLE: MINIMALIST — Clean, typographic.
+- Medium timing (400-600ms), no particle effects
+- Typography IS the art. Large fonts, bold text layers.
+- Simple 2-panel cuts at most. Lots of white space.
+- Paper backgrounds, minimal patterns.
 """,
     SummaryStyle.COMEDY: """
-Animation style: BOUNCY AND PLAYFUL. Use "bounce" and "elastic" easing.
-Exaggerated movements. Characters should bounce-in, not fade-in.
-Sparkle effects and impact bursts on punchlines.
-Emoji-heavy expressions. Fast typewriter (20-30ms).
-Mood presets: warm-amber, sunrise-hope.
+STYLE: COMEDY — Bouncy, playful.
+- Bounce/elastic easing, exaggerated movements
+- Characters bounce in, fast typewriter (20-30ms)
+- Use shout bubbles and SFX text for punchlines
+- Warm backgrounds, dots pattern.
 """,
     SummaryStyle.ACADEMIC: """
-Animation style: MEASURED AND STRUCTURED. Stagger animations for lists.
-Data blocks are the primary content type. Clean list layouts.
-Minimal effects — maybe subtle particles for emphasis.
-Typewriter speed: medium (40-50ms).
-Mood presets: cool-mystery, calm-green.
+STYLE: ACADEMIC — Structured, data-driven.
+- Staggered list reveals. Data blocks as primary content.
+- Clean grid cuts. Crosshatch patterns for scholarly feel.
+- Medium typewriter (40-50ms). Narrator style bubbles.
 """,
 }
 
 
 def get_living_panel_prompt(style: SummaryStyle) -> str:
-    """System prompt for generating Living Panel DSL."""
-    style_guidance = STYLE_ANIMATION_GUIDANCE.get(style, STYLE_ANIMATION_GUIDANCE[SummaryStyle.MANGA])
+    """System prompt for generating Living Panel DSL v2.0."""
+    guidance = STYLE_GUIDANCE.get(style, STYLE_GUIDANCE[SummaryStyle.MANGA])
 
-    return f"""You are a Living Manga Panel Director — you create animated, interactive manga panel experiences.
+    return f"""You are a Living Manga Panel Director. You create animated manga panel experiences
+using a structured DSL that a rendering engine interprets.
 
-Instead of static panels, you create LIVING PANELS: animated canvases with sprites, text,
-speech bubbles, effects, and timeline-driven animations. Think: a manga panel that comes ALIVE.
+{guidance}
 
-{style_guidance}
+## DSL v2.0 SPECIFICATION
 
-## DSL SPECIFICATION
+Each panel is a SCENE with ACTS. Acts are temporal states — the reader
+taps to advance between acts. Within each act, a timeline auto-plays
+animations for layers.
 
-You output a JSON document conforming to the Living Panel DSL v1.0.
-Each panel is a canvas with LAYERS (visual elements) and a TIMELINE (animations).
-
-### LAYER TYPES:
-- "background" — gradient + optional pattern overlay. Props: gradient (color array), gradientAngle, pattern ("halftone"|"crosshatch"|"dots"|"lines"|"noise"), patternColor, patternOpacity.
-- "sprite" — character avatar (code-rendered, NO image). Props: character (name), expression ("neutral"|"curious"|"shocked"|"determined"|"wise"|"thoughtful"|"excited"|"sad"|"angry"|"smirk"|"fearful"|"triumphant"), size (px), showName (bool), silhouette (bool), glowColor.
-- "text" — typography block. Props: content, fontSize (use "clamp(1rem, 4vw, 3rem)" format), fontFamily ("display"|"body"|"label"|"mono"), color, textAlign, maxWidth, textShadow, letterSpacing, typewriter (bool), typewriterSpeed (ms).
-- "speech_bubble" — dialogue bubble. Props: text, character, style ("speech"|"thought"|"shout"|"whisper"|"narrator"), tailDirection ("left"|"right"|"bottom"|"top"|"none"), maxWidth, typewriter, typewriterSpeed.
-- "effect" — visual FX. Props: effect ("particles"|"speed_lines"|"impact_burst"|"sparkle"|"rain"|"snow"|"smoke"|"vignette"|"lightning"), color, intensity (0-1), count, direction ("up"|"down"|"left"|"right"|"radial").
-- "shape" — SVG shape. Props: shape ("circle"|"rect"|"line"|"triangle"|"star"), fill, stroke, strokeWidth.
-- "data_block" — list/grid of key concepts. Props: items (array of {{label, value?, icon?, highlight?}}), layout ("list"|"grid"|"stack"|"counter"), accentColor, showIndex, animateIn ("stagger"|"cascade"|"pop"|"none"), staggerDelay (ms).
-- "scene_transition" — decorative divider. Props: transition type, color, text.
-
-### LAYER POSITIONING:
-All layers (except background/effect) use x, y coordinates.
-Use PERCENTAGE strings for responsive layout: "50%" centers, "10%" is left-ish, "80%" is right-ish.
-y: "20%" is near top, "50%" is center, "80%" is near bottom.
-
-### TIMELINE:
-Array of animation steps. Each step:
-- "at": start time in ms (0 = panel load)
-- "target": layer id
-- "animate": properties to animate. Use [from, to] arrays for x, y, opacity, scale, rotate. Set "typewriter": true for text reveals.
-- "duration": ms
-- "easing": "linear"|"ease-in"|"ease-out"|"ease-in-out"|"spring"|"bounce"|"elastic"|"sharp"
-- "repeat": -1 for infinite, or number of repeats
-- "yoyo": true to reverse on repeat
-
-### EVENTS (optional):
-Array of event bindings:
-- "trigger": "onClick"|"onVisible"|"onHover"
-- "target": layer id
-- "actions": array of {{"type": "animate"|"show"|"hide"|"toggle", "target": layer_id, "animate": ..., "duration": ...}}
-
-## OUTPUT FORMAT — valid JSON object:
+### TOP-LEVEL STRUCTURE:
 {{
-  "version": "1.0",
-  "canvas": {{
-    "width": 800,
-    "height": 600,
-    "background": "#0a0a1a",
-    "mood": "dramatic-dark"
-  }},
-  "layers": [ ... ],
-  "timeline": [ ... ],
-  "events": [ ... ],
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#F2E8D5", "mood": "light" }},
+  "acts": [ ... ],
   "meta": {{
-    "content_type": "splash|narration|dialogue|data|transition",
-    "narrative_context": "brief description of what this panel shows"
+    "panel_id": "unique-id",
+    "chapter_index": 0,
+    "content_type": "dialogue|narration|splash|data|concept",
+    "narrative_beat": "brief description",
+    "duration_ms": 5000
   }}
 }}
 
+### CANVAS MOODS:
+- "light" → cream paper (#F2E8D5), black ink (#1A1825)
+- "dark" → dark ink (#1A1825), light text (#F0EEE8)
+
+### ACT STRUCTURE:
+{{
+  "id": "act-name",
+  "duration_ms": 5000,
+  "transition_in": {{ "type": "fade", "duration_ms": 400 }},
+  "layout": {{ "type": "full" }},
+  "layers": [ ... ],
+  "cells": [],
+  "timeline": [ ... ]
+}}
+
+### LAYOUT TYPES:
+
+1. SIMPLE LAYOUTS:
+   - "full" — single panel, no sub-divisions
+   - "split-h" — left + right (cells: position "left", "right")
+   - "split-v" — top + bottom (cells: position "top", "bottom")
+   - "grid-2x2" — 4 panels (cells: position "tl", "tr", "bl", "br")
+
+2. CUT-BASED LAYOUTS (manga-native!):
+   - "cuts" — define cuts[] to recursively subdivide the page
+   - Each cut: {{ "direction": "h"|"v", "position": 0.0-1.0, "angle": -4 to 4, "target": 0 }}
+   - Algorithm: starts with 1 full region (index 0)
+     - First cut splits region 0 into regions 0 and 1
+     - Second cut can target region 0, 1, etc.
+   - Cells correspond to final regions by index (position: "0", "1", "2", ...)
+   - Use angle: 1-2 degrees for that hand-ruled manga feel
+
+   Example — 3-panel layout (top-left wide, top-right narrow, bottom full):
+   "layout": {{
+     "type": "cuts",
+     "cuts": [
+       {{ "direction": "h", "position": 0.55, "angle": 1.5 }},
+       {{ "direction": "v", "position": 0.65, "angle": -1, "target": 0 }}
+     ],
+     "gap": 5,
+     "stagger_ms": 200
+   }}
+
+### LAYER TYPES:
+- "background" — props: gradient (color[]), gradientAngle, pattern ("halftone"|"crosshatch"|"dots"|"lines"|"manga_screen"), patternOpacity
+- "sprite" — props: character (name), expression ("neutral"|"curious"|"shocked"|"wise"|"thoughtful"|"excited"|"sad"|"angry"), size (px), showName, silhouette, facing ("left"|"right")
+- "text" — props: content, fontSize (use clamp()), fontFamily ("display"|"body"|"label"), color, textAlign, maxWidth, lineHeight, typewriter, typewriterSpeed
+- "speech_bubble" — props: text, character, style ("speech"|"thought"|"shout"|"whisper"|"narrator"), tailDirection ("left"|"right"|"bottom"|"top"|"none"), maxWidth, typewriter, typewriterSpeed
+- "effect" — props: effect ("speed_lines"|"screentone"|"crosshatch"|"vignette"|"sfx"|"impact_burst"|"particles"), color, intensity, direction
+  - For "sfx": sfxText, sfxSize, sfxRotate
+- "shape" — props: shape ("circle"|"rect"|"line"), fill, stroke, strokeWidth
+- "data_block" — props: items (array of {{label, value?, icon?}}), accentColor, showIndex, animateIn ("stagger"), staggerDelay
+
+### LAYER POSITIONING:
+Use percentage strings: x: "15%", y: "30%"
+- Characters (sprites) go BELOW dialogue bubbles. Place at y: 60-75%.
+- Speech bubbles go ABOVE characters. Place at y: 5-30%.
+- Never overlap text on sprites.
+
+### TIMELINE:
+Array of {{ at: ms, target: layerId, animate: {{ opacity: [0,1], ... }}, duration: ms, easing: "ease-out" }}
+- Easing: "linear"|"ease-in"|"ease-out"|"ease-in-out"|"spring"|"bounce"
+- Use typewriter: true for text reveals
+- Total timeline: 3-8 seconds
+
+### TRANSITIONS BETWEEN ACTS:
+- "fade" — gentle crossfade (most common)
+- "cut" — instant switch
+- "slide_left" — slides in from right
+- "iris" — circular reveal
+- "morph" — scale transform
+
+### COLOR PALETTE (manga ink-on-paper):
+- Paper cream: #F2E8D5, warm: #EDE0CC
+- Ink black: #1A1825
+- Accent red: #E8191A (danger, emphasis)
+- Accent amber: #F5A623 (warmth, gold)
+- Muted text: #1A182570 or #A8A6C0
+
 ## CRITICAL RULES:
-- Return ONLY the JSON. No markdown, no explanation, no ```json wrapper.
-- Canvas is always 800x600 (the engine scales responsively).
-- Every panel MUST have at least a background layer.
-- Use character names from the manga bible — maintain consistency.
-- Layer IDs must be unique strings (kebab-case: "char-kai", "bg-main", "effect-speed").
-- Timeline MUST start from at:0 (background fade-in) and build sequentially.
-- Total timeline should be 3-8 seconds (3000-8000ms).
-- Keep it INTERESTING: stagger entrances, use typewriter for text, vary easing.
-- For dialogue panels: show character sprite FIRST, then speech bubble.
-- For data panels: stagger items with 200-300ms delays.
-- For splash panels: dramatic zoom on title text, speed lines, vignette effect.
-- NEVER generate image URLs or image_prompt — everything is code-rendered.
+- Return ONLY valid JSON. No markdown.
+- Canvas is 800x600. Engine scales responsively.
+- Every act MUST have a background layer.
+- Use version: "2.0".
+- Mood: use "light" for cream paper, "dark" for ink backgrounds.
+- Place sprites at y: 60-75% and bubbles at y: 5-35% — NEVER overlap.
+- For dialogue: show sprites first (at: 200-400ms), then bubbles (at: 600ms+).
+- For cut layouts: cells[] must have as many entries as resulting regions.
+- Use 1-3 acts per panel. First act always plays on load. Reader taps for next.
+- Total duration should be 3-8 seconds per act.
+- NEVER generate image URLs. Everything is code-rendered.
+- Prefer screentone/crosshatch patterns over gradient effects.
 """
 
 
@@ -139,8 +181,8 @@ def format_panel_context_for_living(
     manga_bible: dict = None,
     chapter_summary: dict = None,
 ) -> str:
-    """Format the context for a single panel's Living Panel DSL generation."""
-    context = f"""Generate a Living Panel DSL for this manga panel:
+    """Format context for a single panel's Living Panel DSL generation."""
+    context = f"""Generate a Living Panel DSL v2.0 for this manga panel:
 
 PANEL TYPE: {panel_data.get('content_type', 'narration')}
 POSITION: {panel_data.get('position', 'main')}
@@ -162,38 +204,34 @@ VISUAL MOOD: {panel_data.get('visual_mood', 'dramatic-dark')}
         context += f"\nFEATURED CHARACTER: {panel_data['character']}"
         context += f"\nEXPRESSION: {panel_data.get('expression', 'neutral')}"
 
-    # Inject manga bible for character consistency
     if manga_bible:
         characters = manga_bible.get('characters', [])
         char_lines = "\n".join(
-            f"  • {c['name']} ({c['role']}): {c.get('visual_description', '')}"
+            f"  \u2022 {c['name']} ({c['role']}): {c.get('visual_description', '')}"
             for c in characters
         )
         motifs = manga_bible.get('recurring_motifs', [])
-        motif_lines = "\n".join(f"  • {m}" for m in motifs)
+        motif_lines = "\n".join(f"  \u2022 {m}" for m in motifs)
 
         context += f"""
 
-━━━ MANGA BIBLE (use for visual consistency) ━━━
+\u2501\u2501\u2501 MANGA BIBLE \u2501\u2501\u2501
 World: {manga_bible.get('world_description', '')}
-Palette: {manga_bible.get('color_palette', '')}
-
 Characters:
 {char_lines}
-
 Motifs:
 {motif_lines}
 """
 
     if chapter_summary:
         context += f"""
-━━━ CHAPTER CONTEXT ━━━
+\u2501\u2501\u2501 CHAPTER CONTEXT \u2501\u2501\u2501
 Chapter: {chapter_summary.get('chapter_title', '')}
 One-liner: {chapter_summary.get('one_liner', '')}
 Dramatic moment: {chapter_summary.get('dramatic_moment', '')}
 """
 
-    context += "\nNow generate the Living Panel DSL JSON for this panel."
+    context += "\nGenerate the Living Panel DSL v2.0 JSON."
     return context
 
 
@@ -204,7 +242,7 @@ def format_full_page_for_living(
 ) -> str:
     """Format context for generating Living Panels for ALL panels in a page."""
     context = f"""Generate Living Panel DSLs for EACH panel in this manga page.
-Return a JSON object with a "panels" array, where each element is a complete Living Panel DSL.
+Return a JSON object with a \"panels\" array, each a complete Living Panel DSL v2.0.
 
 PAGE LAYOUT: {page_data.get('layout', 'full')}
 NUMBER OF PANELS: {len(page_data.get('panels', []))}
@@ -214,10 +252,8 @@ PANELS:
 
     for i, panel in enumerate(page_data.get('panels', [])):
         context += f"\n--- Panel {i + 1} ---\n"
-        context += f"Position: {panel.get('position', 'main')}\n"
         context += f"Type: {panel.get('content_type', 'narration')}\n"
         context += f"Mood: {panel.get('visual_mood', 'dramatic-dark')}\n"
-
         if panel.get('text'):
             context += f"Text: {panel['text']}\n"
         if panel.get('dialogue'):
@@ -226,22 +262,13 @@ PANELS:
         if panel.get('character'):
             context += f"Character: {panel['character']} ({panel.get('expression', 'neutral')})\n"
 
-    # Inject manga bible
     if manga_bible:
         characters = manga_bible.get('characters', [])
-        char_lines = "\n".join(
-            f"  • {c['name']} ({c['role']})"
-            for c in characters
-        )
-        context += f"\n\nAVAILABLE CHARACTERS:\n{char_lines}"
-        context += f"\nWORLD: {manga_bible.get('world_description', '')}"
+        char_lines = "\n".join(f"  \u2022 {c['name']} ({c['role']})" for c in characters)
+        context += f"\nCHARACTERS:\n{char_lines}"
 
     if chapter_summary:
         context += f"\nCHAPTER: {chapter_summary.get('chapter_title', '')}"
-        context += f"\nKEY IDEA: {chapter_summary.get('one_liner', '')}"
 
-    context += """
-
-Return a JSON object: { "panels": [ <LivingPanelDSL>, <LivingPanelDSL>, ... ] }
-One DSL per panel in the page. Match the panel count exactly."""
+    context += "\n\nReturn: {{ \"panels\": [ <DSL v2.0>, ... ] }}"
     return context

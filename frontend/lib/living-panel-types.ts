@@ -57,9 +57,31 @@ export interface Act {
 /** How the act arranges its sub-panels */
 export interface ActLayout {
   type: "full" | "split-h" | "split-v" | "grid-2x2" | "grid-3" |
-        "l-shape" | "t-shape" | "diagonal" | "overlap" | "free";
+        "l-shape" | "t-shape" | "diagonal" | "overlap" | "free" | "cuts";
   gap?: number;                  // px between cells
-stagger_ms?: number;           // delay between cell reveals
+  stagger_ms?: number;           // delay between cell reveals
+  cuts?: CutSpec[];              // for type="cuts" — recursive panel divisions
+  borderWidth?: number;          // ink border width around panels
+}
+
+/**
+ * CutSpec — defines how a manga page is divided into panels.
+ * Inspired by comfyui_panels: sequential cuts on a page.
+ *
+ * ALGORITHM:
+ * 1. Start with one full-page region [0, 0, 1, 1]
+ * 2. Each cut targets a region (by index) and splits it
+ * 3. Split creates two new regions, replacing the target
+ * 4. Result: array of rectangular regions for panel content
+ *
+ * The `angle` creates slight tilt on the dividing line
+ * for that authentic manga hand-ruled aesthetic.
+ */
+export interface CutSpec {
+  direction: "h" | "v";         // horizontal or vertical cut
+  position: number;              // 0.0-1.0, where to cut within the target region
+  angle?: number;                // degrees of tilt (-4 to 4) for manga feel
+  target?: number;               // which region to cut (0-based, default 0)
 }
 
 /** A sub-panel within an act */

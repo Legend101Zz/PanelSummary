@@ -24,6 +24,7 @@ import {
 } from "./AnimationSystem";
 import { LayerContent } from "./LayerRenderers";
 import { PaperTexture, InkBorder } from "./MangaInk";
+import { CutLayout } from "./CutLayoutEngine";
 
 // ============================================================
 // TYPES
@@ -247,14 +248,29 @@ export function LivingPanelEngine({
 function ActRenderer({ act }: { act: Act }) {
   const gridStyle = LAYOUT_GRIDS[act.layout.type] || LAYOUT_GRIDS["full"];
   const hasCells = act.cells && act.cells.length > 0;
+  const isCutLayout = act.layout.type === "cuts" && act.layout.cuts;
 
   return (
     <div className="absolute inset-0">
       {/* Act-level layers */}
       <ActLayerStack layers={act.layers} timeline={act.timeline} events={act.events} />
 
-      {/* Sub-panel grid */}
-      {hasCells && (
+      {/* Cut-based panel layout */}
+      {isCutLayout && hasCells && (
+        <CutLayout
+          cuts={act.layout.cuts!}
+          cells={act.cells!}
+          gutter={act.layout.gap ?? 4}
+          borderWidth={act.layout.borderWidth ?? 2.5}
+          staggerMs={act.layout.stagger_ms || 0}
+          renderCell={(cell) => (
+            <ActLayerStack layers={cell.layers} timeline={cell.timeline} />
+          )}
+        />
+      )}
+
+      {/* Traditional grid layout */}
+      {!isCutLayout && hasCells && (
         <div
           className="absolute inset-0 z-10"
           style={{

@@ -1,14 +1,13 @@
 """
-generate_living_panels.py — Living Panel DSL Generation
-========================================================
-Generates Living Panel DSL JSON for manga panels using LLM.
-Each static manga panel gets converted into an animated,
-interactive experience.
+generate_living_panels.py — Living Panel DSL v2.0 Generation
+=============================================================
+Generates act-based Living Panel DSL with cut layouts,
+manga ink aesthetic, and user-controlled pacing.
 
 ORCHESTRATION FLOW:
 1. Take existing MangaPage (static panels)
-2. For each panel, generate a LivingPanelDSL via LLM
-3. Validate DSL structure
+2. For each panel, generate a LivingPanelDSL v2.0 via LLM
+3. Validate + auto-fix DSL structure
 4. Store alongside the static panel data
 5. Frontend renders using LivingPanelEngine
 """
@@ -28,32 +27,42 @@ from app.models import SummaryStyle
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# DSL VALIDATION
+# VALID VALUES
 # ============================================================
 
 VALID_LAYER_TYPES = {
     "background", "sprite", "text", "speech_bubble",
-    "effect", "shape", "data_block", "scene_transition",
+    "effect", "shape", "data_block", "scene_transition", "image",
 }
 
 VALID_EFFECTS = {
     "particles", "speed_lines", "impact_burst", "sparkle",
     "rain", "snow", "smoke", "screen_shake", "vignette",
-    "lens_flare", "floating_kanji", "ink_splash", "lightning",
+    "floating_kanji", "ink_splash", "lightning",
+    "screentone", "crosshatch", "sfx",
 }
 
-VALID_EASINGS = {
-    "linear", "ease-in", "ease-out", "ease-in-out",
-    "spring", "bounce", "elastic", "sharp",
+VALID_LAYOUTS = {
+    "full", "split-h", "split-v", "grid-2x2", "grid-3",
+    "l-shape", "t-shape", "diagonal", "overlap", "free", "cuts",
 }
 
+VALID_TRANSITIONS = {
+    "cut", "fade", "crack", "morph", "iris",
+    "slide_left", "slide_up", "dissolve",
+}
+
+
+# ============================================================
+# DSL v2.0 VALIDATION
+# ============================================================
 
 def validate_living_panel_dsl(dsl: dict) -> tuple[bool, list[str]]:
-    """Validate a Living Panel DSL dict. Returns (is_valid, errors)."""
+    """Validate a Living Panel DSL v2.0 dict."""
     errors = []
 
-    if dsl.get("version") != "1.0":
-        errors.append("Missing or invalid version (must be '1.0')")
+    if dsl.get("version") not in ("2.0", "1.0"):
+        errors.append("version must be '2.0'")
 
     canvas = dsl.get("canvas")
     if not isinstance(canvas, dict):
@@ -64,78 +73,95 @@ def validate_living_panel_dsl(dsl: dict) -> tuple[bool, list[str]]:
         if not isinstance(canvas.get("height"), (int, float)):
             errors.append("canvas.height must be a number")
 
-    layers = dsl.get("layers", [])
-    if not isinstance(layers, list) or len(layers) == 0:
-        errors.append("Must have at least one layer")
+    acts = dsl.get("acts", [])
+    if not isinstance(acts, list) or len(acts) == 0:
+        errors.append("Must have at least one act")
     else:
-        layer_ids = set()
-        for i, layer in enumerate(layers):
-            if not isinstance(layer, dict):
-                errors.append(f"Layer {i} is not a dict")
+        for ai, act in enumerate(acts):
+            if not isinstance(act, dict):
+                errors.append(f"Act {ai} is not a dict")
                 continue
-            lid = layer.get("id")
-            if not lid:
-                errors.append(f"Layer {i} missing id")
-            elif lid in layer_ids:
-                errors.append(f"Duplicate layer id: {lid}")
-            else:
-                layer_ids.add(lid)
+            if not act.get("id"):
+                errors.append(f"Act {ai} missing id")
+            if not isinstance(act.get("duration_ms"), (int, float)):
+                errors.append(f"Act {ai} missing duration_ms")
 
-            ltype = layer.get("type")
-            if ltype not in VALID_LAYER_TYPES:
-                errors.append(f"Layer '{lid}': invalid type '{ltype}'")
+            layout = act.get("layout", {})
+            if layout.get("type") not in VALID_LAYOUTS:
+                errors.append(f"Act {ai}: invalid layout type '{layout.get('type')}'")
 
-            if not isinstance(layer.get("props"), dict) and ltype not in ("scene_transition",):
-                errors.append(f"Layer '{lid}': missing props")
+            # Validate layers within act
+            for li, layer in enumerate(act.get("layers", [])):
+                if not isinstance(layer, dict):
+                    continue
+                if layer.get("type") not in VALID_LAYER_TYPES:
+                    errors.append(f"Act {ai} layer {li}: invalid type '{layer.get('type')}'")
 
-    timeline = dsl.get("timeline", [])
-    if not isinstance(timeline, list):
-        errors.append("timeline must be an array")
-    else:
-        for i, step in enumerate(timeline):
-            if not isinstance(step, dict):
-                errors.append(f"Timeline step {i} is not a dict")
-                continue
-            if "at" not in step:
-                errors.append(f"Timeline step {i}: missing 'at'")
-            if "target" not in step:
-                errors.append(f"Timeline step {i}: missing 'target'")
-            if "duration" not in step:
-                errors.append(f"Timeline step {i}: missing 'duration'")
+            # Validate cells
+            for ci, cell in enumerate(act.get("cells", [])):
+                if not isinstance(cell, dict):
+                    continue
+                if not cell.get("id"):
+                    errors.append(f"Act {ai} cell {ci} missing id")
 
     return len(errors) == 0, errors
 
 
 def fix_common_dsl_issues(dsl: dict) -> dict:
     """Auto-fix common LLM mistakes in DSL output."""
-    # Ensure version
-    dsl.setdefault("version", "1.0")
+    # Version
+    dsl["version"] = "2.0"
 
-    # Ensure canvas defaults
+    # Canvas defaults
     canvas = dsl.setdefault("canvas", {})
     canvas.setdefault("width", 800)
     canvas.setdefault("height", 600)
-    canvas.setdefault("background", "#0a0a1a")
+    canvas.setdefault("background", "#F2E8D5")
+    canvas.setdefault("mood", "light")
 
-    # Ensure layers have props
-    for layer in dsl.get("layers", []):
-        layer.setdefault("props", {})
-        layer.setdefault("id", f"layer-{id(layer)}")
+    # If v1.0 format (flat layers + timeline), convert to v2.0 act format
+    if "layers" in dsl and "acts" not in dsl:
+        dsl["acts"] = [{
+            "id": "main",
+            "duration_ms": dsl.get("meta", {}).get("duration_ms", 5000),
+            "layout": {"type": "full"},
+            "layers": dsl.pop("layers", []),
+            "cells": [],
+            "timeline": dsl.pop("timeline", []),
+            "events": dsl.pop("events", []),
+        }]
 
-    # Ensure timeline has valid structure
-    for step in dsl.get("timeline", []):
-        step.setdefault("duration", 500)
-        step.setdefault("easing", "ease-out")
-        if "animate" not in step:
-            step["animate"] = {"opacity": [0, 1]}
+    # Fix acts
+    for act in dsl.get("acts", []):
+        act.setdefault("id", f"act-{id(act)}")
+        act.setdefault("duration_ms", 5000)
+        act.setdefault("layout", {"type": "full"})
+        act.setdefault("layers", [])
+        act.setdefault("cells", [])
+        act.setdefault("timeline", [])
 
-    # Ensure events is a list
-    if "events" not in dsl or not isinstance(dsl.get("events"), list):
-        dsl["events"] = []
+        # Ensure all layers have props and id
+        for layer in act.get("layers", []):
+            layer.setdefault("props", {})
+            layer.setdefault("id", f"layer-{id(layer)}")
 
-    # Ensure meta
+        # Ensure timeline steps have required fields
+        for step in act.get("timeline", []):
+            step.setdefault("duration", 500)
+            step.setdefault("easing", "ease-out")
+            if "animate" not in step:
+                step["animate"] = {"opacity": [0, 1]}
+
+        # Fix cells
+        for cell in act.get("cells", []):
+            cell.setdefault("id", f"cell-{id(cell)}")
+            cell.setdefault("layers", [])
+            cell.setdefault("timeline", [])
+            for layer in cell.get("layers", []):
+                layer.setdefault("props", {})
+                layer.setdefault("id", f"layer-{id(layer)}")
+
     dsl.setdefault("meta", {})
-
     return dsl
 
 
@@ -150,7 +176,7 @@ async def generate_living_panel(
     manga_bible: dict = None,
     chapter_summary: dict = None,
 ) -> Optional[dict]:
-    """Generate a Living Panel DSL for a single panel."""
+    """Generate a Living Panel DSL v2.0 for a single panel."""
     system_prompt = get_living_panel_prompt(style)
     user_message = format_panel_context_for_living(
         panel_data, manga_bible, chapter_summary
@@ -169,16 +195,11 @@ async def generate_living_panel(
         if isinstance(parsed, str):
             parsed = json.loads(parsed)
 
-        # Auto-fix common issues
         parsed = fix_common_dsl_issues(parsed)
 
-        # Validate
         is_valid, errors = validate_living_panel_dsl(parsed)
         if not is_valid:
-            logger.warning(
-                f"Living panel DSL validation failed: {errors}. "
-                f"Attempting to use with fixes applied."
-            )
+            logger.warning(f"Living panel DSL validation issues: {errors}")
 
         return parsed
 
@@ -212,11 +233,11 @@ async def generate_living_panels_for_page(
 
 
 # ============================================================
-# FALLBACK DSL GENERATION (no LLM needed)
+# FALLBACK DSL (v2.0 format, no LLM needed)
 # ============================================================
 
 def generate_fallback_living_panel(panel_data: dict) -> dict:
-    """Generate a basic Living Panel DSL from static panel data without LLM."""
+    """Generate a basic Living Panel DSL v2.0 from static panel data."""
     content_type = panel_data.get("content_type", "narration")
     text = panel_data.get("text", "")
     dialogue = panel_data.get("dialogue", [])
@@ -224,68 +245,53 @@ def generate_fallback_living_panel(panel_data: dict) -> dict:
     expression = panel_data.get("expression", "neutral")
     mood = panel_data.get("visual_mood", "dramatic-dark")
 
-    mood_colors = {
-        "dramatic-dark":  ["#0a0a1a", "#1a1025", "#0d0d1e"],
-        "warm-amber":     ["#1a1408", "#2a1c0a", "#1a1205"],
-        "cool-mystery":   ["#081018", "#0a1520", "#060e18"],
-        "intense-red":    ["#1a0808", "#250a0a", "#1a0505"],
-        "calm-green":     ["#081a10", "#0a2015", "#051a0c"],
-        "ethereal-purple": ["#120820", "#1a0a28", "#100618"],
-    }
-    mood_accents = {
-        "dramatic-dark": "#8080ff", "warm-amber": "#f5a623",
-        "cool-mystery": "#00bfa5", "intense-red": "#e8191a",
-        "calm-green": "#4caf50", "ethereal-purple": "#bb86fc",
-    }
-
-    colors = mood_colors.get(mood, mood_colors["dramatic-dark"])
-    accent = mood_accents.get(mood, "#8080ff")
+    is_dark = mood in ("dramatic-dark", "cool-mystery", "intense-red")
+    bg_color = "#1A1825" if is_dark else "#F2E8D5"
+    bg_color2 = "#0F0E17" if is_dark else "#EDE0CC"
+    ink = "#F0EEE8" if is_dark else "#1A1825"
+    muted = "#A8A6C080" if is_dark else "#1A182570"
+    pattern = "halftone" if is_dark else "manga_screen"
+    canvas_mood = "dark" if is_dark else "light"
 
     layers = [
         {
-            "id": "bg",
-            "type": "background",
-            "opacity": 0,
+            "id": "bg", "type": "background", "opacity": 1,
             "props": {
-                "gradient": colors,
+                "gradient": [bg_color, bg_color2],
                 "gradientAngle": 160,
-                "pattern": "halftone",
-                "patternColor": accent,
-                "patternOpacity": 0.08,
+                "pattern": pattern,
+                "patternOpacity": 0.05,
             },
         },
     ]
-    timeline = [
-        {"at": 0, "target": "bg", "animate": {"opacity": [0, 1]}, "duration": 500, "easing": "ease-in"},
-    ]
+    timeline = []
 
     if content_type == "narration" and text:
         layers.append({
-            "id": "narration-text",
-            "type": "text",
-            "x": "50%", "y": "50%", "opacity": 0,
+            "id": "narration", "type": "text",
+            "x": "15%", "y": "35%", "opacity": 0,
             "props": {
                 "content": text,
                 "fontSize": "clamp(0.9rem, 3vw, 1.4rem)",
                 "fontFamily": "body",
-                "color": accent,
-                "textAlign": "center",
-                "maxWidth": 500,
+                "color": ink,
+                "textAlign": "left",
+                "maxWidth": "70%",
                 "lineHeight": 1.5,
                 "typewriter": True,
-                "typewriterSpeed": 30,
+                "typewriterSpeed": 35,
             },
         })
         timeline.append(
-            {"at": 500, "target": "narration-text", "animate": {"opacity": [0, 1], "typewriter": True}, "duration": 1500}
+            {"at": 400, "target": "narration",
+             "animate": {"opacity": [0, 1], "typewriter": True}, "duration": 2000}
         )
 
     elif content_type == "dialogue" and dialogue:
         if character:
             layers.append({
-                "id": f"sprite-{character.lower().replace(' ', '-')}",
-                "type": "sprite",
-                "x": "50%", "y": "30%", "opacity": 0,
+                "id": "char", "type": "sprite",
+                "x": "50%", "y": "65%", "opacity": 0,
                 "props": {
                     "character": character,
                     "expression": expression,
@@ -294,103 +300,89 @@ def generate_fallback_living_panel(panel_data: dict) -> dict:
                 },
             })
             timeline.append(
-                {"at": 300, "target": f"sprite-{character.lower().replace(' ', '-')}",
-                 "animate": {"opacity": [0, 1], "scale": [0.8, 1]}, "duration": 500, "easing": "spring"}
+                {"at": 200, "target": "char",
+                 "animate": {"opacity": [0, 1]}, "duration": 400}
             )
 
-        for i, line in enumerate(dialogue):
-            bubble_id = f"bubble-{i}"
+        for i, line in enumerate(dialogue[:4]):
+            bid = f"bubble-{i}"
+            x_pos = "8%" if i % 2 == 0 else "48%"
+            y_pos = f"{8 + i * 10}%"
             layers.append({
-                "id": bubble_id,
-                "type": "speech_bubble",
-                "x": "50%", "y": f"{50 + i * 15}%", "opacity": 0,
+                "id": bid, "type": "speech_bubble",
+                "x": x_pos, "y": y_pos, "opacity": 0,
                 "props": {
                     "text": line.get("text", ""),
                     "character": line.get("character", character or "?"),
                     "style": "speech",
-                    "tailDirection": "top",
-                    "maxWidth": 240,
+                    "tailDirection": "bottom" if i < 2 else "top",
+                    "maxWidth": 210,
                     "typewriter": True,
                     "typewriterSpeed": 35,
                 },
             })
             timeline.append(
-                {"at": 800 + i * 1200, "target": bubble_id,
-                 "animate": {"opacity": [0, 1], "typewriter": True}, "duration": 800}
+                {"at": 600 + i * 1200, "target": bid,
+                 "animate": {"opacity": [0, 1], "typewriter": True}, "duration": 900}
             )
 
     elif content_type == "splash" and text:
         layers.extend([
             {
-                "id": "speed-lines",
-                "type": "effect", "opacity": 0,
-                "props": {"effect": "speed_lines", "color": accent, "intensity": 0.5, "count": 24},
+                "id": "speed", "type": "effect", "opacity": 0,
+                "props": {"effect": "speed_lines", "color": ink,
+                          "intensity": 0.3, "direction": "radial"},
             },
             {
-                "id": "vignette",
-                "type": "effect", "opacity": 0,
-                "props": {"effect": "vignette", "color": "#000000", "intensity": 0.7},
-            },
-            {
-                "id": "splash-title",
-                "type": "text",
-                "x": "50%", "y": "45%", "opacity": 0, "scale": 1.5,
+                "id": "title", "type": "text",
+                "x": "10%", "y": "30%", "opacity": 0,
                 "props": {
                     "content": text,
-                    "fontSize": "clamp(2rem, 7vw, 4.5rem)",
+                    "fontSize": "clamp(1.4rem, 5vw, 2.8rem)",
                     "fontFamily": "display",
-                    "color": "#ffffff",
-                    "textAlign": "center",
-                    "textShadow": f"3px 3px 0 {accent}60, 0 0 40px rgba(0,0,0,0.8)",
-                    "letterSpacing": "0.05em",
+                    "color": ink,
+                    "lineHeight": 1.2,
+                    "typewriter": True,
+                    "typewriterSpeed": 50,
                 },
             },
         ])
         timeline.extend([
-            {"at": 200, "target": "speed-lines", "animate": {"opacity": [0, 0.5]}, "duration": 400},
-            {"at": 300, "target": "vignette", "animate": {"opacity": [0, 1]}, "duration": 600},
-            {"at": 400, "target": "splash-title", "animate": {"opacity": [0, 1], "scale": [1.4, 1]}, "duration": 800, "easing": "spring"},
+            {"at": 200, "target": "speed",
+             "animate": {"opacity": [0, 1]}, "duration": 500},
+            {"at": 300, "target": "title",
+             "animate": {"opacity": [0, 1], "typewriter": True}, "duration": 2000},
         ])
 
-    elif content_type == "data" and text:
-        items = [s.strip() for s in text.split("|") if s.strip()]
+    else:
         layers.append({
-            "id": "data-block",
-            "type": "data_block",
-            "x": "50%", "y": "50%", "opacity": 0,
-            "props": {
-                "items": [{"label": item, "highlight": i == 0} for i, item in enumerate(items)],
-                "layout": "stack",
-                "accentColor": accent,
-                "showIndex": True,
-                "animateIn": "stagger",
-                "staggerDelay": 250,
-            },
+            "id": "transition", "type": "scene_transition", "opacity": 0,
+            "props": {"color": muted, "text": text or "..."},
         })
         timeline.append(
-            {"at": 500, "target": "data-block", "animate": {"opacity": [0, 1], "y": ["60%", "50%"]}, "duration": 600, "easing": "ease-out"}
+            {"at": 300, "target": "transition",
+             "animate": {"opacity": [0, 1]}, "duration": 600}
         )
 
-    else:
-        # transition or unknown
-        layers.append({
-            "id": "transition",
-            "type": "scene_transition",
-            "opacity": 0,
-            "props": {"transition": "fade_black", "color": accent, "text": text or "..."},
-        })
-        timeline.append(
-            {"at": 300, "target": "transition", "animate": {"opacity": [0, 1]}, "duration": 800}
-        )
+    total_ms = max(3000, len(timeline) * 1200 + 2000)
 
     return {
-        "version": "1.0",
-        "canvas": {"width": 800, "height": 600, "background": colors[0], "mood": mood},
-        "layers": layers,
-        "timeline": timeline,
-        "events": [],
+        "version": "2.0",
+        "canvas": {
+            "width": 800, "height": 600,
+            "background": bg_color, "mood": canvas_mood,
+        },
+        "acts": [{
+            "id": "main",
+            "duration_ms": total_ms,
+            "layout": {"type": "full"},
+            "layers": layers,
+            "cells": [],
+            "timeline": timeline,
+        }],
         "meta": {
             "content_type": content_type,
-            "narrative_context": text[:100] if text else "Panel",
+            "narrative_beat": text[:80] if text else "Panel",
+            "duration_ms": total_ms,
         },
     }
