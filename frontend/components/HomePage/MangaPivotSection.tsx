@@ -241,77 +241,160 @@ export function MangaPivotSection() {
           {/* Diagonal slash between panels */}
           <SlashLine angle={-8} position={54} delay={0.35} />
 
-          {/* Panel B: Manga panels (right side) */}
+          {/* Panel B: Manga page (right side) — uses the character SVG */}
           <DiagonalPanel
             clipPath="polygon(58% 0, 100% 0, 100% 100%, 44% 100%)"
             delay={0.25}
           >
             <div
-              className="absolute inset-0 flex flex-col items-center justify-center p-8"
-              style={{ background: "var(--paper-2)" }}
+              className="absolute inset-0 flex flex-col items-center justify-center p-6"
+              style={{ background: "#fff" }}
             >
               <span style={{
                 fontFamily: "var(--font-label)",
                 fontSize: 9,
                 letterSpacing: "0.25em",
                 color: "var(--red)",
-                marginBottom: 12,
+                marginBottom: 8,
               }}>THE MANGA WAY</span>
 
-              {/* Mini manga grid */}
-              <div style={{ width: 120 }}>
-                <div className="grid grid-cols-2 gap-[2px]">
-                  {/* Big top panel */}
-                  <div className="col-span-2 border-2 flex items-center justify-center"
+              {/* Actual manga page layout */}
+              <div style={{
+                width: 160,
+                border: "3px solid var(--ink-on-paper)",
+                background: "#fff",
+                position: "relative",
+                overflow: "hidden",
+              }}>
+                {/* Panel 1: Wide top — character splash */}
+                <div style={{
+                  borderBottom: "2.5px solid var(--ink-on-paper)",
+                  height: 80,
+                  position: "relative",
+                  overflow: "hidden",
+                  background: "linear-gradient(135deg, #2c3260 0%, #1f2440 100%)",
+                }}>
+                  {/* Character SVG */}
+                  <img
+                    src="/manga-character.svg"
+                    alt=""
                     style={{
-                      borderColor: "var(--ink-on-paper)",
-                      height: 36,
-                      background: "#fff",
-                    }}>
-                    <span style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: 7,
-                      color: "var(--ink-on-paper)",
-                    }}>INSIGHT</span>
-                  </div>
-                  {/* Two bottom panels */}
-                  <div className="border-2 flex items-center justify-center"
-                    style={{
-                      borderColor: "var(--ink-on-paper)",
-                      height: 44,
-                      background: "#fff",
-                      position: "relative",
-                    }}>
-                    {/* Character dot */}
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%) scale(1.2)",
+                      width: "85%",
+                      height: "auto",
+                      opacity: 0.95,
+                    }}
+                  />
+                  {/* Narrator box */}
+                  <div style={{
+                    position: "absolute",
+                    top: 4,
+                    left: 4,
+                    background: "#1A1825",
+                    color: "#F5A623",
+                    fontFamily: "var(--font-label)",
+                    fontSize: 5,
+                    letterSpacing: "0.12em",
+                    padding: "2px 5px",
+                    border: "1px solid #F5A623",
+                  }}>CH.03</div>
+                </div>
+
+                {/* Panel row: 2 columns with diagonal cut */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  borderBottom: "2.5px solid var(--ink-on-paper)",
+                  height: 55,
+                }}>
+                  {/* Panel 2: Character close-up + speech */}
+                  <div style={{
+                    borderRight: "2.5px solid var(--ink-on-paper)",
+                    position: "relative",
+                    background: "#fff",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}>
+                    {/* Simple character head silhouette */}
                     <div style={{
-                      width: 10, height: 18,
+                      width: 20, height: 28,
                       background: "var(--ink-on-paper)",
-                      borderRadius: "50% 50% 0 0",
+                      borderRadius: "50% 50% 10% 10%",
+                      marginBottom: -4,
                     }} />
                     {/* Speech bubble */}
                     <div style={{
                       position: "absolute",
-                      top: 2, right: 2,
+                      top: 3, right: 3,
                       background: "#fff",
-                      border: "1px solid var(--ink-on-paper)",
-                      borderRadius: 6,
-                      padding: "1px 4px",
+                      border: "1.5px solid var(--ink-on-paper)",
+                      borderRadius: 10,
+                      padding: "2px 5px",
                       fontFamily: "var(--font-bubble)",
-                      fontSize: 6,
-                    }}>\u300C!\u300D</div>
-                  </div>
-                  <div className="border-2 flex items-center justify-center"
-                    style={{
-                      borderColor: "var(--ink-on-paper)",
-                      height: 44,
-                      background: "rgba(26,24,37,0.03)",
+                      fontSize: 7,
+                      color: "var(--ink-on-paper)",
+                      lineHeight: 1.2,
                     }}>
+                      This is<br/>the key!
+                    </div>
+                  </div>
+
+                  {/* Panel 3: Action with speed lines */}
+                  <div style={{
+                    position: "relative",
+                    background: "#fff",
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}>
+                    {/* CSS speed lines */}
+                    <div style={{
+                      position: "absolute",
+                      inset: 0,
+                      backgroundImage: `repeating-conic-gradient(
+                        from 0deg at 50% 50%,
+                        transparent 0deg,
+                        rgba(26,24,37,0.06) 0.8deg,
+                        transparent 1.6deg
+                      )`,
+                    }} />
                     <span style={{
                       fontFamily: "var(--font-display)",
-                      fontSize: 6,
+                      fontSize: 8,
                       color: "var(--ink-on-paper)",
-                    }}>ACTION!</span>
+                      position: "relative",
+                      zIndex: 1,
+                      textShadow: "0 0 4px #fff, 0 0 8px #fff",
+                    }}>BOOM!</span>
                   </div>
+                </div>
+
+                {/* Panel 4: Wide bottom — impact text */}
+                <div style={{
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#fff",
+                  position: "relative",
+                }}>
+                  {/* Thought bubble */}
+                  <span style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 6,
+                    fontStyle: "italic",
+                    color: "rgba(26,24,37,0.5)",
+                    textAlign: "center",
+                    lineHeight: 1.3,
+                  }}>
+                    Knowledge compressed<br/>into visual memory.
+                  </span>
                 </div>
               </div>
 
@@ -320,7 +403,7 @@ export function MangaPivotSection() {
                 fontSize: "0.7rem",
                 color: "var(--ink-on-paper)",
                 fontWeight: 600,
-                marginTop: 10,
+                marginTop: 8,
               }}>
                 Visual. Sequential. Addictive.
               </p>
