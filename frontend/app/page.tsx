@@ -23,6 +23,7 @@ import type { BookListItem } from "@/lib/types";
 import dynamic from "next/dynamic";
 
 const AttentionGame = dynamic(() => import("@/components/HomePage/AttentionGame"), { ssr: false });
+const MangaPivotSection = dynamic(() => import("@/components/HomePage/MangaPivotSection"), { ssr: false });
 
 // ============================================================
 // REVEAL — animate children on scroll into view
@@ -116,19 +117,21 @@ function StepCard({ num, title, desc, accent, icon }: {
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
       }}
     >
-      {/* Step number */}
+      {/* Step number — pushed behind content */}
       <span style={{
         position: "absolute",
-        top: -1,
-        right: 12,
+        bottom: 8,
+        right: 10,
         fontFamily: "var(--font-display)",
-        fontSize: "3rem",
-        color: `${accent}15`,
+        fontSize: "4rem",
         lineHeight: 1,
         pointerEvents: "none",
+        zIndex: 0,
+        opacity: 0.07,
+        color: accent,
       }}>{num}</span>
 
-      <div className="flex items-center gap-3 mb-3">
+      <div className="relative z-10 flex items-center gap-3 mb-3">
         <div style={{
           width: 36,
           height: 36,
@@ -147,7 +150,7 @@ function StepCard({ num, title, desc, accent, icon }: {
         }}>{title}</h3>
       </div>
 
-      <p style={{
+      <p className="relative z-10" style={{
         fontFamily: "var(--font-body)",
         fontSize: "0.85rem",
         color: "var(--text-2)",
@@ -339,193 +342,9 @@ export default function HomePage() {
 
       {/* ====================================================
           § 3 — THE PIVOT
-          "But manga works."
-          Paper-colored section — visual palette break.
+          "But manga works." — Full manga-panel experience.
       ==================================================== */}
-      <section
-        className="relative py-20 px-4 overflow-hidden"
-        style={{ background: "var(--paper)" }}
-      >
-        {/* Paper halftone */}
-        <div className="absolute inset-0 halftone--paper" />
-
-        <div className="relative z-10 max-w-4xl mx-auto">
-          <Reveal>
-            <div className="text-center mb-12">
-              <p style={{
-                fontFamily: "var(--font-label)",
-                fontSize: 10,
-                letterSpacing: "0.3em",
-                color: "rgba(26,24,37,0.35)",
-                marginBottom: 12,
-              }}>
-                THE FORMAT THAT SURVIVES
-              </p>
-              <h2 style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(2rem, 7vw, 4.5rem)",
-                lineHeight: 0.95,
-                color: "var(--ink-on-paper)",
-                marginBottom: 16,
-              }}>
-                BUT
-                <span style={{ color: "var(--red)" }}> MANGA</span>
-                <br />WORKS.
-              </h2>
-              <p style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "1rem",
-                color: "rgba(26,24,37,0.6)",
-                maxWidth: 520,
-                margin: "0 auto",
-                lineHeight: 1.7,
-              }}>
-                People binge 200 chapters in a weekend. Why? Because manga
-                compresses information into <strong>visual sequences</strong> —
-                panels, pacing, emotion. Your brain processes it 60,000x faster than text.
-              </p>
-            </div>
-          </Reveal>
-
-          {/* Side by side: text vs manga */}
-          <Reveal delay={0.15}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-              {/* The old way */}
-              <div className="p-5 border-2" style={{
-                borderColor: "rgba(26,24,37,0.15)",
-                background: "#fff",
-              }}>
-                <span style={{
-                  fontFamily: "var(--font-label)",
-                  fontSize: 9,
-                  letterSpacing: "0.2em",
-                  color: "rgba(26,24,37,0.3)",
-                }}>THE OLD WAY</span>
-                {/* Fake text block */}
-                <div className="mt-3 space-y-2">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <div key={i} className="flex gap-1">
-                      {Array.from({ length: 3 + Math.floor(Math.random() * 4) }, (_, j) => (
-                        <div key={j} style={{
-                          height: 8,
-                          width: 20 + Math.random() * 40,
-                          background: `rgba(26,24,37,${0.06 + Math.random() * 0.08})`,
-                          borderRadius: 1,
-                        }} />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-3" style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "0.75rem",
-                  color: "rgba(26,24,37,0.35)",
-                  fontStyle: "italic",
-                }}>Dense. Linear. Exhausting.</p>
-              </div>
-
-              {/* The manga way */}
-              <div className="p-5 border-2" style={{
-                borderColor: "var(--ink-on-paper)",
-                background: "#fff",
-              }}>
-                <span style={{
-                  fontFamily: "var(--font-label)",
-                  fontSize: 9,
-                  letterSpacing: "0.2em",
-                  color: "var(--red)",
-                }}>THE MANGA WAY</span>
-                {/* Mini manga panel grid */}
-                <div className="mt-3 grid grid-cols-2 gap-[3px]">
-                  <div className="border-2 p-2 col-span-2" style={{
-                    borderColor: "var(--ink-on-paper)",
-                    minHeight: 40,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
-                    <span style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "0.65rem",
-                      color: "var(--ink-on-paper)",
-                    }}>THE KEY INSIGHT</span>
-                  </div>
-                  <div className="border-2 p-2" style={{
-                    borderColor: "var(--ink-on-paper)",
-                    minHeight: 50,
-                    position: "relative",
-                  }}>
-                    {/* Character silhouette */}
-                    <div style={{
-                      width: 16,
-                      height: 28,
-                      background: "var(--ink-on-paper)",
-                      borderRadius: "50% 50% 0 0",
-                      margin: "0 auto",
-                    }} />
-                    <div style={{
-                      position: "absolute",
-                      top: 3,
-                      right: 3,
-                      background: "#fff",
-                      border: "1px solid var(--ink-on-paper)",
-                      borderRadius: 8,
-                      padding: "2px 5px",
-                      fontFamily: "var(--font-bubble)",
-                      fontSize: 8,
-                      color: "var(--ink-on-paper)",
-                    }}>「...!」</div>
-                  </div>
-                  <div className="border-2 p-2" style={{
-                    borderColor: "var(--ink-on-paper)",
-                    minHeight: 50,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "rgba(26,24,37,0.03)",
-                  }}>
-                    {/* Speed lines */}
-                    <span style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "0.5rem",
-                      color: "var(--ink-on-paper)",
-                      letterSpacing: "0.1em",
-                    }}>ACTION!</span>
-                  </div>
-                </div>
-                <p className="mt-3" style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "0.75rem",
-                  color: "var(--ink-on-paper)",
-                  fontWeight: 600,
-                }}>Visual. Sequential. Addictive.</p>
-              </div>
-            </div>
-          </Reveal>
-
-          {/* The punchline */}
-          <Reveal delay={0.3}>
-            <div className="text-center">
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(1.1rem, 3vw, 1.6rem)",
-                color: "var(--ink-on-paper)",
-                marginBottom: 6,
-              }}>
-                So we built a machine that turns
-              </p>
-              <p style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(1.5rem, 5vw, 2.8rem)",
-                lineHeight: 1,
-              }}>
-                <span style={{ color: "rgba(26,24,37,0.3)" }}>any book</span>{" "}
-                <span style={{ color: "var(--red)" }}>into manga.</span>
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      <MangaPivotSection />
 
       {/* ====================================================
           § 4 — HOW IT WORKS
@@ -542,9 +361,8 @@ export default function HomePage() {
                 color: "var(--text-1)",
                 lineHeight: 1,
               }}>
-                THREE STEPS.
-                <br />
-                <span style={{ color: "var(--amber)" }}>ZERO READING.</span>
+                BOOKS<span style={{ color: "var(--text-3)", margin: "0 8px" }}>→</span>
+                <span style={{ color: "var(--amber)" }}>MANGA</span>
               </h2>
             </div>
           </Reveal>
