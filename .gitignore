@@ -25,3 +25,4 @@ uploads/
 # OS
 .DS_Store
 *.log
+.github/instructions/wmt-copilot.instructions.md

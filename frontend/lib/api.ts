@@ -246,6 +246,45 @@ export async function getReels(
 }
 
 // ============================================================
+// LIVING PANELS
+// ============================================================
+
+/**
+ * Get Living Panel DSLs for a specific manga page.
+ * Returns auto-generated fallback DSLs (no LLM needed).
+ */
+export async function getLivingPanels(
+  summaryId: string,
+  chapterIdx: number,
+  pageIdx: number,
+): Promise<{ chapter_index: number; page_index: number; layout: string; living_panels: any[] }> {
+  const response = await api.get(
+    `/summary/${summaryId}/living-panels/${chapterIdx}/${pageIdx}`
+  );
+  return response.data;
+}
+
+/**
+ * Generate Living Panel DSLs via LLM (more creative, costs tokens).
+ */
+export async function generateLivingPanels(
+  summaryId: string,
+  chapterIdx: number,
+  pageIdx: number,
+  options: { apiKey: string; provider: LLMProvider; model?: string },
+): Promise<{ chapter_index: number; page_index: number; layout: string; living_panels: any[] }> {
+  const response = await api.post(
+    `/summary/${summaryId}/living-panels/${chapterIdx}/${pageIdx}/generate`,
+    {
+      api_key: options.apiKey,
+      provider: options.provider,
+      model: options.model,
+    }
+  );
+  return response.data;
+}
+
+// ============================================================
 // IMAGE HELPERS
 // ============================================================
 

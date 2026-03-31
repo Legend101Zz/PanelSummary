@@ -1,0 +1,4 @@
+{
+    "diffEditor.codeLens": true,
+    "snyk.advanced.autoSelectOrganization": true
+}

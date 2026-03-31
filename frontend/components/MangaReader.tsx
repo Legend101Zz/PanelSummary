@@ -13,7 +13,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { getImageUrl } from "@/lib/api";
 import { getStyleAccent } from "@/lib/utils";
 import type {
@@ -416,10 +416,21 @@ export function MangaReader({ summary }: { summary: Summary }) {
             CH.{chIdx + 1}/{chapters.length} · PAGE {pageIdx + 1}/{pages.length}
           </p>
         </div>
-        <span className="font-label px-2 py-0.5 border uppercase"
-          style={{ color: accent, borderColor: `${accent}40`, background: `${accent}10`, fontSize: "9px" }}>
-          {page.layout}
-        </span>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/books/${summary.book_id || ''}/manga/living?summary=${summary.id || ''}`}
+            className="flex items-center gap-1 font-label px-2 py-0.5 border uppercase transition-colors"
+            style={{ color: '#ffc220', borderColor: '#ffc22040', background: '#ffc22010', fontSize: '9px', textDecoration: 'none' }}
+            title="View Living Panels (animated)"
+          >
+            <Sparkles size={10} />
+            LIVING
+          </a>
+          <span className="font-label px-2 py-0.5 border uppercase"
+            style={{ color: accent, borderColor: `${accent}40`, background: `${accent}10`, fontSize: "9px" }}>
+            {page.layout}
+          </span>
+        </div>
       </div>
 
       {/* Main page + nav */}
