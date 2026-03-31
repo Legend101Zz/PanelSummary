@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * living/page.tsx — Living Manga Panel Demo & Viewer
- * =====================================================
- * Shows a manga page with Living Panel DSL-driven animations.
- * Falls back to auto-generated DSLs from the static panel data.
+ * living/page.tsx — Living Manga Panel Viewer v2.0
+ * ==================================================
+ * Full-screen immersive viewer for act-based Living Panels.
+ * Navigates between panels (pages) and lets acts auto-play.
  *
  * URL: /books/{id}/manga/living?summary={summaryId}
  */
@@ -18,7 +18,7 @@ import { getStyleAccent } from "@/lib/utils";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
 import type { Summary, MangaPage } from "@/lib/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
-import { createSampleLivingPanel } from "@/lib/living-panel-types";
+import { SAMPLE_LIVING_PANELS } from "@/lib/sample-living-book";
 
 export default function LivingMangaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -29,26 +29,22 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Navigation state
-  const [chIdx, setChIdx] = useState(0);
-  const [pageIdx, setPageIdx] = useState(0);
+  // Navigation
   const [panelIdx, setPanelIdx] = useState(0);
 
-  // Living panel DSLs for current page
+  // Living panels (from API or sample)
   const [livingPanels, setLivingPanels] = useState<LivingPanelDSL[]>([]);
   const [loadingPanels, setLoadingPanels] = useState(false);
-
-  // Demo mode (no summary)
   const [demoMode, setDemoMode] = useState(!summaryId);
 
   // ============================================================
-  // LOAD SUMMARY
+  // LOAD
   // ============================================================
 
   useEffect(() => {
     if (!summaryId) {
       setDemoMode(true);
-      setLivingPanels([createSampleLivingPanel()]);
+      setLivingPanels(SAMPLE_LIVING_PANELS);
       setLoading(false);
       return;
     }
@@ -59,96 +55,57 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           setError("Summary not yet complete");
         } else {
           setSummary(data);
+          // Try loading living panels from API, fallback to sample
+          return getLivingPanels(summaryId, 0, 0)
+            .then((lpData) => {
+              setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
+            })
+            .catch(() => {
+              console.warn("No living panels from API, using sample data");
+              setDemoMode(true);
+              setLivingPanels(SAMPLE_LIVING_PANELS);
+            });
         }
       })
-      .catch(() => setError("Failed to load summary"))
+      .catch(() => {
+        // Can't load summary — use demo mode
+        setDemoMode(true);
+        setLivingPanels(SAMPLE_LIVING_PANELS);
+      })
       .finally(() => setLoading(false));
   }, [summaryId]);
-
-  // ============================================================
-  // LOAD LIVING PANELS FOR CURRENT PAGE
-  // ============================================================
-
-  useEffect(() => {
-    if (!summary || !summaryId || demoMode) return;
-
-    setLoadingPanels(true);
-    getLivingPanels(summaryId, chIdx, pageIdx)
-      .then((data) => {
-        setLivingPanels(data.living_panels as LivingPanelDSL[]);
-        setPanelIdx(0);
-      })
-      .catch((err) => {
-        console.error("Failed to load living panels:", err);
-        setLivingPanels([createSampleLivingPanel()]);
-      })
-      .finally(() => setLoadingPanels(false));
-  }, [summary, summaryId, chIdx, pageIdx, demoMode]);
 
   // ============================================================
   // NAVIGATION
   // ============================================================
 
-  const chapters = summary?.manga_chapters || [];
-  const chapter = chapters[chIdx];
-  const pages: MangaPage[] = chapter?.pages || [];
-  const currentPage = pages[pageIdx];
   const totalPanels = livingPanels.length;
   const accent = summary ? getStyleAccent(summary.style) : "#00f5ff";
 
-  const goNextPanel = useCallback(() => {
-    if (panelIdx < totalPanels - 1) {
-      setPanelIdx(p => p + 1);
-      return;
-    }
-    // Next page
-    if (pageIdx < pages.length - 1) {
-      setPageIdx(p => p + 1);
-      setPanelIdx(0);
-      return;
-    }
-    // Next chapter
-    if (chIdx < chapters.length - 1) {
-      setChIdx(c => c + 1);
-      setPageIdx(0);
-      setPanelIdx(0);
-    }
-  }, [panelIdx, totalPanels, pageIdx, pages.length, chIdx, chapters.length]);
+  const goNext = useCallback(() => {
+    if (panelIdx < totalPanels - 1) setPanelIdx(p => p + 1);
+  }, [panelIdx, totalPanels]);
 
-  const goPrevPanel = useCallback(() => {
-    if (panelIdx > 0) {
-      setPanelIdx(p => p - 1);
-      return;
-    }
-    if (pageIdx > 0) {
-      setPageIdx(p => p - 1);
-      setPanelIdx(0);
-      return;
-    }
-    if (chIdx > 0) {
-      setChIdx(c => c - 1);
-      setPageIdx(0);
-      setPanelIdx(0);
-    }
-  }, [panelIdx, pageIdx, chIdx]);
+  const goPrev = useCallback(() => {
+    if (panelIdx > 0) setPanelIdx(p => p - 1);
+  }, [panelIdx]);
 
-  // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === " ") goNextPanel();
-      if (e.key === "ArrowLeft") goPrevPanel();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [goNextPanel, goPrevPanel]);
+  }, [goNext, goPrev]);
 
   // ============================================================
-  // LOADING / ERROR STATES
+  // LOADING / ERROR
   // ============================================================
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0a1a" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#000" }}>
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
       </div>
     );
@@ -156,10 +113,10 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
 
   if (error && !demoMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4" style={{ background: "#0a0a1a" }}>
+      <div className="min-h-screen flex items-center justify-center text-center px-4" style={{ background: "#000" }}>
         <div>
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl text-white mb-2" style={{ fontFamily: "var(--font-display)" }}>{error}</h1>
+          <h1 className="text-2xl text-white mb-2">{error}</h1>
         </div>
       </div>
     );
@@ -170,119 +127,58 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   // ============================================================
 
   const currentDSL = livingPanels[panelIdx];
+  const isFirst = panelIdx === 0;
+  const isLast = panelIdx >= totalPanels - 1;
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: "#0a0a1a" }}>
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#000" }}>
       <LivingPanelStyles />
 
-      {/* Top bar */}
+      {/* Minimal top bar */}
       <div
-        className="flex items-center justify-between px-4 py-2 border-b z-30"
-        style={{
-          background: "rgba(10,10,26,0.95)",
-          backdropFilter: "blur(10px)",
-          borderColor: `${accent}20`,
-        }}
+        className="flex items-center justify-between px-4 py-2 z-30"
+        style={{ background: "rgba(0,0,0,0.8)", borderBottom: "1px solid #ffffff08" }}
       >
         <div className="flex items-center gap-2">
-          <Sparkles size={16} style={{ color: accent }} />
-          <span
-            style={{
-              color: accent,
-              fontSize: "10px",
-              letterSpacing: "0.2em",
-              fontFamily: "var(--font-label, monospace)",
-              textTransform: "uppercase",
-            }}
-          >
+          <Sparkles size={14} style={{ color: accent }} />
+          <span style={{ color: accent, fontSize: "9px", letterSpacing: "0.2em", fontFamily: "monospace", textTransform: "uppercase" as const }}>
             Living Panels
           </span>
           {demoMode && (
-            <span
-              className="px-2 py-0.5 rounded"
-              style={{
-                background: `${accent}20`,
-                color: accent,
-                fontSize: "9px",
-                fontFamily: "monospace",
-              }}
-            >
-              DEMO
+            <span style={{ background: `${accent}15`, color: accent, fontSize: "8px", fontFamily: "monospace", padding: "2px 6px", borderRadius: 3 }}>
+              DEMO · Atomic Habits
             </span>
           )}
         </div>
 
         <div className="text-center">
-          {chapter && (
-            <>
-              <p
-                className="truncate"
-                style={{
-                  color: "white",
-                  fontSize: "11px",
-                  maxWidth: "250px",
-                  fontFamily: "var(--font-body, sans-serif)",
-                }}
-              >
-                {chapter.chapter_title}
-              </p>
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: "9px",
-                  fontFamily: "var(--font-label, monospace)",
-                }}
-              >
-                CH.{chIdx + 1}/{chapters.length} · PAGE {pageIdx + 1}/{pages.length} ·
-                PANEL {panelIdx + 1}/{totalPanels}
-              </p>
-            </>
-          )}
-          {demoMode && (
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "11px" }}>
-              Sample Living Panel — Animated Manga Canvas
-            </p>
-          )}
+          <p style={{ color: "#fff8", fontSize: "10px", fontFamily: "monospace" }}>
+            {currentDSL?.meta?.narrative_beat || ""}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Zap size={14} style={{ color: accent }} />
-          <span
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              fontSize: "9px",
-              fontFamily: "monospace",
-            }}
-          >
-            DSL v1.0
+          <span style={{ color: "#fff3", fontSize: "9px", fontFamily: "monospace" }}>
+            {panelIdx + 1}/{totalPanels}
           </span>
+          <Zap size={12} style={{ color: accent }} />
+          <span style={{ color: "#fff3", fontSize: "8px", fontFamily: "monospace" }}>v2.0</span>
         </div>
       </div>
 
-      {/* Main panel area + navigation */}
+      {/* Main panel + nav */}
       <div className="flex-1 flex items-stretch min-h-0">
-        {/* Prev button */}
+        {/* Prev */}
         <button
-          onClick={goPrevPanel}
-          disabled={demoMode && panelIdx === 0}
-          className="flex items-center px-2 sm:px-4 transition-opacity"
-          style={{
-            color: "rgba(255,255,255,0.4)",
-            opacity: (demoMode && panelIdx === 0) ? 0.2 : 1,
-          }}
+          onClick={goPrev} disabled={isFirst}
+          className="flex items-center px-3 sm:px-5 transition-opacity"
+          style={{ color: "#fff4", opacity: isFirst ? 0.15 : 1 }}
         >
           <ChevronLeft size={28} />
         </button>
 
-        {/* Panel canvas */}
-        <div
-          className="flex-1 min-w-0 relative overflow-hidden"
-          style={{
-            margin: "12px 0",
-            border: `1px solid ${accent}20`,
-            borderRadius: 8,
-          }}
-        >
+        {/* Canvas */}
+        <div className="flex-1 min-w-0 relative overflow-hidden" style={{ margin: "8px 0" }}>
           {loadingPanels ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="w-6 h-6 animate-spin" style={{ color: accent }} />
@@ -290,11 +186,11 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           ) : currentDSL ? (
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${chIdx}-${pageIdx}-${panelIdx}`}
-                initial={{ opacity: 0, scale: 0.95 }}
+                key={panelIdx}
+                initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                transition={{ duration: 0.3 }}
+                exit={{ opacity: 0, scale: 1.03 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 className="absolute inset-0"
               >
                 <LivingPanelEngine
@@ -306,31 +202,27 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
             </AnimatePresence>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
-              <p style={{ color: "rgba(255,255,255,0.3)", fontSize: "14px" }}>No panels available</p>
+              <p style={{ color: "#fff3", fontSize: "14px" }}>No panels</p>
             </div>
           )}
         </div>
 
-        {/* Next button */}
+        {/* Next */}
         <button
-          onClick={goNextPanel}
-          disabled={demoMode && panelIdx >= totalPanels - 1}
-          className="flex items-center px-2 sm:px-4 transition-opacity"
-          style={{
-            color: "rgba(255,255,255,0.4)",
-            opacity: (demoMode && panelIdx >= totalPanels - 1) ? 0.2 : 1,
-          }}
+          onClick={goNext} disabled={isLast}
+          className="flex items-center px-3 sm:px-5 transition-opacity"
+          style={{ color: "#fff4", opacity: isLast ? 0.15 : 1 }}
         >
           <ChevronRight size={28} />
         </button>
       </div>
 
       {/* Panel dots */}
-      <div className="flex items-center justify-center gap-1.5 py-3">
-        {livingPanels.map((_, i) => (
+      <div className="flex items-center justify-center gap-1.5 py-2">
+        {livingPanels.map((p, i) => (
           <motion.div
             key={i}
-            animate={{ width: i === panelIdx ? 18 : 5, opacity: i === panelIdx ? 1 : 0.3 }}
+            animate={{ width: i === panelIdx ? 20 : 5, opacity: i === panelIdx ? 1 : 0.25 }}
             className="h-1 rounded-full cursor-pointer"
             style={{ background: accent }}
             onClick={() => setPanelIdx(i)}
@@ -338,22 +230,16 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
         ))}
       </div>
 
-      {/* Bottom info bar */}
-      <div
-        className="flex items-center justify-between px-4 py-2 border-t"
-        style={{
-          borderColor: `${accent}15`,
-          background: "rgba(10,10,26,0.95)",
-        }}
-      >
-        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "9px", fontFamily: "monospace" }}>
-          {currentDSL ? `${currentDSL.layers?.length || 0} layers · ${currentDSL.timeline?.length || 0} animations` : ""}
+      {/* Bottom info */}
+      <div className="flex items-center justify-between px-4 py-1.5" style={{ borderTop: "1px solid #ffffff08", background: "rgba(0,0,0,0.8)" }}>
+        <span style={{ color: "#fff2", fontSize: "8px", fontFamily: "monospace" }}>
+          {currentDSL ? `${currentDSL.acts?.length || 0} acts · ${currentDSL.meta?.content_type || ""}` : ""}
         </span>
-        <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "8px", fontFamily: "monospace" }}>
-          LIVING MANGA PANELS · DSL ENGINE v1.0
+        <span style={{ color: "#fff15", fontSize: "7px", fontFamily: "monospace", letterSpacing: "0.15em" }}>
+          LIVING MANGA · DSL ENGINE v2.0
         </span>
-        <span style={{ color: "rgba(255,255,255,0.3)", fontSize: "9px", fontFamily: "monospace" }}>
-          {currentDSL?.meta?.content_type || ""}
+        <span style={{ color: "#fff2", fontSize: "8px", fontFamily: "monospace" }}>
+          {currentDSL?.meta?.panel_id || ""}
         </span>
       </div>
     </div>

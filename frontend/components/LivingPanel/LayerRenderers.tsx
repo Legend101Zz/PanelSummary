@@ -84,6 +84,8 @@ function getPatternCSS(pattern: string, color: string): string {
       return `repeating-linear-gradient(0deg, ${color}10, ${color}10 1px, transparent 1px, transparent 6px)`;
     case "noise":
       return `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
+    case "manga_screen":
+      return `repeating-linear-gradient(45deg, ${color}08, ${color}08 2px, transparent 2px, transparent 6px)`;
     default:
       return "none";
   }
@@ -317,13 +319,75 @@ function BubbleTail({
 }
 
 // ============================================================
-// RE-EXPORTS from EffectRenderers (split for file size)
+// IMAGE RENDERER
 // ============================================================
 
-export {
+import type { ImageLayer } from "@/lib/living-panel-types";
+
+export function ImageRenderer({ layer }: { layer: ImageLayer }) {
+  const { props } = layer;
+  return (
+    <img
+      src={props.src}
+      alt={props.alt || ""}
+      className="w-full h-full"
+      style={{
+        objectFit: props.objectFit || "cover",
+        filter: props.filter,
+        mixBlendMode: (props.blendMode as any) || "normal",
+      }}
+    />
+  );
+}
+
+// ============================================================
+// LAYER CONTENT DISPATCHER
+// ============================================================
+
+import type { Layer } from "@/lib/living-panel-types";
+import {
   EffectRenderer,
   ShapeRenderer,
   DataBlockRenderer,
   SceneTransitionRenderer,
 } from "./EffectRenderers";
+
+// Re-export for other consumers
+export {
+  EffectRenderer,
+  ShapeRenderer,
+  DataBlockRenderer,
+  SceneTransitionRenderer,
+};
+
+export function LayerContent({
+  layer,
+  isAnimating,
+}: {
+  layer: Layer;
+  isAnimating?: boolean;
+}) {
+  switch (layer.type) {
+    case "background":
+      return <BackgroundRenderer layer={layer} />;
+    case "sprite":
+      return <SpriteRenderer layer={layer} />;
+    case "text":
+      return <TextRenderer layer={layer} isAnimating={isAnimating} />;
+    case "speech_bubble":
+      return <SpeechBubbleRenderer layer={layer} isAnimating={isAnimating} />;
+    case "effect":
+      return <EffectRenderer layer={layer} />;
+    case "shape":
+      return <ShapeRenderer layer={layer} />;
+    case "data_block":
+      return <DataBlockRenderer layer={layer} isAnimating={isAnimating} />;
+    case "scene_transition":
+      return <SceneTransitionRenderer layer={layer} />;
+    case "image":
+      return <ImageRenderer layer={layer as ImageLayer} />;
+    default:
+      return null;
+  }
+}
 
