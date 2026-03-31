@@ -9,23 +9,24 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.1.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "motion": "^11.15.0",
-    "zustand": "^5.0.2",
-    "axios": "^1.7.9",
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-progress": "^1.1.1",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-toast": "^1.2.4",
     "@radix-ui/react-tooltip": "^1.1.6",
+    "@use-gesture/react": "^10.3.1",
+    "axios": "^1.7.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
+    "motion": "^11.15.0",
+    "next": "15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "roughjs": "^4.6.6",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "@use-gesture/react": "^10.3.1"
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

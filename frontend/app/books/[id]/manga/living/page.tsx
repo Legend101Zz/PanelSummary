@@ -1,22 +1,23 @@
 "use client";
 
 /**
- * living/page.tsx — Living Manga Panel Viewer v2.0
- * ==================================================
- * Full-screen immersive viewer for act-based Living Panels.
- * Navigates between panels (pages) and lets acts auto-play.
+ * living/page.tsx — Living Manga Reader v2.1
+ * ============================================
+ * Full-screen manga reading experience.
+ * Paper background. Ink borders. User-controlled pacing.
+ * Navigate between pages (panels) with arrows.
+ * Tap inside a panel to advance its acts.
  *
  * URL: /books/{id}/manga/living?summary={summaryId}
  */
 
 import { useEffect, useState, use, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle, ChevronLeft, ChevronRight, Sparkles, Zap } from "lucide-react";
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { getSummary, getLivingPanels } from "@/lib/api";
-import { getStyleAccent } from "@/lib/utils";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
-import type { Summary, MangaPage } from "@/lib/types";
+import type { Summary } from "@/lib/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
 import { SAMPLE_LIVING_PANELS } from "@/lib/sample-living-book";
 
@@ -31,10 +32,10 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
 
   // Navigation
   const [panelIdx, setPanelIdx] = useState(0);
+  const [actInfo, setActInfo] = useState({ current: 0, total: 1 });
 
-  // Living panels (from API or sample)
+  // Living panels
   const [livingPanels, setLivingPanels] = useState<LivingPanelDSL[]>([]);
-  const [loadingPanels, setLoadingPanels] = useState(false);
   const [demoMode, setDemoMode] = useState(!summaryId);
 
   // ============================================================
@@ -55,20 +56,15 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           setError("Summary not yet complete");
         } else {
           setSummary(data);
-          // Try loading living panels from API, fallback to sample
           return getLivingPanels(summaryId, 0, 0)
-            .then((lpData) => {
-              setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
-            })
+            .then((lpData) => setLivingPanels(lpData.living_panels as LivingPanelDSL[]))
             .catch(() => {
-              console.warn("No living panels from API, using sample data");
               setDemoMode(true);
               setLivingPanels(SAMPLE_LIVING_PANELS);
             });
         }
       })
       .catch(() => {
-        // Can't load summary — use demo mode
         setDemoMode(true);
         setLivingPanels(SAMPLE_LIVING_PANELS);
       })
@@ -76,11 +72,10 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   }, [summaryId]);
 
   // ============================================================
-  // NAVIGATION
+  // NAVIGATION (between pages/panels)
   // ============================================================
 
   const totalPanels = livingPanels.length;
-  const accent = summary ? getStyleAccent(summary.style) : "#00f5ff";
 
   const goNext = useCallback(() => {
     if (panelIdx < totalPanels - 1) setPanelIdx(p => p + 1);
@@ -99,24 +94,28 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
     return () => window.removeEventListener("keydown", handler);
   }, [goNext, goPrev]);
 
+  const onActChange = useCallback((current: number, total: number) => {
+    setActInfo({ current: current + 1, total });
+  }, []);
+
   // ============================================================
   // LOADING / ERROR
   // ============================================================
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#000" }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0F0E17" }}>
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: "#F5A623" }} />
       </div>
     );
   }
 
   if (error && !demoMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4" style={{ background: "#000" }}>
-        <div>
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl text-white mb-2">{error}</h1>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0F0E17" }}>
+        <div className="text-center">
+          <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: "#E8191A" }} />
+          <h1 style={{ color: "#F0EEE8", fontSize: "1.2rem", fontFamily: "var(--font-display)" }}>{error}</h1>
         </div>
       </div>
     );
@@ -131,114 +130,162 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   const isLast = panelIdx >= totalPanels - 1;
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ background: "#000" }}>
+    <div className="fixed inset-0 flex flex-col" style={{ background: "#0F0E17" }}>
       <LivingPanelStyles />
 
-      {/* Minimal top bar */}
+      {/* Minimal header — ink on dark surface */}
       <div
         className="flex items-center justify-between px-4 py-2 z-30"
-        style={{ background: "rgba(0,0,0,0.8)", borderBottom: "1px solid #ffffff08" }}
+        style={{ background: "#17161F", borderBottom: "1px solid #2E2C3F" }}
       >
         <div className="flex items-center gap-2">
-          <Sparkles size={14} style={{ color: accent }} />
-          <span style={{ color: accent, fontSize: "9px", letterSpacing: "0.2em", fontFamily: "monospace", textTransform: "uppercase" as const }}>
-            Living Panels
+          <span style={{
+            fontFamily: "var(--font-label)",
+            fontSize: 9,
+            color: "#F5A623",
+            letterSpacing: "0.15em",
+            textTransform: "uppercase" as const,
+          }}>
+            Living Manga
           </span>
           {demoMode && (
-            <span style={{ background: `${accent}15`, color: accent, fontSize: "8px", fontFamily: "monospace", padding: "2px 6px", borderRadius: 3 }}>
-              DEMO · Atomic Habits
+            <span style={{
+              fontSize: 8,
+              fontFamily: "var(--font-label)",
+              color: "#A8A6C0",
+              background: "#1F1E28",
+              padding: "2px 6px",
+              borderRadius: 2,
+              border: "1px solid #2E2C3F",
+            }}>
+              DEMO
             </span>
           )}
         </div>
 
-        <div className="text-center">
-          <p style={{ color: "#fff8", fontSize: "10px", fontFamily: "monospace" }}>
-            {currentDSL?.meta?.narrative_beat || ""}
-          </p>
-        </div>
+        <span style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 11,
+          color: "#A8A6C080",
+          maxWidth: "40%",
+          textAlign: "center" as const,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap" as const,
+        }}>
+          {currentDSL?.meta?.narrative_beat || ""}
+        </span>
 
         <div className="flex items-center gap-2">
-          <span style={{ color: "#fff3", fontSize: "9px", fontFamily: "monospace" }}>
-            {panelIdx + 1}/{totalPanels}
+          <span style={{ color: "#5E5C78", fontSize: 9, fontFamily: "var(--font-label)" }}>
+            {panelIdx + 1} / {totalPanels}
           </span>
-          <Zap size={12} style={{ color: accent }} />
-          <span style={{ color: "#fff3", fontSize: "8px", fontFamily: "monospace" }}>v2.0</span>
+          {actInfo.total > 1 && (
+            <span style={{
+              color: "#5E5C78",
+              fontSize: 8,
+              fontFamily: "var(--font-label)",
+              border: "1px solid #2E2C3F",
+              padding: "1px 4px",
+              borderRadius: 2,
+            }}>
+              act {actInfo.current}/{actInfo.total}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Main panel + nav */}
+      {/* Main area: panel + navigation edges */}
       <div className="flex-1 flex items-stretch min-h-0">
-        {/* Prev */}
+
+        {/* Left nav edge */}
         <button
-          onClick={goPrev} disabled={isFirst}
-          className="flex items-center px-3 sm:px-5 transition-opacity"
-          style={{ color: "#fff4", opacity: isFirst ? 0.15 : 1 }}
+          onClick={goPrev}
+          disabled={isFirst}
+          className="flex items-center justify-center transition-opacity"
+          style={{
+            width: 48,
+            color: "#5E5C78",
+            opacity: isFirst ? 0.15 : 0.5,
+            cursor: isFirst ? "default" : "pointer",
+          }}
+          aria-label="Previous page"
         >
-          <ChevronLeft size={28} />
+          <ChevronLeft size={24} />
         </button>
 
-        {/* Canvas */}
-        <div className="flex-1 min-w-0 relative overflow-hidden" style={{ margin: "8px 0" }}>
-          {loadingPanels ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 animate-spin" style={{ color: accent }} />
-            </div>
-          ) : currentDSL ? (
+        {/* Panel canvas */}
+        <div className="flex-1 min-w-0 flex items-center justify-center p-2 sm:p-4">
+          {currentDSL ? (
             <AnimatePresence mode="wait">
               <motion.div
                 key={panelIdx}
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.03 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="w-full h-full max-w-4xl"
               >
                 <LivingPanelEngine
                   dsl={currentDSL}
-                  autoplay={true}
                   debug={false}
+                  onActChange={onActChange}
                 />
               </motion.div>
             </AnimatePresence>
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p style={{ color: "#fff3", fontSize: "14px" }}>No panels</p>
-            </div>
+            <p style={{ color: "#5E5C78", fontSize: 12, fontFamily: "var(--font-body)" }}>
+              No panels available
+            </p>
           )}
         </div>
 
-        {/* Next */}
+        {/* Right nav edge */}
         <button
-          onClick={goNext} disabled={isLast}
-          className="flex items-center px-3 sm:px-5 transition-opacity"
-          style={{ color: "#fff4", opacity: isLast ? 0.15 : 1 }}
+          onClick={goNext}
+          disabled={isLast}
+          className="flex items-center justify-center transition-opacity"
+          style={{
+            width: 48,
+            color: "#5E5C78",
+            opacity: isLast ? 0.15 : 0.5,
+            cursor: isLast ? "default" : "pointer",
+          }}
+          aria-label="Next page"
         >
-          <ChevronRight size={28} />
+          <ChevronRight size={24} />
         </button>
       </div>
 
-      {/* Panel dots */}
-      <div className="flex items-center justify-center gap-1.5 py-2">
-        {livingPanels.map((p, i) => (
-          <motion.div
+      {/* Page dots */}
+      <div className="flex items-center justify-center gap-1 py-2">
+        {livingPanels.map((_, i) => (
+          <button
             key={i}
-            animate={{ width: i === panelIdx ? 20 : 5, opacity: i === panelIdx ? 1 : 0.25 }}
-            className="h-1 rounded-full cursor-pointer"
-            style={{ background: accent }}
             onClick={() => setPanelIdx(i)}
+            className="rounded-full transition-all"
+            style={{
+              width: i === panelIdx ? 16 : 4,
+              height: 3,
+              background: i === panelIdx ? "#F5A623" : "#2E2C3F",
+            }}
+            aria-label={`Page ${i + 1}`}
           />
         ))}
       </div>
 
-      {/* Bottom info */}
-      <div className="flex items-center justify-between px-4 py-1.5" style={{ borderTop: "1px solid #ffffff08", background: "rgba(0,0,0,0.8)" }}>
-        <span style={{ color: "#fff2", fontSize: "8px", fontFamily: "monospace" }}>
+      {/* Footer */}
+      <div
+        className="flex items-center justify-between px-4 py-1"
+        style={{ borderTop: "1px solid #2E2C3F", background: "#17161F" }}
+      >
+        <span style={{ color: "#5E5C7850", fontSize: 7, fontFamily: "var(--font-label)" }}>
           {currentDSL ? `${currentDSL.acts?.length || 0} acts · ${currentDSL.meta?.content_type || ""}` : ""}
         </span>
-        <span style={{ color: "#fff15", fontSize: "7px", fontFamily: "monospace", letterSpacing: "0.15em" }}>
-          LIVING MANGA · DSL ENGINE v2.0
+        <span style={{ color: "#5E5C7830", fontSize: 7, fontFamily: "var(--font-label)", letterSpacing: "0.15em" }}>
+          TAP PANEL TO ADVANCE · ARROWS TO NAVIGATE
         </span>
-        <span style={{ color: "#fff2", fontSize: "8px", fontFamily: "monospace" }}>
+        <span style={{ color: "#5E5C7850", fontSize: 7, fontFamily: "var(--font-label)" }}>
           {currentDSL?.meta?.panel_id || ""}
         </span>
       </div>

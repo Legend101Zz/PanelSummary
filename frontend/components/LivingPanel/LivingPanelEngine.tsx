@@ -1,16 +1,15 @@
+"use client";
+
 /**
- * LivingPanelEngine.tsx — Act-Based Rendering Engine v2.0
- * ========================================================
- * Interprets DSL v2.0 with Acts, sub-panels, and transitions.
+ * LivingPanelEngine.tsx — Manga Reading Engine v2.1
+ * ===================================================
+ * User-controlled act progression. NO auto-advance.
+ * Tap/click the panel to advance to the next act.
+ * Timeline animations play within each act, but the reader
+ * decides when to move forward.
  *
- * ARCHITECTURE:
- * 1. Parse DSL → extract ordered Acts
- * 2. Auto-advance through acts (or manual control)
- * 3. Each act renders its layout (full, split, grid) with sub-panels
- * 4. Each sub-panel has its own layer tree + timeline
- * 5. Transitions between acts use cinematic effects
- *
- * This is not After Effects. This is manga that breathes.
+ * Aesthetic: Ink on paper. Screentone. Hand-drawn borders.
+ * Not a tech demo. A reading experience.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -24,6 +23,7 @@ import {
   getToValues,
 } from "./AnimationSystem";
 import { LayerContent } from "./LayerRenderers";
+import { PaperTexture, InkBorder } from "./MangaInk";
 
 // ============================================================
 // TYPES
@@ -41,8 +41,8 @@ interface LayerAnimState {
 interface LivingPanelEngineProps {
   dsl: LivingPanelDSL;
   className?: string;
-  autoplay?: boolean;
   debug?: boolean;
+  onActChange?: (actIndex: number, totalActs: number) => void;
 }
 
 // ============================================================
@@ -62,47 +62,25 @@ const LAYOUT_GRIDS: Record<string, React.CSSProperties> = {
 };
 
 // ============================================================
-// TRANSITION VARIANTS
+// TRANSITION VARIANTS (subtle, manga-appropriate)
 // ============================================================
 
 function getTransitionVariants(effect?: TransitionEffect) {
-  const type = effect?.type || "fade";
-  const dur = (effect?.duration_ms || 400) / 1000;
+  const dur = (effect?.duration_ms || 350) / 1000;
 
-  switch (type) {
+  switch (effect?.type) {
     case "crack":
       return {
-        initial: { opacity: 0, scale: 1.05, filter: "brightness(2)" },
-        animate: { opacity: 1, scale: 1, filter: "brightness(1)" },
-        exit: { opacity: 0, scale: 0.95, filter: "brightness(0)" },
+        initial: { opacity: 0, filter: "brightness(1.8)" },
+        animate: { opacity: 1, filter: "brightness(1)" },
+        exit: { opacity: 0 },
         transition: { duration: dur, ease: [0.4, 0, 0.2, 1] },
       };
     case "morph":
       return {
-        initial: { opacity: 0, scale: 0.95 },
+        initial: { opacity: 0, scale: 0.97 },
         animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0, scale: 1.05 },
-        transition: { duration: dur, ease: [0.16, 1, 0.3, 1] },
-      };
-    case "zoom_through":
-      return {
-        initial: { opacity: 0, scale: 0.3 },
-        animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0, scale: 3 },
-        transition: { duration: dur, ease: "easeInOut" },
-      };
-    case "slide_left":
-      return {
-        initial: { opacity: 0, x: "100%" },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: "-100%" },
-        transition: { duration: dur, ease: [0.16, 1, 0.3, 1] },
-      };
-    case "slide_up":
-      return {
-        initial: { opacity: 0, y: "100%" },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: "-100%" },
+        exit: { opacity: 0, scale: 1.02 },
         transition: { duration: dur, ease: [0.16, 1, 0.3, 1] },
       };
     case "iris":
@@ -112,6 +90,13 @@ function getTransitionVariants(effect?: TransitionEffect) {
         exit: { opacity: 0, clipPath: "circle(0% at 50% 50%)" },
         transition: { duration: dur, ease: "easeInOut" },
       };
+    case "slide_left":
+      return {
+        initial: { opacity: 0, x: 40 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -40 },
+        transition: { duration: dur, ease: [0.16, 1, 0.3, 1] },
+      };
     case "cut":
       return {
         initial: { opacity: 0 },
@@ -119,19 +104,12 @@ function getTransitionVariants(effect?: TransitionEffect) {
         exit: { opacity: 0 },
         transition: { duration: 0.05 },
       };
-    case "whip_pan":
-      return {
-        initial: { opacity: 0, x: "120%", filter: "blur(8px)" },
-        animate: { opacity: 1, x: 0, filter: "blur(0px)" },
-        exit: { opacity: 0, x: "-120%", filter: "blur(8px)" },
-        transition: { duration: dur * 0.6, ease: [0.4, 0, 0.2, 1] },
-      };
     default: // fade
       return {
         initial: { opacity: 0 },
         animate: { opacity: 1 },
         exit: { opacity: 0 },
-        transition: { duration: dur },
+        transition: { duration: Math.max(dur, 0.25) },
       };
   }
 }
@@ -141,28 +119,37 @@ function getTransitionVariants(effect?: TransitionEffect) {
 // ============================================================
 
 export function LivingPanelEngine({
-  dsl, className = "", autoplay = true, debug = false,
+  dsl, className = "", debug = false, onActChange,
 }: LivingPanelEngineProps) {
   const [actIndex, setActIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(!autoplay);
+  const [actReady, setActReady] = useState(false);
   const { canvas, acts } = dsl;
   const currentAct = acts[actIndex];
+  const isLastAct = actIndex >= acts.length - 1;
 
-  // Auto-advance acts
+  // Notify parent of act changes
   useEffect(() => {
-    if (isPaused || !currentAct || actIndex >= acts.length - 1) return;
-    const timer = setTimeout(() => setActIndex(i => i + 1), currentAct.duration_ms);
-    return () => clearTimeout(timer);
-  }, [actIndex, isPaused, currentAct, acts.length]);
+    onActChange?.(actIndex, acts.length);
+  }, [actIndex, acts.length, onActChange]);
 
-  // Keyboard controls
+  // Mark act as "ready" after its timeline has had time to play
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === " ") { e.preventDefault(); setIsPaused(p => !p); }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+    setActReady(false);
+    if (!currentAct) return;
+    // Give the timeline some time, then show "tap to continue"
+    const readyTimer = setTimeout(
+      () => setActReady(true),
+      Math.min(currentAct.duration_ms * 0.7, 6000),
+    );
+    return () => clearTimeout(readyTimer);
+  }, [actIndex, currentAct]);
+
+  // TAP TO ADVANCE (the core interaction)
+  const advanceAct = useCallback(() => {
+    if (!isLastAct) {
+      setActIndex(i => i + 1);
+    }
+  }, [isLastAct]);
 
   if (!currentAct) return null;
 
@@ -175,10 +162,17 @@ export function LivingPanelEngine({
         width: "100%",
         aspectRatio: `${canvas.width} / ${canvas.height}`,
         maxHeight: "100%",
-        background: canvas.background,
-        borderRadius: 4,
+        cursor: isLastAct ? "default" : "pointer",
       }}
+      onClick={advanceAct}
     >
+      {/* Paper base */}
+      <PaperTexture tone={canvas.mood === "dark" ? "dark" : "cream"} />
+
+      {/* Ink border */}
+      <InkBorder thickness={3} roughness={0.6} />
+
+      {/* Act content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentAct.id}
@@ -192,17 +186,43 @@ export function LivingPanelEngine({
         </motion.div>
       </AnimatePresence>
 
-      {/* Act progress indicator */}
+      {/* "Tap to continue" hint */}
+      {actReady && !isLastAct && (
+        <motion.div
+          className="absolute bottom-3 right-3 z-30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-label)",
+              fontSize: 9,
+              color: canvas.mood === "dark" ? "#ffffff40" : "#1A182540",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase" as const,
+            }}
+          >
+            tap ▶
+          </span>
+        </motion.div>
+      )}
+
+      {/* Act dots (only if multiple acts) */}
       {acts.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-40 flex gap-1.5">
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-30 flex gap-1">
           {acts.map((_, i) => (
-            <motion.div
+            <div
               key={i}
-              className="rounded-full cursor-pointer"
-              style={{ width: i === actIndex ? 16 : 5, height: 4, background: i === actIndex ? "#ffffff" : "#ffffff30" }}
-              animate={{ width: i === actIndex ? 16 : 5 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setActIndex(i)}
+              className="rounded-full"
+              style={{
+                width: i === actIndex ? 12 : 4,
+                height: 3,
+                background: canvas.mood === "dark"
+                  ? (i === actIndex ? "#ffffff80" : "#ffffff20")
+                  : (i === actIndex ? "#1A182560" : "#1A182515"),
+                transition: "width 0.3s, background 0.3s",
+              }}
             />
           ))}
         </div>
@@ -210,10 +230,10 @@ export function LivingPanelEngine({
 
       {/* Debug */}
       {debug && (
-        <div className="absolute top-1 left-1 z-50 px-2 py-1" style={{ background: "#000c", color: "#0f0", fontSize: 9, fontFamily: "monospace" }}>
+        <div className="absolute top-1 left-1 z-50 px-2 py-0.5"
+          style={{ background: "#000c", color: "#0f0", fontSize: 8, fontFamily: "monospace" }}>
           Act {actIndex + 1}/{acts.length} · "{currentAct.id}" · {currentAct.layout.type}
-          {currentAct.cells?.length ? ` · ${currentAct.cells.length} cells` : ""}
-          {isPaused ? " ⏸" : " ▶"}
+          {actReady ? " ✓" : " ◷"}
         </div>
       )}
     </div>
@@ -230,14 +250,19 @@ function ActRenderer({ act }: { act: Act }) {
 
   return (
     <div className="absolute inset-0">
-      {/* Act-level layers (backgrounds, effects) */}
+      {/* Act-level layers */}
       <ActLayerStack layers={act.layers} timeline={act.timeline} events={act.events} />
 
       {/* Sub-panel grid */}
       {hasCells && (
         <div
           className="absolute inset-0 z-10"
-          style={{ display: "grid", gap: act.layout.gap ?? 2, ...gridStyle }}
+          style={{
+            display: "grid",
+            gap: act.layout.gap ?? 3,
+            padding: act.layout.gap ?? 3,
+            ...gridStyle,
+          }}
         >
           {act.cells!.map((cell, i) => (
             <SubPanelRenderer
@@ -263,13 +288,13 @@ function SubPanelRenderer({ cell, staggerDelay }: { cell: SubPanel; staggerDelay
       style={{
         gridArea: cell.position,
         background: cell.style?.background || "transparent",
-        border: cell.style?.border || "none",
-        borderRadius: cell.style?.borderRadius || 0,
+        border: cell.style?.border || "2px solid #1A182520",
+        borderRadius: cell.style?.borderRadius || 1,
         clipPath: cell.style?.clipPath,
       }}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: staggerDelay / 1000, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: staggerDelay / 1000, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
     >
       <ActLayerStack layers={cell.layers} timeline={cell.timeline} />
     </motion.div>
@@ -292,7 +317,6 @@ function ActLayerStack({
   );
   const [activeTypewriters, setActiveTypewriters] = useState<Set<string>>(new Set());
 
-  // Schedule timeline
   useEffect(() => {
     const cleanup = scheduleTimeline(timeline, (step: TimelineStep) => {
       setLayerStates(prev => ({
@@ -310,7 +334,6 @@ function ActLayerStack({
     return cleanup;
   }, [timeline]);
 
-  // Click handler
   const handleClick = useCallback(
     (layerId: string) => {
       const binding = events?.find(e => e.trigger === "onClick" && e.target === layerId);
@@ -391,7 +414,7 @@ function LayerWrapper({
       className="absolute"
       style={{
         zIndex: layer.zIndex ?? (10 + index),
-        cursor: clickable ? "pointer" : "default",
+        cursor: clickable ? "pointer" : "inherit",
         transformOrigin: layer.origin || "center center",
       }}
       animate={{
@@ -402,8 +425,7 @@ function LayerWrapper({
         rotate: state.rotate ?? layer.rotate ?? 0,
       }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      onClick={clickable ? onClick : undefined}
-      whileHover={clickable ? { scale: 1.05 } : undefined}
+      onClick={clickable ? (e) => { e.stopPropagation(); onClick(); } : undefined}
     >
       {children}
     </motion.div>
@@ -441,34 +463,17 @@ function buildInitialStates(
 export function LivingPanelStyles() {
   return (
     <style jsx global>{`
-      @keyframes particle-up {
-        0% { transform: translateY(0) scale(1); opacity: 0.6; }
-        100% { transform: translateY(-600px) scale(0); opacity: 0; }
-      }
-      @keyframes sparkle-twinkle {
-        0%, 100% { opacity: 0; transform: scale(0.5); }
-        50% { opacity: 1; transform: scale(1); }
-      }
-      @keyframes impact-burst {
-        0% { transform: scale(0); opacity: 1; }
-        100% { transform: scale(3); opacity: 0; }
-      }
       @keyframes stagger-in {
-        0% { transform: translateX(-20px); opacity: 0; }
+        0% { transform: translateX(-12px); opacity: 0; }
         100% { transform: translateX(0); opacity: 1; }
       }
       @keyframes float-gentle {
-        0%, 100% { transform: translateY(-5px); }
-        50% { transform: translateY(5px); }
+        0%, 100% { transform: translateY(-3px); }
+        50% { transform: translateY(3px); }
       }
       @keyframes pulse-glow {
-        0%, 100% { transform: scale(0.95); filter: brightness(1); }
-        50% { transform: scale(1.05); filter: brightness(1.2); }
-      }
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
+        0%, 100% { transform: scale(0.97); }
+        50% { transform: scale(1.03); }
       }
     `}</style>
   );

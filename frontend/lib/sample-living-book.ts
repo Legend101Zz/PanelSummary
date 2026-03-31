@@ -1,723 +1,668 @@
 /**
- * sample-living-book.ts — Handcrafted Living Panel Demo
- * ======================================================
- * A full multi-page, multi-act sample based on "Atomic Habits".
- * Each panel uses the DSL v2.0 act system to tell a story
- * through spatial and temporal composition.
+ * sample-living-book.ts — "Atomic Habits" as Living Manga
+ * =========================================================
+ * INK ON PAPER. Screentone shading. Character silhouettes.
+ * This reads like a manga, not a tech demo.
  *
- * This is NOT generated — it's hand-directed to showcase
- * what the system can do at its best.
+ * Every panel tells a piece of the story through:
+ * - Typography that breathes (appearing naturally, not flashily)
+ * - Character silhouettes in dialogue
+ * - Ink-based effects (speed lines, screentone, crosshatch)
+ * - Cream paper backgrounds with pen-drawn borders
+ * - Restrained, intentional motion
  */
 
-import type { LivingPanelDSL, Act } from "./living-panel-types";
+import type { LivingPanelDSL } from "./living-panel-types";
 
 // ============================================================
-// PAGE 1: THE OPENING — "Why Small Things Matter"
-// Starts as a dark void, text appears letter by letter,
-// then the panel CRACKS into 4 sub-panels showing examples.
+// PAGE 1: THE QUESTION
+// A quiet opening. Paper. Ink. One question.
 // ============================================================
 
 export const PANEL_01_OPENING: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#000000", mood: "void" },
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
   acts: [
-    // ACT 1: The void. A single sentence emerges.
     {
-      id: "void",
-      duration_ms: 4500,
+      id: "the-question",
+      duration_ms: 5000,
       layout: { type: "full" },
       layers: [
         {
-          id: "bg-void", type: "background", opacity: 0,
-          props: { gradient: ["#000000", "#050510", "#000000"], gradientAngle: 0 },
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 180, pattern: "manga_screen", patternOpacity: 0.04 },
         },
         {
-          id: "single-line", type: "text",
-          x: "50%", y: "50%", opacity: 0,
+          id: "question", type: "text",
+          x: "15%", y: "30%", opacity: 0,
           props: {
-            content: "What if the smallest thing you do today\nchanges everything tomorrow?",
-            fontSize: "clamp(1.1rem, 3.5vw, 2rem)",
-            fontFamily: "body",
-            color: "#e0e0e0",
-            textAlign: "center",
-            maxWidth: 500,
-            lineHeight: 1.7,
+            content: "What if the smallest thing\nyou do today...",
+            fontSize: "clamp(1.3rem, 4vw, 2.2rem)",
+            fontFamily: "display",
+            color: "#1A1825",
+            textAlign: "left",
+            maxWidth: "70%",
+            lineHeight: 1.5,
             typewriter: true,
-            typewriterSpeed: 45,
+            typewriterSpeed: 55,
           },
         },
         {
-          id: "dot", type: "shape",
-          x: "50%", y: "78%", opacity: 0,
-          width: 6, height: 6,
-          props: { shape: "circle", fill: "#3d7bff", radius: 3 },
+          id: "answer", type: "text",
+          x: "20%", y: "58%", opacity: 0,
+          props: {
+            content: "...changes everything tomorrow?",
+            fontSize: "clamp(1rem, 3vw, 1.6rem)",
+            fontFamily: "body",
+            color: "#1A182580",
+            textAlign: "left",
+            maxWidth: "60%",
+            lineHeight: 1.5,
+          },
+        },
+        {
+          id: "ink-mark", type: "shape",
+          x: "12%", y: "30%", opacity: 0,
+          width: 3, height: 80,
+          props: { shape: "rect", fill: "#1A1825", stroke: "none", strokeWidth: 0 },
+        },
+        {
+          id: "attribution", type: "text",
+          x: "15%", y: "80%", opacity: 0,
+          props: {
+            content: "\u2014 ATOMIC HABITS",
+            fontSize: "0.65rem",
+            fontFamily: "label",
+            color: "#1A182540",
+            letterSpacing: "0.2em",
+          },
         },
       ],
       cells: [],
       timeline: [
-        { at: 300, target: "bg-void", animate: { opacity: [0, 1] }, duration: 800, easing: "ease-in" },
-        { at: 800, target: "single-line", animate: { opacity: [0, 1], typewriter: true }, duration: 3000 },
-        { at: 3800, target: "dot", animate: { opacity: [0, 1], scale: [0, 1] }, duration: 400, easing: "spring" },
+        { at: 200, target: "ink-mark", animate: { opacity: [0, 0.7] }, duration: 300 },
+        { at: 400, target: "question", animate: { opacity: [0, 1], typewriter: true }, duration: 3000 },
+        { at: 3800, target: "answer", animate: { opacity: [0, 0.5] }, duration: 600 },
+        { at: 4200, target: "attribution", animate: { opacity: [0, 1] }, duration: 400 },
       ],
-    },
-
-    // ACT 2: The panel CRACKS into 4 windows showing habit examples
-    {
-      id: "crack-open",
-      duration_ms: 8000,
-      transition_in: { type: "crack", duration_ms: 600, easing: "sharp" },
-      layout: { type: "grid-2x2", gap: 3, stagger_ms: 300 },
-      layers: [
-        {
-          id: "bg-deep", type: "background",
-          props: { gradient: ["#0a0a1a", "#0f0a20"], gradientAngle: 160 },
-        },
-      ],
-      cells: [
-        // TOP-LEFT: The morning person
-        {
-          id: "cell-morning",
-          position: "tl",
-          style: { background: "linear-gradient(135deg, #1a1408 0%, #0f0a05 100%)", border: "1px solid #f5a62320" },
-          layers: [
-            {
-              id: "icon-sun", type: "text",
-              x: "50%", y: "25%", opacity: 0,
-              props: { content: "☀️", fontSize: "2.5rem", textAlign: "center" },
-            },
-            {
-              id: "txt-morning", type: "text",
-              x: "50%", y: "55%", opacity: 0,
-              props: {
-                content: "5:30 AM\nOne pushup.",
-                fontSize: "clamp(0.7rem, 2vw, 1rem)",
-                fontFamily: "body", color: "#f5a623",
-                textAlign: "center", lineHeight: 1.5,
-              },
-            },
-            {
-              id: "txt-morning-after", type: "text",
-              x: "50%", y: "82%", opacity: 0,
-              props: {
-                content: "Then two. Then ten.",
-                fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-                fontFamily: "label", color: "#f5a62380",
-                textAlign: "center",
-              },
-            },
-          ],
-          timeline: [
-            { at: 0, target: "icon-sun", animate: { opacity: [0, 1], scale: [2, 1] }, duration: 500, easing: "spring" },
-            { at: 400, target: "txt-morning", animate: { opacity: [0, 1], y: ["65%", "55%"] }, duration: 500 },
-            { at: 2000, target: "txt-morning-after", animate: { opacity: [0, 0.5] }, duration: 800 },
-          ],
-        },
-        // TOP-RIGHT: The reader
-        {
-          id: "cell-reader",
-          position: "tr",
-          style: { background: "linear-gradient(135deg, #08101a 0%, #050a12 100%)", border: "1px solid #3d7bff20" },
-          layers: [
-            {
-              id: "icon-book", type: "text",
-              x: "50%", y: "25%", opacity: 0,
-              props: { content: "📖", fontSize: "2.5rem", textAlign: "center" },
-            },
-            {
-              id: "txt-reader", type: "text",
-              x: "50%", y: "55%", opacity: 0,
-              props: {
-                content: "One page\nbefore bed.",
-                fontSize: "clamp(0.7rem, 2vw, 1rem)",
-                fontFamily: "body", color: "#3d7bff",
-                textAlign: "center", lineHeight: 1.5,
-              },
-            },
-            {
-              id: "txt-reader-after", type: "text",
-              x: "50%", y: "82%", opacity: 0,
-              props: {
-                content: "50 books a year.",
-                fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-                fontFamily: "label", color: "#3d7bff80",
-                textAlign: "center",
-              },
-            },
-          ],
-          timeline: [
-            { at: 0, target: "icon-book", animate: { opacity: [0, 1], rotate: [-15, 0] }, duration: 500, easing: "spring" },
-            { at: 400, target: "txt-reader", animate: { opacity: [0, 1], y: ["65%", "55%"] }, duration: 500 },
-            { at: 2200, target: "txt-reader-after", animate: { opacity: [0, 0.5] }, duration: 800 },
-          ],
-        },
-        // BOTTOM-LEFT: The writer
-        {
-          id: "cell-writer",
-          position: "bl",
-          style: { background: "linear-gradient(135deg, #0a1a10 0%, #050f08 100%)", border: "1px solid #4caf5020" },
-          layers: [
-            {
-              id: "icon-pen", type: "text",
-              x: "50%", y: "25%", opacity: 0,
-              props: { content: "✏️", fontSize: "2.5rem", textAlign: "center" },
-            },
-            {
-              id: "txt-writer", type: "text",
-              x: "50%", y: "55%", opacity: 0,
-              props: {
-                content: "One sentence\neach morning.",
-                fontSize: "clamp(0.7rem, 2vw, 1rem)",
-                fontFamily: "body", color: "#4caf50",
-                textAlign: "center", lineHeight: 1.5,
-              },
-            },
-            {
-              id: "txt-writer-after", type: "text",
-              x: "50%", y: "82%", opacity: 0,
-              props: {
-                content: "A novel in 18 months.",
-                fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-                fontFamily: "label", color: "#4caf5080",
-                textAlign: "center",
-              },
-            },
-          ],
-          timeline: [
-            { at: 0, target: "icon-pen", animate: { opacity: [0, 1], y: ["40%", "25%"] }, duration: 500, easing: "ease-out" },
-            { at: 400, target: "txt-writer", animate: { opacity: [0, 1], y: ["65%", "55%"] }, duration: 500 },
-            { at: 2400, target: "txt-writer-after", animate: { opacity: [0, 0.5] }, duration: 800 },
-          ],
-        },
-        // BOTTOM-RIGHT: The compound effect
-        {
-          id: "cell-compound",
-          position: "br",
-          style: { background: "linear-gradient(135deg, #1a0a20 0%, #0f0518 100%)", border: "1px solid #bb86fc20" },
-          layers: [
-            {
-              id: "percent", type: "text",
-              x: "50%", y: "30%", opacity: 0,
-              props: {
-                content: "1%",
-                fontSize: "clamp(2rem, 6vw, 3.5rem)",
-                fontFamily: "display", color: "#bb86fc",
-                textAlign: "center",
-                textShadow: "0 0 30px #bb86fc40",
-              },
-            },
-            {
-              id: "txt-compound", type: "text",
-              x: "50%", y: "65%", opacity: 0,
-              props: {
-                content: "better every day\n= 37× in a year",
-                fontSize: "clamp(0.7rem, 2vw, 1rem)",
-                fontFamily: "body", color: "#bb86fc",
-                textAlign: "center", lineHeight: 1.5,
-              },
-            },
-          ],
-          timeline: [
-            { at: 0, target: "percent", animate: { opacity: [0, 1], scale: [3, 1] }, duration: 700, easing: "spring" },
-            { at: 600, target: "txt-compound", animate: { opacity: [0, 1] }, duration: 600 },
-            { at: 2000, target: "percent", animate: { pulse: { minScale: 0.95, maxScale: 1.08 } }, duration: 1500, repeat: -1, yoyo: true },
-          ],
-        },
-      ],
-      timeline: [],
     },
   ],
   meta: {
     panel_id: "opening-001",
     chapter_index: 0,
-    content_type: "intro",
-    narrative_beat: "The hook — small things compound into transformations",
-    duration_ms: 12500,
+    content_type: "narration",
+    narrative_beat: "The fundamental question of Atomic Habits",
+    duration_ms: 5000,
   },
 };
 
 // ============================================================
-// PAGE 2: THE HABIT LOOP — "The Four Laws"
-// Starts with a character dialogue, then splits to show
-// each step of the habit loop in sequence.
+// PAGE 2: THE MENTOR SCENE
+// Two characters. Dialogue. A lesson about habits.
 // ============================================================
 
 export const PANEL_02_HABIT_LOOP: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#060610", mood: "revelation" },
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
   acts: [
-    // ACT 1: Mentor introduces the concept
     {
-      id: "mentor-intro",
-      duration_ms: 5000,
+      id: "scene-setup",
+      duration_ms: 6000,
       layout: { type: "full" },
       layers: [
         {
-          id: "bg1", type: "background",
-          props: { gradient: ["#060610", "#0c0a1a", "#060610"], gradientAngle: 180, pattern: "halftone", patternColor: "#ffffff", patternOpacity: 0.03 },
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#E8D8BF"], gradientAngle: 160, pattern: "dots", patternOpacity: 0.05 },
         },
         {
-          id: "sage", type: "sprite",
-          x: "65%", y: "40%", opacity: 0,
-          props: { character: "Sensei Ryo", expression: "wise", size: 72, showName: true, glowColor: "#f5a62330" },
+          id: "hana", type: "sprite",
+          x: "18%", y: "55%", opacity: 0,
+          props: { character: "Hana", expression: "curious", facing: "right", size: 56 },
         },
         {
-          id: "kai", type: "sprite",
-          x: "25%", y: "50%", opacity: 0,
-          props: { character: "Hana", expression: "curious", size: 56, showName: true },
+          id: "ryo", type: "sprite",
+          x: "70%", y: "52%", opacity: 0,
+          props: { character: "Ryo", expression: "wise", facing: "left", size: 60 },
         },
         {
-          id: "bubble-hana", type: "speech_bubble",
-          x: "8%", y: "28%", opacity: 0,
+          id: "b-hana", type: "speech_bubble",
+          x: "8%", y: "15%", opacity: 0,
           props: {
-            text: "But I always quit after two weeks...",
-            character: "Hana", style: "speech",
-            tailDirection: "bottom", maxWidth: 200,
-            typewriter: true, typewriterSpeed: 35,
+            text: "I keep trying to build good habits but they never stick...",
+            character: "Hana",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 35,
+            maxWidth: 220,
           },
         },
         {
-          id: "bubble-ryo", type: "speech_bubble",
-          x: "48%", y: "18%", opacity: 0,
+          id: "b-ryo", type: "speech_bubble",
+          x: "52%", y: "10%", opacity: 0,
           props: {
-            text: "You’re not failing at habits. You’re missing the loop.",
-            character: "Sensei Ryo", style: "speech",
-            tailDirection: "bottom", maxWidth: 240,
-            typewriter: true, typewriterSpeed: 30,
-            emphasis: true,
+            text: "That's because you're thinking about the habit. Think about the system.",
+            character: "Ryo",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 30,
+            maxWidth: 230,
           },
         },
       ],
       cells: [],
       timeline: [
-        { at: 200, target: "kai", animate: { opacity: [0, 1], x: ["-5%", "25%"] }, duration: 500, easing: "ease-out" },
-        { at: 400, target: "sage", animate: { opacity: [0, 1], x: ["100%", "65%"] }, duration: 600, easing: "ease-out" },
-        { at: 1000, target: "bubble-hana", animate: { opacity: [0, 1], typewriter: true }, duration: 1200 },
-        { at: 2800, target: "bubble-ryo", animate: { opacity: [0, 1], typewriter: true }, duration: 1800 },
+        { at: 200, target: "hana", animate: { opacity: [0, 1], x: ["12%", "18%"] }, duration: 500 },
+        { at: 400, target: "ryo", animate: { opacity: [0, 1], x: ["76%", "70%"] }, duration: 500 },
+        { at: 800, target: "b-hana", animate: { opacity: [0, 1], typewriter: true }, duration: 2000 },
+        { at: 3500, target: "b-ryo", animate: { opacity: [0, 1], typewriter: true }, duration: 2200 },
       ],
     },
 
-    // ACT 2: The Loop — panel splits into a vertical flow
+    // ACT 2: The insight panel
     {
       id: "the-loop",
-      duration_ms: 10000,
-      transition_in: { type: "morph", duration_ms: 500, easing: "ease-in-out" },
-      layout: { type: "split-v", gap: 2, stagger_ms: 500 },
+      duration_ms: 5000,
+      transition_in: { type: "fade", duration_ms: 400 },
+      layout: { type: "full" },
       layers: [
         {
-          id: "bg-loop", type: "background",
-          props: { gradient: ["#0a0a1a", "#100a20"], gradientAngle: 180 },
+          id: "bg2", type: "background", opacity: 1,
+          props: { gradient: ["#EDE0CC", "#F2E8D5"], gradientAngle: 0, pattern: "crosshatch", patternOpacity: 0.06 },
+        },
+        {
+          id: "narrator", type: "speech_bubble",
+          x: "10%", y: "8%", opacity: 0,
+          props: {
+            text: "THE HABIT LOOP",
+            style: "narrator",
+            tailDirection: "none",
+            maxWidth: 200,
+          },
+        },
+        {
+          id: "step1", type: "text",
+          x: "15%", y: "30%", opacity: 0,
+          props: {
+            content: "1. CUE",
+            fontSize: "1.2rem",
+            fontFamily: "display",
+            color: "#1A1825",
+          },
+        },
+        {
+          id: "step1-desc", type: "text",
+          x: "15%", y: "38%", opacity: 0,
+          props: {
+            content: "Make it obvious",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#1A182570",
+          },
+        },
+        {
+          id: "step2", type: "text",
+          x: "55%", y: "30%", opacity: 0,
+          props: {
+            content: "2. CRAVING",
+            fontSize: "1.2rem",
+            fontFamily: "display",
+            color: "#1A1825",
+          },
+        },
+        {
+          id: "step2-desc", type: "text",
+          x: "55%", y: "38%", opacity: 0,
+          props: {
+            content: "Make it attractive",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#1A182570",
+          },
+        },
+        {
+          id: "step3", type: "text",
+          x: "15%", y: "58%", opacity: 0,
+          props: {
+            content: "3. RESPONSE",
+            fontSize: "1.2rem",
+            fontFamily: "display",
+            color: "#1A1825",
+          },
+        },
+        {
+          id: "step3-desc", type: "text",
+          x: "15%", y: "66%", opacity: 0,
+          props: {
+            content: "Make it easy",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#1A182570",
+          },
+        },
+        {
+          id: "step4", type: "text",
+          x: "55%", y: "58%", opacity: 0,
+          props: {
+            content: "4. REWARD",
+            fontSize: "1.2rem",
+            fontFamily: "display",
+            color: "#1A1825",
+          },
+        },
+        {
+          id: "step4-desc", type: "text",
+          x: "55%", y: "66%", opacity: 0,
+          props: {
+            content: "Make it satisfying",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#1A182570",
+          },
+        },
+        {
+          id: "divider-h", type: "shape",
+          x: "10%", y: "50%", opacity: 0,
+          width: 640, height: 1,
+          props: { shape: "line", stroke: "#1A182520", strokeWidth: 1 },
+        },
+        {
+          id: "divider-v", type: "shape",
+          x: "50%", y: "25%", opacity: 0,
+          width: 1, height: 280,
+          props: { shape: "rect", fill: "#1A182515", stroke: "none", strokeWidth: 0 },
         },
       ],
-      cells: [
-        // TOP: The loop diagram
-        {
-          id: "cell-diagram",
-          position: "top",
-          style: { background: "transparent" },
-          layers: [
-            {
-              id: "loop-title", type: "text",
-              x: "50%", y: "15%", opacity: 0,
-              props: {
-                content: "THE HABIT LOOP",
-                fontSize: "clamp(0.8rem, 2.5vw, 1.3rem)",
-                fontFamily: "display", color: "#ffffff",
-                textAlign: "center", letterSpacing: "0.15em",
-              },
-            },
-            // Four steps as a horizontal sequence
-            { id: "step-cue", type: "text", x: "12%", y: "55%", opacity: 0,
-              props: { content: "CUE", fontSize: "clamp(0.9rem, 2vw, 1.2rem)", fontFamily: "display", color: "#00f5ff", textAlign: "center" } },
-            { id: "arrow-1", type: "text", x: "28%", y: "55%", opacity: 0,
-              props: { content: "→", fontSize: "1.2rem", color: "#ffffff30", textAlign: "center" } },
-            { id: "step-craving", type: "text", x: "38%", y: "55%", opacity: 0,
-              props: { content: "CRAVING", fontSize: "clamp(0.9rem, 2vw, 1.2rem)", fontFamily: "display", color: "#f5a623", textAlign: "center" } },
-            { id: "arrow-2", type: "text", x: "55%", y: "55%", opacity: 0,
-              props: { content: "→", fontSize: "1.2rem", color: "#ffffff30", textAlign: "center" } },
-            { id: "step-response", type: "text", x: "68%", y: "55%", opacity: 0,
-              props: { content: "RESPONSE", fontSize: "clamp(0.9rem, 2vw, 1.2rem)", fontFamily: "display", color: "#4caf50", textAlign: "center" } },
-            { id: "arrow-3", type: "text", x: "84%", y: "55%", opacity: 0,
-              props: { content: "→", fontSize: "1.2rem", color: "#ffffff30", textAlign: "center" } },
-            { id: "step-reward", type: "text", x: "93%", y: "55%", opacity: 0,
-              props: { content: "REWARD", fontSize: "clamp(0.9rem, 2vw, 1.2rem)", fontFamily: "display", color: "#bb86fc", textAlign: "center" } },
-          ],
-          timeline: [
-            { at: 0, target: "loop-title", animate: { opacity: [0, 1], y: ["25%", "15%"] }, duration: 500 },
-            { at: 500, target: "step-cue", animate: { opacity: [0, 1], scale: [0.5, 1] }, duration: 400, easing: "spring" },
-            { at: 900, target: "arrow-1", animate: { opacity: [0, 0.5] }, duration: 200 },
-            { at: 1100, target: "step-craving", animate: { opacity: [0, 1], scale: [0.5, 1] }, duration: 400, easing: "spring" },
-            { at: 1500, target: "arrow-2", animate: { opacity: [0, 0.5] }, duration: 200 },
-            { at: 1700, target: "step-response", animate: { opacity: [0, 1], scale: [0.5, 1] }, duration: 400, easing: "spring" },
-            { at: 2100, target: "arrow-3", animate: { opacity: [0, 0.5] }, duration: 200 },
-            { at: 2300, target: "step-reward", animate: { opacity: [0, 1], scale: [0.5, 1] }, duration: 400, easing: "spring" },
-          ],
-        },
-        // BOTTOM: Example application
-        {
-          id: "cell-example",
-          position: "bottom",
-          style: { background: "linear-gradient(180deg, #0a0a1a00 0%, #0a0a1a 20%)", border: "none" },
-          layers: [
-            {
-              id: "example-title", type: "text",
-              x: "50%", y: "10%", opacity: 0,
-              props: {
-                content: "Example: Building a reading habit",
-                fontSize: "clamp(0.6rem, 1.5vw, 0.85rem)",
-                fontFamily: "label", color: "#ffffff50",
-                textAlign: "center", letterSpacing: "0.1em",
-              },
-            },
-            {
-              id: "ex-data", type: "data_block",
-              x: "50%", y: "55%", opacity: 0,
-              props: {
-                items: [
-                  { label: "CUE: Put a book on your pillow", icon: "📍", highlight: true },
-                  { label: "CRAVING: Feel the pull of a good story", icon: "✨" },
-                  { label: "RESPONSE: Read one page", icon: "📖" },
-                  { label: "REWARD: Mark it on your habit tracker", icon: "✅" },
-                ],
-                layout: "stack", accentColor: "#00f5ff",
-                showIndex: false, animateIn: "stagger", staggerDelay: 400,
-              },
-            },
-          ],
-          timeline: [
-            { at: 500, target: "example-title", animate: { opacity: [0, 0.6] }, duration: 400 },
-            { at: 800, target: "ex-data", animate: { opacity: [0, 1], y: ["65%", "55%"] }, duration: 600, easing: "ease-out" },
-          ],
-        },
+      cells: [],
+      timeline: [
+        { at: 200, target: "narrator", animate: { opacity: [0, 1] }, duration: 300 },
+        { at: 300, target: "divider-h", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 300, target: "divider-v", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 500, target: "step1", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 700, target: "step1-desc", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 1200, target: "step2", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 1400, target: "step2-desc", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 1900, target: "step3", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 2100, target: "step3-desc", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 2600, target: "step4", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 2800, target: "step4-desc", animate: { opacity: [0, 1] }, duration: 400 },
       ],
-      timeline: [],
     },
   ],
   meta: {
     panel_id: "habit-loop-002",
-    chapter_index: 0,
-    content_type: "concept",
-    narrative_beat: "Introducing the four-step habit loop",
-    duration_ms: 15000,
+    chapter_index: 1,
+    content_type: "dialogue",
+    narrative_beat: "The four laws of behavior change",
+    duration_ms: 11000,
   },
 };
 
 // ============================================================
-// PAGE 3: THE IDENTITY SHIFT — "Become, Don't Just Do"
-// Three-act structure: bold statement → contrast → revelation
+// PAGE 3: IDENTITY SHIFT
+// The core thesis — you don't rise to your goals,
+// you fall to the level of your systems.
 // ============================================================
 
 export const PANEL_03_IDENTITY: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#050505", mood: "confrontation" },
+  canvas: { width: 800, height: 600, background: "#1A1825", mood: "dark" },
   acts: [
-    // ACT 1: The wrong way (crossed out)
     {
-      id: "wrong-way",
-      duration_ms: 3500,
+      id: "the-wrong-way",
+      duration_ms: 4000,
       layout: { type: "full" },
       layers: [
         {
-          id: "bg-wrong", type: "background",
-          props: { gradient: ["#1a0505", "#100000"], gradientAngle: 180 },
+          id: "bg-dark", type: "background", opacity: 1,
+          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "halftone", patternOpacity: 0.04 },
         },
         {
           id: "wrong-label", type: "text",
-          x: "50%", y: "20%", opacity: 0,
+          x: "10%", y: "12%", opacity: 0,
           props: {
-            content: "OUTCOME-BASED",
-            fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-            fontFamily: "label", color: "#e8191a80",
-            textAlign: "center", letterSpacing: "0.2em",
+            content: "THE WRONG WAY",
+            fontSize: "0.65rem",
+            fontFamily: "label",
+            color: "#E8191A60",
+            letterSpacing: "0.15em",
           },
         },
         {
           id: "wrong-text", type: "text",
-          x: "50%", y: "45%", opacity: 0,
+          x: "10%", y: "35%", opacity: 0,
           props: {
             content: "\"I want to lose 20 pounds.\"",
-            fontSize: "clamp(1.2rem, 4vw, 2.2rem)",
-            fontFamily: "display", color: "#e8191a",
-            textAlign: "center",
+            fontSize: "clamp(1.1rem, 3vw, 1.8rem)",
+            fontFamily: "display",
+            color: "#E8191A",
+            typewriter: true,
+            typewriterSpeed: 40,
           },
         },
         {
           id: "strikethrough", type: "shape",
-          x: "15%", y: "48%", opacity: 0,
-          width: "70%", height: 3,
-          props: { shape: "line", stroke: "#e8191a", strokeWidth: 3 },
+          x: "10%", y: "42%", opacity: 0,
+          width: 340, height: 3,
+          props: { shape: "rect", fill: "#E8191A60", stroke: "none", strokeWidth: 0 },
         },
         {
-          id: "vignette", type: "effect", opacity: 0,
-          props: { effect: "vignette", color: "#000000", intensity: 0.8 },
+          id: "wrong-sub", type: "text",
+          x: "10%", y: "55%", opacity: 0,
+          props: {
+            content: "Goals focus on outcomes.\nOutcomes are temporary.",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#A8A6C080",
+            lineHeight: 1.6,
+          },
         },
       ],
       cells: [],
       timeline: [
-        { at: 200, target: "bg-wrong", animate: { opacity: [0, 1] }, duration: 500 },
-        { at: 200, target: "vignette", animate: { opacity: [0, 1] }, duration: 500 },
-        { at: 400, target: "wrong-label", animate: { opacity: [0, 0.6] }, duration: 400 },
-        { at: 600, target: "wrong-text", animate: { opacity: [0, 1], scale: [1.1, 1] }, duration: 500 },
-        { at: 2000, target: "strikethrough", animate: { opacity: [0, 1], width: ["0%", "70%"] }, duration: 300, easing: "sharp" },
+        { at: 200, target: "wrong-label", animate: { opacity: [0, 1] }, duration: 300 },
+        { at: 500, target: "wrong-text", animate: { opacity: [0, 1], typewriter: true }, duration: 1500 },
+        { at: 2200, target: "strikethrough", animate: { opacity: [0, 0.6] }, duration: 200 },
+        { at: 2600, target: "wrong-sub", animate: { opacity: [0, 1] }, duration: 500 },
       ],
     },
 
-    // ACT 2: The right way (golden)
+    // ACT 2: The right way
     {
-      id: "right-way",
-      duration_ms: 4000,
-      transition_in: { type: "fade", duration_ms: 400, color: "#000000" },
+      id: "the-right-way",
+      duration_ms: 5000,
+      transition_in: { type: "fade", duration_ms: 500 },
       layout: { type: "full" },
       layers: [
         {
-          id: "bg-right", type: "background",
-          props: { gradient: ["#0a0a05", "#1a1408", "#0a0a05"], gradientAngle: 160 },
+          id: "bg-paper", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 180, pattern: "manga_screen", patternOpacity: 0.05 },
         },
         {
           id: "right-label", type: "text",
-          x: "50%", y: "20%", opacity: 0,
+          x: "10%", y: "12%", opacity: 0,
           props: {
-            content: "IDENTITY-BASED",
-            fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-            fontFamily: "label", color: "#f5a62380",
-            textAlign: "center", letterSpacing: "0.2em",
+            content: "THE RIGHT WAY",
+            fontSize: "0.65rem",
+            fontFamily: "label",
+            color: "#1A182560",
+            letterSpacing: "0.15em",
           },
         },
         {
           id: "right-text", type: "text",
-          x: "50%", y: "45%", opacity: 0,
+          x: "10%", y: "30%", opacity: 0,
           props: {
-            content: "\"I am the type of person\nwho moves every day.\"",
-            fontSize: "clamp(1.2rem, 4vw, 2.2rem)",
-            fontFamily: "display", color: "#f5a623",
-            textAlign: "center", lineHeight: 1.4,
-            textShadow: "0 0 40px #f5a62330",
+            content: "\"I am the type of person\nwho takes care of their body.\"",
+            fontSize: "clamp(1.2rem, 3.5vw, 2rem)",
+            fontFamily: "display",
+            color: "#1A1825",
+            lineHeight: 1.4,
+            typewriter: true,
+            typewriterSpeed: 40,
           },
         },
         {
-          id: "sparkles", type: "effect", opacity: 0,
-          props: { effect: "sparkle", color: "#f5a623", count: 8, intensity: 0.4 },
+          id: "right-sub", type: "text",
+          x: "10%", y: "60%", opacity: 0,
+          props: {
+            content: "Identity drives behavior.\nBehavior reinforces identity.\nThis is how real change happens.",
+            fontSize: "0.85rem",
+            fontFamily: "body",
+            color: "#1A182570",
+            lineHeight: 1.7,
+          },
+        },
+        {
+          id: "ink-accent", type: "shape",
+          x: "8%", y: "28%", opacity: 0,
+          width: 3, height: 100,
+          props: { shape: "rect", fill: "#1A1825", stroke: "none", strokeWidth: 0 },
         },
       ],
       cells: [],
       timeline: [
-        { at: 200, target: "right-label", animate: { opacity: [0, 0.6] }, duration: 400 },
-        { at: 400, target: "right-text", animate: { opacity: [0, 1], scale: [0.9, 1] }, duration: 600, easing: "spring" },
-        { at: 1200, target: "sparkles", animate: { opacity: [0, 1] }, duration: 500 },
+        { at: 200, target: "right-label", animate: { opacity: [0, 1] }, duration: 300 },
+        { at: 200, target: "ink-accent", animate: { opacity: [0, 0.6] }, duration: 300 },
+        { at: 400, target: "right-text", animate: { opacity: [0, 1], typewriter: true }, duration: 2500 },
+        { at: 3200, target: "right-sub", animate: { opacity: [0, 1] }, duration: 600 },
       ],
-    },
-
-    // ACT 3: The split — contrast side by side
-    {
-      id: "contrast",
-      duration_ms: 6000,
-      transition_in: { type: "morph", duration_ms: 500, easing: "ease-in-out" },
-      layout: { type: "split-h", gap: 2 },
-      layers: [],
-      cells: [
-        {
-          id: "cell-outcome",
-          position: "left",
-          style: { background: "linear-gradient(180deg, #1a0505 0%, #0a0000 100%)", border: "1px solid #e8191a15" },
-          layers: [
-            { id: "o-label", type: "text", x: "50%", y: "12%", opacity: 0,
-              props: { content: "OUTCOME", fontSize: "0.6rem", fontFamily: "label", color: "#e8191a60", textAlign: "center", letterSpacing: "0.15em" } },
-            { id: "o-q", type: "text", x: "50%", y: "35%", opacity: 0,
-              props: { content: "\"What do I want?\"", fontSize: "clamp(0.9rem, 2.5vw, 1.3rem)", fontFamily: "body", color: "#e8191a", textAlign: "center" } },
-            { id: "o-result", type: "text", x: "50%", y: "70%", opacity: 0,
-              props: { content: "Willpower-dependent\nQuits when hard\nExternal motivation", fontSize: "clamp(0.55rem, 1.3vw, 0.75rem)",
-                fontFamily: "body", color: "#e8191a60", textAlign: "center", lineHeight: 1.8 } },
-          ],
-          timeline: [
-            { at: 300, target: "o-label", animate: { opacity: [0, 0.6] }, duration: 300 },
-            { at: 500, target: "o-q", animate: { opacity: [0, 1] }, duration: 400 },
-            { at: 1500, target: "o-result", animate: { opacity: [0, 0.6], y: ["78%", "70%"] }, duration: 500 },
-          ],
-        },
-        {
-          id: "cell-identity",
-          position: "right",
-          style: { background: "linear-gradient(180deg, #14120a 0%, #0a0905 100%)", border: "1px solid #f5a62320" },
-          layers: [
-            { id: "i-label", type: "text", x: "50%", y: "12%", opacity: 0,
-              props: { content: "IDENTITY", fontSize: "0.6rem", fontFamily: "label", color: "#f5a62360", textAlign: "center", letterSpacing: "0.15em" } },
-            { id: "i-q", type: "text", x: "50%", y: "35%", opacity: 0,
-              props: { content: "\"Who do I want to become?\"", fontSize: "clamp(0.9rem, 2.5vw, 1.3rem)", fontFamily: "body", color: "#f5a623", textAlign: "center" } },
-            { id: "i-result", type: "text", x: "50%", y: "70%", opacity: 0,
-              props: { content: "Self-reinforcing\nProof of identity\nIntrinsic motivation", fontSize: "clamp(0.55rem, 1.3vw, 0.75rem)",
-                fontFamily: "body", color: "#f5a62380", textAlign: "center", lineHeight: 1.8 } },
-          ],
-          timeline: [
-            { at: 300, target: "i-label", animate: { opacity: [0, 0.6] }, duration: 300 },
-            { at: 500, target: "i-q", animate: { opacity: [0, 1] }, duration: 400 },
-            { at: 1500, target: "i-result", animate: { opacity: [0, 0.8], y: ["78%", "70%"] }, duration: 500 },
-          ],
-        },
-      ],
-      timeline: [],
     },
   ],
   meta: {
     panel_id: "identity-003",
-    chapter_index: 1,
+    chapter_index: 2,
     content_type: "concept",
-    narrative_beat: "The identity shift — become, don't just do",
-    duration_ms: 13500,
+    narrative_beat: "Identity-based habits are the foundation",
+    duration_ms: 9000,
   },
 };
 
 // ============================================================
-// PAGE 4: THE ENVIRONMENT — "Design Your World"
-// A single dramatic reveal with speed lines and impact
+// PAGE 4: THE BIG QUOTE
+// Full-bleed dramatic typography. Speed lines.
+// Like the splash page of a shonen manga.
 // ============================================================
 
 export const PANEL_04_ENVIRONMENT: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#050a10", mood: "revelation" },
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
   acts: [
     {
-      id: "environment-reveal",
-      duration_ms: 8000,
+      id: "big-quote",
+      duration_ms: 5000,
       layout: { type: "full" },
       layers: [
         {
-          id: "bg-env", type: "background", opacity: 0,
-          props: { gradient: ["#050a10", "#0a1520", "#051015"], gradientAngle: 160, pattern: "manga_screen", patternColor: "#00bfa5", patternOpacity: 0.04 },
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#E8D8BF"], gradientAngle: 170, pattern: "halftone", patternOpacity: 0.06 },
         },
         {
-          id: "speed", type: "effect", opacity: 0,
-          props: { effect: "speed_lines", color: "#00bfa5", count: 32, intensity: 0.7 },
+          id: "speed", type: "effect",
+          props: { effect: "speed_lines", direction: "radial", intensity: 0.3, color: "#1A1825" },
         },
         {
-          id: "impact", type: "effect", opacity: 0,
-          props: { effect: "impact_burst", color: "#00bfa5" },
-        },
-        {
-          id: "title-env", type: "text",
-          x: "50%", y: "30%", opacity: 0, scale: 2,
+          id: "big-text", type: "text",
+          x: "10%", y: "25%", opacity: 0,
           props: {
-            content: "YOU DON\u2019T RISE\nTO YOUR GOALS",
-            fontSize: "clamp(1.5rem, 5vw, 3rem)",
-            fontFamily: "display", color: "#ffffff",
-            textAlign: "center", lineHeight: 1.2,
-            textShadow: "4px 4px 0 #00bfa540, 0 0 60px rgba(0,0,0,0.9)",
-            letterSpacing: "0.03em",
+            content: "You do not rise\nto the level of\nyour goals.",
+            fontSize: "clamp(1.4rem, 5vw, 2.8rem)",
+            fontFamily: "display",
+            color: "#1A1825",
+            lineHeight: 1.2,
+            typewriter: true,
+            typewriterSpeed: 50,
           },
         },
         {
-          id: "subtitle-env", type: "text",
-          x: "50%", y: "65%", opacity: 0,
+          id: "big-text-2", type: "text",
+          x: "10%", y: "65%", opacity: 0,
           props: {
-            content: "You fall to the level of your systems.",
-            fontSize: "clamp(0.9rem, 2.5vw, 1.4rem)",
-            fontFamily: "body", color: "#00bfa5",
-            textAlign: "center",
-            typewriter: true, typewriterSpeed: 40,
+            content: "You fall to the level\nof your systems.",
+            fontSize: "clamp(1.2rem, 4vw, 2.2rem)",
+            fontFamily: "display",
+            color: "#1A182580",
+            lineHeight: 1.2,
           },
         },
         {
-          id: "attribution", type: "text",
-          x: "50%", y: "85%", opacity: 0,
+          id: "dash", type: "shape",
+          x: "10%", y: "60%", opacity: 0,
+          width: 50, height: 3,
+          props: { shape: "rect", fill: "#1A182540", stroke: "none", strokeWidth: 0 },
+        },
+        {
+          id: "author", type: "text",
+          x: "10%", y: "85%", opacity: 0,
           props: {
-            content: "— James Clear",
-            fontSize: "clamp(0.6rem, 1.5vw, 0.8rem)",
-            fontFamily: "label", color: "#ffffff30",
-            textAlign: "center", letterSpacing: "0.1em",
+            content: "JAMES CLEAR",
+            fontSize: "0.6rem",
+            fontFamily: "label",
+            color: "#1A182540",
+            letterSpacing: "0.2em",
           },
         },
       ],
       cells: [],
       timeline: [
-        { at: 0, target: "bg-env", animate: { opacity: [0, 1] }, duration: 500 },
-        { at: 300, target: "speed", animate: { opacity: [0, 0.5] }, duration: 300 },
-        { at: 400, target: "impact", animate: { opacity: [0, 1] }, duration: 200 },
-        { at: 400, target: "title-env", animate: { opacity: [0, 1], scale: [1.8, 1] }, duration: 600, easing: "spring" },
-        { at: 2500, target: "subtitle-env", animate: { opacity: [0, 1], typewriter: true }, duration: 2000 },
-        { at: 5500, target: "attribution", animate: { opacity: [0, 0.4] }, duration: 600 },
-        { at: 1500, target: "speed", animate: { opacity: [0.5, 0.15] }, duration: 2000 },
+        { at: 200, target: "speed", animate: { opacity: [0, 1] }, duration: 600 },
+        { at: 300, target: "big-text", animate: { opacity: [0, 1], typewriter: true }, duration: 2500 },
+        { at: 3000, target: "dash", animate: { opacity: [0, 1] }, duration: 200 },
+        { at: 3200, target: "big-text-2", animate: { opacity: [0, 0.55] }, duration: 500 },
+        { at: 4000, target: "author", animate: { opacity: [0, 1] }, duration: 300 },
       ],
     },
   ],
   meta: {
-    panel_id: "environment-004",
+    panel_id: "systems-004",
     chapter_index: 2,
     content_type: "splash",
-    narrative_beat: "The most powerful quote — systems over goals",
-    duration_ms: 8000,
+    narrative_beat: "The central thesis — systems over goals",
+    duration_ms: 5000,
   },
 };
 
 // ============================================================
-// PAGE 5: THE DIALOGUE — "Two-Minute Rule"
-// Pure character interaction with progressive reveal
+// PAGE 5: THE TWO-MINUTE RULE
+// Dialogue scene with a punchline.
 // ============================================================
 
 export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
   version: "2.0",
-  canvas: { width: 800, height: 600, background: "#08080f", mood: "intimate" },
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
   acts: [
     {
-      id: "two-min-dialogue",
-      duration_ms: 12000,
+      id: "dialogue",
+      duration_ms: 7000,
       layout: { type: "full" },
       layers: [
         {
-          id: "bg-intimate", type: "background",
-          props: { gradient: ["#08080f", "#0f0a18"], gradientAngle: 180, pattern: "dots", patternColor: "#bb86fc", patternOpacity: 0.02 },
-        },
-        // Characters
-        {
-          id: "hana-sprite", type: "sprite",
-          x: "18%", y: "35%", opacity: 0,
-          props: { character: "Hana", expression: "shocked", size: 52, showName: true },
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#E8D8BF"], gradientAngle: 160, pattern: "dots", patternOpacity: 0.04 },
         },
         {
-          id: "ryo-sprite", type: "sprite",
-          x: "78%", y: "35%", opacity: 0,
-          props: { character: "Sensei Ryo", expression: "smirk", size: 64, showName: true, glowColor: "#f5a62320" },
+          id: "hana", type: "sprite",
+          x: "18%", y: "58%", opacity: 0,
+          props: { character: "Hana", expression: "curious", facing: "right", size: 52 },
         },
-        // Dialogue sequence
+        {
+          id: "ryo", type: "sprite",
+          x: "72%", y: "55%", opacity: 0,
+          props: { character: "Ryo", expression: "wise", facing: "left", size: 56 },
+        },
         {
           id: "b1", type: "speech_bubble",
-          x: "30%", y: "18%", opacity: 0,
-          props: { text: "How do I start meditating for 30 minutes?", character: "Hana", style: "speech", tailDirection: "left", maxWidth: 220, typewriter: true, typewriterSpeed: 30 },
+          x: "6%", y: "10%", opacity: 0,
+          props: {
+            text: "How do I start reading more?",
+            character: "Hana",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 35,
+            maxWidth: 200,
+          },
         },
         {
           id: "b2", type: "speech_bubble",
-          x: "42%", y: "15%", opacity: 0,
-          props: { text: "You don’t.", character: "Sensei Ryo", style: "speech", tailDirection: "right", maxWidth: 160, typewriter: true, typewriterSpeed: 50 },
+          x: "50%", y: "12%", opacity: 0,
+          props: {
+            text: "Read one page.",
+            character: "Ryo",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 40,
+            maxWidth: 200,
+          },
         },
         {
           id: "b3", type: "speech_bubble",
-          x: "30%", y: "58%", opacity: 0,
-          props: { text: "...what?", character: "Hana", style: "speech", tailDirection: "left", maxWidth: 100, typewriter: true, typewriterSpeed: 60 },
+          x: "6%", y: "35%", opacity: 0,
+          props: {
+            text: "Just... one?",
+            character: "Hana",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 45,
+            maxWidth: 160,
+          },
         },
         {
           id: "b4", type: "speech_bubble",
-          x: "42%", y: "55%", opacity: 0,
-          props: { text: "You meditate for two minutes.\nEvery habit must be small enough\nthat you can’t say no.", character: "Sensei Ryo", style: "speech", tailDirection: "right", maxWidth: 260, typewriter: true, typewriterSpeed: 28 },
-        },
-        // The punchline — big text at the bottom
-        {
-          id: "punchline", type: "text",
-          x: "50%", y: "88%", opacity: 0,
+          x: "48%", y: "32%", opacity: 0,
           props: {
-            content: "THE TWO-MINUTE RULE",
-            fontSize: "clamp(0.7rem, 2vw, 1rem)",
-            fontFamily: "display", color: "#bb86fc",
-            textAlign: "center", letterSpacing: "0.2em",
-            textShadow: "0 0 20px #bb86fc30",
+            text: "A habit must be established before it can be improved. Two minutes. That's all.",
+            character: "Ryo",
+            style: "speech",
+            tailDirection: "bottom",
+            typewriter: true,
+            typewriterSpeed: 30,
+            maxWidth: 240,
           },
         },
       ],
       cells: [],
       timeline: [
-        { at: 200, target: "hana-sprite", animate: { opacity: [0, 1] }, duration: 400 },
-        { at: 300, target: "ryo-sprite", animate: { opacity: [0, 1] }, duration: 400 },
-        { at: 800, target: "b1", animate: { opacity: [0, 1], typewriter: true }, duration: 1500 },
-        { at: 3000, target: "b2", animate: { opacity: [0, 1], typewriter: true }, duration: 500 },
-        { at: 4500, target: "b3", animate: { opacity: [0, 1], typewriter: true }, duration: 400 },
-        { at: 5800, target: "b4", animate: { opacity: [0, 1], typewriter: true }, duration: 3000 },
-        { at: 10000, target: "punchline", animate: { opacity: [0, 1], scale: [0.8, 1] }, duration: 500, easing: "spring" },
+        { at: 200, target: "hana", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 300, target: "ryo", animate: { opacity: [0, 1] }, duration: 400 },
+        { at: 600, target: "b1", animate: { opacity: [0, 1], typewriter: true }, duration: 1200 },
+        { at: 2200, target: "b2", animate: { opacity: [0, 1], typewriter: true }, duration: 800 },
+        { at: 3500, target: "b3", animate: { opacity: [0, 1], typewriter: true }, duration: 600 },
+        { at: 4600, target: "b4", animate: { opacity: [0, 1], typewriter: true }, duration: 2200 },
+      ],
+    },
+
+    // ACT 2: The rule
+    {
+      id: "the-rule",
+      duration_ms: 3000,
+      transition_in: { type: "fade", duration_ms: 400 },
+      layout: { type: "full" },
+      layers: [
+        {
+          id: "bg2", type: "background", opacity: 1,
+          props: { gradient: ["#EDE0CC", "#F2E8D5"], gradientAngle: 0, pattern: "crosshatch", patternOpacity: 0.05 },
+        },
+        {
+          id: "rule-label", type: "speech_bubble",
+          x: "25%", y: "10%", opacity: 0,
+          props: {
+            text: "THE TWO-MINUTE RULE",
+            style: "narrator",
+            tailDirection: "none",
+            maxWidth: 280,
+          },
+        },
+        {
+          id: "rule-text", type: "text",
+          x: "15%", y: "35%", opacity: 0,
+          props: {
+            content: "When you start a new habit,\nit should take less than\ntwo minutes to do.",
+            fontSize: "clamp(1.1rem, 3.5vw, 1.8rem)",
+            fontFamily: "display",
+            color: "#1A1825",
+            lineHeight: 1.4,
+          },
+        },
+        {
+          id: "rule-sub", type: "text",
+          x: "15%", y: "70%", opacity: 0,
+          props: {
+            content: "Master the art of showing up.",
+            fontSize: "0.9rem",
+            fontFamily: "body",
+            color: "#1A182560",
+          },
+        },
+      ],
+      cells: [],
+      timeline: [
+        { at: 200, target: "rule-label", animate: { opacity: [0, 1] }, duration: 300 },
+        { at: 500, target: "rule-text", animate: { opacity: [0, 1] }, duration: 500 },
+        { at: 1500, target: "rule-sub", animate: { opacity: [0, 1] }, duration: 400 },
       ],
     },
   ],
@@ -726,12 +671,12 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
     chapter_index: 3,
     content_type: "dialogue",
     narrative_beat: "The two-minute rule — make it so easy you can't say no",
-    duration_ms: 12000,
+    duration_ms: 10000,
   },
 };
 
 // ============================================================
-// ALL SAMPLE PANELS (exported as a collection)
+// ALL SAMPLE PANELS
 // ============================================================
 
 export const SAMPLE_LIVING_PANELS: LivingPanelDSL[] = [
@@ -742,7 +687,6 @@ export const SAMPLE_LIVING_PANELS: LivingPanelDSL[] = [
   PANEL_05_TWO_MINUTE,
 ];
 
-/** Helper to get a sample panel by index */
 export function getSamplePanel(index: number): LivingPanelDSL {
   return SAMPLE_LIVING_PANELS[index % SAMPLE_LIVING_PANELS.length];
 }

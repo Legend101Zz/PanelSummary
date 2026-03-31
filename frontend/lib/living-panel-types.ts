@@ -193,6 +193,11 @@ export interface EffectLayer extends LayerBase {
     count?: number;
     speed?: number;
     direction?: "up" | "down" | "left" | "right" | "radial" | "random";
+    // SFX (manga sound effect text)
+    sfxText?: string;
+    sfxSize?: number;
+    sfxRotate?: number;
+    sfxOutline?: boolean;
   };
 }
 
@@ -321,7 +326,8 @@ export type EffectType =
   | "particles" | "speed_lines" | "impact_burst"
   | "sparkle" | "rain" | "snow" | "smoke"
   | "screen_shake" | "vignette" | "lens_flare"
-  | "floating_kanji" | "ink_splash" | "lightning";
+  | "floating_kanji" | "ink_splash" | "lightning"
+  | "screentone" | "crosshatch" | "sfx";
 
 export type EasingType =
   | "linear" | "ease-in" | "ease-out" | "ease-in-out"
