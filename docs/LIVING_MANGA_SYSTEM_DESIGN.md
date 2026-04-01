@@ -28,12 +28,14 @@
 │                                       │                         │
 │                                       ├─ Phase 0: Credits       │
 │                                       ├─ Phase 1: Analysis      │
-│                                       │   (synopsis + bible)    │
-│                                       ├─ Phase 2: Plan          │
-│                                       ├─ Phase 3: Cost Est.     │
-│                                       ├─ Phase 4: DSL Gen       │
+│                                       │   (synopsis ‖ bible)    │
+│                                       │   (PARALLEL!)           │
+│                                       ├─ Phase 2: Plan + Cost   │
+│                                       │   (merged, no waste)    │
+│                                       ├─ Phase 3: DSL Gen       │
 │                                       │   (parallel, N panels)  │
-│                                       └─ Phase 5: Assembly      │
+│                                       │   (per-panel progress)  │
+│                                       └─ Phase 4: Assembly      │
 │                                       │                         │
 │                                       ▼                         │
 │                              Image Generation                   │
