@@ -52,6 +52,8 @@ class OrchestratorResult:
     panels_failed: int
     cancelled: bool
     image_panel_ids: list[str]         # Panel IDs that should get AI images
+    book_synopsis: dict = None         # Generated or passed-through synopsis
+    manga_bible: dict = None           # Generated or passed-through bible
 
 
 class MangaOrchestrator:
@@ -118,10 +120,23 @@ class MangaOrchestrator:
     async def run(
         self,
         canonical_chapters: list[dict],
-        book_synopsis: dict,
-        manga_bible: dict,
+        book_synopsis: dict | None = None,
+        manga_bible: dict | None = None,
+        llm_client: Optional["LLMClient"] = None,
     ) -> OrchestratorResult:
-        """Execute the full manga generation pipeline."""
+        """Execute the full manga generation pipeline.
+
+        The orchestrator IS the brain. It owns:
+        - Phase 0: Credit check
+        - Phase 1: Book analysis (synopsis + manga bible) — if not provided
+        - Phase 2: Manga structure planning
+        - Phase 3: Cost estimation
+        - Phase 4: Parallel DSL generation
+        - Phase 5: Assembly + validation
+
+        If book_synopsis and manga_bible are provided (from previous pipeline),
+        Phase 1 is skipped. This allows both fresh runs and incremental usage.
+        """
         start_time = time.time()
         empty_result = lambda cancelled=True: OrchestratorResult(
             living_panels=[], manga_plan=None,
@@ -129,6 +144,8 @@ class MangaOrchestrator:
             total_time_s=time.time() - start_time,
             panels_generated=0, panels_failed=0,
             cancelled=cancelled, image_panel_ids=[],
+            book_synopsis=book_synopsis or {},
+            manga_bible=manga_bible or {},
         )
 
         # ── PHASE 0: Credit check ──
@@ -141,8 +158,45 @@ class MangaOrchestrator:
                 return empty_result()
             self._report(2, f"Credits: ${remaining:.4f} remaining", "credit_check")
 
-        # ── PHASE 1: Planning (style-aware) ──
-        self._report(5, "Planning manga structure...", "planning")
+        # ── PHASE 1: Book Analysis (synopsis + bible) ──
+        # If upstream already computed these, skip. Otherwise, generate here.
+        if not book_synopsis:
+            self._report(3, "Analyzing book narrative arc...", "analysis")
+            try:
+                from app.stage_book_synopsis import generate_book_synopsis
+                book_synopsis = await generate_book_synopsis(
+                    canonical_chapters=canonical_chapters,
+                    llm_client=self.llm,
+                )
+                logger.info(f"Synopsis generated: {book_synopsis.get('book_thesis', '')[:80]}")
+            except Exception as e:
+                logger.warning(f"Synopsis generation failed (non-fatal): {e}")
+                book_synopsis = {}
+
+        if self._is_cancelled():
+            return empty_result()
+
+        if not manga_bible:
+            self._report(5, "Designing manga world and characters...", "analysis")
+            try:
+                from app.stage_manga_planner import generate_manga_bible
+                manga_bible = await generate_manga_bible(
+                    book_synopsis=book_synopsis,
+                    canonical_chapters=canonical_chapters,
+                    style=self.style,
+                    llm_client=self.llm,
+                )
+                n_chars = len(manga_bible.get("characters", []))
+                logger.info(f"Manga bible: {n_chars} characters, {len(manga_bible.get('chapter_plans', []))} chapter plans")
+            except Exception as e:
+                logger.warning(f"Manga bible failed (non-fatal, will use defaults): {e}")
+                manga_bible = {}
+
+        if self._is_cancelled():
+            return empty_result()
+
+        # ── PHASE 2: Planning (style-aware) ──
+        self._report(10, "Planning manga structure...", "planning")
 
         try:
             manga_plan = await plan_manga(
@@ -164,17 +218,17 @@ class MangaOrchestrator:
             manga_plan = _generate_fallback_plan(canonical_chapters, manga_bible)
 
         if self._is_cancelled():
-            return self._cancelled_result(manga_plan, start_time)
+            return self._cancelled_result(manga_plan, start_time, book_synopsis, manga_bible)
 
         self._report(
-            10,
+            15,
             f"Plan ready: {manga_plan.total_panels} panels across "
             f"{manga_plan.total_pages} pages",
             "planning",
             {"total_panels": manga_plan.total_panels, "total_pages": manga_plan.total_pages},
         )
 
-        # ── PHASE 2: Pre-flight cost estimation ──
+        # ── PHASE 3: Pre-flight cost estimation ──
         if self.tracker:
             # 1 planner call already done + N DSL calls to go
             est = self.tracker.estimate_remaining_cost(
@@ -195,10 +249,8 @@ class MangaOrchestrator:
                     "cost_warning",
                 )
 
-        # ── PHASE 3: TRUE Parallel DSL Generation ──
-        # ALL panels fire at once. Semaphore limits concurrency.
-        # No artificial chapter-by-chapter serialization.
-        self._report(12, "Generating Living Panel DSLs...", "generating")
+        # ── PHASE 4: TRUE Parallel DSL Generation ──
+        self._report(18, "Generating Living Panel DSLs...", "generating")
 
         ch_summaries = {
             ch.get("chapter_index", i): ch
@@ -235,7 +287,7 @@ class MangaOrchestrator:
                 all_results[assignment.panel_id] = result
 
             done_count = i + 1
-            pct = 12 + int((done_count / manga_plan.total_panels) * 78)
+            pct = 18 + int((done_count / manga_plan.total_panels) * 70)  # 18-88%
             self._report(
                 pct,
                 f"Panel {done_count}/{manga_plan.total_panels}: "
@@ -248,8 +300,8 @@ class MangaOrchestrator:
                 },
             )
 
-        # ── PHASE 4: Assemble ──
-        self._report(92, "Assembling manga...", "assembling")
+        # ── PHASE 5: Assemble ──
+        self._report(90, "Assembling manga...", "assembling")
 
         living_panels = []
         panels_ok = 0
@@ -308,6 +360,8 @@ class MangaOrchestrator:
             panels_failed=panels_fail,
             cancelled=False,
             image_panel_ids=image_panel_ids,
+            book_synopsis=book_synopsis or {},
+            manga_bible=manga_bible or {},
         )
 
     def _build_neighbor_context(self, panels: list[PanelAssignment]) -> dict[str, str]:
@@ -369,7 +423,8 @@ class MangaOrchestrator:
             return result
 
     def _cancelled_result(
-        self, plan: Optional[MangaPlan], start_time: float
+        self, plan: Optional[MangaPlan], start_time: float,
+        book_synopsis: dict = None, manga_bible: dict = None,
     ) -> OrchestratorResult:
         reason = ""
         if self.tracker:
@@ -381,4 +436,6 @@ class MangaOrchestrator:
             total_time_s=time.time() - start_time,
             panels_generated=0, panels_failed=0,
             cancelled=True, image_panel_ids=[],
+            book_synopsis=book_synopsis or {},
+            manga_bible=manga_bible or {},
         )

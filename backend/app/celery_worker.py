@@ -1,18 +1,10 @@
 """
 celery_worker.py — Background Task Definitions
 ================================================
-Celery runs these tasks in a separate process from FastAPI.
-This means heavy work (PDF parsing, LLM calls) doesn't freeze the API server.
+Celery tasks for PDF parsing and summary generation.
+Progress updates stored in MongoDB, polled by frontend.
 
-HOW IT WORKS:
-1. FastAPI receives a request and calls: parse_pdf_task.delay(...)
-2. Celery puts the task in Redis queue
-3. The Celery worker (separate process) picks it up and runs it
-4. Progress updates are stored in MongoDB (JobStatus documents)
-5. Frontend polls /status/{task_id} to see progress
-
-START THE WORKER WITH:
-  celery -A app.celery_worker worker --loglevel=info
+Start: celery -A app.celery_worker worker --loglevel=info
 """
 
 import asyncio
@@ -25,15 +17,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 logger = logging.getLogger(__name__)
 
-# ============================================================
-# CELERY APP SETUP
-# ============================================================
-
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-# Create Celery app
-# broker = where tasks are queued (Redis)
-# backend = where results are stored (also Redis)
 celery_app = Celery(
     "panelsummary",
     broker=REDIS_URL,
@@ -47,20 +32,12 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    # Retry failed tasks up to 3 times
     task_max_retries=3,
     task_default_retry_delay=10,
-    # Worker settings
-    worker_prefetch_multiplier=1,  # Don't grab multiple tasks at once
-    task_acks_late=True,           # Acknowledge AFTER completion (safer)
-    broker_connection_retry_on_startup=True,  # Silence Celery 6.0 deprecation warning
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
+    broker_connection_retry_on_startup=True,
 )
-
-
-# ============================================================
-# HELPER: Run async code in sync Celery task
-# WHY: Celery tasks are sync; our DB calls are async
-# ============================================================
 
 def run_async(coro):
     """Run an async coroutine from a sync context"""
@@ -74,19 +51,7 @@ def run_async(coro):
 
 def sync_update_job(task_id: str, status: str, progress: int, message: str,
                     result_id: str = None, error: str = None):
-    """
-    Synchronous job status update using PyMongo directly.
-
-    WHY THIS EXISTS:
-    progress_callback is called from inside synchronous parse_pdf() code which
-    is itself running inside an already-running asyncio event loop (_run()).
-    Calling run_async() there would attempt loop.run_until_complete() on a loop
-    that is ALREADY running → RuntimeError: Cannot run the event loop while
-    another loop is running.
-
-    Solution: for callbacks invoked from sync code inside an async context,
-    use the synchronous PyMongo driver instead of async Motor.
-    """
+    """Synchronous job status update via PyMongo (for callbacks in sync context)."""
     from pymongo import MongoClient
     from app.config import get_settings
     settings = get_settings()
@@ -131,9 +96,7 @@ async def update_job_status(task_id: str, status: str, progress: int, message: s
         await job.save()
 
 
-# ============================================================
 # TASK 1: PDF PARSING
-# ============================================================
 
 @celery_app.task(bind=True, name="app.celery_worker.parse_pdf_task")
 def parse_pdf_task(self, book_id: str, pdf_path: str):
@@ -255,9 +218,7 @@ def parse_pdf_task(self, book_id: str, pdf_path: str):
     run_async(_run())
 
 
-# ============================================================
-# TASK 2: SUMMARIZATION (canonical summary + manga + reels)
-# ============================================================
+# TASK 2: SUMMARIZATION
 
 @celery_app.task(bind=True, name="app.celery_worker.generate_summary_task")
 def generate_summary_task(
@@ -272,14 +233,7 @@ def generate_summary_task(
     generate_images: bool = False,    # run AI image gen after panels
     image_model: str = None,          # image generation model (OpenRouter)
 ):
-    """
-    Background task: Generate canonical summaries + manga panels + reels.
-
-    This runs in stages:
-    1. For each chapter: generate canonical summary (LLM)
-    2. For each chapter: generate manga panels (LLM, uses canonical)
-    3. For each chapter: generate reel scripts (LLM, uses canonical)
-    """
+    """Background task: Compress chapters → Orchestrator (synopsis + bible + DSLs) → Images."""
     logger.info(f"Starting summary generation for book {book_id}")
 
     async def _run():
@@ -289,11 +243,8 @@ def generate_summary_task(
             SummaryStyle, CanonicalChapterSummary
         )
         from app.llm_client import LLMClient
-        from app.generate_manga import generate_manga_for_book
 
         from app.prompts import get_canonical_summary_prompt, format_chapter_for_llm
-        from app.stage_book_synopsis import generate_book_synopsis
-        from app.stage_manga_planner import generate_manga_bible
         from app.models import MangaBible, CharacterProfile, ChapterPlan
         import json
 
@@ -404,179 +355,122 @@ def generate_summary_task(
 
         await update_job_status(
             self.request.id, "progress", 40,
-            "Chapters summarized! Analyzing the full narrative arc..."
+            "Chapters compressed! Handing off to the Orchestrator..."
         )
 
-        # STAGE 2: Book synopsis — whole-book narrative arc
-        book_synopsis = {}
-        try:
-            book_synopsis = await generate_book_synopsis(
-                canonical_chapters=canonical_chapters,
-                llm_client=llm,
-            )
-            total_cost += 0  # tokens tracked inside llm client; cost negligible for 1 call
-        except Exception as e:
-            logger.warning(f"Book synopsis failed (non-fatal): {e}")
-
-        await update_job_status(
-            self.request.id, "progress", 46,
-            "Narrative arc mapped! Designing manga characters and world..."
-        )
-
-        # STAGE 3: Manga bible — characters, world, per-chapter plans
-        manga_bible_dict = {}
-        try:
-            manga_bible_dict = await generate_manga_bible(
-                book_synopsis=book_synopsis,
-                canonical_chapters=canonical_chapters,
-                style=summary_style,
-                llm_client=llm,
-            )
-
-            # Persist the bible in the summary document
-            if manga_bible_dict:
-                try:
-                    summary_doc.manga_bible = MangaBible(
-                        world_description=manga_bible_dict.get("world_description", ""),
-                        color_palette=manga_bible_dict.get("color_palette", ""),
-                        characters=[
-                            CharacterProfile(**c) for c in manga_bible_dict.get("characters", [])
-                            if isinstance(c, dict)
-                        ],
-                        recurring_motifs=manga_bible_dict.get("recurring_motifs", []),
-                        chapter_plans=[
-                            ChapterPlan(**p) for p in manga_bible_dict.get("chapter_plans", [])
-                            if isinstance(p, dict)
-                        ],
-                    )
-                    await summary_doc.save()
-                except Exception as e:
-                    logger.warning(f"Could not save manga bible to DB (non-fatal): {e}")
-        except Exception as e:
-            logger.warning(f"Manga bible failed (non-fatal, will use fallback): {e}")
-
-        await update_job_status(
-            self.request.id, "progress", 55,
-            "Story bible ready! Drawing manga panels..."
-        )
-
-        # STAGE 4: Manga panels — uses bible for coherent characters and visuals
+        # ============================================================
+        # STAGE 2: THE ORCHESTRATOR — owns the entire creative pipeline
+        # (synopsis + bible + planning + parallel DSL generation)
+        # ============================================================
         summary_doc.status = ProcessingStatus.GENERATING
         await summary_doc.save()
 
-        def manga_progress(pct, msg):
-            sync_update_job(self.request.id, "progress", 55 + int(pct * 0.15), msg)
+        from app.agents.orchestrator import MangaOrchestrator
+        from app.agents.credit_tracker import CreditTracker
 
-        manga_chapters, manga_cost = await generate_manga_for_book(
-            book_id=book_id,
-            canonical_chapters=canonical_chapters,
-            style=summary_style,
-            llm_client=llm,
-            manga_bible=manga_bible_dict or None,
-            progress_callback=manga_progress,
+        credit_tracker = CreditTracker(
+            api_key=api_key,
+            model=llm.model,
         )
 
-        summary_doc.manga_chapters = manga_chapters
-        total_cost += manga_cost.get("estimated_cost_usd", 0)
+        # Persistent cancel-check connection
+        from pymongo import MongoClient
+        from app.config import get_settings as _cancel_settings
+        _cancel_s = _cancel_settings()
+        _cancel_client = MongoClient(_cancel_s.mongodb_url)
+        _cancel_db = _cancel_client[_cancel_s.db_name]
+        _cancel_task_id = self.request.id
+
+        def check_cancel():
+            try:
+                job = _cancel_db["job_statuses"].find_one(
+                    {"celery_task_id": _cancel_task_id}
+                )
+                return job and job.get("status") == "cancelled"
+            except Exception:
+                return False
+
+        def orch_progress(pct, msg, detail=None):
+            # Orchestrator: 40-90% of overall pipeline
+            mapped_pct = 40 + int(pct * 0.50)
+            cost_info = ""
+            if detail and detail.get("cost"):
+                cost_info = f" (${detail['cost'].get('run_cost', 0):.4f})"
+            sync_update_job(
+                self.request.id, "progress", mapped_pct,
+                f"{msg}{cost_info}",
+            )
+
+        orchestrator = MangaOrchestrator(
+            llm_client=llm,
+            style=summary_style,
+            credit_tracker=credit_tracker,
+            progress_callback=orch_progress,
+            cancel_check=check_cancel,
+            image_budget=5,
+            max_concurrent=4,
+        )
+
+        orch_result = await orchestrator.run(
+            canonical_chapters=canonical_chapters,
+            # Don't pass synopsis/bible — let orchestrator generate them
+            book_synopsis=None,
+            manga_bible=None,
+        )
+
+        # Store results from the orchestrator
+        summary_doc.living_panels = orch_result.living_panels
+        total_cost += orch_result.cost_snapshot.get("run_cost", 0)
+
+        # Store the manga bible the orchestrator produced
+        manga_bible_dict = orch_result.manga_bible or {}
+        if manga_bible_dict:
+            try:
+                summary_doc.manga_bible = MangaBible(
+                    world_description=manga_bible_dict.get("world_description", ""),
+                    color_palette=manga_bible_dict.get("color_palette", ""),
+                    characters=[
+                        CharacterProfile(**c) for c in manga_bible_dict.get("characters", [])
+                        if isinstance(c, dict)
+                    ],
+                    recurring_motifs=manga_bible_dict.get("recurring_motifs", []),
+                    chapter_plans=[
+                        ChapterPlan(**p) for p in manga_bible_dict.get("chapter_plans", [])
+                        if isinstance(p, dict)
+                    ],
+                )
+            except Exception as e:
+                logger.warning(f"Could not save manga bible to DB (non-fatal): {e}")
+
         await summary_doc.save()
 
-        # STAGE 5: Living Panel DSL Generation (Orchestrator)
-        # Wrapped in try/except — if this fails, we still have static manga panels
-        orch_result = None
+        # Clean up cancel connection
         try:
-            await update_job_status(
-                self.request.id, "progress", 70,
-                "Bringing panels to life..."
-            )
-            logger.info("Starting Living Panel orchestrator (Stage 5)")
+            _cancel_client.close()
+        except Exception:
+            pass
 
-            from app.agents.orchestrator import MangaOrchestrator
-            from app.agents.credit_tracker import CreditTracker
-
-            credit_tracker = CreditTracker(
-                api_key=api_key,
-                model=llm.model,
-            )
-
-            # Persistent cancel-check connection
-            from pymongo import MongoClient
-            from app.config import get_settings as _cancel_settings
-            _cancel_s = _cancel_settings()
-            _cancel_client = MongoClient(_cancel_s.mongodb_url)
-            _cancel_db = _cancel_client[_cancel_s.db_name]
-            _cancel_task_id = self.request.id
-
-            def check_cancel():
-                try:
-                    job = _cancel_db["job_statuses"].find_one(
-                        {"celery_task_id": _cancel_task_id}
-                    )
-                    return job and job.get("status") == "cancelled"
-                except Exception:
-                    return False
-
-            def living_progress(pct, msg, detail=None):
-                mapped_pct = 70 + int(pct * 0.20)
-                cost_info = ""
-                if detail and detail.get("cost"):
-                    cost_info = f" (${detail['cost'].get('run_cost', 0):.4f})"
-                sync_update_job(
-                    self.request.id, "progress", mapped_pct,
-                    f"{msg}{cost_info}",
-                )
-
-            orchestrator = MangaOrchestrator(
-                llm_client=llm,
-                style=summary_style,
-                credit_tracker=credit_tracker,
-                progress_callback=living_progress,
-                cancel_check=check_cancel,
-                image_budget=5,
-                max_concurrent=4,
-            )
-
-            orch_result = await orchestrator.run(
-                canonical_chapters=canonical_chapters,
-                book_synopsis=book_synopsis,
-                manga_bible=manga_bible_dict or {},
-            )
-
-            # Store living panels
-            summary_doc.living_panels = orch_result.living_panels
-            total_cost += orch_result.cost_snapshot.get("run_cost", 0)
+        if orch_result.cancelled:
+            summary_doc.status = ProcessingStatus.COMPLETE
+            summary_doc.updated_at = datetime.utcnow()
             await summary_doc.save()
-
-            if orch_result.cancelled:
-                summary_doc.status = ProcessingStatus.COMPLETE
-                summary_doc.updated_at = datetime.utcnow()
-                await summary_doc.save()
-                await update_job_status(
-                    self.request.id, "success", 100,
-                    f"Cancelled early. {orch_result.panels_generated} living panels saved. Cost: ~${total_cost:.4f}",
-                    result_id=str(summary_doc.id),
-                )
-                return
-
-            try:
-                _cancel_client.close()
-            except Exception:
-                pass
-
-            logger.info(
-                f"Living panels: {orch_result.panels_generated} ok, "
-                f"{orch_result.panels_failed} fallback, "
-                f"{orch_result.total_time_s:.1f}s"
-            )
-        except Exception as e:
-            logger.error(f"Living Panel orchestrator FAILED (non-fatal, continuing with static manga): {e}", exc_info=True)
-            # Non-fatal: static manga panels are still available
             await update_job_status(
-                self.request.id, "progress", 90,
-                f"Living panels skipped (error). Static manga is still available."
+                self.request.id, "success", 100,
+                f"Cancelled early. {orch_result.panels_generated} living panels saved. Cost: ~${total_cost:.4f}",
+                result_id=str(summary_doc.id),
             )
+            return
 
-        # STAGE 6 (optional): AI image generation for splash panels
-        if generate_images:
+        logger.info(
+            f"Orchestrator done: {orch_result.panels_generated} panels ok, "
+            f"{orch_result.panels_failed} fallback, "
+            f"{orch_result.total_time_s:.1f}s"
+        )
+
+        # ============================================================
+        # STAGE 3 (optional): AI image generation for splash panels
+        # ============================================================
+        if generate_images and summary_doc.manga_chapters:
             from app.image_generator import generate_images_for_summary
             from app.config import get_settings as _gs
             img_settings = _gs()
@@ -609,7 +503,7 @@ def generate_summary_task(
         n_living = len(summary_doc.living_panels) if hasattr(summary_doc, 'living_panels') and summary_doc.living_panels else 0
         await update_job_status(
             self.request.id, "success", 100,
-            f"Done! {len(manga_chapters)} chapters, {n_living} living panels, {n_chars} characters. Cost: ~${total_cost:.4f}",
+            f"Done! {n_living} living panels, {n_chars} characters, {len(canonical_chapters)} chapters. Cost: ~${total_cost:.4f}",
             result_id=str(summary_doc.id),
         )
 
@@ -644,10 +538,7 @@ def generate_summary_task(
     run_async(_run_guarded())
 
 
-# ============================================================
 # TASK: ON-DEMAND REEL GENERATION
-# Triggered explicitly by user after manga summary is complete.
-# ============================================================
 
 @celery_app.task(bind=True, name="generate_reels_task")
 def generate_reels_task(

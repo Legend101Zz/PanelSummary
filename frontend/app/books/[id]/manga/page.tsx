@@ -125,8 +125,23 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
     );
   }
 
-  // Classic mode
+  // Classic mode (backward compat for old summaries with static manga pages)
   if (mode === "classic") {
+    const hasStaticPages = summary.manga_chapters && summary.manga_chapters.length > 0;
+    if (!hasStaticPages) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "#0F0E17" }}>
+          <p style={{ color: "#A8A6C0", fontSize: 14 }}>No static manga pages available for this summary.</p>
+          <button
+            onClick={() => setMode("living")}
+            className="px-4 py-2 rounded"
+            style={{ background: "#F5A623", color: "#0F0E17", fontWeight: 600, fontSize: 13 }}
+          >
+            Switch to Living Manga
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="relative">
         <ModeToggle mode={mode} onToggle={setMode} />
