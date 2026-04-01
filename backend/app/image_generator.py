@@ -20,11 +20,27 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# Primary and fallback image models
-IMAGE_MODELS = [
-    "google/gemini-3.1-flash-image-preview",
-    "black-forest-labs/flux.2-klein-4b",
+# Available image generation models (cheapest first — all via OpenRouter)
+IMAGE_GENERATION_MODELS = [
+    {
+        "id": "google/gemini-2.5-flash-image",
+        "name": "Gemini 2.5 Flash Image (Nano Banana) — $2.50/1M",
+        "modalities": ["image", "text"],
+    },
+    {
+        "id": "google/gemini-3.1-flash-image-preview",
+        "name": "Gemini 3.1 Flash Image Preview (Nano Banana 2) — $3/1M",
+        "modalities": ["image", "text"],
+    },
+    {
+        "id": "google/gemini-3-pro-image-preview",
+        "name": "Gemini 3 Pro Image Preview (Nano Banana Pro) — $12/1M",
+        "modalities": ["image", "text"],
+    },
 ]
+
+DEFAULT_IMAGE_MODEL = IMAGE_GENERATION_MODELS[0]["id"]  # cheapest by default
+IMAGE_MODELS = [m["id"] for m in IMAGE_GENERATION_MODELS]
 
 STYLE_SUFFIXES = {
     "manga":       "manga illustration, black and white ink style, bold outlines, dynamic composition, expressive characters",
@@ -41,10 +57,11 @@ async def generate_panel_image(
     api_key: str,
     output_path: str,
     panel_type: str = "scene",
+    image_model: str = None,
 ) -> bool:
     """
     Generate a manga panel image via OpenRouter's image generation API.
-    Tries models in order, returns True on first success.
+    Uses `image_model` as primary, falls back to cheaper models on failure.
     """
     style_hint = STYLE_SUFFIXES.get(style, STYLE_SUFFIXES["manga"])
     prompt = f"{visual_description}. Style: {style_hint}."[:500]
@@ -52,7 +69,11 @@ async def generate_panel_image(
     # Aspect ratio: portrait for title/action, square for dialogue/scene
     aspect = "2:3" if panel_type in ("title", "action") else "1:1"
 
-    for model in IMAGE_MODELS:
+    # Build ordered model list: user-chosen first, then rest as fallback
+    primary = image_model or DEFAULT_IMAGE_MODEL
+    ordered = [primary] + [m for m in IMAGE_MODELS if m != primary]
+
+    for model in ordered:
         # Gemini image models use modalities=["image","text"]
         # Flux models use modalities=["image"]
         modalities = ["image", "text"] if "gemini" in model else ["image"]
@@ -138,6 +159,7 @@ async def generate_images_for_summary(
     image_base_dir: str,
     progress_callback=None,
     max_images: int = MAX_IMAGES_PER_BOOK,
+    image_model: str = None,
 ) -> tuple[list, int, float]:
     """
     Generate images ONLY for splash panels (page-based layout).
@@ -187,6 +209,7 @@ async def generate_images_for_summary(
             api_key=api_key,
             output_path=out_path,
             panel_type="splash",
+            image_model=image_model,
         )
         if ok:
             panel.image_id = f"{book_id}/{fname}"

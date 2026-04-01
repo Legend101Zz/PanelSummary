@@ -18,7 +18,7 @@ import time
 from typing import Optional
 
 import tiktoken
-from openai import AsyncOpenAI, APIError
+from openai import AsyncOpenAI, APIError, RateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +167,14 @@ class LLMClient:
 
         except APIError as e:
             logger.error(f"LLM API error: {e}")
+            # 429 — surface immediately so the worker can mark the task failed
+            status = getattr(e, "status_code", None)
+            if status == 429:
+                raise RateLimitError(
+                    f"Rate limit hit on model '{self.model}'. "
+                    "Switch to a less-loaded model (e.g. google/gemini-2.0-flash-001 or qwen/qwq-32b) "
+                    "or add credits at openrouter.ai/settings/integrations."
+                ) from e
             raise
 
     def _parse_json_response(self, content: str) -> Optional[dict | list]:
@@ -263,6 +271,8 @@ class LLMClient:
 
                 return result
 
+            except RateLimitError:
+                raise  # Never retry 429s — fail fast so the worker marks it as failed
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"LLM call failed (attempt {attempt + 1}): {e}")

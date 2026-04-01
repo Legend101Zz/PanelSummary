@@ -268,8 +268,9 @@ def generate_summary_task(
     provider: str = "openrouter",
     model: str = None,
     style: str = "manga",
-    chapter_range: list = None,     # [start_idx, end_idx] inclusive; None = all
-    generate_images: bool = False,  # run AI image gen after panels
+    chapter_range: list = None,       # [start_idx, end_idx] inclusive; None = all
+    generate_images: bool = False,    # run AI image gen after panels
+    image_model: str = None,          # image generation model (OpenRouter)
 ):
     """
     Background task: Generate canonical summaries + manga panels + reels.
@@ -497,6 +498,7 @@ def generate_summary_task(
                 api_key=api_key,
                 image_base_dir=img_settings.image_dir,
                 progress_callback=img_progress,
+                image_model=image_model,
             )
             summary_doc.manga_chapters = updated_chapters
             total_cost += img_cost
@@ -517,7 +519,33 @@ def generate_summary_task(
 
         logger.info(f"Summary generation complete for book {book_id}")
 
-    run_async(_run())
+    async def _run_guarded():
+        """Wraps _run() so ANY unhandled exception marks the summary as failed."""
+        from app.models import BookSummary, ProcessingStatus
+        try:
+            await _run()
+        except Exception as exc:
+            err_msg = str(exc)
+            logger.error(f"Summary task FAILED for {summary_id}: {err_msg}", exc_info=True)
+            try:
+                await get_db()
+                summary_doc = await BookSummary.get(summary_id)
+                if summary_doc:
+                    summary_doc.status = ProcessingStatus.FAILED
+                    summary_doc.error_message = err_msg[:500]
+                    await summary_doc.save()
+            except Exception as save_err:
+                logger.error(f"Could not mark summary as failed: {save_err}")
+            try:
+                await update_job_status(
+                    self.request.id, "failure", 0,
+                    f"Failed: {err_msg[:200]}", error=err_msg[:500]
+                )
+            except Exception:
+                pass
+            raise  # Still propagate so Celery records the task as FAILURE
+
+    run_async(_run_guarded())
 
 
 # ============================================================

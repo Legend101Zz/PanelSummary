@@ -109,10 +109,11 @@ class UploadResponse(BaseModel):
 class SummarizeRequest(BaseModel):
     api_key: str                        # User's OpenAI or OpenRouter key
     provider: str = "openrouter"        # "openai" or "openrouter"
-    model: Optional[str] = None         # specific model ID
+    model: Optional[str] = None         # specific LLM model ID
     style: str = "manga"
     chapter_range: Optional[list[int]] = None   # [start_idx, end_idx] inclusive, None=all
     generate_images: bool = False       # run AI image gen per panel (costs extra)
+    image_model: Optional[str] = None  # image generation model (defaults to cheapest)
 
 
 class UpdateTitleRequest(BaseModel):
@@ -370,6 +371,7 @@ async def start_summarization(
         style=request.style,
         chapter_range=request.chapter_range,
         generate_images=request.generate_images,
+        image_model=request.image_model,
     )
 
     # Track job status
@@ -728,6 +730,13 @@ async def generate_reels_for_summary(summary_id: str, request: GenerateReelsRequ
     await job_status.insert()
 
     return {"task_id": task.id, "message": "Reel generation started"}
+
+
+@app.get("/image-models")
+async def get_image_models():
+    """Return the list of supported image generation models (cheapest first)."""
+    from app.image_generator import IMAGE_GENERATION_MODELS, DEFAULT_IMAGE_MODEL
+    return {"models": IMAGE_GENERATION_MODELS, "default": DEFAULT_IMAGE_MODEL}
 
 
 @app.get("/openrouter/models")

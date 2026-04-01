@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, ChevronDown, X, Zap, ExternalLink } from "lucide-react";
+import { Search, ChevronDown, X, ExternalLink } from "lucide-react";
 import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -81,20 +81,11 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     if (open) load();
   }, [open, load]);
 
-  const [visibleCount, setVisibleCount] = useState(25);
+  const [visibleCount, setVisibleCount] = useState(5);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Reset visible count when search changes
-  useEffect(() => setVisibleCount(25), [search]);
-
-  // Infinite scroll inside the dropdown
-  const handleScroll = useCallback(() => {
-    const el = listRef.current;
-    if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) {
-      setVisibleCount(n => n + 25);
-    }
-  }, []);
+  useEffect(() => setVisibleCount(5), [search]);
 
   const allFiltered = models.filter(m => {
     const q = search.toLowerCase();
@@ -173,7 +164,7 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
             </div>
 
             {/* List */}
-            <div ref={listRef} className="overflow-y-auto" style={{ maxHeight: "280px" }} onScroll={handleScroll}>
+            <div ref={listRef} className="overflow-y-auto" style={{ maxHeight: "280px" }}>
               {loading ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   LOADING MODELS…
@@ -230,6 +221,20 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               )}
             </div>
 
+            {/* Load more — outside scroll container so it never bounces */}
+            {!loading && allFiltered.length > visibleCount && (
+              <button
+                onMouseDown={e => e.preventDefault()}
+                onClick={() => setVisibleCount(n => n + 5)}
+                className="w-full py-2 text-label transition-colors"
+                style={{ fontSize: "9px", color: "var(--amber)", background: "var(--surface-2)", borderTop: "1px solid var(--border)" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,166,35,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "var(--surface-2)")}
+              >
+                LOAD MORE · {allFiltered.length - visibleCount} remaining
+              </button>
+            )}
+
             {/* Footer */}
             <div className="flex items-center justify-between px-3 py-2 border-t" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
               <button
@@ -238,9 +243,6 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
                 style={{ fontSize: "9px", color: "var(--text-3)" }}
               >
                 {showAll ? "Show featured only" : `Show all ${models.length} models`}
-              {showAll && allFiltered.length > visibleCount && (
-                <span style={{ color: "var(--amber)" }}> · {allFiltered.length - visibleCount} more ↓</span>
-              )}
               </button>
               <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1 text-label hover:underline"

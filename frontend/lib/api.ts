@@ -117,6 +117,7 @@ export async function startSummarization(
     style: SummaryStyle;
     chapterRange?: [number, number] | null;
     generateImages?: boolean;
+    imageModel?: string;
   }
 ): Promise<{ summary_id: string; task_id: string; message: string }> {
   const response = await api.post(`/books/${bookId}/summarize`, {
@@ -126,7 +127,16 @@ export async function startSummarization(
     style: options.style,
     chapter_range: options.chapterRange ?? null,
     generate_images: options.generateImages ?? false,
+    image_model: options.imageModel ?? null,
   });
+  return response.data;
+}
+
+export async function getImageModels(): Promise<{
+  models: { id: string; name: string; modalities: string[] }[];
+  default: string;
+}> {
+  const response = await api.get("/image-models");
   return response.data;
 }
 

@@ -17,6 +17,7 @@ import {
 import { useAppStore } from "@/lib/store";
 import { STYLE_OPTIONS } from "@/lib/types";
 import { ModelSelector } from "@/components/ModelSelector";
+import { getImageModels } from "@/lib/api";
 import { GenerationFacts } from "@/components/GenerationFacts";
 import type { Book, SummaryListItem, SummaryStyle, LLMProvider } from "@/lib/types";
 
@@ -231,6 +232,12 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
   const [keyError, setKeyError]     = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genImages, setGenImages]   = useState(false);
+  const [imageModel, setImageModel] = useState("google/gemini-2.5-flash-image");
+  const [imageModelOptions, setImageModelOptions] = useState<{id:string;name:string}[]>([
+    { id: "google/gemini-2.5-flash-image",            name: "Gemini 2.5 Flash Image — $2.50/1M (cheapest)" },
+    { id: "google/gemini-3.1-flash-image-preview",    name: "Gemini 3.1 Flash Image Preview — $3/1M" },
+    { id: "google/gemini-3-pro-image-preview",        name: "Gemini 3 Pro Image Preview — $12/1M (best quality)" },
+  ]);
   const [chapterRange, setChapterRange] = useState<[number, number] | null>(null);
   const [showLargePdf, setShowLargePdf] = useState(false);
   const [rangeChosen, setRangeChosen]   = useState(false);
@@ -291,6 +298,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
         style: selectedStyle,
         chapterRange,
         generateImages: genImages,
+        imageModel: genImages ? imageModel : undefined,
       });
       setTaskId(res.task_id);
       push(2, `Task received · model: ${localModel}`);
@@ -394,7 +402,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
           <div>
             <p className="font-label" style={{ fontSize: "10px", color: "var(--text-1)" }}>Generate Panel Images</p>
             <p className="font-label" style={{ fontSize: "8px", color: "var(--text-3)" }}>
-              Uses Gemini via OpenRouter · free tier · ~10s/panel
+              Max {4} splash images · via OpenRouter
             </p>
           </div>
         </div>
@@ -405,6 +413,38 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
             className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow" />
         </button>
       </label>
+
+      {/* Image model picker — shown only when image gen is enabled */}
+      <AnimatePresence>
+        {genImages && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="flex flex-col gap-1.5 pl-2 border-l-2" style={{ borderColor: "var(--teal)" }}>
+              <p className="text-label" style={{ fontSize: "9px", color: "var(--teal)" }}>IMAGE MODEL</p>
+              {imageModelOptions.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => !generating && setImageModel(opt.id)}
+                  disabled={generating}
+                  className="w-full text-left px-3 py-2 border transition-colors"
+                  style={{
+                    borderColor: imageModel === opt.id ? "var(--teal)" : "var(--border)",
+                    background: imageModel === opt.id ? "rgba(0,191,165,0.08)" : "var(--surface-2)",
+                  }}
+                >
+                  <p className="font-label" style={{ fontSize: "9px", color: imageModel === opt.id ? "var(--teal)" : "var(--text-2)" }}>
+                    {opt.name}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Large PDF warning (inline, collapsible) */}
       <AnimatePresence>
