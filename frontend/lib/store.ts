@@ -70,7 +70,7 @@ export const useAppStore = create<AppState>()(
       apiKey: null,
       provider: "openai",
       model: null,
-      setApiKey: (key, provider, model = null) =>
+      setApiKey: (key, provider, model = undefined) =>
         set({ apiKey: key, provider, model }),
       clearApiKey: () => set({ apiKey: null }),
 

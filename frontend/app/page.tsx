@@ -455,7 +455,7 @@ export default function HomePage() {
                       }}
                     >
                       {book.cover_image_id
-                        ? <img src={getImageUrl(book.cover_image_id)} alt={book.title} className="w-full h-32 object-cover" />
+                        ? <img src={getImageUrl(book.cover_image_id) ?? undefined} alt={book.title} className="w-full h-32 object-cover" />
                         : <div className="w-full h-32 flex items-center justify-center" style={{ background: "var(--surface-2)" }}>
                             <BookOpen size={20} style={{ color: "var(--text-3)" }} />
                           </div>

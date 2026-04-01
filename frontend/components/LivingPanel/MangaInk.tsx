@@ -372,7 +372,7 @@ export function MangaBubble({
   className = "",
 }: {
   children: React.ReactNode;
-  variant?: "speech" | "thought" | "shout" | "whisper" | "narrator";
+  variant?: "speech" | "thought" | "shout" | "whisper" | "narrator" | "internal";
   tail?: "left" | "right" | "bottom" | "top" | "none";
   maxWidth?: number;
   className?: string;

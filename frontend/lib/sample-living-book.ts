@@ -741,7 +741,7 @@ export const PANEL_06_GLITCH: LivingPanelDSL = {
       layers: [
         {
           id: "bg", type: "background", opacity: 1,
-          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "screentone", patternOpacity: 0.08 },
+          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "manga_screen", patternOpacity: 0.08 },
         },
         {
           id: "old-text", type: "text",
@@ -788,7 +788,7 @@ export const PANEL_06_GLITCH: LivingPanelDSL = {
         {
           id: "impact", type: "effect",
           x: "50%", y: "50%", opacity: 0,
-          props: { effect: "impact_burst", color: "#E8191A", size: 300 },
+          props: { effect: "impact_burst", color: "#E8191A", intensity: 0.8 },
         },
         {
           id: "break-text", type: "text",
@@ -798,13 +798,12 @@ export const PANEL_06_GLITCH: LivingPanelDSL = {
             fontSize: "clamp(2rem, 6vw, 3.5rem)",
             fontFamily: "display",
             color: "#1A1825",
-            fontWeight: "900",
           },
         },
         {
           id: "sfx", type: "effect",
           x: "65%", y: "25%", opacity: 0,
-          props: { effect: "sfx", text: "\u30d0\u30ad\u30c3!!", color: "#E8191A", size: 100, rotation: -12 },
+          props: { effect: "sfx", sfxText: "\u30d0\u30ad\u30c3!!", color: "#E8191A", sfxSize: 100, sfxRotate: -12 },
         },
       ],
       timeline: [
@@ -843,6 +842,7 @@ export const PANEL_07_DATA: LivingPanelDSL = {
       cells: [
         {
           id: "title-cell",
+          position: "left",
           layers: [
             {
               id: "title", type: "text",
@@ -873,6 +873,7 @@ export const PANEL_07_DATA: LivingPanelDSL = {
         },
         {
           id: "data-cell",
+          position: "right",
           layers: [
             {
               id: "growth-data", type: "data_block",
@@ -886,6 +887,7 @@ export const PANEL_07_DATA: LivingPanelDSL = {
                   { label: "Day 365", value: "37.78" },
                 ],
                 accentColor: "#E8191A",
+                layout: "list",
                 animateIn: "stagger",
               },
             },
@@ -935,7 +937,8 @@ export const PANEL_08_CUTS: LivingPanelDSL = {
       cells: [
         {
           id: "cell-morning",
-          border: { color: "#F0EEE820", width: 1, style: "solid" },
+          position: "tl",
+          style: { border: "1px solid #F0EEE820" },
           layers: [
             {
               id: "t1", type: "text",
@@ -957,7 +960,8 @@ export const PANEL_08_CUTS: LivingPanelDSL = {
         },
         {
           id: "cell-coffee",
-          border: { color: "#F5A62340", width: 1, style: "solid" },
+          position: "tr",
+          style: { border: "1px solid #F5A62340" },
           layers: [
             {
               id: "t2", type: "text",
@@ -979,7 +983,8 @@ export const PANEL_08_CUTS: LivingPanelDSL = {
         },
         {
           id: "cell-lunch",
-          border: { color: "#F0EEE820", width: 1, style: "solid" },
+          position: "bl",
+          style: { border: "1px solid #F0EEE820" },
           layers: [
             {
               id: "t3", type: "text",
@@ -1001,7 +1006,8 @@ export const PANEL_08_CUTS: LivingPanelDSL = {
         },
         {
           id: "cell-night",
-          border: { color: "#E8191A40", width: 1, style: "solid" },
+          position: "br",
+          style: { border: "1px solid #E8191A40" },
           layers: [
             {
               id: "t4", type: "text",

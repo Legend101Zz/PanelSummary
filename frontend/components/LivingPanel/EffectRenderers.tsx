@@ -21,7 +21,7 @@ export function EffectRenderer({ layer }: { layer: EffectLayer }) {
     case "speed_lines":
       return (
         <MangaSpeedLines
-          direction={props.direction === "horizontal" ? "horizontal" : props.direction === "vertical" ? "vertical" : "radial"}
+          direction={props.direction === "left" || props.direction === "right" ? "horizontal" : props.direction === "up" || props.direction === "down" ? "vertical" : "radial"}
           intensity={props.intensity ?? 0.5}
           ink={props.color || "#1A1825"}
         />
