@@ -260,6 +260,17 @@ export async function getReels(
 // ============================================================
 
 /**
+ * Get ALL Living Panel DSLs for a summary.
+ * Returns orchestrator-generated panels if available, fallback otherwise.
+ */
+export async function getAllLivingPanels(
+  summaryId: string,
+): Promise<{ summary_id: string; total_panels: number; living_panels: any[]; source: string }> {
+  const response = await api.get(`/summary/${summaryId}/all-living-panels`);
+  return response.data;
+}
+
+/**
  * Get Living Panel DSLs for a specific manga page.
  * Returns auto-generated fallback DSLs (no LLM needed).
  */
@@ -305,6 +316,27 @@ export async function generateLivingPanels(
 export function getImageUrl(imageId: string | null | undefined): string | null {
   if (!imageId) return null;
   return `${API_URL}/images/${imageId}`;
+}
+
+/**
+ * Check OpenRouter credits.
+ */
+export async function checkCredits(apiKey: string): Promise<{
+  total_credits: number;
+  used_credits: number;
+  remaining_credits: number;
+  error?: string;
+}> {
+  const response = await api.get(`/credits?api_key=${encodeURIComponent(apiKey)}`);
+  return response.data;
+}
+
+/**
+ * Cancel a running job.
+ */
+export async function cancelJob(taskId: string): Promise<{ message: string; cancelled: boolean }> {
+  const response = await api.post(`/jobs/${taskId}/cancel`);
+  return response.data;
 }
 
 /**

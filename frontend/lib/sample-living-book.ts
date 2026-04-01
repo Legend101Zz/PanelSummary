@@ -726,6 +726,325 @@ export const PANEL_05_TWO_MINUTE: LivingPanelDSL = {
 };
 
 // ============================================================
+// PAGE 6: GLITCH PANEL — "Breaking Old Patterns"
+// A panel that visually BREAKS to show habit disruption
+// ============================================================
+
+export const PANEL_06_GLITCH: LivingPanelDSL = {
+  version: "2.0",
+  canvas: { width: 800, height: 600, background: "#1A1825", mood: "dark" },
+  acts: [
+    {
+      id: "old-pattern",
+      duration_ms: 3000,
+      layout: { type: "full" },
+      layers: [
+        {
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 180, pattern: "screentone", patternOpacity: 0.08 },
+        },
+        {
+          id: "old-text", type: "text",
+          x: "20%", y: "35%", opacity: 0,
+          props: {
+            content: "You've been doing the same thing\nfor years.",
+            fontSize: "clamp(1rem, 3vw, 1.6rem)",
+            fontFamily: "body",
+            color: "#F0EEE8",
+            textAlign: "left",
+            maxWidth: "60%",
+            lineHeight: 1.6,
+            typewriter: true,
+            typewriterSpeed: 40,
+          },
+        },
+        {
+          id: "repeat-echo-1", type: "text",
+          x: "22%", y: "37%", opacity: 0,
+          props: { content: "the same thing", fontSize: "1rem", fontFamily: "body", color: "#F0EEE820" },
+        },
+        {
+          id: "repeat-echo-2", type: "text",
+          x: "24%", y: "39%", opacity: 0,
+          props: { content: "the same thing", fontSize: "1rem", fontFamily: "body", color: "#F0EEE810" },
+        },
+      ],
+      timeline: [
+        { at: 300, target: "old-text", animate: { opacity: [0, 1] }, duration: 800, easing: "ease-out" },
+        { at: 1500, target: "repeat-echo-1", animate: { opacity: [0, 0.15] }, duration: 600 },
+        { at: 1800, target: "repeat-echo-2", animate: { opacity: [0, 0.08] }, duration: 600 },
+      ],
+    },
+    {
+      id: "break-pattern",
+      duration_ms: 4000,
+      transition_in: { type: "cut", duration_ms: 100 },
+      layout: { type: "full" },
+      layers: [
+        {
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 180 },
+        },
+        {
+          id: "impact", type: "effect",
+          x: "50%", y: "50%", opacity: 0,
+          props: { effect: "impact_burst", color: "#E8191A", size: 300 },
+        },
+        {
+          id: "break-text", type: "text",
+          x: "15%", y: "40%", opacity: 0,
+          props: {
+            content: "BREAK IT.",
+            fontSize: "clamp(2rem, 6vw, 3.5rem)",
+            fontFamily: "display",
+            color: "#1A1825",
+            fontWeight: "900",
+          },
+        },
+        {
+          id: "sfx", type: "effect",
+          x: "65%", y: "25%", opacity: 0,
+          props: { effect: "sfx", text: "\u30d0\u30ad\u30c3!!", color: "#E8191A", size: 100, rotation: -12 },
+        },
+      ],
+      timeline: [
+        { at: 0, target: "impact", animate: { opacity: [0, 1] }, duration: 200, easing: "ease-out" },
+        { at: 100, target: "break-text", animate: { opacity: [0, 1] }, duration: 300, easing: "ease-out" },
+        { at: 200, target: "sfx", animate: { opacity: [0, 0.8] }, duration: 400 },
+      ],
+    },
+  ],
+  meta: {
+    panel_id: "ch2-pg0-p0",
+    narrative_beat: "Breaking old patterns — the moment of disruption",
+    content_type: "splash",
+  },
+};
+
+// ============================================================
+// PAGE 7: DATA CASCADE — "The 1% Rule"
+// A panel that visualizes compound growth as cascading data
+// ============================================================
+
+export const PANEL_07_DATA: LivingPanelDSL = {
+  version: "2.0",
+  canvas: { width: 800, height: 600, background: "#F2E8D5", mood: "light" },
+  acts: [
+    {
+      id: "the-math",
+      duration_ms: 6000,
+      layout: { type: "split-v" },
+      layers: [
+        {
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#F2E8D5", "#EDE0CC"], gradientAngle: 160, pattern: "crosshatch", patternOpacity: 0.03 },
+        },
+      ],
+      cells: [
+        {
+          id: "title-cell",
+          layers: [
+            {
+              id: "title", type: "text",
+              x: "10%", y: "25%", opacity: 0,
+              props: {
+                content: "THE 1% RULE",
+                fontSize: "clamp(1.2rem, 3.5vw, 1.8rem)",
+                fontFamily: "display",
+                color: "#1A1825",
+                letterSpacing: "0.15em",
+              },
+            },
+            {
+              id: "subtitle", type: "text",
+              x: "10%", y: "55%", opacity: 0,
+              props: {
+                content: "1% better every day = 37x better in a year",
+                fontSize: "clamp(0.75rem, 2vw, 1rem)",
+                fontFamily: "body",
+                color: "#1A182570",
+              },
+            },
+          ],
+          timeline: [
+            { at: 300, target: "title", animate: { opacity: [0, 1] }, duration: 600, easing: "ease-out" },
+            { at: 800, target: "subtitle", animate: { opacity: [0, 1] }, duration: 600 },
+          ],
+        },
+        {
+          id: "data-cell",
+          layers: [
+            {
+              id: "growth-data", type: "data_block",
+              x: "8%", y: "10%", opacity: 0,
+              props: {
+                items: [
+                  { label: "Day 1", value: "1.00" },
+                  { label: "Day 30", value: "1.35" },
+                  { label: "Day 90", value: "2.45" },
+                  { label: "Day 180", value: "6.00" },
+                  { label: "Day 365", value: "37.78" },
+                ],
+                accentColor: "#E8191A",
+                animateIn: "stagger",
+              },
+            },
+          ],
+          timeline: [
+            { at: 1200, target: "growth-data", animate: { opacity: [0, 1] }, duration: 800, easing: "ease-out" },
+          ],
+        },
+      ],
+      timeline: [],
+    },
+  ],
+  meta: {
+    panel_id: "ch2-pg1-p0",
+    narrative_beat: "The mathematics of marginal improvement",
+    content_type: "data",
+  },
+};
+
+// ============================================================
+// PAGE 8: SPLIT-SECOND CUTS — "Habit Stacking"
+// Rapid-fire multi-panel cuts showing a day's habits
+// ============================================================
+
+export const PANEL_08_CUTS: LivingPanelDSL = {
+  version: "2.0",
+  canvas: { width: 800, height: 600, background: "#1A1825", mood: "dark" },
+  acts: [
+    {
+      id: "habit-stack",
+      duration_ms: 5000,
+      layout: {
+        type: "cuts",
+        cuts: [
+          { direction: "v", position: 0.5, angle: 2 },
+          { direction: "h", position: 0.5, angle: -1 },
+        ],
+        gap: 4,
+        stagger_ms: 300,
+      },
+      layers: [
+        {
+          id: "bg", type: "background", opacity: 1,
+          props: { gradient: ["#1A1825", "#0F0E17"], gradientAngle: 160, pattern: "halftone", patternOpacity: 0.06 },
+        },
+      ],
+      cells: [
+        {
+          id: "cell-morning",
+          border: { color: "#F0EEE820", width: 1, style: "solid" },
+          layers: [
+            {
+              id: "t1", type: "text",
+              x: "15%", y: "35%", opacity: 0,
+              props: {
+                content: "After I wake up,\nI will meditate.",
+                fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+                fontFamily: "body",
+                color: "#F0EEE8",
+                lineHeight: 1.5,
+                typewriter: true,
+                typewriterSpeed: 30,
+              },
+            },
+          ],
+          timeline: [
+            { at: 400, target: "t1", animate: { opacity: [0, 1] }, duration: 500 },
+          ],
+        },
+        {
+          id: "cell-coffee",
+          border: { color: "#F5A62340", width: 1, style: "solid" },
+          layers: [
+            {
+              id: "t2", type: "text",
+              x: "15%", y: "35%", opacity: 0,
+              props: {
+                content: "After I pour coffee,\nI will journal.",
+                fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+                fontFamily: "body",
+                color: "#F5A623",
+                lineHeight: 1.5,
+                typewriter: true,
+                typewriterSpeed: 30,
+              },
+            },
+          ],
+          timeline: [
+            { at: 700, target: "t2", animate: { opacity: [0, 1] }, duration: 500 },
+          ],
+        },
+        {
+          id: "cell-lunch",
+          border: { color: "#F0EEE820", width: 1, style: "solid" },
+          layers: [
+            {
+              id: "t3", type: "text",
+              x: "15%", y: "35%", opacity: 0,
+              props: {
+                content: "After I eat lunch,\nI will read 2 pages.",
+                fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+                fontFamily: "body",
+                color: "#F0EEE8",
+                lineHeight: 1.5,
+                typewriter: true,
+                typewriterSpeed: 30,
+              },
+            },
+          ],
+          timeline: [
+            { at: 1000, target: "t3", animate: { opacity: [0, 1] }, duration: 500 },
+          ],
+        },
+        {
+          id: "cell-night",
+          border: { color: "#E8191A40", width: 1, style: "solid" },
+          layers: [
+            {
+              id: "t4", type: "text",
+              x: "15%", y: "30%", opacity: 0,
+              props: {
+                content: "After I close my laptop,\nI will stretch.",
+                fontSize: "clamp(0.7rem, 2vw, 0.95rem)",
+                fontFamily: "body",
+                color: "#E8191A",
+                lineHeight: 1.5,
+                typewriter: true,
+                typewriterSpeed: 30,
+              },
+            },
+            {
+              id: "label", type: "text",
+              x: "15%", y: "70%", opacity: 0,
+              props: {
+                content: "HABIT STACKING",
+                fontSize: "0.55rem",
+                fontFamily: "label",
+                color: "#F0EEE830",
+                letterSpacing: "0.2em",
+              },
+            },
+          ],
+          timeline: [
+            { at: 1300, target: "t4", animate: { opacity: [0, 1] }, duration: 500 },
+            { at: 2000, target: "label", animate: { opacity: [0, 1] }, duration: 800 },
+          ],
+        },
+      ],
+      timeline: [],
+    },
+  ],
+  meta: {
+    panel_id: "ch2-pg2-p0",
+    narrative_beat: "Building a chain of habits — each one triggers the next",
+    content_type: "montage",
+  },
+};
+
+// ============================================================
 // ALL SAMPLE PANELS
 // ============================================================
 
@@ -735,6 +1054,9 @@ export const SAMPLE_LIVING_PANELS: LivingPanelDSL[] = [
   PANEL_03_IDENTITY,
   PANEL_04_ENVIRONMENT,
   PANEL_05_TWO_MINUTE,
+  PANEL_06_GLITCH,
+  PANEL_07_DATA,
+  PANEL_08_CUTS,
 ];
 
 export function getSamplePanel(index: number): LivingPanelDSL {

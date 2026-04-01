@@ -15,7 +15,7 @@ import { useEffect, useState, use, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { getSummary, getLivingPanels } from "@/lib/api";
+import { getSummary, getAllLivingPanels } from "@/lib/api";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
 import type { Summary } from "@/lib/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
@@ -56,8 +56,19 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           setError("Summary not yet complete");
         } else {
           setSummary(data);
-          return getLivingPanels(summaryId, 0, 0)
-            .then((lpData) => setLivingPanels(lpData.living_panels as LivingPanelDSL[]))
+          // Try to load orchestrator-generated living panels
+          return getAllLivingPanels(summaryId)
+            .then((lpData) => {
+              if (lpData.living_panels && lpData.living_panels.length > 0) {
+                setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
+                if (lpData.source === "fallback") {
+                  setDemoMode(false); // fallback but still real data
+                }
+              } else {
+                setDemoMode(true);
+                setLivingPanels(SAMPLE_LIVING_PANELS);
+              }
+            })
             .catch(() => {
               setDemoMode(true);
               setLivingPanels(SAMPLE_LIVING_PANELS);

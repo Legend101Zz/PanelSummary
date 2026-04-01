@@ -218,6 +218,7 @@ class BookSummary(Document):
 
     # Generated outputs (derived from canonical + bible)
     manga_chapters: list[MangaChapterSummary] = []
+    living_panels: list[dict] = []  # Living Panel DSL v2.0 dicts (from orchestrator)
     reels: list[ReelLesson] = []
 
     # Generation options
