@@ -246,8 +246,6 @@ class JobStatus(Document):
     """
     Tracks the status of background jobs.
     Frontend polls /status/{job_id} to show progress bar.
-
-    MongoDB collection: 'job_statuses'
     """
     celery_task_id: Indexed(str, unique=True)  # type: ignore
     job_type: str          # "parse_pdf" | "summarize" | "generate_manga" | "generate_reels"
@@ -256,6 +254,13 @@ class JobStatus(Document):
     message: str = ""      # Human-readable status message
     result_id: Optional[str] = None  # ID of the created Book or BookSummary
     error: Optional[str] = None
+
+    # Structured pipeline tracking
+    phase: Optional[str] = None               # current phase: credits|analysis|planning|generating|assembling|images|complete
+    panels_done: int = 0                      # panels completed so far
+    panels_total: int = 0                     # total panels planned
+    cost_so_far: float = 0.0                  # accumulated cost in USD
+    estimated_total_cost: Optional[float] = None  # estimated final cost
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

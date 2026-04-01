@@ -133,6 +133,12 @@ class JobStatusResponse(BaseModel):
     message: str
     result_id: Optional[str] = None
     error: Optional[str] = None
+    # Pipeline tracking
+    phase: Optional[str] = None
+    panels_done: int = 0
+    panels_total: int = 0
+    cost_so_far: float = 0.0
+    estimated_total_cost: Optional[float] = None
 
 
 # ============================================================
@@ -419,6 +425,11 @@ async def get_job_status(task_id: str):
         message=job.message,
         result_id=job.result_id,
         error=job.error,
+        phase=job.phase,
+        panels_done=job.panels_done,
+        panels_total=job.panels_total,
+        cost_so_far=job.cost_so_far,
+        estimated_total_cost=job.estimated_total_cost,
     )
 
 

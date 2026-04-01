@@ -150,52 +150,79 @@ class MangaOrchestrator:
 
         # ── PHASE 0: Credit check ──
         if self.tracker:
-            self._report(0, "Checking credits...", "credit_check")
+            self._report(0, "Checking credits...", "credits")
             await self.tracker.fetch_credits()
             remaining = self.tracker.snapshot.remaining_credits
             if remaining <= 0:
                 self._report(0, f"No credits remaining (${remaining:.4f})", "error")
                 return empty_result()
-            self._report(2, f"Credits: ${remaining:.4f} remaining", "credit_check")
+            self._report(2, f"Credits: ${remaining:.4f} remaining", "credits")
 
-        # ── PHASE 1: Book Analysis (synopsis + bible) ──
-        # If upstream already computed these, skip. Otherwise, generate here.
-        if not book_synopsis:
-            self._report(3, "Analyzing book narrative arc...", "analysis")
-            try:
-                from app.stage_book_synopsis import generate_book_synopsis
-                book_synopsis = await generate_book_synopsis(
-                    canonical_chapters=canonical_chapters,
-                    llm_client=self.llm,
-                )
-                logger.info(f"Synopsis generated: {book_synopsis.get('book_thesis', '')[:80]}")
-            except Exception as e:
-                logger.warning(f"Synopsis generation failed (non-fatal): {e}")
-                book_synopsis = {}
+        # ── PHASE 1: Book Analysis (synopsis + bible IN PARALLEL) ──
+        # Key insight: synopsis and bible are INDEPENDENT of each other.
+        # Both only need canonical_chapters. Running them in parallel
+        # saves ~30-40% of this phase's wall time.
+        need_synopsis = not book_synopsis
+        need_bible = not manga_bible
+
+        if need_synopsis or need_bible:
+            self._report(3, "Analyzing book world and narrative arc...", "analysis")
+
+            async def _gen_synopsis():
+                try:
+                    from app.stage_book_synopsis import generate_book_synopsis
+                    result = await generate_book_synopsis(
+                        canonical_chapters=canonical_chapters,
+                        llm_client=self.llm,
+                    )
+                    logger.info(f"Synopsis: {result.get('book_thesis', '')[:80]}")
+                    return result
+                except Exception as e:
+                    logger.warning(f"Synopsis failed (non-fatal): {e}")
+                    return {}
+
+            async def _gen_bible():
+                try:
+                    from app.stage_manga_planner import generate_manga_bible
+                    result = await generate_manga_bible(
+                        book_synopsis=book_synopsis or {},  # may be empty on first pass
+                        canonical_chapters=canonical_chapters,
+                        style=self.style,
+                        llm_client=self.llm,
+                    )
+                    n = len(result.get("characters", []))
+                    logger.info(f"Bible: {n} characters")
+                    return result
+                except Exception as e:
+                    logger.warning(f"Bible failed (non-fatal): {e}")
+                    return {}
+
+            # Fire both in parallel
+            tasks = []
+            if need_synopsis:
+                tasks.append(_gen_synopsis())
+            if need_bible:
+                tasks.append(_gen_bible())
+
+            results = await asyncio.gather(*tasks)
+
+            idx = 0
+            if need_synopsis:
+                book_synopsis = results[idx]
+                idx += 1
+            if need_bible:
+                manga_bible = results[idx]
+
+            n_chars = len(manga_bible.get("characters", [])) if manga_bible else 0
+            self._report(
+                8, f"Analysis complete: {n_chars} characters mapped", "analysis",
+                {"characters": n_chars, "has_synopsis": bool(book_synopsis)},
+            )
 
         if self._is_cancelled():
             return empty_result()
 
-        if not manga_bible:
-            self._report(5, "Designing manga world and characters...", "analysis")
-            try:
-                from app.stage_manga_planner import generate_manga_bible
-                manga_bible = await generate_manga_bible(
-                    book_synopsis=book_synopsis,
-                    canonical_chapters=canonical_chapters,
-                    style=self.style,
-                    llm_client=self.llm,
-                )
-                n_chars = len(manga_bible.get("characters", []))
-                logger.info(f"Manga bible: {n_chars} characters, {len(manga_bible.get('chapter_plans', []))} chapter plans")
-            except Exception as e:
-                logger.warning(f"Manga bible failed (non-fatal, will use defaults): {e}")
-                manga_bible = {}
-
-        if self._is_cancelled():
-            return empty_result()
-
-        # ── PHASE 2: Planning (style-aware) ──
+        # ── PHASE 2: Planning + Cost Estimate (merged) ──
         self._report(10, "Planning manga structure...", "planning")
 
         try:
@@ -208,9 +235,8 @@ class MangaOrchestrator:
                 style=self.style,
             )
             logger.info(
-                f"Manga plan: {manga_plan.total_panels} panels, "
-                f"{manga_plan.total_pages} pages, "
-                f"{manga_plan.total_chapters} chapters"
+                f"Plan: {manga_plan.total_panels} panels, "
+                f"{manga_plan.total_pages} pages"
             )
         except Exception as e:
             logger.error(f"Planning failed: {e}")
@@ -220,36 +246,31 @@ class MangaOrchestrator:
         if self._is_cancelled():
             return self._cancelled_result(manga_plan, start_time, book_synopsis, manga_bible)
 
-        self._report(
-            15,
-            f"Plan ready: {manga_plan.total_panels} panels across "
-            f"{manga_plan.total_pages} pages",
-            "planning",
-            {"total_panels": manga_plan.total_panels, "total_pages": manga_plan.total_pages},
-        )
-
-        # ── PHASE 3: Pre-flight cost estimation ──
+        # Cost estimation (folded into planning report, not a separate phase)
+        est_cost = None
         if self.tracker:
-            # 1 planner call already done + N DSL calls to go
             est = self.tracker.estimate_remaining_cost(
                 remaining_calls=manga_plan.total_panels,
                 avg_tokens=AVG_TOKENS_PER_DSL_CALL,
             )
-            total_est = self.tracker.snapshot.run_cost + est
+            est_cost = round(self.tracker.snapshot.run_cost + est, 4)
             remaining = self.tracker.snapshot.remaining_credits
-            if remaining > 0 and total_est > remaining * 0.9:
-                logger.warning(
-                    f"Estimated cost ${total_est:.4f} may exceed "
-                    f"remaining ${remaining:.4f}"
-                )
-                self._report(
-                    11,
-                    f"Warning: estimated cost ~${total_est:.4f} "
-                    f"(${remaining:.4f} remaining)",
-                    "cost_warning",
-                )
+            if remaining > 0 and est_cost > remaining * 0.9:
+                logger.warning(f"Est. cost ${est_cost} may exceed remaining ${remaining:.4f}")
 
-        # ── PHASE 4: TRUE Parallel DSL Generation ──
+        self._report(
+            15,
+            f"Plan: {manga_plan.total_panels} panels, {manga_plan.total_pages} pages"
+            + (f" (~${est_cost}" if est_cost else "") + ("" if not est_cost else ")"),
+            "planning",
+            {
+                "total_panels": manga_plan.total_panels,
+                "total_pages": manga_plan.total_pages,
+                "estimated_cost": est_cost,
+            },
+        )
+
+        # ── PHASE 3: Parallel DSL Generation (streaming) ──
         self._report(18, "Generating Living Panel DSLs...", "generating")
 
         ch_summaries = {
@@ -259,6 +280,8 @@ class MangaOrchestrator:
 
         # Build adjacent panel context for pacing awareness
         panel_neighbors = self._build_neighbor_context(manga_plan.panels)
+        total_panels = len(manga_plan.panels)
+        self._panels_completed = 0  # shared counter for progress
 
         # Fire ALL panels in parallel (semaphore controls concurrency)
         tasks = [
@@ -267,6 +290,7 @@ class MangaOrchestrator:
                 manga_bible=manga_bible,
                 chapter_summary=ch_summaries.get(p.chapter_index),
                 neighbor_context=panel_neighbors.get(p.panel_id, ""),
+                total_panels=total_panels,
             )
             for p in manga_plan.panels
         ]
@@ -300,7 +324,7 @@ class MangaOrchestrator:
                 },
             )
 
-        # ── PHASE 5: Assemble ──
+        # ── PHASE 4: Assemble ──
         self._report(90, "Assembling manga...", "assembling")
 
         living_panels = []
@@ -399,8 +423,9 @@ class MangaOrchestrator:
         manga_bible: Optional[dict],
         chapter_summary: Optional[dict],
         neighbor_context: str = "",
+        total_panels: int = 1,
     ) -> dict:
-        """Generate DSL with concurrency limiting."""
+        """Generate DSL with concurrency limiting and per-panel progress."""
         async with self._semaphore:
             if self._is_cancelled():
                 return {"dsl": None, "success": False, "error": "Cancelled"}
@@ -419,6 +444,17 @@ class MangaOrchestrator:
                     result["tokens"].get("input", 0),
                     result["tokens"].get("output", 0),
                 )
+
+            # Report per-panel progress
+            self._panels_completed += 1
+            done = self._panels_completed
+            pct = 18 + int((done / total_panels) * 70)  # 18% to 88%
+            self._report(
+                pct,
+                f"Panel {done}/{total_panels}: {assignment.content_type}",
+                "generating",
+                {"panels_ok": done, "total_panels": total_panels},
+            )
 
             return result
 

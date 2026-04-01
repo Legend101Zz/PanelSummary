@@ -202,6 +202,12 @@ export interface JobStatusResponse {
   message: string;
   result_id: string | null;
   error: string | null;
+  // Pipeline tracking
+  phase: string | null;
+  panels_done: number;
+  panels_total: number;
+  cost_so_far: number;
+  estimated_total_cost: number | null;
 }
 
 export interface ReelsPageResponse {

@@ -47,10 +47,11 @@ def run_async(coro):
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
-
 def sync_update_job(task_id: str, status: str, progress: int, message: str,
-                    result_id: str = None, error: str = None):
+                    result_id: str = None, error: str = None,
+                    phase: str = None, panels_done: int = None,
+                    panels_total: int = None, cost_so_far: float = None,
+                    estimated_total_cost: float = None):
     """Synchronous job status update via PyMongo (for callbacks in sync context)."""
     from pymongo import MongoClient
     from app.config import get_settings
@@ -63,10 +64,18 @@ def sync_update_job(task_id: str, status: str, progress: int, message: str,
         update["result_id"] = result_id
     if error:
         update["error"] = error
+    if phase is not None:
+        update["phase"] = phase
+    if panels_done is not None:
+        update["panels_done"] = panels_done
+    if panels_total is not None:
+        update["panels_total"] = panels_total
+    if cost_so_far is not None:
+        update["cost_so_far"] = cost_so_far
+    if estimated_total_cost is not None:
+        update["estimated_total_cost"] = estimated_total_cost
     db["job_statuses"].update_one({"celery_task_id": task_id}, {"$set": update})
     client.close()
-
-
 async def get_db():
     """Get MongoDB database connection"""
     from app.config import get_settings
@@ -78,8 +87,6 @@ async def get_db():
     db = client[settings.db_name]
     await init_beanie(database=db, document_models=[Book, BookSummary, JobStatus])
     return db
-
-
 async def update_job_status(task_id: str, status: str, progress: int, message: str, result_id: str = None, error: str = None):
     """Update the JobStatus document in MongoDB"""
     from app.models import JobStatus
@@ -94,19 +101,12 @@ async def update_job_status(task_id: str, status: str, progress: int, message: s
         if error:
             job.error = error
         await job.save()
-
-
 # TASK 1: PDF PARSING
 
 @celery_app.task(bind=True, name="app.celery_worker.parse_pdf_task")
 def parse_pdf_task(self, book_id: str, pdf_path: str):
-    """
-    Background task: Parse a PDF and populate the Book document.
-
-    bind=True gives us access to `self` (the task instance)
-    which lets us update task state and check for retries.
-    """
-    logger.info(f"Starting PDF parse task for book_id: {book_id}")
+    """Background task: Parse a PDF and populate the Book document."""
+    logger.info(f"Starting PDF parse for {book_id}")
 
     async def _run():
         await get_db()
@@ -176,13 +176,11 @@ def parse_pdf_task(self, book_id: str, pdf_path: str):
                     word_count=ch["word_count"],
                 ))
 
-            # Update the Book document with parsed content
-            # Use original_filename as title if PDF metadata is absent/looks like a hash
+            # Use original_filename as title if PDF metadata is absent/ugly
             meta_title = parsed.get("title", "") or ""
             if not meta_title or len(meta_title) > 80 or all(c in "0123456789abcdef" for c in meta_title[:20]):
-                # Metadata title is missing/ugly — use the filename we saved
                 meta_title = book.original_filename or book.title or "Untitled"
-                meta_title = meta_title.replace(".pdf", "").replace("_", " ").replace("-", " ")
+                meta_title = meta_title.replace(".pdf", "").replace("_", " ")
             book.title = meta_title
             book.author = parsed.get("author")
             book.total_pages = parsed.get("total_pages", 0)
@@ -216,8 +214,6 @@ def parse_pdf_task(self, book_id: str, pdf_path: str):
             raise
 
     run_async(_run())
-
-
 # TASK 2: SUMMARIZATION
 
 @celery_app.task(bind=True, name="app.celery_worker.generate_summary_task")
@@ -281,9 +277,11 @@ def generate_summary_task(
         # STAGE 1: Canonical summaries (one per chapter)
         for i, chapter in enumerate(all_chapters):
             progress = int((i / total_chapters) * 40)  # 0-40%
-            await update_job_status(
+            sync_update_job(
                 self.request.id, "progress", progress,
-                f"Summarizing chapter {i + 1}/{total_chapters}: '{chapter.title[:40]}'..."
+                f"Compressing chapter {i + 1}/{total_chapters}: '{chapter.title[:40]}'...",
+                phase="compressing",
+                panels_done=i, panels_total=total_chapters,
             )
 
             # Build chapter content from sections
@@ -355,37 +353,35 @@ def generate_summary_task(
 
         await update_job_status(
             self.request.id, "progress", 40,
-            "Chapters compressed! Handing off to the Orchestrator..."
+            "Chapters compressed! Handing off to the Orchestrator...",
+        )
+        # Also set the phase via sync (the async update_job_status doesn't have phase)
+        sync_update_job(
+            self.request.id, "progress", 40,
+            "Chapters compressed! Orchestrator taking over...",
+            phase="analysis",
         )
 
-        # ============================================================
-        # STAGE 2: THE ORCHESTRATOR — owns the entire creative pipeline
-        # (synopsis + bible + planning + parallel DSL generation)
-        # ============================================================
+        # STAGE 2: THE ORCHESTRATOR
         summary_doc.status = ProcessingStatus.GENERATING
         await summary_doc.save()
 
         from app.agents.orchestrator import MangaOrchestrator
         from app.agents.credit_tracker import CreditTracker
 
-        credit_tracker = CreditTracker(
-            api_key=api_key,
-            model=llm.model,
-        )
+        credit_tracker = CreditTracker(api_key=api_key, model=llm.model)
 
-        # Persistent cancel-check connection
+        # Cancel checker — persistent Mongo connection for perf
         from pymongo import MongoClient
-        from app.config import get_settings as _cancel_settings
-        _cancel_s = _cancel_settings()
-        _cancel_client = MongoClient(_cancel_s.mongodb_url)
-        _cancel_db = _cancel_client[_cancel_s.db_name]
-        _cancel_task_id = self.request.id
+        from app.config import get_settings as _cs
+        _cs_s = _cs()
+        _cc = MongoClient(_cs_s.mongodb_url)
+        _cdb = _cc[_cs_s.db_name]
+        _ctid = self.request.id
 
         def check_cancel():
             try:
-                job = _cancel_db["job_statuses"].find_one(
-                    {"celery_task_id": _cancel_task_id}
-                )
+                job = _cdb["job_statuses"].find_one({"celery_task_id": _ctid})
                 return job and job.get("status") == "cancelled"
             except Exception:
                 return False
@@ -393,12 +389,17 @@ def generate_summary_task(
         def orch_progress(pct, msg, detail=None):
             # Orchestrator: 40-90% of overall pipeline
             mapped_pct = 40 + int(pct * 0.50)
-            cost_info = ""
-            if detail and detail.get("cost"):
-                cost_info = f" (${detail['cost'].get('run_cost', 0):.4f})"
+            phase = detail.get("stage", "") if detail else ""
+            cost_data = detail.get("cost", {}) if detail else {}
+            panel_detail = detail.get("detail", {}) if detail else {}
+
             sync_update_job(
-                self.request.id, "progress", mapped_pct,
-                f"{msg}{cost_info}",
+                self.request.id, "progress", mapped_pct, msg,
+                phase=phase or None,
+                panels_done=panel_detail.get("panels_ok", None),
+                panels_total=panel_detail.get("total_panels", None),
+                cost_so_far=cost_data.get("run_cost", None),
+                estimated_total_cost=panel_detail.get("estimated_cost", None),
             )
 
         orchestrator = MangaOrchestrator(
@@ -446,7 +447,7 @@ def generate_summary_task(
 
         # Clean up cancel connection
         try:
-            _cancel_client.close()
+            _cc.close()
         except Exception:
             pass
 
@@ -475,10 +476,10 @@ def generate_summary_task(
             from app.config import get_settings as _gs
             img_settings = _gs()
 
-            await update_job_status(self.request.id, "progress", 91, "Generating splash images…")
+            sync_update_job(self.request.id, "progress", 91, "Generating splash images…", phase="images")
 
             def img_progress(pct, msg):
-                sync_update_job(self.request.id, "progress", 91 + int(pct * 0.07), msg)
+                sync_update_job(self.request.id, "progress", 91 + int(pct * 0.07), msg, phase="images")
 
             updated_chapters, n_images, img_cost = await generate_images_for_summary(
                 book_id=book_id,
@@ -536,8 +537,6 @@ def generate_summary_task(
             raise  # Still propagate so Celery records the task as FAILURE
 
     run_async(_run_guarded())
-
-
 # TASK: ON-DEMAND REEL GENERATION
 
 @celery_app.task(bind=True, name="generate_reels_task")

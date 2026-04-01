@@ -17,210 +17,16 @@ import {
 import { useAppStore } from "@/lib/store";
 import { STYLE_OPTIONS } from "@/lib/types";
 import { ModelSelector } from "@/components/ModelSelector";
+import { PipelineTracker } from "@/components/PipelineTracker";
+import { LogFeed } from "@/components/LogFeed";
+import { LargePdfWarning, PAGE_LIMIT } from "@/components/LargePdfWarning";
+import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
+import type { LogEntry } from "@/components/LogFeed";
 import { getImageModels } from "@/lib/api";
 import { GenerationFacts } from "@/components/GenerationFacts";
 import type { Book, SummaryListItem, SummaryStyle, LLMProvider } from "@/lib/types";
 
-// ─── STATUS BADGE ───────────────────────────────────────────
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { color: string; label: string }> = {
-    pending:     { color: "var(--text-3)",  label: "Pending" },
-    parsing:     { color: "var(--amber)",   label: "Parsing…" },
-    parsed:      { color: "var(--teal)",    label: "Ready" },
-    summarizing: { color: "var(--amber)",   label: "Summarizing…" },
-    generating:  { color: "var(--amber)",   label: "Generating…" },
-    complete:    { color: "var(--teal)",    label: "Complete" },
-    failed:      { color: "var(--red)",     label: "Failed" },
-  };
-  const { color, label } = map[status] ?? { color: "var(--text-3)", label: status };
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-label border"
-      style={{ color, borderColor: color, background: `${color}15`, fontSize: "10px" }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-      {label}
-    </span>
-  );
-}
-
-// ─── INLINE TITLE EDITOR ────────────────────────────────────
-function TitleEditor({ bookId, initial, onSaved }: { bookId: string; initial: string; onSaved: (t: string) => void }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue]     = useState(initial);
-  const [saving, setSaving]   = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
-
-  const save = async () => {
-    if (!value.trim() || value === initial) { setEditing(false); return; }
-    setSaving(true);
-    try {
-      await updateBookTitle(bookId, value.trim());
-      onSaved(value.trim());
-    } catch {}
-    setSaving(false);
-    setEditing(false);
-  };
-
-  if (!editing) return (
-    <div className="flex items-center gap-2 group">
-      <h1 className="font-display leading-tight"
-        style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.5rem,4vw,2.8rem)", color: "var(--text-1)" }}>
-        {initial}
-      </h1>
-      <button onClick={() => setEditing(true)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ color: "var(--text-3)" }} title="Rename">
-        <Pencil size={14} />
-      </button>
-    </div>
-  );
-
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        ref={inputRef}
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
-        className="bg-transparent border-b-2 outline-none font-display"
-        style={{
-          fontFamily: "var(--font-display)", fontSize: "clamp(1.5rem,4vw,2.8rem)",
-          color: "var(--text-1)", borderColor: "var(--amber)", minWidth: "200px",
-        }}
-      />
-      <button onClick={save} disabled={saving} style={{ color: "var(--teal)" }}>
-        {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-      </button>
-      <button onClick={() => { setEditing(false); setValue(initial); }} style={{ color: "var(--text-3)" }}>
-        <X size={14} />
-      </button>
-    </div>
-  );
-}
-
-// ─── LIVE LOG FEED ───────────────────────────────────────────
-interface LogEntry { pct: number; msg: string; done?: boolean; error?: boolean }
-
-function LogFeed({ entries }: { entries: LogEntry[] }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [entries.length]);
-
-  return (
-    <div className="border overflow-hidden" style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
-        <div className="flex gap-1.5">
-          {["var(--red)", "var(--amber)", "var(--teal)"].map((c, i) => (
-            <div key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />
-          ))}
-        </div>
-        <span className="font-label" style={{ color: "var(--text-3)", fontSize: "9px" }}>AI GENERATION LOG</span>
-      </div>
-      <div className="p-3 max-h-44 overflow-y-auto space-y-0.5">
-        {entries.map((e, i) => (
-          <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-            className="flex items-start gap-2 font-label text-xs">
-            <span style={{ color: "var(--text-3)", minWidth: "28px", textAlign: "right" }}>{e.pct}%</span>
-            <span style={{ color: e.error ? "var(--red)" : e.done ? "var(--teal)" : "var(--text-2)" }}>
-              {e.error ? "✗ " : e.done ? "✓ " : "› "}{e.msg}
-            </span>
-          </motion.div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-      {entries.length > 0 && (
-        <div className="xp-bar mx-3 mb-3">
-          <motion.div className="xp-fill" animate={{ width: `${entries.at(-1)?.pct ?? 0}%` }} transition={{ duration: 0.35 }} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── LARGE PDF WARNING ──────────────────────────────────────
-const WORDS_PER_PAGE = 500;
-const TOKEN_LIMIT    = 65_000;
-const PAGE_LIMIT     = Math.floor(TOKEN_LIMIT / WORDS_PER_PAGE); // ~130 pages
-
-interface PageChoiceProps {
-  totalPages: number;
-  totalChapters: number;
-  chapters: { index: number; title: string; page_start: number; page_end: number; word_count: number }[];
-  onChoice: (range: [number, number] | null) => void;
-}
-
-function LargePdfWarning({ totalPages, totalChapters, chapters, onChoice }: PageChoiceProps) {
-  const [mode, setMode] = useState<"full" | "first" | "custom">("first");
-  const [customEnd, setCustomEnd] = useState(Math.min(totalChapters - 1, 9));
-
-  const estWords = (range: [number, number] | null) => {
-    const chs = range ? chapters.filter(c => c.index >= range[0] && c.index <= range[1]) : chapters;
-    return chs.reduce((s, c) => s + c.word_count, 0);
-  };
-  const estCost = (words: number) => ((words / 750) * 0.0002).toFixed(3);
-
-  const selected: [number, number] | null =
-    mode === "full"   ? null :
-    mode === "first"  ? [0, Math.min(totalChapters - 1, 9)] :
-                        [0, customEnd];
-
-  const selWords = estWords(selected);
-
-  return (
-    <div className="panel p-4 border-amber" style={{ borderColor: "rgba(245,166,35,0.5)", background: "rgba(245,166,35,0.04)" }}>
-      <div className="flex items-start gap-2 mb-4">
-        <Info size={14} style={{ color: "var(--amber)", flexShrink: 0, marginTop: 2 }} />
-        <div>
-          <p className="font-label" style={{ color: "var(--amber)", fontSize: "10px" }}>LARGE DOCUMENT DETECTED</p>
-          <p className="text-sm mt-0.5" style={{ fontFamily: "var(--font-body)", color: "var(--text-2)" }}>
-            This book has {totalPages} pages (~{Math.round(totalPages * WORDS_PER_PAGE / 1000)}K words).
-            Processing all chapters in one job may exceed the {PAGE_LIMIT}-page token budget.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2 mb-4">
-        {([
-          { key: "full",   label: "Full Book",        sub: `${totalChapters} chapters · may be slow/costly` },
-          { key: "first",  label: "First 10 Chapters", sub: `Chapters 1–10 · recommended for big books` },
-          { key: "custom", label: "Custom Range",      sub: "Choose end chapter" },
-        ] as const).map(opt => (
-          <label key={opt.key} className="flex items-start gap-2 cursor-pointer">
-            <input type="radio" name="range-mode" value={opt.key}
-              checked={mode === opt.key} onChange={() => setMode(opt.key)}
-              style={{ marginTop: 3, accentColor: "var(--amber)" }} />
-            <div>
-              <p className="font-label" style={{ fontSize: "10px", color: "var(--text-1)" }}>{opt.label}</p>
-              <p className="font-label" style={{ fontSize: "9px", color: "var(--text-3)" }}>{opt.sub}</p>
-              {opt.key === "custom" && mode === "custom" && (
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="font-label" style={{ fontSize: "9px", color: "var(--text-3)" }}>Chapters 1 –</span>
-                  <input type="range" min={1} max={totalChapters - 1}
-                    value={customEnd} onChange={e => setCustomEnd(+e.target.value)}
-                    style={{ accentColor: "var(--amber)", width: "100px" }} />
-                  <span className="font-label" style={{ fontSize: "9px", color: "var(--amber)" }}>{customEnd + 1}</span>
-                </div>
-              )}
-            </div>
-          </label>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="font-label" style={{ fontSize: "9px", color: "var(--text-3)" }}>
-          Est. ~{Math.round(selWords / 1000)}K words · ~${estCost(selWords)} at $0.20/1M tokens
-        </p>
-        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={() => onChoice(selected)}
-          className="btn-primary py-1.5 px-4 text-xs gap-1.5"
-          style={{ fontFamily: "var(--font-label)", fontSize: "10px" }}>
-          <Zap size={12} /> Use This Range
-        </motion.button>
-      </div>
-    </div>
-  );
-}
-
+// ─── GENERATE PANEL ─────────────────────────────────────────
 // ─── GENERATE PANEL ─────────────────────────────────────────
 function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: string) => void }) {
   const { apiKey, provider, model, setApiKey, selectedStyle, setSelectedStyle } = useAppStore();
@@ -245,6 +51,15 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
   const [taskId, setTaskId]         = useState<string | null>(null);
   const pollingRef                  = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Pipeline state — fed by structured progress data from backend
+  const [pipeline, setPipeline] = useState({
+    phase: null as string | null,
+    panelsDone: 0,
+    panelsTotal: 0,
+    costSoFar: 0,
+    estimatedCost: null as number | null,
+  });
+
   // Show large PDF warning automatically for big books
   const isLarge = (book.total_pages ?? 0) > PAGE_LIMIT || (book.total_chapters ?? 0) > 12;
 
@@ -257,8 +72,19 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
       try {
         const s = await getJobStatus(taskId);
         push(s.progress, s.message);
+
+        // Update pipeline state from structured backend data
+        setPipeline(prev => ({
+          phase: s.phase ?? prev.phase,
+          panelsDone: s.panels_done ?? prev.panelsDone,
+          panelsTotal: s.panels_total ?? prev.panelsTotal,
+          costSoFar: s.cost_so_far ?? prev.costSoFar,
+          estimatedCost: s.estimated_total_cost ?? prev.estimatedCost,
+        }));
+
         if (s.status === "success") {
           clearInterval(pollingRef.current!);
+          setPipeline(prev => ({ ...prev, phase: "complete" }));
           push(100, "Complete! Opening manga reader…", { done: true });
           setGenerating(false);
           setTimeout(() => onComplete(s.result_id!), 1200);
@@ -492,21 +318,22 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
         </div>
       )}
 
-      {/* Generation in progress — facts + status */}
+      {/* Generation in progress — pipeline + facts + status */}
       <AnimatePresence>
         {generating && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             className="flex flex-col gap-3">
-            {/* Simultaneous notice */}
-            <div className="flex items-start gap-2 px-3 py-2 border"
-              style={{ borderColor: "rgba(0,191,165,0.25)", background: "rgba(0,191,165,0.04)" }}>
-              <span style={{ fontSize: "14px" }}>⚡</span>
-              <p className="font-label" style={{ color: "var(--teal)", fontSize: "9px", lineHeight: 1.5 }}>
-                Manga panels + Reels are generated simultaneously from the same canonical summary.
-                One LLM call per chapter — no double billing.
-              </p>
-            </div>
-            {/* Relax notice */}
+            {/* Pipeline Tracker */}
+            <PipelineTracker
+              phase={pipeline.phase}
+              progress={log.at(-1)?.pct ?? 0}
+              panelsDone={pipeline.panelsDone}
+              panelsTotal={pipeline.panelsTotal}
+              costSoFar={pipeline.costSoFar}
+              estimatedCost={pipeline.estimatedCost}
+              message={log.at(-1)?.msg ?? "Initializing..."}
+            />
+            {/* Background hint */}
             <div className="flex items-start gap-2 px-3 py-2 border"
               style={{ borderColor: "rgba(245,166,35,0.2)", background: "rgba(245,166,35,0.03)" }}>
               <span style={{ fontSize: "14px" }}>☕</span>
