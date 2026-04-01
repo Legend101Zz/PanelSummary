@@ -481,93 +481,99 @@ def generate_summary_task(
         await summary_doc.save()
 
         # STAGE 5: Living Panel DSL Generation (Orchestrator)
-        await update_job_status(
-            self.request.id, "progress", 70,
-            "Bringing panels to life..."
-        )
-
-        from app.agents.orchestrator import MangaOrchestrator
-        from app.agents.credit_tracker import CreditTracker
-
-        # Track credits for cost control
-        credit_tracker = CreditTracker(
-            api_key=api_key,
-            model=llm.model,
-        )
-
-        # Check for cancellation via a flag in MongoDB
-        # Use a SINGLE persistent connection (not one per check)
-        from pymongo import MongoClient
-        from app.config import get_settings as _cancel_settings
-        _cancel_s = _cancel_settings()
-        _cancel_client = MongoClient(_cancel_s.mongodb_url)
-        _cancel_db = _cancel_client[_cancel_s.db_name]
-        _cancel_task_id = self.request.id
-
-        def check_cancel():
-            """Check if user cancelled. Uses persistent connection."""
-            try:
-                job = _cancel_db["job_statuses"].find_one(
-                    {"celery_task_id": _cancel_task_id}
-                )
-                return job and job.get("status") == "cancelled"
-            except Exception:
-                return False  # if DB is down, don't cancel
-
-        def living_progress(pct, msg, detail=None):
-            # Living panels: 70-90% of overall pipeline
-            mapped_pct = 70 + int(pct * 0.20)
-            cost_info = ""
-            if detail and detail.get("cost"):
-                cost_info = f" (${detail['cost'].get('run_cost', 0):.4f})"
-            sync_update_job(
-                self.request.id, "progress", mapped_pct,
-                f"{msg}{cost_info}",
-            )
-
-        orchestrator = MangaOrchestrator(
-            llm_client=llm,
-            style=summary_style,
-            credit_tracker=credit_tracker,
-            progress_callback=living_progress,
-            cancel_check=check_cancel,
-            image_budget=5,
-            max_concurrent=4,
-        )
-
-        orch_result = await orchestrator.run(
-            canonical_chapters=canonical_chapters,
-            book_synopsis=book_synopsis,
-            manga_bible=manga_bible_dict or {},
-        )
-
-        # Store living panels in the summary document
-        summary_doc.living_panels = orch_result.living_panels
-        total_cost += orch_result.cost_snapshot.get("run_cost", 0)
-        await summary_doc.save()
-
-        if orch_result.cancelled:
-            summary_doc.status = ProcessingStatus.COMPLETE  # partial complete
-            summary_doc.updated_at = datetime.utcnow()
-            await summary_doc.save()
-            await update_job_status(
-                self.request.id, "success", 100,
-                f"Cancelled early. {orch_result.panels_generated} living panels saved. Cost: ~${total_cost:.4f}",
-                result_id=str(summary_doc.id),
-            )
-            return
-
-        # Clean up cancel connection
+        # Wrapped in try/except — if this fails, we still have static manga panels
+        orch_result = None
         try:
-            _cancel_client.close()
-        except Exception:
-            pass
+            await update_job_status(
+                self.request.id, "progress", 70,
+                "Bringing panels to life..."
+            )
+            logger.info("Starting Living Panel orchestrator (Stage 5)")
 
-        logger.info(
-            f"Living panels: {orch_result.panels_generated} ok, "
-            f"{orch_result.panels_failed} fallback, "
-            f"{orch_result.total_time_s:.1f}s"
-        )
+            from app.agents.orchestrator import MangaOrchestrator
+            from app.agents.credit_tracker import CreditTracker
+
+            credit_tracker = CreditTracker(
+                api_key=api_key,
+                model=llm.model,
+            )
+
+            # Persistent cancel-check connection
+            from pymongo import MongoClient
+            from app.config import get_settings as _cancel_settings
+            _cancel_s = _cancel_settings()
+            _cancel_client = MongoClient(_cancel_s.mongodb_url)
+            _cancel_db = _cancel_client[_cancel_s.db_name]
+            _cancel_task_id = self.request.id
+
+            def check_cancel():
+                try:
+                    job = _cancel_db["job_statuses"].find_one(
+                        {"celery_task_id": _cancel_task_id}
+                    )
+                    return job and job.get("status") == "cancelled"
+                except Exception:
+                    return False
+
+            def living_progress(pct, msg, detail=None):
+                mapped_pct = 70 + int(pct * 0.20)
+                cost_info = ""
+                if detail and detail.get("cost"):
+                    cost_info = f" (${detail['cost'].get('run_cost', 0):.4f})"
+                sync_update_job(
+                    self.request.id, "progress", mapped_pct,
+                    f"{msg}{cost_info}",
+                )
+
+            orchestrator = MangaOrchestrator(
+                llm_client=llm,
+                style=summary_style,
+                credit_tracker=credit_tracker,
+                progress_callback=living_progress,
+                cancel_check=check_cancel,
+                image_budget=5,
+                max_concurrent=4,
+            )
+
+            orch_result = await orchestrator.run(
+                canonical_chapters=canonical_chapters,
+                book_synopsis=book_synopsis,
+                manga_bible=manga_bible_dict or {},
+            )
+
+            # Store living panels
+            summary_doc.living_panels = orch_result.living_panels
+            total_cost += orch_result.cost_snapshot.get("run_cost", 0)
+            await summary_doc.save()
+
+            if orch_result.cancelled:
+                summary_doc.status = ProcessingStatus.COMPLETE
+                summary_doc.updated_at = datetime.utcnow()
+                await summary_doc.save()
+                await update_job_status(
+                    self.request.id, "success", 100,
+                    f"Cancelled early. {orch_result.panels_generated} living panels saved. Cost: ~${total_cost:.4f}",
+                    result_id=str(summary_doc.id),
+                )
+                return
+
+            try:
+                _cancel_client.close()
+            except Exception:
+                pass
+
+            logger.info(
+                f"Living panels: {orch_result.panels_generated} ok, "
+                f"{orch_result.panels_failed} fallback, "
+                f"{orch_result.total_time_s:.1f}s"
+            )
+        except Exception as e:
+            logger.error(f"Living Panel orchestrator FAILED (non-fatal, continuing with static manga): {e}", exc_info=True)
+            # Non-fatal: static manga panels are still available
+            await update_job_status(
+                self.request.id, "progress", 90,
+                f"Living panels skipped (error). Static manga is still available."
+            )
 
         # STAGE 6 (optional): AI image generation for splash panels
         if generate_images:
