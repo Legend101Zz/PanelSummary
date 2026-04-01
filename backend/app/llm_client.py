@@ -138,7 +138,7 @@ class LLMClient:
                 kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         try:
-            logger.debug(f"Calling LLM: {self.model}, ~{input_tokens} input tokens")
+            logger.info(f"[LLM] → {self.model} | ~{input_tokens} input tokens")
             start_time = time.time()
 
             response = await self.client.chat.completions.create(**kwargs)
@@ -148,7 +148,12 @@ class LLMClient:
             output_tokens = response.usage.completion_tokens if response.usage else self.count_tokens(content)
             input_tokens_actual = response.usage.prompt_tokens if response.usage else input_tokens
 
-            logger.debug(f"LLM response: {output_tokens} tokens in {elapsed:.1f}s")
+            # Log the full response so it's visible in celery/backend logs
+            preview = content[:2000] + ("…" if len(content) > 2000 else "")
+            logger.info(
+                f"[LLM] ← {self.model} | {output_tokens} out tokens | {elapsed:.1f}s\n"
+                f"{'─'*60}\n{preview}\n{'─'*60}"
+            )
 
             result = {
                 "content": content,
@@ -241,7 +246,7 @@ class LLMClient:
                         except json.JSONDecodeError:
                             break  # try the other bracket type
 
-        logger.warning(f"PARSE FAIL — first 500 chars of cleaned content: {content[:500]!r}")
+        logger.warning(f"[LLM] JSON parse FAIL — raw content ({len(content)} chars):\n{content[:1000]!r}")
         return None
 
     async def chat_with_retry(
@@ -262,7 +267,7 @@ class LLMClient:
 
                 # If JSON mode and parsing failed, retry with stronger instruction
                 if kwargs.get("json_mode", True) and result["parsed"] is None and attempt < max_retries:
-                    logger.warning(f"JSON parse failed, retry {attempt + 1}/{max_retries}")
+                    logger.warning(f"[LLM] JSON parse failed (attempt {attempt + 1}/{max_retries}), retrying…")
                     # Append stricter instruction
                     retry_message = user_message + "\n\nIMPORTANT: Your response MUST be valid JSON only. No markdown, no explanation, just the JSON object/array."
                     last_result = result

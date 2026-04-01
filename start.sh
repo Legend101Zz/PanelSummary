@@ -72,7 +72,7 @@ ok "FastAPI → http://localhost:8000  (pid $BACKEND_PID)"
 # ─── Start Celery ────────────────────────────────────────────
 step "Starting Celery worker..."
 # --pool=solo avoids fork() which crashes PyTorch/Docling on macOS Apple Silicon
-celery -A app.celery_worker worker --loglevel=warning --pool=solo > /tmp/celery.log 2>&1 &
+celery -A app.celery_worker worker --loglevel=info --pool=solo > /tmp/celery.log 2>&1 &
 CELERY_PID=$!
 echo $CELERY_PID > /tmp/panelsummary_celery.pid
 ok "Celery worker running           (pid $CELERY_PID)"
