@@ -218,7 +218,8 @@ class BookSummary(Document):
 
     # Generated outputs (derived from canonical + bible)
     manga_chapters: list[MangaChapterSummary] = []
-    living_panels: list[dict] = []  # Living Panel DSL v2.0 dicts (from orchestrator)
+    living_panels: list[dict] = []  # LEGACY: kept for backward compat, new panels use LivingPanelDoc
+    panel_count: int = 0           # count of panels in LivingPanelDoc collection
     reels: list[ReelLesson] = []
 
     # Generation options
@@ -240,6 +241,35 @@ class BookSummary(Document):
 
     class Settings:
         name = "book_summaries"
+
+
+class LivingPanelDoc(Document):
+    """
+    Individual living panel DSL — stored separately from BookSummary
+    to avoid MongoDB's 16MB document limit.
+
+    Each panel is its own document, indexed by summary_id + panel_index.
+    This allows:
+    - Paginated loading (frontend fetches panels as needed)
+    - Individual panel regeneration
+    - No 16MB ceiling even for 500+ panel books
+
+    MongoDB collection: 'living_panels'
+    """
+    summary_id: Indexed(str)  # type: ignore  # References BookSummary._id
+    panel_id: str             # e.g., "ch0-pg0-p0"
+    panel_index: int          # 0-based order in the book
+    dsl: dict                 # The full Living Panel DSL v2.0 JSON
+    content_type: str = ""    # splash/dialogue/narration etc
+    chapter_index: int = 0
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "living_panels"
+        indexes = [
+            [("summary_id", 1), ("panel_index", 1)],
+        ]
 
 
 class JobStatus(Document):

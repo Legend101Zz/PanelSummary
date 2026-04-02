@@ -91,8 +91,8 @@ export function SpriteRenderer({ layer }: { layer: SpriteLayer }) {
 
   return (
     <MangaCharacter
-      name={props.character}
-      expression={props.expression}
+      name={props.character || "Character"}
+      expression={props.expression || "neutral"}
       pose={props.facing === "left" ? "thinking" : "standing"}
       size={props.size || 64}
       ink={isDark ? "#000" : "#1A1825"}

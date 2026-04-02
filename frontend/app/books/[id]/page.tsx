@@ -196,7 +196,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
             disabled={generating}
           />
           <p className="font-label mt-1" style={{ fontSize: "9px", color: "var(--text-3)" }}>
-            Recommended: qwen/qwen3.5-397b-a17b · Try also qwq-32b or gemini-flash
+            Recommended: google/gemini-2.5-flash (fastest, best JSON reliability)
           </p>
         </div>
       )}

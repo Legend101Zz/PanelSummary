@@ -25,19 +25,31 @@ export interface ORModel {
 
 // Curated shortlist shown by default (best value models)
 const FEATURED_IDS = [
-  "qwen/qwen3.5-397b-a17b",   // user's primary choice
-  "qwen/qwen3-235b-a22b",
-  "qwen/qwq-32b",
+  "google/gemini-2.5-flash",     // RECOMMENDED: fast, reliable JSON, cheap
   "google/gemini-2.0-flash-001",
   "google/gemini-flash-1.5",
+  "qwen/qwen3-235b-a22b",
+  "qwen/qwq-32b",
   "anthropic/claude-3-haiku",
   "anthropic/claude-3.5-sonnet",
   "openai/gpt-4o-mini",
   "openai/gpt-4o",
-  "meta-llama/llama-3.3-70b-instruct",
   "deepseek/deepseek-chat",
+  "meta-llama/llama-3.3-70b-instruct",
   "mistralai/mistral-nemo",
+  "qwen/qwen3.5-397b-a17b",     // slow for manga gen (~60s/call)
 ];
+
+// Speed/reliability ratings for manga panel generation
+const MODEL_BADGES: Record<string, { label: string; color: string }> = {
+  "google/gemini-2.5-flash":     { label: "⚡ Recommended", color: "#2a8703" },
+  "google/gemini-2.0-flash-001": { label: "⚡ Fast",   color: "#2a8703" },
+  "google/gemini-flash-1.5":     { label: "⚡ Fast",   color: "#2a8703" },
+  "openai/gpt-4o-mini":          { label: "⚡ Fast",   color: "#2a8703" },
+  "deepseek/deepseek-chat":      { label: "⚡ Fast",   color: "#2a8703" },
+  "anthropic/claude-3-haiku":    { label: "⚡ Fast",   color: "#2a8703" },
+  "qwen/qwen3.5-397b-a17b":     { label: "🐢 Slow (~60s)", color: "#ea1100" },
+};
 
 function priceLabel(m: ORModel): string {
   if (m.is_free) return "FREE";
@@ -193,8 +205,13 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
                       {m.provider.slice(0, 6)}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="truncate" style={{ fontFamily: "var(--font-label)", fontSize: "10px", color: m.id === value ? "var(--amber)" : "var(--text-1)" }}>
+                      <p className="truncate flex items-center gap-1.5" style={{ fontFamily: "var(--font-label)", fontSize: "10px", color: m.id === value ? "var(--amber)" : "var(--text-1)" }}>
                         {m.name}
+                        {MODEL_BADGES[m.id] && (
+                          <span style={{ fontSize: "7px", color: MODEL_BADGES[m.id].color, fontWeight: 600 }}>
+                            {MODEL_BADGES[m.id].label}
+                          </span>
+                        )}
                       </p>
                       <p className="text-label" style={{ fontSize: "8px", color: "var(--text-3)" }}>
                         {ctxLabel(m.context_length)}

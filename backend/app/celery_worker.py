@@ -1,11 +1,4 @@
-"""
-celery_worker.py — Background Task Definitions
-================================================
-Celery tasks for PDF parsing and summary generation.
-Progress updates stored in MongoDB, polled by frontend.
-
-Start: celery -A app.celery_worker worker --loglevel=info
-"""
+"""celery_worker.py — Background tasks for PDF parsing & summary generation."""
 
 import asyncio
 import logging
@@ -80,12 +73,12 @@ async def get_db():
     """Get MongoDB database connection"""
     from app.config import get_settings
     from beanie import init_beanie
-    from app.models import Book, BookSummary, JobStatus
+    from app.models import Book, BookSummary, LivingPanelDoc, JobStatus
 
     settings = get_settings()
     client = AsyncIOMotorClient(settings.mongodb_url)
     db = client[settings.db_name]
-    await init_beanie(database=db, document_models=[Book, BookSummary, JobStatus])
+    await init_beanie(database=db, document_models=[Book, BookSummary, LivingPanelDoc, JobStatus])
     return db
 async def update_job_status(task_id: str, status: str, progress: int, message: str, result_id: str = None, error: str = None):
     """Update the JobStatus document in MongoDB"""
@@ -309,6 +302,9 @@ def generate_summary_task(
                 total_cost += result["estimated_cost_usd"]
 
                 parsed = result.get("parsed") or {}
+                # LLM sometimes wraps in array
+                if isinstance(parsed, list):
+                    parsed = parsed[0] if parsed else {}
 
                 canonical = CanonicalChapterSummary(
                     chapter_index=chapter.index,
@@ -419,8 +415,28 @@ def generate_summary_task(
             manga_bible=None,
         )
 
-        # Store results from the orchestrator
-        summary_doc.living_panels = orch_result.living_panels
+        # Store results — save panels to dedicated collection (not embedded)
+        panel_docs = []
+        for i, panel_dsl in enumerate(orch_result.living_panels):
+            panel_docs.append(LivingPanelDoc(
+                summary_id=str(summary_doc.id),
+                panel_id=panel_dsl.get("meta", {}).get("panel_id", f"panel-{i}"),
+                panel_index=i,
+                dsl=panel_dsl,
+                content_type=panel_dsl.get("meta", {}).get("content_type", ""),
+                chapter_index=panel_dsl.get("meta", {}).get("chapter_index", 0),
+            ))
+        if panel_docs:
+            # Delete old panels for this summary (if re-running)
+            await LivingPanelDoc.find(
+                LivingPanelDoc.summary_id == str(summary_doc.id)
+            ).delete()
+            await LivingPanelDoc.insert_many(panel_docs)
+            logger.info(f"Saved {len(panel_docs)} panels to living_panels collection")
+
+        summary_doc.panel_count = len(orch_result.living_panels)
+        # Don't store panels in summary doc anymore (keep empty for backward compat)
+        summary_doc.living_panels = []
         total_cost += orch_result.cost_snapshot.get("run_cost", 0)
 
         # Store the manga bible the orchestrator produced
@@ -468,9 +484,7 @@ def generate_summary_task(
             f"{orch_result.total_time_s:.1f}s"
         )
 
-        # ============================================================
         # STAGE 3 (optional): AI image generation for splash panels
-        # ============================================================
         if generate_images and summary_doc.manga_chapters:
             from app.image_generator import generate_images_for_summary
             from app.config import get_settings as _gs

@@ -33,7 +33,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
 from app.config import get_settings
-from app.models import Book, BookSummary, JobStatus, ProcessingStatus, SummaryStyle
+from app.models import Book, BookSummary, LivingPanelDoc, JobStatus, ProcessingStatus, SummaryStyle
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ async def startup_event():
 
     await init_beanie(
         database=db,
-        document_models=[Book, BookSummary, JobStatus],
+        document_models=[Book, BookSummary, LivingPanelDoc, JobStatus],
     )
 
     os.makedirs(settings.upload_dir, exist_ok=True)
@@ -651,13 +651,26 @@ async def get_all_living_panels(summary_id: str):
     if not summary:
         raise HTTPException(status_code=404, detail="Summary not found")
 
-    # If we have stored living panels from the orchestrator, return them
+    # NEW: Try the dedicated living_panels collection first
+    panel_docs = await LivingPanelDoc.find(
+        LivingPanelDoc.summary_id == summary_id
+    ).sort("+panel_index").to_list()
+
+    if panel_docs:
+        return {
+            "summary_id": summary_id,
+            "total_panels": len(panel_docs),
+            "living_panels": [doc.dsl for doc in panel_docs],
+            "source": "orchestrator",
+        }
+
+    # LEGACY: check embedded living_panels on BookSummary
     if summary.living_panels:
         return {
             "summary_id": summary_id,
             "total_panels": len(summary.living_panels),
             "living_panels": summary.living_panels,
-            "source": "orchestrator",
+            "source": "orchestrator-legacy",
         }
 
     # Fallback: generate programmatic DSLs from static panels

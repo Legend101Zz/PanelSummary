@@ -177,7 +177,7 @@ export function MangaCharacter({
   ink?: string;
   showName?: boolean;
 }) {
-  const hash = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const hash = (name || "Character").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const path = SILHOUETTE_PATHS[pose] || SILHOUETTE_PATHS.standing;
 
   // Expression modifies the face area
@@ -219,7 +219,7 @@ export function MangaCharacter({
 }
 
 function getExpressionMark(expression: string): React.ReactNode | null {
-  switch (expression) {
+  switch (expression || "neutral") {
     case "shocked":
       return (
         <>

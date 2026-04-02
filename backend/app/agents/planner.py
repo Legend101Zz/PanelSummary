@@ -100,7 +100,8 @@ agent HOW to make it interesting. Think about:
 3. Vary layouts — don't repeat the same layout 3 times in a row
 4. Image budget goes to the MOST visually impactful splash panels
 5. Every chapter needs at least 1 dialogue panel with character interaction
-6. Keep total panels per chapter between 4-12
+6. Keep total panels per chapter between 2-8 (scale to content size)
+7. NEVER exceed the HARD CAP on total panels specified in constraints
 
 Return JSON:
 {{
@@ -139,6 +140,7 @@ def _build_planner_context(
     book_synopsis: dict,
     manga_bible: dict,
     image_budget: int,
+    max_panels: int = 30,
 ) -> str:
     """Build the full context for the planner LLM."""
     parts = []
@@ -175,7 +177,10 @@ def _build_planner_context(
 
     parts.append(f"\n=== CONSTRAINTS ===")
     parts.append(f"Image budget: {image_budget} images for the ENTIRE book")
-    parts.append(f"Target: 2-5 pages per chapter, 4-12 panels total per chapter")
+    panels_per_ch = max(2, max_panels // max(1, len(canonical_chapters)))
+    parts.append(f"HARD CAP: {max_panels} total panels for the ENTIRE book")
+    parts.append(f"Target: 1-3 pages per chapter, {panels_per_ch} panels per chapter")
+    parts.append("DO NOT exceed the panel cap. Fewer, better panels > many weak ones.")
     parts.append("Plan the manga now.")
 
     return "\n".join(parts)
@@ -217,11 +222,28 @@ async def plan_manga(
     style_key = style.value if hasattr(style, 'value') else str(style)
     style_hint = STYLE_PLANNING_HINTS.get(style_key, STYLE_PLANNING_HINTS["manga"])
 
+    # Scale panel budget proportionally to content size
+    total_words = sum(
+        len(ch.get("narrative_summary", "").split())
+        for ch in canonical_chapters
+    )
+    n_chapters = len(canonical_chapters)
+    # Rule: ~3 panels per 200 words of summary, capped per chapter
+    panels_by_content = max(6, min(total_words // 70, n_chapters * 8))
+    # Small docs (< 10 pages / < 1000 words summary) get a hard cap
+    if total_words < 1000:
+        panels_by_content = min(panels_by_content, max(6, n_chapters * 2))
+    logger.info(
+        f"Panel budget: {panels_by_content} "
+        f"(~{total_words} summary words, {n_chapters} chapters)"
+    )
+
     system_prompt = PLANNER_SYSTEM_PROMPT.format(image_budget=image_budget)
     system_prompt += f"\n\n## STYLE GUIDE\n{style_hint}"
 
     user_message = _build_planner_context(
-        canonical_chapters, book_synopsis, manga_bible, image_budget
+        canonical_chapters, book_synopsis, manga_bible, image_budget,
+        max_panels=panels_by_content,
     )
 
     logger.info(f"Planning manga for {len(canonical_chapters)} chapters (image budget: {image_budget})")
@@ -235,7 +257,17 @@ async def plan_manga(
     )
 
     parsed = result.get("parsed") or {}
-    return _build_manga_plan(parsed, canonical_chapters, manga_bible)
+    plan = _build_manga_plan(parsed, canonical_chapters, manga_bible)
+
+    # HARD CAP enforcement — if LLM ignored the cap, truncate
+    if len(plan.panels) > panels_by_content:
+        logger.warning(
+            f"LLM planned {len(plan.panels)} panels but cap is {panels_by_content}. Truncating."
+        )
+        plan.panels = plan.panels[:panels_by_content]
+        plan.total_panels = len(plan.panels)
+
+    return plan
 
 
 def _build_manga_plan(

@@ -193,7 +193,14 @@ async def generate_living_panel(
 
         parsed = result.get("parsed") or {}
         if isinstance(parsed, str):
-            parsed = json.loads(parsed)
+            try:
+                parsed = json.loads(parsed)
+            except (json.JSONDecodeError, ValueError):
+                parsed = {}
+        if isinstance(parsed, list):
+            parsed = parsed[0] if parsed else {}
+        if not isinstance(parsed, dict):
+            parsed = {}
 
         parsed = fix_common_dsl_issues(parsed)
 
