@@ -761,6 +761,42 @@ async def generate_living_panels_endpoint(
         chapter_summary=chapter_summary,
     )
 
+    # Persist generated panels to LivingPanelDoc collection
+    # Get current max panel_index for this summary to append correctly
+    last_panel = await LivingPanelDoc.find(
+        LivingPanelDoc.summary_id == summary_id
+    ).sort("-panel_index").limit(1).to_list()
+    next_idx = (last_panel[0].panel_index + 1) if last_panel else 0
+
+    panel_docs = []
+    for i, panel_dsl in enumerate(living_panels):
+        panel_id = f"ch{chapter_idx}-pg{page_idx}-p{i}"
+        # Upsert: delete existing panels for this page, then insert
+        panel_docs.append(LivingPanelDoc(
+            summary_id=summary_id,
+            panel_id=panel_id,
+            panel_index=next_idx + i,
+            dsl=panel_dsl if isinstance(panel_dsl, dict) else {},
+            content_type=panel_dsl.get("meta", {}).get("content_type", "") if isinstance(panel_dsl, dict) else "",
+            chapter_index=chapter_idx,
+        ))
+
+    if panel_docs:
+        # Remove old panels for this specific page
+        existing_ids = [d.panel_id for d in panel_docs]
+        await LivingPanelDoc.find(
+            LivingPanelDoc.summary_id == summary_id,
+            {"panel_id": {"$in": existing_ids}},
+        ).delete()
+        await LivingPanelDoc.insert_many(panel_docs)
+
+        # Update count on summary
+        total = await LivingPanelDoc.find(
+            LivingPanelDoc.summary_id == summary_id
+        ).count()
+        summary.panel_count = total
+        await summary.save()
+
     return {
         "chapter_index": chapter_idx,
         "page_index": page_idx,
@@ -800,12 +836,17 @@ async def update_book(book_id: str, req: UpdateTitleRequest):
 
 @app.delete("/summaries/{summary_id}")
 async def delete_summary(summary_id: str):
-    """Delete a summary so the user can regenerate with different settings"""
+    """Delete a summary and its associated living panel documents"""
     summary = await BookSummary.get(summary_id)
     if not summary:
         raise HTTPException(status_code=404, detail="Summary not found")
+    # Cascade-delete panel docs from the separate collection
+    deleted_panels = await LivingPanelDoc.find(
+        LivingPanelDoc.summary_id == summary_id
+    ).delete()
     await summary.delete()
-    return {"deleted": summary_id}
+    panels_removed = getattr(deleted_panels, "deleted_count", 0) if deleted_panels else 0
+    return {"deleted": summary_id, "panels_removed": panels_removed}
 
 
 class GenerateReelsRequest(BaseModel):

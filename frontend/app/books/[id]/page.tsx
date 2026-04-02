@@ -33,7 +33,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
 
   const [localKey, setLocalKey]     = useState(apiKey ?? "");
   const [localProv, setLocalProv]   = useState<LLMProvider>(provider === "openai" ? "openrouter" : provider);
-  const [localModel, setLocalModel] = useState(model ?? "qwen/qwen3.5-397b-a17b");
+  const [localModel, setLocalModel] = useState(model ?? "google/gemini-2.5-flash");
   const [showKey, setShowKey]       = useState(false);
   const [keyError, setKeyError]     = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
