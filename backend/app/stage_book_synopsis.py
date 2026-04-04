@@ -42,7 +42,7 @@ Create the whole-book narrative synopsis for this manga adaptation."""
     result = await llm_client.chat_with_retry(
         system_prompt=system_prompt,
         user_message=user_message,
-        max_tokens=2000,
+        max_tokens=3000,
         temperature=0.6,
         json_mode=True,
     )
@@ -78,4 +78,10 @@ def _fallback_synopsis(canonical_chapters: list[dict]) -> dict:
         "act_two": f"Chapters {act_split}-{2*act_split-1}: Core ideas and complexity",
         "act_three": f"Chapters {2*act_split}-{n-1}: Application and synthesis",
         "emotional_journey": "Curiosity → struggle → breakthrough → empowerment",
+        "manga_story_beats": [
+            ch.get("dramatic_moment", ch.get("one_liner", f"Key moment from chapter {i}"))
+            for i, ch in enumerate(canonical_chapters)
+            if ch.get("dramatic_moment") or ch.get("one_liner")
+        ][:12],
+        "key_facts_to_preserve": all_concepts[:8],
     }

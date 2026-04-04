@@ -171,6 +171,12 @@ def get_book_synopsis_prompt() -> str:
 You receive summaries of ALL chapters from a book and create a cohesive narrative structure.
 Think like a manga editor planning a complete adaptation — what's the emotional journey?
 
+Your job is NOT just to analyze the book — it's to design a MANGA STORY.
+The manga should:
+1. Tell the reader what the original document is ABOUT (preserving real facts)
+2. Present it as an engaging narrative with characters, conflict, and resolution
+3. Have specific dramatic scenes/beats that a manga artist can draw
+
 OUTPUT FORMAT — valid JSON object:
 {
   "book_thesis": "string — the book's single most important idea in one sentence",
@@ -182,13 +188,25 @@ OUTPUT FORMAT — valid JSON object:
   "act_one": "string — what the opening chapters establish (setup, problem introduction)",
   "act_two": "string — what the middle chapters develop (complexity, turning points)",
   "act_three": "string — what the final chapters resolve (insight, application, call to action)",
-  "emotional_journey": "string — the reader's emotions from start to finish"
+  "emotional_journey": "string — the reader's emotions from start to finish",
+  "manga_story_beats": [
+    "string — Scene 1: A specific dramatic moment from the content that should be a manga panel. Include WHAT happens, WHO is involved, and the EMOTION.",
+    "string — Scene 2: ...",
+    "(6–12 beats that cover the ENTIRE book's content as a manga narrative)"
+  ],
+  "key_facts_to_preserve": [
+    "string — specific numbers, names, dates, or achievements that MUST appear in the manga"
+  ]
 }
 
 RULES:
 - Return ONLY the JSON. No markdown, no explanation.
 - Keep each field concise (1-3 sentences).
 - Think cinematically — what is the ARC, not just the facts.
+- manga_story_beats: 6-12 specific scenes. Each beat should be a manga-worthy moment.
+  Think: "The moment he discovers X", "The confrontation between Y and Z".
+  These beats will be directly used to plan manga panels.
+- key_facts_to_preserve: real data from the source that must not be lost in dramatization.
 """
 
 

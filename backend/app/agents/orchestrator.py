@@ -249,9 +249,10 @@ class MangaOrchestrator:
                 for ch in consolidated
             )
             n_ch = len(consolidated)
-            max_panels = max(6, min(total_words // 70, n_ch * 8))
+            max_panels = max(12, min(total_words // 50, n_ch * 8))
             if total_words < 1000:
-                max_panels = min(max_panels, max(6, n_ch * 2))
+                max_panels = max(max_panels, n_ch * 3)
+                max_panels = min(max_panels, max(12, n_ch * 5))
             manga_plan = _generate_fallback_plan(
                 consolidated, manga_bible, max_panels=max_panels,
             )

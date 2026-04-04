@@ -98,8 +98,11 @@ agent HOW to make it interesting. Think about:
 2. Last page of each chapter should be a transition or cliffhanger
 3. Image budget goes to the MOST visually impactful splash panels
 4. Every chapter needs at least 1 dialogue panel with character interaction
-5. Keep total panels per chapter between 2-8 (scale to content size)
+5. Keep total panels per chapter between 3-8 (scale to content size)
 6. NEVER exceed the HARD CAP on total panels specified in constraints
+7. If MANGA STORY BEATS are provided, EVERY beat MUST be covered by at least one panel
+8. Each panel should contain REAL content from the source — not generic filler
+9. AIM FOR THE MAXIMUM panel count allowed. More panels = richer manga experience.
 
 ## LAYOUT VARIETY (CRITICAL — this is what makes it feel like MANGA):
 - NEVER use the same layout on more than 2 consecutive pages.
@@ -164,6 +167,26 @@ def _build_planner_context(
         parts.append(f"Arc: {book_synopsis.get('narrative_arc', '')}")
         parts.append(f"World: {book_synopsis.get('world_description', '')}")
         parts.append(f"Metaphor: {book_synopsis.get('core_metaphor', '')}")
+
+        # Story beats — these are specific scenes the manga MUST cover
+        story_beats = book_synopsis.get("manga_story_beats", [])
+        if story_beats:
+            parts.append("")
+            parts.append("=== MANGA STORY BEATS (from synopsis) ===")
+            parts.append(
+                "These are the KEY dramatic moments your manga MUST include. "
+                "Each beat should map to at least one panel:"
+            )
+            for i, beat in enumerate(story_beats):
+                parts.append(f"  Beat {i + 1}: {beat}")
+
+        # Key facts that must be preserved
+        key_facts = book_synopsis.get("key_facts_to_preserve", [])
+        if key_facts:
+            parts.append("")
+            parts.append("KEY FACTS TO PRESERVE IN PANELS:")
+            for fact in key_facts[:8]:
+                parts.append(f"  • {fact}")
         parts.append("")
 
     # Manga Bible
@@ -189,10 +212,17 @@ def _build_planner_context(
 
     parts.append(f"\n=== CONSTRAINTS ===")
     parts.append(f"Image budget: {image_budget} images for the ENTIRE book")
-    panels_per_ch = max(2, max_panels // max(1, len(canonical_chapters)))
-    parts.append(f"HARD CAP: {max_panels} total panels for the ENTIRE book")
-    parts.append(f"Target: 1-3 pages per chapter, {panels_per_ch} panels per chapter")
-    parts.append("DO NOT exceed the panel cap. Fewer, better panels > many weak ones.")
+    panels_per_ch = max(3, max_panels // max(1, len(canonical_chapters)))
+    parts.append(f"TARGET PANEL COUNT: {max_panels} total panels for the ENTIRE book")
+    parts.append(f"Target: 2-4 pages per chapter, {panels_per_ch} panels per chapter")
+    parts.append(
+        "USE the full panel budget. A richer manga tells a better story. "
+        "Every chapter deserves at least 3 panels (splash + dialogue + narration/data)."
+    )
+    parts.append(
+        "Cover ALL the content from the source material. "
+        "Don't leave out key facts, achievements, or narrative moments."
+    )
     parts.append("Plan the manga now.")
 
     return "\n".join(parts)
@@ -231,6 +261,10 @@ def consolidate_short_chapters(
     A 3-page resume with 10 section headers shouldn't produce 10 chapters.
     We merge adjacent chapters that are both small (< 200 words) into one,
     capped at `max_chapters`.
+
+    IMPORTANT: We keep at LEAST 3 chapters (ideally 4-5) even for short docs.
+    Over-consolidation (e.g. 10→2) kills narrative depth and produces too
+    few panels for a proper manga experience.
     """
     total_words = sum(
         len(ch.get("narrative_summary", "").split())
@@ -239,11 +273,15 @@ def consolidate_short_chapters(
     n = len(canonical_chapters)
 
     # Only consolidate small documents (< 2000 summary words)
-    if total_words >= 2000 or n <= 3:
+    if total_words >= 2000 or n <= 4:
         return canonical_chapters
 
-    # Target: max(3, total_words // 500) chapters, or max_chapters if given
-    target = max_chapters or max(3, total_words // 500)
+    # Target: keep more chapters — short docs need MORE panels, not fewer.
+    # Use ~300 words per chapter (was 500), minimum 4 chapters.
+    if max_chapters:
+        target = max_chapters  # Explicit override — respect it
+    else:
+        target = max(4, min(n, total_words // 300 + 1))
     if n <= target:
         return canonical_chapters
 
@@ -256,7 +294,7 @@ def consolidate_short_chapters(
     buf: list[dict] = []
     buf_words = 0
     # How many words each merged chapter should aim for
-    words_per_merged = max(200, total_words // target)
+    words_per_merged = max(150, total_words // target)
 
     for ch in canonical_chapters:
         ch_words = len(ch.get("narrative_summary", "").split())
@@ -271,16 +309,10 @@ def consolidate_short_chapters(
             buf = []
             buf_words = 0
 
-    # Flush leftover
+    # Flush leftover — create a NEW chapter instead of absorbing into the
+    # last one, which was collapsing content and losing narrative depth.
     if buf:
-        if merged:
-            # Absorb into last chapter to avoid a tiny trailing chapter
-            last_group_chs = buf
-            merged[-1] = _merge_chapter_group(
-                [merged[-1]] + last_group_chs, len(merged) - 1,
-            )
-        else:
-            merged.append(_merge_chapter_group(buf, 0))
+        merged.append(_merge_chapter_group(buf, len(merged)))
 
     logger.info(f"Consolidated {n} → {len(merged)} chapters")
     return merged
@@ -354,11 +386,15 @@ async def plan_manga(
         for ch in canonical_chapters
     )
     n_chapters = len(canonical_chapters)
-    # Rule: ~3 panels per 200 words of summary, capped per chapter
-    panels_by_content = max(6, min(total_words // 70, n_chapters * 8))
-    # Small docs (< 10 pages / < 1000 words summary) get a hard cap
+    # Rule: ~3 panels per 150 words of summary, floor of 3 per chapter
+    # We want ENOUGH panels to tell a real story, not a slideshow.
+    panels_by_content = max(12, min(total_words // 50, n_chapters * 8))
+    # Small docs still get generous budgets — short != boring.
+    # Minimum: 3 panels per chapter (splash + dialogue + data/narration)
     if total_words < 1000:
-        panels_by_content = min(panels_by_content, max(6, n_chapters * 2))
+        panels_by_content = max(panels_by_content, n_chapters * 3)
+        # But still cap at something reasonable
+        panels_by_content = min(panels_by_content, max(12, n_chapters * 5))
     logger.info(
         f"Panel budget: {panels_by_content} "
         f"(~{total_words} summary words, {n_chapters} chapters)"
@@ -375,9 +411,9 @@ async def plan_manga(
     logger.info(f"Planning manga for {n_chapters} chapters (image budget: {image_budget})")
 
     # ── 1A: Scale max_tokens with chapter count to prevent truncation ──
-    # Each chapter needs ~600-800 tokens of planning output.
-    # Base 2000 + 800 per chapter, capped at 12000.
-    max_tokens = min(12000, 2000 + n_chapters * 800)
+    # Each chapter needs ~800-1000 tokens of planning output.
+    # Base 3000 + 1000 per chapter, capped at 16000.
+    max_tokens = min(16000, 3000 + n_chapters * 1000)
 
     result = await llm_client.chat_with_retry(
         system_prompt=system_prompt,
@@ -554,10 +590,10 @@ def _generate_fallback_plan(
                 mentor = c.get("name", mentor)
 
     n_chapters = len(canonical_chapters)
-    # Budget: 2 core panels per chapter + optional data panels
-    core_per_ch = 2
+    # Budget: 3 core panels per chapter (splash + dialogue + data/narration)
+    core_per_ch = 3
     budget_remaining = max_panels - (n_chapters * core_per_ch)
-    # Distribute bonus panels (data panels) evenly across chapters
+    # Distribute bonus panels evenly across chapters
     bonus_every_n = max(1, n_chapters // max(1, budget_remaining)) if budget_remaining > 0 else 999
 
     logger.info(
@@ -616,6 +652,33 @@ def _generate_fallback_plan(
                 "Use cuts layout with angled divider (1-2 degrees). "
                 "Character sprites in each cell. Speech bubbles with typewriter. "
                 "Sprite fade-in before bubbles appear."
+            ),
+            dependencies=[],
+        ))
+        chapter_panels.append(pid)
+
+        if len(panels) >= max_panels:
+            parallel_groups.append(chapter_panels)
+            break
+
+        # Panel 3: Narration — the chapter's key narrative insight
+        narrative = ch.get("narrative_summary", one_liner)
+        # Trim to a punchy sentence for the narration panel
+        if len(narrative) > 200:
+            narrative = narrative[:200].rsplit(" ", 1)[0] + "..."
+        pid = f"ch{ch_idx}-pg1-p1"
+        panels.append(PanelAssignment(
+            panel_id=pid, chapter_index=ch_idx, page_index=1, panel_index=1,
+            content_type="narration",
+            narrative_beat=ch.get("dramatic_moment", "Key insight reveal"),
+            text_content=narrative,
+            dialogue=[], character=None, expression="neutral",
+            visual_mood="dramatic-dark",
+            layout_hint="full",
+            image_budget=False,
+            creative_direction=(
+                "Atmospheric narration with vignette effect and slow "
+                "typewriter text. Crosshatch pattern bg. Particles floating."
             ),
             dependencies=[],
         ))

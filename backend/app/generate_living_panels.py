@@ -161,6 +161,42 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
                 layer.setdefault("props", {})
                 layer.setdefault("id", f"layer-{id(layer)}")
 
+        # ── Cuts layout validation ──
+        # If layout is "cuts", ensure cells[] count matches the
+        # expected region count from cuts[]. N cuts = N+1 regions.
+        layout = act.get("layout", {})
+        if layout.get("type") == "cuts":
+            cuts = layout.get("cuts", [])
+            expected_regions = len(cuts) + 1 if cuts else 2
+            actual_cells = len(act.get("cells", []))
+
+            if actual_cells == 0 and act.get("layers"):
+                # LLM put everything in layers but declared cuts layout.
+                # Downgrade to "full" since there are no cells to render.
+                layout["type"] = "full"
+                logger.debug(
+                    "Cuts layout with 0 cells — downgrading to full"
+                )
+            elif actual_cells > 0 and actual_cells < expected_regions:
+                # Fewer cells than regions — pad with empty cells
+                for ci in range(actual_cells, expected_regions):
+                    act["cells"].append({
+                        "id": f"cell-pad-{ci}",
+                        "position": str(ci),
+                        "layers": [],
+                        "timeline": [],
+                    })
+
+        # ── Timeline target validation ──
+        # Ensure all timeline targets reference actual layer IDs
+        all_ids = {l.get("id") for l in act.get("layers", [])}
+        for cell in act.get("cells", []):
+            all_ids.update(l.get("id") for l in cell.get("layers", []))
+        act["timeline"] = [
+            step for step in act.get("timeline", [])
+            if step.get("target") in all_ids
+        ]
+
     dsl.setdefault("meta", {})
     return dsl
 
