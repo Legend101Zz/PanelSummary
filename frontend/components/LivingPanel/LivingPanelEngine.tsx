@@ -187,13 +187,13 @@ export function LivingPanelEngine({
         </motion.div>
       </AnimatePresence>
 
-      {/* "Tap to continue" hint */}
-      {actReady && !isLastAct && (
+      {/* "Tap to continue" or "playing" indicator (issue 5.3) */}
+      {acts.length > 1 && (
         <motion.div
           className="absolute bottom-3 right-3 z-30"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
         >
           <span
             style={{
@@ -204,7 +204,9 @@ export function LivingPanelEngine({
               textTransform: "uppercase" as const,
             }}
           >
-            tap ▶
+            {isLastAct
+              ? (actReady ? "fin" : "◷")
+              : (actReady ? "tap ▶" : "◷")}
           </span>
         </motion.div>
       )}

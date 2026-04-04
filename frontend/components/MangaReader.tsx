@@ -346,23 +346,39 @@ export function MangaReader({ summary }: { summary: Summary }) {
   const accent   = getStyleAccent(summary.style);
 
   // Use pages if available, fall back to legacy
+  // Issue 5.1: Legacy panels get mood inferred from panel type (not all "dramatic-dark")
   const pages: MangaPage[] = chapter?.pages?.length
     ? chapter.pages
-    : (chapter?.panels || []).map((p, i) => ({
-        page_index: i,
-        layout: "full" as const,
-        panels: [{
-          position: "main",
-          content_type: p.panel_type === "dialogue" ? "dialogue" as const : "narration" as const,
-          text: p.caption || p.visual_description,
-          dialogue: p.dialogue || [],
-          visual_mood: "dramatic-dark" as const,
-          character: null,
-          expression: "neutral" as const,
-          image_id: p.image_id,
-          image_prompt: null,
-        }],
-      }));
+    : (chapter?.panels || []).map((p, i) => {
+        // Map legacy panel_type to a reasonable visual_mood
+        const legacyMoodMap: Record<string, string> = {
+          dialogue: "warm-amber",
+          action: "dramatic-dark",
+          title: "dramatic-dark",
+          recap: "cool-mystery",
+          montage: "warm-amber",
+          narration: "cool-mystery",
+          data: "cool-mystery",
+          transition: "soft-melancholy",
+        };
+        const mood = legacyMoodMap[p.panel_type] || "dramatic-dark";
+
+        return {
+          page_index: i,
+          layout: "full" as const,
+          panels: [{
+            position: "main",
+            content_type: p.panel_type === "dialogue" ? "dialogue" as const : "narration" as const,
+            text: p.caption || p.visual_description,
+            dialogue: p.dialogue || [],
+            visual_mood: mood as any,
+            character: null,
+            expression: "neutral" as const,
+            image_id: p.image_id,
+            image_prompt: null,
+          }],
+        };
+      });
 
   const page = pages[pageIdx];
 

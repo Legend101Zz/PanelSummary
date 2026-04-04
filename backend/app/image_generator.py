@@ -151,6 +151,34 @@ async def generate_panel_image(
 MAX_IMAGES_PER_BOOK = 4  # Cost control: max AI images per book
 
 
+def _distribute_budget(eligible: list, max_images: int) -> list:
+    """Pick panels distributed across the book's narrative arc.
+
+    Instead of taking the first N eligible panels (which clusters
+    images in early chapters), pick from evenly spaced positions
+    across the book — roughly at 25%, 50%, 75%, 100% of the way through.
+
+    This ensures every act of the story gets visual representation.
+    """
+    n = len(eligible)
+    if n <= max_images:
+        return eligible
+
+    # Pick evenly spaced indices
+    step = n / max_images
+    indices = [int(step * i + step / 2) for i in range(max_images)]
+    # Clamp to valid range
+    indices = [min(i, n - 1) for i in indices]
+    # Deduplicate while preserving order
+    seen = set()
+    result = []
+    for i in indices:
+        if i not in seen:
+            seen.add(i)
+            result.append(eligible[i])
+    return result
+
+
 async def generate_images_for_summary(
     book_id: str,
     manga_chapters: list,
@@ -160,11 +188,13 @@ async def generate_images_for_summary(
     progress_callback=None,
     max_images: int = MAX_IMAGES_PER_BOOK,
     image_model: str = None,
-) -> tuple[list, int, float]:
-    """
-    Generate images ONLY for splash panels (page-based layout).
-    Budget: max 4 images per book to control cost.
-    Falls back to old panel-based detection for legacy summaries.
+) -> tuple[list, int, int, float]:
+    """Generate images ONLY for splash panels (page-based layout).
+
+    Budget is distributed across narrative positions (issue 4.1).
+    Failures are tracked and returned (issue 4.2).
+
+    Returns: (manga_chapters, generated_count, failed_count, cost)
     """
     eligible = []
 
@@ -181,12 +211,13 @@ async def generate_images_for_summary(
                 if panel.panel_type not in ("title", "recap") and not panel.image_id:
                     eligible.append((ci, ch, None, panel))
 
-    # Enforce budget
-    eligible = eligible[:max_images]
-    total = len(eligible)
+    # Distribute budget across narrative arc (issue 4.1)
+    selected = _distribute_budget(eligible, max_images)
+    total = len(selected)
     generated = 0
+    failed = 0
 
-    for idx, (ci, ch, page, panel) in enumerate(eligible):
+    for idx, (ci, ch, page, panel) in enumerate(selected):
         if progress_callback:
             pct = int((idx / max(total, 1)) * 100)
             progress_callback(pct, f"Generating image {idx+1}/{total}: {ch.chapter_title[:30]}")
@@ -214,6 +245,15 @@ async def generate_images_for_summary(
         if ok:
             panel.image_id = f"{book_id}/{fname}"
             generated += 1
+        else:
+            failed += 1
+            logger.warning(
+                f"Image generation failed for chapter {ci}, page {page_idx} "
+                f"(attempt used all {len(IMAGE_MODELS)} model fallbacks)"
+            )
 
-    logger.info(f"Image generation: {generated}/{total} (budget: {max_images})")
-    return manga_chapters, generated, 0.0
+    logger.info(
+        f"Image generation: {generated}/{total} succeeded, "
+        f"{failed} failed (budget: {max_images})"
+    )
+    return manga_chapters, generated, failed, 0.0

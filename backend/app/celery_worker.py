@@ -35,6 +35,17 @@ celery_app.conf.update(
     task_soft_time_limit=540,  # 9 min soft warning
 )
 
+# Issue 6.2: Ensure storage dirs exist when Celery worker starts
+# (main.py does this for the FastAPI process, but Celery is a separate process)
+try:
+    from app.config import get_settings as _boot_settings
+    _s = _boot_settings()
+    os.makedirs(_s.pdf_dir, exist_ok=True)
+    os.makedirs(_s.image_dir, exist_ok=True)
+    logger.info(f"Storage dirs verified: {_s.pdf_dir}, {_s.image_dir}")
+except Exception as e:
+    logger.warning(f"Could not verify storage dirs at boot: {e}")
+
 def run_async(coro):
     """Run an async coroutine from a sync context"""
     loop = asyncio.new_event_loop()
@@ -441,6 +452,14 @@ def generate_summary_task(
         # Don't store panels in summary doc anymore (keep empty for backward compat)
         summary_doc.living_panels = []
         total_cost += orch_result.cost_snapshot.get("run_cost", 0)
+        total_tokens += (
+            orch_result.cost_snapshot.get("run_input_tokens", 0)
+            + orch_result.cost_snapshot.get("run_output_tokens", 0)
+        )
+
+        # Track quality flags (issue 3.2: surface silent failures)
+        summary_doc.bible_used = orch_result.bible_used
+        summary_doc.synopsis_used = orch_result.synopsis_used
 
         # Store the manga bible the orchestrator produced
         manga_bible_dict = orch_result.manga_bible or {}
@@ -498,7 +517,7 @@ def generate_summary_task(
             def img_progress(pct, msg):
                 sync_update_job(self.request.id, "progress", 91 + int(pct * 0.07), msg, phase="images")
 
-            updated_chapters, n_images, img_cost = await generate_images_for_summary(
+            updated_chapters, n_images, n_img_failed, img_cost = await generate_images_for_summary(
                 book_id=book_id,
                 manga_chapters=summary_doc.manga_chapters,
                 style=style,
@@ -508,8 +527,9 @@ def generate_summary_task(
                 image_model=image_model,
             )
             summary_doc.manga_chapters = updated_chapters
+            summary_doc.images_failed = n_img_failed
             total_cost += img_cost
-            logger.info(f"Generated {n_images} splash images")
+            logger.info(f"Generated {n_images} splash images ({n_img_failed} failed)")
 
         summary_doc.total_tokens_used = total_tokens
         summary_doc.estimated_cost_usd = round(total_cost, 4)

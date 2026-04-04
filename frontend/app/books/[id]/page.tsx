@@ -378,10 +378,18 @@ function SummaryRow({ summary, bookId, onDeleted }: { summary: SummaryListItem; 
 
   const handleGenerateReels = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    if (!apiKey) { alert("Please enter your API key first"); return; }
+    // Issue 5.2: Prompt for key if store is empty (don't use stale key silently)
+    let key = apiKey;
+    if (!key) {
+      key = prompt("Enter your OpenRouter API key to generate reels:");
+      if (!key) return;
+      // Persist to store so future calls reuse it
+      const store = useAppStore.getState();
+      store.setApiKey(key, store.provider, store.model ?? undefined);
+    }
     setGeneratingReels(true);
     try {
-      const res = await generateReels(summary.id, { apiKey, provider: provider as LLMProvider, model: model ?? undefined });
+      const res = await generateReels(summary.id, { apiKey: key, provider: provider as LLMProvider, model: model ?? undefined });
       if (res.task_id) {
         setReelTaskId(res.task_id);
         // Poll until done

@@ -39,8 +39,10 @@ async def generate_manga_bible(
     """
     system_prompt = get_manga_bible_prompt(style)
 
+    # Numbered checklist so the LLM can't skip chapters (issue 3.1)
     chapter_list = "\n".join(
-        f"  Chapter {ch.get('chapter_index', i)}: {ch.get('chapter_title', 'Unknown')} — {ch.get('one_liner', '')}"
+        f"  [{ch.get('chapter_index', i)}] Chapter {ch.get('chapter_index', i)}: "
+        f"{ch.get('chapter_title', 'Unknown')} — {ch.get('one_liner', '')}"
         for i, ch in enumerate(canonical_chapters)
     )
 
@@ -56,10 +58,11 @@ async def generate_manga_bible(
   Act Three: {book_synopsis.get('act_three', '')}
   Emotional journey: {book_synopsis.get('emotional_journey', '')}
 
-CHAPTERS ({len(canonical_chapters)} total):
+CHAPTERS ({len(canonical_chapters)} total — you MUST produce chapter_plans for ALL {len(canonical_chapters)}):
 {chapter_list}
 
-Design the complete manga bible for this adaptation."""
+Design the complete manga bible for this adaptation.
+IMPORTANT: chapter_plans array MUST have exactly {len(canonical_chapters)} entries, one per chapter index."""
 
     logger.info(f"Generating manga bible for {len(canonical_chapters)} chapters")
 
@@ -85,6 +88,26 @@ Design the complete manga bible for this adaptation."""
     return bible
 
 
+# Mood progression for fallback chapter plans (3-act structure)
+_POSITION_MOODS = [
+    (0.25, "mysterious"),   # Act 1: setup
+    (0.50, "intense"),      # Act 2: rising action
+    (0.75, "revelatory"),   # Act 2b: turning point
+    (1.00, "triumphant"),   # Act 3: resolution
+]
+
+
+def _mood_for_position(idx: int, total: int) -> str:
+    """Pick a mood based on chapter position in the book."""
+    if total <= 1:
+        return "reflective"
+    position = idx / (total - 1)  # 0.0 to 1.0
+    for threshold, mood in _POSITION_MOODS:
+        if position <= threshold:
+            return mood
+    return "triumphant"
+
+
 def _ensure_all_chapters_covered(
     bible: dict,
     canonical_chapters: list[dict],
@@ -93,6 +116,7 @@ def _ensure_all_chapters_covered(
     """Ensure chapter_plans has an entry for every chapter index."""
     plans = bible.get("chapter_plans", [])
     existing_indices = {p.get("chapter_index") for p in plans}
+    total = len(canonical_chapters)
 
     for ch in canonical_chapters:
         idx = ch.get("chapter_index", 0)
@@ -100,10 +124,10 @@ def _ensure_all_chapters_covered(
             logger.debug(f"Bible missing chapter plan for index {idx} — adding fallback")
             plans.append({
                 "chapter_index": idx,
-                "mood": "reflective",
+                "mood": _mood_for_position(idx, total),
                 "dramatic_beat": ch.get("dramatic_moment", ch.get("one_liner", f"Key insight from chapter {idx}")),
                 "image_theme": ch.get("metaphor", book_synopsis.get("core_metaphor", "abstract concept visualization")),
-                "panel_emphasis": "dialogue-heavy",
+                "panel_emphasis": "balanced",
             })
 
     bible["chapter_plans"] = sorted(plans, key=lambda p: p.get("chapter_index", 0))

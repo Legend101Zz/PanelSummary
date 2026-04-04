@@ -64,9 +64,14 @@ class LLMClient:
                 },
             )
             self.model = model or "anthropic/claude-3-haiku"
+            # Prompt caching: supported by Anthropic, OpenAI, Gemini, DeepSeek
+            # on OpenRouter. Sticky routing maximizes cache hits automatically.
+            self._supports_cache_control = True
         else:
             self.client = AsyncOpenAI(api_key=api_key)
             self.model = model or "gpt-4o-mini"
+            # OpenAI handles caching automatically (>1024 tokens)
+            self._supports_cache_control = False
 
         # Token counter (for cost estimation)
         try:
@@ -110,10 +115,27 @@ class LLMClient:
             "estimated_cost_usd": float,
         }
         """
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ]
+        # Build messages with prompt caching for OpenRouter
+        # The system prompt is the same across many calls — cache it.
+        if self._supports_cache_control and len(system_prompt) > 500:
+            messages = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": system_prompt,
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                },
+                {"role": "user", "content": user_message},
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
 
         input_tokens = self.count_tokens(system_prompt + user_message)
 

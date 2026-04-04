@@ -54,6 +54,8 @@ class OrchestratorResult:
     image_panel_ids: list[str]         # Panel IDs that should get AI images
     book_synopsis: dict = None         # Generated or passed-through synopsis
     manga_bible: dict = None           # Generated or passed-through bible
+    bible_used: bool = True            # False if bible generation failed
+    synopsis_used: bool = True         # False if synopsis generation failed
 
 
 class MangaOrchestrator:
@@ -148,6 +150,8 @@ class MangaOrchestrator:
         # ── PHASE 1: Book Analysis (synopsis + bible IN PARALLEL) ──
         need_synopsis = not book_synopsis
         need_bible = not manga_bible
+        bible_ok = True
+        synopsis_ok = True
 
         if need_synopsis or need_bible:
             self._report(3, "Analyzing book world and narrative arc...", "analysis")
@@ -196,10 +200,22 @@ class MangaOrchestrator:
             if need_bible:
                 manga_bible = results[idx]
 
+            # Track quality flags (issue 3.2: surface silent failures)
+            bible_ok = bool(manga_bible and manga_bible.get("characters"))
+            synopsis_ok = bool(book_synopsis and book_synopsis.get("book_thesis"))
+            if not bible_ok:
+                logger.warning("Bible generation failed or returned empty — quality will be degraded")
+            if not synopsis_ok:
+                logger.warning("Synopsis generation failed or returned empty — quality will be degraded")
+
             n_chars = len(manga_bible.get("characters", [])) if manga_bible else 0
             self._report(
                 8, f"Analysis complete: {n_chars} characters mapped", "analysis",
-                {"characters": n_chars, "has_synopsis": bool(book_synopsis)},
+                {
+                    "characters": n_chars,
+                    "has_synopsis": synopsis_ok,
+                    "has_bible": bible_ok,
+                },
             )
 
         if self._is_cancelled():
@@ -382,6 +398,8 @@ class MangaOrchestrator:
             image_panel_ids=image_panel_ids,
             book_synopsis=book_synopsis or {},
             manga_bible=manga_bible or {},
+            bible_used=bible_ok,
+            synopsis_used=synopsis_ok,
         )
 
     # ── Helpers ───────────────────────────────────────────────

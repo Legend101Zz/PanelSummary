@@ -236,6 +236,11 @@ class BookSummary(Document):
     total_tokens_used: int = 0
     estimated_cost_usd: float = 0.0
 
+    # Generation quality flags (issue 3.2: surface silent failures)
+    bible_used: bool = True         # False if bible generation failed
+    synopsis_used: bool = True      # False if synopsis generation failed
+    images_failed: int = 0          # Count of failed image generations (issue 4.2)
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
