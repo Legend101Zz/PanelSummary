@@ -228,7 +228,7 @@ def generate_summary_task(
     async def _run():
         await get_db()
         from app.models import (
-            Book, BookSummary, JobStatus, ProcessingStatus,
+            Book, BookSummary, JobStatus, LivingPanelDoc, ProcessingStatus,
             SummaryStyle, CanonicalChapterSummary
         )
         from app.llm_client import LLMClient

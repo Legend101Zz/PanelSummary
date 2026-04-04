@@ -19,6 +19,9 @@ import os
 import shutil
 import sys
 
+# Add backend/ to sys.path so `app.*` imports work when running as a script
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
 
 def red(s: str) -> str:
     return f"\033[91m{s}\033[0m"

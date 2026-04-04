@@ -177,10 +177,13 @@ export function DataBlockRenderer({
 }) {
   const { props } = layer;
   const accent = props.accentColor || "#1A1825";
+  const items = props.items || [];
+
+  if (!items.length) return null;
 
   return (
     <div className="flex flex-col gap-1 w-full" style={{ maxWidth: 380 }}>
-      {props.items.map((item, i) => (
+      {items.map((item, i) => (
         <div
           key={i}
           className="flex items-center gap-2 px-3 py-1.5"

@@ -27,6 +27,10 @@ import sys
 import time
 from datetime import datetime, timedelta
 
+# Add backend/ to sys.path so `app.*` imports work when running as a script
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+
 # ── ANSI helpers ──────────────────────────────────────────────
 
 def clear_screen():

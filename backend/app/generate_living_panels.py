@@ -312,6 +312,9 @@ def generate_fallback_living_panel(panel_data: dict) -> dict:
             )
 
         for i, line in enumerate(dialogue[:4]):
+            # dialogue entries can be dicts {"character":..,"text":..} or plain strings
+            if isinstance(line, str):
+                line = {"text": line, "character": character or "?"}
             bid = f"bubble-{i}"
             x_pos = "8%" if i % 2 == 0 else "48%"
             y_pos = f"{8 + i * 10}%"

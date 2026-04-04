@@ -258,6 +258,8 @@ PANELS:
             context += f"Text: {panel['text']}\n"
         if panel.get('dialogue'):
             for d in panel['dialogue']:
+                if isinstance(d, str):
+                    d = {"text": d, "character": "?"}
                 context += f"  {d.get('character', '?')}: \"{d.get('text', '')}\"\n"
         if panel.get('character'):
             context += f"Character: {panel['character']} ({panel.get('expression', 'neutral')})\n"

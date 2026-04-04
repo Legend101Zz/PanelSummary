@@ -121,6 +121,8 @@ def _build_panel_context(
     if assignment.dialogue:
         parts.append("Dialogue:")
         for d in assignment.dialogue:
+            if isinstance(d, str):
+                d = {"text": d, "character": "?"}
             parts.append(f"  {d.get('character', '?')}: \"{d.get('text', '')}\"")
 
     if assignment.character:
