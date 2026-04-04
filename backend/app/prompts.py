@@ -25,10 +25,17 @@ from app.models import SummaryStyle
 STYLE_DESCRIPTORS = {
     SummaryStyle.MANGA: """
 You write in the spirit of shonen manga — high energy, dramatic revelations,
-bold declarations. Use "!!!" for emphasis. Characters discover truths dramatically.
-Use narrative beats like: "And then... everything changed."
+bold declarations. Characters discover truths dramatically.
 Panel directions should have dynamic angles and speed lines.
 Vocabulary: bold, kinetic, youth-energy, dramatic.
+
+FIDELITY RULES:
+- Dramatize REAL facts from the source text. Turn actual achievements into dramatic beats.
+- NEVER invent physical settings, events, or scenarios not described in the text.
+- NEVER fabricate dialogue that didn't happen.
+- If the source says "719 GitHub contributions" — that IS your dramatic moment. Don't replace it with fiction.
+- Use specific numbers, names, and dates from the source — these ARE your dramatic material.
+- Vary your dramatic rhythm. Not every section should use the same "And then..." pattern.
 """,
     SummaryStyle.NOIR: """
 You write in classic noir style — cynical, atmospheric, hard-boiled.
@@ -36,12 +43,21 @@ Everything is shadow and revelation. The narrator has seen things.
 Use short punchy sentences. Lots of ellipses... and pauses.
 Panel directions: rain-slicked streets, silhouettes, harsh shadows.
 Vocabulary: world-weary, atmospheric, clipped, evocative.
+
+FIDELITY RULES:
+- Apply noir TONE to real content. Don't invent crime scenes or mysteries.
+- Preserve actual facts, names, and numbers from the source.
+- The "mystery" should be the real questions the text raises, not fabricated ones.
 """,
     SummaryStyle.MINIMALIST: """
 You write with extreme precision — no wasted words. Every sentence carries weight.
 Clean structure: fact, implication, so-what. No metaphors, no drama.
 Panel directions: clean lines, lots of whitespace, Helvetica energy.
 Vocabulary: precise, clean, academic-but-accessible.
+
+FIDELITY RULES:
+- This style demands the HIGHEST factual accuracy. Zero embellishment.
+- Every claim must trace directly to the source text.
 """,
     SummaryStyle.COMEDY: """
 You write like a witty explainer who can't help making jokes.
@@ -49,6 +65,10 @@ Use relatable analogies, pop culture references, light sarcasm.
 Every key point has a comedic angle. The AI tutor who makes learning fun.
 Panel directions: expressive faces, comedic timing, reaction shots.
 Vocabulary: playful, self-aware, genuinely funny, occasionally absurd.
+
+FIDELITY RULES:
+- Make jokes ABOUT the real content, not about invented scenarios.
+- Preserve actual facts and achievements — just make them funny.
 """,
     SummaryStyle.ACADEMIC: """
 You write like a brilliant professor who respects their students.
@@ -56,6 +76,10 @@ Rigorous but clear. Define terms on first use. Show your reasoning.
 Citations as [Author, Year] when possible. Connect ideas to broader context.
 Panel directions: clean diagrams, clear labels, structured layouts.
 Vocabulary: precise, scholarly, thorough, intellectually honest.
+
+FIDELITY RULES:
+- Highest factual fidelity. No embellishment, no dramatization.
+- If the text doesn't support a claim, don't make it.
 """,
 }
 
@@ -120,6 +144,15 @@ RULES:
 - narrative_state_update: only list what's NEW in THIS chapter. Don't repeat earlier context.
 - If previous chapter context is provided, use it to connect this chapter's summary to the broader arc.
 - If the text is very short (< 200 words), do your best and note that in one_liner.
+
+FACTUAL FIDELITY (CRITICAL):
+- EVERY claim in your summary must trace to something in the source text.
+- NEVER invent events, settings, characters, or scenarios not in the source.
+- Preserve specific names, numbers, dates, and achievements exactly as stated.
+- memorable_quotes MUST be actual quotes from the text, not your invention.
+- dramatic_moment must describe something that ACTUALLY happens in the text.
+- If the source is a resume/portfolio/list: the FACTS are your material. Don't replace them with fiction.
+- Your job is to INTERPRET and PRESENT the real content in your style, not to REPLACE it with a story.
 """
 
 
@@ -408,6 +441,36 @@ def format_chapter_for_llm(chapter: dict, max_words: int = 8000) -> str:
 
 CHAPTER CONTENT:
 {content}"""
+
+
+def get_content_length_guidance(word_count: int) -> str:
+    """Return extra instructions based on chapter length.
+
+    Short content (resumes, bullet lists, bios) needs different treatment
+    than long-form prose. Without this, the LLM inflates 50 words of
+    bullet points into 200 words of fabricated drama.
+
+    See: Tier 3 — log analysis showed resume sections turned into
+    invented temple visits and spiritual awakenings.
+    """
+    if word_count < 150:
+        return (
+            "\nCONTENT LENGTH NOTE: This section is VERY short "
+            f"({word_count} words). It may be a list, resume section, or brief note.\n"
+            "- Keep narrative_summary under 80 words. Do NOT inflate.\n"
+            "- Preserve EVERY specific fact (names, numbers, titles, dates).\n"
+            "- Do NOT invent backstory, settings, or dramatic scenarios.\n"
+            "- Your style should season the real facts, not replace them.\n"
+        )
+    elif word_count < 400:
+        return (
+            "\nCONTENT LENGTH NOTE: This section is relatively brief "
+            f"({word_count} words).\n"
+            "- Keep narrative_summary under 150 words.\n"
+            "- Stick closely to what's actually stated. Minimal embellishment.\n"
+            "- Preserve all specific names, numbers, and achievements.\n"
+        )
+    return ""  # Long content — standard treatment
 
 
 def format_summary_for_manga(canonical_summary: dict, manga_bible: dict = None) -> str:

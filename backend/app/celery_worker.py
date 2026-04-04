@@ -247,7 +247,7 @@ def generate_summary_task(
         )
         from app.llm_client import LLMClient
 
-        from app.prompts import get_canonical_summary_prompt, format_chapter_for_llm
+        from app.prompts import get_canonical_summary_prompt, format_chapter_for_llm, get_content_length_guidance
         from app.models import MangaBible, CharacterProfile, ChapterPlan
         import json
 
@@ -315,7 +315,13 @@ def generate_summary_task(
             system_prompt = get_canonical_summary_prompt(summary_style)
 
             # Build user message with running context (P0)
+            # 3B: Add content-length guidance for short sections
+            word_count = len(content.split())
+            length_guidance = get_content_length_guidance(word_count)
             chapter_text = format_chapter_for_llm(chapter_dict)
+            if length_guidance:
+                chapter_text += length_guidance
+
             if running_context:
                 user_message = f"""CONTEXT FROM PREVIOUS CHAPTERS:
 {running_context}
