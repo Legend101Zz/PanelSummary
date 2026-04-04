@@ -434,6 +434,10 @@ function LayerWrapper({
         zIndex: layer.zIndex ?? (10 + index),
         cursor: clickable ? "pointer" : "inherit",
         transformOrigin: layer.origin || "center center",
+        // 2D: Prevent layers from rendering outside panel bounds
+        maxWidth: "90%",
+        maxHeight: "85%",
+        overflow: "hidden" as const,
       }}
       animate={{
         left: state.x ?? layer.x ?? 0,

@@ -395,6 +395,10 @@ export function MangaBubble({
         color: styles.color,
         lineHeight: 1.45,
         boxShadow: variant === "shout" ? "3px 3px 0 #1A1825" : "1px 1px 0 rgba(0,0,0,0.08)",
+        // 2D: Prevent speech bubbles from overflowing
+        overflow: "hidden" as const,
+        maxHeight: 180,
+        wordBreak: "break-word" as const,
       }}
     >
       {children}

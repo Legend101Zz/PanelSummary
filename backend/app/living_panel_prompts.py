@@ -247,6 +247,103 @@ Example 2 — QUIET DIALOGUE with cut layout + 2 acts:
   "meta": {{ "content_type": "dialogue", "narrative_beat": "The mentor's key lesson", "duration_ms": 10000 }}
 }}
 
+Example 3 — DATA PANEL with staggered data_block + grid layout:
+{{
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#F2E8D5", "mood": "light" }},
+  "acts": [{{
+    "id": "data-reveal", "duration_ms": 5000,
+    "transition_in": {{ "type": "fade", "duration_ms": 400 }},
+    "layout": {{ "type": "full" }},
+    "layers": [
+      {{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#F2E8D5", "#EDE0CC"], "pattern": "crosshatch", "patternOpacity": 0.05 }} }},
+      {{ "id": "title", "type": "text", "x": "8%", "y": "6%", "opacity": 0, "props": {{ "content": "KEY FINDINGS", "fontSize": "clamp(1.2rem, 4.5vw, 2.2rem)", "fontFamily": "display", "color": "#1A1825" }} }},
+      {{ "id": "data", "type": "data_block", "x": "8%", "y": "22%", "opacity": 0, "props": {{ "items": [{{ "label": "Revenue Growth", "value": "+23% YoY" }}, {{ "label": "New Markets", "value": "3 regions" }}, {{ "label": "Team Size", "value": "48 → 72" }}], "accentColor": "#E8191A", "showIndex": true, "animateIn": "stagger", "staggerDelay": 200 }} }},
+      {{ "id": "aside", "type": "speech_bubble", "x": "55%", "y": "70%", "opacity": 0, "props": {{ "text": "These numbers tell the real story.", "character": "Analyst", "style": "narrator", "tailDirection": "none", "typewriter": true, "typewriterSpeed": 35 }} }}
+    ],
+    "cells": [],
+    "timeline": [
+      {{ "at": 200, "target": "title", "animate": {{ "opacity": [0, 1] }}, "duration": 300, "easing": "spring" }},
+      {{ "at": 600, "target": "data", "animate": {{ "opacity": [0, 1] }}, "duration": 400, "easing": "ease-out" }},
+      {{ "at": 2000, "target": "aside", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 1500, "easing": "ease-out" }}
+    ]
+  }}],
+  "meta": {{ "content_type": "data", "narrative_beat": "Key metrics reveal", "duration_ms": 5000 }}
+}}
+
+Example 4 — ACTION MONTAGE with angled cuts + multiple SFX:
+{{
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#1A1825", "mood": "dark" }},
+  "acts": [{{
+    "id": "action", "duration_ms": 4000,
+    "transition_in": {{ "type": "cut", "duration_ms": 80 }},
+    "layout": {{
+      "type": "cuts",
+      "cuts": [
+        {{ "direction": "h", "position": 0.45, "angle": 2.5 }},
+        {{ "direction": "v", "position": 0.5, "angle": -1.5, "target": 1 }}
+      ],
+      "gap": 4,
+      "stagger_ms": 150
+    }},
+    "layers": [
+      {{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#1A1825", "#0F0E17"], "pattern": "manga_screen", "patternOpacity": 0.06 }} }}
+    ],
+    "cells": [
+      {{ "id": "top", "position": "0", "layers": [
+        {{ "id": "speed", "type": "effect", "opacity": 0, "props": {{ "effect": "speed_lines", "color": "#F0EEE8", "intensity": 0.8, "direction": "horizontal" }} }},
+        {{ "id": "sfx1", "type": "effect", "x": "60%", "y": "30%", "opacity": 0, "props": {{ "effect": "sfx", "sfxText": "WHOOSH", "sfxSize": 36, "color": "#F5A623", "sfxRotate": -12 }} }},
+        {{ "id": "char-action", "type": "sprite", "x": "30%", "y": "55%", "opacity": 0, "props": {{ "character": "Hero", "expression": "determined", "size": 60, "facing": "right" }} }}
+      ], "timeline": [
+        {{ "at": 100, "target": "speed", "animate": {{ "opacity": [0, 0.8] }}, "duration": 200 }},
+        {{ "at": 150, "target": "char-action", "animate": {{ "opacity": [0, 1], "scale": [0.8, 1] }}, "duration": 300, "easing": "spring" }},
+        {{ "at": 300, "target": "sfx1", "animate": {{ "opacity": [0, 1], "scale": [1.5, 1] }}, "duration": 200, "easing": "bounce" }}
+      ] }},
+      {{ "id": "bl", "position": "1", "layers": [
+        {{ "id": "impact", "type": "effect", "opacity": 0, "props": {{ "effect": "impact_burst", "color": "#E8191A", "intensity": 0.7 }} }},
+        {{ "id": "reaction", "type": "text", "x": "15%", "y": "40%", "opacity": 0, "props": {{ "content": "The moment everything shifted.", "fontSize": "clamp(0.85rem, 3vw, 1.3rem)", "fontFamily": "body", "color": "#F0EEE8" }} }}
+      ], "timeline": [
+        {{ "at": 400, "target": "impact", "animate": {{ "opacity": [0, 1] }}, "duration": 250, "easing": "ease-out" }},
+        {{ "at": 700, "target": "reaction", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 1000 }}
+      ] }},
+      {{ "id": "br", "position": "2", "layers": [
+        {{ "id": "char-react", "type": "sprite", "x": "50%", "y": "60%", "opacity": 0, "props": {{ "character": "Observer", "expression": "shocked", "size": 52, "facing": "left" }} }}
+      ], "timeline": [
+        {{ "at": 500, "target": "char-react", "animate": {{ "opacity": [0, 1] }}, "duration": 350 }}
+      ] }}
+    ],
+    "timeline": []
+  }}],
+  "meta": {{ "content_type": "montage", "narrative_beat": "The confrontation", "duration_ms": 4000 }}
+}}
+
+Example 5 — NARRATION with atmospheric effects (NO sprites, NO dialogue):
+{{
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#1A1825", "mood": "dark" }},
+  "acts": [{{
+    "id": "reflect", "duration_ms": 6000,
+    "transition_in": {{ "type": "fade", "duration_ms": 800 }},
+    "layout": {{ "type": "full" }},
+    "layers": [
+      {{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#1A1825", "#2A2838"], "pattern": "halftone", "patternOpacity": 0.06 }} }},
+      {{ "id": "vignette", "type": "effect", "opacity": 0, "props": {{ "effect": "vignette", "intensity": 0.5 }} }},
+      {{ "id": "particles", "type": "effect", "opacity": 0, "props": {{ "effect": "particles", "color": "#F0EEE830", "intensity": 0.3 }} }},
+      {{ "id": "quote", "type": "text", "x": "12%", "y": "35%", "opacity": 0, "props": {{ "content": "Some truths can only be understood in silence.", "fontSize": "clamp(1.1rem, 4vw, 2rem)", "fontFamily": "display", "color": "#F0EEE8", "maxWidth": "75%", "lineHeight": 1.6, "typewriter": true, "typewriterSpeed": 55 }} }},
+      {{ "id": "attribution", "type": "text", "x": "60%", "y": "72%", "opacity": 0, "props": {{ "content": "— The Narrator", "fontSize": "clamp(0.7rem, 2vw, 0.9rem)", "fontFamily": "label", "color": "#A8A6C0" }} }}
+    ],
+    "cells": [],
+    "timeline": [
+      {{ "at": 200, "target": "vignette", "animate": {{ "opacity": [0, 1] }}, "duration": 600 }},
+      {{ "at": 400, "target": "particles", "animate": {{ "opacity": [0, 0.4] }}, "duration": 800 }},
+      {{ "at": 800, "target": "quote", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 3000 }},
+      {{ "at": 4200, "target": "attribution", "animate": {{ "opacity": [0, 0.7] }}, "duration": 600, "easing": "ease-in" }}
+    ]
+  }}],
+  "meta": {{ "content_type": "narration", "narrative_beat": "Quiet reflection", "duration_ms": 6000 }}
+}}
+
 ## CRITICAL RULES:
 - Return ONLY valid JSON. No markdown.
 - Canvas is 800×600. Engine scales responsively.
@@ -261,6 +358,21 @@ Example 2 — QUIET DIALOGUE with cut layout + 2 acts:
 - NEVER generate image URLs. Everything is code-rendered.
 - Prefer screentone/crosshatch patterns over flat gradients.
 - DON'T just put text on a gradient — that's what the fallback engine does. YOU are the artist.
+
+## ANTI-REPETITION (CRITICAL):
+When generating multiple panels for a page, you MUST vary:
+- **Layouts**: If panel 1 uses "full", panel 2 MUST use a different layout ("cuts", "split-h", etc.)
+- **Effects**: Don't use the same effect (vignette, speed_lines) on 2+ adjacent panels.
+- **Techniques**: Alternate between typewriter text, data_block stagger, sprite slam-in, SFX bursts.
+- **Mood pairing**: Pair light panels with dark panels. Pair fast panels with slow ones.
+- **Layer variety**: A good panel has 4-7 layers. Text + gradient alone is BORING. Add:
+  • An effect layer (speed_lines, screentone, vignette, particles)
+  • A character sprite (even in narration panels — a silhouette adds presence)
+  • An SFX text for emphasis moments
+  • A data_block for structured information
+
+If the layout_hint says "cuts", you MUST use layout type "cuts" with actual cuts[] and cells[].
+Do NOT downgrade "cuts" to "full". The cuts layout is what makes it manga.
 """
 
 

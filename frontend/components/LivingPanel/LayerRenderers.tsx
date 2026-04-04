@@ -143,11 +143,15 @@ export function TextRenderer({
         fontFamily: fontMap[props.fontFamily || "body"],
         color: props.color || "#1A1825",
         textAlign: props.textAlign || "left",
-        maxWidth: props.maxWidth || "100%",
+        maxWidth: props.maxWidth || "90%",
         lineHeight: props.lineHeight || 1.4,
         textShadow: props.textShadow,
         letterSpacing: props.letterSpacing,
         whiteSpace: "pre-wrap" as const,
+        // 2D: Prevent text from overflowing panel bounds
+        overflow: "hidden" as const,
+        maxHeight: "80%",
+        wordBreak: "break-word" as const,
       }}
     >
       {visibleText}

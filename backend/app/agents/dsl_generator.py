@@ -34,6 +34,214 @@ from app.models import SummaryStyle
 
 logger = logging.getLogger(__name__)
 
+
+# ============================================================
+# 2C: POST-GENERATION DSL ENFORCEMENT
+# ============================================================
+
+def _enforce_content_requirements(
+    dsl: dict,
+    assignment: PanelAssignment,
+) -> dict:
+    """Ensure the DSL actually contains elements appropriate for its content type.
+
+    The LLM sometimes generates a dialogue panel with no sprites or speech bubbles,
+    or a splash panel with no effects. This safety net injects missing elements.
+    """
+    if not dsl.get("acts"):
+        return dsl
+
+    content_type = assignment.content_type
+    first_act = dsl["acts"][0]
+
+    # Collect all layer types across the first act (including cells)
+    all_layers = list(first_act.get("layers", []))
+    for cell in first_act.get("cells", []):
+        all_layers.extend(cell.get("layers", []))
+    layer_types = {l.get("type") for l in all_layers}
+
+    # ── Dialogue panels MUST have sprites + speech bubbles ──
+    if content_type == "dialogue":
+        if "sprite" not in layer_types and assignment.dialogue:
+            logger.info(f"{assignment.panel_id}: Injecting missing sprites for dialogue")
+            _inject_dialogue_sprites(first_act, assignment)
+        if "speech_bubble" not in layer_types and assignment.dialogue:
+            logger.info(f"{assignment.panel_id}: Injecting missing speech bubbles")
+            _inject_dialogue_bubbles(first_act, assignment)
+
+    # ── Splash panels SHOULD have at least one effect ──
+    if content_type == "splash":
+        effect_types = {
+            l.get("props", {}).get("effect")
+            for l in all_layers if l.get("type") == "effect"
+        }
+        if not effect_types:
+            logger.info(f"{assignment.panel_id}: Injecting speed_lines for splash")
+            _inject_splash_effect(first_act)
+
+    # ── Data panels SHOULD have a data_block ──
+    if content_type == "data" and "data_block" not in layer_types:
+        concepts = [c.strip() for c in assignment.text_content.split("|") if c.strip()]
+        if concepts:
+            logger.info(f"{assignment.panel_id}: Injecting data_block for data panel")
+            _inject_data_block(first_act, concepts)
+
+    # ── Enforce layout hint: if planner said "cuts", at least one act should have cuts ──
+    if assignment.layout_hint == "cuts":
+        has_cuts = any(
+            act.get("layout", {}).get("type") == "cuts"
+            for act in dsl.get("acts", [])
+        )
+        if not has_cuts and content_type in ("dialogue", "montage", "action"):
+            logger.info(f"{assignment.panel_id}: Upgrading layout to cuts per planner hint")
+            _upgrade_to_cuts_layout(first_act, assignment)
+
+    return dsl
+
+
+def _inject_dialogue_sprites(
+    act: dict, assignment: PanelAssignment,
+) -> None:
+    """Add character sprites for dialogue participants."""
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+    characters = []
+    for d in assignment.dialogue:
+        name = d.get("character", "?") if isinstance(d, dict) else "?"
+        if name not in characters:
+            characters.append(name)
+
+    positions = [("25%", "65%", "right"), ("70%", "62%", "left")]
+    for i, char in enumerate(characters[:2]):
+        x, y, facing = positions[i % 2]
+        layer_id = f"sprite-{i}"
+        layers.append({
+            "id": layer_id, "type": "sprite",
+            "x": x, "y": y, "opacity": 0,
+            "props": {
+                "character": char,
+                "expression": assignment.expression or "neutral",
+                "size": 56, "facing": facing,
+            },
+        })
+        timeline.append({
+            "at": 200 + i * 200, "target": layer_id,
+            "animate": {"opacity": [0, 1]}, "duration": 400,
+            "easing": "ease-out",
+        })
+
+
+def _inject_dialogue_bubbles(
+    act: dict, assignment: PanelAssignment,
+) -> None:
+    """Add speech bubbles for dialogue lines."""
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+    y_positions = ["8%", "18%", "28%"]
+    for i, d in enumerate(assignment.dialogue[:3]):
+        if isinstance(d, str):
+            d = {"text": d, "character": "?"}
+        layer_id = f"bubble-{i}"
+        layers.append({
+            "id": layer_id, "type": "speech_bubble",
+            "x": "10%" if i % 2 == 0 else "50%",
+            "y": y_positions[i % 3],
+            "opacity": 0,
+            "props": {
+                "text": d.get("text", ""),
+                "character": d.get("character", "?"),
+                "style": "speech",
+                "tailDirection": "bottom" if i % 2 == 0 else "left",
+                "typewriter": True, "typewriterSpeed": 30,
+            },
+        })
+        timeline.append({
+            "at": 800 + i * 600, "target": layer_id,
+            "animate": {"opacity": [0, 1], "typewriter": True},
+            "duration": 1200, "easing": "ease-out",
+        })
+
+
+def _inject_splash_effect(act: dict) -> None:
+    """Add speed_lines effect to a splash panel."""
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+    layers.append({
+        "id": "speed-inject", "type": "effect", "opacity": 0,
+        "props": {
+            "effect": "speed_lines", "color": "#F0EEE8",
+            "intensity": 0.5, "direction": "radial",
+        },
+    })
+    timeline.insert(0, {
+        "at": 100, "target": "speed-inject",
+        "animate": {"opacity": [0, 0.7]}, "duration": 300,
+        "easing": "ease-out",
+    })
+
+
+def _inject_data_block(act: dict, concepts: list[str]) -> None:
+    """Add a data_block layer for concept items."""
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+    items = [{"label": c} for c in concepts[:6]]
+    layers.append({
+        "id": "data-inject", "type": "data_block",
+        "x": "10%", "y": "25%", "opacity": 0,
+        "props": {
+            "items": items, "accentColor": "#E8191A",
+            "showIndex": True, "animateIn": "stagger",
+            "staggerDelay": 200,
+        },
+    })
+    timeline.append({
+        "at": 600, "target": "data-inject",
+        "animate": {"opacity": [0, 1]}, "duration": 400,
+        "easing": "ease-out",
+    })
+
+
+def _upgrade_to_cuts_layout(
+    act: dict, assignment: PanelAssignment,
+) -> None:
+    """Upgrade a full/split layout to cuts with 2 cells.
+
+    Moves existing non-background layers into cells.
+    """
+    old_layers = act.get("layers", [])
+    old_timeline = act.get("timeline", [])
+
+    # Separate background from content layers
+    bg_layers = [l for l in old_layers if l.get("type") == "background"]
+    content_layers = [l for l in old_layers if l.get("type") != "background"]
+
+    if len(content_layers) < 2:
+        return  # Not enough layers to meaningfully split
+
+    # Split content layers into two cells
+    mid = len(content_layers) // 2
+    cell0_layers = content_layers[:mid]
+    cell1_layers = content_layers[mid:]
+
+    # Build timeline for each cell
+    cell0_ids = {l["id"] for l in cell0_layers}
+    cell1_ids = {l["id"] for l in cell1_layers}
+    cell0_tl = [t for t in old_timeline if t.get("target") in cell0_ids]
+    cell1_tl = [t for t in old_timeline if t.get("target") in cell1_ids]
+
+    act["layout"] = {
+        "type": "cuts",
+        "cuts": [{"direction": "v", "position": 0.55, "angle": 1.5}],
+        "gap": 5,
+        "stagger_ms": 150,
+    }
+    act["layers"] = bg_layers
+    act["timeline"] = [t for t in old_timeline if t.get("target") not in cell0_ids | cell1_ids]
+    act["cells"] = [
+        {"id": "left", "position": "0", "layers": cell0_layers, "timeline": cell0_tl},
+        {"id": "right", "position": "1", "layers": cell1_layers, "timeline": cell1_tl},
+    ]
+
 # Content type → temperature mapping.
 # Creative panels run hotter, structured panels run cooler.
 TEMPERATURE_MAP = {
@@ -234,6 +442,8 @@ async def generate_page_dsls(
                         f"DSL issues for {assignment.panel_id}: {errors[:3]}"
                     )
                 _inject_panel_meta(dsl, assignment)
+                # 2C: Enforce content type requirements
+                dsl = _enforce_content_requirements(dsl, assignment)
                 per_panel_tokens = {
                     "input": tokens_used["input"] // len(page_panels),
                     "output": tokens_used["output"] // len(page_panels),
@@ -321,6 +531,8 @@ async def generate_panel_dsl(
             )
 
         _inject_panel_meta(parsed, assignment)
+        # 2C: Enforce content type requirements
+        parsed = _enforce_content_requirements(parsed, assignment)
 
         tokens_used = {
             "input": result.get("input_tokens", 0),

@@ -96,11 +96,24 @@ agent HOW to make it interesting. Think about:
 ## RULES:
 1. First page of each chapter MUST be a splash (title page)
 2. Last page of each chapter should be a transition or cliffhanger
-3. Vary layouts — don't repeat the same layout 3 times in a row
-4. Image budget goes to the MOST visually impactful splash panels
-5. Every chapter needs at least 1 dialogue panel with character interaction
-6. Keep total panels per chapter between 2-8 (scale to content size)
-7. NEVER exceed the HARD CAP on total panels specified in constraints
+3. Image budget goes to the MOST visually impactful splash panels
+4. Every chapter needs at least 1 dialogue panel with character interaction
+5. Keep total panels per chapter between 2-8 (scale to content size)
+6. NEVER exceed the HARD CAP on total panels specified in constraints
+
+## LAYOUT VARIETY (CRITICAL — this is what makes it feel like MANGA):
+- NEVER use the same layout on more than 2 consecutive pages.
+- At least 40% of pages MUST use "cuts" layout. This is manga's signature.
+- Use this mapping as your guide:
+  • splash → "full" (big dramatic moment, full page)
+  • dialogue → "cuts" (ALWAYS — characters in separate cells with angled dividers)
+  • narration → "full" or "split-v" (atmospheric breathing room)
+  • data → "grid-2x2" or "split-h" (structured information)
+  • montage → "cuts" with 3+ cells (rapid sequence, steep angles)
+  • concept → "full" or "cuts" (abstract visualization)
+  • transition → "full" (chapter break, minimal)
+- The rhythm of layouts IS the pacing. Full→cuts→cuts→full creates energy.
+  Full→full→full→full is a slideshow, not manga.
 
 Return JSON:
 {{
