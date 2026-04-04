@@ -375,13 +375,10 @@ def generate_summary_task(
                     narrative_state["terms"].extend(
                         state_update.get("new_terms", [])
                     )
-                    # Threads: replace with latest unresolved
+                    # Replace threads with what this chapter says is still open
                     new_threads = state_update.get("unresolved_threads", [])
-                    resolved = state_update.get("resolved_threads", [])
-                    narrative_state["threads"] = [
-                        t for t in narrative_state["threads"]
-                        if t not in resolved
-                    ] + new_threads
+                    if new_threads:
+                        narrative_state["threads"] = new_threads
                     if state_update.get("emotional_shift"):
                         narrative_state["emotional_arc"].append(
                             state_update["emotional_shift"]

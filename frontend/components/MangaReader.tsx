@@ -359,7 +359,7 @@ export function MangaReader({ summary }: { summary: Summary }) {
           montage: "warm-amber",
           narration: "cool-mystery",
           data: "cool-mystery",
-          transition: "soft-melancholy",
+          transition: "ethereal-purple",
         };
         const mood = legacyMoodMap[p.panel_type] || "dramatic-dark";
 

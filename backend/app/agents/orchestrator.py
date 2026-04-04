@@ -135,6 +135,8 @@ class MangaOrchestrator:
             cancelled=cancelled, image_panel_ids=[],
             book_synopsis=book_synopsis or {},
             manga_bible=manga_bible or {},
+            bible_used=bible_ok,
+            synopsis_used=synopsis_ok,
         )
 
         # ── PHASE 0: Credit check ──
