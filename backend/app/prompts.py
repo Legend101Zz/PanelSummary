@@ -70,11 +70,15 @@ def get_canonical_summary_prompt(style: SummaryStyle) -> str:
     System prompt for generating the canonical chapter summary.
     This is called ONCE per chapter. The output is cached and
     used to generate both manga panels AND reel scripts.
+
+    Includes narrative_state_update for cross-chapter context tracking.
+    See: SUMMARIZATION_ANALYSIS.md, Problem 1 & 3 / P0 & P2.
     """
     style_desc = STYLE_DESCRIPTORS[style]
 
     return f"""You are a world-class book summarizer and knowledge architect.
 Your job is to distill a book chapter into its essential structure.
+You may receive context from earlier chapters — use it to maintain continuity.
 
 STYLE GUIDANCE:
 {style_desc}
@@ -99,7 +103,13 @@ You MUST return a valid JSON object with this exact schema:
     "string — practical takeaway the reader can use (if applicable)"
   ],
   "dramatic_moment": "string — the single most surprising or revelatory moment in this chapter (1-2 sentences)",
-  "metaphor": "string — a vivid metaphor that captures the chapter's essence (for manga/visual use)"
+  "metaphor": "string — a vivid metaphor that captures the chapter's essence (for manga/visual use)",
+  "narrative_state_update": {{
+    "new_characters": ["string — name (role) — only characters/entities NEW in this chapter"],
+    "new_terms": ["string — term: brief definition — key concepts introduced here"],
+    "unresolved_threads": ["string — questions/tensions left open at chapter end"],
+    "emotional_shift": "string — how the reader's emotional state changes in this chapter (e.g. 'curious → unsettled')"
+  }}
 }}
 
 RULES:
@@ -107,6 +117,8 @@ RULES:
 - key_concepts must be 3-7 items.
 - narrative_summary must be 100-300 words.
 - one_liner must be under 20 words and genuinely capture the chapter's thesis.
+- narrative_state_update: only list what's NEW in THIS chapter. Don't repeat earlier context.
+- If previous chapter context is provided, use it to connect this chapter's summary to the broader arc.
 - If the text is very short (< 200 words), do your best and note that in one_liner.
 """
 
@@ -364,19 +376,33 @@ RULES:
 # The actual content we send with the system prompts
 # ============================================================
 
-def format_chapter_for_llm(chapter: dict, max_words: int = 3000) -> str:
-    """
-    Prepare chapter content for LLM consumption.
-    Truncates if too long (saves tokens = saves money).
+def format_chapter_for_llm(chapter: dict, max_words: int = 8000) -> str:
+    """Prepare chapter content for LLM consumption.
+
+    Default limit raised to 8000 words (~10K tokens) — well within
+    modern model context windows (128K+). A 6000-word chapter passes
+    through untouched.
+
+    When truncation IS needed, we keep the beginning AND end of the
+    chapter (middle-truncation). Chapters build to their conclusion;
+    front-only truncation loses the dramatic_moment and key insight.
+    See: SUMMARIZATION_ANALYSIS.md, Problem 2.
     """
     title = chapter.get("title", "Unknown Chapter")
     content = chapter.get("content", "")
 
-    # Truncate to max_words
     words = content.split()
     if len(words) > max_words:
-        content = " ".join(words[:max_words])
-        content += f"\n\n[Content truncated at {max_words} words for summarization]"
+        # Middle-truncation: keep beginning + end (the two most important parts)
+        half = max_words // 2
+        beginning = " ".join(words[:half])
+        ending = " ".join(words[-half:])
+        omitted = len(words) - max_words
+        content = (
+            f"{beginning}"
+            f"\n\n[...{omitted} words omitted from middle for summarization...]\n\n"
+            f"{ending}"
+        )
 
     return f"""CHAPTER TITLE: {title}
 
@@ -450,21 +476,24 @@ THIS CHAPTER'S PLAN:
 def format_all_summaries_for_synopsis(canonical_chapters: list[dict]) -> str:
     """Format all canonical chapter summaries for the book synopsis agent.
 
-    NOTE: We intentionally skip narrative_summary to keep context lean.
-    The one-liner + key concepts + dramatic moment give the synopsis agent
-    everything it needs without burning tokens on 300-char previews.
+    Includes the full narrative_summary so the synopsis agent can
+    synthesize from actual content instead of tweet-length inputs.
+    See: SUMMARIZATION_ANALYSIS.md, Problem 5 / P3.
     """
     sections = []
     for ch in canonical_chapters:
         concepts = ", ".join(ch.get('key_concepts', [])[:6])  # cap at 6
         dramatic = ch.get('dramatic_moment', '')
+        narrative = ch.get('narrative_summary', '')
         parts = [
             f"CHAPTER {ch.get('chapter_index', 0)} \u2014 {ch.get('chapter_title', 'Unknown')}:",
             f"  One-liner: {ch.get('one_liner', '')}",
             f"  Key concepts: {concepts}",
         ]
         if dramatic:
-            parts.append(f"  Dramatic moment: {dramatic[:120]}")
+            parts.append(f"  Dramatic moment: {dramatic}")
+        if narrative:
+            parts.append(f"  Summary: {narrative}")
         sections.append("\n".join(parts))
     return "\n\n".join(sections)
 

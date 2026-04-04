@@ -281,7 +281,18 @@ def generate_summary_task(
         total_tokens = 0
         total_cost = 0.0
 
-        # STAGE 1: Canonical summaries (one per chapter)
+        # Running context for cross-chapter awareness (P0 + P2)
+        # Each chapter's summary feeds the next chapter's context,
+        # so the LLM knows who characters are, what happened, etc.
+        running_context = ""
+        narrative_state = {
+            "characters": [],   # accumulated from each chapter's narrative_state_update
+            "terms": [],        # accumulated key terms
+            "threads": [],      # currently open threads
+            "emotional_arc": [],  # emotional progression
+        }
+
+        # STAGE 1: Canonical summaries (one per chapter, with accumulated context)
         for i, chapter in enumerate(all_chapters):
             progress = int((i / total_chapters) * 40)  # 0-40%
             sync_update_job(
@@ -302,7 +313,17 @@ def generate_summary_task(
             }
 
             system_prompt = get_canonical_summary_prompt(summary_style)
-            user_message = format_chapter_for_llm(chapter_dict)
+
+            # Build user message with running context (P0)
+            chapter_text = format_chapter_for_llm(chapter_dict)
+            if running_context:
+                user_message = f"""CONTEXT FROM PREVIOUS CHAPTERS:
+{running_context}
+
+{'=' * 40}
+{chapter_text}"""
+            else:
+                user_message = chapter_text
 
             try:
                 result = await llm.chat_with_retry(
@@ -334,7 +355,57 @@ def generate_summary_task(
                 canonical_dict = canonical.model_dump()
                 canonical_dict["dramatic_moment"] = parsed.get("dramatic_moment", "")
                 canonical_dict["metaphor"] = parsed.get("metaphor", "")
+                canonical_dict["narrative_state_update"] = parsed.get("narrative_state_update", {})
                 canonical_chapters.append(canonical_dict)
+
+                # Update running context for next chapter (P0)
+                concepts_str = ", ".join(canonical.key_concepts[:3])
+                running_context += (
+                    f"\nCh{chapter.index} ({canonical.chapter_title}): "
+                    f"{canonical.one_liner}. "
+                    f"Key: {concepts_str}\n"
+                )
+
+                # Update narrative state (P2)
+                state_update = parsed.get("narrative_state_update", {})
+                if state_update:
+                    narrative_state["characters"].extend(
+                        state_update.get("new_characters", [])
+                    )
+                    narrative_state["terms"].extend(
+                        state_update.get("new_terms", [])
+                    )
+                    # Threads: replace with latest unresolved
+                    new_threads = state_update.get("unresolved_threads", [])
+                    resolved = state_update.get("resolved_threads", [])
+                    narrative_state["threads"] = [
+                        t for t in narrative_state["threads"]
+                        if t not in resolved
+                    ] + new_threads
+                    if state_update.get("emotional_shift"):
+                        narrative_state["emotional_arc"].append(
+                            state_update["emotional_shift"]
+                        )
+
+                    # Add narrative state summary to running context
+                    # (compact form — only if we have meaningful data)
+                    if narrative_state["characters"]:
+                        running_context += (
+                            f"Characters so far: "
+                            f"{', '.join(narrative_state['characters'][-6:])}\n"
+                        )
+                    if narrative_state["threads"]:
+                        running_context += (
+                            f"Open threads: "
+                            f"{'; '.join(narrative_state['threads'][-3:])}\n"
+                        )
+
+                # Cap running context to prevent unbounded growth
+                # (~500 tokens max — keeps cost negligible)
+                if len(running_context) > 2000:
+                    lines = running_context.strip().split("\n")
+                    # Keep last N lines (most recent chapters)
+                    running_context = "\n".join(lines[-15:]) + "\n"
 
             except Exception as e:
                 logger.error(f"Failed to summarize chapter {i}: {e}")
