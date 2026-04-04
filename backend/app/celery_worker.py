@@ -235,6 +235,7 @@ def generate_summary_task(
     chapter_range: list = None,       # [start_idx, end_idx] inclusive; None = all
     generate_images: bool = False,    # run AI image gen after panels
     image_model: str = None,          # image generation model (OpenRouter)
+    generation_mode: str = "llm",     # "llm" or "template"
 ):
     """Background task: Compress chapters → Orchestrator (synopsis + bible + DSLs) → Images."""
     logger.info(f"Starting summary generation for book {book_id}")
@@ -446,11 +447,10 @@ def generate_summary_task(
             phase="analysis",
         )
 
-        # STAGE 2: THE ORCHESTRATOR
+        # STAGE 2: THE ORCHESTRATOR (LLM or Template mode)
         summary_doc.status = ProcessingStatus.GENERATING
         await summary_doc.save()
 
-        from app.agents.orchestrator import MangaOrchestrator
         from app.agents.credit_tracker import CreditTracker
 
         credit_tracker = CreditTracker(api_key=api_key, model=llm.model)
@@ -486,15 +486,30 @@ def generate_summary_task(
                 estimated_total_cost=panel_detail.get("estimated_cost", None),
             )
 
-        orchestrator = MangaOrchestrator(
-            llm_client=llm,
-            style=summary_style,
-            credit_tracker=credit_tracker,
-            progress_callback=orch_progress,
-            cancel_check=check_cancel,
-            image_budget=5,
-            max_concurrent=4,
-        )
+        # ── Branch: Template vs LLM mode ──
+        if generation_mode == "template":
+            from app.agents.template_orchestrator import TemplateOrchestrator
+            orchestrator = TemplateOrchestrator(
+                llm_client=llm,
+                style=summary_style,
+                credit_tracker=credit_tracker,
+                progress_callback=orch_progress,
+                cancel_check=check_cancel,
+                image_budget=5,
+            )
+            logger.info("Using TEMPLATE orchestrator (zero DSL tokens)")
+        else:
+            from app.agents.orchestrator import MangaOrchestrator
+            orchestrator = MangaOrchestrator(
+                llm_client=llm,
+                style=summary_style,
+                credit_tracker=credit_tracker,
+                progress_callback=orch_progress,
+                cancel_check=check_cancel,
+                image_budget=5,
+                max_concurrent=4,
+            )
+            logger.info("Using LLM orchestrator (per-panel DSL generation)")
 
         orch_result = await orchestrator.run(
             canonical_chapters=canonical_chapters,

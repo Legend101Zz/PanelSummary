@@ -114,6 +114,7 @@ class SummarizeRequest(BaseModel):
     chapter_range: Optional[list[int]] = None   # [start_idx, end_idx] inclusive, None=all
     generate_images: bool = False       # run AI image gen per panel (costs extra)
     image_model: Optional[str] = None  # image generation model (defaults to cheapest)
+    generation_mode: str = "llm"       # "llm" (original) or "template" (fast, zero DSL tokens)
 
 
 class UpdateTitleRequest(BaseModel):
@@ -354,6 +355,11 @@ async def start_summarization(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid style: {request.style}")
 
+    # Validate generation mode
+    gen_mode = request.generation_mode
+    if gen_mode not in ("llm", "template"):
+        gen_mode = "llm"
+
     # Create BookSummary document
     summary = BookSummary(
         book_id=book_id,
@@ -361,6 +367,7 @@ async def start_summarization(
         model=request.model,
         chapter_range=request.chapter_range,
         generate_images=request.generate_images,
+        generation_mode=gen_mode,
         status=ProcessingStatus.PENDING,
     )
     await summary.insert()
@@ -378,6 +385,7 @@ async def start_summarization(
         chapter_range=request.chapter_range,
         generate_images=request.generate_images,
         image_model=request.image_model,
+        generation_mode=gen_mode,
     )
 
     # Track job status
@@ -817,6 +825,7 @@ async def get_book_summaries(book_id: str):
             "total_chapters": len(s.canonical_chapters),
             "total_reels": len(s.reels),
             "estimated_cost_usd": s.estimated_cost_usd,
+            "generation_mode": getattr(s, "generation_mode", "llm"),
             "created_at": s.created_at.isoformat(),
         }
         for s in summaries

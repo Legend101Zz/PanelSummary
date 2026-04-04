@@ -24,7 +24,7 @@ import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
 import type { LogEntry } from "@/components/LogFeed";
 import { getImageModels } from "@/lib/api";
 import { GenerationFacts } from "@/components/GenerationFacts";
-import type { Book, SummaryListItem, SummaryStyle, LLMProvider } from "@/lib/types";
+import type { Book, SummaryListItem, SummaryStyle, LLMProvider, GenerationMode } from "@/lib/types";
 
 // ─── GENERATE PANEL ─────────────────────────────────────────
 // ─── GENERATE PANEL ─────────────────────────────────────────
@@ -38,6 +38,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
   const [keyError, setKeyError]     = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genImages, setGenImages]   = useState(false);
+  const [genMode, setGenMode]       = useState<"llm" | "template">("template");
   const [imageModel, setImageModel] = useState("google/gemini-2.5-flash-image");
   const [imageModelOptions, setImageModelOptions] = useState<{id:string;name:string}[]>([
     { id: "google/gemini-2.5-flash-image",            name: "Gemini 2.5 Flash Image — $2.50/1M (cheapest)" },
@@ -125,6 +126,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
         chapterRange,
         generateImages: genImages,
         imageModel: genImages ? imageModel : undefined,
+        generationMode: genMode,
       });
       setTaskId(res.task_id);
       push(2, `Task received · model: ${localModel}`);
@@ -219,6 +221,57 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Generation Mode toggle */}
+      <div className="flex flex-col gap-1.5">
+        <p className="text-label">GENERATION MODE</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            onClick={() => !generating && setGenMode("template")}
+            disabled={generating}
+            className="flex flex-col items-center gap-1 py-2.5 border transition-all"
+            style={{
+              borderColor: genMode === "template" ? "var(--teal)" : "var(--border)",
+              background: genMode === "template" ? "rgba(0,191,165,0.08)" : "var(--surface-2)",
+            }}
+          >
+            <span className="text-base leading-none">⚡</span>
+            <span className="font-label" style={{
+              fontSize: "8px",
+              color: genMode === "template" ? "var(--teal)" : "var(--text-3)",
+            }}>TEMPLATE</span>
+            <span className="font-label" style={{
+              fontSize: "7px",
+              color: "var(--text-3)", opacity: 0.7,
+            }}>Fast · Cheap</span>
+          </button>
+          <button
+            onClick={() => !generating && setGenMode("llm")}
+            disabled={generating}
+            className="flex flex-col items-center gap-1 py-2.5 border transition-all"
+            style={{
+              borderColor: genMode === "llm" ? "var(--amber)" : "var(--border)",
+              background: genMode === "llm" ? "rgba(245,166,35,0.08)" : "var(--surface-2)",
+            }}
+          >
+            <span className="text-base leading-none">🧠</span>
+            <span className="font-label" style={{
+              fontSize: "8px",
+              color: genMode === "llm" ? "var(--amber)" : "var(--text-3)",
+            }}>LLM DSL</span>
+            <span className="font-label" style={{
+              fontSize: "7px",
+              color: "var(--text-3)", opacity: 0.7,
+            }}>Creative · Costly</span>
+          </button>
+        </div>
+        {genMode === "template" && (
+          <p className="font-label" style={{ fontSize: "8px", color: "var(--teal)", lineHeight: 1.4 }}>
+            ⚡ Templates use hand-crafted panel designs. ~7x cheaper, 3x faster.
+            LLM still handles summarization &amp; planning.
+          </p>
+        )}
       </div>
 
       {/* Generate Images toggle */}
@@ -418,6 +471,9 @@ function SummaryRow({ summary, bookId, onDeleted }: { summary: SummaryListItem; 
           <p className="text-label" style={{ fontSize: "9px" }}>
             {summary.total_chapters} ch · {hasReels ? `${summary.total_reels} reels` : "no reels yet"}
             {summary.estimated_cost_usd > 0 && ` · $${summary.estimated_cost_usd.toFixed(3)}`}
+            {summary.generation_mode === "template" && (
+              <span style={{ color: "var(--teal)", marginLeft: 4 }}>⚡TPL</span>
+            )}
           </p>
         </div>
       </Link>
