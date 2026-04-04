@@ -30,6 +30,9 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_acks_late=True,
     broker_connection_retry_on_startup=True,
+    # Hard time limits per task (in seconds)
+    task_time_limit=600,       # 10 min hard kill
+    task_soft_time_limit=540,  # 9 min soft warning
 )
 
 def run_async(coro):

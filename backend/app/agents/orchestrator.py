@@ -2,34 +2,34 @@
 orchestrator.py — Manga Generation Orchestrator
 =================================================
 The conductor of the entire manga generation pipeline.
-Coordinates all agents and manages the flow:
 
-1. UNDERSTAND — Receive full text context from upstream stages
-2. PLAN — Create manga structure (planner agent)
-3. ESTIMATE — Pre-flight cost estimation before burning tokens
-4. GENERATE — Create Living Panel DSLs (TRUE parallel, all panels)
-5. VALIDATE — Check all DSLs, fix issues
-6. ASSEMBLE — Combine into final manga structure
+Phases:
+  0. Credit check
+  1. Book analysis (synopsis + bible) — parallel
+  2. Planning (structure + cost estimate)
+  3. Parallel DSL generation — PER-PAGE, not per-panel
+  4. Assembly + validation
 
-Key features:
-- TRUE parallel DSL generation (all panels at once, semaphore for rate limit)
-- Pre-flight cost estimation before any DSL generation
-- Adjacent panel context for pacing/continuity awareness
-- Credit tracking with cancel support
-- Granular real-time status updates
-- Graceful degradation (fallback DSLs if LLM fails)
+Key design decisions:
+  - Per-page generation: panels on the same page are generated
+    together so the LLM can compose them as a visual unit.
+    This cuts API calls from ~25 to ~8 and produces coordinated panels.
+  - Previous chapter ending context for cross-chapter continuity.
+  - Semaphore-limited concurrency for rate limit protection.
+  - Graceful fallback: if a page fails, each panel gets individual fallback.
 """
 
 import asyncio
 import logging
 import time
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable, Optional
 
 from app.llm_client import LLMClient
 from app.models import SummaryStyle
 from app.agents.planner import MangaPlan, PanelAssignment, plan_manga
-from app.agents.dsl_generator import generate_panel_dsl
+from app.agents.dsl_generator import generate_page_dsls, generate_panel_dsl
 from app.agents.credit_tracker import CreditTracker
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,6 @@ class MangaOrchestrator:
         self.image_budget = image_budget
         self.max_concurrent = max_concurrent
         self._semaphore = asyncio.Semaphore(max_concurrent)
-        # Cancel flag — checked once, cached to avoid repeated DB hits
         self._cancel_cache_time: float = 0
         self._cancel_cached: bool = False
 
@@ -124,19 +123,7 @@ class MangaOrchestrator:
         manga_bible: dict | None = None,
         llm_client: Optional["LLMClient"] = None,
     ) -> OrchestratorResult:
-        """Execute the full manga generation pipeline.
-
-        The orchestrator IS the brain. It owns:
-        - Phase 0: Credit check
-        - Phase 1: Book analysis (synopsis + manga bible) — if not provided
-        - Phase 2: Manga structure planning
-        - Phase 3: Cost estimation
-        - Phase 4: Parallel DSL generation
-        - Phase 5: Assembly + validation
-
-        If book_synopsis and manga_bible are provided (from previous pipeline),
-        Phase 1 is skipped. This allows both fresh runs and incremental usage.
-        """
+        """Execute the full manga generation pipeline."""
         start_time = time.time()
         empty_result = lambda cancelled=True: OrchestratorResult(
             living_panels=[], manga_plan=None,
@@ -159,9 +146,6 @@ class MangaOrchestrator:
             self._report(2, f"Credits: ${remaining:.4f} remaining", "credits")
 
         # ── PHASE 1: Book Analysis (synopsis + bible IN PARALLEL) ──
-        # Key insight: synopsis and bible are INDEPENDENT of each other.
-        # Both only need canonical_chapters. Running them in parallel
-        # saves ~30-40% of this phase's wall time.
         need_synopsis = not book_synopsis
         need_bible = not manga_bible
 
@@ -185,7 +169,7 @@ class MangaOrchestrator:
                 try:
                     from app.stage_manga_planner import generate_manga_bible
                     result = await generate_manga_bible(
-                        book_synopsis=book_synopsis or {},  # may be empty on first pass
+                        book_synopsis=book_synopsis or {},
                         canonical_chapters=canonical_chapters,
                         style=self.style,
                         llm_client=self.llm,
@@ -197,7 +181,6 @@ class MangaOrchestrator:
                     logger.warning(f"Bible failed (non-fatal): {e}")
                     return {}
 
-            # Fire both in parallel
             tasks = []
             if need_synopsis:
                 tasks.append(_gen_synopsis())
@@ -222,7 +205,7 @@ class MangaOrchestrator:
         if self._is_cancelled():
             return empty_result()
 
-        # ── PHASE 2: Planning + Cost Estimate (merged) ──
+        # ── PHASE 2: Planning + Cost Estimate ──
         self._report(10, "Planning manga structure...", "planning")
 
         try:
@@ -244,33 +227,38 @@ class MangaOrchestrator:
             manga_plan = _generate_fallback_plan(canonical_chapters, manga_bible)
 
         if self._is_cancelled():
-            return self._cancelled_result(manga_plan, start_time, book_synopsis, manga_bible)
+            return self._cancelled_result(
+                manga_plan, start_time, book_synopsis, manga_bible
+            )
 
-        # Cost estimation (folded into planning report, not a separate phase)
+        # Cost estimation
         est_cost = None
+        n_pages = len(self._group_panels_by_page(manga_plan.panels))
         if self.tracker:
             est = self.tracker.estimate_remaining_cost(
-                remaining_calls=manga_plan.total_panels,
-                avg_tokens=AVG_TOKENS_PER_DSL_CALL,
+                remaining_calls=n_pages,  # per-page, not per-panel!
+                avg_tokens=AVG_TOKENS_PER_DSL_CALL * 3,  # pages are bigger calls
             )
             est_cost = round(self.tracker.snapshot.run_cost + est, 4)
             remaining = self.tracker.snapshot.remaining_credits
             if remaining > 0 and est_cost > remaining * 0.9:
-                logger.warning(f"Est. cost ${est_cost} may exceed remaining ${remaining:.4f}")
+                logger.warning(
+                    f"Est. cost ${est_cost} may exceed remaining ${remaining:.4f}"
+                )
 
         self._report(
             15,
-            f"Plan: {manga_plan.total_panels} panels, {manga_plan.total_pages} pages"
-            + (f" (~${est_cost}" if est_cost else "") + ("" if not est_cost else ")"),
+            f"Plan: {manga_plan.total_panels} panels across {n_pages} pages"
+            + (f" (~${est_cost})" if est_cost else ""),
             "planning",
             {
                 "total_panels": manga_plan.total_panels,
-                "total_pages": manga_plan.total_pages,
+                "total_pages": n_pages,
                 "estimated_cost": est_cost,
             },
         )
 
-        # ── PHASE 3: Parallel DSL Generation (streaming) ──
+        # ── PHASE 3: Per-PAGE DSL Generation (parallel across pages) ──
         self._report(18, "Generating Living Panel DSLs...", "generating")
 
         ch_summaries = {
@@ -278,51 +266,31 @@ class MangaOrchestrator:
             for i, ch in enumerate(canonical_chapters)
         }
 
-        # Build adjacent panel context for pacing awareness
-        panel_neighbors = self._build_neighbor_context(manga_plan.panels)
-        total_panels = len(manga_plan.panels)
-        self._panels_completed = 0  # shared counter for progress
+        # Group panels by page for batch generation
+        page_groups = self._group_panels_by_page(manga_plan.panels)
+        total_panels = manga_plan.total_panels
+        self._panels_completed = 0
 
-        # Fire ALL panels in parallel (semaphore controls concurrency)
-        tasks = [
-            self._generate_with_semaphore(
-                assignment=p,
+        # Build chapter ending context for cross-chapter continuity (issue 2.6)
+        chapter_endings = self._extract_chapter_endings(canonical_chapters)
+
+        # Fire all pages in parallel (semaphore controls concurrency)
+        page_tasks = [
+            self._generate_page_with_semaphore(
+                page_panels=panels,
                 manga_bible=manga_bible,
-                chapter_summary=ch_summaries.get(p.chapter_index),
-                neighbor_context=panel_neighbors.get(p.panel_id, ""),
+                chapter_summary=ch_summaries.get(panels[0].chapter_index),
                 total_panels=total_panels,
+                prev_chapter_ending=chapter_endings.get(
+                    panels[0].chapter_index - 1
+                ) if panels[0].panel_index == 0 else None,
             )
-            for p in manga_plan.panels
+            for _page_key, panels in sorted(page_groups.items())
         ]
 
-        all_panel_results = await asyncio.gather(*tasks, return_exceptions=True)
-
-        # Map results back to panel_ids
-        all_results = {}
-        for i, (assignment, result) in enumerate(
-            zip(manga_plan.panels, all_panel_results)
-        ):
-            if isinstance(result, Exception):
-                logger.error(f"Panel {assignment.panel_id} exception: {result}")
-                all_results[assignment.panel_id] = {
-                    "dsl": None, "success": False, "error": str(result)
-                }
-            else:
-                all_results[assignment.panel_id] = result
-
-            done_count = i + 1
-            pct = 18 + int((done_count / manga_plan.total_panels) * 70)  # 18-88%
-            self._report(
-                pct,
-                f"Panel {done_count}/{manga_plan.total_panels}: "
-                f"{assignment.panel_id}",
-                "generating",
-                {
-                    "panel_id": assignment.panel_id,
-                    "done": done_count,
-                    "total": manga_plan.total_panels,
-                },
-            )
+        all_page_results = await asyncio.gather(
+            *page_tasks, return_exceptions=True
+        )
 
         # ── PHASE 4: Assemble ──
         self._report(90, "Assembling manga...", "assembling")
@@ -331,47 +299,75 @@ class MangaOrchestrator:
         panels_ok = 0
         panels_fail = 0
         image_panel_ids = []
+        page_keys = sorted(page_groups.keys())
 
-        for assignment in manga_plan.panels:
-            result = all_results.get(assignment.panel_id, {})
-            dsl = result.get("dsl")
+        for page_idx, page_result in enumerate(all_page_results):
+            page_panels = page_groups[page_keys[page_idx]]
 
-            if dsl:
-                living_panels.append(dsl)
-                if result.get("success"):
-                    panels_ok += 1
-                else:
+            if isinstance(page_result, Exception):
+                logger.error(f"Page {page_keys[page_idx]} exception: {page_result}")
+                # Full page failure — fallback for each panel
+                for assignment in page_panels:
+                    from app.generate_living_panels import (
+                        generate_fallback_living_panel,
+                    )
+                    fb = generate_fallback_living_panel({
+                        "content_type": assignment.content_type,
+                        "text": assignment.text_content,
+                        "dialogue": assignment.dialogue,
+                        "character": assignment.character,
+                        "expression": assignment.expression,
+                        "visual_mood": assignment.visual_mood,
+                        "position": "main",
+                    })
+                    living_panels.append(fb)
                     panels_fail += 1
-            else:
-                from app.generate_living_panels import generate_fallback_living_panel
-                fallback = generate_fallback_living_panel({
-                    "content_type": assignment.content_type,
-                    "text": assignment.text_content,
-                    "dialogue": assignment.dialogue,
-                    "character": assignment.character,
-                    "expression": assignment.expression,
-                    "visual_mood": assignment.visual_mood,
-                    "position": "main",
-                })
-                living_panels.append(fallback)
-                panels_fail += 1
+                continue
 
-            # Collect panels that should get AI images
-            if assignment.image_budget:
-                image_panel_ids.append(assignment.panel_id)
+            # page_result is a list of {dsl, tokens, success} dicts
+            for i, panel_result in enumerate(page_result):
+                assignment = page_panels[i] if i < len(page_panels) else None
+                dsl = panel_result.get("dsl")
+
+                if dsl:
+                    living_panels.append(dsl)
+                    if panel_result.get("success"):
+                        panels_ok += 1
+                    else:
+                        panels_fail += 1
+                else:
+                    from app.generate_living_panels import (
+                        generate_fallback_living_panel,
+                    )
+                    fb = generate_fallback_living_panel({
+                        "content_type": assignment.content_type if assignment else "narration",
+                        "text": assignment.text_content if assignment else "",
+                        "dialogue": assignment.dialogue if assignment else [],
+                        "character": assignment.character if assignment else None,
+                        "expression": assignment.expression if assignment else "neutral",
+                        "visual_mood": assignment.visual_mood if assignment else "dramatic-dark",
+                        "position": "main",
+                    })
+                    living_panels.append(fb)
+                    panels_fail += 1
+
+                # Collect image-eligible panels
+                if assignment and assignment.image_budget:
+                    image_panel_ids.append(assignment.panel_id)
 
         elapsed = time.time() - start_time
 
         self._report(
             100,
             f"Done! {panels_ok} panels generated, {panels_fail} fallbacks. "
-            f"{elapsed:.1f}s total.",
+            f"{n_pages} pages, {elapsed:.1f}s total.",
             "complete",
             {
                 "panels_ok": panels_ok,
                 "panels_fail": panels_fail,
                 "time_s": round(elapsed, 1),
                 "image_panels": len(image_panel_ids),
+                "pages": n_pages,
             },
         )
 
@@ -388,75 +384,80 @@ class MangaOrchestrator:
             manga_bible=manga_bible or {},
         )
 
-    def _build_neighbor_context(self, panels: list[PanelAssignment]) -> dict[str, str]:
-        """
-        Build a short context string for each panel describing its neighbors.
-        This gives DSL agents awareness of pacing and visual continuity.
-        """
-        neighbors = {}
-        for i, p in enumerate(panels):
-            parts = []
-            if i > 0:
-                prev = panels[i - 1]
-                parts.append(
-                    f"PREVIOUS panel: {prev.content_type} / {prev.visual_mood} "
-                    f"/ layout={prev.layout_hint}"
-                )
-            if i < len(panels) - 1:
-                nxt = panels[i + 1]
-                parts.append(
-                    f"NEXT panel: {nxt.content_type} / {nxt.visual_mood} "
-                    f"/ layout={nxt.layout_hint}"
-                )
-            if parts:
-                parts.insert(0, "\n=== ADJACENT PANELS (for pacing) ===")
-                parts.append(
-                    "Vary your pacing/layout from neighbors. "
-                    "Don't repeat the same mood or layout as adjacent panels."
-                )
-            neighbors[p.panel_id] = "\n".join(parts)
-        return neighbors
+    # ── Helpers ───────────────────────────────────────────────
 
-    async def _generate_with_semaphore(
+    @staticmethod
+    def _group_panels_by_page(
+        panels: list[PanelAssignment],
+    ) -> dict[tuple[int, int], list[PanelAssignment]]:
+        """Group panels by (chapter_index, page_index) for per-page generation."""
+        groups: dict[tuple[int, int], list[PanelAssignment]] = defaultdict(list)
+        for p in panels:
+            groups[(p.chapter_index, p.page_index)].append(p)
+        # Sort panels within each page by panel_index
+        for key in groups:
+            groups[key].sort(key=lambda p: p.panel_index)
+        return dict(groups)
+
+    @staticmethod
+    def _extract_chapter_endings(
+        canonical_chapters: list[dict],
+    ) -> dict[int, str]:
+        """Extract the last narrative beat of each chapter for continuity."""
+        endings = {}
+        for ch in canonical_chapters:
+            idx = ch.get("chapter_index", 0)
+            # Use the one-liner as a compact chapter ending summary
+            one_liner = ch.get("one_liner", "")
+            if one_liner:
+                endings[idx] = one_liner
+        return endings
+
+    async def _generate_page_with_semaphore(
         self,
-        assignment: PanelAssignment,
+        page_panels: list[PanelAssignment],
         manga_bible: Optional[dict],
         chapter_summary: Optional[dict],
-        neighbor_context: str = "",
         total_panels: int = 1,
-    ) -> dict:
-        """Generate DSL with concurrency limiting and per-panel progress."""
+        prev_chapter_ending: Optional[str] = None,
+    ) -> list[dict]:
+        """Generate DSLs for one page with concurrency limiting."""
         async with self._semaphore:
             if self._is_cancelled():
-                return {"dsl": None, "success": False, "error": "Cancelled"}
+                return [
+                    {"dsl": None, "success": False, "error": "Cancelled"}
+                    for _ in page_panels
+                ]
 
-            result = await generate_panel_dsl(
-                assignment=assignment,
+            results = await generate_page_dsls(
+                page_panels=page_panels,
                 llm_client=self.llm,
+                style=self.style,
                 manga_bible=manga_bible,
                 chapter_summary=chapter_summary,
-                neighbor_context=neighbor_context,
+                prev_chapter_ending=prev_chapter_ending,
             )
 
             # Track cost
-            if self.tracker and result.get("tokens"):
-                self.tracker.record_call(
-                    result["tokens"].get("input", 0),
-                    result["tokens"].get("output", 0),
-                )
+            if self.tracker:
+                total_in = sum(r.get("tokens", {}).get("input", 0) for r in results)
+                total_out = sum(r.get("tokens", {}).get("output", 0) for r in results)
+                if total_in or total_out:
+                    self.tracker.record_call(total_in, total_out)
 
             # Report per-panel progress
-            self._panels_completed += 1
+            self._panels_completed += len(page_panels)
             done = self._panels_completed
             pct = 18 + int((done / total_panels) * 70)  # 18% to 88%
+            page_key = f"ch{page_panels[0].chapter_index}-pg{page_panels[0].page_index}"
             self._report(
                 pct,
-                f"Panel {done}/{total_panels}: {assignment.content_type}",
+                f"Page {page_key}: {len(page_panels)} panels ({done}/{total_panels} total)",
                 "generating",
                 {"panels_ok": done, "total_panels": total_panels},
             )
 
-            return result
+            return results
 
     def _cancelled_result(
         self, plan: Optional[MangaPlan], start_time: float,

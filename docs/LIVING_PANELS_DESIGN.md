@@ -1,423 +1,277 @@
-# Living Manga Panels — System Design Document
+# Living Manga Panels — System Design & Architecture
 
-## Architecture Overview
+## What This Is
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                         ORCHESTRATION LAYER                          │
-│  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐  │
-│  │ Book Pipeline  │   │ DSL Generator  │   │ Asset Manager  │  │
-│  │ (existing)     │──▶│ (LLM Agent)    │──▶│ (cache/CDN)    │  │
-│  └─────────────────┘   └─────────────────┘   └─────────────────┘  │
-│       │                      │                      │             │
-│       ▼                      ▼                      ▼             │
-│  Chapter Summary      LivingPanelDSL v2.0       Sprite/BG        │
-│  + Manga Bible        (JSON document)            Assets           │
-└──────────────────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                         RENDERING ENGINE                            │
-│                                                                      │
-│  DSL JSON ──▶ Act Scheduler ──▶ Layout Engine ──▶ Layer Compositor    │
-│                                  │                   │              │
-│                            Sub-Panel Grid        Animation System   │
-│                            (CSS Grid)            (Timeline + Motion) │
-│                                  │                   │              │
-│                            Layer Renderers       Event System       │
-│                            (React components)    (click/hover)      │
-│                                  │                                  │
-│                                  ▼                                  │
-│                           ┌─────────────────┐                       │
-│                           │  Screen Output  │                       │
-│                           │  (DOM/CSS/SVG)  │                       │
-│                           └─────────────────┘                       │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+Living Manga Panels transform static comic panels into **interactive, animated reading experiences**.
+Each panel is driven by a DSL (Domain-Specific Language) that an LLM generates
+and a browser-based rendering engine interprets.
+
+Instead of expensive image generation for every panel, we use:
+- **Code-rendered sprites** (character silhouettes, expressions)
+- **Typography as art** (typewriter reveals, slam-in text, staggered lists)
+- **Animation timelines** (keyframe sequences with easing)
+- **Manga patterns** (screentone, crosshatch, speed lines)
+- **Reader-controlled pacing** (tap to advance between acts)
 
 ---
 
-## 1. DSL Design (v2.0) — The Language
+## 1. DSL Design (v2.0)
 
-### Core Concept: Acts, Not Layers
+### Core Principles
+- **LLM-friendly**: Flat-ish JSON, no excessive nesting, clear field names
+- **Act-based**: Each panel has 1–3 "acts" — temporal states the reader taps through
+- **Composition-aware**: Panels on the same page are generated together
+- **Extensible**: New layer types and effects can be added without schema changes
 
-The v1.0 DSL was a flat layer stack with a single timeline — basically After Effects.
-v2.0 introduces **Acts**: temporal scenes within a panel. A panel is a **scene** that
-plays through acts sequentially, like frames in a storyboard.
-
-**Why acts?**
-- A panel can start as a single dark void with text, then *crack* into 4 sub-panels
-- Each act can have a completely different spatial layout
-- Sub-panels within an act have their own independent animation timelines
-- Transitions between acts create cinematic moments (crack, morph, iris, whip-pan)
-
-### Schema Structure
-
-```
-LivingPanelDSL
-├─ version: "2.0"
-├─ canvas: { width, height, background, mood }
-├─ acts[]
-│   ├─ id, duration_ms
-│   ├─ transition_in: { type, duration_ms, easing }
-│   ├─ layout: { type, gap, stagger_ms }
-│   ├─ layers[]: Act-level layers (backgrounds, effects)
-│   ├─ cells[]: Sub-panels
-│   │   ├─ id, position
-│   │   ├─ style: { background, border, clipPath }
-│   │   ├─ layers[]: Cell-local layers
-│   │   └─ timeline[]: Cell-local animations
-│   ├─ timeline[]: Act-level animations
-│   └─ events[]: Interactive behaviors
-└─ meta: { panel_id, narrative_beat, duration_ms }
+### Top-Level Structure
+```json
+{
+  "version": "2.0",
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#F2E8D5",
+    "mood": "light"
+  },
+  "acts": [ ... ],
+  "meta": {
+    "panel_id": "ch0-pg0-p0",
+    "chapter_index": 0,
+    "content_type": "dialogue",
+    "narrative_beat": "The mentor reveals the truth",
+    "duration_ms": 5000
+  }
+}
 ```
 
-### Design Principles
-1. **Max 3 levels deep** — LLM-friendly, no recursive nesting
-2. **Timeline-based** — keyframes, not imperative code
-3. **Act-driven** — temporal structure drives spatial composition
-4. **Flat within cells** — each sub-panel is a simple layer stack
-5. **Transitions are first-class** — how you enter an act matters
+### Act Structure
+Each act is a self-contained scene with:
+- **Layout**: How the panel is subdivided (full, split, cuts)
+- **Layers**: Visual elements (background, sprites, text, effects)
+- **Cells**: Sub-panels within cut layouts, each with own layers + timeline
+- **Timeline**: Animation sequence for the act
+- **Transition**: How to enter this act (fade, cut, iris, etc.)
 
-### Available Layout Types
-| Layout | Positions | Use Case |
-|--------|-----------|----------|
-| `full` | main | Single canvas, splash |
-| `split-h` | left, right | Contrast, dialogue |
-| `split-v` | top, bottom | Before/after, reveal |
-| `grid-2x2` | tl, tr, bl, br | Examples, montage |
-| `grid-3` | left, top-right, bottom-right | Focus + detail |
-| `l-shape` | main, side-top, side-bottom | Main + sidebar |
-| `t-shape` | top, bottom-left, bottom-right | Wide + details |
-| `diagonal` | top-left, bottom-right | Dynamic tension |
-| `overlap` | back, front | Layered depth |
+### Layer Types
+| Type | Purpose | Key Props |
+|------|---------|----------|
+| `background` | Panel backdrop | gradient, pattern, patternOpacity |
+| `sprite` | Character visual | character, expression, size, silhouette |
+| `text` | Narration/title | content, fontSize, fontFamily, typewriter |
+| `speech_bubble` | Dialogue | text, character, style, tailDirection |
+| `effect` | Visual FX | effect type, intensity, direction |
+| `shape` | Geometric | shape, fill, stroke |
+| `data_block` | Info display | items[], accentColor, animateIn |
+| `scene_transition` | Scene change | color, text |
+| `image` | AI-generated image | (expensive, budget-limited) |
 
-### Available Transitions
-| Transition | Effect |
-|------------|--------|
-| `cut` | Hard cut (instant) |
-| `fade` | Opacity crossfade |
-| `crack` | Panel shatters/cracks open |
-| `morph` | Smooth shape transformation |
-| `iris` | Circle wipe in/out |
-| `zoom_through` | Camera pushes through |
-| `slide_left/up` | Directional slide |
-| `whip_pan` | Fast blur-pan |
-| `ink_wash` | Ink spreading effect |
-| `dissolve` | Pixel dissolve |
+### Layout System: Cuts
+The cut system is manga-native: start with one panel, cut it recursively:
+```json
+"layout": {
+  "type": "cuts",
+  "cuts": [
+    { "direction": "h", "position": 0.55, "angle": 1.5 },
+    { "direction": "v", "position": 0.65, "angle": -1, "target": 0 }
+  ],
+  "gap": 5,
+  "stagger_ms": 200
+}
+```
+
+The slight `angle` (1–2°) gives the hand-ruled manga feel.
 
 ---
 
 ## 2. Example DSL JSON
 
-See `frontend/lib/sample-living-book.ts` for 5 complete panels.
-
-Here's the conceptual flow of Panel 1 ("The Opening"):
-
-**Act 1 (4.5s): The Void**
-- Black screen, single question fades in word-by-word
-- "What if the smallest thing you do today changes everything tomorrow?"
-- A tiny blue dot pulses at the bottom
-
-**Act 2 (8s): The Crack** _(transition: crack)_
-- Panel SHATTERS into a 2×2 grid
-- Each cell reveals a habit example with staggered entry:
-  - ☀️ 5:30 AM / One pushup. Then two. Then ten.
-  - 📖 One page before bed. 50 books a year.
-  - ✏️ One sentence each morning. A novel in 18 months.
-  - 1% better every day = 37× in a year (pulses)
+See `living_panel_prompts.py` for two complete examples embedded in the LLM prompt:
+1. **DRAMATIC SPLASH** — speed lines + SFX + sprite + text slam-in
+2. **QUIET DIALOGUE** — cut layout + 2 acts + typewriter bubbles
 
 ---
 
-## 3. Rendering Engine Architecture
-
-### Key Modules
-
-| Module | Responsibility |
-|--------|---------------|
-| `LivingPanelEngine` | Root orchestrator: act scheduling, transitions |
-| `ActRenderer` | Renders one act: background layers + cell grid |
-| `SubPanelRenderer` | Renders one cell with stagger delay |
-| `ActLayerStack` | Reusable layer stack with timeline scheduling |
-| `LayerWrapper` | Positioning + motion animation per layer |
-| `LayerContent` | Dispatches to type-specific renderers |
-| `AnimationSystem` | Timeline scheduler, easing maps, typewriter |
-| `LayerRenderers` | Background, Sprite, Text, SpeechBubble, Image |
-| `EffectRenderers` | Speed lines, particles, sparkle, vignette |
+## 3. Engine Architecture
 
 ### Data Flow
-
 ```
-DSL JSON
-  │
-  ▼
-LivingPanelEngine
-  ├─ Extracts acts[]
-  ├─ Manages actIndex (auto-advance via setTimeout)
-  ├─ AnimatePresence wraps act transitions
-  │
-  ▼
-ActRenderer (per act)
-  ├─ ActLayerStack for act-level layers
-  ├─ CSS Grid from layout.type
-  │
-  ▼
-SubPanelRenderer (per cell)
-  ├─ Stagger delay from layout.stagger_ms
-  ├─ ActLayerStack for cell-level layers
-  │
-  ▼
-ActLayerStack (reusable)
-  ├─ buildInitialStates() from layers + timeline
-  ├─ scheduleTimeline() → setTimeout per step
-  ├─ LayerWrapper (positioning + motion)
-  └─ LayerContent (type dispatch)
+DSL JSON → LivingPanelEngine (React)
+  └─ ActRenderer
+      ├─ ActLayerStack (act-level layers + timeline)
+      ├─ CutLayout (if layout.type === 'cuts')
+      │   └─ CellRenderer (per-cell layers + timeline)
+      └─ GridLayout (if layout.type === 'split-h', etc.)
+          └─ CellRenderer
+
+Animation: AnimationSystem.ts (scheduleTimeline, easing)
+Rendering: LayerRenderers.tsx (per-type components)
+Aesthetics: MangaInk.tsx (PaperTexture, InkBorder)
+Cuts: CutLayoutEngine.tsx (recursive subdivision)
 ```
 
-### Tech Stack
-- **React** — component tree
-- **Motion (Framer Motion)** — animation interpolation, springs, transitions
-- **CSS Grid** — sub-panel layouts
-- **SVG** — speed lines, shapes
-- **CSS keyframes** — particles, sparkles, shake
-- **No Canvas/WebGL** — DOM-based for accessibility + SEO
+### Key Modules
+| Module | Responsibility |
+|--------|---------------|
+| `LivingPanelEngine.tsx` | Act state machine, tap-to-advance, transitions |
+| `AnimationSystem.ts` | Timeline scheduler, easing functions, keyframe interpolation |
+| `LayerRenderers.tsx` | Per-type rendering (sprite, text, bubble, effect) |
+| `CutLayoutEngine.tsx` | Manga cut subdivision algorithm + CSS clip-path |
+| `MangaInk.tsx` | Paper textures, ink borders, screentone patterns |
+
+### Reader Interaction Model
+1. Panel loads → Act 1 auto-plays its timeline
+2. Timeline completes → "tap ▶" hint appears
+3. Reader taps → Transition to Act 2
+4. Final act completes → Panel is "done"
+5. Act dots at bottom show progress
 
 ---
 
 ## 4. LLM Generation Strategy
 
+### Per-Page Generation (Primary Path)
+Panels on the same page are generated in a **single LLM call**.
+This lets the model compose panels that work together:
+- Vary pacing (slow panel next to fast panel)
+- Vary layout types (don't give every panel the same layout)
+- Create visual contrast (light/dark, busy/sparse)
+
 ### Prompt Structure
-
 ```
-You are a Living Manga Panel Director.
+[System] Living Manga Panel Director prompt
+  ├─ DSL v2.0 specification (schema reference)
+  ├─ Emotion→Technique mapping (mood → creative choices)
+  ├─ 2 diverse example panels (learn style, not content)
+  └─ Critical rules (constraints, validation)
 
-Given a narrative beat from a book chapter, generate a LivingPanelDSL v2.0
-JSON that creates a cinematic, animated manga panel.
-
-## INPUTS PROVIDED
-- Chapter summary (what happens)
-- Manga Bible (character names, visual style, color palette)
-- Panel context (where this panel sits in the page, content_type)
-- Previous panel's narrative_beat (for continuity)
-
-## YOUR JOB
-Design 1-3 acts that tell this narrative beat through:
-1. Spatial composition (layouts that change between acts)
-2. Temporal reveals (what appears when, in what order)
-3. Character interaction (sprites + speech bubbles with typewriter)
-4. Typography as emotion (font size, color, shadow = mood)
-5. Effects as punctuation (speed lines for impact, sparkles for wonder)
-
-## RULES
-- Each act has ONE clear purpose (setup, reveal, punchline)
-- Transitions between acts should feel intentional (crack = surprise, morph = evolution)
-- Timeline: stagger elements 300-800ms apart for readability
-- Never more than 3 acts per panel
-- Never more than 6 layers per cell
-- Sub-panels: max 4 cells per act
-- Typewriter speed: 25-50ms per character
-- Total panel duration: 5-15 seconds
-- Use the character names and colors from the Manga Bible
-
-## OUTPUT
-Return ONLY valid JSON conforming to LivingPanelDSL v2.0 schema.
+[User] Page context
+  ├─ Panel assignments (type, mood, text, dialogue, characters)
+  ├─ Relevant characters from manga bible (only those on this page)
+  ├─ Chapter context (title, theme)
+  └─ Previous chapter ending (for cross-chapter continuity)
 ```
+
+### Temperature Mapping
+Content type drives creativity level:
+| Type | Temperature | Rationale |
+|------|-------------|----------|
+| `splash` | 0.9 | Maximum creativity |
+| `concept` | 0.9 | Abstract, needs imagination |
+| `montage` | 0.85 | Creative sequencing |
+| `dialogue` | 0.75 | Balanced creativity |
+| `narration` | 0.7 | Consistent pacing |
+| `data` | 0.6 | Structured, accurate |
 
 ### Guardrails
-
-1. **JSON Schema validation** — Validate against TypeScript types after generation
-2. **Duration bounds** — Reject if total duration < 3s or > 20s
-3. **Layer count limits** — Max 8 layers per act, max 6 per cell
-4. **Timeline ordering** — Verify `at` values are monotonically reasonable
-5. **Character consistency** — Cross-reference character names against Manga Bible
-6. **Retry with feedback** — If validation fails, send error back to LLM with fix instructions
-
-### Generation Pipeline
-
-```
-Chapter Summary + Manga Bible + Panel Context
-                  │
-                  ▼
-          System Prompt (template above)
-                  │
-                  ▼
-            LLM Generation
-                  │
-                  ▼
-          JSON Parse + Schema Validate
-                  │
-          ┌─────┴─────┐
-          │ Valid?     │
-          ├─Yes─▶ Store in MongoDB
-          └─No──▶ Retry with error feedback (max 2 retries)
-```
+1. **Schema validation** after every generation (validate_living_panel_dsl)
+2. **Auto-fix** common LLM mistakes (fix_common_dsl_issues)
+3. **Per-panel fallback** if page generation returns fewer panels than expected
+4. **JSON mode** in OpenAI calls; robust parsing for OpenRouter
+5. **Retry with stricter instructions** on JSON parse failure
+6. **Max 3 acts** enforced in prompt (prevents runaway complexity)
 
 ---
 
 ## 5. Orchestration System
 
-### Full Pipeline Flow
-
+### Pipeline Flow
 ```
-┌───────────────────────────────────────────────────┐
-│              EXISTING PIPELINE                   │
-│  PDF → Chapter Summaries → Manga Bible → Pages   │
-└────────────────────────┬──────────────────────────┘
-                         │
-                         ▼
-┌───────────────────────────────────────────────────┐
-│          LIVING PANEL PIPELINE (NEW)               │
-│                                                     │
-│  For each page in manga_chapters:                   │
-│    For each panel in page.panels:                   │
-│      1. Build context (chapter summary, manga       │
-│         bible, panel type, position, neighbors)     │
-│      2. Check cache (MongoDB: living_panels          │
-│         collection, keyed by panel_id)              │
-│      3. If not cached:                              │
-│         a. Send to LLM with DSL generation prompt   │
-│         b. Validate response                        │
-│         c. Store in MongoDB                         │
-│      4. Return DSL JSON to frontend                 │
-│                                                     │
-│  Cost control:                                      │
-│  - Cache aggressively (one generation per panel)    │
-│  - Batch panels per page (parallel LLM calls)       │
-│  - Use cheaper models for simpler panel types       │
-│    (narration = GPT-4o-mini, splash = GPT-4o)      │
-│  - No image generation in living panels             │
-│    (sprites are code-rendered, not AI images)       │
-└───────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌───────────────────────────────────────────────────┐
-│                FRONTEND                             │
-│  /books/{id}/manga/living?summary={id}              │
-│                                                     │
-│  LivingPanelEngine receives DSL JSON                │
-│  → Schedules acts → Renders layers → Animates      │
-└───────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│  PHASE 0: Credit Check                               │
+│  Check OpenRouter balance, abort if $0               │
+└───────────────────────────────────────────────────────┘
+                           │
+┌─────────────────────────┬─────────────────────────────┐
+│  PHASE 1a: Synopsis       │  PHASE 1b: Manga Bible        │
+│  (Book thesis, arc,      │  (Characters, motifs,          │
+│   emotional journey)     │   visual style per chapter)    │
+└─────────────────────────┴─────────────────────────────┘
+               │ (parallel)                     │
+               └─────────────────────────────┘
+                           │
+┌───────────────────────────────────────────────────────┐
+│  PHASE 2: Planner                                    │
+│  Creates PanelAssignment list                        │
+│  (chapter → page → panel structure)                  │
+│  Sets content types, moods, image budget              │
+└───────────────────────────────────────────────────────┘
+                           │
+┌───────────────────────────────────────────────────────┐
+│  PHASE 3: Per-Page DSL Generation                    │
+│  Group panels by (chapter, page)                     │
+│  One LLM call per page (2-4 panels)                  │
+│  Semaphore limits to 4 concurrent calls               │
+│  Previous chapter ending for continuity               │
+└───────────────────────────────────────────────────────┘
+                           │
+┌───────────────────────────────────────────────────────┐
+│  PHASE 4: Assembly                                   │
+│  Validate each panel DSL                             │
+│  Collect image-eligible panels                       │
+│  Store to MongoDB (LivingPanelDoc collection)        │
+└───────────────────────────────────────────────────────┘
 ```
 
-### Incremental Generation
-- Living panels are generated **lazily** — only when a user views a page
-- First view triggers generation, subsequent views hit cache
-- Panels on the same page can be generated in parallel
-- Celery worker handles background generation
+### Cost Control
+- **Per-page generation** cuts API calls by ~3x (25 panels → 8 pages)
+- **Image budget** limits expensive image generation (default: 5 per book)
+- **Credit tracking** with pre-flight estimate and real-time updates
+- **Cancellation** via DB flag check (5-second cache)
+- **Task timeout** (10 min hard limit via Celery)
 
-### Cost Model
-- DSL generation: ~500-1000 tokens per panel (GPT-4o-mini: ~$0.001/panel)
-- A typical book: 10 chapters × 5 pages × 3 panels = 150 panels
-- Total cost: ~$0.15 per book for living panels
-- Zero image generation cost (all code-rendered)
+### Caching Strategy
+- Generated DSLs stored in MongoDB `living_panels` collection
+- Manga Bible and Synopsis stored on BookSummary document
+- Frontend caches panel DSLs in React state
+- No re-generation if panels already exist (unless explicitly requested)
 
 ---
 
-## 6. Creative Ideas — New Medium Exploration
-
-### What makes this different from "animated comics"?
-
-Traditional motion comics just add motion to static panels. We're building
-something fundamentally different: **panels that think about how to tell
-their story through spatial and temporal composition.**
+## 6. Creative Ideas / New Medium Exploration
 
 ### Novel Panel Types
+1. **Data Reveal Panels**: Key statistics animate in as data_blocks with stagger reveals. Numbers count up. Charts build bar-by-bar. The data IS the drama.
 
-#### 1. 🌊 The Breathing Panel
-The panel subtly expands and contracts with the reader's scroll speed.
-Faster scrolling = faster breathing = more tension. Slow down = calm.
+2. **Echo Panels**: Same layout, 2 acts, different text. First act shows what was said. Second act shows what was meant. Visual mood shifts between acts.
 
-#### 2. ⏳ The Time-Lapse Cell
-A sub-panel that shows compressed time: a plant growing, a habit
-tracker filling up day by day, seasons changing in the background.
-Done with CSS animations + SVG, zero AI images.
+3. **Perspective Split**: Cut layout where each cell shows the same moment from a different character's POV. Same event, different speech bubbles, different expressions.
 
-#### 3. 📊 The Data Revelation
-A panel that starts as narrative prose, then morphs into a data
-visualization. "Habits compound" becomes a visible exponential curve
-drawn in real-time. Numbers animate up. The typography IS the chart.
+4. **Ambient Panels**: No text at all. Just background patterns evolving over time — rain particles, floating kanji, shifting screentone density. Mood as content.
 
-#### 4. 🌀 The Perspective Shift
-Panel splits in half: left side shows the character's internal
-monologue (dark, thought bubbles), right side shows external
-reality (bright, speech bubbles). Both timelines play simultaneously.
+5. **Choice Panels**: Interactive branch point. Two speech bubbles appear; reader taps one to advance to a different act. (Not just linear tap-through.)
 
-#### 5. 🎭 The Mask Panel
-Character sprite starts with one expression, but on click/tap,
-the "mask" peels away to reveal a different expression underneath.
-"What they show" vs "what they feel".
+### Unique Storytelling Mechanics
 
-#### 6. 💥 The Impact Frame
-A single word or phrase fills the entire panel with increasing
-scale, then SLAMS to final position with screen shake and speed lines.
-Think manga emphasis frames but programmatic.
+1. **Pacing as Meaning**: Slow typewriter = gravity. Fast slam-in = urgency. The reader FEELS the emotional weight through animation timing, not just words.
 
-#### 7. 🌍 The Parallax Scene
-Multiple background layers at different scroll speeds create depth.
-Character sprites move at foreground speed, landscapes at background
-speed. Creates a 2.5D effect without any 3D rendering.
+2. **Composition Contrast**: Because we generate per-page, adjacent panels can create visual dialectic — a cramped, dark dialogue panel next to a wide-open splash. The contrast is intentional.
 
-#### 8. 📝 The Live Annotation
-As the narrative plays, annotations appear on the side like a
-teacher's marginalia. Clickable annotations reveal deeper insights.
-The panel becomes a learning surface, not just a story surface.
+3. **Progressive Revelation**: Information arrives in layers. Background first, then character, then context, then the punchline. Each layer adds meaning. The reader watches understanding build.
 
-#### 9. 🎵 The Rhythm Panel
-Elements appear to a beat. Speech bubbles pop in on rhythm.
-Data points land on beats. The panel has a musical quality.
-Implemented via carefully timed timeline steps.
+4. **SFX as Language**: Onomatopoeia isn't decoration — it's storytelling. A "CRACK" SFX at 48px rotated -8° communicates differently than "crack" in a speech bubble.
 
-#### 10. ♾️ The Loop Panel
-The last frame's ending state becomes the first frame's beginning
-state, creating an infinite loop. Perfect for illustrating cycles
-(habit loops, feedback loops, compound growth).
+5. **Screentone Storytelling**: Manga patterns (screentone, crosshatch, speed lines) aren't just aesthetic — they encode mood. Dense crosshatch = scholarly weight. Speed lines = urgency. Halftone = mystery.
 
-### Storytelling Mechanics
+### What Makes This a New Medium
 
-#### Spatial Narrative
-- Panel splits don't just show content — they mean something
-- Left/right splits = comparison, contrast, choice
-- Top/bottom splits = before/after, cause/effect
-- 2×2 grids = parallel examples, montage
-- Full canvas = emphasis, immersion, impact
+Traditional manga: static, ink on paper, reader controls pacing by eye movement.
+Traditional animation: temporal, creator controls pacing.
 
-#### Temporal Narrative
-- The ORDER things appear conveys meaning
-- A question appears before the answer (tension)
-- Characters enter before they speak (presence)
-- Data appears after the claim (evidence)
-- The punchline is always last (impact)
+**Living Manga Panels**: The reader controls MACRO pacing (tap between acts)
+but the creator controls MICRO pacing (animation timing within acts).
+This is a new medium: **reader-directed animation**.
 
-#### Emotional Typography
-- Font size = volume (small = whisper, huge = scream)
-- Color temperature = emotion (warm = comfort, cold = fear)
-- Letter spacing = pacing (tight = fast, wide = slow)
-- Text shadow = weight (heavy shadow = important)
-- Typewriter speed = urgency (fast = excited, slow = thoughtful)
+The reader gets the deliberate pacing of manga with the emotional impact of animation.
+No video player. No scrubbing. Just tap, watch, feel, tap.
 
 ---
 
-## Files Modified/Created
+## Changes Made
 
-| File | Purpose |
-|------|--------|
-| `frontend/lib/living-panel-types.ts` | DSL v2.0 type definitions |
-| `frontend/lib/sample-living-book.ts` | 5 handcrafted sample panels |
-| `frontend/components/LivingPanel/LivingPanelEngine.tsx` | Act-based rendering engine |
-| `frontend/components/LivingPanel/LayerRenderers.tsx` | Layer dispatching + image type |
-| `frontend/components/LivingPanel/index.ts` | Exports |
-| `frontend/app/books/[id]/manga/living/page.tsx` | Viewer page with demo mode |
-
-## What's Working Now
-
-The living panel viewer at:
-```
-http://localhost:3000/books/{any-id}/manga/living?summary={any-id}
-```
-
-Shows 5 animated panels you can navigate with arrow keys:
-1. **The Opening** — void → crack into 4 habit examples
-2. **The Habit Loop** — mentor dialogue → loop diagram + examples
-3. **The Identity Shift** — wrong way (red) → right way (gold) → contrast
-4. **The Environment** — dramatic quote with speed lines
-5. **The Two-Minute Rule** — progressive dialogue reveal
+### Backend
+1. **`living_panel_prompts.py`** — Added emotion→technique mapping, 2 diverse example panels, act count limit (max 3), and anti-laziness instruction
+2. **`agents/dsl_generator.py`** — Complete rewrite. Single prompt source (no more duplicate DSL_AGENT_SYSTEM_PROMPT). Per-page and per-panel generation. Temperature mapping. Conditionalized bible injection.
+3. **`agents/orchestrator.py`** — Complete rewrite. Per-page generation (group by chapter+page, one LLM call per page). Previous chapter ending context. Semaphore-limited concurrency.
+4. **`generate_living_panels.py`** — Fixed fallback: accepts layout_hint, caps dialogue at 2 lines per act to prevent bubble overlap
+5. **`prompts.py`** — Trimmed `format_all_summaries_for_synopsis` to skip narrative_summary (saves ~40% tokens)
+6. **`celery_worker.py`** — Added task time limits (10 min hard, 9 min soft)

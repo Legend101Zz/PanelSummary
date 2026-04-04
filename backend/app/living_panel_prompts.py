@@ -160,19 +160,107 @@ Array of {{ at: ms, target: layerId, animate: {{ opacity: [0,1], ... }}, duratio
 - Accent amber: #F5A623 (warmth, gold)
 - Muted text: #1A182570 or #A8A6C0
 
+## EMOTION → TECHNIQUE MAPPING
+
+Use the panel's mood to drive your creative choices. These are STARTING POINTS — combine and riff:
+
+TENSION  → slow timeline (6-8s), vignette, screentone, sparse text, dark palette, zoom-in
+TRIUMPH  → fast slam-in (200ms ease spring), speed_lines, impact_burst, large display font, red accent
+MYSTERY  → slow fade-in (1200ms), halftone, particles, muted colors, whisper bubbles
+HUMOR    → bounce/elastic easing, shout bubbles, SFX text ("WHAM!"), warm palette, fast typewriter
+SORROW   → very slow typewriter (60-80ms), no effects, desaturated ink, minimal layers, long pauses
+DATA/ANALYSIS → stagger reveal (200ms gaps), data_block, grid cuts, clean lines, academic body font
+ACTION   → cut layout with 2-3 cells, speed_lines, fast timeline (3-4s), multiple sprites
+REVELATION → iris transition, slow scale from 0.8→1.0, ink_splash effect, dramatic pause then text slam
+REFLECTION → full layout, single centered text, crosshatch pattern, thought bubbles, gentle float animation
+
+## EXAMPLES (learn the STYLE, not the content)
+
+Example 1 — DRAMATIC SPLASH with speed lines + SFX:
+{{
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#1A1825", "mood": "dark" }},
+  "acts": [{{
+    "id": "impact", "duration_ms": 4000,
+    "transition_in": {{ "type": "cut", "duration_ms": 100 }},
+    "layout": {{ "type": "full" }},
+    "layers": [
+      {{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#1A1825", "#0F0E17"], "pattern": "screentone", "patternOpacity": 0.08 }} }},
+      {{ "id": "speed", "type": "effect", "opacity": 0, "props": {{ "effect": "speed_lines", "color": "#F0EEE8", "intensity": 0.6, "direction": "radial" }} }},
+      {{ "id": "sfx", "type": "effect", "x": "55%", "y": "15%", "opacity": 0, "props": {{ "effect": "sfx", "sfxText": "CRACK", "sfxSize": 48, "color": "#E8191A", "sfxRotate": -8 }} }},
+      {{ "id": "hero", "type": "sprite", "x": "40%", "y": "60%", "opacity": 0, "scale": 0.7, "props": {{ "character": "The Mentor", "expression": "determined", "size": 72, "silhouette": true }} }},
+      {{ "id": "line", "type": "text", "x": "12%", "y": "82%", "opacity": 0, "props": {{ "content": "Everything changes now.", "fontSize": "clamp(1.1rem, 4vw, 2rem)", "fontFamily": "display", "color": "#F0EEE8" }} }}
+    ],
+    "cells": [],
+    "timeline": [
+      {{ "at": 100, "target": "speed", "animate": {{ "opacity": [0, 1] }}, "duration": 300, "easing": "ease-out" }},
+      {{ "at": 200, "target": "hero", "animate": {{ "opacity": [0, 1], "scale": [0.7, 1.0] }}, "duration": 400, "easing": "spring" }},
+      {{ "at": 350, "target": "sfx", "animate": {{ "opacity": [0, 1], "scale": [1.4, 1.0] }}, "duration": 200, "easing": "bounce" }},
+      {{ "at": 800, "target": "line", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 1200, "easing": "ease-out" }}
+    ]
+  }}],
+  "meta": {{ "content_type": "splash", "narrative_beat": "The turning point", "duration_ms": 4000 }}
+}}
+
+Example 2 — QUIET DIALOGUE with cut layout + 2 acts:
+{{
+  "version": "2.0",
+  "canvas": {{ "width": 800, "height": 600, "background": "#F2E8D5", "mood": "light" }},
+  "acts": [
+    {{
+      "id": "question", "duration_ms": 5000,
+      "transition_in": {{ "type": "fade", "duration_ms": 600 }},
+      "layout": {{ "type": "cuts", "cuts": [{{ "direction": "v", "position": 0.55, "angle": 1.5 }}], "gap": 5, "stagger_ms": 200 }},
+      "layers": [{{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#F2E8D5", "#EDE0CC"], "pattern": "crosshatch", "patternOpacity": 0.04 }} }}],
+      "cells": [
+        {{ "id": "left", "position": "0", "layers": [
+          {{ "id": "char-a", "type": "sprite", "x": "50%", "y": "65%", "opacity": 0, "props": {{ "character": "Student", "expression": "curious", "size": 52 }} }},
+          {{ "id": "q-bubble", "type": "speech_bubble", "x": "10%", "y": "8%", "opacity": 0, "props": {{ "text": "But what does it really mean?", "character": "Student", "style": "speech", "tailDirection": "bottom", "typewriter": true, "typewriterSpeed": 30 }} }}
+        ], "timeline": [
+          {{ "at": 300, "target": "char-a", "animate": {{ "opacity": [0, 1] }}, "duration": 400 }},
+          {{ "at": 700, "target": "q-bubble", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 1200 }}
+        ] }},
+        {{ "id": "right", "position": "1", "layers": [
+          {{ "id": "char-b", "type": "sprite", "x": "50%", "y": "62%", "opacity": 0, "props": {{ "character": "Mentor", "expression": "wise", "size": 58 }} }}
+        ], "timeline": [
+          {{ "at": 200, "target": "char-b", "animate": {{ "opacity": [0, 1] }}, "duration": 500 }}
+        ] }}
+      ],
+      "timeline": []
+    }},
+    {{
+      "id": "answer", "duration_ms": 5000,
+      "transition_in": {{ "type": "fade", "duration_ms": 400 }},
+      "layout": {{ "type": "full" }},
+      "layers": [
+        {{ "id": "bg2", "type": "background", "opacity": 1, "props": {{ "gradient": ["#EDE0CC", "#F2E8D5"], "pattern": "dots", "patternOpacity": 0.03 }} }},
+        {{ "id": "mentor-big", "type": "sprite", "x": "60%", "y": "60%", "opacity": 0, "props": {{ "character": "Mentor", "expression": "thoughtful", "size": 72 }} }},
+        {{ "id": "a-bubble", "type": "speech_bubble", "x": "8%", "y": "12%", "opacity": 0, "props": {{ "text": "It means you have to live it — not just understand it.", "character": "Mentor", "style": "speech", "tailDirection": "right", "typewriter": true, "typewriterSpeed": 40 }} }}
+      ],
+      "cells": [],
+      "timeline": [
+        {{ "at": 200, "target": "mentor-big", "animate": {{ "opacity": [0, 1] }}, "duration": 500 }},
+        {{ "at": 600, "target": "a-bubble", "animate": {{ "opacity": [0, 1], "typewriter": true }}, "duration": 1800 }}
+      ]
+    }}
+  ],
+  "meta": {{ "content_type": "dialogue", "narrative_beat": "The mentor's key lesson", "duration_ms": 10000 }}
+}}
+
 ## CRITICAL RULES:
 - Return ONLY valid JSON. No markdown.
-- Canvas is 800x600. Engine scales responsively.
+- Canvas is 800×600. Engine scales responsively.
 - Every act MUST have a background layer.
 - Use version: "2.0".
 - Mood: use "light" for cream paper, "dark" for ink backgrounds.
 - Place sprites at y: 60-75% and bubbles at y: 5-35% — NEVER overlap.
 - For dialogue: show sprites first (at: 200-400ms), then bubbles (at: 600ms+).
 - For cut layouts: cells[] must have as many entries as resulting regions.
-- Use 1-3 acts per panel. First act always plays on load. Reader taps for next.
-- Total duration should be 3-8 seconds per act.
+- **MAX 3 ACTS per panel.** First act auto-plays on load. Reader taps for next.
+- Total duration: 3-8 seconds per act.
 - NEVER generate image URLs. Everything is code-rendered.
-- Prefer screentone/crosshatch patterns over gradient effects.
+- Prefer screentone/crosshatch patterns over flat gradients.
+- DON'T just put text on a gradient — that's what the fallback engine does. YOU are the artist.
 """
 
 
@@ -240,22 +328,34 @@ def format_full_page_for_living(
     manga_bible: dict = None,
     chapter_summary: dict = None,
 ) -> str:
-    """Format context for generating Living Panels for ALL panels in a page."""
-    context = f"""Generate Living Panel DSLs for EACH panel in this manga page.
-Return a JSON object with a \"panels\" array, each a complete Living Panel DSL v2.0.
+    """Format context for generating Living Panels for ALL panels in a page.
+
+    This is the PRIMARY generation path. By generating all panels on a page
+    in a single LLM call, the model can compose panels that work together:
+    contrast moods, coordinate timing, vary layouts.
+    """
+    n_panels = len(page_data.get('panels', []))
+    context = f"""Generate Living Panel DSLs for ALL {n_panels} panels on this manga page.
+Return a JSON object: {{ "panels": [ <DSL v2.0>, <DSL v2.0>, ... ] }}
+
+These panels appear TOGETHER on one page. Make them COMPOSE well:
+- Vary pacing (if one panel is slow/moody, make the adjacent one snappy)
+- Vary layout types (don't give every panel the same layout)
+- Vary techniques (if one panel uses typewriter, another might use stagger or slam-in)
+- Create visual contrast (light/dark, busy/sparse, action/reflection)
 
 PAGE LAYOUT: {page_data.get('layout', 'full')}
-NUMBER OF PANELS: {len(page_data.get('panels', []))}
-
-PANELS:
+PANEL COUNT: {n_panels}
 """
 
     for i, panel in enumerate(page_data.get('panels', [])):
-        context += f"\n--- Panel {i + 1} ---\n"
+        context += f"\n--- Panel {i + 1} of {n_panels} ---\n"
         context += f"Type: {panel.get('content_type', 'narration')}\n"
         context += f"Mood: {panel.get('visual_mood', 'dramatic-dark')}\n"
-        if panel.get('text'):
-            context += f"Text: {panel['text']}\n"
+        if panel.get('narrative_beat'):
+            context += f"Beat: {panel['narrative_beat']}\n"
+        if panel.get('text') or panel.get('text_content'):
+            context += f"Text: {panel.get('text') or panel.get('text_content')}\n"
         if panel.get('dialogue'):
             for d in panel['dialogue']:
                 if isinstance(d, str):
@@ -263,14 +363,31 @@ PANELS:
                 context += f"  {d.get('character', '?')}: \"{d.get('text', '')}\"\n"
         if panel.get('character'):
             context += f"Character: {panel['character']} ({panel.get('expression', 'neutral')})\n"
+        if panel.get('creative_direction'):
+            context += f"Direction: {panel['creative_direction']}\n"
 
+    # Only inject characters that appear on this page
     if manga_bible:
-        characters = manga_bible.get('characters', [])
-        char_lines = "\n".join(f"  \u2022 {c['name']} ({c['role']})" for c in characters)
-        context += f"\nCHARACTERS:\n{char_lines}"
+        page_chars = {p.get('character') for p in page_data.get('panels', []) if p.get('character')}
+        relevant_chars = [
+            c for c in manga_bible.get('characters', [])
+            if c['name'] in page_chars
+        ]
+        if relevant_chars:
+            char_lines = "\n".join(
+                f"  \u2022 {c['name']} ({c['role']}): {c.get('speech_style', '')}"
+                for c in relevant_chars
+            )
+            context += f"\nCHARACTERS ON THIS PAGE:\n{char_lines}"
+        # Always include one-line world context
+        world = manga_bible.get('world_description', '')
+        if world:
+            context += f"\nWORLD: {world[:150]}\n"
 
     if chapter_summary:
         context += f"\nCHAPTER: {chapter_summary.get('chapter_title', '')}"
+        context += f"\nTHEME: {chapter_summary.get('one_liner', '')}"
 
-    context += "\n\nReturn: {{ \"panels\": [ <DSL v2.0>, ... ] }}"
+    context += f"\n\nReturn exactly {n_panels} panels in the \"panels\" array.\n"
+    context += "Each panel is a complete Living Panel DSL v2.0 JSON object."
     return context

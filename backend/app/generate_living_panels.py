@@ -244,13 +244,18 @@ async def generate_living_panels_for_page(
 # ============================================================
 
 def generate_fallback_living_panel(panel_data: dict) -> dict:
-    """Generate a basic Living Panel DSL v2.0 from static panel data."""
+    """Generate a basic Living Panel DSL v2.0 from static panel data.
+
+    This is the safety net when LLM generation fails. It produces
+    a clean, readable panel with proper animation sequencing.
+    """
     content_type = panel_data.get("content_type", "narration")
-    text = panel_data.get("text", "")
+    text = panel_data.get("text", "") or panel_data.get("text_content", "")
     dialogue = panel_data.get("dialogue", [])
     character = panel_data.get("character")
     expression = panel_data.get("expression", "neutral")
     mood = panel_data.get("visual_mood", "dramatic-dark")
+    layout_hint = panel_data.get("layout_hint", "full")
 
     is_dark = mood in ("dramatic-dark", "cool-mystery", "intense-red")
     bg_color = "#1A1825" if is_dark else "#F2E8D5"
@@ -317,7 +322,7 @@ def generate_fallback_living_panel(panel_data: dict) -> dict:
                 line = {"text": line, "character": character or "?"}
             bid = f"bubble-{i}"
             x_pos = "8%" if i % 2 == 0 else "48%"
-            y_pos = f"{8 + i * 10}%"
+            y_pos = f"{8 + i * 15}%"  # more vertical space between bubbles
             layers.append({
                 "id": bid, "type": "speech_bubble",
                 "x": x_pos, "y": y_pos, "opacity": 0,

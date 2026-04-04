@@ -448,17 +448,24 @@ THIS CHAPTER'S PLAN:
 
 
 def format_all_summaries_for_synopsis(canonical_chapters: list[dict]) -> str:
-    """Format all canonical chapter summaries for the book synopsis agent"""
+    """Format all canonical chapter summaries for the book synopsis agent.
+
+    NOTE: We intentionally skip narrative_summary to keep context lean.
+    The one-liner + key concepts + dramatic moment give the synopsis agent
+    everything it needs without burning tokens on 300-char previews.
+    """
     sections = []
     for ch in canonical_chapters:
-        concepts = ", ".join(ch.get('key_concepts', []))
-        summary_preview = ch.get('narrative_summary', '')[:300]
-        sections.append(
-            f"CHAPTER {ch.get('chapter_index', 0)} — {ch.get('chapter_title', 'Unknown')}:\n"
-            f"  One-liner: {ch.get('one_liner', '')}\n"
-            f"  Key concepts: {concepts}\n"
-            f"  Summary: {summary_preview}"
-        )
+        concepts = ", ".join(ch.get('key_concepts', [])[:6])  # cap at 6
+        dramatic = ch.get('dramatic_moment', '')
+        parts = [
+            f"CHAPTER {ch.get('chapter_index', 0)} \u2014 {ch.get('chapter_title', 'Unknown')}:",
+            f"  One-liner: {ch.get('one_liner', '')}",
+            f"  Key concepts: {concepts}",
+        ]
+        if dramatic:
+            parts.append(f"  Dramatic moment: {dramatic[:120]}")
+        sections.append("\n".join(parts))
     return "\n\n".join(sections)
 
 
