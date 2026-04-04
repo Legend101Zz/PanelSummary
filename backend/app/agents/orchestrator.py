@@ -241,8 +241,20 @@ class MangaOrchestrator:
             )
         except Exception as e:
             logger.error(f"Planning failed: {e}")
-            from app.agents.planner import _generate_fallback_plan
-            manga_plan = _generate_fallback_plan(canonical_chapters, manga_bible)
+            from app.agents.planner import _generate_fallback_plan, consolidate_short_chapters
+            # Consolidate chapters before fallback (1C) and respect budget (1B)
+            consolidated = consolidate_short_chapters(canonical_chapters)
+            total_words = sum(
+                len(ch.get("narrative_summary", "").split())
+                for ch in consolidated
+            )
+            n_ch = len(consolidated)
+            max_panels = max(6, min(total_words // 70, n_ch * 8))
+            if total_words < 1000:
+                max_panels = min(max_panels, max(6, n_ch * 2))
+            manga_plan = _generate_fallback_plan(
+                consolidated, manga_bible, max_panels=max_panels,
+            )
 
         if self._is_cancelled():
             return self._cancelled_result(

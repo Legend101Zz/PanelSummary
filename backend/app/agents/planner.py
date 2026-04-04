@@ -14,7 +14,6 @@ Inspired by how code agents handle large codebases:
 OUTPUT: MangaPlan — a list of PanelAssignments
 """
 
-import json
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -210,6 +209,117 @@ Use dialogue sparingly — prefer narration with key quotes.""",
 }
 
 
+def consolidate_short_chapters(
+    canonical_chapters: list[dict],
+    max_chapters: int | None = None,
+) -> list[dict]:
+    """Merge adjacent thin chapters so short docs don't explode into 40 panels.
+
+    A 3-page resume with 10 section headers shouldn't produce 10 chapters.
+    We merge adjacent chapters that are both small (< 200 words) into one,
+    capped at `max_chapters`.
+    """
+    total_words = sum(
+        len(ch.get("narrative_summary", "").split())
+        for ch in canonical_chapters
+    )
+    n = len(canonical_chapters)
+
+    # Only consolidate small documents (< 2000 summary words)
+    if total_words >= 2000 or n <= 3:
+        return canonical_chapters
+
+    # Target: max(3, total_words // 500) chapters, or max_chapters if given
+    target = max_chapters or max(3, total_words // 500)
+    if n <= target:
+        return canonical_chapters
+
+    logger.info(
+        f"Consolidating {n} chapters → ~{target} "
+        f"(short doc: ~{total_words} summary words)"
+    )
+
+    merged: list[dict] = []
+    buf: list[dict] = []
+    buf_words = 0
+    # How many words each merged chapter should aim for
+    words_per_merged = max(200, total_words // target)
+
+    for ch in canonical_chapters:
+        ch_words = len(ch.get("narrative_summary", "").split())
+        buf.append(ch)
+        buf_words += ch_words
+
+        # Flush when buffer is fat enough (unless we'd overshoot target)
+        remaining = n - (len(merged) + len(buf))
+        remaining_merges = target - len(merged) - 1  # -1 for current buffer
+        if buf_words >= words_per_merged or remaining <= remaining_merges:
+            merged.append(_merge_chapter_group(buf, len(merged)))
+            buf = []
+            buf_words = 0
+
+    # Flush leftover
+    if buf:
+        if merged:
+            # Absorb into last chapter to avoid a tiny trailing chapter
+            last_group_chs = buf
+            merged[-1] = _merge_chapter_group(
+                [merged[-1]] + last_group_chs, len(merged) - 1,
+            )
+        else:
+            merged.append(_merge_chapter_group(buf, 0))
+
+    logger.info(f"Consolidated {n} → {len(merged)} chapters")
+    return merged
+
+
+def _merge_chapter_group(chapters: list[dict], new_index: int) -> dict:
+    """Merge a list of thin chapters into a single combined chapter."""
+    if len(chapters) == 1:
+        ch = dict(chapters[0])
+        ch["chapter_index"] = new_index
+        return ch
+
+    titles = [ch.get("chapter_title", "") for ch in chapters]
+    return {
+        "chapter_index": new_index,
+        "chapter_title": " / ".join(t for t in titles if t),
+        "one_liner": chapters[0].get("one_liner", ""),
+        "key_concepts": _dedup_list([
+            c for ch in chapters
+            for c in ch.get("key_concepts", [])
+        ])[:6],
+        "narrative_summary": "\n\n".join(
+            ch.get("narrative_summary", "") for ch in chapters
+        ),
+        "dramatic_moment": next(
+            (ch.get("dramatic_moment", "") for ch in chapters
+             if ch.get("dramatic_moment")),
+            "",
+        ),
+        "memorable_quotes": _dedup_list([
+            q for ch in chapters
+            for q in ch.get("memorable_quotes", [])
+        ])[:3],
+        "action_items": _dedup_list([
+            a for ch in chapters
+            for a in ch.get("action_items", [])
+        ])[:4],
+    }
+
+
+def _dedup_list(items: list) -> list:
+    """Deduplicate a list while preserving order."""
+    seen = set()
+    result = []
+    for item in items:
+        key = str(item).lower().strip()
+        if key not in seen:
+            seen.add(key)
+            result.append(item)
+    return result
+
+
 async def plan_manga(
     canonical_chapters: list[dict],
     book_synopsis: dict,
@@ -219,6 +329,9 @@ async def plan_manga(
     style: str = "manga",
 ) -> MangaPlan:
     """Run the planner agent to create a full manga plan."""
+    # ── 1C: Consolidate inflated chapters for short documents ──
+    canonical_chapters = consolidate_short_chapters(canonical_chapters)
+
     style_key = style.value if hasattr(style, 'value') else str(style)
     style_hint = STYLE_PLANNING_HINTS.get(style_key, STYLE_PLANNING_HINTS["manga"])
 
@@ -246,18 +359,33 @@ async def plan_manga(
         max_panels=panels_by_content,
     )
 
-    logger.info(f"Planning manga for {len(canonical_chapters)} chapters (image budget: {image_budget})")
+    logger.info(f"Planning manga for {n_chapters} chapters (image budget: {image_budget})")
+
+    # ── 1A: Scale max_tokens with chapter count to prevent truncation ──
+    # Each chapter needs ~600-800 tokens of planning output.
+    # Base 2000 + 800 per chapter, capped at 12000.
+    max_tokens = min(12000, 2000 + n_chapters * 800)
 
     result = await llm_client.chat_with_retry(
         system_prompt=system_prompt,
         user_message=user_message,
-        max_tokens=8000,
+        max_tokens=max_tokens,
         temperature=0.7,
         json_mode=True,
     )
 
     parsed = result.get("parsed") or {}
-    plan = _build_manga_plan(parsed, canonical_chapters, manga_bible)
+
+    # ── 1A: Detect truncation — output_tokens hitting max_tokens ──
+    output_tokens = result.get("output_tokens", 0)
+    if output_tokens >= max_tokens - 10:
+        logger.warning(
+            f"Planner output likely truncated ({output_tokens}/{max_tokens} tokens). "
+            f"JSON may be incomplete — falling back to robust parsing."
+        )
+
+    plan = _build_manga_plan(parsed, canonical_chapters, manga_bible,
+                             max_panels=panels_by_content)
 
     # HARD CAP enforcement — if LLM ignored the cap, truncate
     if len(plan.panels) > panels_by_content:
@@ -271,31 +399,68 @@ async def plan_manga(
 
 
 def _build_manga_plan(
-    plan_data: dict,
+    plan_data: dict | list,
     canonical_chapters: list[dict],
     manga_bible: dict,
+    max_panels: int = 30,
 ) -> MangaPlan:
-    """Convert raw LLM plan output into structured MangaPlan."""
-    panels = []
-    parallel_groups = []
-    current_group = []
-    image_count = 0
+    """Convert raw LLM plan output into structured MangaPlan.
+
+    Robust against malformed LLM output:
+    - If plan_data is a list, assume it's the chapters array directly
+    - If chapter/page/panel entries are wrong type, skip them gracefully
+    - Falls back to _generate_fallback_plan() if nothing is salvageable
+    """
+    # ── 1A: Handle list-type parsed responses ──
+    # When the JSON is truncated (hit max_tokens), the parser may extract
+    # just the chapters array instead of the outer {"chapters": [...]} dict.
+    if isinstance(plan_data, list):
+        logger.warning(
+            "Planner returned a list instead of dict — "
+            "likely truncated JSON. Wrapping as chapters array."
+        )
+        plan_data = {"chapters": plan_data}
+
+    if not isinstance(plan_data, dict):
+        logger.error(f"Planner returned unexpected type: {type(plan_data)}")
+        return _generate_fallback_plan(canonical_chapters, manga_bible,
+                                       max_panels=max_panels)
 
     chapters = plan_data.get("chapters", [])
 
     # Fallback: if LLM didn't return chapters, generate a basic plan
     if not chapters:
-        return _generate_fallback_plan(canonical_chapters, manga_bible)
+        return _generate_fallback_plan(canonical_chapters, manga_bible,
+                                       max_panels=max_panels)
+
+    panels = []
+    parallel_groups = []
+    image_count = 0
 
     for ch_data in chapters:
+        # ── 1A: Type guard — skip malformed chapter entries ──
+        if not isinstance(ch_data, dict):
+            logger.warning(f"Skipping non-dict chapter entry: {type(ch_data)}")
+            continue
+
         ch_idx = ch_data.get("chapter_index", 0)
         chapter_panels = []
 
         for page_data in ch_data.get("pages", []):
+            if not isinstance(page_data, dict):
+                logger.warning(f"Skipping non-dict page entry in ch{ch_idx}")
+                continue
+
             pg_idx = page_data.get("page_index", 0)
             layout = page_data.get("layout", "full")
 
             for pi, panel_data in enumerate(page_data.get("panels", [])):
+                if not isinstance(panel_data, dict):
+                    logger.warning(
+                        f"Skipping non-dict panel in ch{ch_idx}-pg{pg_idx}"
+                    )
+                    continue
+
                 panel_id = f"ch{ch_idx}-pg{pg_idx}-p{pi}"
 
                 assignment = PanelAssignment(
@@ -326,6 +491,12 @@ def _build_manga_plan(
         if chapter_panels:
             parallel_groups.append(chapter_panels)
 
+    # If we parsed chapters but got zero usable panels, fallback
+    if not panels:
+        logger.warning("Parsed chapters but extracted 0 panels — using fallback")
+        return _generate_fallback_plan(canonical_chapters, manga_bible,
+                                       max_panels=max_panels)
+
     # Calculate total pages
     page_set = set()
     for p in panels:
@@ -342,11 +513,21 @@ def _build_manga_plan(
     )
 
 
+# Layout rotation for fallback — avoids the "everything is full" monotony
+_FALLBACK_LAYOUTS = ["full", "cuts", "split-v", "cuts", "split-h", "cuts"]
+
+
 def _generate_fallback_plan(
     canonical_chapters: list[dict],
     manga_bible: dict,
+    max_panels: int = 30,
 ) -> MangaPlan:
-    """Fallback plan when LLM planning fails."""
+    """Fallback plan when LLM planning fails.
+
+    ── 1B: Respects the panel budget cap ──
+    Generates 2 panels/chapter (splash + dialogue) by default,
+    adds a data panel only if budget allows. Never exceeds max_panels.
+    """
     panels = []
     parallel_groups = []
 
@@ -359,59 +540,77 @@ def _generate_fallback_plan(
             elif c.get("role") in ("mentor", "guide"):
                 mentor = c.get("name", mentor)
 
-    for ch in canonical_chapters:
-        ch_idx = ch.get("chapter_index", 0)
+    n_chapters = len(canonical_chapters)
+    # Budget: 2 core panels per chapter + optional data panels
+    core_per_ch = 2
+    budget_remaining = max_panels - (n_chapters * core_per_ch)
+    # Distribute bonus panels (data panels) evenly across chapters
+    bonus_every_n = max(1, n_chapters // max(1, budget_remaining)) if budget_remaining > 0 else 999
+
+    logger.info(
+        f"Fallback plan: {n_chapters} chapters, budget {max_panels}, "
+        f"{core_per_ch}/ch + bonus every {bonus_every_n} chapters"
+    )
+
+    for ci, ch in enumerate(canonical_chapters):
+        ch_idx = ch.get("chapter_index", ci)
         title = ch.get("chapter_title", f"Chapter {ch_idx}")
         one_liner = ch.get("one_liner", "")
         chapter_panels = []
 
-        # Page 0: Splash
+        if len(panels) >= max_panels:
+            break
+
+        # Pick layout from rotation (avoids monotonous "full" everywhere)
+        page_layout = _FALLBACK_LAYOUTS[ci % len(_FALLBACK_LAYOUTS)]
+
+        # Panel 1: Splash (always full for splash pages)
         pid = f"ch{ch_idx}-pg0-p0"
         panels.append(PanelAssignment(
             panel_id=pid, chapter_index=ch_idx, page_index=0, panel_index=0,
             content_type="splash", narrative_beat=f"Chapter {ch_idx} title splash",
             text_content=title, dialogue=[], character=None,
             expression="neutral", visual_mood="intense-red",
-            layout_hint="full", image_budget=(ch_idx == 0),
-            creative_direction="Dramatic title reveal with speed lines and impact_burst. Use screentone bg.",
+            layout_hint="full", image_budget=(ci == 0),
+            creative_direction=(
+                "Dramatic title reveal with speed lines and impact_burst. "
+                "Use screentone bg. SFX text for emphasis."
+            ),
             dependencies=[],
         ))
         chapter_panels.append(pid)
 
-        # Page 1: Narration + Dialogue
+        if len(panels) >= max_panels:
+            parallel_groups.append(chapter_panels)
+            break
+
+        # Panel 2: Dialogue (use cuts layout for manga feel)
         pid = f"ch{ch_idx}-pg1-p0"
         panels.append(PanelAssignment(
             panel_id=pid, chapter_index=ch_idx, page_index=1, panel_index=0,
-            content_type="narration", narrative_beat="Setting the scene",
-            text_content=one_liner, dialogue=[], character=None,
-            expression="neutral", visual_mood="cool-mystery",
-            layout_hint="split-v", image_budget=False,
-            creative_direction="Slow typewriter reveal. Crosshatch pattern background.",
-            dependencies=[],
-        ))
-        chapter_panels.append(pid)
-
-        pid = f"ch{ch_idx}-pg1-p1"
-        panels.append(PanelAssignment(
-            panel_id=pid, chapter_index=ch_idx, page_index=1, panel_index=1,
             content_type="dialogue",
             narrative_beat="Characters discuss the key idea",
-            text_content="",
+            text_content=one_liner,
             dialogue=[
                 {"character": protagonist, "text": "So what's the breakthrough here?"},
                 {"character": mentor, "text": ch.get("dramatic_moment", "Let me show you...")},
             ],
             character=protagonist, expression="curious",
             visual_mood="dramatic-dark",
-            layout_hint="split-v", image_budget=False,
-            creative_direction="Characters face each other. Bubbles appear with typewriter. Sprite fade-in.",
+            layout_hint="cuts",  # Cuts layout for dialogue!
+            image_budget=False,
+            creative_direction=(
+                "Use cuts layout with angled divider (1-2 degrees). "
+                "Character sprites in each cell. Speech bubbles with typewriter. "
+                "Sprite fade-in before bubbles appear."
+            ),
             dependencies=[],
         ))
         chapter_panels.append(pid)
 
-        # Page 2: Key concepts
+        # Bonus: Data panel if budget allows (every Nth chapter)
         concepts = ch.get("key_concepts", [])
-        if concepts:
+        if concepts and ci % bonus_every_n == 0 and len(panels) < max_panels:
             pid = f"ch{ch_idx}-pg2-p0"
             panels.append(PanelAssignment(
                 panel_id=pid, chapter_index=ch_idx, page_index=2, panel_index=0,
@@ -420,8 +619,12 @@ def _generate_fallback_plan(
                 text_content=" | ".join(concepts[:5]),
                 dialogue=[], character=None, expression="neutral",
                 visual_mood="warm-amber",
-                layout_hint="full", image_budget=False,
-                creative_direction="Staggered data block reveal. Each concept animates in with a bounce. Amber accent.",
+                layout_hint=page_layout,
+                image_budget=False,
+                creative_direction=(
+                    "Staggered data_block reveal. Each concept animates in "
+                    "with bounce easing. Use amber accent color."
+                ),
                 dependencies=[],
             ))
             chapter_panels.append(pid)
