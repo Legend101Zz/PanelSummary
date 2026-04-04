@@ -44,7 +44,8 @@ async def main():
     book_id = sys.argv[1]
     force = "--force" in sys.argv
 
-    from _db import connect, Book, BookSummary, LivingPanelDoc, JobStatus
+    from app.scripts._db import (Book, BookSummary, JobStatus, LivingPanelDoc,
+                                 connect)
     settings = await connect()
 
     # --- Fetch the book ---

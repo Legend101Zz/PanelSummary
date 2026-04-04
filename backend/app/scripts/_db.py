@@ -10,17 +10,19 @@ Usage:
 """
 
 import asyncio
-import sys
 import os
+import sys
 
-# Add backend to path so we can import app modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+# Ensure the backend directory is on sys.path so `app.*` imports work
+# regardless of where the script is invoked from.
+_backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
 
-from motor.motor_asyncio import AsyncIOMotorClient
+from app.config import Settings, get_settings
+from app.models import Book, BookSummary, JobStatus, LivingPanelDoc
 from beanie import init_beanie
-
-from app.config import get_settings, Settings
-from app.models import Book, BookSummary, LivingPanelDoc, JobStatus
+from motor.motor_asyncio import AsyncIOMotorClient
 
 
 async def connect():

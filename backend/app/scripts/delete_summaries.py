@@ -51,7 +51,8 @@ async def main():
         if idx + 1 < len(sys.argv):
             single_summary_id = sys.argv[idx + 1]
 
-    from _db import connect, Book, BookSummary, LivingPanelDoc, JobStatus
+    from app.scripts._db import (Book, BookSummary, JobStatus, LivingPanelDoc,
+                                 connect)
     await connect()
 
     # --- Verify the book exists ---

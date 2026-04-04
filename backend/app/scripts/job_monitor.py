@@ -22,11 +22,10 @@ Usage:
 
 import asyncio
 import os
-import sys
 import signal
+import sys
 import time
 from datetime import datetime, timedelta
-
 
 # ── ANSI helpers ──────────────────────────────────────────────
 
@@ -124,7 +123,7 @@ def time_ago(dt: datetime) -> str:
 # ── Fetch all jobs ────────────────────────────────────────────
 
 async def fetch_jobs(show_all: bool = False):
-    from _db import JobStatus, BookSummary, Book
+    from app.scripts._db import Book, BookSummary, JobStatus
 
     if show_all:
         jobs = await JobStatus.find().sort("-updated_at").limit(50).to_list()
@@ -187,8 +186,7 @@ async def fetch_jobs(show_all: bool = False):
 
 async def cancel_job(job: dict) -> str:
     """Attempt to cancel/revoke a celery job."""
-    from _db import JobStatus
-    import importlib
+    from app.scripts._db import JobStatus
 
     celery_id = job["celery_id"]
 
@@ -204,7 +202,6 @@ async def cancel_job(job: dict) -> str:
 
     # Try to revoke via Celery
     try:
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
         from app.celery_worker import celery_app
         celery_app.control.revoke(celery_id, terminate=True, signal="SIGTERM")
     except Exception as e:
@@ -361,7 +358,7 @@ def read_key(timeout: float = 0.1) -> str | None:
 # ── Main loop ─────────────────────────────────────────────────
 
 async def run_monitor(show_all_initial: bool = False, watch: bool = False):
-    from _db import connect
+    from app.scripts._db import connect
     await connect()
 
     selected = 0
@@ -446,6 +443,10 @@ async def run_monitor(show_all_initial: bool = False, watch: bool = False):
 
 
 def main():
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print(__doc__)
+        sys.exit(0)
+
     show_all = "--all" in sys.argv
     watch = "--watch" in sys.argv
 
