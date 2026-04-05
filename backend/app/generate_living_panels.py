@@ -132,18 +132,61 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
         }]
 
     # Fix acts
-    for act in dsl.get("acts", []):
-        act.setdefault("id", f"act-{id(act)}")
+    for ai, act in enumerate(dsl.get("acts", [])):
+        act.setdefault("id", f"act-{ai}")
         act.setdefault("duration_ms", 5000)
         act.setdefault("layout", {"type": "full"})
         act.setdefault("layers", [])
         act.setdefault("cells", [])
         act.setdefault("timeline", [])
 
+        # ── Transition defaults ──
+        # Every act needs a transition_in. LLMs often omit this.
+        act.setdefault("transition_in", {
+            "type": "fade",
+            "duration_ms": 400 if ai == 0 else 350,
+        })
+        transition = act["transition_in"]
+        if transition.get("type") not in VALID_TRANSITIONS:
+            transition["type"] = "fade"
+        transition.setdefault("duration_ms", 400)
+
+        # ── Layout type validation ──
+        layout = act.get("layout", {})
+        if layout.get("type") not in VALID_LAYOUTS:
+            logger.debug(
+                f"Unknown layout '{layout.get('type')}' → downgrade to full"
+            )
+            layout["type"] = "full"
+
+        # ── Background layer guarantee ──
+        # Every act MUST have a background layer. Renderer breaks without one.
+        has_bg = any(
+            l.get("type") == "background"
+            for l in act.get("layers", [])
+        )
+        if not has_bg:
+            mood = canvas.get("mood", "light")
+            bg_color = "#F2E8D5" if mood == "light" else "#1A1825"
+            bg_color2 = "#EDE0CC" if mood == "light" else "#0F0E17"
+            act["layers"].insert(0, {
+                "id": f"bg-fix-{ai}",
+                "type": "background",
+                "opacity": 1,
+                "props": {
+                    "gradient": [bg_color, bg_color2],
+                    "pattern": "crosshatch",
+                    "patternOpacity": 0.04,
+                },
+            })
+
         # Ensure all layers have props and id
-        for layer in act.get("layers", []):
+        for li, layer in enumerate(act.get("layers", [])):
             layer.setdefault("props", {})
-            layer.setdefault("id", f"layer-{id(layer)}")
+            layer.setdefault("id", f"layer-{ai}-{li}")
+            # Fix opacity: must be a number
+            if not isinstance(layer.get("opacity"), (int, float)):
+                layer["opacity"] = 1 if layer.get("type") == "background" else 0
 
         # Ensure timeline steps have required fields
         for step in act.get("timeline", []):
@@ -151,15 +194,33 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
             step.setdefault("easing", "ease-out")
             if "animate" not in step:
                 step["animate"] = {"opacity": [0, 1]}
+            # Fix 'at' — must be a number
+            if not isinstance(step.get("at"), (int, float)):
+                step["at"] = 0
 
         # Fix cells
-        for cell in act.get("cells", []):
-            cell.setdefault("id", f"cell-{id(cell)}")
+        for ci, cell in enumerate(act.get("cells", [])):
+            cell.setdefault("id", f"cell-{ai}-{ci}")
             cell.setdefault("layers", [])
             cell.setdefault("timeline", [])
-            for layer in cell.get("layers", []):
+            # Normalize position to string (renderer expects "0", "1", etc.)
+            if isinstance(cell.get("position"), int):
+                cell["position"] = str(cell["position"])
+            elif cell.get("position") is None:
+                cell["position"] = str(ci)
+            for li, layer in enumerate(cell.get("layers", [])):
                 layer.setdefault("props", {})
-                layer.setdefault("id", f"layer-{id(layer)}")
+                layer.setdefault("id", f"cell-{ai}-{ci}-layer-{li}")
+                if not isinstance(layer.get("opacity"), (int, float)):
+                    layer["opacity"] = 0
+            # Fix cell timelines too
+            for step in cell.get("timeline", []):
+                step.setdefault("duration", 500)
+                step.setdefault("easing", "ease-out")
+                if "animate" not in step:
+                    step["animate"] = {"opacity": [0, 1]}
+                if not isinstance(step.get("at"), (int, float)):
+                    step["at"] = 0
 
         # ── Cuts layout validation ──
         # If layout is "cuts", ensure cells[] count matches the
