@@ -237,6 +237,8 @@ class MangaOrchestrator:
         self._report(18, "Planning manga panel structure...", "planning")
 
         try:
+            # Pass min_scenes from blueprint so planner doesn't undershoot
+            n_scenes = len(manga_blueprint.get("scenes", [])) if manga_blueprint else 0
             manga_plan = await plan_manga(
                 canonical_chapters=canonical_chapters,
                 book_synopsis=book_synopsis,
@@ -244,6 +246,7 @@ class MangaOrchestrator:
                 llm_client=self.llm,
                 image_budget=self.image_budget,
                 style=self.style,
+                min_scenes=n_scenes,
             )
             logger.info(
                 f"Plan: {manga_plan.total_panels} panels, "

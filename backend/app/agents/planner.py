@@ -372,8 +372,15 @@ async def plan_manga(
     llm_client: LLMClient,
     image_budget: int = 5,
     style: str = "manga",
+    min_scenes: int = 0,
 ) -> MangaPlan:
-    """Run the planner agent to create a full manga plan."""
+    """Run the planner agent to create a full manga plan.
+
+    Args:
+        min_scenes: Minimum number of scenes from the story blueprint.
+            When provided, the panel budget is raised to ensure every
+            designed scene gets at least one panel.
+    """
     # ── 1C: Consolidate inflated chapters for short documents ──
     canonical_chapters = consolidate_short_chapters(canonical_chapters)
 
@@ -386,7 +393,7 @@ async def plan_manga(
         for ch in canonical_chapters
     )
     n_chapters = len(canonical_chapters)
-    # Rule: ~3 panels per 150 words of summary, floor of 3 per chapter
+    # Rule: ~3 panels 0 words of summary, floor of 3 per chapter
     # We want ENOUGH panels to tell a real story, not a slideshow.
     panels_by_content = max(12, min(total_words // 50, n_chapters * 8))
     # Small docs still get generous budgets — short != boring.
@@ -395,6 +402,16 @@ async def plan_manga(
         panels_by_content = max(panels_by_content, n_chapters * 3)
         # But still cap at something reasonable
         panels_by_content = min(panels_by_content, max(12, n_chapters * 5))
+
+    # If the story blueprint designed N scenes, we need at LEAST N panels
+    # (each scene → at least 1 panel). This prevents the "too few panels" bug.
+    if min_scenes > 0:
+        panels_by_content = max(panels_by_content, min_scenes)
+        logger.info(
+            f"Panel budget raised to {panels_by_content} "
+            f"(story blueprint has {min_scenes} scenes)"
+        )
+
     logger.info(
         f"Panel budget: {panels_by_content} "
         f"(~{total_words} summary words, {n_chapters} chapters)"
