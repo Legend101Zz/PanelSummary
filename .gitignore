@@ -25,5 +25,9 @@ uploads/
 # OS
 .DS_Store
 *.log
-.github/instructions/wmt-copilot.instructions.md
+log.md
 log.txt
+.github/instructions/wmt-copilot.instructions.md
+
+# Storage / uploads
+storage/

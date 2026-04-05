@@ -1,8 +1,8 @@
 # Living Manga System Design
 
-> **Status**: Implementation in progress  
-> **Last Updated**: 2025-03-31  
-> **Author**: Orchestrator Architecture Team
+> **Status**: Production (v2 architecture)  
+> **Last Updated**: 2026-04-04  
+> **Author**: Mrigesh Thakur
 
 ---
 
@@ -20,42 +20,65 @@
 
 ## 1. Architecture Overview
 
+### v2 Pipeline: "Understand First, Design Second"
+
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PIPELINE (Celery Worker)                      │
-│                                                                 │
-│  PDF → Parse → Compress Chapters → ORCHESTRATOR (THE BRAIN)     │
-│                                       │                         │
-│                                       ├─ Phase 0: Credits       │
-│                                       ├─ Phase 1: Analysis      │
-│                                       │   (synopsis ‖ bible)    │
-│                                       │   (PARALLEL!)           │
-│                                       ├─ Phase 2: Plan + Cost   │
-│                                       │   (merged, no waste)    │
-│                                       ├─ Phase 3: DSL Gen       │
-│                                       │   (parallel, N panels)  │
-│                                       │   (per-panel progress)  │
-│                                       └─ Phase 4: Assembly      │
-│                                       │                         │
-│                                       ▼                         │
-│                              Image Generation                   │
-│                           (splash panels only)                  │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    PIPELINE (Celery Worker)                       │
+│                                                                  │
+│  PDF → Parse → Compress Chapters → ORCHESTRATOR (THE BRAIN)      │
+│                                       │                          │
+│                                       ├─ Phase 0: Credit Check   │
+│                                       │                          │
+│                                       ├─ Phase 1: Document       │
+│                                       │   Understanding          │
+│                                       │   (Knowledge Document:   │
+│                                       │    entities, relations,  │
+│                                       │    data, quotes, arc)    │
+│                                       │                          │
+│                                       ├─ Phase 2: Story Design   │
+│                                       │   (Blueprint: chars,     │
+│                                       │    scenes, world, facts) │
+│                                       │                          │
+│                                       ├─ Phase 3: Planning       │
+│                                       │   (panel assignments,    │
+│                                       │    budgets, layout map)  │
+│                                       │                          │
+│                                       ├─ Phase 4: DSL Gen        │
+│                                       │   (per-page, parallel,   │
+│                                       │    semaphore-limited)    │
+│                                       │                          │
+│                                       └─ Phase 5: Assembly       │
+│                                                                  │
+│                              Optional: Image Generation          │
+│                              (splash panels only, max 5/book)    │
+└──────────────────────────────────────────────────────────────────┘
                                │
                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    FRONTEND (Next.js)                            │
-│                                                                 │
-│  DSL JSON → Living Panel Renderer                               │
-│               │                                                 │
-│               ├─ Scene Graph (entities + layers)                │
+┌──────────────────────────────────────────────────────────────────┐
+│                    FRONTEND (Next.js 15)                          │
+│                                                                  │
+│  DSL JSON → Living Panel Engine                                  │
+│               │                                                  │
+│               ├─ Act Progression (tap to advance)               │
+│               ├─ Cut Layout Engine (manga-native subdivisions)  │
 │               ├─ Animation System (timelines + easing)          │
-│               ├─ Typography Engine (word-by-word, effects)      │
-│               ├─ Particle System (rain, sparks, dust)           │
-│               ├─ Audio Cue System (SFX triggers)                │
-│               └─ Interaction Layer (tap, scroll, hover)         │
-└─────────────────────────────────────────────────────────────────┘
+│               ├─ Layer Renderers (sprites, text, bubbles, FX)   │
+│               ├─ Manga Ink (paper textures, borders)            │
+│               └─ Effect Renderers (speed lines, screentone)     │
+└──────────────────────────────────────────────────────────────────┘
 ```
+
+### Why v2?
+
+The old pipeline (v1) generated synopsis and bible **in parallel** — the bible
+never even saw the synopsis. Each stage worked from lossy compressed summaries.
+The result was sparse manga with generic content.
+
+v2 flips this: **understand everything first**, then design a story from that
+understanding. The Knowledge Document is the single source of truth. The
+Story Blueprint maps every character to a real entity and every scene to
+specific content from the document.
 
 ---
 

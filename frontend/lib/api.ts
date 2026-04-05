@@ -20,7 +20,6 @@ import type {
   UploadResponse,
   SummaryStyle,
   LLMProvider,
-  GenerationMode,
 } from "./types";
 
 // The base URL for all API calls
@@ -119,7 +118,6 @@ export async function startSummarization(
     chapterRange?: [number, number] | null;
     generateImages?: boolean;
     imageModel?: string;
-    generationMode?: GenerationMode;
   }
 ): Promise<{ summary_id: string; task_id: string; message: string }> {
   const response = await api.post(`/books/${bookId}/summarize`, {
@@ -130,7 +128,6 @@ export async function startSummarization(
     chapter_range: options.chapterRange ?? null,
     generate_images: options.generateImages ?? false,
     image_model: options.imageModel ?? null,
-    generation_mode: options.generationMode ?? "llm",
   });
   return response.data;
 }

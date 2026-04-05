@@ -24,7 +24,7 @@ import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
 import type { LogEntry } from "@/components/LogFeed";
 import { getImageModels } from "@/lib/api";
 import { GenerationFacts } from "@/components/GenerationFacts";
-import type { Book, SummaryListItem, SummaryStyle, LLMProvider, GenerationMode } from "@/lib/types";
+import type { Book, SummaryListItem, SummaryStyle, LLMProvider } from "@/lib/types";
 
 // ─── GENERATE PANEL ─────────────────────────────────────────
 // ─── GENERATE PANEL ─────────────────────────────────────────
@@ -125,7 +125,6 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
         chapterRange,
         generateImages: genImages,
         imageModel: genImages ? imageModel : undefined,
-        generationMode: "llm",
       });
       setTaskId(res.task_id);
       push(2, `Task received · model: ${localModel}`);

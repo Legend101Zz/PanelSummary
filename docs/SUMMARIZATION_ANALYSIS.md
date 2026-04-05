@@ -28,15 +28,15 @@ FABLES (COLM 2024) found something scarier: even the best model (Claude-3-Opus) 
 
 ```
 PDF → Parse chapters → Compress each chapter independently (3000-word cap)
-                           → Synopsis (from compressed chapters)
-                           → Manga Bible (from synopsis + chapters)
-                           → Planner (from synopsis + bible + chapters)
+                           → Document Understanding (Knowledge Document)
+                           → Manga Story Design (Blueprint: chars + scenes)
+                           → Planner (from blueprint + chapters)
                            → DSL panels (from plan + bible)
 ```
 
-**Our strategy is: Independent chapter compression → hierarchical synthesis.**
+**Our strategy is: Independent chapter compression → deep understanding → story design → generation.**
 
-Each chapter is summarized in isolation (one LLM call per chapter, seeing only that chapter's content, capped at 3000 words). Then downstream agents (synopsis, bible, planner) work from these compressed summaries — never from the original text.
+Each chapter is summarized in isolation (one LLM call per chapter, seeing only that chapter's content, capped at 3000 words). A Document Understanding stage then builds a Knowledge Document from ALL chapter summaries — extracting entities, relationships, data points, and emotional arc. The Manga Story Design stage takes this Knowledge Document and designs the complete story (characters mapped to real entities, specific scenes with dialogue beats). Downstream agents (planner, DSL generator) work from this rich blueprint.
 
 ---
 

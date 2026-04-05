@@ -38,11 +38,6 @@ class SummaryStyle(str, Enum):
     ACADEMIC = "academic"       # Formal, structured, citation-style
 
 
-class GenerationMode(str, Enum):
-    LLM = "llm"                 # LLM generates DSL per-panel (original flow)
-    TEMPLATE = "template"       # Hand-crafted templates filled by code (fast, cheap)
-
-
 # ============================================================
 # SUB-MODELS — nested objects inside documents
 # ============================================================
@@ -231,7 +226,6 @@ class BookSummary(Document):
     model: Optional[str] = None             # LLM model used
     chapter_range: Optional[list[int]] = None  # [start, end] chapter indices; None = all
     generate_images: bool = False           # Whether to run AI image generation per panel
-    generation_mode: str = "llm"            # "llm" or "template" — how panels are created
 
     # Status
     status: ProcessingStatus = ProcessingStatus.PENDING

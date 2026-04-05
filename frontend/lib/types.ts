@@ -31,7 +31,6 @@ export type SummaryStyle =
 
 export type LLMProvider = "openai" | "openrouter";
 
-export type GenerationMode = "llm";
 
 // ============================================================
 // BOOK TYPES
@@ -179,7 +178,6 @@ export interface Summary {
 export interface SummaryListItem {
   id: string;
   style: SummaryStyle;
-  generation_mode?: GenerationMode;
   status: ProcessingStatus;
   total_chapters: number;
   total_reels: number;
