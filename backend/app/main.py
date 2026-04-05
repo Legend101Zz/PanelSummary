@@ -355,10 +355,8 @@ async def start_summarization(
     except ValueError:
         raise HTTPException(status_code=400, detail=f"Invalid style: {request.style}")
 
-    # Validate generation mode
-    gen_mode = request.generation_mode
-    if gen_mode not in ("llm", "template"):
-        gen_mode = "llm"
+    # Generation mode is always LLM now (template mode removed)
+    gen_mode = "llm"
 
     # Create BookSummary document
     summary = BookSummary(
@@ -385,7 +383,6 @@ async def start_summarization(
         chapter_range=request.chapter_range,
         generate_images=request.generate_images,
         image_model=request.image_model,
-        generation_mode=gen_mode,
     )
 
     # Track job status

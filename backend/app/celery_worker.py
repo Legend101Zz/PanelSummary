@@ -235,9 +235,8 @@ def generate_summary_task(
     chapter_range: list = None,       # [start_idx, end_idx] inclusive; None = all
     generate_images: bool = False,    # run AI image gen after panels
     image_model: str = None,          # image generation model (OpenRouter)
-    generation_mode: str = "llm",     # "llm" or "template"
 ):
-    """Background task: Compress chapters → Orchestrator (synopsis + bible + DSLs) → Images."""
+    """Background task: Compress chapters → Understand → Design → Generate DSLs → Images."""
     logger.info(f"Starting summary generation for book {book_id}")
 
     async def _run():
@@ -486,30 +485,18 @@ def generate_summary_task(
                 estimated_total_cost=panel_detail.get("estimated_cost", None),
             )
 
-        # ── Branch: Template vs LLM mode ──
-        if generation_mode == "template":
-            from app.agents.template_orchestrator import TemplateOrchestrator
-            orchestrator = TemplateOrchestrator(
-                llm_client=llm,
-                style=summary_style,
-                credit_tracker=credit_tracker,
-                progress_callback=orch_progress,
-                cancel_check=check_cancel,
-                image_budget=5,
-            )
-            logger.info("Using TEMPLATE orchestrator (zero DSL tokens)")
-        else:
-            from app.agents.orchestrator import MangaOrchestrator
-            orchestrator = MangaOrchestrator(
-                llm_client=llm,
-                style=summary_style,
-                credit_tracker=credit_tracker,
-                progress_callback=orch_progress,
-                cancel_check=check_cancel,
-                image_budget=5,
-                max_concurrent=4,
-            )
-            logger.info("Using LLM orchestrator (per-panel DSL generation)")
+        # ── Branch: LLM-only pipeline (v2 architecture) ──
+        from app.agents.orchestrator import MangaOrchestrator
+        orchestrator = MangaOrchestrator(
+            llm_client=llm,
+            style=summary_style,
+            credit_tracker=credit_tracker,
+            progress_callback=orch_progress,
+            cancel_check=check_cancel,
+            image_budget=5,
+            max_concurrent=4,
+        )
+        logger.info("Using v2 orchestrator (understand → design → generate)")
 
         orch_result = await orchestrator.run(
             canonical_chapters=canonical_chapters,

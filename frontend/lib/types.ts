@@ -31,7 +31,7 @@ export type SummaryStyle =
 
 export type LLMProvider = "openai" | "openrouter";
 
-export type GenerationMode = "llm" | "template";
+export type GenerationMode = "llm";
 
 // ============================================================
 // BOOK TYPES
