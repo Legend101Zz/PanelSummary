@@ -107,6 +107,131 @@ def validate_living_panel_dsl(dsl: dict) -> tuple[bool, list[str]]:
     return len(errors) == 0, errors
 
 
+# ============================================================
+# TEXT CONTRAST ENFORCEMENT (WCAG AA)
+# ============================================================
+
+# Pre-computed: dark ink on cream paper, light text on dark backgrounds
+_DARK_TEXT = "#1A1825"  # Ink black — for light/cream backgrounds
+_LIGHT_TEXT = "#F0EEE8"  # Paper white — for dark backgrounds
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[int, int, int] | None:
+    """Parse #RRGGBB or #RGB to (r, g, b). Returns None on failure."""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = h[0]*2 + h[1]*2 + h[2]*2
+    if len(h) < 6:
+        return None
+    try:
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return None
+
+
+def _relative_luminance(r: int, g: int, b: int) -> float:
+    """WCAG 2.x relative luminance."""
+    def linearize(c: int) -> float:
+        s = c / 255.0
+        return s / 12.92 if s <= 0.04045 else ((s + 0.055) / 1.055) ** 2.4
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+
+
+def _contrast_ratio(fg: str, bg: str) -> float:
+    """Compute WCAG contrast ratio between two hex colors. Returns 1.0 on error."""
+    fg_rgb = _hex_to_rgb(fg)
+    bg_rgb = _hex_to_rgb(bg)
+    if not fg_rgb or not bg_rgb:
+        return 1.0  # Assume bad contrast if we can't parse
+    l1 = _relative_luminance(*fg_rgb)
+    l2 = _relative_luminance(*bg_rgb)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _is_dark_color(hex_color: str) -> bool:
+    """Returns True if the color is perceptually dark."""
+    rgb = _hex_to_rgb(hex_color)
+    if not rgb:
+        return False
+    return _relative_luminance(*rgb) < 0.2
+
+
+def _fix_text_color(text_color: str, bg_color: str) -> str:
+    """Ensure text has at least 4.5:1 contrast against background.
+
+    If contrast is insufficient, flip to dark ink or light paper
+    depending on the background luminance.
+    """
+    ratio = _contrast_ratio(text_color, bg_color)
+    if ratio >= 4.5:
+        return text_color  # Already good
+
+    # Pick the color with better contrast against this background
+    dark_ratio = _contrast_ratio(_DARK_TEXT, bg_color)
+    light_ratio = _contrast_ratio(_LIGHT_TEXT, bg_color)
+    fixed = _DARK_TEXT if dark_ratio > light_ratio else _LIGHT_TEXT
+    logger.debug(
+        f"Contrast fix: {text_color} on {bg_color} = {ratio:.1f}:1 → "
+        f"{fixed} ({max(dark_ratio, light_ratio):.1f}:1)"
+    )
+    return fixed
+
+
+def _get_panel_bg_color(dsl: dict) -> str:
+    """Extract the dominant background color from the DSL."""
+    canvas_bg = dsl.get("canvas", {}).get("background", "#F2E8D5")
+    # Check first act's background layer for gradient override
+    for act in dsl.get("acts", []):
+        for layer in act.get("layers", []):
+            if layer.get("type") == "background":
+                gradient = layer.get("props", {}).get("gradient", [])
+                if gradient:
+                    return gradient[0]  # Dominant color is first gradient stop
+        break  # Only check first act for the dominant background
+    return canvas_bg
+
+
+def _enforce_text_contrast(dsl: dict) -> None:
+    """Walk all text/speech_bubble layers and fix contrast against background.
+
+    This is the safety net that prevents white-text-on-cream-paper disasters.
+    Mutates the DSL in place.
+    """
+    bg_color = _get_panel_bg_color(dsl)
+
+    def fix_layers(layers: list[dict]) -> None:
+        for layer in layers:
+            ltype = layer.get("type", "")
+            props = layer.get("props", {})
+
+            if ltype == "text" and "color" in props:
+                props["color"] = _fix_text_color(props["color"], bg_color)
+                # Add text shadow as readability safety net
+                if not props.get("textShadow"):
+                    if _is_dark_color(bg_color):
+                        props["textShadow"] = "0 1px 3px rgba(0,0,0,0.6)"
+                    else:
+                        props["textShadow"] = "0 1px 2px rgba(255,255,255,0.5)"
+
+            elif ltype == "speech_bubble":
+                # Bubble interiors are always light, so text should be dark
+                # unless it's a "shout" or "narrator" style on dark bg
+                pass  # Bubbles handle their own contrast in the renderer
+
+            elif ltype == "effect" and "color" in props:
+                # SFX text needs contrast too
+                effect = props.get("effect", "")
+                if effect == "sfx" and "sfxText" in props:
+                    props["color"] = _fix_text_color(props["color"], bg_color)
+
+    for act in dsl.get("acts", []):
+        fix_layers(act.get("layers", []))
+        for cell in act.get("cells", []):
+            fix_layers(cell.get("layers", []))
+
+
 def fix_common_dsl_issues(dsl: dict) -> dict:
     """Auto-fix common LLM mistakes in DSL output."""
     # Version
@@ -257,6 +382,9 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
             step for step in act.get("timeline", [])
             if step.get("target") in all_ids
         ]
+
+    # ── Text contrast enforcement (WCAG AA: 4.5:1) ──────────────────
+    _enforce_text_contrast(dsl)
 
     dsl.setdefault("meta", {})
     return dsl
