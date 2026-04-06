@@ -418,10 +418,9 @@ function LayerWrapper({
     return (
       <motion.div
         className="absolute inset-0"
-        style={{ zIndex: layer.zIndex ?? index }}
         animate={{ opacity: state.opacity ?? layer.opacity ?? 1, scale: state.scale ?? layer.scale ?? 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        style={{ ...{ zIndex: layer.zIndex ?? index }, willChange: "opacity, transform" }}
+        style={{ zIndex: layer.zIndex ?? index, willChange: "opacity, transform" }}
       >
         {children}
       </motion.div>
