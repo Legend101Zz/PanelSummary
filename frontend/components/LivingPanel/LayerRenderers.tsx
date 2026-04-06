@@ -145,7 +145,7 @@ export function TextRenderer({
         textAlign: props.textAlign || "left",
         maxWidth: props.maxWidth || "90%",
         lineHeight: props.lineHeight || 1.4,
-        textShadow: props.textShadow,
+        textShadow: props.textShadow || "0 1px 2px rgba(0,0,0,0.3)",
         letterSpacing: props.letterSpacing,
         whiteSpace: "pre-wrap" as const,
         // 2D: Prevent text from overflowing panel bounds
