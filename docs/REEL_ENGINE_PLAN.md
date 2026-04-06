@@ -1,706 +1,865 @@
-# 🎬 PanelSummary — Reel Engine: Plan of Action
+# 🎬 PanelSummary — Reel Engine v2: The REAL Plan
 
 > **Author**: Mrigesh Thakur × Comreton  
 > **Date**: 2026-04-07  
-> **Status**: BRAINSTORM → READY FOR EXECUTION  
-> **Goal**: Replace doom-scrolling with knowledge-scrolling
+> **Status**: BRAINSTORM → CRITIQUED → READY  
+> **Principle**: No templates. The LLM is the director.
 
 ---
 
-## The Vision
+## Why v1 Plan Was Wrong
 
-You've read a book. PanelSummary already turns it into a living manga.
-Now it also generates **short-form video reels** (30–60s) — catchy,
-beautifully animated, knowledge-dense micro-videos built from the book's
-knowledge graph, narrative arc, and key insights.
+The first plan proposed 6 fixed visual templates (KineticType, DataStory,
+QuoteSplash, etc.). That's a creative prison. It's the equivalent of
+giving a filmmaker 6 preset After Effects templates and saying "pick one."
 
-**Dual-swipe UX:**
-- ↕ Vertical swipe = reel from a **different book**
-- ↔ Horizontal swipe = next reel from the **same book**
-- This is the TikTok/Reels/Shorts interaction model, but for learning
+The right approach: give the LLM a **vocabulary of visual primitives**
+and let it compose ANYTHING. We already proved this works — it's exactly
+what the Living Panel DSL v2.0 does for manga panels. Acts, layers,
+timeline keyframes, effects. The LLM designs freely; the renderer
+interprets faithfully.
 
-**Memory system:** Each time you generate a reel, the engine remembers
-what content was used. Next request → fresh content from a different
-part of the book. No repeats until the book is exhausted.
+**Video DSL = Living Panel DSL evolved for time.**
 
 ---
 
-## Research: Remotion vs Revideo
+## Key Architecture Decisions
 
-### Remotion (https://github.com/remotion-dev/remotion)
-| Aspect | Details |
-|--------|---------|
-| Paradigm | React components → video frames |
-| Maturity | 4+ years, 21k+ stars |
-| Rendering | Server (CLI/Lambda) or browser |
-| Player | `@remotion/player` — inline preview |
-| Output | MP4, WebM, GIF |
-| Stack fit | **Perfect** — we're already React/Next |
-| Pricing | Free OSS, paid cloud rendering |
-| Audio | Built-in audio support |
+### 1. No Templates — The DSL IS the Medium
 
-### Revideo (https://github.com/redotvideo/revideo)
-| Aspect | Details |
-|--------|---------|
-| Paradigm | Generator functions, Motion Canvas |
-| Maturity | ~1 year, 1.5k stars |
-| Rendering | Node.js server-side |
-| Player | Custom player |
-| Output | MP4, WebM |
-| Stack fit | Different paradigm, separate learn |
-| Pricing | Free OSS |
-| Audio | Yes |
+Instead of `template: "kinetic_type"`, the LLM gets a vocabulary:
 
-### ✅ Decision: **Remotion**
+| Primitive | What it does |
+|-----------|-------------|
+| `text` layer | Any text, any font, any size, any position |
+| `counter` layer | Animated number counting up (73% → shown) |
+| `speech_bubble` | Dialogue with character attribution |
+| `data_block` | Staggered bullet list |
+| `effect` | Speed lines, particles, halftone, ink splash |
+| `shape` | Circles, rectangles, lines, dividers |
+| `sprite` | Character silhouettes with expressions |
+| `background` | Gradients, patterns, solid colors |
+| `illustration` | SVG scene backgrounds |
+| `camera` | Pan, zoom, rotate the whole scene |
+| Scene transitions | Cut, fade, wipe, zoom, glitch, ink_wash |
 
-Why:
-1. **React-native** — we reuse all our existing design system, fonts,
-   colors, manga panels, speed lines, halftone textures
-2. **`@remotion/player`** — zero-latency preview in the browser, no
-   pre-rendering needed for the player. Render to MP4 only for download/share
-3. **Composition model** — each reel is a React `<Composition>`, we can
-   have multiple visual templates (typography-heavy, data-viz, quote-splash,
-   entity-relationship animated, etc.)
-4. **Server rendering** — when user wants to download/share, we render
-   server-side via Remotion CLI or Lambda
-5. **Ecosystem** — `@remotion/transitions`, `@remotion/noise`,
-   `@remotion/paths`, `@remotion/shapes` — free visual building blocks
+The LLM composes these into whatever it wants. A data-heavy reel
+uses counters + data_blocks. A quote reel uses large text + fade
+transitions. A story reel uses sprites + speech bubbles + speed lines.
+An experimental reel uses shapes + camera movement + glitch transitions.
 
----
+**No two reels need to look alike.** The DSL is expressive enough for
+infinite variety, constrained enough for reliable rendering.
 
-## Architecture
+### 2. Server-Side Rendering → MP4 → `/storage/`
+
+No Remotion player in the browser. No in-app editor. The pipeline:
 
 ```
-                      ┌──────────────────────────────────────┐
-                      │         EXISTING DATA                │
-                      │  knowledge_doc (core_thesis,         │
-                      │    entities, clusters, quotes,       │
-                      │    emotional_arc, data_points)       │
-                      │  knowledge_graph (entities, edges,   │
-                      │    conflicts, dramatic_weight)       │
-                      │  narrative_arc (3-act beats)         │
-                      │  canonical_chapters                  │
-                      │  manga_bible (characters, motifs)    │
-                      └──────────────┬───────────────────────┘
-                                     │
-                          ┌──────────▼──────────┐
-                          │  REEL CONTENT PICKER │ (LLM)
-                          │  "What's catchy?"    │
-                          │  - Checks memory     │
-                          │  - Avoids repeats    │
-                          │  - Picks from:       │
-                          │    • quotable_moments │
-                          │    • conflict_pairs   │
-                          │    • data_points      │
-                          │    • key arguments    │
-                          │    • emotional beats  │
-                          │  Outputs: ReelScript  │
-                          └──────────┬───────────┘
-                                     │
-                          ┌──────────▼──────────┐
-                          │  REEL SCRIPT         │
-                          │  (structured JSON)   │
-                          │  - scenes[]          │
-                          │    - type (quote/     │
-                          │      data/entity/    │
-                          │      argument/hook)  │
-                          │    - content         │
-                          │    - duration_ms     │
-                          │    - visual_style    │
-                          │    - animation       │
-                          │  - transitions[]     │
-                          │  - audio_mood        │
-                          │  - color_palette     │
-                          │  - total_duration_s  │
-                          └──────────┬───────────┘
-                                     │
-                   ┌─────────────────┼─────────────────┐
-                   ▼                 ▼                  ▼
-          ┌────────────┐   ┌──────────────┐   ┌──────────────┐
-          │  REMOTION   │   │  REMOTION    │   │  REMOTION    │
-          │  Template:  │   │  Template:   │   │  Template:   │
-          │  KINETIC    │   │  DATA VIZ    │   │  STORY ARC   │
-          │  TYPOGRAPHY │   │  ANIMATED    │   │  CINEMATIC   │
-          └──────┬──────┘   └──────┬───────┘   └──────┬───────┘
-                 │                 │                   │
-                 └────────────────┬┘───────────────────┘
-                                  │
-                    ┌─────────────▼──────────────┐
-                    │       DELIVERY              │
-                    │                             │
-                    │  ① @remotion/player          │
-                    │     → in-browser preview     │
-                    │     → instant, no render     │
-                    │                             │
-                    │  ② Remotion CLI render       │
-                    │     → MP4 for download       │
-                    │     → share to social        │
-                    └─────────────────────────────┘
+LLM generates Video DSL (JSON)
+    ↓
+Backend validates + auto-fixes (same pattern as manga)
+    ↓
+Backend calls reel-renderer (Node.js + Remotion CLI)
+    ↓
+Remotion renders headless: React → Chrome frames → ffmpeg → MP4
+    ↓
+MP4 saved to /storage/reels/{book_id}/{reel_id}.mp4
+    ↓
+Frontend plays <video> with dual-swipe player
 ```
+
+Why this approach:
+- **Deterministic** — Remotion renders frame-by-frame, no timing drift
+- **Cacheable** — MP4 files served directly, no computation on playback
+- **Shareable** — Users can download and share actual video files
+- **Decoupled** — Frontend is just a video player, zero Remotion deps
+
+### 3. Separate Renderer Project
+
+```
+PanelSummary/
+├── backend/          # Python + FastAPI (generates DSL, orchestrates)
+├── frontend/         # Next.js (video player, no Remotion)
+├── reel-renderer/    # Node.js + Remotion (renders DSL → MP4)
+└── storage/
+    └── reels/        # Output MP4 files
+```
+
+The reel-renderer is a headless service. Backend POSTs a DSL JSON,
+renderer outputs an MP4. Clean separation of concerns.
 
 ---
 
-## Data Model: New Entities
+## The Video DSL Specification
 
-### ReelScript (Backend — stored in MongoDB)
+### Evolution from Living Panel DSL
+
+| Living Panel DSL | Video DSL | Why |
+|-----------------|-----------|-----|
+| `acts[]` (tap to advance) | `scenes[]` (auto-flow) | No user interaction |
+| Canvas 800×600 | Canvas 1080×1920 | Portrait video |
+| No fps | `fps: 30` | Frame rate control |
+| No font declaration | `fonts[]` | Google Fonts loaded |
+| No palette | `palette{}` | Global color system |
+| `transition_in` per act | `transition` per scene | Same concept |
+| 3-8s per act | 3-12s per scene | Longer scenes OK |
+| Total ~10-30s | Total 30-60s | Full reel length |
+| New: — | `counter` layer type | Animated numbers |
+| New: — | `camera` per scene | Pan/zoom/rotate |
+
+### DSL Schema
+
+```json
+{
+  "version": "1.0",
+
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "background": "#0F0E17"
+  },
+
+  "fonts": [
+    "Dela Gothic One",
+    "Outfit",
+    "DotGothic16"
+  ],
+
+  "palette": {
+    "bg": "#0F0E17",
+    "fg": "#F0EEE8",
+    "accent": "#F5A623",
+    "accent2": "#E8191A",
+    "muted": "#5E5C78"
+  },
+
+  "scenes": [
+    {
+      "id": "hook",
+      "duration_ms": 4000,
+      "transition": { "type": "cut" },
+      "camera": {
+        "zoom": [1.0, 1.05],
+        "pan": { "x": [0, 0], "y": [0, -20] }
+      },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "background",
+          "props": {
+            "gradient": ["#0F0E17", "#1A0A2E"],
+            "gradientAngle": 160,
+            "pattern": "halftone",
+            "patternOpacity": 0.06
+          }
+        },
+        {
+          "id": "hook-text",
+          "type": "text",
+          "x": "10%",
+          "y": "35%",
+          "props": {
+            "content": "What if everything you knew about habits was wrong?",
+            "fontSize": "clamp(2rem, 7vw, 3.5rem)",
+            "fontFamily": "Dela Gothic One",
+            "color": "#F0EEE8",
+            "maxWidth": "80%",
+            "lineHeight": 1.15
+          }
+        },
+        {
+          "id": "speed",
+          "type": "effect",
+          "props": {
+            "effect": "speed_lines",
+            "color": "#F5A623",
+            "intensity": 0.4,
+            "direction": "radial"
+          }
+        }
+      ],
+      "timeline": [
+        {
+          "at": 0,
+          "target": "speed",
+          "animate": { "opacity": [0, 0.6] },
+          "duration": 400,
+          "easing": "ease-out"
+        },
+        {
+          "at": 300,
+          "target": "hook-text",
+          "animate": { "opacity": [0, 1], "y": ["38%", "35%"] },
+          "duration": 600,
+          "easing": "spring"
+        }
+      ]
+    },
+    {
+      "id": "stat-reveal",
+      "duration_ms": 6000,
+      "transition": {
+        "type": "wipe",
+        "direction": "up",
+        "duration_ms": 500
+      },
+      "layers": [
+        {
+          "id": "bg2",
+          "type": "background",
+          "props": {
+            "gradient": ["#F2E8D5", "#EDE0CC"],
+            "pattern": "crosshatch",
+            "patternOpacity": 0.04
+          }
+        },
+        {
+          "id": "big-number",
+          "type": "counter",
+          "x": "50%",
+          "y": "30%",
+          "props": {
+            "from": 0,
+            "to": 73,
+            "suffix": "%",
+            "fontSize": "8rem",
+            "fontFamily": "Dela Gothic One",
+            "color": "#E8191A",
+            "textAlign": "center",
+            "duration_ms": 2000
+          }
+        },
+        {
+          "id": "stat-label",
+          "type": "text",
+          "x": "50%",
+          "y": "52%",
+          "props": {
+            "content": "of habit changes fail in the first week",
+            "fontSize": "1.4rem",
+            "fontFamily": "Outfit",
+            "color": "#1A1825",
+            "textAlign": "center",
+            "maxWidth": "70%"
+          }
+        }
+      ],
+      "timeline": [
+        {
+          "at": 200,
+          "target": "big-number",
+          "animate": { "opacity": [0, 1], "scale": [0.8, 1.0] },
+          "duration": 400,
+          "easing": "spring"
+        },
+        {
+          "at": 300,
+          "target": "big-number",
+          "animate": { "countUp": true },
+          "duration": 2000,
+          "easing": "ease-out"
+        },
+        {
+          "at": 2500,
+          "target": "stat-label",
+          "animate": { "opacity": [0, 1], "y": ["55%", "52%"] },
+          "duration": 500,
+          "easing": "ease-out"
+        }
+      ]
+    }
+  ],
+
+  "meta": {
+    "title": "The 73% Problem",
+    "book_title": "Atomic Habits",
+    "book_id": "abc123",
+    "summary_id": "def456",
+    "source_content_ids": ["quote-3", "data-7", "cluster-2"],
+    "total_duration_ms": 42000,
+    "mood": "revelatory"
+  }
+}
+```
+
+### Layer Types (Full Vocabulary)
+
+**Inherited from Living Panel DSL (already proven):**
+
+| Type | Purpose | Key Props |
+|------|---------|-----------|
+| `background` | Gradients, patterns, solid | gradient, pattern, patternOpacity |
+| `text` | Any text on screen | content, fontSize, fontFamily, color, typewriter |
+| `speech_bubble` | Dialogue with tail | text, character, style, tailDirection |
+| `effect` | Visual FX | effect, color, intensity, direction |
+| `sprite` | Character silhouette | character, expression, pose, silhouette |
+| `data_block` | Bullet list | items[], accentColor, animateIn |
+| `shape` | Geometric primitives | shape, fill, stroke, strokeWidth |
+| `illustration` | SVG scene bg | scene, style, primaryColor |
+
+**New for Video DSL:**
+
+| Type | Purpose | Key Props |
+|------|---------|-----------|
+| `counter` | Animated number | from, to, suffix, prefix, duration_ms |
+
+That's it. ONE new layer type. Everything else is composition of
+existing primitives. The power isn't in having more types — it's in
+the LLM's freedom to COMBINE them in unexpected ways.
+
+### Scene-Level Camera
+
+Each scene can optionally have camera movement:
+
+```json
+"camera": {
+  "zoom": [1.0, 1.15],           // start → end scale
+  "pan": { "x": [0, -30], "y": [0, 20] },  // px offset
+  "rotate": [0, 2],              // degrees
+  "easing": "ease-in-out"
+}
+```
+
+This wraps ALL layers in the scene. A slow zoom-in creates tension.
+A pan reveals off-screen content. Rotate adds dynamism.
+
+### Scene Transitions
+
+```json
+"transition": {
+  "type": "cut|fade|wipe|zoom|glitch|ink_wash|slide|iris",
+  "duration_ms": 400,
+  "direction": "up|down|left|right",
+  "color": "#000000"
+}
+```
+
+| Transition | Effect | Best For |
+|-----------|--------|----------|
+| `cut` | Instant switch | High energy, fast pacing |
+| `fade` | Crossfade | Gentle, contemplative |
+| `wipe` | Directional reveal | Scene change, topic shift |
+| `zoom` | Scale in/out | Focus, emphasis |
+| `glitch` | Digital distortion | Surprising, tech content |
+| `ink_wash` | Ink bleeding across | Manga-native, beautiful |
+| `slide` | Push old scene away | Sequential content |
+| `iris` | Circular reveal | Dramatic reveal |
+
+### Animation System (Inherited from Living Panel DSL)
+
+```json
+{
+  "at": 300,              // ms from scene start
+  "target": "layer-id",   // which layer to animate
+  "animate": {
+    "opacity": [0, 1],    // from → to
+    "scale": [0.8, 1.0],
+    "x": ["10%", "15%"],
+    "y": ["40%", "35%"],
+    "rotate": [0, 5],
+    "typewriter": true,    // character-by-character reveal
+    "countUp": true        // for counter layers
+  },
+  "duration": 600,        // ms
+  "easing": "spring"      // linear|ease-in|ease-out|ease-in-out|spring|bounce
+}
+```
+
+Same proven system. The LLM already knows how to use this from
+Living Panel generation. Zero learning curve.
+
+---
+
+## Content Pipeline: What Gets Put in Reels
+
+### Available Data (already exists in the pipeline):
+
+```
+knowledge_doc:
+  ├── core_thesis           → hook material
+  ├── key_entities[]        → character content
+  ├── argument_structure    → logical flow content
+  ├── knowledge_clusters[]  → themed content groups
+  ├── emotional_arc         → dramatic moments
+  ├── quotable_moments[]    → quote scenes
+  ├── data_points[]         → counter/data scenes
+  ├── relationships[]       → entity relationship content
+  └── what_makes_interesting → hook material
+
+knowledge_graph:
+  ├── central_entities      → who matters most
+  ├── conflict_pairs        → dramatic tension
+  ├── mentor_pairs          → wisdom moments
+  └── dramatic_weight       → importance scoring
+
+narrative_arc:
+  ├── acts[1,2,3]           → story structure
+  ├── beats[]               → individual story moments
+  ├── theme                 → overarching message
+  └── central_question      → the hook
+```
+
+### Memory System
 
 ```python
-class ReelScene(BaseModel):
-    """A single scene within a reel (2-10s)"""
-    scene_index: int
-    scene_type: str          # "hook" | "quote" | "data" | "entity_reveal"
-                             # | "argument" | "conflict" | "takeaway" | "cta"
-    headline: str            # Big text on screen (max 8 words)
-    body: str                # Supporting text (max 25 words)
-    entity_names: list[str]  # Entities to visualize in this scene
-    data_value: str | None   # For data scenes: "73%" or "$4.2B"
-    quote_text: str | None   # For quote scenes
-    quote_attribution: str | None
-    duration_ms: int         # 2000-8000ms
-    animation: str           # "typewriter" | "slam" | "fade_up" | "count_up"
-                             # | "orbit" | "split_reveal" | "glitch"
-    visual_emphasis: str     # "high" | "medium" | "low"
-
-class ReelScript(BaseModel):
-    """Complete script for one video reel"""
-    reel_id: str             # UUID
+class BookReelMemory:
+    """What content has been used in reels for this book."""
     book_id: str
     summary_id: str
-    
-    # Content identity
-    title: str               # Internal title for management
-    hook_line: str            # The scroll-stopping opener
-    source_content_ids: list[str]  # Which knowledge bits were used (for memory)
-    
-    # Visual design
-    color_palette: dict       # {bg, text, accent, accent2}
-    visual_template: str      # "kinetic_type" | "data_story" | "quote_splash"
-                              # | "entity_web" | "argument_flow" | "manga_panels"
-    font_pairing: dict        # {display, body, accent}
-    
-    # Scenes
-    scenes: list[ReelScene]
-    total_duration_ms: int    # Sum of scene durations + transitions
-    
-    # Audio
-    audio_mood: str           # "epic" | "contemplative" | "urgent" | "playful"
-    
-    # Metadata
-    chapter_refs: list[int]   # Which chapters contributed
-    generated_at: datetime
-    render_status: str        # "script" | "preview" | "rendered"
-    video_url: str | None     # GridFS or S3 URL once rendered
-
-class BookReelMemory(BaseModel):
-    """Tracks what content has been used in reels for a book"""
-    book_id: str
-    summary_id: str
-    used_quote_indices: list[int]        # Indices into knowledge_doc.quotable_moments
-    used_data_point_indices: list[int]
-    used_cluster_themes: list[str]
-    used_entity_names: list[str]         # Entities already featured
-    used_beat_ids: list[str]             # Narrative beats already used
-    used_argument_indices: list[int]
+    used_content_ids: list[str]    # IDs like "quote-3", "data-7"
     total_reels_generated: int
+    exhausted: bool                # True when all content used
     last_generated_at: datetime
 ```
 
-### ReelScript MongoDB Document
+Each piece of content gets an ID (e.g., `quote-0`, `data-3`,
+`cluster-habit-stacking`, `beat-climax`). When a reel uses content,
+its IDs are added to `used_content_ids`. Next reel generation
+filters out used content.
+
+### Content Selection (Rule-Based, Not LLM)
 
 ```python
-class ReelScriptDoc(Document):
-    """Individual reel script stored in MongoDB"""
-    reel_id: str
-    book_id: Indexed(str)
-    summary_id: Indexed(str)
-    script: dict              # Full ReelScript as dict
-    render_status: str        # "script" | "rendered"
-    video_gridfs_id: str | None
-    created_at: datetime
+def select_reel_content(knowledge_doc, graph, arc, memory):
+    """Pick unused content for the next reel. No LLM needed."""
     
-    class Settings:
-        name = "reel_scripts"
-        indexes = [
-            [("book_id", 1), ("created_at", -1)],
-        ]
-
-class BookReelMemoryDoc(Document):
-    """Memory of what's been used per book"""
-    book_id: Indexed(str, unique=True)
-    summary_id: str
-    used_content: dict        # BookReelMemory as dict
-    updated_at: datetime
+    pool = []
     
-    class Settings:
-        name = "reel_memory"
-```
-
----
-
-## Remotion Visual Templates
-
-We'll build **6 distinct Remotion compositions** (visual templates).
-Each creates a completely different video aesthetic. The LLM picks the
-best template for the content, but user can override.
-
-### 1. `KineticType` — Kinetic Typography
-Big words slamming onto screen. Think Apple keynote energy.
-- Full-bleed color backgrounds
-- Words animate: slam, typewriter, split, glitch
-- Manga speed lines on dramatic reveals
-- Best for: arguments, key points, takeaways
-
-### 2. `DataStory` — Animated Data Visualization
-Numbers counting up, charts drawing themselves, stats flying in.
-- Dark bg, neon accent numbers
-- Count-up animations for statistics
-- Bar/line charts that draw on-screen
-- Best for: data_points, metrics, comparisons
-
-### 3. `QuoteSplash` — Quote-Driven Narrative
-Beautiful typographic quotes with atmospheric backgrounds.
-- Large serif quote text, centered
-- Attribution fades in below
-- Subtle parallax background motion
-- Best for: quotable_moments, memorable lines
-
-### 4. `EntityWeb` — Knowledge Graph Animation
-Entities and relationships animating, orbiting, connecting.
-- Nodes (entities) appear and orbit
-- Edges (relationships) draw between them
-- Labels fade in with significance text
-- Best for: knowledge_graph visualization, relationships
-
-### 5. `StoryArc` — Cinematic Narrative Flow
-3-act mini-story with chapter-like transitions.
-- "Act I / Act II / Act III" title cards
-- Each beat as a scene with mood lighting
-- Emotional gradient background shifts
-- Best for: narrative_arc beats, emotional journey
-
-### 6. `MangaPanels` — Animated Manga Page
-Brings our existing manga panel aesthetic to video.
-- Panels appear with crack-in animation
-- Speech bubbles type out
-- Speed lines, halftone textures
-- Best for: dialogue-heavy content, character insights
-
----
-
-## Reel Content Picker: How It Works
-
-The **Content Picker** is the brain that decides what to put in each reel.
-It gets the full knowledge graph + memory of what's been used.
-
-### Content Sources (priority order):
-
-1. **Quotable Moments** (highest impact, most shareable)
-   - Each becomes a `QuoteSplash` or `KineticType` scene
-   
-2. **Conflict Pairs** from knowledge graph
-   - "X vs Y" — always dramatic, always catchy
-   - Becomes `EntityWeb` or `KineticType` scene
-
-3. **Data Points** (specific numbers are scroll-stoppers)
-   - "73% of companies that..." — `DataStory` scene
-   
-4. **Knowledge Cluster Insights** (non-obvious connections)
-   - The "insights" field in clusters — often the best content
-   
-5. **Emotional Arc Beats** (turning points, climax)
-   - Dramatic moments → `StoryArc` or `MangaPanels`
-
-6. **Key Arguments** from argument_structure
-   - Structured logic flow → `KineticType`
-
-### Content Selection Algorithm:
-
-```python
-def pick_reel_content(knowledge_doc, graph, arc, memory):
-    """Pick content for the next reel, avoiding repeats."""
+    # Quotable moments (high catchiness)
+    for i, q in enumerate(knowledge_doc["quotable_moments"]):
+        cid = f"quote-{i}"
+        if cid not in memory.used_content_ids:
+            pool.append({"id": cid, "type": "quote", "data": q, "weight": 0.9})
     
-    available = []
+    # Data points (scroll-stopping numbers)
+    for i, d in enumerate(knowledge_doc["data_points"]):
+        cid = f"data-{i}"
+        if cid not in memory.used_content_ids:
+            pool.append({"id": cid, "type": "data", "data": d, "weight": 0.85})
     
-    # 1. Unused quotes
-    for i, quote in enumerate(knowledge_doc["quotable_moments"]):
-        if i not in memory.used_quote_indices:
-            available.append({
-                "type": "quote",
-                "index": i,
-                "content": quote,
-                "catchiness": score_catchiness(quote),
-                "template": "quote_splash",
-            })
-    
-    # 2. Unused conflict pairs
+    # Conflict pairs from graph (always dramatic)
     for pair in graph.conflict_pairs:
-        pair_key = f"{pair['from']}:{pair['to']}"
-        if pair_key not in memory.used_entity_names:
-            available.append({
-                "type": "conflict",
-                "content": pair,
-                "catchiness": 0.9,  # Conflicts are always catchy
-                "template": "entity_web",
+        cid = f"conflict-{pair['from']}-{pair['to']}"
+        if cid not in memory.used_content_ids:
+            pool.append({"id": cid, "type": "conflict", "data": pair, "weight": 0.9})
+    
+    # Narrative beats (story moments)
+    for beat in arc.all_beats:
+        if beat.beat_id not in memory.used_content_ids:
+            pool.append({
+                "id": beat.beat_id, "type": "beat",
+                "data": beat.to_dict(), "weight": beat.dramatic_weight
             })
     
-    # 3. Unused data points
-    for i, dp in enumerate(knowledge_doc["data_points"]):
-        if i not in memory.used_data_point_indices:
-            available.append({
-                "type": "data",
-                "index": i,
-                "content": dp,
-                "catchiness": score_data_catchiness(dp),
-                "template": "data_story",
+    # Knowledge cluster insights
+    for i, cluster in enumerate(knowledge_doc["knowledge_clusters"]):
+        cid = f"cluster-{i}"
+        if cid not in memory.used_content_ids:
+            pool.append({
+                "id": cid, "type": "cluster",
+                "data": cluster, "weight": 0.7
             })
     
-    # ... similar for clusters, beats, arguments
-    
-    # Sort by catchiness, take top content for one reel
-    available.sort(key=lambda x: x["catchiness"], reverse=True)
-    
-    # Pick 4-6 items for a 30-60s reel
-    selected = available[:6]
-    
-    # Send to LLM to craft into a coherent reel script
-    return selected
+    # Sort by weight, pick top 4-8 items for one reel
+    pool.sort(key=lambda x: x["weight"], reverse=True)
+    return pool[:8]
 ```
 
-### LLM's Role:
-
-The Content Picker selects WHAT content to use. The LLM then:
-1. Arranges it into a compelling narrative order
-2. Writes the hook line (scroll-stopper)
-3. Writes tight headlines and body text for each scene
-4. Chooses animations that match the energy
-5. Sets the color palette and mood
-6. Decides duration per scene
+The selected content is then passed to the LLM along with the
+Video DSL spec. The LLM arranges it into a reel and generates
+the full DSL JSON.
 
 ---
 
-## Frontend: Reel Player Design
+## Rendering Pipeline
 
-### Player Architecture
+### Step-by-Step Flow
+
+```
+1. User clicks "Generate Reel" on book detail page
+    ↓
+2. Backend: select_reel_content() picks unused content
+    ↓
+3. Backend: LLM generates Video DSL JSON (~800-1200 tokens)
+    ↓
+4. Backend: validate + auto-fix DSL (same as manga panels)
+    ↓
+5. Backend: write DSL to temp file
+    ↓
+6. Backend: subprocess → reel-renderer CLI
+   $ cd reel-renderer && npx remotion render \
+       src/index.ts ReelComposition \
+       /storage/reels/{book_id}/{reel_id}.mp4 \
+       --props=/tmp/{reel_id}.json \
+       --width=1080 --height=1920 --fps=30
+    ↓
+7. Remotion: headless Chrome renders each frame
+   - Loads fonts from Google Fonts
+   - Renders layers per frame using interpolate()
+   - Applies scene transitions
+   - Encodes via ffmpeg → MP4
+    ↓
+8. Backend: update MongoDB with render status + video path
+    ↓
+9. Frontend: GET /api/reels/{reel_id}/video → serves MP4
+```
+
+### Render Performance
+
+For a 45-second reel at 30fps = 1,350 frames.
+Remotion renders ~10-20 frames/sec on modern hardware.
+Total render time: **~1-2 minutes**.
+
+This is acceptable because:
+- Generation is async (Celery task, like manga)
+- User gets progress updates via SSE
+- Once rendered, playback is instant
+- Videos are cached (no re-rendering)
+
+### Dependencies
+
+```
+reel-renderer/
+  - Node.js v18+ ✓ (already have v18.20.8)
+  - @remotion/cli
+  - @remotion/transitions
+  - @remotion/noise (procedural backgrounds)
+  - ffmpeg (needs install: brew install ffmpeg)
+```
+
+---
+
+## Frontend: Video Player
+
+### No Remotion in the Browser
+
+The frontend has ZERO Remotion dependencies. It's a plain video player
+with a TikTok-style dual-swipe interaction model.
 
 ```
 frontend/
 ├── app/
 │   └── reels/
-│       └── page.tsx                    # Entry point, fetches reels
+│       └── page.tsx              # Entry (fetches reel list)
 │
-├── components/
-│   └── ReelPlayer/
-│       ├── ReelPlayer.tsx              # Main player container
-│       │   - Vertical scroll-snap for between-books
-│       │   - Horizontal drag for within-book
-│       │   - IntersectionObserver for active tracking
-│       │
-│       ├── ReelVideoCard.tsx           # Single reel card wrapper
-│       │   - @remotion/player instance
-│       │   - Play/pause on visibility
-│       │   - Progress bar
-│       │   - Action buttons (save, share, download)
-│       │
-│       ├── ReelOverlay.tsx             # Top/bottom overlay UI
-│       │   - Book info strip (top)
-│       │   - Action buttons (right side, TikTok-style)
-│       │   - Progress dots for horizontal position
-│       │   - Caption/description (bottom)
-│       │
-│       └── ReelGenerateButton.tsx      # "Generate New Reel" CTA
-│           - Shows when no more reels for a book
-│           - Triggers backend generation
-│
-├── remotion/                           # Remotion compositions
-│   ├── Root.tsx                        # Remotion entry point
-│   ├── compositions/
-│   │   ├── KineticType.tsx             # Template 1
-│   │   ├── DataStory.tsx               # Template 2
-│   │   ├── QuoteSplash.tsx             # Template 3
-│   │   ├── EntityWeb.tsx               # Template 4
-│   │   ├── StoryArc.tsx                # Template 5
-│   │   └── MangaPanels.tsx             # Template 6
-│   │
-│   ├── elements/                       # Reusable animated elements
-│   │   ├── SlamText.tsx                # Text that slams in
-│   │   ├── TypewriterText.tsx          # Character-by-character
-│   │   ├── CountUpNumber.tsx           # Number counting up
-│   │   ├── GlitchReveal.tsx            # Glitch effect text reveal
-│   │   ├── SpeedLinesBackground.tsx    # Manga speed lines
-│   │   ├── HalftoneOverlay.tsx         # Halftone dot texture
-│   │   ├── NodeGraph.tsx               # Animated entity nodes
-│   │   ├── DrawingChart.tsx            # Self-drawing chart
-│   │   └── PanelCrack.tsx              # Manga panel crack-in
-│   │
-│   └── utils/
-│       ├── timing.ts                   # Scene timing helpers
-│       ├── easing.ts                   # Custom easing curves
-│       └── colors.ts                   # Palette from ReelScript
+└── components/
+    └── ReelVideoPlayer/
+        ├── ReelVideoPlayer.tsx   # Main container
+        │   - Vertical scroll-snap (book-to-book)
+        │   - Horizontal swipe (within-book)
+        │   - IntersectionObserver for auto-play
+        │
+        ├── VideoCard.tsx         # Single reel card
+        │   - <video> element
+        │   - Play/pause on visibility
+        │   - Progress bar overlay
+        │   - Double-tap to skip/replay
+        │
+        ├── ReelOverlay.tsx       # UI overlay
+        │   - Book info (top)
+        │   - Action buttons (right rail)
+        │   - Horizontal position dots
+        │   - "Generate More" at end
+        │
+        └── ReelActions.tsx       # Action buttons
+            - ❤️ Save
+            - 📖 Open in manga reader
+            - ⬇️ Download MP4
+            - ↗️ Share
 ```
 
-### Player UX Details
+### Interaction Model
 
-**Vertical Navigation (between books):**
-- CSS `scroll-snap-type: y mandatory` (same as current)
-- Each "snap point" is a book's reel
-- Smooth 60fps native scrolling
-- Auto-play on snap (IntersectionObserver)
-- Auto-pause when off-screen
+```
+┌──────────────────────────┐
+│   📚 Book Title          │ ← top bar (book info)
+│   by Author              │
+│                          │
+│  ┌────────────────────┐  │
+│  │                    │  │
+│  │                    │  │
+│  │    <video>         │  │ ← auto-playing MP4
+│  │                    │  │
+│  │                    │  │
+│  │                    │  │   ← tap to pause/play
+│  │                    │  │
+│  │                    │  │
+│  └────────────────────┘  │
+│                          │
+│  • • ━━ •               │ ← horizontal position (same book)
+│  ═══════════════         │ ← playback progress bar
+│                          │
+│  ↕ scroll for more books │
+└──────────────────────────┘
 
-**Horizontal Navigation (within book):**
-- `motion.div` with `drag="x"` + `dragConstraints`
-- Swipe left = next reel from same book
-- Swipe right = previous reel
-- Dot indicators show position
-- "Generate More" card at end of book's reels
+   Right rail:              │ ❤️
+   (TikTok-style            │ 💬
+    floating buttons)        │ ⬇️
+                             │ ↗️
+```
 
-**Player Controls:**
-- Tap to pause/resume
-- Double-tap right = skip forward 5s
-- Double-tap left = replay
-- Long press = 2x speed (knowledge speed-run)
-- Progress bar at bottom (thin, accent-colored)
+**Vertical scroll** = CSS scroll-snap → different book's reel  
+**Horizontal swipe** = motion drag → same book, next reel  
+**Tap** = pause/resume video  
+**Double-tap right** = skip 5s forward  
+**Double-tap left** = replay from start  
 
-**Action Buttons (right rail, TikTok-style):**
-- ❤️ Save to collection
-- 💬 View in book context (links to manga reader at relevant chapter)
-- ⬇️ Download MP4 (triggers server render)
-- ↗️ Share (native share API)
-- 📖 Book info popup
+### Why This Is Better Than @remotion/player
+
+| @remotion/player (v1 plan) | <video> element (v2 plan) |
+|---------------------------|--------------------------|
+| Remotion deps in frontend | Zero extra deps |
+| Renders on-the-fly (CPU) | Plays cached MP4 (GPU) |
+| Can't share the "video" | Real MP4, downloadable |
+| Complex client bundle | Tiny client footprint |
+| No offline playback | Videos cached by browser |
 
 ---
 
-## Backend: API Endpoints
+## Critique & Risk Analysis
 
-### New Endpoints
+### Risk 1: LLM Can't See the Video
+
+**Problem:** The LLM generates a DSL without seeing the result.
+It might create invisible text, overlapping elements, or ugly palettes.
+
+**Mitigation (proven):** Same approach as manga panels:
+- `validate_reel_dsl()` — structural validation
+- `fix_common_dsl_issues()` — auto-repair missing IDs, bad positions
+- `enforce_text_contrast()` — WCAG AA compliance
+- `LAYER_TYPE_ALIASES` — normalize LLM-invented types
+- Default palette fallback — if LLM's colors are unreadable
+- Position clamping — elements can't be off-screen
+
+**This already works for manga.** The same validator pattern applies.
+
+### Risk 2: Remotion CLI Render Time
+
+**Problem:** 1-2 minutes per reel. Users might not wait.
+
+**Mitigation:**
+- Async task (Celery) — same as manga generation
+- SSE progress updates — "Rendering frame 847/1350..."
+- **Batch pre-generation** — when manga is generated, auto-queue
+  2-3 reels in the background. User sees them ready when they visit.
+- Once rendered, instant playback forever
+
+### Risk 3: ffmpeg Dependency
+
+**Problem:** ffmpeg not installed on this machine.
+
+**Mitigation:** `brew install ffmpeg`. Or Docker container for the
+reel-renderer with ffmpeg pre-installed. Remotion officially
+documents this setup.
+
+### Risk 4: Remotion Licensing
+
+**Problem:** Remotion requires a paid "Company License" for companies
+with $10M+ revenue. Walmart qualifies.
+
+**Mitigation options:**
+1. **Check if internal-tool exemption applies** — Remotion's license
+   distinguishes between customer-facing products and internal tools
+2. **Alternative: use Puppeteer + ffmpeg directly** — skip Remotion,
+   render our own React components in headless Chrome, capture frames
+   with Puppeteer's `page.screenshot()`, encode with ffmpeg
+3. **Alternative: use MotionCanvas/Revideo** — MIT licensed, no
+   revenue restrictions
+
+**Recommendation:** Start with Remotion for fastest MVP. If licensing
+is a blocker, the DSL is renderer-agnostic — we can swap Remotion
+for Puppeteer+ffmpeg without changing the DSL or backend at all.
+The DSL ↔ Renderer boundary is clean.
+
+### Risk 5: Storage Growth
+
+**Problem:** 45s MP4 at 1080×1920 = ~5-15MB per reel.
+100 reels = 500MB-1.5GB.
+
+**Mitigation:**
+- `/storage/reels/` with cleanup policy (delete after 30 days)
+- Compress with H.265 (smaller files, same quality)
+- Regenerate on demand (DSL is stored, re-render is cheap)
+- Future: move to S3/GCS for production scale
+
+### Risk 6: Token Cost
+
+**Analysis:** A 45-second reel with 6 scenes ≈ 800-1200 output tokens.
+At Gemini 2.5 Flash pricing (~$0.15/1M output tokens):
+- One reel ≈ $0.0002
+- 100 reels ≈ $0.02
+
+**Negligible.** Cheaper than a single manga panel.
+
+---
+
+## Comparison: Remotion vs Alternatives
+
+### Why Not Just Use Canvas + MediaRecorder?
+
+We already render manga panels in the browser. Could we just record
+the LivingPanelEngine playing?
+
+| Canvas Recording | Remotion CLI |
+|-----------------|-------------|
+| Timing drift (real-time) | Frame-accurate |
+| Browser-dependent output | Deterministic |
+| No ffmpeg integration | Built-in encoding |
+| Must run in browser | Headless server |
+| Flaky MediaRecorder API | Battle-tested pipeline |
+
+**Verdict:** Remotion is purpose-built for this. Don't reinvent it.
+
+### Why Not Revideo?
+
+| Revideo | Remotion |
+|---------|----------|
+| MIT license (free) | Company license needed |
+| Generator functions | React components |
+| 1.5k stars, ~1 year | 21k stars, 4+ years |
+| Different paradigm | Same React stack |
+| Smaller ecosystem | Rich plugin ecosystem |
+
+**Verdict:** Remotion is better for our stack. If licensing blocks us,
+Revideo is the fallback. Or Puppeteer+ffmpeg as escape hatch.
+
+### Why Not a Cloud API (Creatomate, Shotstack)?
+
+| Cloud API | Self-Hosted Remotion |
+|-----------|---------------------|
+| Per-render cost ($0.05-0.50) | Free (after setup) |
+| External dependency | Self-contained |
+| Limited customization | Full control |
+| Data leaves network | Data stays local |
+
+**Verdict:** Self-hosted. We're Walmart — data stays inside.
+
+---
+
+## File Structure (Final)
 
 ```
-POST /api/books/{book_id}/reels/generate
-  - Body: { api_key, provider, model, count?: 1 }
-  - Picks content, calls LLM, creates ReelScript(s)
-  - Returns: { reel_scripts: [...], task_id }
-  
-GET /api/books/{book_id}/reels
-  - Returns all reel scripts for a book
-  - Sorted by created_at desc
-  
-GET /api/reels/feed
-  - Returns mixed reels from all books
-  - For the vertical feed (one per book, interleaved)
-  - Pagination: offset + limit
-
-POST /api/reels/{reel_id}/render
-  - Triggers server-side MP4 render
-  - Returns: { task_id }
-  - On completion: stores video in GridFS
-
-GET /api/reels/{reel_id}/video
-  - Serves rendered MP4 from GridFS
-  
-GET /api/books/{book_id}/reel-memory
-  - Returns what content has been used
-  - For debug/transparency
-```
-
-### Backend File Structure
-
-```
-backend/app/
-├── reel_engine/
-│   ├── __init__.py
-│   ├── content_picker.py       # Selects catchy content, checks memory
-│   ├── script_generator.py     # LLM → ReelScript conversion
-│   ├── memory.py               # BookReelMemory CRUD
-│   ├── renderer.py             # Remotion CLI render trigger
-│   └── prompts.py              # Reel-specific LLM prompts
+PanelSummary/
+├── backend/
+│   └── app/
+│       ├── reel_engine/              # NEW
+│       │   ├── __init__.py
+│       │   ├── content_picker.py     # Selects content, checks memory
+│       │   ├── script_generator.py   # LLM → Video DSL JSON
+│       │   ├── dsl_validator.py      # Validate + auto-fix DSL
+│       │   ├── memory.py             # BookReelMemory CRUD
+│       │   ├── renderer.py           # Calls reel-renderer subprocess
+│       │   └── prompts.py            # LLM system prompt (DSL spec)
+│       ├── models.py                 # + ReelScriptDoc, BookReelMemoryDoc
+│       └── main.py                   # + new API endpoints
 │
-├── models.py                   # + ReelScriptDoc, BookReelMemoryDoc
-└── main.py                     # + new reel endpoints
+├── reel-renderer/                    # NEW (standalone Node.js)
+│   ├── package.json
+│   ├── remotion.config.ts
+│   ├── tsconfig.json
+│   └── src/
+│       ├── index.ts                  # Remotion entry + composition
+│       ├── ReelComposition.tsx       # Reads DSL → renders scenes
+│       ├── SceneRenderer.tsx         # Single scene with layers
+│       ├── layers/                   # One renderer per layer type
+│       │   ├── BackgroundLayer.tsx
+│       │   ├── TextLayer.tsx
+│       │   ├── CounterLayer.tsx
+│       │   ├── SpeechBubbleLayer.tsx
+│       │   ├── EffectLayer.tsx
+│       │   ├── SpriteLayer.tsx
+│       │   ├── DataBlockLayer.tsx
+│       │   ├── ShapeLayer.tsx
+│       │   └── IllustrationLayer.tsx
+│       ├── transitions/
+│       │   └── SceneTransition.tsx   # All transition types
+│       ├── effects/                  # Visual FX renderers
+│       │   ├── SpeedLines.tsx
+│       │   ├── Particles.tsx
+│       │   ├── Halftone.tsx
+│       │   └── InkSplash.tsx
+│       └── utils/
+│           ├── timing.ts             # Frame ↔ ms conversion
+│           ├── interpolation.ts      # Custom easing
+│           └── fonts.ts              # Google Fonts loader
+│
+├── frontend/
+│   ├── app/
+│   │   └── reels/
+│   │       └── page.tsx              # Video reel page
+│   └── components/
+│       ├── ReelVideoPlayer/          # NEW
+│       │   ├── ReelVideoPlayer.tsx   # Dual-swipe container
+│       │   ├── VideoCard.tsx         # Single video card
+│       │   ├── ReelOverlay.tsx       # UI overlay
+│       │   └── ReelActions.tsx       # Action buttons
+│       └── ReelsFeed.tsx             # OLD (text reels, kept)
+│
+└── storage/
+    └── reels/                        # Rendered MP4 files
+        └── {book_id}/
+            └── {reel_id}.mp4
 ```
 
 ---
 
-## Execution Plan: Phases
+## Execution Plan (Revised)
 
-### Phase 1: Foundation (Days 1-2)
-**Goal:** Data models + content picker + LLM script generation
+### Phase 1: Backend Engine (Days 1-2)
+- [ ] Create `reel_engine/` package
+- [ ] `models.py` additions (ReelScriptDoc, BookReelMemoryDoc)
+- [ ] `content_picker.py` — select content, check memory
+- [ ] `memory.py` — CRUD for BookReelMemory
+- [ ] `prompts.py` — Video DSL spec as LLM system prompt
+- [ ] `script_generator.py` — LLM call → Video DSL
+- [ ] `dsl_validator.py` — validate + auto-fix (port from manga)
+- [ ] API endpoints in `main.py`
+- [ ] Tests for content picker, validator, memory
 
-- [ ] Add `ReelScriptDoc` and `BookReelMemoryDoc` to `models.py`
-- [ ] Create `backend/app/reel_engine/` package
-- [ ] Build `content_picker.py` — selects content from knowledge_doc/graph
-- [ ] Build `memory.py` — tracks used content per book
-- [ ] Build `script_generator.py` — LLM prompt → ReelScript
-- [ ] Build `prompts.py` — system prompt for reel script creation
-- [ ] Add API endpoints to `main.py`
-- [ ] Tests for content picker + memory
+### Phase 2: Reel Renderer (Days 2-3)
+- [ ] `brew install ffmpeg`
+- [ ] Init `reel-renderer/` project with Remotion
+- [ ] `ReelComposition.tsx` — DSL interpreter
+- [ ] `SceneRenderer.tsx` — per-scene rendering
+- [ ] Layer renderers (text, background, counter, effect, etc.)
+- [ ] Scene transitions
+- [ ] Camera (pan/zoom/rotate)
+- [ ] `renderer.py` — backend subprocess integration
+- [ ] Test: sample DSL → MP4 output
 
-### Phase 2: Remotion Setup (Days 2-3)
-**Goal:** Remotion project + first 2 visual templates
-
-- [ ] Install Remotion in the project (separate `remotion/` directory or inside frontend)
-- [ ] Create `Root.tsx` with composition registration
-- [ ] Build reusable elements: `SlamText`, `TypewriterText`, `CountUpNumber`
-- [ ] Build `SpeedLinesBackground` + `HalftoneOverlay` (port from CSS)
-- [ ] Build Template 1: `KineticType` composition
-- [ ] Build Template 2: `QuoteSplash` composition
-- [ ] Test with sample ReelScript data
-
-### Phase 3: Player (Days 3-4)
-**Goal:** Production-grade dual-swipe player
-
-- [ ] Build `ReelPlayer.tsx` — vertical scroll-snap container
-- [ ] Build `ReelVideoCard.tsx` — wraps `@remotion/player`
-- [ ] Build `ReelOverlay.tsx` — book info, actions, progress
-- [ ] Wire horizontal swipe for same-book navigation
+### Phase 3: Video Player (Days 3-4)
+- [ ] `ReelVideoPlayer.tsx` — dual-swipe container
+- [ ] `VideoCard.tsx` — video playback with overlay
+- [ ] `ReelOverlay.tsx` — book info, actions
+- [ ] `ReelActions.tsx` — save, download, share
+- [ ] Horizontal swipe for same-book reels
 - [ ] IntersectionObserver for auto-play/pause
-- [ ] Connect to backend API for reel data
-- [ ] "Generate New Reel" button + flow
+- [ ] "Generate Reel" button on book detail page
+- [ ] Video serving endpoint in backend
 
-### Phase 4: More Templates (Days 4-5)
-**Goal:** Remaining visual templates + polish
-
-- [ ] Build `DataStory` composition (count-up numbers, charts)
-- [ ] Build `EntityWeb` composition (animated knowledge graph)
-- [ ] Build `StoryArc` composition (3-act mini-narrative)
-- [ ] Build `MangaPanels` composition (animated manga page)
-- [ ] Template selection logic (LLM picks + user override)
-
-### Phase 5: Server Rendering + Polish (Days 5-6)
-**Goal:** Download/share + final polish
-
-- [ ] Set up Remotion CLI rendering in backend
-- [ ] MP4 render endpoint + GridFS storage
-- [ ] Download button in player
-- [ ] Share functionality (native share API)
-- [ ] Performance optimization (lazy-load compositions)
-- [ ] Accessibility review (captions, reduced motion)
-- [ ] Integration with book detail page ("Generate Reels" button)
+### Phase 4: Polish (Days 4-5)
+- [ ] Batch pre-generation (auto-queue reels after manga)
+- [ ] Download MP4 functionality
+- [ ] Share via native share API
+- [ ] Progress tracking during render (SSE)
+- [ ] Edge cases: empty books, failed renders, disk space
+- [ ] Accessibility: reduced motion, captions
 - [ ] Update ARCHITECTURE.md
 
 ---
 
-## Design Language: NOT AI Slop
+## The Philosophy
 
-### Typography Choices (per template):
+> "The LLM is the director. The DSL is the screenplay.
+>  Remotion is the camera crew. The viewer just sees the film."
 
-| Template | Display | Body | Accent |
-|----------|---------|------|--------|
-| KineticType | **Dela Gothic One** | Outfit | DotGothic16 |
-| QuoteSplash | **Playfair Display** | Lora | — |
-| DataStory | **Instrument Sans** | Outfit | JetBrains Mono |
-| EntityWeb | **Space Mono** | Outfit | — |
-| StoryArc | **Cormorant Garamond** | Libre Baskerville | — |
-| MangaPanels | **Boogaloo** | Outfit | DotGothic16 |
+No templates. No presets. No "AI slop aesthetic."
+The same DSL can produce a slow, contemplative quote reel with
+Playfair Display on a paper-cream background... or a high-energy
+data barrage with speed lines and impact bursts... or an animated
+knowledge graph with orbiting nodes... or something we haven't
+imagined yet.
 
-### Color Palettes (sampled, not the same every time):
-
-The LLM picks from these + can invent:
-- **Manga Ink**: `#0F0E17` bg, `#F5A623` accent, `#E8191A` secondary
-- **Deep Ocean**: `#0A192F` bg, `#64FFDA` accent, `#CCD6F6` text
-- **Desert Dusk**: `#1A0A00` bg, `#FF6B35` accent, `#FFE0B2` text
-- **Neon Void**: `#0D0221` bg, `#FF2D95` accent, `#00F0FF` secondary
-- **Paper & Ink**: `#F2E8D5` bg, `#1A1825` text, `#E8191A` accent
-- **Midnight Lab**: `#050510` bg, `#7B68EE` accent, `#98FB98` secondary
-
-### Animation Principles:
-- **Purposeful motion** — every animation serves the content
-- **30fps for cinematic feel** (not 60 — this isn't a game)
-- **Stagger reveals** — don't show everything at once
-- **Breathing room** — 300-500ms between scene transitions
-- **Exit before enter** — old content leaves before new arrives
-
----
-
-## Integration Points
-
-### Book Detail Page (`books/[id]/page.tsx`)
-
-After manga is generated, show a new section:
-
-```
-┌─────────────────────────────────────────┐
-│  🎬 VIDEO REELS                         │
-│                                         │
-│  [Generate First Reel]                  │
-│  ─── or ───                             │
-│  3 reels generated                      │
-│  ┌─────┐ ┌─────┐ ┌─────┐               │
-│  │ ▶   │ │ ▶   │ │ ▶   │  [+ More]    │
-│  │Reel1│ │Reel2│ │Reel3│               │
-│  └─────┘ └─────┘ └─────┘               │
-└─────────────────────────────────────────┘
-```
-
-### Knowledge Graph → Reel Mapping
-
-The existing `knowledge_graph.py` already has:
-- `central_entities` → protagonist entities for EntityWeb
-- `conflict_pairs` → dramatic conflict reels
-- `mentor_pairs` → wisdom/teaching reels
-- `dramatic_weight` → which entities deserve spotlight
-
-The existing `narrative_arc.py` already has:
-- 3-act beats → StoryArc template
-- `suggested_panel_type` → maps to visual template
-- `dramatic_weight` → content priority
-
-This means our Content Picker has RICH data to work with — we're not
-starting from scratch, we're building on the deep understanding
-pipeline that already exists.
-
----
-
-## Migration Path: Old Reels → New Reels
-
-The current `ReelLesson` model is text-only (title, hook, key_points).
-We keep backward compat:
-
-1. Old `/reels` page still works with `ReelsFeed.tsx` (text cards)
-2. New `/reels/video` page uses `ReelPlayer.tsx` (video reels)
-3. Book detail page shows both options
-4. Eventually phase out text reels in favor of video reels
-
----
-
-## Open Questions
-
-1. **Audio**: Do we want background music? Remotion supports it.
-   Options: royalty-free ambient tracks, or generate via AI music.
-   Recommendation: Start without, add later as enhancement.
-
-2. **Voiceover**: Text-to-speech narration?
-   Could use browser TTS or a service like ElevenLabs.
-   Recommendation: V2 feature — start with text-only, visual-heavy.
-
-3. **Render farm**: For server-side rendering at scale.
-   Remotion Lambda is the easy path but costs $$.
-   Alternative: Docker container with Remotion CLI + headless Chrome.
-   Recommendation: Start with CLI rendering, evaluate Lambda later.
-
-4. **Storage**: Rendered MP4s can be 2-10MB each.
-   GridFS works for small scale, S3 for production.
-   Recommendation: GridFS for now (same as existing image storage).
-
----
-
-## Why This Will Work
-
-1. **We already have the hard part** — deep document understanding,
-   knowledge graphs, narrative arcs. The reel engine is just a new
-   OUTPUT FORMAT from the same understanding.
-
-2. **Remotion is battle-tested** — used by Shopify, GitHub, and others
-   for programmatic video. Not experimental.
-
-3. **The content is inherently viral** — book insights are the kind of
-   content people share. We're just packaging it beautifully.
-
-4. **Dual-swipe is proven** — TikTok, Reels, Shorts all prove this
-   interaction model works for content consumption.
-
-5. **Memory system prevents fatigue** — fresh content every time means
-   users come back. This is the "one more episode" of learning.
-
----
-
-## Let's Build This. 🐶⚡
+The vocabulary is fixed. The compositions are infinite.
