@@ -118,6 +118,22 @@ RULES:
   Some are quiet. Some are intense. Some are data-heavy. Mix it up."""
 
 
+def _unwrap_parsed(parsed) -> dict:
+    """Safely unwrap LLM parsed output to a dict.
+
+    LLMs sometimes wrap JSON responses in an array. This caused v2 to crash
+    with: 'list' object has no attribute 'get'
+    """
+    if isinstance(parsed, dict):
+        return parsed
+    if isinstance(parsed, list) and parsed:
+        for item in parsed:
+            if isinstance(item, dict):
+                logger.info("Unwrapped list→dict from LLM response")
+                return item
+    return {}
+
+
 def _format_knowledge_for_design(
     knowledge_doc: dict,
     canonical_chapters: list[dict],
@@ -290,7 +306,7 @@ Design the manga now."""
         json_mode=True,
     )
 
-    blueprint = result.get("parsed") or {}
+    blueprint = _unwrap_parsed(result.get("parsed"))
 
     if not blueprint or not blueprint.get("scenes"):
         logger.warning("Manga story design failed — using fallback")

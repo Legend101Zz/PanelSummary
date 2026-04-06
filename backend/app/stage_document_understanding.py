@@ -170,6 +170,24 @@ def _build_understanding_input(canonical_chapters: list[dict]) -> str:
     return "\n\n".join(sections)
 
 
+def _unwrap_parsed(parsed) -> dict:
+    """Safely unwrap LLM parsed output to a dict.
+
+    LLMs sometimes wrap JSON responses in an array instead of returning
+    a bare object. This caused both v2 stages to crash with:
+        'list' object has no attribute 'get'
+    """
+    if isinstance(parsed, dict):
+        return parsed
+    if isinstance(parsed, list) and parsed:
+        # Take the first dict element — the LLM wrapped the response
+        for item in parsed:
+            if isinstance(item, dict):
+                logger.info("Unwrapped list→dict from LLM response")
+                return item
+    return {}
+
+
 async def generate_document_understanding(
     canonical_chapters: list[dict],
     llm_client: LLMClient,
@@ -211,7 +229,7 @@ Build the complete knowledge map now."""
         json_mode=True,
     )
 
-    knowledge_doc = result.get("parsed") or {}
+    knowledge_doc = _unwrap_parsed(result.get("parsed"))
 
     if not knowledge_doc or not knowledge_doc.get("core_thesis"):
         logger.warning("Document understanding failed — using fallback")
