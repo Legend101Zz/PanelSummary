@@ -262,9 +262,10 @@ def consolidate_short_chapters(
     We merge adjacent chapters that are both small (< 200 words) into one,
     capped at `max_chapters`.
 
-    IMPORTANT: We keep at LEAST 3 chapters (ideally 4-5) even for short docs.
-    Over-consolidation (e.g. 10→2) kills narrative depth and produces too
-    few panels for a proper manga experience.
+    IMPORTANT: Only consolidate genuinely thin documents. A 10-chapter
+    research paper with 1400 words of summaries (140 words/chapter) is
+    RICH content that deserves individual chapter treatment. Consolidating
+    it kills narrative depth and produces incoherent manga.
     """
     total_words = sum(
         len(ch.get("narrative_summary", "").split())
@@ -272,16 +273,20 @@ def consolidate_short_chapters(
     )
     n = len(canonical_chapters)
 
-    # Only consolidate small documents (< 2000 summary words)
-    if total_words >= 2000 or n <= 4:
+    # Skip consolidation if:
+    # - Already few chapters (no point merging)
+    # - Lots of total summary words (rich document)
+    # - Average chapter is already dense (>80 words = real content)
+    avg_words_per_chapter = total_words / max(n, 1)
+    if total_words >= 1500 or n <= 5 or avg_words_per_chapter > 80:
         return canonical_chapters
 
     # Target: keep more chapters — short docs need MORE panels, not fewer.
-    # Use ~300 words per chapter (was 500), minimum 4 chapters.
+    # Use ~250 words per chapter, minimum 5 chapters.
     if max_chapters:
         target = max_chapters  # Explicit override — respect it
     else:
-        target = max(4, min(n, total_words // 300 + 1))
+        target = max(5, min(n, total_words // 250 + 1))
     if n <= target:
         return canonical_chapters
 
@@ -293,8 +298,9 @@ def consolidate_short_chapters(
     merged: list[dict] = []
     buf: list[dict] = []
     buf_words = 0
-    # How many words each merged chapter should aim for
-    words_per_merged = max(150, total_words // target)
+    # How many words each merged chapter should aim for.
+    # Floor of 50 (not 150) so very short docs still hit their target count.
+    words_per_merged = max(50, total_words // target)
 
     for ch in canonical_chapters:
         ch_words = len(ch.get("narrative_summary", "").split())
@@ -429,8 +435,8 @@ async def plan_manga(
 
     # ── 1A: Scale max_tokens with chapter count to prevent truncation ──
     # Each chapter needs ~800-1000 tokens of planning output.
-    # Base 3000 + 1000 per chapter, capped at 16000.
-    max_tokens = min(16000, 3000 + n_chapters * 1000)
+    # Floor of 8000 so even 4-chapter docs don't truncate at 7000.
+    max_tokens = max(8000, min(16000, 3000 + n_chapters * 1000))
 
     result = await llm_client.chat_with_retry(
         system_prompt=system_prompt,
