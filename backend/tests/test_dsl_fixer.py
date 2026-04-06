@@ -3,6 +3,7 @@
 import pytest
 from app.generate_living_panels import (
     fix_common_dsl_issues, validate_living_panel_dsl,
+    LAYER_TYPE_ALIASES,
     _contrast_ratio, _fix_text_color, _hex_to_rgb,
 )
 
@@ -276,3 +277,47 @@ class TestContrastEnforcement:
         fixed = fix_common_dsl_issues(dsl)
         txt = fixed["acts"][0]["cells"][0]["layers"][0]["props"]
         assert txt["color"] == "#F0EEE8"  # Flipped to light
+
+
+class TestLayerTypeAliasing:
+    """LLMs invent layer type names. We should normalize them, not reject."""
+
+    def _make_dsl_with_layer_type(self, layer_type: str) -> dict:
+        return {
+            "version": "2.0",
+            "canvas": {"width": 800, "height": 600, "background": "#1A1825"},
+            "meta": {"narrative_beat": "test"},
+            "acts": [{
+                "id": "act-1",
+                "duration_ms": 3000,
+                "transition_in": {"type": "fade"},
+                "layout": {"type": "full"},
+                "layers": [{
+                    "id": "layer-1",
+                    "type": layer_type,
+                    "opacity": 1,
+                    "props": {"description": "test"},
+                }],
+            }],
+        }
+
+    @pytest.mark.parametrize("alias,expected", list(LAYER_TYPE_ALIASES.items()))
+    def test_alias_normalizes_during_validation(self, alias, expected):
+        dsl = self._make_dsl_with_layer_type(alias)
+        is_valid, errors = validate_living_panel_dsl(dsl)
+        # Should pass validation (alias is recognized)
+        alias_errors = [e for e in errors if "invalid type" in e]
+        assert not alias_errors, f"Alias '{alias}' should not cause invalid type error: {errors}"
+        # Layer type should be normalized
+        assert dsl["acts"][0]["layers"][0]["type"] == expected
+
+    def test_illustration_becomes_background(self):
+        """The most common LLM invention: 'illustration'."""
+        dsl = self._make_dsl_with_layer_type("illustration")
+        validate_living_panel_dsl(dsl)
+        assert dsl["acts"][0]["layers"][0]["type"] == "background"
+
+    def test_truly_invalid_type_still_errors(self):
+        dsl = self._make_dsl_with_layer_type("banana_layer")
+        is_valid, errors = validate_living_panel_dsl(dsl)
+        assert any("invalid type" in e for e in errors)

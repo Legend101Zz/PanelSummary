@@ -33,6 +33,24 @@ logger = logging.getLogger(__name__)
 VALID_LAYER_TYPES = {
     "background", "sprite", "text", "speech_bubble",
     "effect", "shape", "data_block", "scene_transition", "image",
+    "illustration",  # LLMs consistently use this — treat as background
+}
+
+# Map LLM-invented types to valid ones (the LLM is creative with names)
+LAYER_TYPE_ALIASES = {
+    "illustration": "background",
+    "bg": "background",
+    "dialog": "speech_bubble",
+    "dialogue": "speech_bubble",
+    "bubble": "speech_bubble",
+    "char": "sprite",
+    "character": "sprite",
+    "fx": "effect",
+    "sfx": "effect",
+    "transition": "scene_transition",
+    "img": "image",
+    "picture": "image",
+    "data": "data_block",
 }
 
 VALID_EFFECTS = {
@@ -94,8 +112,12 @@ def validate_living_panel_dsl(dsl: dict) -> tuple[bool, list[str]]:
             for li, layer in enumerate(act.get("layers", [])):
                 if not isinstance(layer, dict):
                     continue
-                if layer.get("type") not in VALID_LAYER_TYPES:
-                    errors.append(f"Act {ai} layer {li}: invalid type '{layer.get('type')}'")
+                # Normalize LLM-invented type names
+                layer_type = layer.get("type", "")
+                if layer_type in LAYER_TYPE_ALIASES:
+                    layer["type"] = LAYER_TYPE_ALIASES[layer_type]
+                elif layer_type not in VALID_LAYER_TYPES:
+                    errors.append(f"Act {ai} layer {li}: invalid type '{layer_type}'")
 
             # Validate cells
             for ci, cell in enumerate(act.get("cells", [])):
@@ -103,6 +125,13 @@ def validate_living_panel_dsl(dsl: dict) -> tuple[bool, list[str]]:
                     continue
                 if not cell.get("id"):
                     errors.append(f"Act {ai} cell {ci} missing id")
+                # Normalize layer types inside cells too
+                for li, layer in enumerate(cell.get("layers", [])):
+                    if not isinstance(layer, dict):
+                        continue
+                    layer_type = layer.get("type", "")
+                    if layer_type in LAYER_TYPE_ALIASES:
+                        layer["type"] = LAYER_TYPE_ALIASES[layer_type]
 
     return len(errors) == 0, errors
 
