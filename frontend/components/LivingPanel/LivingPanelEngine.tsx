@@ -420,7 +420,8 @@ function LayerWrapper({
         className="absolute inset-0"
         style={{ zIndex: layer.zIndex ?? index }}
         animate={{ opacity: state.opacity ?? layer.opacity ?? 1, scale: state.scale ?? layer.scale ?? 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        style={{ ...{ zIndex: layer.zIndex ?? index }, willChange: "opacity, transform" }}
       >
         {children}
       </motion.div>
@@ -438,6 +439,7 @@ function LayerWrapper({
         maxWidth: "90%",
         maxHeight: "85%",
         overflow: "hidden" as const,
+        willChange: "transform, opacity",
       }}
       animate={{
         left: state.x ?? layer.x ?? 0,
@@ -446,7 +448,7 @@ function LayerWrapper({
         scale: state.scale ?? layer.scale ?? 1,
         rotate: state.rotate ?? layer.rotate ?? 0,
       }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       onClick={clickable ? (e) => { e.stopPropagation(); onClick(); } : undefined}
     >
       {children}
