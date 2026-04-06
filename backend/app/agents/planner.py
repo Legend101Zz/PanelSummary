@@ -436,6 +436,7 @@ async def plan_manga(
     image_budget: int = 5,
     style: str = "manga",
     min_scenes: int = 0,
+    narrative_arc_context: str = "",
 ) -> MangaPlan:
     """Run the planner agent to create a full manga plan.
 
@@ -443,6 +444,8 @@ async def plan_manga(
         min_scenes: Minimum number of scenes from the story blueprint.
             When provided, the panel budget is raised to ensure every
             designed scene gets at least one panel.
+        narrative_arc_context: Pre-formatted 3-act narrative arc from
+            narrative_arc.py. Gives the planner structural guidance.
     """
     # ── 1C: Consolidate inflated chapters for short documents ──
     canonical_chapters = consolidate_short_chapters(canonical_chapters)
@@ -487,6 +490,10 @@ async def plan_manga(
         canonical_chapters, book_synopsis, manga_bible, image_budget,
         max_panels=panels_by_content,
     )
+
+    # Inject narrative arc if available — gives the planner structural guidance
+    if narrative_arc_context:
+        user_message = narrative_arc_context + "\n\n" + user_message
 
     logger.info(f"Planning manga for {n_chapters} chapters (image budget: {image_budget})")
 

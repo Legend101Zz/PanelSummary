@@ -3,23 +3,16 @@ orchestrator.py — Manga Generation Orchestrator
 =================================================
 The conductor of the entire manga generation pipeline.
 
-Architecture (v2 — "Understand First, Design Second"):
+Architecture (v3 — "Understand → Graph → Arc → Compose → Render"):
   0. Credit check
-  1. Deep Document Understanding — build a Knowledge Document from all chapters
-  2. Manga Story Design — design complete story (characters, scenes, world)
-     from the Knowledge Document (replaces old synopsis + bible)
-  3. Planning — map scenes to panel assignments with budgets
-  4. Parallel DSL generation — PER-PAGE, not per-panel
-  5. Assembly + validation
-
-Why this architecture:
-  Old flow: summaries → synopsis (from summaries) → bible (from summaries) → panels
-  Problem: each stage lost information. Manga was built from a skeleton.
-
-  New flow: summaries → DEEP understanding → unified story design → panels
-  The Knowledge Document preserves ALL facts, entities, and relationships.
-  The Story Design maps them into manga scenes with specific content.
-  The DSL generator has rich scene descriptions to work from.
+  1. Deep Document Understanding — build a Knowledge Document
+  2. Knowledge Graph — extract entities + relationships as a graph
+  3. Narrative Arc — map graph to 3-act structure with beats
+  4. Manga Story Design — LLM designs characters, world, scenes
+  5. Planning — map scenes to panel assignments with budgets
+  6. Scene Composition — enrich panels with illustration directions
+  7. Parallel DSL generation — PER-PAGE, with illustration data
+  8. Assembly + validation
 """
 
 import asyncio
@@ -184,8 +177,45 @@ class MangaOrchestrator:
         if self._is_cancelled():
             return empty_result()
 
+        # ── PHASE 1b: Knowledge Graph (rule-based, no LLM) ──
+        knowledge_graph = None
+        narrative_arc = None
+        narrative_arc_dict = None
+
+        try:
+            from app.knowledge_graph import build_knowledge_graph
+            knowledge_graph = build_knowledge_graph(knowledge_doc)
+            kg_stats = knowledge_graph.to_dict().get("stats", {})
+            self._report(
+                9, f"Knowledge graph: {kg_stats.get('entity_count', 0)} entities, "
+                   f"{kg_stats.get('edge_count', 0)} relationships",
+                "knowledge_graph",
+            )
+        except Exception as e:
+            logger.warning(f"Knowledge graph construction failed (non-fatal): {e}")
+
+        # ── PHASE 1c: Narrative Arc (rule-based, no LLM) ──
+        if knowledge_graph:
+            try:
+                from app.narrative_arc import build_narrative_arc
+                narrative_arc = build_narrative_arc(
+                    graph=knowledge_graph,
+                    knowledge_doc=knowledge_doc,
+                    canonical_chapters=canonical_chapters,
+                )
+                narrative_arc_dict = narrative_arc.to_dict()
+                self._report(
+                    10, f"Narrative arc: {narrative_arc.total_beats} beats across 3 acts",
+                    "narrative_arc",
+                )
+            except Exception as e:
+                logger.warning(f"Narrative arc construction failed (non-fatal): {e}")
+
+        if self._is_cancelled():
+            return empty_result()
+
         # ── PHASE 2: Manga Story Design (replaces old synopsis + bible) ──
-        self._report(10, "Designing manga story architecture...", "story_design")
+        self._report(12, "Designing manga story architecture...", "story_design")
 
         try:
             from app.stage_manga_story_design import (
@@ -239,6 +269,12 @@ class MangaOrchestrator:
         try:
             # Pass min_scenes from blueprint so planner doesn't undershoot
             n_scenes = len(manga_blueprint.get("scenes", [])) if manga_blueprint else 0
+
+            # Build narrative arc context for the planner
+            arc_context = ""
+            if narrative_arc:
+                arc_context = narrative_arc.to_planner_context()
+
             manga_plan = await plan_manga(
                 canonical_chapters=canonical_chapters,
                 book_synopsis=book_synopsis,
@@ -247,6 +283,7 @@ class MangaOrchestrator:
                 image_budget=self.image_budget,
                 style=self.style,
                 min_scenes=n_scenes,
+                narrative_arc_context=arc_context,
             )
             logger.info(
                 f"Plan: {manga_plan.total_panels} panels, "
@@ -301,6 +338,41 @@ class MangaOrchestrator:
                 "estimated_cost": est_cost,
             },
         )
+
+        # ── PHASE 3b: Scene Composition (rule-based enrichment) ──
+        try:
+            from app.scene_composer import compose_scene_directions
+            # Convert PanelAssignment dataclasses to dicts for enrichment
+            panel_dicts = [
+                {
+                    "panel_id": p.panel_id,
+                    "chapter_index": p.chapter_index,
+                    "content_type": p.content_type,
+                    "visual_mood": p.visual_mood,
+                    "scene_description": p.scene_description,
+                    "creative_direction": p.creative_direction,
+                    "character": p.character,
+                }
+                for p in manga_plan.panels
+            ]
+            enriched = compose_scene_directions(
+                panel_dicts, manga_bible, narrative_arc_dict,
+            )
+            # Attach illustration data back to panel assignments
+            for panel, enrichment in zip(manga_plan.panels, enriched):
+                panel.creative_direction = (
+                    panel.creative_direction
+                    + f"\nILLUSTRATION: scene={enrichment['illustration']['scene']}, "
+                    f"style={enrichment['illustration']['style']}, "
+                    f"accent={enrichment['illustration']['accentColor']}"
+                )
+                if enrichment.get("suggested_pose"):
+                    panel.creative_direction += f"\nCHARACTER POSE: {enrichment['suggested_pose']}"
+                if enrichment.get("suggested_aura"):
+                    panel.creative_direction += f", AURA: {enrichment['suggested_aura']}"
+            logger.info("Scene composition complete")
+        except Exception as e:
+            logger.warning(f"Scene composition failed (non-fatal): {e}")
 
         # ── PHASE 4: Per-PAGE DSL Generation (parallel across pages) ──
         self._report(25, "Generating Living Panel DSLs...", "generating")
