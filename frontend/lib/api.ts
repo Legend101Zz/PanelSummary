@@ -118,6 +118,7 @@ export async function startSummarization(
     chapterRange?: [number, number] | null;
     generateImages?: boolean;
     imageModel?: string;
+    engine?: "v2" | "v4";
   }
 ): Promise<{ summary_id: string; task_id: string; message: string }> {
   const response = await api.post(`/books/${bookId}/summarize`, {
@@ -128,6 +129,7 @@ export async function startSummarization(
     chapter_range: options.chapterRange ?? null,
     generate_images: options.generateImages ?? false,
     image_model: options.imageModel ?? null,
+    engine: options.engine ?? "v2",
   });
   return response.data;
 }
@@ -265,7 +267,14 @@ export async function getReels(
  */
 export async function getAllLivingPanels(
   summaryId: string,
-): Promise<{ summary_id: string; total_panels: number; living_panels: any[]; source: string }> {
+): Promise<{
+  summary_id: string;
+  total_panels: number;
+  living_panels: any[];
+  source: string;
+  engine?: string;
+  v4_pages?: any[];
+}> {
   const response = await api.get(`/summary/${summaryId}/all-living-panels`);
   return response.data;
 }

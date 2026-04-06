@@ -26,6 +26,7 @@ from app.llm_client import LLMClient
 from app.models import SummaryStyle
 from app.agents.planner import MangaPlan, PanelAssignment, plan_manga
 from app.agents.dsl_generator import generate_page_dsls, generate_panel_dsl
+from app.v4_dsl_generator import generate_v4_page
 from app.agents.credit_tracker import CreditTracker
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,8 @@ class OrchestratorResult:
     manga_bible: dict = None           # Generated or passed-through bible
     bible_used: bool = True            # False if bible generation failed
     synopsis_used: bool = True         # False if synopsis generation failed
+    engine: str = "v2"                 # Which engine was used
+    v4_pages: list[dict] = None        # V4 page data (layout + panels grouped)
 
 
 class MangaOrchestrator:
@@ -76,6 +79,7 @@ class MangaOrchestrator:
         cancel_check: Optional[Callable] = None,
         image_budget: int = 5,
         max_concurrent: int = MAX_CONCURRENT_DSL_AGENTS,
+        engine: str = "v2",   # "v2" (verbose DSL) or "v4" (semantic intent)
     ):
         self.llm = llm_client
         self.style = style
@@ -84,6 +88,7 @@ class MangaOrchestrator:
         self.cancel_check = cancel_check
         self.image_budget = image_budget
         self.max_concurrent = max_concurrent
+        self.engine = engine
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._cancel_cache_time: float = 0
         self._cancel_cached: bool = False
@@ -415,6 +420,7 @@ class MangaOrchestrator:
         panels_ok = 0
         panels_fail = 0
         image_panel_ids = []
+        v4_pages = []  # Collect V4 page data for page-level rendering
         page_keys = sorted(page_groups.keys())
 
         for page_idx, page_result in enumerate(all_page_results):
@@ -441,6 +447,10 @@ class MangaOrchestrator:
                 continue
 
             # page_result is a list of {dsl, tokens, success} dicts
+            # Collect V4 page data (first result has the full page)
+            if page_result and isinstance(page_result, list) and page_result[0].get("v4_page"):
+                v4_pages.append(page_result[0]["v4_page"])
+
             for i, panel_result in enumerate(page_result):
                 assignment = page_panels[i] if i < len(page_panels) else None
                 dsl = panel_result.get("dsl")
@@ -500,6 +510,8 @@ class MangaOrchestrator:
             manga_bible=manga_bible or {},
             bible_used=bible_ok,
             synopsis_used=synopsis_ok,
+            engine=self.engine,
+            v4_pages=v4_pages if v4_pages else None,
         )
 
     # ── Helpers ───────────────────────────────────────────────
@@ -547,14 +559,40 @@ class MangaOrchestrator:
                     for _ in page_panels
                 ]
 
-            results = await generate_page_dsls(
-                page_panels=page_panels,
-                llm_client=self.llm,
-                style=self.style,
-                manga_bible=manga_bible,
-                chapter_summary=chapter_summary,
-                prev_chapter_ending=prev_chapter_ending,
-            )
+            if self.engine == "v4":
+                result = await generate_v4_page(
+                    page_panels=page_panels,
+                    llm_client=self.llm,
+                    style=self.style,
+                    manga_bible=manga_bible,
+                    chapter_summary=chapter_summary,
+                    prev_chapter_ending=prev_chapter_ending,
+                )
+                # V4 returns a single page dict; wrap each panel as a result
+                page_data = result.get("page", {})
+                tokens = result.get("tokens", {})
+                success = result.get("success", False)
+                results = []
+                for panel_dict in page_data.get("panels", []):
+                    results.append({
+                        "dsl": panel_dict,
+                        "tokens": tokens,
+                        "success": success,
+                        "engine": "v4",
+                        "v4_page": page_data,
+                    })
+                # Fill missing panels with empty results
+                while len(results) < len(page_panels):
+                    results.append({"dsl": None, "success": False, "engine": "v4"})
+            else:
+                results = await generate_page_dsls(
+                    page_panels=page_panels,
+                    llm_client=self.llm,
+                    style=self.style,
+                    manga_bible=manga_bible,
+                    chapter_summary=chapter_summary,
+                    prev_chapter_ending=prev_chapter_ending,
+                )
 
             # Track cost
             if self.tracker:

@@ -38,6 +38,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
   const [keyError, setKeyError]     = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [genImages, setGenImages]   = useState(false);
+  const [selectedEngine, setSelectedEngine] = useState<"v2" | "v4">("v2");
   const [imageModel, setImageModel] = useState("google/gemini-2.5-flash-image");
   const [imageModelOptions, setImageModelOptions] = useState<{id:string;name:string}[]>([
     { id: "google/gemini-2.5-flash-image",            name: "Gemini 2.5 Flash Image — $2.50/1M (cheapest)" },
@@ -125,6 +126,7 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
         chapterRange,
         generateImages: genImages,
         imageModel: genImages ? imageModel : undefined,
+        engine: selectedEngine,
       });
       setTaskId(res.task_id);
       push(2, `Task received · model: ${localModel}`);
@@ -271,6 +273,39 @@ function GeneratePanel({ book, onComplete }: { book: Book; onComplete: (sid: str
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Large PDF warning (inline, collapsible) */}
+
+      {/* Engine selector */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-label" style={{ fontSize: "10px", color: "var(--text-1)" }}>Rendering Engine</p>
+          <p className="font-label" style={{ fontSize: "8px", color: "var(--text-3)" }}>
+            V2 = verbose DSL · V4 = semantic intent (faster, cheaper)
+          </p>
+        </div>
+        <div className="flex gap-1">
+          {(["v2", "v4"] as const).map(eng => (
+            <button
+              key={eng}
+              onClick={() => !generating && setSelectedEngine(eng)}
+              disabled={generating}
+              className="px-3 py-1 rounded text-xs font-bold transition-all"
+              style={{
+                background: selectedEngine === eng
+                  ? (eng === "v4" ? "#2A8703" : "#0053e2")
+                  : "var(--bg-3)",
+                color: selectedEngine === eng ? "#fff" : "var(--text-3)",
+                border: `1px solid ${selectedEngine === eng ? "transparent" : "var(--border-2)"}`,
+                fontFamily: "var(--font-label)",
+                letterSpacing: "0.08em",
+              }}
+            >
+              {eng.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Large PDF warning (inline, collapsible) */}
       <AnimatePresence>

@@ -235,6 +235,7 @@ def generate_summary_task(
     chapter_range: list = None,       # [start_idx, end_idx] inclusive; None = all
     generate_images: bool = False,    # run AI image gen after panels
     image_model: str = None,          # image generation model (OpenRouter)
+    engine: str = "v2",               # "v2" or "v4" rendering engine
 ):
     """Background task: Compress chapters → Understand → Design → Generate DSLs → Images."""
     logger.info(f"Starting summary generation for book {book_id}")
@@ -495,8 +496,9 @@ def generate_summary_task(
             cancel_check=check_cancel,
             image_budget=5,
             max_concurrent=4,
+            engine=engine,
         )
-        logger.info("Using v2 orchestrator (understand → design → generate)")
+        logger.info(f"Using {engine} orchestrator (understand → design → generate)")
 
         orch_result = await orchestrator.run(
             canonical_chapters=canonical_chapters,
@@ -508,13 +510,22 @@ def generate_summary_task(
         # Store results — save panels to dedicated collection (not embedded)
         panel_docs = []
         for i, panel_dsl in enumerate(orch_result.living_panels):
+            # Handle both v2 (meta.panel_id) and v4 (panel_id) formats
+            if "meta" in panel_dsl:
+                pid = panel_dsl["meta"].get("panel_id", f"panel-{i}")
+                ctype = panel_dsl["meta"].get("content_type", "")
+                ch_idx = panel_dsl["meta"].get("chapter_index", 0)
+            else:
+                pid = panel_dsl.get("panel_id", f"panel-{i}")
+                ctype = panel_dsl.get("type", "")
+                ch_idx = panel_dsl.get("chapter_index", 0)
             panel_docs.append(LivingPanelDoc(
                 summary_id=str(summary_doc.id),
-                panel_id=panel_dsl.get("meta", {}).get("panel_id", f"panel-{i}"),
+                panel_id=pid,
                 panel_index=i,
                 dsl=panel_dsl,
-                content_type=panel_dsl.get("meta", {}).get("content_type", ""),
-                chapter_index=panel_dsl.get("meta", {}).get("chapter_index", 0),
+                content_type=ctype,
+                chapter_index=ch_idx,
             ))
         if panel_docs:
             # Delete old panels for this summary (if re-running)
@@ -536,6 +547,9 @@ def generate_summary_task(
         # Track quality flags (issue 3.2: surface silent failures)
         summary_doc.bible_used = orch_result.bible_used
         summary_doc.synopsis_used = orch_result.synopsis_used
+        summary_doc.engine = orch_result.engine
+        if orch_result.v4_pages:
+            summary_doc.v4_pages = orch_result.v4_pages
 
         # Store the manga bible the orchestrator produced
         manga_bible_dict = orch_result.manga_bible or {}

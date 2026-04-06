@@ -114,6 +114,7 @@ class SummarizeRequest(BaseModel):
     chapter_range: Optional[list[int]] = None   # [start_idx, end_idx] inclusive, None=all
     generate_images: bool = False       # run AI image gen per panel (costs extra)
     image_model: Optional[str] = None  # image generation model (defaults to cheapest)
+    engine: str = "v2"                 # "v2" (verbose DSL) or "v4" (semantic intent)
 
 
 class UpdateTitleRequest(BaseModel):
@@ -380,6 +381,7 @@ async def start_summarization(
         chapter_range=request.chapter_range,
         generate_images=request.generate_images,
         image_model=request.image_model,
+        engine=request.engine,
     )
 
     # Track job status
@@ -659,12 +661,17 @@ async def get_all_living_panels(summary_id: str):
     ).sort("+panel_index").to_list()
 
     if panel_docs:
-        return {
+        result = {
             "summary_id": summary_id,
             "total_panels": len(panel_docs),
             "living_panels": [doc.dsl for doc in panel_docs],
             "source": "orchestrator",
+            "engine": getattr(summary, "engine", "v2"),
         }
+        # Include v4 page data for page-level rendering
+        if getattr(summary, "v4_pages", None):
+            result["v4_pages"] = summary.v4_pages
+        return result
 
     # LEGACY: check embedded living_panels on BookSummary
     if summary.living_panels:

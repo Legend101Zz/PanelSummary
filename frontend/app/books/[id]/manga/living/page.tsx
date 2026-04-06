@@ -17,6 +17,8 @@ import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { getSummary, getAllLivingPanels } from "@/lib/api";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
+import { V4PageRenderer } from "@/components/V4Engine";
+import type { V4Page } from "@/components/V4Engine";
 import type { Summary } from "@/lib/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
 import { SAMPLE_LIVING_PANELS } from "@/lib/sample-living-book";
@@ -36,6 +38,8 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
 
   // Living panels
   const [livingPanels, setLivingPanels] = useState<LivingPanelDSL[]>([]);
+  const [v4Pages, setV4Pages] = useState<V4Page[]>([]);
+  const [engine, setEngine] = useState<"v2" | "v4">("v2");
   const [demoMode, setDemoMode] = useState(!summaryId);
 
   // ============================================================
@@ -59,7 +63,13 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           // Try to load orchestrator-generated living panels
           return getAllLivingPanels(summaryId)
             .then((lpData) => {
-              if (lpData.living_panels && lpData.living_panels.length > 0) {
+              const detectedEngine = lpData.engine || "v2";
+              setEngine(detectedEngine as "v2" | "v4");
+
+              if (detectedEngine === "v4" && lpData.v4_pages?.length) {
+                setV4Pages(lpData.v4_pages as V4Page[]);
+                setDemoMode(false);
+              } else if (lpData.living_panels && lpData.living_panels.length > 0) {
                 setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
                 if (lpData.source === "fallback") {
                   setDemoMode(false); // fallback but still real data
@@ -86,7 +96,7 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   // NAVIGATION (between pages/panels)
   // ============================================================
 
-  const totalPanels = livingPanels.length;
+  const totalPanels = engine === "v4" ? v4Pages.length : livingPanels.length;
 
   const goNext = useCallback(() => {
     if (panelIdx < totalPanels - 1) setPanelIdx(p => p + 1);
@@ -137,6 +147,7 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
   // ============================================================
 
   const currentDSL = livingPanels[panelIdx];
+  const currentV4Page = v4Pages[panelIdx];
   const isFirst = panelIdx === 0;
   const isLast = panelIdx >= totalPanels - 1;
 
@@ -193,7 +204,9 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           whiteSpace: "nowrap" as const,
           padding: "0 12px",
         }}>
-          {currentDSL?.meta?.narrative_beat || ""}
+          {engine === "v4"
+            ? `Page ${panelIdx + 1}`
+            : (currentDSL?.meta?.narrative_beat || "")}
         </span>
 
         {/* Right: page / act counters */}
@@ -237,7 +250,20 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
 
         {/* Panel canvas */}
         <div className="flex-1 min-w-0 flex items-center justify-center p-2 sm:p-4">
-          {currentDSL ? (
+          {engine === "v4" && currentV4Page ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`v4-${panelIdx}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="w-full h-full max-w-4xl"
+              >
+                <V4PageRenderer page={currentV4Page} />
+              </motion.div>
+            </AnimatePresence>
+          ) : currentDSL ? (
             <AnimatePresence mode="wait">
               <motion.div
                 key={panelIdx}

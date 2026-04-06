@@ -240,6 +240,8 @@ class BookSummary(Document):
     bible_used: bool = True         # False if bible generation failed
     synopsis_used: bool = True      # False if synopsis generation failed
     images_failed: int = 0          # Count of failed image generations (issue 4.2)
+    engine: str = "v2"              # "v2" or "v4" rendering engine used
+    v4_pages: list[dict] = []       # V4 page-level layout data (empty for v2)
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
