@@ -96,6 +96,27 @@ def _enforce_content_requirements(
             logger.info(f"{assignment.panel_id}: Upgrading layout to cuts per planner hint")
             _upgrade_to_cuts_layout(first_act, assignment)
 
+    # ── CRITICAL: Every panel MUST have readable text content ──
+    # The LLM spends tokens on illustration layers but forgets text.
+    # If there's no text/speech_bubble/data_block, inject one.
+    all_layers_final = list(first_act.get("layers", []))
+    for cell in first_act.get("cells", []):
+        all_layers_final.extend(cell.get("layers", []))
+    text_types = {"text", "speech_bubble", "data_block"}
+    has_readable = any(l.get("type") in text_types for l in all_layers_final)
+
+    if not has_readable:
+        text = assignment.text_content or assignment.narrative_beat or ""
+        if content_type == "splash" and text:
+            logger.info(f"{assignment.panel_id}: Injecting title text for splash")
+            _inject_title_text(first_act, text)
+        elif content_type == "narration" and text:
+            logger.info(f"{assignment.panel_id}: Injecting narration text")
+            _inject_narration_text(first_act, text, assignment)
+        elif text:
+            logger.info(f"{assignment.panel_id}: Injecting fallback caption")
+            _inject_narration_text(first_act, text, assignment)
+
     return dsl
 
 
@@ -198,6 +219,85 @@ def _inject_data_block(act: dict, concepts: list[str]) -> None:
         "at": 600, "target": "data-inject",
         "animate": {"opacity": [0, 1]}, "duration": 400,
         "easing": "ease-out",
+    })
+
+
+def _inject_title_text(act: dict, title: str) -> None:
+    """Add a big title text layer for splash panels.
+
+    Splash panels often have elaborate illustration layers but forget
+    the actual title text that the reader sees.
+    """
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+    layers.append({
+        "id": "title-inject", "type": "text",
+        "x": "50%", "y": "50%", "opacity": 0,
+        "props": {
+            "content": title[:80],
+            "fontSize": 28,
+            "fontWeight": "bold",
+            "color": "#F0EEE8",
+            "textAlign": "center",
+            "maxWidth": "80%",
+            "textShadow": "0 2px 8px rgba(0,0,0,0.8)",
+        },
+    })
+    timeline.append({
+        "at": 400, "target": "title-inject",
+        "animate": {"opacity": [0, 1], "y": ["55%", "50%"]},
+        "duration": 600, "easing": "ease-out",
+    })
+
+
+def _inject_narration_text(
+    act: dict, text: str, assignment: PanelAssignment,
+) -> None:
+    """Add a narration caption for panels with no readable content.
+
+    The LLM generates 500 tokens of illustration descriptions but zero
+    text layers — so the panel looks pretty but says nothing.
+    """
+    layers = act.setdefault("layers", [])
+    timeline = act.setdefault("timeline", [])
+
+    # If we have a character, add a small character tag
+    if assignment.character:
+        layers.append({
+            "id": "char-tag-inject", "type": "text",
+            "x": "8%", "y": "8%", "opacity": 0,
+            "props": {
+                "content": assignment.character,
+                "fontSize": 10,
+                "fontWeight": "bold",
+                "color": "#F5A623",
+                "letterSpacing": "0.1em",
+            },
+        })
+        timeline.append({
+            "at": 200, "target": "char-tag-inject",
+            "animate": {"opacity": [0, 0.6]},
+            "duration": 300, "easing": "ease-out",
+        })
+
+    # Main narration caption
+    layers.append({
+        "id": "narration-inject", "type": "text",
+        "x": "50%", "y": "50%", "opacity": 0,
+        "props": {
+            "content": text[:120],
+            "fontSize": 16,
+            "color": "#F0EEE8",
+            "textAlign": "center",
+            "maxWidth": "75%",
+            "fontStyle": "italic",
+            "lineHeight": 1.6,
+        },
+    })
+    timeline.append({
+        "at": 500, "target": "narration-inject",
+        "animate": {"opacity": [0, 1]},
+        "duration": 500, "easing": "ease-out",
     })
 
 
