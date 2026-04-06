@@ -148,9 +148,9 @@ export function TextRenderer({
         textShadow: props.textShadow || "0 1px 2px rgba(0,0,0,0.3)",
         letterSpacing: props.letterSpacing,
         whiteSpace: "pre-wrap" as const,
-        // 2D: Prevent text from overflowing panel bounds
+        // Prevent text from overflowing panel bounds
         overflow: "hidden" as const,
-        maxHeight: "80%",
+        maxHeight: "75%",
         wordBreak: "break-word" as const,
       }}
     >

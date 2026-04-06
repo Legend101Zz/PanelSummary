@@ -232,6 +232,48 @@ def _enforce_text_contrast(dsl: dict) -> None:
             fix_layers(cell.get("layers", []))
 
 
+def _enforce_text_limits(layer: dict, is_cell: bool = False) -> None:
+    """Enforce text length limits to prevent overflow.
+
+    Full panels can hold ~200 chars of body text comfortably.
+    Cell panels (sub-panels) can hold ~100 chars.
+    Speech bubbles should be even shorter (~120/80 chars).
+
+    When text is too long, we truncate at the last sentence boundary
+    and add an ellipsis.
+    """
+    ltype = layer.get("type", "")
+    props = layer.get("props", {})
+
+    if ltype == "text":
+        content = props.get("content", "")
+        max_len = 120 if is_cell else 220
+        if len(content) > max_len:
+            # Truncate at last sentence boundary
+            truncated = content[:max_len]
+            for sep in ('. ', '\n', '! ', '? ', '; '):
+                last_sep = truncated.rfind(sep)
+                if last_sep > max_len * 0.4:
+                    truncated = truncated[:last_sep + 1]
+                    break
+            props["content"] = truncated.rstrip() + "…"
+            logger.debug(
+                f"Text truncated: {len(content)} → {len(props['content'])} chars"
+            )
+
+    elif ltype == "speech_bubble":
+        text = props.get("text", "")
+        max_len = 80 if is_cell else 140
+        if len(text) > max_len:
+            truncated = text[:max_len]
+            for sep in ('. ', '! ', '? ', ', '):
+                last_sep = truncated.rfind(sep)
+                if last_sep > max_len * 0.4:
+                    truncated = truncated[:last_sep + 1]
+                    break
+            props["text"] = truncated.rstrip() + "…"
+
+
 def fix_common_dsl_issues(dsl: dict) -> dict:
     """Auto-fix common LLM mistakes in DSL output."""
     # Version
@@ -312,6 +354,8 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
             # Fix opacity: must be a number
             if not isinstance(layer.get("opacity"), (int, float)):
                 layer["opacity"] = 1 if layer.get("type") == "background" else 0
+            # Enforce text length limits to prevent overflow
+            _enforce_text_limits(layer, is_cell=False)
 
         # Ensure timeline steps have required fields
         for step in act.get("timeline", []):
@@ -333,11 +377,24 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
                 cell["position"] = str(cell["position"])
             elif cell.get("position") is None:
                 cell["position"] = str(ci)
+            # Prevent empty cells — add a subtle screentone if no layers
+            if not cell.get("layers"):
+                cell["layers"] = [{
+                    "id": f"cell-{ai}-{ci}-fill",
+                    "type": "effect",
+                    "opacity": 1,
+                    "props": {
+                        "effect": "screentone",
+                        "intensity": 0.06,
+                    },
+                }]
             for li, layer in enumerate(cell.get("layers", [])):
                 layer.setdefault("props", {})
                 layer.setdefault("id", f"cell-{ai}-{ci}-layer-{li}")
                 if not isinstance(layer.get("opacity"), (int, float)):
                     layer["opacity"] = 0
+                # Cells are smaller — stricter text limits
+                _enforce_text_limits(layer, is_cell=True)
             # Fix cell timelines too
             for step in cell.get("timeline", []):
                 step.setdefault("duration", 500)
