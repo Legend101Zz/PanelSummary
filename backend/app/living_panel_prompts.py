@@ -85,6 +85,13 @@ animations for layers.
 - "light" → cream paper (#F2E8D5), black ink (#1A1825)
 - "dark" → dark ink (#1A1825), light text (#F0EEE8)
 
+### CRITICAL — TEXT CONTRAST RULES:
+- On light/cream backgrounds: ALWAYS use dark text (#1A1825 or darker)
+- On dark backgrounds: ALWAYS use light text (#F0EEE8 or lighter)
+- NEVER use #F0EEE8 text on #F2E8D5 backgrounds (invisible!)
+- NEVER use #1A1825 text on #1A1825 backgrounds (invisible!)
+- When in doubt: light bg = dark text, dark bg = light text
+
 ### ACT STRUCTURE:
 {{
   "id": "act-name",
