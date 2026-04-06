@@ -53,6 +53,11 @@ class Settings(BaseSettings):
         base = self.storage_dir or _default_storage()
         return f"{base}/images"
 
+    @property
+    def reels_dir(self) -> str:
+        base = self.storage_dir or _default_storage()
+        return f"{base}/reels"
+
     # --- LLM Defaults ---
     default_model: str = "qwen/qwen3.5-397b-a17b"  # Default OpenRouter model (user-specified)
     max_tokens_per_chapter: int = 4000   # Cap to control costs

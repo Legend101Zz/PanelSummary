@@ -279,6 +279,75 @@ class LivingPanelDoc(Document):
         ]
 
 
+# ============================================================
+# VIDEO REEL MODELS — DSL-driven video generation
+# ============================================================
+
+class VideoReelDoc(Document):
+    """
+    A single rendered video reel — stored separately like LivingPanelDoc.
+
+    Each reel is its own document with the full DSL (for re-rendering)
+    and a path to the rendered MP4.
+
+    MongoDB collection: 'video_reels'
+    """
+    book_id: Indexed(str)  # type: ignore
+    summary_id: Indexed(str)  # type: ignore
+    reel_index: int               # 0-based within this book
+
+    # The Video DSL JSON — the full creative blueprint
+    dsl: dict = {}
+
+    # Content tracking — which content IDs went into this reel
+    source_content_ids: list[str] = []  # e.g. ["quote-3", "data-7", "beat-climax"]
+
+    # Render output
+    video_path: Optional[str] = None   # e.g. "reels/abc123/reel-0.mp4"
+    render_status: str = "pending"      # pending | rendering | complete | failed
+    render_error: Optional[str] = None
+    duration_ms: int = 0                # actual video duration
+
+    # Metadata from DSL
+    title: str = ""
+    mood: str = ""
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "video_reels"
+        indexes = [
+            [("book_id", 1), ("reel_index", 1)],
+            [("summary_id", 1)],
+        ]
+
+
+class BookReelMemory(Document):
+    """
+    Tracks what content has been used in reels for a book.
+    Prevents the LLM from repeating the same quotes/data/beats.
+
+    One document per book — simple append-only list.
+
+    MongoDB collection: 'book_reel_memory'
+    """
+    book_id: Indexed(str, unique=True)  # type: ignore
+    summary_id: str
+
+    # Content IDs that have been used in any reel for this book
+    used_content_ids: list[str] = []
+
+    # Stats
+    total_reels_generated: int = 0
+    exhausted: bool = False  # True when all content has been used
+
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "book_reel_memory"
+
+
 class JobStatus(Document):
     """
     Tracks the status of background jobs.

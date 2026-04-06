@@ -221,6 +221,186 @@ def parse_pdf_task(self, book_id: str, pdf_path: str):
             raise
 
     run_async(_run())
+
+
+# ============================================================
+# TASK: VIDEO REEL GENERATION (DSL → Remotion → MP4)
+# ============================================================
+
+@celery_app.task(bind=True, name="generate_video_reel_task")
+def generate_video_reel_task(
+    self,
+    summary_id: str,
+    api_key: str,
+    provider: str = "openrouter",
+    model: str = None,
+):
+    """Generate a single video reel from unused book content."""
+
+    async def _run():
+        await get_db()
+        from app.models import (
+            Book, BookSummary, VideoReelDoc, ProcessingStatus,
+        )
+        from app.llm_client import LLMClient
+        from app.reel_engine.content_picker import (
+            select_reel_content, get_total_content_count,
+        )
+        from app.reel_engine.memory import (
+            get_or_create_memory, mark_content_used, check_exhaustion,
+        )
+        from app.reel_engine.script_generator import generate_video_dsl
+        from app.reel_engine.renderer import render_video_reel, check_renderer_ready
+
+        try:
+            # 1. Load summary and book
+            summary = await BookSummary.get(summary_id)
+            if not summary:
+                await update_job_status(
+                    self.request.id, "failure", 0,
+                    "Summary not found", error="Summary not found",
+                )
+                return
+
+            book = await Book.get(summary.book_id)
+            book_title = book.title if book else "Unknown Book"
+            book_author = book.author if book else None
+            book_id = summary.book_id
+
+            await update_job_status(
+                self.request.id, "progress", 5,
+                "Loading book content...",
+            )
+
+            # 2. Check renderer readiness
+            renderer_ready, renderer_msg = check_renderer_ready()
+            if not renderer_ready:
+                logger.warning(f"Renderer not ready: {renderer_msg}")
+                # Continue anyway — we'll generate DSL and store it,
+                # render can happen later
+
+            # 3. Get or create memory
+            memory = await get_or_create_memory(book_id, summary_id)
+
+            # 4. Check if content is exhausted
+            canonical = [ch.model_dump() for ch in summary.canonical_chapters]
+            bible = summary.manga_bible.model_dump() if summary.manga_bible else None
+            total_available = get_total_content_count(canonical, bible)
+
+            if await check_exhaustion(book_id, total_available):
+                await update_job_status(
+                    self.request.id, "success", 100,
+                    "All content has been used! No new reels to generate.",
+                    result_id=summary_id,
+                )
+                return
+
+            # 5. Select unused content
+            await update_job_status(
+                self.request.id, "progress", 15,
+                "Selecting catchy content...",
+            )
+            content_items = select_reel_content(
+                canonical, bible, memory.used_content_ids,
+            )
+
+            if not content_items:
+                await update_job_status(
+                    self.request.id, "success", 100,
+                    "No unused content available.",
+                    result_id=summary_id,
+                )
+                return
+
+            # 6. Generate Video DSL via LLM
+            await update_job_status(
+                self.request.id, "progress", 25,
+                "LLM is directing the reel...",
+            )
+            llm = LLMClient(api_key=api_key, provider=provider, model=model)
+            dsl, cost_info = await generate_video_dsl(
+                content_items=content_items,
+                book_title=book_title,
+                book_author=book_author,
+                style=summary.style,
+                llm_client=llm,
+            )
+
+            # 7. Determine reel index
+            existing_count = await VideoReelDoc.find(
+                VideoReelDoc.book_id == book_id
+            ).count()
+
+            # 8. Store reel document (DSL saved regardless of render)
+            content_ids = [item["id"] for item in content_items]
+            meta = dsl.get("meta", {})
+
+            reel_doc = VideoReelDoc(
+                book_id=book_id,
+                summary_id=summary_id,
+                reel_index=existing_count,
+                dsl=dsl,
+                source_content_ids=content_ids,
+                render_status="pending",
+                duration_ms=meta.get("total_duration_ms", 0),
+                title=meta.get("title", f"Reel {existing_count + 1}"),
+                mood=meta.get("mood", ""),
+            )
+            await reel_doc.insert()
+
+            # 9. Mark content as used
+            await mark_content_used(book_id, content_ids)
+
+            # 10. Render video (if renderer is ready)
+            if renderer_ready:
+                await update_job_status(
+                    self.request.id, "progress", 50,
+                    "Rendering video (this takes 1-2 min)...",
+                )
+
+                try:
+                    def render_progress(pct, msg):
+                        sync_update_job(
+                            self.request.id, "progress",
+                            50 + int(pct * 0.45), msg,
+                        )
+
+                    video_path = render_video_reel(
+                        dsl=dsl,
+                        book_id=book_id,
+                        reel_id=str(reel_doc.id),
+                        progress_callback=render_progress,
+                    )
+
+                    reel_doc.video_path = video_path
+                    reel_doc.render_status = "complete"
+                    await reel_doc.save()
+
+                except Exception as render_err:
+                    logger.error(f"Render failed: {render_err}")
+                    reel_doc.render_status = "failed"
+                    reel_doc.render_error = str(render_err)[:500]
+                    await reel_doc.save()
+                    # Don't fail the whole task — DSL is saved
+            else:
+                reel_doc.render_status = "failed"
+                reel_doc.render_error = f"Renderer not ready: {renderer_msg}"
+                await reel_doc.save()
+
+            await update_job_status(
+                self.request.id, "success", 100,
+                f"Video reel generated! ({meta.get('total_duration_ms', 0) / 1000:.0f}s)",
+                result_id=str(reel_doc.id),
+            )
+
+        except Exception as e:
+            logger.error(f"Video reel generation failed: {e}", exc_info=True)
+            await update_job_status(
+                self.request.id, "failure", 0,
+                f"Failed: {e}", error=str(e),
+            )
+
+    run_async(_run())
 # TASK 2: SUMMARIZATION
 
 @celery_app.task(bind=True, name="app.celery_worker.generate_summary_task")
