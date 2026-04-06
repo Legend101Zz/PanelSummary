@@ -127,7 +127,8 @@ export type LayerType =
   | "shape"
   | "data_block"
   | "scene_transition"
-  | "image";                     // for the rare AI-generated images
+  | "image"
+  | "illustration";
 
 export interface LayerBase {
   id: string;
@@ -157,16 +158,25 @@ export interface BackgroundLayer extends LayerBase {
   };
 }
 
+export type PoseType =
+  | "standing" | "thinking" | "action"
+  | "dramatic" | "defeated" | "presenting"
+  | "pointing" | "celebrating";
+
 export interface SpriteLayer extends LayerBase {
   type: "sprite";
   props: {
     character: string;
     expression: ExpressionType;
+    pose?: PoseType;
     size?: number;
     showName?: boolean;
     silhouette?: boolean;
     glowColor?: string;
     facing?: "left" | "right";
+    signatureColor?: string;   // character's accent color
+    signatureSymbol?: string;  // SVG path for character icon
+    aura?: "energy" | "calm" | "dark" | "fire" | "ice" | "none";
   };
 }
 
@@ -268,11 +278,37 @@ export interface SceneTransitionLayer extends LayerBase {
 export interface ImageLayer extends LayerBase {
   type: "image";
   props: {
-    src: string;                 // image URL or asset key
+    src: string;
     alt?: string;
     objectFit?: "cover" | "contain" | "fill";
-    filter?: string;             // CSS filter
-    blendMode?: string;          // mix-blend-mode
+    filter?: string;
+    blendMode?: string;
+  };
+}
+
+export interface IllustrationLayer extends LayerBase {
+  type: "illustration";
+  props: {
+    /** Pre-built scene component ID (e.g. "laboratory", "digital-realm") */
+    scene?: string;
+    /** Inline SVG markup for custom illustrations */
+    svg?: string;
+    /** Art style filter applied to the illustration */
+    style?: "manga-ink" | "blueprint" | "watercolor" | "neon";
+    /** Color overrides for the scene */
+    primaryColor?: string;
+    accentColor?: string;
+    /** Scene-specific props (floating items, glow points, etc.) */
+    elements?: Array<{
+      type: string;
+      x: string;
+      y: string;
+      size?: number;
+      color?: string;
+      label?: string;
+    }>;
+    /** Description for accessibility */
+    description?: string;
   };
 }
 
@@ -285,7 +321,8 @@ export type Layer =
   | ShapeLayer
   | DataBlockLayer
   | SceneTransitionLayer
-  | ImageLayer;
+  | ImageLayer
+  | IllustrationLayer;
 
 // ============================================================
 // ANIMATION

@@ -133,7 +133,7 @@ animations for layers.
 
 ### LAYER TYPES:
 - "background" — props: gradient (color[]), gradientAngle, pattern ("halftone"|"crosshatch"|"dots"|"lines"|"manga_screen"), patternOpacity
-- "sprite" — props: character (name), expression ("neutral"|"curious"|"shocked"|"wise"|"thoughtful"|"excited"|"sad"|"angry"), size (px), showName, silhouette, facing ("left"|"right")
+- "sprite" — props: character (name), expression ("neutral"|"curious"|"shocked"|"wise"|"thoughtful"|"excited"|"sad"|"angry"|"determined"|"smirk"|"fearful"|"triumphant"), pose ("standing"|"thinking"|"action"|"dramatic"|"defeated"|"presenting"|"pointing"|"celebrating"), size (px), showName, silhouette, facing ("left"|"right"), signatureColor (hex), aura ("energy"|"calm"|"dark"|"fire"|"ice"|"none")
 - "text" — props: content, fontSize (use clamp()), fontFamily ("display"|"body"|"label"), color, textAlign, maxWidth, lineHeight, typewriter, typewriterSpeed
 - "speech_bubble" — props: text, character, style ("speech"|"thought"|"shout"|"whisper"|"narrator"), tailDirection ("left"|"right"|"bottom"|"top"|"none"), maxWidth, typewriter, typewriterSpeed
 - "effect" — props: effect ("speed_lines"|"screentone"|"crosshatch"|"vignette"|"sfx"|"impact_burst"|"particles"), color, intensity, direction
@@ -195,7 +195,7 @@ Example 1 — DRAMATIC SPLASH with speed lines + SFX:
       {{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#1A1825", "#0F0E17"], "pattern": "screentone", "patternOpacity": 0.08 }} }},
       {{ "id": "speed", "type": "effect", "opacity": 0, "props": {{ "effect": "speed_lines", "color": "#F0EEE8", "intensity": 0.6, "direction": "radial" }} }},
       {{ "id": "sfx", "type": "effect", "x": "55%", "y": "15%", "opacity": 0, "props": {{ "effect": "sfx", "sfxText": "CRACK", "sfxSize": 48, "color": "#E8191A", "sfxRotate": -8 }} }},
-      {{ "id": "hero", "type": "sprite", "x": "40%", "y": "60%", "opacity": 0, "scale": 0.7, "props": {{ "character": "The Mentor", "expression": "determined", "size": 72, "silhouette": true }} }},
+      {{ "id": "hero", "type": "sprite", "x": "40%", "y": "60%", "opacity": 0, "scale": 0.7, "props": {{ "character": "The Mentor", "expression": "determined", "pose": "dramatic", "size": 72, "silhouette": true, "aura": "energy" }} }},
       {{ "id": "line", "type": "text", "x": "12%", "y": "82%", "opacity": 0, "props": {{ "content": "Everything changes now.", "fontSize": "clamp(1.1rem, 4vw, 2rem)", "fontFamily": "display", "color": "#F0EEE8" }} }}
     ],
     "cells": [],
@@ -502,11 +502,18 @@ PANEL COUNT: {n_panels}
             if c['name'] in page_chars
         ]
         if relevant_chars:
-            char_lines = "\n".join(
-                f"  \u2022 {c['name']} ({c['role']}): {c.get('speech_style', '')}"
-                for c in relevant_chars
-            )
-            context += f"\nCHARACTERS ON THIS PAGE:\n{char_lines}"
+            char_lines = []
+            for c in relevant_chars:
+                line = f"  • {c['name']} ({c['role']}): {c.get('speech_style', '')}"
+                # Include visual signature for the DSL generator
+                sig_color = c.get('signature_color', '')
+                sig_aura = c.get('aura', '')
+                if sig_color:
+                    line += f" [color: {sig_color}]"
+                if sig_aura:
+                    line += f" [aura: {sig_aura}]"
+                char_lines.append(line)
+            context += f"\nCHARACTERS ON THIS PAGE:\n" + "\n".join(char_lines)
         # Always include one-line world context
         world = manga_bible.get('world_description', '')
         if world:

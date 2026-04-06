@@ -158,8 +158,18 @@ const SILHOUETTE_PATHS: Record<string, string> = {
   standing: "M24 8 C24 4 20 0 16 0 C12 0 8 4 8 8 C8 10 9 12 11 13 L9 22 L6 32 L10 32 L12 26 L14 32 L18 32 L20 26 L22 32 L26 32 L23 22 L21 13 C23 12 24 10 24 8 Z",
   // Sitting/thinking pose
   thinking: "M20 8 C20 4 17 1 14 1 C11 1 8 4 8 8 C8 10 9 12 11 13 L10 18 L6 20 L4 28 L8 28 L10 24 L12 30 L16 30 L18 24 L20 22 L24 24 L26 22 L22 18 L20 13 C22 12 20 10 20 8 Z",
-  // Action pose
+  // Action pose — leaning forward with arms extended
   action: "M18 7 C18 3 15 0 12 0 C9 0 6 3 6 7 C6 9 7 11 9 12 L6 18 L2 22 L4 24 L10 20 L8 28 L10 32 L14 24 L16 32 L20 32 L18 22 L22 18 L20 16 L16 14 L15 12 C17 11 18 9 18 7 Z",
+  // Dramatic — wide stance, chest out, power pose
+  dramatic: "M20 7 C20 3 17 0 14 0 C11 0 8 3 8 7 C8 9 9 11 11 12 L8 16 L3 14 L2 16 L7 20 L6 26 L4 32 L8 32 L10 28 L14 32 L18 32 L20 28 L22 32 L26 32 L24 26 L23 20 L28 16 L27 14 L22 16 L19 12 C21 11 22 9 20 7 Z",
+  // Defeated — slumped, head down
+  defeated: "M18 9 C18 5 16 3 14 3 C12 3 10 5 10 9 C10 11 11 12 12 13 L11 16 L9 18 L7 20 L6 26 L5 32 L9 32 L10 28 L13 32 L17 32 L18 28 L19 32 L23 32 L22 26 L21 20 L19 18 L17 16 L16 13 C17 12 18 11 18 9 Z",
+  // Presenting — one arm extended forward
+  presenting: "M22 8 C22 4 19 1 16 1 C13 1 10 4 10 8 C10 10 11 12 13 13 L11 18 L9 22 L7 32 L11 32 L13 26 L15 32 L19 32 L21 26 L23 32 L27 32 L25 22 L23 16 L28 12 L30 10 L28 8 L22 14 L20 13 C22 12 23 10 22 8 Z",
+  // Pointing — arm pointing at something
+  pointing: "M22 8 C22 4 19 0 16 0 C13 0 10 4 10 8 C10 10 11 12 13 13 L12 18 L9 22 L7 32 L11 32 L13 26 L15 32 L19 32 L21 26 L23 32 L27 32 L24 22 L22 16 L26 10 L30 6 L29 4 L24 8 L20 13 C22 12 23 10 22 8 Z",
+  // Celebrating — arms up
+  celebrating: "M20 8 C20 4 17 0 14 0 C11 0 8 4 8 8 C8 10 9 12 11 13 L10 16 L6 10 L4 6 L2 8 L6 14 L8 20 L6 28 L4 32 L8 32 L10 28 L14 32 L18 32 L20 28 L22 32 L24 32 L26 28 L24 20 L26 14 L30 8 L28 6 L26 10 L22 16 L19 13 C21 12 22 10 20 8 Z",
 };
 
 export function MangaCharacter({
@@ -169,19 +179,25 @@ export function MangaCharacter({
   size = 64,
   ink = "#1A1825",
   showName = true,
+  signatureColor,
+  aura = "none",
 }: {
   name: string;
   expression: string;
-  pose?: "standing" | "thinking" | "action";
+  pose?: string;
   size?: number;
   ink?: string;
   showName?: boolean;
+  signatureColor?: string;
+  aura?: string;
 }) {
   const hash = (name || "Character").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
   const path = SILHOUETTE_PATHS[pose] || SILHOUETTE_PATHS.standing;
-
-  // Expression modifies the face area
   const expressionMark = getExpressionMark(expression);
+  const accentColor = signatureColor || ink;
+
+  // Generate a deterministic color from character name if no signature
+  const autoColor = signatureColor || `hsl(${hash % 360}, 60%, 45%)`;
 
   return (
     <div className="flex flex-col items-center gap-1" style={{ width: size * 1.2 }}>
@@ -190,9 +206,25 @@ export function MangaCharacter({
         height={size}
         viewBox="0 0 32 32"
         style={{ filter: "drop-shadow(1px 1px 0 rgba(0,0,0,0.1))" }}
+        role="img"
+        aria-label={`${name} — ${expression}`}
       >
+        {/* Aura effect behind the character */}
+        {aura && aura !== "none" && (
+          <AuraEffect aura={aura} color={autoColor} />
+        )}
         {/* Silhouette fill */}
         <path d={path} fill={ink} stroke="none" />
+        {/* Accent stripe — gives each character visual identity */}
+        {signatureColor && (
+          <path
+            d={path}
+            fill="none"
+            stroke={signatureColor}
+            strokeWidth="0.6"
+            opacity="0.7"
+          />
+        )}
         {/* Expression marks near the head */}
         {expressionMark && (
           <g transform="translate(16, 4)">
@@ -205,7 +237,7 @@ export function MangaCharacter({
           style={{
             fontSize: Math.max(8, size * 0.14),
             fontFamily: "var(--font-label, monospace)",
-            color: ink,
+            color: signatureColor || ink,
             letterSpacing: "0.12em",
             textTransform: "uppercase" as const,
             opacity: 0.7,
@@ -215,6 +247,36 @@ export function MangaCharacter({
         </span>
       )}
     </div>
+  );
+}
+
+/** Renders a subtle aura glow behind a character silhouette. */
+function AuraEffect({ aura, color }: { aura: string; color: string }) {
+  const auraColors: Record<string, string[]> = {
+    energy:  [color, "transparent"],
+    calm:    ["#88bbff", "transparent"],
+    dark:    ["#2a1a3a", "transparent"],
+    fire:    ["#E8191A", "#ff6600", "transparent"],
+    ice:     ["#66ccff", "#aaddff", "transparent"],
+  };
+  const stops = auraColors[aura] || auraColors.energy;
+  const id = `aura-${aura}-${color.replace('#', '')}`;
+  return (
+    <>
+      <defs>
+        <radialGradient id={id} cx="50%" cy="50%" r="60%">
+          {stops.map((c, i) => (
+            <stop
+              key={i}
+              offset={`${(i / (stops.length - 1)) * 100}%`}
+              stopColor={c}
+              stopOpacity={i === stops.length - 1 ? 0 : 0.25}
+            />
+          ))}
+        </radialGradient>
+      </defs>
+      <circle cx="16" cy="16" r="18" fill={`url(#${id})`} />
+    </>
   );
 }
 
@@ -250,6 +312,34 @@ function getExpressionMark(expression: string): React.ReactNode | null {
     case "sad":
       return (
         <path d="M-3 0 Q0 3 3 0" fill="none" stroke="#fff" strokeWidth="0.8" />
+      );
+    case "determined":
+      return (
+        <>
+          <line x1="-5" y1="-4" x2="-2" y2="-3" stroke="#fff" strokeWidth="1.4" />
+          <line x1="5" y1="-4" x2="2" y2="-3" stroke="#fff" strokeWidth="1.4" />
+          <line x1="-2" y1="2" x2="2" y2="2" stroke="#fff" strokeWidth="0.8" />
+        </>
+      );
+    case "smirk":
+      return (
+        <path d="M-2 1 Q1 3 4 0" fill="none" stroke="#fff" strokeWidth="0.8" />
+      );
+    case "fearful":
+      return (
+        <>
+          <circle cx="-3" cy="-2" r="1.5" fill="none" stroke="#fff" strokeWidth="0.6" />
+          <circle cx="3" cy="-2" r="1.5" fill="none" stroke="#fff" strokeWidth="0.6" />
+          <path d="M-2 2 Q0 4 2 2" fill="none" stroke="#fff" strokeWidth="0.6" />
+        </>
+      );
+    case "triumphant":
+      return (
+        <>
+          <text x="0" y="-8" fill="#fff" fontSize="5" fontFamily="var(--font-bubble)" textAnchor="middle">★</text>
+          <line x1="-5" y1="-3" x2="-2" y2="-4" stroke="#fff" strokeWidth="1" />
+          <line x1="5" y1="-3" x2="2" y2="-4" stroke="#fff" strokeWidth="1" />
+        </>
       );
     default:
       return null;

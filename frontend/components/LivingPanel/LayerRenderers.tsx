@@ -89,14 +89,19 @@ export function SpriteRenderer({ layer }: { layer: SpriteLayer }) {
   const { props } = layer;
   const isDark = props.silhouette;
 
+  // Map facing to a default pose if no explicit pose given
+  const pose = props.pose || (props.facing === "left" ? "thinking" : "standing");
+
   return (
     <MangaCharacter
       name={props.character || "Character"}
       expression={props.expression || "neutral"}
-      pose={props.facing === "left" ? "thinking" : "standing"}
+      pose={pose}
       size={props.size || 64}
       ink={isDark ? "#000" : "#1A1825"}
       showName={props.showName !== false}
+      signatureColor={props.signatureColor}
+      aura={props.aura || "none"}
     />
   );
 }

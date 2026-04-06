@@ -61,7 +61,10 @@ OUTPUT FORMAT — valid JSON object:
       "based_on": "string — which entity/concept from the document this character represents",
       "visual_description": "string — exact visual: hair, clothing, expression, body language (for image generation)",
       "speech_style": "string — how they talk, what phrases they use",
-      "arc": "string — how this character changes across the manga"
+      "arc": "string — how this character changes across the manga",
+      "signature_color": "string — a hex color that defines this character's visual identity (e.g. '#E8191A' for a fiery rival, '#0053e2' for a calm mentor)",
+      "aura": "string — the visual aura when this character appears: energy | calm | dark | fire | ice | none",
+      "default_pose": "string — their typical body language: standing | thinking | action | dramatic | defeated | presenting | pointing | celebrating"
     }
   ],
 
