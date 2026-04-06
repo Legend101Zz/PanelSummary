@@ -459,9 +459,13 @@ async def plan_manga(
         for ch in canonical_chapters
     )
     n_chapters = len(canonical_chapters)
-    # Rule: ~3 panels 0 words of summary, floor of 3 per chapter
-    # We want ENOUGH panels to tell a real story, not a slideshow.
-    panels_by_content = max(12, min(total_words // 50, n_chapters * 8))
+    # Rule: ~1 panel per 35 words of summary, floor of 4 per chapter.
+    # Previous formula (words//50, 3/chapter) produced only 26 panels for a
+    # 10-chapter paper — that's 2.6 panels/chapter, barely enough for
+    # splash + dialogue. A proper manga chapter needs at minimum:
+    #   splash + dialogue + narration/data + transition = 4 panels
+    # Cap at 8 per chapter to stay budget-friendly.
+    panels_by_content = max(n_chapters * 4, min(total_words // 35, n_chapters * 8))
     # Small docs still get generous budgets — short != boring.
     # Minimum: 3 panels per chapter (splash + dialogue + data/narration)
     if total_words < 1000:
@@ -498,9 +502,12 @@ async def plan_manga(
     logger.info(f"Planning manga for {n_chapters} chapters (image budget: {image_budget})")
 
     # ── 1A: Scale max_tokens with chapter count to prevent truncation ──
-    # Each chapter needs ~800-1000 tokens of planning output.
-    # Floor of 8000 so even 4-chapter docs don't truncate at 7000.
-    max_tokens = max(8000, min(16000, 3000 + n_chapters * 1000))
+    # BUG FIX: 10 chapters hit exactly 13000/13000 ceiling, truncating the
+    # planner JSON mid-chapter. The LLM WANTED 44 panels but the JSON was
+    # incomplete so we only got 26. Each chapter needs ~1500 tokens of
+    # planning output (layout + panels + scene descriptions).
+    # Formula: base 10000 + 1500 per chapter, capped at 25000.
+    max_tokens = max(10000, min(25000, 5000 + n_chapters * 1500))
 
     result = await llm_client.chat_with_retry(
         system_prompt=system_prompt,
@@ -523,13 +530,22 @@ async def plan_manga(
     plan = _build_manga_plan(parsed, canonical_chapters, manga_bible,
                              max_panels=panels_by_content)
 
-    # HARD CAP enforcement — if LLM ignored the cap, truncate
-    if len(plan.panels) > panels_by_content:
+    # SOFT CAP enforcement — the LLM knows the story better than our formula.
+    # Allow up to 30% over budget (the LLM planned panels for a reason).
+    # Only hard-truncate if wildly over budget.
+    soft_cap = int(panels_by_content * 1.3)
+    if len(plan.panels) > soft_cap:
         logger.warning(
-            f"LLM planned {len(plan.panels)} panels but cap is {panels_by_content}. Truncating."
+            f"LLM planned {len(plan.panels)} panels, soft cap is {soft_cap} "
+            f"(budget: {panels_by_content}). Truncating to soft cap."
         )
-        plan.panels = plan.panels[:panels_by_content]
+        plan.panels = plan.panels[:soft_cap]
         plan.total_panels = len(plan.panels)
+    elif len(plan.panels) > panels_by_content:
+        logger.info(
+            f"LLM planned {len(plan.panels)} panels (budget: {panels_by_content}). "
+            f"Accepting — within 30% tolerance."
+        )
 
     return plan
 

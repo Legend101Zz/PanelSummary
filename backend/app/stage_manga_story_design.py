@@ -298,11 +298,14 @@ Design the manga now."""
 
     logger.info(f"Designing manga story from {n} chapters")
 
-    # Scale tokens — more chapters = more scenes needed
+    # Scale tokens — more chapters = more scenes needed.
     # The story design is the creative blueprint — truncation kills it.
-    # Previous limit (11000 for 10ch) caused JSON truncation and fallback to
-    # a skeleton with 2 generic characters. Give the LLM room to breathe.
-    max_tokens = min(20000, 5000 + n * 1200)
+    # BUG FIX: 10 chapters produced 17000 out tokens hitting exactly the
+    # max_tokens=17000 ceiling → JSON truncated → fallback to skeleton with
+    # 2 generic characters. The story design is the single most important
+    # LLM call — it designs the ENTIRE manga. Give it room.
+    # Formula: base 8000 + 2000 per chapter, capped at 30000.
+    max_tokens = min(30000, 8000 + n * 2000)
 
     result = await llm_client.chat_with_retry(
         system_prompt=STORY_DESIGN_SYSTEM_PROMPT,
@@ -313,6 +316,21 @@ Design the manga now."""
     )
 
     blueprint = _unwrap_parsed(result.get("parsed"))
+
+    # If parsed is empty, try recovering from raw response
+    # (the LLM may have hit max_tokens and produced truncated JSON)
+    if not blueprint or not blueprint.get("scenes"):
+        raw = result.get("content", "")
+        if raw and len(raw) > 100:
+            recovered = llm_client._recover_truncated_json(raw)
+            if recovered:
+                recovered_bp = _unwrap_parsed(recovered)
+                if recovered_bp and recovered_bp.get("scenes"):
+                    logger.info(
+                        f"Recovered story design from truncated JSON "
+                        f"({len(recovered_bp['scenes'])} scenes)"
+                    )
+                    blueprint = recovered_bp
 
     if not blueprint or not blueprint.get("scenes"):
         logger.warning("Manga story design failed — using fallback")
