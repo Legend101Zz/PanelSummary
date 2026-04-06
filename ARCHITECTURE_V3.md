@@ -1,5 +1,15 @@
 # PanelSummary v3 Architecture: From PPT to Manga
 
+## Implementation Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 0 | ✅ DONE | Bug fixes: token limits, JSON recovery, text overflow, empty cells |
+| Phase 1 | ✅ DONE | Narrative-first planner prompt rewrite |
+| Phase 2 | ✅ DONE | SVG Illustration Engine with 7-scene library |
+| Phase 3 | ✅ DONE | Knowledge Graph → Narrative Arc → Scene Composer |
+| Phase 4 | ✅ DONE | Richer characters: 8 poses, auras, signature colors |
+
 ## Deep Analysis of Current State
 
 ### What's Actually Happening (Evidence from `new-log.md`)
