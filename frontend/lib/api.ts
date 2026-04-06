@@ -258,6 +258,88 @@ export async function getReels(
 }
 
 // ============================================================
+// VIDEO REELS (DSL-rendered MP4s)
+// ============================================================
+
+import type {
+  VideoReelsResponse,
+  BookVideoReelsResponse,
+  ReelMemoryResponse,
+} from "./types";
+
+/**
+ * Generate a new video reel for a book summary.
+ */
+export async function generateVideoReel(
+  summaryId: string,
+  apiKey: string,
+  provider: string = "openrouter",
+  model?: string,
+): Promise<{ task_id: string; message: string }> {
+  const response = await api.post(`/summary/${summaryId}/generate-video-reel`, {
+    api_key: apiKey,
+    provider,
+    model,
+  });
+  return response.data;
+}
+
+/**
+ * Get all rendered video reels for a specific book.
+ */
+export async function getVideoReelsForBook(
+  bookId: string,
+): Promise<BookVideoReelsResponse> {
+  const response = await api.get<BookVideoReelsResponse>(
+    `/video-reels/${bookId}`,
+  );
+  return response.data;
+}
+
+/**
+ * Get video reels from all books for the infinite feed.
+ */
+export async function getVideoReels(
+  offset = 0,
+  limit = 20,
+): Promise<VideoReelsResponse> {
+  const response = await api.get<VideoReelsResponse>(
+    `/video-reels?offset=${offset}&limit=${limit}`,
+  );
+  return response.data;
+}
+
+/**
+ * Get the video file URL for a reel.
+ */
+export function getVideoReelUrl(bookId: string, reelId: string): string {
+  return `${API_URL}/video-reels/${bookId}/${reelId}/video`;
+}
+
+/**
+ * Check reel generation memory for a book.
+ */
+export async function getReelMemory(
+  bookId: string,
+): Promise<ReelMemoryResponse> {
+  const response = await api.get<ReelMemoryResponse>(
+    `/video-reels/memory/${bookId}`,
+  );
+  return response.data;
+}
+
+/**
+ * Check renderer status.
+ */
+export async function checkRendererStatus(): Promise<{
+  ready: boolean;
+  message: string;
+}> {
+  const response = await api.get("/video-reels/renderer-status");
+  return response.data;
+}
+
+// ============================================================
 // LIVING PANELS
 // ============================================================
 

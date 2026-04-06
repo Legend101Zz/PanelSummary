@@ -5,14 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  BookOpen, Zap, Film, Loader2, CheckCircle,
+  BookOpen, Zap, Film, Video, Loader2, CheckCircle,
   AlertCircle, Eye, Lock, ExternalLink,
   EyeOff, Pencil, Check, Trash2, Image as ImageIcon,
   ChevronRight, Info, X, FileText
 } from "lucide-react";
 import {
   getBook, getBookSummaries, startSummarization,
-  getJobStatus, getImageUrl, updateBookTitle, deleteSummary, generateReels
+  getJobStatus, getImageUrl, updateBookTitle, deleteSummary, generateReels,
+  generateVideoReel, getVideoReelsForBook,
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { STYLE_OPTIONS } from "@/lib/types";
@@ -574,6 +575,13 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                   <Link href={`/reels?summary=${firstDone?.id}`}>
                     <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="btn-secondary py-2.5 px-5 text-sm gap-2">
                       <Film size={14} /> Watch Reels
+                    </motion.div>
+                  </Link>
+                  <Link href={`/video-reels?book=${id}`}>
+                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      className="flex items-center gap-2 py-2.5 px-5 border text-sm font-label transition-colors"
+                      style={{ borderColor: "var(--red)", color: "var(--red)", background: "var(--surface)", fontSize: "11px" }}>
+                      <Video size={14} /> Video Reels
                     </motion.div>
                   </Link>
                 </>

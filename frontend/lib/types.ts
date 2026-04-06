@@ -152,6 +152,49 @@ export interface ReelLesson {
   total_reels_in_book?: number;
 }
 
+// ── VIDEO REELS (DSL-rendered MP4s) ──
+export interface VideoReel {
+  id: string;
+  reel_index: number;
+  title: string;
+  mood: string;
+  duration_ms: number;
+  video_path: string;
+  created_at: string;
+  book?: {
+    id: string;
+    title: string;
+    author: string | null;
+    cover_image_id: string | null;
+  };
+  total_reels_in_book?: number;
+}
+
+export interface VideoReelsResponse {
+  reels: VideoReel[];
+  total: number;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export interface BookVideoReelsResponse {
+  book: {
+    id: string;
+    title: string;
+    author: string | null;
+    cover_image_id: string | null;
+  };
+  reels: VideoReel[];
+  total: number;
+}
+
+export interface ReelMemoryResponse {
+  total_reels_generated: number;
+  used_content_count: number;
+  exhausted: boolean;
+}
+
 // ============================================================
 // SUMMARY TYPES
 // ============================================================
