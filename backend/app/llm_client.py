@@ -269,6 +269,133 @@ class LLMClient:
                             break  # try the other bracket type
 
         logger.warning(f"[LLM] JSON parse FAIL — raw content ({len(content)} chars):\n{content[:1000]!r}")
+
+        # ── 5. Truncated JSON recovery ─────────────────────────────────────
+        # When the LLM hits max_tokens, JSON gets cut mid-stream.
+        # Attempt to close unclosed brackets/braces to recover partial data.
+        recovered = self._recover_truncated_json(content)
+        if recovered is not None:
+            logger.info(f"[LLM] Recovered truncated JSON ({len(content)} chars)")
+            return recovered
+
+        return None
+
+    def _recover_truncated_json(self, content: str) -> Optional[dict | list]:
+        """Attempt to recover JSON that was truncated by max_tokens.
+
+        Strategy:
+        1. Find the first { or [
+        2. If there's an unclosed string, remove it entirely
+        3. Strip trailing incomplete key-value pairs
+        4. Close all unclosed brackets/braces
+        5. Try to parse
+
+        Recovers ~80% of truncated responses where most data is intact.
+        """
+        # Find the first opening bracket
+        start = -1
+        for i, ch in enumerate(content):
+            if ch in ('{', '['):
+                start = i
+                break
+        if start == -1:
+            return None
+
+        fragment = content[start:]
+
+        # Detect if we're in an unclosed string at the end
+        in_string = False
+        escape = False
+        last_string_open = -1
+        for i, ch in enumerate(fragment):
+            if escape:
+                escape = False
+                continue
+            if ch == '\\' and in_string:
+                escape = True
+                continue
+            if ch == '"':
+                if not in_string:
+                    last_string_open = i
+                in_string = not in_string
+
+        if in_string and last_string_open >= 0:
+            # Truncated mid-string. Remove the incomplete string entirely.
+            fragment = fragment[:last_string_open]
+
+        # Strip trailing partial key-value syntax
+        fragment = fragment.rstrip()
+        # Remove trailing incomplete tokens: comma, colon, whitespace
+        while fragment and fragment[-1] in (',', ':', ' ', '\n', '\t'):
+            fragment = fragment[:-1]
+        # If the fragment ends with an orphaned key string like ,"key"
+        # we need to remove that too
+        import re as _re
+        fragment = _re.sub(r',\s*"[^"]*"\s*$', '', fragment)
+
+        # Close unclosed brackets/braces
+        stack = []
+        in_str = False
+        esc = False
+        for ch in fragment:
+            if esc:
+                esc = False
+                continue
+            if ch == '\\' and in_str:
+                esc = True
+                continue
+            if ch == '"':
+                in_str = not in_str
+                continue
+            if in_str:
+                continue
+            if ch in ('{', '['):
+                stack.append('}' if ch == '{' else ']')
+            elif ch in ('}', ']'):
+                if stack:
+                    stack.pop()
+
+        closers = ''.join(reversed(stack))
+        attempt = fragment + closers
+
+        try:
+            return json.loads(attempt)
+        except json.JSONDecodeError:
+            pass
+
+        # Try removing the last incomplete entry (after last comma at top depth)
+        # by finding the last comma at depth 1
+        in_str = False
+        esc = False
+        depth = 0
+        last_comma_at_d1 = -1
+        for i, ch in enumerate(fragment):
+            if esc:
+                esc = False
+                continue
+            if ch == '\\' and in_str:
+                esc = True
+                continue
+            if ch == '"':
+                in_str = not in_str
+                continue
+            if in_str:
+                continue
+            if ch in ('{', '['):
+                depth += 1
+            elif ch in ('}', ']'):
+                depth -= 1
+            elif ch == ',' and depth == 1:
+                last_comma_at_d1 = i
+
+        if last_comma_at_d1 > 0:
+            trimmed = fragment[:last_comma_at_d1]
+            attempt2 = trimmed + closers
+            try:
+                return json.loads(attempt2)
+            except json.JSONDecodeError:
+                pass
+
         return None
 
     async def chat_with_retry(

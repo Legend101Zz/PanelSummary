@@ -1,14 +1,4 @@
-Modern agents now:
-📂
-Navigate repositories
-✓
-Run automated tests
-🔧
-Submit patches end-to-end
-⚙
-Make autonomous decisions
-◈
-Execute complex workflows
+
 
 -------------- celery@Comreton-Macbook-Air.local v5.4.0 (opalescent)
 --- **\*** -----

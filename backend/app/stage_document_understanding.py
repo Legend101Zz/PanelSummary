@@ -219,7 +219,9 @@ Build the complete knowledge map now."""
     logger.info(f"Generating deep document understanding from {n} chapters")
 
     # Scale tokens with document size — more chapters = richer understanding needed
-    max_tokens = min(8000, 2500 + n * 500)
+    # Previous limit (7500 for 10ch) caused truncation and silent fallbacks.
+    # The knowledge document is the SINGLE SOURCE OF TRUTH — don't starve it.
+    max_tokens = min(16000, 4000 + n * 1000)
 
     result = await llm_client.chat_with_retry(
         system_prompt=UNDERSTANDING_SYSTEM_PROMPT,

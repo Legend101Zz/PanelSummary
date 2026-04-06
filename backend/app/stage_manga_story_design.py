@@ -296,7 +296,10 @@ Design the manga now."""
     logger.info(f"Designing manga story from {n} chapters")
 
     # Scale tokens — more chapters = more scenes needed
-    max_tokens = min(12000, 3000 + n * 800)
+    # The story design is the creative blueprint — truncation kills it.
+    # Previous limit (11000 for 10ch) caused JSON truncation and fallback to
+    # a skeleton with 2 generic characters. Give the LLM room to breathe.
+    max_tokens = min(20000, 5000 + n * 1200)
 
     result = await llm_client.chat_with_retry(
         system_prompt=STORY_DESIGN_SYSTEM_PROMPT,
