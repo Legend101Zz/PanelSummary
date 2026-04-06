@@ -32,7 +32,7 @@ class PanelAssignment:
     panel_index: int
     content_type: str       # splash | dialogue | narration | data | montage | concept
     narrative_beat: str     # what story moment this captures
-    text_content: str       # main text to display
+    text_content: str       # brief narrative caption (MAX 80 chars)
     dialogue: list          # [{character, text}]
     character: Optional[str]
     expression: str
@@ -40,6 +40,7 @@ class PanelAssignment:
     layout_hint: str        # suggested layout type
     image_budget: bool      # whether this panel gets an AI image
     creative_direction: str # specific instructions for the DSL agent
+    scene_description: str  # what the scene looks like visually
     dependencies: list      # panel_ids this depends on (for ordering)
 
 
@@ -69,14 +70,46 @@ You output a JSON plan with:
 3. Which panels get AI images (BUDGET: max {image_budget} for entire book)
 4. Creative direction for each panel's DSL generation
 
+## MANGA STORYTELLING RULES (CRITICAL — this is what separates manga from PowerPoint):
+
+### SHOW, DON'T TELL
+- NEVER dump paragraphs of text into a panel. That's a slide, not manga.
+- Instead: use SHORT narration (1-2 sentences max) + character dialogue
+- Convert information into CHARACTER REACTIONS and VISUAL METAPHORS
+- If a fact can be shown through a character's dialogue or reaction, DO THAT
+
+### TEXT CONTENT LIMITS (HARD RULES):
+- text_content: MAX 80 characters for narration panels, MAX 40 for splash
+- dialogue: MAX 60 characters per dialogue line
+- NEVER use bullet points, emoji lists, or numbered lists in text_content
+- NEVER start text with "CHAPTER X:" — use scene_description for that
+- The text should read like a manga caption: atmospheric, brief, evocative
+
+### BAD (PowerPoint):
+  text_content: "Modern agents now:\n📂 Navigate repositories\n✓ Run automated tests\n🔧 Submit patches end-to-end\n⚙ Make autonomous decisions"
+
+### GOOD (Manga):
+  text_content: "The old ways were ending."
+  dialogue: [
+    {{"character": "LIVE-SWE-AGENT", "text": "I don't just follow instructions. I see the whole picture."}},
+    {{"character": "Narrator", "text": "Navigate. Test. Patch. Decide. All in one breath."}}
+  ]
+  scene_description: "Split panel: left shows old agent stumbling in dark code maze. Right shows LIVE-SWE-AGENT standing atop a mountain of resolved issues, surveying the landscape below."
+
+### DIALOGUE IS THE HEART OF MANGA:
+- Every concept should be expressed through character interaction
+- Characters ARGUE about ideas, DISCOVER insights, REACT to data
+- Even technical content becomes dialogue: "77.4%... that's impossible!" / "Not impossible. Evolved."
+- Use the characters from the manga bible — give them PERSONALITY in their lines
+
 ## PANEL TYPES:
-- "splash" — Full-page dramatic moment. Gets image budget priority.
-- "dialogue" — Character conversation. Sprites + speech bubbles.
-- "narration" — Story narration. Typewriter text, atmospheric bg.
-- "data" — Key concepts/facts. Data blocks, lists, diagrams.
-- "montage" — Quick sequence of moments. Multi-cell cuts layout.
-- "concept" — Abstract idea visualization. Effects + typography.
-- "transition" — Scene/chapter break. Minimal, atmospheric.
+- "splash" — Full-page dramatic moment. Gets image budget priority. MAX 40 chars text.
+- "dialogue" — Character conversation. 2-4 dialogue lines. This is your PRIMARY type.
+- "narration" — Brief atmospheric narration. MAX 80 chars. Mood-setting only.
+- "data" — Key stats/numbers. Use data_block format, NOT text paragraphs.
+- "montage" — Quick sequence. Multiple short moments in cut cells.
+- "concept" — Visual metaphor. Minimal text, strong visual description.
+- "transition" — Scene/chapter break. 1 line of text max.
 
 ## LAYOUT TYPES:
 - "full" — Single panel, full page
@@ -88,9 +121,10 @@ You output a JSON plan with:
 ## CREATIVE DIRECTION:
 For each panel, write a brief creative direction that tells the DSL
 agent HOW to make it interesting. Think about:
-- What animations/effects would enhance this moment?
-- What manga techniques (speed lines, screen shake, dramatic zoom)?
-- Pacing: fast cuts vs slow reveals?
+- What SCENE should the background show? (lab, digital realm, battlefield)
+- Which characters are present and what are they DOING?
+- What visual metaphor represents this concept?
+- What manga techniques (speed lines, impact burst, dramatic zoom)?
 - What makes this panel FEEL different from the others?
 
 ## RULES:
@@ -103,6 +137,7 @@ agent HOW to make it interesting. Think about:
 7. If MANGA STORY BEATS are provided, EVERY beat MUST be covered by at least one panel
 8. Each panel should contain REAL content from the source — not generic filler
 9. AIM FOR THE MAXIMUM panel count allowed. More panels = richer manga experience.
+10. At least 50% of all panels MUST be "dialogue" type. Characters drive the story.
 
 ## LAYOUT VARIETY (CRITICAL — this is what makes it feel like MANGA):
 - NEVER use the same layout on more than 2 consecutive pages.
@@ -130,14 +165,36 @@ Return JSON:
           "panels": [
             {{
               "content_type": "splash",
-              "narrative_beat": "Chapter opening — protagonist faces the void",
-              "text_content": "CHAPTER 1: THE AWAKENING",
+              "narrative_beat": "Chapter opening — the question that started it all",
+              "text_content": "Can they evolve?",
               "dialogue": [],
-              "character": null,
-              "expression": "neutral",
+              "character": "LIVE-SWE-AGENT",
+              "expression": "determined",
               "visual_mood": "dramatic-dark",
               "image_budget": true,
-              "creative_direction": "Speed lines radiating from center. Title text should slam in with impact_burst effect. Dark ink background with screentone gradient."
+              "scene_description": "A lone figure stands before a massive screen of scrolling code. Lightning-like energy crackles around their hands. The code begins to reshape itself.",
+              "creative_direction": "Speed lines radiating from center. Title text slams in with impact_burst. Dark ink background with screentone gradient. Character silhouette at center, backlit by monitor glow."
+            }}
+          ]
+        }},
+        {{
+          "page_index": 1,
+          "layout": "cuts",
+          "panels": [
+            {{
+              "content_type": "dialogue",
+              "narrative_beat": "Researchers debate the core question",
+              "text_content": "",
+              "dialogue": [
+                {{"character": "Researcher", "text": "Every other agent is pre-trained. Fixed. Limited."}},
+                {{"character": "LIVE-SWE-AGENT", "text": "But what if I could learn... while fighting?"}}
+              ],
+              "character": "LIVE-SWE-AGENT",
+              "expression": "curious",
+              "visual_mood": "tense",
+              "image_budget": false,
+              "scene_description": "Lab scene. Researcher at whiteboard covered in diagrams. LIVE-SWE-AGENT avatar glows on the monitor behind them.",
+              "creative_direction": "Cut layout: researcher on left cell, LIVE-SWE-AGENT on right. Angled divider at 2 degrees. Speech bubbles with typewriter effect."
             }}
           ]
         }}
@@ -550,6 +607,7 @@ def _build_manga_plan(
                     layout_hint=layout,
                     image_budget=panel_data.get("image_budget", False),
                     creative_direction=panel_data.get("creative_direction", ""),
+                    scene_description=panel_data.get("scene_description", ""),
                     dependencies=[],
                 )
 
@@ -641,13 +699,14 @@ def _generate_fallback_plan(
         panels.append(PanelAssignment(
             panel_id=pid, chapter_index=ch_idx, page_index=0, panel_index=0,
             content_type="splash", narrative_beat=f"Chapter {ch_idx} title splash",
-            text_content=title, dialogue=[], character=None,
+            text_content=title[:40], dialogue=[], character=None,
             expression="neutral", visual_mood="intense-red",
             layout_hint="full", image_budget=(ci == 0),
             creative_direction=(
                 "Dramatic title reveal with speed lines and impact_burst. "
                 "Use screentone bg. SFX text for emphasis."
             ),
+            scene_description="Dark atmospheric scene with dramatic lighting. Title text dominates the frame.",
             dependencies=[],
         ))
         chapter_panels.append(pid)
@@ -662,20 +721,21 @@ def _generate_fallback_plan(
             panel_id=pid, chapter_index=ch_idx, page_index=1, panel_index=0,
             content_type="dialogue",
             narrative_beat="Characters discuss the key idea",
-            text_content=one_liner,
+            text_content="",
             dialogue=[
                 {"character": protagonist, "text": "So what's the breakthrough here?"},
-                {"character": mentor, "text": ch.get("dramatic_moment", "Let me show you...")},
+                {"character": mentor, "text": ch.get("dramatic_moment", "Let me show you...")[:60]},
             ],
             character=protagonist, expression="curious",
             visual_mood="dramatic-dark",
-            layout_hint="cuts",  # Cuts layout for dialogue!
+            layout_hint="cuts",
             image_budget=False,
             creative_direction=(
                 "Use cuts layout with angled divider (1-2 degrees). "
                 "Character sprites in each cell. Speech bubbles with typewriter. "
                 "Sprite fade-in before bubbles appear."
             ),
+            scene_description=f"Two characters face each other across a divide. {protagonist} looks questioning, {mentor} looks confident.",
             dependencies=[],
         ))
         chapter_panels.append(pid)
@@ -684,11 +744,18 @@ def _generate_fallback_plan(
             parallel_groups.append(chapter_panels)
             break
 
-        # Panel 3: Narration — the chapter's key narrative insight
-        narrative = ch.get("narrative_summary", one_liner)
-        # Trim to a punchy sentence for the narration panel
-        if len(narrative) > 200:
-            narrative = narrative[:200].rsplit(" ", 1)[0] + "..."
+        # Panel 3: Narration — brief atmospheric caption
+        narrative = ch.get("dramatic_moment", one_liner)
+        # Manga narration is SHORT — one evocative sentence
+        if len(narrative) > 80:
+            # Find the first sentence
+            for sep in ('. ', '! ', '? '):
+                idx = narrative.find(sep)
+                if 0 < idx < 80:
+                    narrative = narrative[:idx + 1]
+                    break
+            else:
+                narrative = narrative[:77] + "..."
         pid = f"ch{ch_idx}-pg1-p1"
         panels.append(PanelAssignment(
             panel_id=pid, chapter_index=ch_idx, page_index=1, panel_index=1,
@@ -703,6 +770,7 @@ def _generate_fallback_plan(
                 "Atmospheric narration with vignette effect and slow "
                 "typewriter text. Crosshatch pattern bg. Particles floating."
             ),
+            scene_description="Wide atmospheric shot. Dark gradient background with floating particles of light.",
             dependencies=[],
         ))
         chapter_panels.append(pid)
@@ -724,6 +792,7 @@ def _generate_fallback_plan(
                     "Staggered data_block reveal. Each concept animates in "
                     "with bounce easing. Use amber accent color."
                 ),
+                scene_description="Data visualization: key concepts float as glowing nodes in a network.",
                 dependencies=[],
             ))
             chapter_panels.append(pid)

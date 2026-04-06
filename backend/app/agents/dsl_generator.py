@@ -293,6 +293,9 @@ def _build_single_panel_context(
     if assignment.creative_direction:
         parts.append(f"Creative direction: {assignment.creative_direction}")
 
+    if assignment.scene_description:
+        parts.append(f"Scene: {assignment.scene_description}")
+
     # Bible context: only inject characters when this panel features one
     if manga_bible:
         world = manga_bible.get("world_description", "")
@@ -385,6 +388,7 @@ async def generate_page_dsls(
                 "character": p.character,
                 "expression": p.expression,
                 "creative_direction": p.creative_direction,
+                "scene_description": p.scene_description,
             }
             for p in page_panels
         ],

@@ -366,6 +366,13 @@ Example 5 — NARRATION with atmospheric effects (NO sprites, NO dialogue):
 - Prefer screentone/crosshatch patterns over flat gradients.
 - DON'T just put text on a gradient — that's what the fallback engine does. YOU are the artist.
 
+## TEXT LENGTH LIMITS (HARD RULES — text WILL be truncated if too long):
+- Text layer content: MAX 120 characters in cells, MAX 200 in full panels.
+- Speech bubble text: MAX 80 characters in cells, MAX 120 in full panels.
+- NEVER write bullet points, numbered lists, or multi-paragraph text.
+- Caption text should be atmospheric and brief: "The old world crumbled." not a paragraph.
+- If you need to convey complex info, use data_block layers, not text paragraphs.
+
 ## ANTI-REPETITION (CRITICAL):
 When generating multiple panels for a page, you MUST vary:
 - **Layouts**: If panel 1 uses "full", panel 2 MUST use a different layout ("cuts", "split-h", etc.)
@@ -484,6 +491,8 @@ PANEL COUNT: {n_panels}
             context += f"Character: {panel['character']} ({panel.get('expression', 'neutral')})\n"
         if panel.get('creative_direction'):
             context += f"Direction: {panel['creative_direction']}\n"
+        if panel.get('scene_description'):
+            context += f"Scene: {panel['scene_description']}\n"
 
     # Only inject characters that appear on this page
     if manga_bible:

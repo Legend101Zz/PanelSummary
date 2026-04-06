@@ -43,6 +43,7 @@ def _assignment(
         layout_hint=layout_hint,
         image_budget=False,
         creative_direction="Test",
+        scene_description="Test scene",
         dependencies=[],
     )
 
@@ -222,3 +223,42 @@ class TestLayoutEnforcement:
         assignment = _assignment(content_type="splash")
         result = _enforce_content_requirements(dsl, assignment)
         assert result == dsl
+
+
+class TestTextLengthEnforcement:
+    """Tests for _enforce_text_limits() — prevents text overflow."""
+
+    def test_long_text_truncated_in_full_panel(self):
+        """Text over 220 chars gets truncated at sentence boundary."""
+        from app.generate_living_panels import _enforce_text_limits
+        layer = {
+            "type": "text",
+            "props": {
+                "content": "A" * 50 + ". " + "B" * 50 + ". " + "C" * 200,
+            },
+        }
+        _enforce_text_limits(layer, is_cell=False)
+        assert len(layer["props"]["content"]) <= 225  # 220 + ellipsis
+        assert layer["props"]["content"].endswith("…")
+
+    def test_short_text_unchanged(self):
+        """Text under the limit is left alone."""
+        from app.generate_living_panels import _enforce_text_limits
+        original = "Short text."
+        layer = {"type": "text", "props": {"content": original}}
+        _enforce_text_limits(layer, is_cell=False)
+        assert layer["props"]["content"] == original
+
+    def test_cell_text_has_stricter_limit(self):
+        """Text in cells (sub-panels) is limited to 120 chars."""
+        from app.generate_living_panels import _enforce_text_limits
+        layer = {"type": "text", "props": {"content": "X" * 200}}
+        _enforce_text_limits(layer, is_cell=True)
+        assert len(layer["props"]["content"]) <= 125
+
+    def test_speech_bubble_truncated(self):
+        """Speech bubbles have their own limits."""
+        from app.generate_living_panels import _enforce_text_limits
+        layer = {"type": "speech_bubble", "props": {"text": "Y" * 200}}
+        _enforce_text_limits(layer, is_cell=False)
+        assert len(layer["props"]["text"]) <= 145
