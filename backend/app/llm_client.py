@@ -330,8 +330,7 @@ class LLMClient:
             fragment = fragment[:-1]
         # If the fragment ends with an orphaned key string like ,"key"
         # we need to remove that too
-        import re as _re
-        fragment = _re.sub(r',\s*"[^"]*"\s*$', '', fragment)
+        fragment = re.sub(r',\s*"[^"]*"\s*$', '', fragment)
 
         # Close unclosed brackets/braces
         stack = []
