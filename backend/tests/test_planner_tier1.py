@@ -207,9 +207,12 @@ class TestChapterConsolidation:
             _make_chapter(2, title="Skills", words=30),
             _make_chapter(3, title="Goals", words=30),
             _make_chapter(4, title="Hobbies", words=30),
+            _make_chapter(5, title="Experience", words=30),
+            _make_chapter(6, title="Education", words=30),
+            _make_chapter(7, title="Awards", words=30),
         ]
         result = consolidate_short_chapters(chapters)
-        assert len(result) < 5
+        assert len(result) < 8  # should consolidate 8 thin chapters
 
         # All key concepts should be preserved somewhere
         all_concepts = set()
