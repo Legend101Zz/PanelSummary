@@ -140,6 +140,14 @@ animations for layers.
   - For "sfx": sfxText, sfxSize, sfxRotate
 - "shape" — props: shape ("circle"|"rect"|"line"), fill, stroke, strokeWidth
 - "data_block" — props: items (array of {{label, value?, icon?}}), accentColor, showIndex, animateIn ("stagger"), staggerDelay
+- "illustration" — SVG scene backgrounds. props:
+  - scene: pick one: "laboratory"|"digital-realm"|"battlefield"|"workshop"|"summit"|"void"|"classroom"
+  - style: "manga-ink" (default, B&W multiply blend) | "blueprint" | "watercolor" | "neon"
+  - primaryColor: hex for main linework (default "#1A1825")
+  - accentColor: hex for highlights/glow (default varies by scene)
+  - elements: optional array of placed items: {{type: "node"|"monitor"|"chart"|"spark", x: "%", y: "%", size, color, label}}
+  - description: alt-text for accessibility
+  USE illustration layers as background scenery in panels — they add visual depth.
 
 ### LAYER POSITIONING:
 Use percentage strings: x: "15%", y: "30%"
@@ -218,7 +226,8 @@ Example 2 — QUIET DIALOGUE with cut layout + 2 acts:
       "id": "question", "duration_ms": 5000,
       "transition_in": {{ "type": "fade", "duration_ms": 600 }},
       "layout": {{ "type": "cuts", "cuts": [{{ "direction": "v", "position": 0.55, "angle": 1.5 }}], "gap": 5, "stagger_ms": 200 }},
-      "layers": [{{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#F2E8D5", "#EDE0CC"], "pattern": "crosshatch", "patternOpacity": 0.04 }} }}],
+      "layers": [{{ "id": "bg", "type": "background", "opacity": 1, "props": {{ "gradient": ["#F2E8D5", "#EDE0CC"], "pattern": "crosshatch", "patternOpacity": 0.04 }} }},
+        {{ "id": "scene", "type": "illustration", "opacity": 1, "props": {{ "scene": "classroom", "style": "manga-ink", "accentColor": "#2a8703", "description": "Classroom with whiteboard" }} }}],
       "cells": [
         {{ "id": "left", "position": "0", "layers": [
           {{ "id": "char-a", "type": "sprite", "x": "50%", "y": "65%", "opacity": 0, "props": {{ "character": "Student", "expression": "curious", "size": 52 }} }},

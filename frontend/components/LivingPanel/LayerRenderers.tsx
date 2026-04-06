@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef } from "react";
 import type {
   BackgroundLayer, SpriteLayer, TextLayer, SpeechBubbleLayer,
-  ImageLayer, Layer,
+  ImageLayer, IllustrationLayer, Layer,
 } from "@/lib/living-panel-types";
 import { createTypewriter } from "./AnimationSystem";
 import {
@@ -18,6 +18,7 @@ import {
 import {
   EffectRenderer, ShapeRenderer, DataBlockRenderer, SceneTransitionRenderer,
 } from "./EffectRenderers";
+import { IllustrationRenderer } from "./IllustrationRenderer";
 
 // Re-export for other consumers
 export { EffectRenderer, ShapeRenderer, DataBlockRenderer, SceneTransitionRenderer };
@@ -271,6 +272,8 @@ export function LayerContent({
       return <SceneTransitionRenderer layer={layer} />;
     case "image":
       return <ImageRenderer layer={layer as ImageLayer} />;
+    case "illustration":
+      return <IllustrationRenderer layer={layer as IllustrationLayer} />;
     default:
       return null;
   }
