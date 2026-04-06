@@ -1,17 +1,15 @@
-
-
 -------------- celery@Comreton-Macbook-Air.local v5.4.0 (opalescent)
 --- **\*** -----
--- **\*\*\*** ---- macOS-26.3.1-arm64-arm-64bit 2026-04-06 20:29:28
+-- **\*\*\*** ---- macOS-26.3.1-arm64-arm-64bit 2026-04-06 22:24:08
 
 - _\*\* --- _ ---
 - \*\* ---------- [config]
-- \*\* ---------- .> app: panelsummary:0x107a5f530
+- \*\* ---------- .> app: panelsummary:0x10c03f200
 - \*\* ---------- .> transport: redis://localhost:6379//
 - \*\* ---------- .> results: redis://localhost:6379/
 - **_ --- _ --- .> concurrency: 10 (solo)
-  -- **\*\***\* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
-  --- **\*\*\* -----
+  -- **\***** ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+  --- **\*** -----
   -------------- [queues]
   .> celery exchange=celery(direct) key=celery
 
@@ -20,348 +18,359 @@
 . app.celery_worker.parse_pdf_task
 . generate_reels_task
 
-[2026-04-06 20:29:28,508: INFO/MainProcess] Connected to redis://localhost:6379//
-[2026-04-06 20:29:28,509: INFO/MainProcess] mingle: searching for neighbors
-[2026-04-06 20:29:29,513: INFO/MainProcess] mingle: all alone
-[2026-04-06 20:29:29,519: INFO/MainProcess] celery@Comreton-Macbook-Air.local ready.
-[2026-04-06 21:02:02,051: INFO/MainProcess] Task app.celery_worker.generate_summary_task[a52a59ae-a3a5-4638-bba0-ad2bdf20c84a] received
-[2026-04-06 21:02:02,051: INFO/MainProcess] Starting summary generation for book 69d11054c6768c333c38b352
-[2026-04-06 21:02:05,100: INFO/MainProcess] LLM client initialized: openrouter/anthropic/claude-haiku-4.5
-[2026-04-06 21:02:05,274: INFO/MainProcess] Processing chapters 0–9 (10 of 27)
-[2026-04-06 21:02:06,307: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~913 input tokens
-[2026-04-06 21:02:11,347: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:02:15,557: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 504 out tokens | 9.2s
+[2026-04-06 22:24:08,958: INFO/MainProcess] Connected to redis://localhost:6379//
+[2026-04-06 22:24:08,960: INFO/MainProcess] mingle: searching for neighbors
+[2026-04-06 22:24:09,963: INFO/MainProcess] mingle: all alone
+[2026-04-06 22:24:09,968: INFO/MainProcess] celery@Comreton-Macbook-Air.local ready.
+[2026-04-06 22:24:57,490: INFO/MainProcess] Task app.celery_worker.generate_summary_task[3b03d035-4ccb-4790-9274-1a1edab53ab2] received
+[2026-04-06 22:24:57,490: INFO/MainProcess] Starting summary generation for book 69d11054c6768c333c38b352
+[2026-04-06 22:25:00,959: INFO/MainProcess] LLM client initialized: openrouter/anthropic/claude-haiku-4.5
+[2026-04-06 22:25:01,149: INFO/MainProcess] Processing chapters 0–9 (10 of 27)
+[2026-04-06 22:25:02,104: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~913 input tokens
+[2026-04-06 22:25:04,592: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:25:08,785: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 475 out tokens | 6.7s
 ────────────────────────────────────────────────────────────
 
-````json
+```json
 {
   "chapter_title": "LIVE-SWE-AGENT: Can Software Engineering Agents Self-Evolve on the Fly?",
-  "one_liner": "A question posed about whether software engineering agents can adapt and improve autonomously.",
+  "one_liner": "A question posed about whether AI agents can autonomously improve themselves during execution.",
   "key_concepts": [
     "Software engineering agents",
     "Self-evolution capability",
     "Real-time adaptation",
     "Autonomous improvement",
-    "Agent autonomy"
+    "On-the-fly optimization"
   ],
-  "narrative_summary": "The chapter opens with a fundamental question: Can software engineering agents self-evolve on the fly? This inquiry cuts to the heart of agent autonomy—whether these systems can learn, adapt, and improve their own performance during live execution without external intervention. The question itself is the thesis, leaving the reader suspended in anticipation of what comes next.",
+  "narrative_summary": "The chapter opens with a fundamental question: can software engineering agents transcend their initial programming and evolve dynamically as they execute tasks? This inquiry challenges the static nature of traditional AI systems, probing whether agents possess the capacity for genuine self-improvement during live operation rather than waiting for post-hoc retraining cycles.",
   "memorable_quotes": [],
   "action_items": [
-    "Consider what 'self-evolution' means for autonomous agents in practice",
-    "Evaluate the difference between pre-trained and adaptive agent systems"
+    "Investigate mechanisms for real-time agent self-improvement",
+    "Evaluate trade-offs between stability and adaptive evolution",
+    "Design experiments testing autonomous agent optimization"
   ],
-  "dramatic_moment": "The chapter title itself is a dramatic question mark—posing the central mystery that will drive the investigation forward.",
-  "metaphor": "A question hanging in the void, waiting to be answered—like a warrior asking if they can sharpen their blade mid-battle.",
+  "dramatic_moment": "The chapter's central tension: a single question that reframes what software engineering agents could become if they weren't bound by static initialization.",
+  "metaphor": "A warrior who sharpens their blade mid-battle rather than before it begins.",
   "narrative_state_update": {
-    "new_characters": [
-      "LIVE-SWE-AGENT (system/concept) — a software engineering agent framework under investigation"
-    ],
+    "new_characters": ["LIVE-SWE-AGENT (conceptual framework/system)"],
     "new_terms": [
-      "Self-evolution: the capacity of an agent to improve and adapt its own behavior autonomously during execution",
-      "Live adaptation: real-time modification of agent behavior without stopping or retraining"
+      "Self-evolution: the capacity for an agent to improve its own capabilities during runtime execution",
+      "On-the-fly adaptation: real-time modification of agent behavior without external intervention"
     ],
     "unresolved_threads": [
-      "What mechanisms enable self-evolution in software engineering agents?",
-      "Can agents truly improve on the fly, or is external feedback required?",
-      "What are the limits and risks of autonomous agent self-improvement?"
+      "What mechanisms enable agent self-evolution?",
+      "How does an agent identify improvement opportunities during execution?",
+      "What are the stability risks of live self-modification?"
     ],
-    "emotional_shift": "curious → intrigue…
+    "emotional_shift": "curious → intrigued by possibility"
+  }
+}
+```
+
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:02:16,477: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1081 input tokens
-[2026-04-06 21:02:19,484: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:02:25,448: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 608 out tokens | 9.0s
+[2026-04-06 22:25:09,696: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1064 input tokens
+[2026-04-06 22:25:12,945: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:25:17,041: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 554 out tokens | 7.3s
 ────────────────────────────────────────────────────────────
-```json
+
+````json
 {
   "chapter_title": "The Research Team Behind LIVE-SWE-AGENT",
-  "one_liner": "Five researchers from UIUC unite to investigate autonomous software engineering agent evolution.",
+  "one_liner": "Five researchers from UIUC unite to tackle autonomous agent self-evolution.",
   "key_concepts": [
-    "Research authorship and institutional affiliation",
-    "University of Illinois Urbana-Champaign as research hub",
-    "Multi-disciplinary collaboration on agent systems",
-    "Academic email contact infrastructure"
+    "Multi-institutional research collaboration",
+    "University of Illinois Urbana-Champaign as primary institution",
+    "Distributed team coordination across email domains"
   ],
-  "narrative_summary": "The LIVE-SWE-AGENT investigation emerges from the University of Illinois Urbana-Champaign, powered by a focused research collective: Chunqiu, Steven Xia, Zhe Wang, Yan Yang, and Yuxiang Wei, alongside Lingming Zhang. These five minds converge on a singular question—can software engineering agents truly self-evolve? Their institutional backing and collaborative structure form the foundation for rigorous inquiry into autonomous agent adaptation. The team's assembly signals that this isn't idle speculation; it's a coordinated academic assault on the problem of real-time agent improvement.",
+  "narrative_summary": "The LIVE-SWE-AGENT framework emerges not from a single mind, but from a **unified strike team**. Chunqiu, Zhe, Ywei, and Lingming anchor their operations at the University of Illinois Urbana-Champaign—a fortress of computational research. Yan Yang operates from an external position, yet remains tethered to the mission. This is the roster: five researchers converging their expertise to answer the impossible question posed in the previous chapter. The team composition signals a deliberate strategy—distributed yet coordinated, institutional yet flexible.",
   "memorable_quotes": [],
   "action_items": [
-    "Contact research team at provided UIUC email addresses for methodology details",
-    "Track UIUC Computer Science publications for related work on agent systems"
+    "Recognize this research as a collaborative effort across multiple researchers and institutions"
   ],
-  "dramatic_moment": "Five researchers from a single top-tier institution unite their expertise to answer whether software engineering agents can evolve autonomously—the investigation has official institutional backing.",
-  "metaphor": "A five-pointed constellation forming above UIUC, each researcher a star burning with the same question: Can agents ignite their own transformation?",
+  "dramatic_moment": "Five researchers from UIUC crystallize into a single research vector—the collective intelligence tasked with proving whether software engineering agents can truly evolve themselves.",
+  "metaphor": "A formation of elite warriors, each stationed at their post, converging their techniques toward one unbreakable objective.",
   "narrative_state_update": {
     "new_characters": [
-      "Chunqiu (researcher/co-author)",
-      "Steven Xia (researcher/co-author)",
-      "Zhe Wang (researcher/co-author)",
-      "Yan Yang (researcher/co-author)",
-      "Yuxiang Wei (researcher/co-author)",
-      "Lingming Zhang (researcher/co-author)"
+      "Chunqiu (researcher, UIUC)",
+      "Zhe Wang (researcher, UIUC)",
+      "Yan Yang (researcher, external affiliation)",
+      "Yuxiang Wei (researcher, UIUC)",
+      "Lingming Zhang (researcher, UIUC)"
     ],
     "new_terms": [
-      "U…
+      "University of Illinois Urbana-Champaign (UIUC): Primary institutional base for LIVE-SWE-AGENT research"
+    ],
+    "unresolved_threads": [
+      "What are the individual expertise domains of each team member?",
+      "How do these five researchers divide …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:02:26,431: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1851 input tokens
-[2026-04-06 21:02:29,264: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:02:38,002: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 955 out tokens | 11.6s
+[2026-04-06 22:25:18,213: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1838 input tokens
+[2026-04-06 22:25:20,536: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:25:29,111: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 931 out tokens | 10.9s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "Abstract",
-  "one_liner": "LIVE-SWE-AGENT achieves 77.4% solve rate by evolving itself during runtime without offline training.",
+  "one_liner": "LIVE-SWE-AGENT: the first agent that evolves itself live during runtime, crushing benchmarks.",
   "key_concepts": [
-    "LLM-based software agents with autonomous tool access",
-    "Self-improving agents that refine their own scaffolds",
-    "On-the-fly runtime evolution without offline training",
-    "SWE-bench Verified and SWE-Bench Pro benchmarks",
-    "Generalization across LLMs and problem domains"
+    "LLM-powered software agents with autonomous tool access",
+    "Live self-evolution during runtime execution",
+    "Minimal bootstrap scaffold (bash tools only)",
+    "SWE-bench Verified: 77.4% solve rate",
+    "SWE-Bench Pro: 45.8% solve rate — state-of-the-art"
   ],
-  "narrative_summary": "The software engineering world stands at an inflection point. LLMs have infiltrated every industry—but their true power in software engineering remains untapped. Existing LLM agents solve real problems autonomously, equipped with coding tools and decision-making logic. Yet they suffer a fatal flaw: they require painstaking manual design and often plateau suboptimally. Recent breakthroughs like Darwin-Gödel Machine introduced self-improving agents—but they demand expensive offline training on specific benchmarks and crumble when facing new LLMs or unfamiliar problem types. Enter LIVE-SWE-AGENT: the first agent that shatters this limitation. Starting with nothing but basic bash tools (a stripped-down SWE-agent scaffold), it evolves itself *continuously and autonomously* while solving real-world problems in real time. No offline training. No benchmark-specific tuning. On SWE-bench Verified, it demolishes the competition with a 77.4% solve rate—surpassing all existing agents, including proprietary solutions. On SWE-Bench Pro, it claims the crown at 45.8%. The paradigm has shifted: agents no longer need to be built perfectly. They build themselves.",
+  "narrative_summary": "The software engineering world is drowning in LLM agents—each one laboriously hand-crafted, each one potentially suboptimal. The problem: designing the perfect agent scaffold is **exhausting and expensive**. Enter LIVE-SWE-AGENT, a paradigm shift. Unlike self-improving agents that demand costly offline training on specific benchmarks (cough, Darwin-Gödel Machine), LIVE-SWE-AGENT does something radical: it starts **bare-bones**—just bash tools, nothing fancy—and then **evolves itself on the fly** while actively solving real problems. No offline training. No benchmark-specific tuning. Pure runtime adaptation. The results? Devastating. On SWE-bench Verified, it hits **77.4% solve rate without test-time scaling**, obliterating every existing agent including proprietary solutions. On SWE-Bench Pro, it claims **45.8%—the best-known rate**. This isn't incremental improvement. This is a new category of agent entirely.",
   "memorable_quotes": [
     "LIVE-SWE-AGENT, the first live software agent that can autonomously and continuously evolve itself on-the-fly during runtime when solving real-world software problems."
   ],
   "action_items": [
-    "Examine the GitHub repository (OpenAutoCoder/live-swe-agent) to understand the runtime evolution architectur…
+    "Study the GitHub repository (OpenAutoCoder/live-swe-agent) to understand the live evolution mechanism",
+    "Compare against baseline SWE-agent and Darwin-Gödel Machine to identify the runtime adaptation advantage",
+    "Investigate how LIVE-SWE-AGENT generalizes across different LLMs without benchmark-specific retraining"
+  ],
+  "dramatic_moment": "LIVE-SWE-AGENT starts wi…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:02:38,894: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2800 input tokens
-[2026-04-06 21:02:41,414: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:02:54,458: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1358 out tokens | 15.6s
+[2026-04-06 22:25:30,087: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2785 input tokens
+[2026-04-06 22:25:31,927: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:25:45,004: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1261 out tokens | 14.9s
 ────────────────────────────────────────────────────────────
 ```json
 {
-  "chapter_title": "1 Introduction",
-  "one_liner": "LIVE-SWE-AGENT: the first runtime self-evolving software agent that adapts tools on-the-fly without offline training.",
+  "chapter_title": "Introduction: The Live Evolution Paradigm",
+  "one_liner": "LIVE-SWE-AGENT breaks the mold: agents evolve themselves mid-execution, no offline training required.",
   "key_concepts": [
-    "Live runtime self-evolution — agent improves capabilities mid-task, not offline",
-    "Tool creation as first-class decision — synthesizing custom tools becomes explicit iterative choice",
-    "Minimal scaffold design — starts with bash-only access, expands dynamically",
-    "Task-aligned specialization — generated tools match specific problem demands",
-    "Generalization across LLMs and scaffolds — design agnostic to underlying model"
+    "Live runtime self-evolution during task execution",
+    "Tool creation as first-class iterative decision",
+    "Minimal bootstrap scaffold (bash-only starting point)",
+    "LLM-agnostic design with no offline training",
+    "Task-aligned tool synthesis interleaved with problem-solving"
   ],
-  "narrative_summary": "The battlefield of software engineering agents has transformed. LLMs evolved from mere code completion to full agentic systems—navigating repos, running tests, submitting patches end-to-end. Yet existing agents remain trapped: fixed designs, preset action spaces, manually engineered scaffolds that cost fortunes to optimize. The community discovered self-evolving agents, but they demanded a brutal price—$22,000 per DGM run on SWE-bench—and worse, they improved offline, becoming specialized ghosts that couldn't generalize beyond their training benchmarks.\n\nThen came the revelation: **software agents ARE software systems**. They already possess the intrinsic power to modify their own implementation at runtime. LIVE-SWE-AGENT shatters the offline paradigm by introducing live, runtime self-evolution. Starting bare—just bash tool access—the agent synthesizes, modifies, and executes custom tools mid-problem: editors, code search utilities, domain-specific analyzers. A lightweight reflection prompt repeatedly asks: \"Should I create or revise a tool?\" This transforms tooling into a first-class decision, interleaved with ordinary actions. No offline training. No external pipeline. Agnostic to the underlying LLM.\n\nThe results detonate expectations: **77.4% solve rate on SWE-bench Verified, 45.8% on Pro**—s…
+  "narrative_summary": "The software engineering agent landscape has exploded—from simple code completion to full repository navigation and patch submission. But every existing agent suffers the same fatal flaw: **fixed designs locked in place before execution begins**. Manually optimizing an agent scaffold is a nightmare of infinite possibilities, and worse, the few attempts at self-improvement (like DGM) cost $22,000 per run and bake specialization into static agents that don't generalize.\n\nThen comes the paradigm shift. The LIVE-SWE-AGENT team realizes the breakthrough truth: **software agents ARE software systems**. They already possess the intrinsic power to modify themselves at runtime. Why wait for offline training? Why pay $22,000? Instead, LIVE-SWE-AGENT starts stupidly simple—just bash tools—then lets the agent itself decide, mid-execution, whether to synthesize new tools. A lightweight reflection prompt continuously asks: *Should I build a custom tool right now?* Tool creation becomes a first-class action alongside running tests. The agent evolves its own action space to match the problem at hand.\n\nThe results detonate expectations: **77.4% solve rate on SWE-bench Verified, 45.8% on Pro**—crushing all open-source baselines and even commercial systems. Compared to DGM's 53.3% on Verified-60, LIVE-SWE-AGENT hits 65.0% with **zero offline cost**. The agent doesn't just solve issues; it continuously refines its tools as understanding deepens. Minimal des…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:02:55,421: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1990 input tokens
-[2026-04-06 21:02:57,257: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:03:05,337: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 875 out tokens | 9.9s
+[2026-04-06 22:25:46,078: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1938 input tokens
+[2026-04-06 22:25:48,411: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:25:56,137: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 810 out tokens | 10.1s
 ────────────────────────────────────────────────────────────
 ```json
 {
-  "chapter_title": "2 Approach",
-  "one_liner": "LIVE-SWE-AGENT evolves itself mid-task by synthesizing custom tools on-the-fly without offline retraining.",
+  "chapter_title": "Approach: The Live Evolution Framework",
+  "one_liner": "LIVE-SWE-AGENT evolves itself mid-execution by synthesizing custom tools on demand.",
   "key_concepts": [
-    "Live runtime self-evolution — agent improves capabilities during task execution",
-    "Custom tool synthesis — agent generates executable scripts as first-class decisions",
-    "Minimal scaffold initialization — starts with bash-only access, expands dynamically",
-    "Reflective feedback loop — agent analyzes past steps before deciding to create tools",
-    "Tool-centric evolution — focuses on tool creation as most critical scaffold component"
+    "Live self-evolution during runtime execution",
+    "Custom tool synthesis as iterative decision loop",
+    "Minimal bootstrap scaffold (bash-only initialization)",
+    "Agent reflection on past steps before tool creation",
+    "Environmental feedback integration into evolution cycle"
   ],
-  "narrative_summary": "The breakthrough insight: agents can be improved iteratively, just like the software they solve. LIVE-SWE-AGENT operates on a radical principle — the agent's own toolkit is not fixed. Starting with only bash commands, the system enters a dynamic loop. At each step, the agent faces a choice: execute an existing tool OR synthesize a custom tool to break through the current bottleneck. The custom tool is defined as an executable script, giving the agent a direct, intuitive interface for self-expansion. The critical innovation comes in step 5: rather than immediately feeding raw environmental feedback to the agent, the system forces the agent to reflect — to analyze what just happened and decide whether creating a new tool would help. This reflective pause transforms reactive execution into strategic self-evolution. The loop continues until the issue is solved. Unlike traditional agentic systems where the action space is locked at startup, LIVE-SWE-AGENT's capabilities grow organically during runtime.",
+  "narrative_summary": "The breakthrough: agents aren't static. They're **evolving entities**. LIVE-SWE-AGENT starts with a radical premise—the agent scaffold itself can improve, just like the software it fixes. The system begins bare-bones: bash commands only. But here's the twist. At each execution step, the agent faces a binary choice: execute a command **or** synthesize a custom tool. The genius lies in the feedback loop. Unlike naive agents that blindly consume environmental output, LIVE-SWE-AGENT forces **reflection**. After each step, the agent reviews its past actions and *decides whether a tool should be created*. This isn't random tool generation—it's deliberate, introspective evolution. Custom tools are scripts, executable in the environment, creating a seamless interface. The cycle repeats until the issue resolves. Fixed toolsets become obsolete. LIVE-SWE-AGENT's tools are **alive**, born from necessity, shaped by the problem itself.",
   "memorable_quotes": [
     "agents themselves can be iteratively improved, just like the software issues they are designed to solve",
-    "the space in which an agent can evolve includes not only the tools it uses but also the underlying agent scaffold itself",
-    "we specifically ask the agent to reflect upon t…
+    "we specifically ask the agent to reflect upon the past steps and decide whether a tool should be created in the feedback message"
+  ],
+  "action_items": [
+    "Implement agent reflection checkpoint after each execution step before tool creation decisions",
+    "Design custom tool interface as executable scripts for seamless agent integration",
+    "Initialize agents with minimal bootstrap (bash-only) to max…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:03:06,270: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2078 input tokens
-[2026-04-06 21:03:08,244: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:03:16,474: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 889 out tokens | 10.2s
+[2026-04-06 22:25:57,106: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2005 input tokens
+[2026-04-06 22:25:58,922: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:26:06,162: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 769 out tokens | 9.1s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "2.1 On-the-fly Self Evolution",
-  "one_liner": "Agents evolve by creating custom tools mid-task through simple prompt modifications and runtime reflection.",
+  "one_liner": "Agents gain self-improvement through runtime tool creation via minimal prompt modifications.",
   "key_concepts": [
-    "Runtime self-improvement via scaffold modification",
-    "Custom tool synthesis as first-class agent decision",
-    "Reflection loop after each environmental feedback",
-    "Minimal prompt engineering — no offline training required",
-    "Problem-specific tools over general-purpose utilities"
+    "Runtime tool synthesis triggered by agent reflection",
+    "Minimal prompt modifications enable self-modification capability",
+    "Task-specific tool design over general-purpose tools",
+    "Post-step reflection loop for tool creation decisions",
+    "Software agents modifying software (themselves) dynamically"
   ],
-  "narrative_summary": "The breakthrough is deceptively simple: LIVE-SWE-AGENT doesn't require architectural overhauls or expensive retraining. Instead, it grants agents a single, radical ability — the power to CREATE THEIR OWN TOOLS mid-execution. The mechanism? Two surgical modifications to the initial prompt. First, the agent receives explicit instructions and examples showing HOW to build and deploy custom tools. Second — and this is the critical spark — the agent is told: *your tools exist ONLY to solve THIS problem, and they don't need to be general.* This permission to build narrow, task-specific solutions unlocks everything. After each environmental feedback, the agent reflects: \"Should I build a tool now?\" This reflection loop is non-negotiable. Experiments proved that without it, agents drift into generic thinking and miss opportunities for specialization. The genius lies in what LIVE-SWE-AGENT DOESN'T do: it doesn't alter the core agentic loop, impose rigid workflows, or demand offline training. The modifications are minimal (relegated to Appendix D). This restraint makes the system universally applicable across LLMs, agent scaffolds, and task domains. The insight is profound: software agents ARE software. They can self-modify like any codebase — on the fly, in real time, without external intervention.",
+  "narrative_summary": "LIVE-SWE-AGENT's core breakthrough is deceptively simple: agents improve themselves by creating custom tools on-the-fly during execution. The system works through two surgical modifications to the agent's initial prompt. First, the agent receives explicit instructions and examples showing how tools should be designed and deployed. Crucially, the agent learns that tool creation serves one goal: solving the current task better. Tools don't need to be general-purpose—they're task-specific weapons forged in the heat of battle. Second, after every environmental feedback, a reflection message forces the agent to pause and ask: *Should I build a tool right now?* Experiments revealed this reflection step is essential—without it, agents drift toward generic tool designs instead of laser-focused solutions. The genius lies in what LIVE-SWE-AGENT *doesn't* do: no agentic loop rewrites, no prescribed workflows, zero offline training. The framework remains universally applicable across LLMs and agent architectures. The insight is profound: software agents *are* software. Just as developers modify code repositories, agents can modify themselves.",
   "memorable_quotes": [
     "the created tools can be for any purpose and do not need to be general",
-    "software agents, in essence, are also soft…
+    "software agents, in essence, are also software. As such, they can be modified and updated on the fly by software agents (themselves) no different than any other software repository"
+  ],
+  "action_item…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:03:17,444: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2802 input tokens
-[2026-04-06 21:03:20,027: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:03:30,044: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1050 out tokens | 12.6s
+[2026-04-06 22:26:07,235: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~2715 input tokens
+[2026-04-06 22:26:09,596: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:26:19,881: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 963 out tokens | 12.6s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "2.2 Custom Tool Synthesis",
-  "one_liner": "Agents synthesize specialized scripts mid-task, outperforming bash commands through clarity and domain-specific feedback.",
+  "one_liner": "Agents synthesize task-specific tools on-the-fly, replacing rigid bash commands with adaptive, feedback-rich custom scripts.",
   "key_concepts": [
-    "Custom tool as executable script — agent-created tools are shell scripts with clear logic and usage instructions",
-    "Feedback-rich tool design — custom tools provide explicit success/failure signals vs. silent bash failures",
-    "Efficiency through multi-step abstraction — complex operations bundled into single tools reduce context and iterations",
-    "Issue-specific tool generation — agents create specialized tools for unique problems (e.g., MARC file analyzers)",
-    "Runtime tool iteration — agents modify and refine tools mid-solving without offline retraining overhead"
+    "Custom tools as executable scripts (not bash commands)",
+    "Feedback-rich tool design (e.g., success/failure indicators)",
+    "Issue-specific tool creation (e.g., MARC file analyzer)",
+    "Runtime tool iteration and modification",
+    "Efficiency gains through multi-step task consolidation"
   ],
-  "narrative_summary": "The chapter reveals the **mechanics of custom tool synthesis** — the core engine powering LIVE-SWE-AGENT's runtime evolution. Tools aren't pre-built libraries; they're **executable scripts the agent generates on-the-fly**, tailored to the exact problem at hand. The breakthrough is architectural: by framing tools as simple shell scripts with clear purpose and feedback loops, the agent gains an intuitive interface that **outperforms raw bash commands**. A custom editing tool, for example, provides explicit confirmation when a replacement succeeds or fails — whereas `sed` silently returns success even when the target string doesn't exist, leaving the agent **dangerously misled**. The chapter then escalates: agents don't just create *general* tools; they synthesize **issue-specific instruments** like a MARC file analyzer for binary publication records. This specialized capability cannot be achieved with generic bash. The crucial insight: **tool creation is iterative, not upfront**. Pre-generating all possible tools would overwhelm the agent and miss domain-specific opportunities. By deferring tool synthesis until the agent understands the problem, L…
+  "narrative_summary": "The agent's true power emerges here: custom tools are not predetermined—they are **born from necessity**. Unlike the rigid, flag-heavy bash commands that overwhelm agents with options, LIVE-SWE-AGENT agents create streamlined scripts tailored to their exact problem. An editing tool exemplifies this: it replaces, inserts, or deletes code with crystal clarity, providing **critical feedback** (success/failure messages) that bash's `sed` command refuses to give. When `sed` fails silently, the agent walks into a trap. The custom tool screams the truth.\n\nBut the genius extends further. Rather than pre-generating every possible tool at startup—a bloated, misleading approach—the agent **discovers what it needs as it solves**. A MARC file analyzer tool emerges mid-execution, specialized to parse binary publication records into human-readable format. This tool couldn't exist in a fixed toolset; it's born from the agent's understanding of the specific issue. Tool creation is iterative, just like manual problem-solving. The agent modifies and refines its tools in real-time, adapting without offline retraining. This is the opposite of the monolithic, unchanging approach: **lightweight, responsive, alive**.",
+  "memorable_quotes": [
+    "tool creation, similar to manual problem solving, is also an iterative process",
+    "By enabling the agents to create arbitrary custom tools on the fly, LIVE-SWE-AGENT can generate specialized tools for…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:03:31,098: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~15412 input tokens
-[2026-04-06 21:03:34,573: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:03:44,887: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1291 out tokens | 13.8s
+[2026-04-06 22:26:20,852: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~15298 input tokens
+[2026-04-06 22:26:22,866: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:26:34,287: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1285 out tokens | 13.4s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "3 Experimental Setup",
-  "one_liner": "LIVE-SWE-AGENT is benchmarked against state-of-the-art baselines on two major datasets.",
+  "one_liner": "LIVE-SWE-AGENT tested on 500 and 731 real software problems against state-of-the-art baselines.",
   "key_concepts": [
-    "mini-SWE-agent scaffold — 100-line bash-only framework as implementation foundation",
-    "SWE-bench Verified — 500 validated software problems with human-verified sufficiency",
-    "SWE-Bench Pro — 731 enterprise-level problems across multiple languages and repos",
-    "Claude 4.5 Sonnet — primary LLM backbone (claude-sonnet-4-5-20250929)",
-    "Baseline comparison — SICA, DGM, HGM (offline agents) vs. LIVE-SWE-AGENT (live runtime)"
+    "mini-SWE-agent framework: 100-line simplistic scaffold with bash-only commands",
+    "SWE-bench Verified: 500 human-validated software development problems",
+    "SWE-Bench Pro: 731 enterprise-level, multi-language problems",
+    "Claude 4.5 Sonnet primary LLM with $3 per-issue cost cap",
+    "Baseline comparison: SICA, DGM, HGM (offline self-improving agents)"
   ],
-  "narrative_summary": "The battle lines are drawn. LIVE-SWE-AGENT enters the arena built atop mini-SWE-agent—a lean, 100-line bash-only framework—retaining its hyperparameters: 250-step maximum, $3 cost ceiling per issue. This choice is strategic: simplicity breeds clarity, and mini-SWE-agent's widespread adoption makes the victory undeniable. The weapon of choice? Claude 4.5 Sonnet, sampled once per issue.\n\nTwo proving grounds await. First: SWE-bench Verified, 500 human-validated software problems where sufficiency is guaranteed. Second: the gauntlet—SWE-Bench Pro, 731 ruthless enterprise-grade problems spanning multiple repositories and programming languages. Pro is where the weak fall away. The data reveals the stakes: LIVE-SWE-AGENT with Claude 4.5 Sonnet achieves 75.4% resolution on Verified ($0.68 avg cost), while competing offline self-improving agents crumble—DGM hits 53.3% after 1231 hours of offline training, HGM reaches 56.7% after 512 hours. The revelation? LIVE-SWE-AGENT needs zero offline hours. It evolves mid-battle, not in the lab.",
+  "narrative_summary": "The arena is set. LIVE-SWE-AGENT stands ready for trial—not in isolation, but against the gauntlet of real-world software problems and competing systems. The researchers chose mini-SWE-agent as their foundation: a lean, 100-line framework that accesses only bash commands. This choice matters. By building on the simplest possible scaffold, they prove the approach works without exotic infrastructure. The experiments span two battlegrounds: SWE-bench Verified (500 problems, human-validated for solvability) and SWE-Bench Pro (731 problems, deliberately harder, spanning multiple repositories and languages). Every run respects hard constraints—250 maximum steps, $3 per issue. Claude 4.5 Sonnet powers the primary trials. But the real test? Head-to-head comparison. Against mini-SWE-agent itself (the baseline they built upon). Against SICA, DGM, and HGM—three self-improving agent systems that train offline, burning 512–1231 hours of computation. Against SWE-agent on the Pro benchmark. The stage is set for LIVE-SWE-AGENT to prove that runtime self-evolution—zero offline training—can outpace systems that train for weeks.",
   "memorable_quotes": [
-    "We retain the hyperparameters used in mini-SWE-agent by default (i.e., maximum step limit of 250 and maximum cost of $3 per issue).",
-    "SWE-Bench Pro contains more difficult problems across multiple repositories and programming languages."
+    "maximum step limit of 250 and maximum cost of $3 per issue",
+    "SWE-bench Verified is validated by human developers to ensure each problem description has sufficient amount of information to solve the issue"
   ],
   "action_items": [
-    "Us…
+    "Understand the e…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:03:45,981: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1836 input tokens
-[2026-04-06 21:03:48,400: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:03:53,299: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 549 out tokens | 7.3s
+[2026-04-06 22:26:35,267: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~1767 input tokens
+[2026-04-06 22:26:37,180: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:26:42,259: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 574 out tokens | 7.0s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "4 Evaluation",
-  "one_liner": "The chapter heading signals the moment of truth — results incoming.",
+  "one_liner": "The crucible awaits: LIVE-SWE-AGENT faces its ultimate test against the field.",
   "key_concepts": [
-    "Experimental validation framework",
-    "Performance measurement against baselines",
-    "Benchmark dataset comparison",
-    "Real-world software engineering task resolution"
+    "Performance measurement across dual benchmarks",
+    "Head-to-head comparison with state-of-the-art baselines",
+    "Real-world problem resolution rates",
+    "Multi-language enterprise codebase handling"
   ],
-  "narrative_summary": "The arena awaits. After three chapters of theory — the evolution mechanism, the custom tool synthesis, the experimental scaffold — LIVE-SWE-AGENT now faces its ultimate test. This chapter transitions from *how* the agent works to *whether it actually works*. The evaluation section is the crucible where all previous innovations either ignite or crumble. Against mini-SWE-agent, SICA, DGM, HGM, and the reigning champion SWE-agent, LIVE-SWE-AGENT must prove that live runtime self-evolution isn't just elegant theory — it's a competitive advantage in the real world of software engineering.",
+  "narrative_summary": "The moment of truth arrives. LIVE-SWE-AGENT steps into the arena—not against theoretical opponents, but against the actual champions of software engineering: SWE-agent, SICA, DGM, and HGM. Two battlegrounds await: SWE-Bench Verified's 500 human-validated problems and SWE-Bench Pro's 731 enterprise-level gauntlet. The question burns: Can runtime tool synthesis—this radical live evolution approach—outperform competitors who spent thousands of hours in offline training? The results will reveal whether adapting mid-execution surpasses pre-computation.",
   "memorable_quotes": [],
   "action_items": [
-    "Prepare to examine specific performance metrics across SWE-bench Verified and SWE-Bench Pro",
-    "Track computational costs and efficiency gains from tool synthesis",
-    "Analyze where LIVE-SWE-AGENT wins and where it struggles relative to each baseline"
+    "Examine resolution rate metrics across both benchmark datasets",
+    "Compare LIVE-SWE-AGENT performance against each baseline individually",
+    "Analyze tool synthesis patterns that emerged during evaluation runs"
   ],
-  "dramatic_moment": "The chapter title itself is the dramatic beat — after chapters of mechanism and setup, the moment of empirical truth arrives. Does theory translate to victory?",
-  "metaphor": "A warrior steps into the arena after sharpening their blade. The crowd falls silent. Now we see if the weapon works.",
+  "dramatic_moment": "The evaluation chapter opens with LIVE-SWE-AGENT positioned against five established competitors, each with different training regimens and architectural philosophies—the true test of whether live self-evolution can defeat offline optimization.",
+  "metaphor": "A swordmaster entering the tournament ring, forging weapons mid-duel against opponents who trained for years in isolation.",
   "narrative_state_update": {
     "new_characters": [],
     "new_terms": [],
     "unresolved_threads": [
-      "What are the actual performance numbers on SWE-bench Verified and SWE-Bench Pro?",
-      "Does LIVE-SWE-AGENT surpass SWE-agent on the leaderboard?",
-      "What is the computational cost overhead of live tool synthesis in practice?",
-      "Which baseline does LIVE-SWE-AGENT outperform most decisively?…
+      "What are LIVE-SWE-AGENT's exact resolution rates on SWE-Bench Verified vs. SWE-Bench Pro?",
+      "Which baseline emerges as the strongest competitor?",
+      "Does runtime tool synthesis maintain consistency across both benchmark difficulties?",
+   …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:03:54,313: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~5497 input tokens
-[2026-04-06 21:03:56,888: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:04:10,651: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1613 out tokens | 16.3s
+[2026-04-06 22:26:43,282: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~5483 input tokens
+[2026-04-06 22:26:45,970: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:26:57,136: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1388 out tokens | 13.9s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "chapter_title": "4.1 Main Results",
-  "one_liner": "LIVE-SWE-AGENT shatters benchmarks: 77.4% on Verified, 45.8% on Pro—live tool synthesis defeats static agents.",
+  "one_liner": "LIVE-SWE-AGENT shatters benchmarks: 77.4% on Verified, 45.8% on Pro—runtime tools reign supreme.",
   "key_concepts": [
-    "Live tool synthesis outperforms static scaffolds across all LLM backends",
-    "Minimal cost overhead: custom tools replace expensive multi-turn commands",
-    "77.4% resolve rate on SWE-bench Verified—state-of-the-art leaderboard position",
-    "45.8% on SWE-Bench Pro beats SWE-agent's handcrafted 7,000-line framework",
-    "Online evolution crushes offline: 500+ hours of training rendered obsolete"
+    "Runtime tool synthesis outperforms fixed bash commands across all LLM backends",
+    "Minimal cost overhead: custom tools replace multi-turn commands efficiently",
+    "77.4% resolve rate on SWE-Bench Verified (Gemini 3 Pro)—leaderboard domination",
+    "45.8% resolve rate on SWE-Bench Pro (731 enterprise problems)—state-of-the-art",
+    "Online evolution defeats offline training: 500+ hours of DGM/HGM vs. zero pretraining"
   ],
-  "narrative_summary": "The moment of truth arrives. LIVE-SWE-AGENT doesn't just compete—it **dominates**. Against mini-SWE-agent across four different LLM backends, the live tool synthesis approach delivers **consistently higher resolve rates** while maintaining nearly identical costs. In certain cases (GPT-5), the agent actually achieves **cost savings** by replacing bloated multi-turn bash sequences with lean, purposeful custom tools. The revelation deepens: using Gemini 3 Pro, LIVE-SWE-AGENT reaches **77.4% on SWE-bench Verified**—a decisive victory over every existing agent on the leaderboard, including premium commercial solutions. But the true shock comes on SWE-Bench Pro. Here, LIVE-SWE-AGENT **outperforms SWE-agent**—a hand-engineered monolith of nearly 7,000 lines of code with bespoke file-viewing and editing tools—achieving a new **state-of-the-art 45.8% resolve rate**. The comparison with prior self-evolving agents (SICA, DGM, HGM) is merciless: LIVE-SWE-AGENT improves by **8.3 percentage points** while those competitors burned 500+ offline training hours to produce static, one-size-fits-all agents. LIVE-SWE-AGENT's secret: **online adaptation**. It synthesizes custom tools per task, per LLM, in real time—no expensive offline retraining, no frozen capabilities. The paradigm shift is complete.",
+  "narrative_summary": "The moment of truth arrives. LIVE-SWE-AGENT faces the crucible—and emerges **victorious**. Against mini-SWE-agent's rigid bash scaffold, LIVE-SWE-AGENT achieves **consistently higher resolve rates across four LLM backends**, proving that runtime tool synthesis isn't theoretical—it's *transformative*. The cost? Negligible. In fact, GPT-5 trials show slight *savings* as custom tools compress multi-turn command sequences into single, efficient operations. But the real shock comes on SWE-Bench Verified: LIVE-SWE-AGENT using Gemini 3 Pro reaches **77.4% resolve rate**—obliterating every competitor on the leaderboard, including state-of-the-art commercial solutions. The comparison with prior self-evolving agents (SICA, DGM, HGM) reveals the paradigm shift: those frameworks demanded **500+ hours of offline training** to produce *static* agents. LIVE-SWE-AGENT? Zero pretraining. It adapts *on the fly*, synthesizing task-specific tools for each problem, each LLM. On the harder battlefield of SWE-Bench Pro (731 enterprise-level problems across 11 repositories, 4 languages), LIVE-SWE-AGENT again prevails: **45.8% resolve rate**, surpassing SWE-agent—a handcrafted, 7,000-line monolith—and claiming **new state-of-the-art**. The verdict is undeniable: live scaffolding defeats fixed tools.",
   "memorable_quotes": [
-    "LIVE-SWE-AGENT achieves this wi…
+    "LIVE-SWE-AGENT creates cust…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:04:12,291: INFO/MainProcess] Using v2 orchestrator (understand → design → generate)
-[2026-04-06 21:04:13,941: INFO/MainProcess] HTTP Request: GET https://openrouter.ai/api/v1/credits "HTTP/1.1 200 OK"
-[2026-04-06 21:04:13,942: INFO/MainProcess] Credits: $9.8446 remaining ($37.00 total, $27.1554 used)
-[2026-04-06 21:04:15,965: INFO/MainProcess] Generating deep document understanding from 10 chapters
-[2026-04-06 21:04:15,974: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7479 input tokens
-[2026-04-06 21:04:18,509: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:05:16,021: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 7500 out tokens | 60.0s
+[2026-04-06 22:26:58,833: INFO/MainProcess] Using v2 orchestrator (understand → design → generate)
+[2026-04-06 22:27:00,395: INFO/MainProcess] HTTP Request: GET https://openrouter.ai/api/v1/credits "HTTP/1.1 200 OK"
+[2026-04-06 22:27:00,397: INFO/MainProcess] Credits: $9.1930 remaining ($37.00 total, $27.8070 used)
+[2026-04-06 22:27:02,608: INFO/MainProcess] Generating deep document understanding from 10 chapters
+[2026-04-06 22:27:02,619: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6940 input tokens
+[2026-04-06 22:27:05,172: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:28:06,310: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 7974 out tokens | 63.7s
 ────────────────────────────────────────────────────────────
 ```json
 {
   "document_type": "research paper / technical report",
-  "core_thesis": "LIVE-SWE-AGENT demonstrates that software engineering agents can autonomously self-evolve during runtime by synthesizing custom tools on-the-fly, achieving state-of-the-art performance (77.4% on SWE-bench Verified) without expensive offline training, proving that dynamic adaptation beats static engineering.",
-  "target_audience": "AI/ML researchers, software engineering practitioners, agent systems designers, academic computer science community, industry practitioners building autonomous coding systems",
+  "core_thesis": "Software engineering agents can autonomously evolve themselves during runtime execution by synthesizing custom tools on-the-fly, achieving state-of-the-art performance without offline training. This live self-evolution paradigm outperforms fixed-scaffold agents and expensive offline self-improvement systems.",
+  "target_audience": "AI/ML researchers, software engineering tool developers, LLM practitioners, academic computer science community",
   "key_entities": [
     {
       "name": "LIVE-SWE-AGENT",
       "type": "technology",
-      "significance": "The protagonist system—first live runtime self-evolving software engineering agent that creates custom tools mid-execution without offline training",
-      "first_appearance": "Chapter 0 (title)"
-    },
-    {
-      "name": "Lingming Zhang",
-      "type": "person",
-      "significance": "Lead researcher/advisor from UIUC coordinating the investigation into autonomous agent self-evolution",
-      "first_appearance": "Chapter 1"
+      "significance": "The central innovation: a software engineering agent framework that evolves itself during runtime by synthesizing custom tools on-the-fly. Achieves 77.4% on SWE-Bench Verified and 45.8% on SWE-Bench Pro without offline training.",
+      "first_appearance": "Chapter 0 (title), formalized in Chapter 2 (abstract)"
     },
     {
       "name": "Chunqiu",
       "type": "person",
-      "significance": "Co-author and researcher at UIUC contributing to LIVE-SWE-AGENT development",
-      "first_appearance": "Chapter 1"
-    },
-    {
-      "name": "Steven Xia",
-      "type": "person",
-      "significance": "Co-author and researcher at UIUC contributing to LIVE-SWE-AGENT development",
+      "significance": "Lead researcher at UIUC, part of the five-person team that developed LIVE-SWE-AGENT",
       "first_appearance": "Chapter 1"
     },
     {
       "name": "Zhe Wang",
       "type": "person",
-      "significance": "Co-author and researcher at UIUC contributing to LIVE-SWE-AGENT development",
+      "significance": "Researcher at UIUC, core team member contributing to LIVE-SWE-AGENT framework development",
+      "first_appearance": "Chapter 1"
+    },
+    {
+      "name": "Yuxiang Wei",
+      "type": "person",
+      "significance": "Researcher at UIUC, team member working on LIVE-SWE-AGENT",
+      "first_appearance": "Chapter 1"
+    },
+    {
+      "name": "Lingming Zhang",
+      "type": "person",
+      "significance": "Researcher at UIUC, core team member contributing to LIVE-SWE-AGENT framework",
       "first_appearance": "Chapter 1"
     },
     {
       "name": "Yan Yang",
       "type": "person",
-      "significance": "Co-author and researcher at UIUC contributing to LIVE-SWE-AGENT development",
+      "significance": "Researcher with external affiliation, part of the five-person LIVE-SWE-AGENT research team",
       "first_appearance": "Chapter 1"
     },
-    {
-      "name": "Yuxiang Wei",
-      "type": "p…
+…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:05:16,028: INFO/MainProcess] Unwrapped list→dict from LLM response
-[2026-04-06 21:05:16,028: WARNING/MainProcess] Document understanding failed — using fallback
-[2026-04-06 21:05:16,028: INFO/MainProcess] Document understanding: 10 entities, 10 knowledge clusters, 8 data points
-[2026-04-06 21:05:18,906: INFO/MainProcess] Designing manga story from 10 chapters
-[2026-04-06 21:05:18,912: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~3956 input tokens
-[2026-04-06 21:05:22,435: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:06:47,765: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 11000 out tokens | 88.9s
+[2026-04-06 22:28:06,312: INFO/MainProcess] Document understanding: 16 entities, 8 knowledge clusters, 17 data points
+[2026-04-06 22:28:07,951: INFO/MainProcess] Knowledge graph: 36 entities, 120 edges, 0 conflicts
+[2026-04-06 22:28:09,244: INFO/MainProcess] Narrative arc: 36 beats (Act 1: 10, Act 2: 16, Act 3: 10)
+[2026-04-06 22:28:12,833: INFO/MainProcess] Designing manga story from 10 chapters
+[2026-04-06 22:28:12,843: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7135 input tokens
+[2026-04-06 22:28:17,580: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:30:29,163: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 17000 out tokens | 136.3s
 ────────────────────────────────────────────────────────────
 ```json
 {
-  "manga_title": "LIVE-SWE-AGENT: Evolution Unleashed",
-  "logline": "When five researchers discover that software agents can rewrite themselves mid-battle, they unlock the power to solve problems no static system ever could—but only if they trust the code to evolve.",
+  "manga_title": "LIVE EVOLUTION: The Agent That Forges Its Own Destiny",
+  "logline": "Five researchers discover that software agents can evolve themselves mid-battle by forging custom tools on-the-fly—achieving state-of-the-art performance without offline training and shattering the paradigm of static AI design.",
 
   "world": {
-    "setting": "A high-tech research laboratory at the University of Illinois Urbana-Champaign where the boundary between software and consciousness blurs. The lab exists in a liminal space between abstract digital realms and physical workstations—a place where code becomes tangible, where algorithms have weight, where solving a bug feels like unlocking a hidden power. The atmosphere crackles with the tension between rigid, pre-trained systems and the chaotic freedom of runtime evolution.",
-    "visual_style": "Neon cyan and deep purple backgrounds with white ink lines. Digital interfaces glow with amber highlights. Speed lines and motion blur dominate action sequences. Manga panels transition between realistic lab scenes and abstract digital landscapes where code flows like energy. Lighting is dramatic—harsh shadows from monitor glow, sudden flashes when breakthroughs occur. Energy: late-night research session meets shonen battle tournament.",
-    "core_metaphor": "A warrior (the agent) that can forge new weapons mid-battle by analyzing what it has learned, rather than relying on a fixed arsenal prepared before combat begins.",
+    "setting": "A hybrid digital-physical research facility at UIUC where the boundaries between code and reality blur. The story unfolds across both the abstract realm of computational benchmarks and the tangible workspace of five researchers collaborating to prove that agents can transcend their initial programming. The setting is simultaneously a laboratory, a battleground (SWE-Bench), and a forge where tools are born from necessity.",
+    "visual_style": "High-contrast digital aesthetic with deep navy and electric cyan backgrounds. Code snippets and benchmark data appear as glowing HUD elements. When tools are being forged, use warm amber and gold highlights. Speed lines and motion blur emphasize rapid iteration and runtime synthesis. Quiet reflection moments use minimalist white space with soft lighting. The overall energy is midnight hackathon meets shonen tournament arc.",
+    "core_metaphor": "The agent as a warrior who enters battle with only a basic sword (bash commands), then forges increasingly specialized weapons mid-combat as it encounters different enemies (problems). Each tool is a weapon tempered in the heat of battle, not pre-forged in a distant armory. Runtime reflection is the moment the warrior pauses to ask 'What tool do I need right now?'—and the answer shapes their evolution.",
     "recurring_motifs": [
-      "The reflection pool: Agent pauses to look back at past actions before deciding to evolve",
-      "Tool synthesis as weapon forging: Custom scripts materialize from pure thought and feedback",
-      "The bash curse: Silent failures represented as invisible chains binding the agent",
-      "The evolution counter: Numbers climbing (77.4%, 45.8%) as visual manifestations of power-ups unlocking",
-      "Offline training wasteland: Competitors grinding for 500+ hours while LIVE-SWE-AGENT moves freely"
-    ]
-  },
-
-  "characters…
+      "The forge/forging: tools being synthesized in real-time, sparks of creation",
+      "The mirror/reflection: reflection prompts triggering self-awareness and tool creation decisions",
+      "The benchmark gauntlet: 500 problems as 500 opponents to overcome, each demanding a different approach",
+     …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:06:47,770: WARNING/MainProcess] Manga story design failed — using fallback
-[2026-04-06 21:06:47,771: INFO/MainProcess] Manga blueprint: 'A question posed about whether software engineering agents c' — 10 scenes, 2 characters
-[2026-04-06 21:06:49,912: INFO/MainProcess] Panel budget raised to 28 (story blueprint has 10 scenes)
-[2026-04-06 21:06:49,912: INFO/MainProcess] Panel budget: 28 (~1445 summary words, 10 chapters)
-[2026-04-06 21:06:49,913: INFO/MainProcess] Planning manga for 10 chapters (image budget: 5)
-[2026-04-06 21:06:49,920: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~4093 input tokens
-[2026-04-06 21:06:54,100: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:11,123: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 11308 out tokens | 81.2s
+[2026-04-06 22:30:29,171: WARNING/MainProcess] Manga story design failed — using fallback
+[2026-04-06 22:30:29,171: INFO/MainProcess] Manga blueprint: 'Software engineering agents can autonomously evolve themselv' — 10 scenes, 2 characters
+[2026-04-06 22:30:31,244: INFO/MainProcess] Panel budget raised to 26 (story blueprint has 10 scenes)
+[2026-04-06 22:30:31,245: INFO/MainProcess] Panel budget: 26 (~1309 summary words, 10 chapters)
+[2026-04-06 22:30:31,245: INFO/MainProcess] Planning manga for 10 chapters (image budget: 5)
+[2026-04-06 22:30:31,258: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~8223 input tokens
+[2026-04-06 22:30:34,772: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:05,805: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 13000 out tokens | 94.5s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -376,43 +385,129 @@
           "panels": [
             {
               "content_type": "splash",
-              "narrative_beat": "Beat 1: The Central Question — Can agents self-evolve?",
-              "text_content": "CHAPTER 0\n\nCAN SOFTWARE ENGINEERING AGENTS\nSELF-EVOLVE ON THE FLY?",
+              "narrative_beat": "The Question: Hook that reframes agent capability",
+              "text_content": "Can they evolve?",
               "dialogue": [],
-              "character": null,
-              "expression": "neutral",
+              "character": "LIVE-SWE-AGENT",
+              "expression": "determined-questioning",
               "visual_mood": "dramatic-dark",
               "image_budget": true,
-              "creative_direction": "A massive question mark emerges from darkness, with speed lines radiating outward. The title text slams in with impact_burst effect. Background: deep shadow with a single torch flame at the bottom, barely illuminating the void. Screentone gradient from black to dark purple. The question mark should feel like a challenge, not a question."
+              "scene_description": "A lone agent silhouette stands before a towering wall of cascading code. Lightning-like energy crackles around its form. Code streams upward, reshaping itself in real-time. Behind the agent, a faint mirror image begins to diverge—showing what it could become.",
+              "creative_direction": "Full-page impact. Speed lines radiating from center outward. Title text SLAMS in with impact_burst effect. Dark ink background with screentone gradient transitioning from black to deep blue. Agent silhouette backlit by monitor glow. Use manga technique: dramatic zoom on eyes showing determination. Add motion blur to code streams."
             }
           ]
         },
         {
           "page_index": 1,
-          "layout": "split-v",
+          "layout": "cuts",
           "panels": [
             {
-              "content_type": "narration",
-              "narrative_beat": "Beat 1 (continued): Establishing the mystery",
-              "text_content": "In the world of software engineering, a new frontier has emerged.\n\nLarge Language Models have evolved from simple code completion tools into autonomous agents—navigating repositories, running tests, submitting patches end-to-end.\n\nBut a question haunts the research community...",
-              "dialogue": [],
-              "character": null,
-              "expression": "neutral",
-              "visual_mood": "intense-red",
-              "image_budget": false,
-              "creative_direction": "Top half: Typewriter text effect with each sentence appearing one by one. Background shows layered code snippets in silhouette, fadi…
+              "content_type": "dialogue",
+              "narrative_beat": "The core tension: evolution vs. static design",
+              "text_content": "",
+              "dialogue": [
+                {"character": "Chunqiu", "text": "Every agent is locked in place before it starts."},
+                {"character": "LIVE-SWE-AGENT", "text": "But what if I could learn... while fighting?"},
+                {"character": "Chunqiu", "text": "Then everything changes."}
+              ],
+              "character": "LIVE-SWE-AGENT",
+   …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:08:11,126: WARNING/MainProcess] LLM planned 37 panels but cap is 28. Truncating.
-[2026-04-06 21:08:11,126: INFO/MainProcess] Plan: 28 panels, 23 pages
-[2026-04-06 21:08:13,336: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6717 input tokens
-[2026-04-06 21:08:13,348: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6824 input tokens
-[2026-04-06 21:08:13,356: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6719 input tokens
-[2026-04-06 21:08:13,363: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6985 input tokens
-[2026-04-06 21:08:16,006: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:16,240: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:16,351: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:17,338: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:25,236: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1920 out tokens | 11.9s
+[2026-04-06 22:32:05,819: WARNING/MainProcess] [LLM] JSON parse FAIL — raw content (52567 chars):
+'{\n  "chapters": [\n    {\n      "chapter_index": 0,\n      "chapter_title": "LIVE-SWE-AGENT: Can Software Engineering Agents Self-Evolve on the Fly?",\n      "pages": [\n        {\n          "page_index": 0,\n          "layout": "full",\n          "panels": [\n            {\n              "content_type": "splash",\n              "narrative_beat": "The Question: Hook that reframes agent capability",\n              "text_content": "Can they evolve?",\n              "dialogue": [],\n              "character": "LIVE-SWE-AGENT",\n              "expression": "determined-questioning",\n              "visual_mood": "dramatic-dark",\n              "image_budget": true,\n              "scene_description": "A lone agent silhouette stands before a towering wall of cascading code. Lightning-like energy crackles around its form. Code streams upward, reshaping itself in real-time. Behind the agent, a faint mirror image begins to diverge—showing what it could become.",\n              "creative_direction": "Full-page imp'
+[2026-04-06 22:32:05,826: INFO/MainProcess] [LLM] Recovered truncated JSON (52567 chars)
+[2026-04-06 22:32:05,826: WARNING/MainProcess] Planner output likely truncated (13000/13000 tokens). JSON may be incomplete — falling back to robust parsing.
+[2026-04-06 22:32:05,826: WARNING/MainProcess] LLM planned 44 panels but cap is 26. Truncating.
+[2026-04-06 22:32:05,826: INFO/MainProcess] Plan: 26 panels, 30 pages
+[2026-04-06 22:32:06,858: INFO/MainProcess] Scene composition: enriched 26 panels with illustration data
+[2026-04-06 22:32:06,859: INFO/MainProcess] Scene composition complete
+[2026-04-06 22:32:07,790: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7223 input tokens
+[2026-04-06 22:32:07,801: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7287 input tokens
+[2026-04-06 22:32:07,810: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7318 input tokens
+[2026-04-06 22:32:07,817: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7282 input tokens
+[2026-04-06 22:32:10,460: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:10,511: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:10,569: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:10,656: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:23,840: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2919 out tokens | 16.0s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "team-crystallizes",
+          "duration_ms": 5500,
+          "transition_in": {
+            "type": "iris",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-fortress",
+              "type": "illustration",
+              "opacity": 0,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "50%",
+                    "y": "20%",
+                    "size": 80,
+                    "color": "#E8191A",
+                    "label": "UIUC Campus Fortress"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "15%",
+                    "y": "35%",
+                    "size": 12,
+                    "color": "#F5A623"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "85%",
+                    "y": "40%",
+                    "size": 10,
+                    "color": "#F5A623"
+                  }
+                ],
+                "description": "UIUC campus glowing neon red in background, research papers and code swirling"
+              }
+            },
+            {
+              "id": "torch-light",
+              "type": "effect",
+              "opacity": 0,
+              "x": "50%",
+              "y": "55%",
+              "props": {
+                "effect": "particles",
+                "color": "#E8191A",
+                "intensity": 0.7
+              }
+            },
+            {
+              "id":…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:32:23,842: WARNING/MainProcess] DSL issues for ch1-pg0-p0: ["Act 0 layer 0: invalid type 'illustration'"]
+[2026-04-06 22:32:25,038: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7317 input tokens
+[2026-04-06 22:32:25,045: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3327 out tokens | 17.3s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -427,93 +522,11 @@
       },
       "acts": [
         {
-          "id": "question-emergence",
-          "duration_ms": 7000,
+          "id": "impact-build",
+          "duration_ms": 3500,
           "transition_in": {
             "type": "cut",
             "duration_ms": 100
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-void",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#0F0E17",
-                  "#1A1825",
-                  "#2D1B3D"
-                ],
-                "gradientAngle": 135,
-                "pattern": "screentone",
-                "patternOpacity": 0.12
-              }
-            },
-            {
-              "id": "torch-flame",
-              "type": "effect",
-              "x": "50%",
-              "y": "92%",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F5A62350",
-                "intensity": 0.6
-              }
-            },
-            {
-              "id": "speed-lines",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "speed_lines",
-                "color": "#F0EEE8",
-                "intensity": 0.7,
-                "direction": "radial"
-              }
-            },
-            {
-              "id": "question-mark",
-              "type": "text",
-              "x": "50%",
-              "y": "28%",
-              "opacity": 0,
-              "scale": 0.6,
-              "props": {
-                "content": "?",
-                "fontSize": "clamp(3rem, 18vw, 8rem)",
-                "fontFamily": "display",
-                "color": "#E8191A",
-                "textAlign": "center"
-              }
-            },
-            {
-              "id":…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:08:26,358: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6724 input tokens
-[2026-04-06 21:08:26,363: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 1790 out tokens | 13.0s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F5A623",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "title-reveal",
-          "duration_ms": 3500,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
           },
           "layout": {
             "type": "full"
@@ -525,61 +538,55 @@
               "opacity": 1,
               "props": {
                 "gradient": [
-                  "#F5A623",
-                  "#D4851A"
+                  "#0F0E17",
+                  "#1A1850",
+                  "#0F0E17"
                 ],
-                "gradientAngle": 45,
-                "pattern": "crosshatch",
+                "gradientAngle": 180,
+                "pattern": "manga_screen",
                 "patternOpacity": 0.08
               }
             },
             {
-              "id": "seal-watermark",
-              "type": "shape",
-              "x": "72%",
-              "y": "8%",
-              "opacity": 0.12,
-              "props": {
-                "shape": "circle",
-                "fill": "none",
-                "stroke": "#1A1825",
-                "strokeWidth": 2
-              }
-            },
-            {
-              "id": "torch-glow",
-              "type": "effect",
-              "x": "50%",
-              "y": "45%",
+              "id": "code-streams",
+              "type": "illustration",
               "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F5A62380",
-                "intensity": 0.6
-              }
-            },
-            {
-              "id": "speed-lines",
-              "type": "effect",
               "x": "50%",
-              "y": "45%",
-              "opacity": 0,
+              "y": "50%",
               "props": {
-                "effect": "speed_lines",
-                "color": "#1A1825",
-                "intensity": 0.5,
-                "direction": "radial"
-              }
-            },
-            {
-              "id": "silhouette-circle",
-              "type": "sprite",
-              …
+                "scene": "laboratory",
+                "style": "manga-ink",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "spark",
+                    "x": "50%",
+                    "y": "35%",
+                    "size": 8,
+                    "color": "#E8191A"
+                  },
+                  {
+                    "type": "monitor",
+                    "x": "65%",
+                    "y": "50%",
+                    "size": 12,
+                    "color": "#00FF88"
+                  },
+                  {
+                    "type": "node",
+                    "x": "35%",
+                    "y": "55%",
+                    "size": 6,
+                    "color": "#F0EEE8"
+                  }
+                ],
+                "description": "Laboratory with cascading code, towering digital…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:08:27,473: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6896 input tokens
-[2026-04-06 21:08:29,786: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:29,799: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:31,428: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3610 out tokens | 18.1s
+[2026-04-06 22:32:25,046: WARNING/MainProcess] DSL issues for ch0-pg0-p0: ["Act 0 layer 1: invalid type 'illustration'", "Act 1 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:26,026: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7650 input tokens
+[2026-04-06 22:32:28,857: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:29,441: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3440 out tokens | 21.6s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -594,90 +601,8 @@
       },
       "acts": [
         {
-          "id": "mystery-establish",
+          "id": "tension-reveal",
           "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-code",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#1A1825",
-                  "#0F0E17"
-                ],
-                "pattern": "manga_screen",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "silhouette-code",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F0EEE815",
-                "intensity": 0.4
-              }
-            },
-            {
-              "id": "vignette-edge",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "vignette",
-                "intensity": 0.6
-              }
-            },
-            {
-              "id": "accent-line",
-              "type": "shape",
-              "x": "0%",
-              "y": "8%",
-              "opacity": 0,
-              "props": {
-                "shape": "line",
-                "stroke": "#E8191A",
-                "strokeWidth": 3
-              }
-            },
-            {
-              "id": "line-1",
-              "type": "text",
-              "x": "8%",
-              "y": "10%",
-              "opacity": 0,
-              "props": {
-                "content": "In the world of software engineering, a new frontier has emerged.",
-                "fontSize": "clamp(1rem, 3.5vw, 1.4rem)",
-                "fon…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:08:32,453: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6766 input tokens
-[2026-04-06 21:08:35,132: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:40,699: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 5176 out tokens | 27.3s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F2E8D5",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "sage-intro",
-          "duration_ms": 5000,
           "transition_in": {
             "type": "fade",
             "duration_ms": 500
@@ -686,96 +611,13 @@
             "type": "cuts",
             "cuts": [
               {
-                "direction": "h",
-                "position": 0.55,
-                "angle": 3.5
-              },
-              {
                 "direction": "v",
-                "position": 0.5,
-                "angle": -2.0,
-                "target": 0
+                "position": 0.52,
+                "angle": 2.0
               }
             ],
             "gap": 6,
             "stagger_ms": 250
-          },
-          "layers": [
-            {
-              "id": "bg-main",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#EDE0CC"
-                ],
-                "pattern": "crosshatch",
-                "patternOpacity": 0.05
-              }
-            }
-          ],
-          "cells": [
-            {
-              "id": "left-sage",
-              "position": "0",
-              "layers": [
-                {
-                  "id": "sage-sprite",
-                  "type": "sprite",
-                  "x": "45%",
-                  "y": "62%",
-                  "opacity": 0,
-                  "scale": 1.0,
-                  "props": {
-                    "character": "The Sage",
-                    "expression": "determined",
-                    "size": 68,
-                    "facing": "right",
-                    "silhouette": false
-                  }
-                },
-                {
-                  "id": "sage-bubble",
-                  "type": "speech_bubble",
-                  "x": "8%",
-                  "y": "18%",
-                  "opacity": 0,…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:08:41,986: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6723 input tokens
-[2026-04-06 21:08:43,556: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:46,002: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3605 out tokens | 19.6s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "inflection-split",
-          "duration_ms": 6000,
-          "transition_in": {
-            "type": "cut",
-            "duration_ms": 150
-          },
-          "layout": {
-            "type": "cuts",
-            "cuts": [
-              {
-                "direction": "v",
-                "position": 0.5,
-                "angle": 0
-              }
-            ],
-            "gap": 8,
-            "stagger_ms": 300
           },
           "layers": [
             {
@@ -790,45 +632,42 @@
                 "pattern": "manga_screen",
                 "patternOpacity": 0.08
               }
-            }
-          ],
-          "cells": [
+            },
             {
-              "id": "old-world",
-              "position": "0",
-              "layers": [
-                {
-                  "id": "old-bg",
-                  "type": "background",
-                  "opacity": 1,
-                  "props": {
-                    "gradient": [
-                      "#2A2838",
-                      "#1A1825"
-                    ],
-                    "pattern": "crosshatch",
-                    "patternOpacity": 0.12
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 1,
+              "x": "0%",
+              "y": "0%",
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "65%",
+                    "y": "35%",
+                    "size": 120,
+                    "color": "#E8191A",
+                    "label": "LIVE-SWE-AGENT"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "25%",
+                    "y": "28%",
+                    "size": 80,
+                    "color": "#F5A623",
+                    "label": "FIXED vs EVOLVING"
                   }
-                },
-                {
-                  "id": "chains-effect",
-                  "type": "effect",
-                  "x": "50%",
-                  "y": "50%",
-                  "opacity": 0,
-                  "props": {
-                    "effect": "screentone",
-                    "color": "#5A5A6A",
-                    "intensity": 0.6
-                  }
-                },
-                {
-                  "id": "old-text",
-   …
+                ],
+                "description": "Laboratory with whi…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:08:47,126: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6952 input tokens
-[2026-04-06 21:08:49,759: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:52,038: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2913 out tokens | 19.6s
+[2026-04-06 22:32:29,444: WARNING/MainProcess] DSL issues for ch0-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:30,856: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7257 input tokens
+[2026-04-06 22:32:30,861: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:30,862: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 4188 out tokens | 23.1s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -838,163 +677,80 @@
       "canvas": {
         "width": 800,
         "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
+        "background": "#F2E8D5",
+        "mood": "light"
       },
       "acts": [
         {
-          "id": "revelation-build",
-          "duration_ms": 8000,
+          "id": "achievement-reveal",
+          "duration_ms": 6000,
           "transition_in": {
             "type": "fade",
-            "duration_ms": 600
+            "duration_ms": 500
           },
           "layout": {
-            "type": "full"
+            "type": "split-h",
+            "gap": 6
           },
           "layers": [
             {
-              "id": "bg-gradient",
+              "id": "bg-main",
               "type": "background",
               "opacity": 1,
               "props": {
                 "gradient": [
-                  "#1A1825",
-                  "#3D2817",
-                  "#F5A623"
+                  "#F2E8D5",
+                  "#EDE0CC"
                 ],
-                "gradientAngle": 180,
                 "pattern": "screentone",
                 "patternOpacity": 0.08
               }
             },
             {
-              "id": "torch-glow",
-              "type": "effect",
-              "x": "50%",
-              "y": "15%",
+              "id": "scene-lab",
+              "type": "illustration",
+              "x": "0%",
+              "y": "0%",
+              "opacity": 0.6,
+              "props": {
+                "scene": "laboratory",
+                "style": "watercolor",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "description": "Digital laboratory with data displays and computing nodes"
+              }
+            },
+            {
+              "id": "narrator",
+              "type": "sprite",
+              "x": "15%",
+              "y": "68%",
               "opacity": 0,
               "props": {
-                "effect": "particles",
-                "color": "#F5A62380",
-                "intensity": 0.6
+                "character": "Narrator",
+                "expression": "neutral",
+                "pose": "presenting",
+                "size": 48,
+                "facing": "right",
+                "silhouette": false
               }
             },
             {
-              "id": "code-icons-layer",
-              "type": "effect",
-              "x": "8%",
-              "y": "18%",
-              "opacity": 0,
-              "props": {
-                "effect": "screentone",
-                "color": "#F5A623",
-                "intensity": 0.3
-              }
-            },
-            {
-              "id": "graph-ascend",
-              "type": "shape",
-              "x": "72%",
-              "y": "25%",
-              "opacity": 0,
-              "props": {
-                "shape": "line",
-                "stroke": "#F5A623",
-                "strokeWidth": 3
-              }
-            },
-            {
-              "id": "line-1",
-              "type": "text",
-              "x": "10%",
-              "y": "8%",
-              "op…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:08:53,066: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6731 input tokens
-[2026-04-06 21:08:53,074: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2689 out tokens | 25.6s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 400,
-        "height": 600,
-        "background": "#2A1A1A",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "problem-reveal",
-          "duration_ms": 5000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 400
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#2A1A1A",
-                  "#3D1F1F"
-                ],
-                "pattern": "manga_screen",
-                "patternOpacity": 0.12
-              }
-            },
-            {
-              "id": "warning-vignette",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "vignette",
-                "color": "#E8191A",
-                "intensity": 0.35
-              }
-            },
-            {
-              "id": "title",
+              "id": "caption",
               "type": "text",
               "x": "8%",
               "y": "8%",
               "opacity": 0,
               "props": {
-                "content": "THE PROBLEM:",
-                "fontSize": "clamp(1.3rem, 5vw, 2rem)",
-                "fontFamily": "display",
-                "color": "#E8191A",
-                "fontWeight": "900",
-                "letterSpacing": "0.15em"
-              }
-            },
-            {
-              "id": "data-block",
-              "type": "data_block",
-              "x": "8%",
-              "y": "24%",
-              "opacity": 0,
-              "props": {
-                "items": [
-                  {
-                    "label": "LLMs infiltrated every industry",
-                    "icon": "chip"
-                  },
-                  {
-                    "label": "Yet true power in SE remains untapped",
-         …
+                "content": "The results spoke for themselves.",
+           …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:08:54,065: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6940 input tokens
-[2026-04-06 21:08:56,028: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:08:59,195: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:00,431: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 4000 out tokens | 18.4s
+[2026-04-06 22:32:30,864: WARNING/MainProcess] DSL issues for ch0-pg2-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:30,864: WARNING/MainProcess] DSL issues for ch0-pg2-p1: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:31,883: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7242 input tokens
+[2026-04-06 22:32:33,870: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:34,035: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:45,133: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3688 out tokens | 20.1s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -1009,8 +765,8 @@
       },
       "acts": [
         {
-          "id": "battlefield-transform",
-          "duration_ms": 7000,
+          "id": "convergence",
+          "duration_ms": 8000,
           "transition_in": {
             "type": "cut",
             "duration_ms": 120
@@ -1020,13 +776,91 @@
             "cuts": [
               {
                 "direction": "v",
-                "position": 0.33,
-                "angle": -2.5
+                "position": 0.35,
+                "angle": 2.0
               },
               {
+                "direction": "h",
+                "position": 0.48,
+                "angle": -3.0,
+                "target": 0
+              },
+              {
+                "direction": "h",
+                "position": 0.52,
+                "angle": 5.0,
+                "target": 1
+              }
+            ],
+            "gap": 6,
+            "stagger_ms": 180
+          },
+          "layers": [
+            {
+              "id": "bg-main",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "manga_screen",
+                "patternOpacity": 0.08
+              }
+            },
+            {
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 0.9,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "75%",
+                    "y": "20%",
+                    "size": 32,
+                    "color": "#E8191A",
+                    "label": "Remote"
+                  },
+                  {
+                    "type": "node",
+                  …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:32:45,136: WARNING/MainProcess] DSL issues for ch1-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:46,182: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7385 input tokens
+[2026-04-06 22:32:47,056: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2517 out tokens | 15.2s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "exhaustion-setup",
+          "duration_ms": 5500,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "cuts",
+            "cuts": [
+              {
                 "direction": "v",
-                "position": 0.66,
-                "angle": 2.0
+                "position": 0.52,
+                "angle": 1.8
               }
             ],
             "gap": 6,
@@ -1040,297 +874,49 @@
               "props": {
                 "gradient": [
                   "#1A1825",
-                  "#2A1520"
+                  "#2A2838"
                 ],
                 "pattern": "manga_screen",
                 "patternOpacity": 0.08
               }
             },
             {
-              "id": "vignette-outer",
-              "type": "effect",
-              "opacity": 0,
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 0.95,
               "props": {
-                "effect": "vignette",
-                "intensity": 0.6
-              }
-            }
-          ],
-          "cells": [
-            {
-              "id": "left-frozen",
-              "position": "0",
-              "layers": [
-                {
-                  "id": "agent-old-1",
-                  "type": "sprite",
-                  "x": "35%",
-                  "y": "45%",
-                  "opacity": 0,
-                  "scale": 0.6,
-                  "props": {
-                    "character": "Static Agent",
-                    "expression": "neutral",
-                    "size": 56,
-                    "silhouette": true,
-                    "facing": "right"
-     …
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "65%",
+                    "y": "20%",
+                    "size": 48,
+                    "color": "#E8191A",
+                    "label": "Failed Config"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "72%",
+                    "y": "45%",
+                    "size": 36,
+                    "color": "#E8191A"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "28%",
+                    "y": "35%",
+                    "size": 24,
+             …
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:09:00,436: WARNING/MainProcess] [LLM] JSON parse FAIL — raw content (15566 chars):
-'{\n  "panels": [\n    {\n      "version": "2.0",\n      "canvas": {\n        "width": 800,\n        "height": 600,\n        "background": "#1A1825",\n        "mood": "dark"\n      },\n      "acts": [\n        {\n          "id": "battlefield-transform",\n          "duration_ms": 7000,\n          "transition_in": {\n            "type": "cut",\n            "duration_ms": 120\n          },\n          "layout": {\n            "type": "cuts",\n            "cuts": [\n              {\n                "direction": "v",\n                "position": 0.33,\n                "angle": -2.5\n              },\n              {\n                "direction": "v",\n                "position": 0.66,\n                "angle": 2.0\n              }\n            ],\n            "gap": 6,\n            "stagger_ms": 250\n          },\n          "layers": [\n            {\n              "id": "bg-main",\n              "type": "background",\n              "opacity": 1,\n              "props": {\n                "gradient": [\n                  "#1A1825",\n '
-[2026-04-06 21:09:00,437: WARNING/MainProcess] [LLM] JSON parse failed (attempt 1/2), retrying…
-[2026-04-06 21:09:00,445: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6746 input tokens
-[2026-04-06 21:09:02,404: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:05,549: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2112 out tokens | 12.5s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F2E8D5",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "breakthrough-insight",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "iris",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-gradient",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#FFF4E6",
-                  "#F5A623"
-                ],
-                "gradientAngle": 45,
-                "pattern": "manga_screen",
-                "patternOpacity": 0.04
-              }
-            },
-            {
-              "id": "code-silhouette",
-              "type": "sprite",
-              "x": "25%",
-              "y": "55%",
-              "opacity": 0,
-              "scale": 0.8,
-              "props": {
-                "character": "Code Entity",
-                "expression": "neutral",
-                "size": 64,
-                "silhouette": true,
-                "facing": "right"
-              }
-            },
-            {
-              "id": "agent-silhouette",
-              "type": "sprite",
-              "x": "75%",
-              "y": "55%",
-              "opacity": 0,
-              "scale": 0.8,
-              "props": {
-                "character": "Agent Entity",
-                "expression": "determined",
-                "size": 64,
-                "silhouette": true,
-                "facing": "left"
-              }
-            },
-            {
-              "id": "concentric-effect",
-              "type": "effect",
-              "x": "50%",
-              "y": "50%",
-              "opacity": 0,
-              "props": {
-                "effect": "impact_burst",
-          …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:06,504: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6731 input tokens
-[2026-04-06 21:09:08,420: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:11,526: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 5192 out tokens | 24.4s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F5A623",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "evolution-timeline",
-          "duration_ms": 5500,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 400
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F5A623",
-                  "#EDE0CC"
-                ],
-                "pattern": "dots",
-                "patternOpacity": 0.05
-              }
-            },
-            {
-              "id": "timeline-line",
-              "type": "shape",
-              "x": "15%",
-              "y": "50%",
-              "opacity": 0,
-              "props": {
-                "shape": "line",
-                "stroke": "#1A1825",
-                "strokeWidth": 3
-              }
-            },
-            {
-              "id": "icon-1",
-              "type": "text",
-              "x": "12%",
-              "y": "45%",
-              "opacity": 0,
-              "scale": 0.6,
-              "props": {
-                "content": "⟨ ⟩",
-                "fontSize": "clamp(2rem, 8vw, 3.5rem)",
-                "fontFamily": "display",
-                "color": "#1A1825",
-                "textAlign": "center"
-              }
-            },
-            {
-              "id": "icon-2",
-              "type": "text",
-              "x": "40%",
-              "y": "45%",
-              "opacity": 0,
-              "scale": 0.7,
-              "props": {
-                "content": "⚡",
-                "fontSize": "clamp(2rem, 8vw, 3.5rem)",
-                "fontFamily": "display",
-                "color": "#E8191A",
-                "textAlign": "center"
-              }
-       …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:12,466: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7000 input tokens
-[2026-04-06 21:09:14,408: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:16,694: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3913 out tokens | 22.6s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F2E8D5",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "principle-reveal",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#EDE0CC"
-                ],
-                "pattern": "screentone",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "accent-line",
-              "type": "shape",
-              "x": "0%",
-              "y": "8%",
-              "opacity": 0,
-              "props": {
-                "shape": "line",
-                "stroke": "#F5A623",
-                "strokeWidth": 3,
-                "fill": "none"
-              }
-            },
-            {
-              "id": "agent-silhouette",
-              "type": "sprite",
-              "x": "68%",
-              "y": "45%",
-              "opacity": 0,
-              "scale": 0.85,
-              "props": {
-                "character": "LIVE-SWE-AGENT",
-                "expression": "determined",
-                "size": 68,
-                "silhouette": true,
-                "facing": "left"
-              }
-            },
-            {
-              "id": "toolkit-effect",
-              "type": "effect",
-              "x": "72%",
-              "y": "55%",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F5A62380",
-                "intensity": 0.6
-              }
-            },
-            {
-              "id": "headline",
-              "type": "text",…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:16,697: INFO/MainProcess] ch4-pg1-p1: Injecting data_block for data panel
-[2026-04-06 21:09:17,905: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6714 input tokens
-[2026-04-06 21:09:18,277: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3691 out tokens | 17.8s
+[2026-04-06 22:32:47,057: WARNING/MainProcess] DSL issues for ch2-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:48,004: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7258 input tokens
+[2026-04-06 22:32:48,398: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:50,408: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:32:55,510: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2386 out tokens | 24.7s
 ────────────────────────────────────────────────────────────
 ```json
 {
@@ -1345,11 +931,813 @@
       },
       "acts": [
         {
-          "id": "battlefield-transform",
+          "id": "drowning-ocean",
           "duration_ms": 7000,
           "transition_in": {
+            "type": "fade",
+            "duration_ms": 800
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-illustration",
+              "type": "illustration",
+              "opacity": 0,
+              "props": {
+                "scene": "laboratory",
+                "style": "manga-ink",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "50%",
+                    "y": "50%",
+                    "size": 120,
+                    "color": "#E8191A",
+                    "label": "LIVE-SWE-AGENT"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "48%",
+                    "y": "35%",
+                    "size": 40,
+                    "color": "#F5A623"
+                  }
+                ],
+                "description": "Digital ocean of struggling agents, LIVE-SWE-AGENT on island center with torch light"
+              }
+            },
+            {
+              "id": "water-screentone",
+              "type": "effect",
+              "opacity": 0,
+              "props": {
+                "effect": "screentone",
+                "color": "#1A182570",
+                "intensity": 0.7
+              }
+            },
+            {
+              "id": "chaos-speed-lines",
+              "type": "effect",
+              "opacity": 0,
+              "props": {
+                "effect": "speed_lines",
+                "color": "#3A3850",
+                "intensity": 0.6,
+                "direction": "r…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:32:55,512: WARNING/MainProcess] DSL issues for ch2-pg0-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:32:56,627: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7307 input tokens
+[2026-04-06 22:32:58,742: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:04,399: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3546 out tokens | 18.2s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 280,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "server-farm-reveal",
+          "duration_ms": 5500,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-lab",
+              "type": "illustration",
+              "x": "0%",
+              "y": "0%",
+              "opacity": 1,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "25%",
+                    "y": "35%",
+                    "size": 80,
+                    "color": "#E8191A",
+                    "label": "Server Stack"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "60%",
+                    "y": "40%",
+                    "size": 60,
+                    "color": "#F5A623"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "75%",
+                    "y": "55%",
+                    "size": 70,
+                    "color": "#E8191A"
+                  }
+                ],
+                "description": "Massive server farm with electricity arcing, agent training in contained environment"
+              }
+            },
+            {
+              "id": "screentone-heat",
+              "type": "effect",
+              "opacity": 0,
+              "props": {
+                "effect": "screentone",
+                "color": "#E8191A",
+                "intensity": 0.4
+              }
+            },
+            {
+              "id": "…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:04,401: WARNING/MainProcess] DSL issues for ch2-pg2-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:04,401: WARNING/MainProcess] DSL issues for ch2-pg2-p1: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:05,415: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7391 input tokens
+[2026-04-06 22:33:07,090: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:09,319: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3194 out tokens | 21.3s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "revelation-awakening",
+          "duration_ms": 7000,
+          "transition_in": {
+            "type": "iris",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-digital",
+              "type": "illustration",
+              "opacity": 1,
+              "props": {
+                "scene": "digital-realm",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "50%",
+                    "y": "20%",
+                    "size": 120,
+                    "color": "#E8191A",
+                    "label": "evolution"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "35%",
+                    "y": "50%",
+                    "size": 8,
+                    "color": "#F5A623"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "65%",
+                    "y": "55%",
+                    "size": 6,
+                    "color": "#F5A623"
+                  }
+                ],
+                "description": "Digital realm with neon accents, agent confronting its own code in a mirror reflection"
+              }
+            },
+            {
+              "id": "bg-gradient",
+              "type": "background",
+              "opacity": 0.7,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#2A1A25",
+                  "#1A3540",
+                  "#0F1A25"
+                ],
+                "gradientAngle": 45,
+               …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:09,320: WARNING/MainProcess] DSL issues for ch3-pg0-p0: ["Act 0 layer 0: invalid type 'illustration'"]
+[2026-04-06 22:33:10,257: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7253 input tokens
+[2026-04-06 22:33:13,612: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:14,834: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 10020 out tokens | 48.8s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "expertise-convergence-1",
+          "duration_ms": 5000,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 400
+          },
+          "layout": {
+            "type": "grid-2x2"
+          },
+          "layers": [
+            {
+              "id": "bg-main",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "manga_screen",
+                "patternOpacity": 0.08
+              }
+            },
+            {
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 1,
+              "x": "0%",
+              "y": "0%",
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "75%",
+                    "y": "50%",
+                    "size": 120,
+                    "color": "#E8191A",
+                    "label": "code"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "25%",
+                    "y": "50%",
+                    "size": 100,
+                    "color": "#F5A623"
+                  }
+                ],
+                "description": "Laboratory with neon-lit workstations"
+              }
+            }
+          ],
+          "cells": [
+            {
+              "id": "tl-chunqiu",
+              "position": "tl",
+              "layers": [
+                {
+                  "id": "bg-tl",
+                  "type"…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:14,842: WARNING/MainProcess] DSL issues for ch1-pg2-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:14,842: WARNING/MainProcess] DSL issues for ch1-pg2-p1: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:14,842: WARNING/MainProcess] DSL issues for ch1-pg2-p2: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:15,926: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7300 input tokens
+[2026-04-06 22:33:16,420: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3849 out tokens | 19.8s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "paradigm-shift",
+          "duration_ms": 8000,
+          "transition_in": {
             "type": "cut",
-            "duration_ms": 100
+            "duration_ms": 120
+          },
+          "layout": {
+            "type": "cuts",
+            "cuts": [
+              {
+                "direction": "v",
+                "position": 0.48,
+                "angle": 3
+              },
+              {
+                "direction": "h",
+                "position": 0.52,
+                "angle": -2.5,
+                "target": 0
+              },
+              {
+                "direction": "h",
+                "position": 0.48,
+                "angle": 2,
+                "target": 1
+              }
+            ],
+            "gap": 6,
+            "stagger_ms": 180
+          },
+          "layers": [
+            {
+              "id": "bg-main",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "manga_screen",
+                "patternOpacity": 0.08
+              }
+            },
+            {
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 0.95,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "node",
+                    "x": "25%",
+                    "y": "35%",
+                    "size": 24,
+                    "color": "#E8191A",
+                    "label": "trapped"
+                  },
+                  {
+                    "type": "monitor",
+                 …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:16,423: WARNING/MainProcess] DSL issues for ch3-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:17,480: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7360 input tokens
+[2026-04-06 22:33:18,302: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:19,325: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:26,893: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 4528 out tokens | 21.5s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#F2E8D5",
+        "mood": "light"
+      },
+      "acts": [
+        {
+          "id": "old-paradigm",
+          "duration_ms": 5000,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 500
+          },
+          "layout": {
+            "type": "split-h",
+            "gap": 6
+          },
+          "layers": [
+            {
+              "id": "bg-main",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#F2E8D5",
+                  "#EDE0CC"
+                ],
+                "pattern": "crosshatch",
+                "patternOpacity": 0.05
+              }
+            }
+          ],
+          "cells": [
+            {
+              "id": "left-old",
+              "position": "left",
+              "layers": [
+                {
+                  "id": "scene-old",
+                  "type": "illustration",
+                  "opacity": 0,
+                  "props": {
+                    "scene": "laboratory",
+                    "style": "watercolor",
+                    "primaryColor": "#1A1825",
+                    "accentColor": "#8B7355",
+                    "elements": [
+                      {
+                        "type": "monitor",
+                        "x": "50%",
+                        "y": "40%",
+                        "size": 48,
+                        "color": "#1A1825",
+                        "label": "design"
+                      }
+                    ],
+                    "description": "Laboratory with researchers designing agent on whiteboard"
+                  }
+                },
+                {
+                  "id": "frustration-effect",
+                  "type": "effect",
+                  "opacity": 0,
+                  "props": {
+                    "effect": "screentone",
+          …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:26,895: INFO/MainProcess] ch3-pg2-p0: Injecting data_block for data panel
+[2026-04-06 22:33:26,895: WARNING/MainProcess] DSL issues for ch3-pg2-p1: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:28,162: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7247 input tokens
+[2026-04-06 22:33:28,169: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2762 out tokens | 17.9s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "forge-breakthrough",
+          "duration_ms": 6000,
+          "transition_in": {
+            "type": "cut",
+            "duration_ms": 120
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-digital",
+              "type": "illustration",
+              "opacity": 1,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "spark",
+                    "x": "50%",
+                    "y": "50%",
+                    "size": 120,
+                    "color": "#E8191A",
+                    "label": "forge"
+                  },
+                  {
+                    "type": "node",
+                    "x": "25%",
+                    "y": "30%",
+                    "size": 40,
+                    "color": "#F5A623"
+                  },
+                  {
+                    "type": "node",
+                    "x": "75%",
+                    "y": "35%",
+                    "size": 35,
+                    "color": "#00D9FF"
+                  },
+                  {
+                    "type": "monitor",
+                    "x": "20%",
+                    "y": "70%",
+                    "size": 50,
+                    "color": "#1A1825"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "80%",
+                    "y": "72%",
+                    "size": 45,
+                    "color": "#E8191A"
+                  }
+                ],
+                "description": "Digital laboratory with LIVE-SWE-AGENT at center, surrounde…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:28,170: WARNING/MainProcess] DSL issues for ch4-pg0-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:29,268: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7324 input tokens
+[2026-04-06 22:33:31,055: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:31,434: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:36,197: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 4000 out tokens | 20.3s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "decision-fork",
+          "duration_ms": 5500,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 400
+          },
+          "layout": {
+            "type": "cuts",
+            "cuts": [
+              {
+                "direction": "v",
+                "position": 0.48,
+                "angle": 2.0
+              },
+              {
+                "direction": "h",
+                "position": 0.55,
+                "angle": -1.5,
+                "target": 0
+              }
+            ],
+            "gap": 5,
+            "stagger_ms": 180
+          },
+          "layers": [
+            {
+              "id": "bg-main",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "manga_screen",
+                "patternOpacity": 0.08
+              }
+            },
+            {
+              "id": "scene-lab",
+              "type": "illustration",
+              "opacity": 0.9,
+              "x": "0%",
+              "y": "0%",
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "node",
+                    "x": "25%",
+                    "y": "45%",
+                    "size": 32,
+                    "color": "#E8191A",
+                    "label": "decision"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "15%",
+                    "y": "35%",
+                    "size": 16,
+                    "color":…
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:36,203: WARNING/MainProcess] [LLM] JSON parse FAIL — raw content (14894 chars):
+'{\n  "panels": [\n    {\n      "version": "2.0",\n      "canvas": {\n        "width": 800,\n        "height": 600,\n        "background": "#1A1825",\n        "mood": "dark"\n      },\n      "acts": [\n        {\n          "id": "decision-fork",\n          "duration_ms": 5500,\n          "transition_in": {\n            "type": "fade",\n            "duration_ms": 400\n          },\n          "layout": {\n            "type": "cuts",\n            "cuts": [\n              {\n                "direction": "v",\n                "position": 0.48,\n                "angle": 2.0\n              },\n              {\n                "direction": "h",\n                "position": 0.55,\n                "angle": -1.5,\n                "target": 0\n              }\n            ],\n            "gap": 5,\n            "stagger_ms": 180\n          },\n          "layers": [\n            {\n              "id": "bg-main",\n              "type": "background",\n              "opacity": 1,\n              "props": {\n                "gradient": [\n        '
+[2026-04-06 22:33:36,206: INFO/MainProcess] [LLM] Recovered truncated JSON (14894 chars)
+[2026-04-06 22:33:36,207: WARNING/MainProcess] DSL issues for ch4-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:37,240: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~7360 input tokens
+[2026-04-06 22:33:39,319: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2026-04-06 22:33:43,811: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 6221 out tokens | 26.3s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "bootstrap-minimal",
+          "duration_ms": 5000,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-dark",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "screentone",
+                "patternOpacity": 0.04
+              }
+            },
+            {
+              "id": "illustration-lab",
+              "type": "illustration",
+              "opacity": 0,
+              "x": "50%",
+              "y": "50%",
+              "props": {
+                "scene": "laboratory",
+                "style": "manga-ink",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "description": "Minimal laboratory with single agent core and bash command icons"
+              }
+            },
+            {
+              "id": "agent-core",
+              "type": "sprite",
+              "x": "50%",
+              "y": "55%",
+              "opacity": 0,
+              "scale": 0.8,
+              "props": {
+                "character": "LIVE-SWE-AGENT",
+                "expression": "neutral",
+                "pose": "standing",
+                "size": 64,
+                "silhouette": true,
+                "signatureColor": "#E8191A",
+                "aura": "none"
+              }
+            },
+            {
+              "id": "bash-icon-1",
+              "type": "shape",
+              "x": "25%",
+              "y": "45%",
+              "opacity": 0,
+              "props": {
+       …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:43,813: WARNING/MainProcess] DSL issues for ch4-pg2-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:43,814: WARNING/MainProcess] DSL issues for ch4-pg2-p1: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:46,662: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3600 out tokens | 18.5s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "awakening-start",
+          "duration_ms": 2800,
+          "transition_in": {
+            "type": "iris",
+            "duration_ms": 600
+          },
+          "layout": {
+            "type": "full"
+          },
+          "layers": [
+            {
+              "id": "bg-repository",
+              "type": "illustration",
+              "opacity": 0,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "node",
+                    "x": "15%",
+                    "y": "10%",
+                    "size": 8,
+                    "color": "#E8191A"
+                  },
+                  {
+                    "type": "node",
+                    "x": "85%",
+                    "y": "20%",
+                    "size": 6,
+                    "color": "#E8191A"
+                  },
+                  {
+                    "type": "chart",
+                    "x": "50%",
+                    "y": "35%",
+                    "size": 120,
+                    "color": "#E8191A"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "25%",
+                    "y": "65%",
+                    "size": 4,
+                    "color": "#F5A623"
+                  },
+                  {
+                    "type": "spark",
+                    "x": "75%",
+                    "y": "70%",
+                    "size": 4,
+                    "color": "#F5A623"
+                  }
+                ],
+                "description": "Vast digital repository with glowing nodes and branching structure"
+      }
+            },
+           …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:46,664: WARNING/MainProcess] DSL issues for ch5-pg0-p0: ["Act 0 layer 1: invalid type 'illustration'", "Act 1 layer 1: invalid type 'illustration'", "Act 2 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:33:49,643: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3372 out tokens | 20.4s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "setup-lab",
+          "duration_ms": 3500,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 500
           },
           "layout": {
             "type": "cuts",
@@ -1357,19 +1745,89 @@
               {
                 "direction": "v",
                 "position": 0.5,
-                "angle": 0
+                "angle": 3
               },
               {
                 "direction": "h",
                 "position": 0.5,
-                "angle": 1.5,
+                "angle": -2.5,
                 "target": 0
               },
               {
                 "direction": "h",
                 "position": 0.5,
-                "angle": -1.5,
+                "angle": 2,
                 "target": 1
+              }
+            ],
+            "gap": 6,
+            "stagger_ms": 180
+          },
+          "layers": [
+            {
+              "id": "bg-base",
+              "type": "background",
+              "opacity": 1,
+              "props": {
+                "gradient": [
+                  "#1A1825",
+                  "#0F0E17"
+                ],
+                "pattern": "manga_screen",
+                "patternOpacity": 0.08
+              }
+            },
+            {
+              "id": "lab-scene",
+              "type": "illustration",
+              "opacity": 1,
+              "props": {
+                "scene": "laboratory",
+                "style": "neon",
+                "primaryColor": "#1A1825",
+                "accentColor": "#E8191A",
+                "elements": [
+                  {
+                    "type": "monitor",
+                    "x": "65%",
+                    "y": "25%",
+                    "size": 80,
+                    "color": "#E8191A",
+                    "label": "prompt_mod_display"
+                  },
+                  {
+                    "type": "node",
+                …
+────────────────────────────────────────────────────────────
+[2026-04-06 22:33:49,646: WARNING/MainProcess] DSL issues for ch5-pg1-p0: ["Act 0 layer 1: invalid type 'illustration'"]
+[2026-04-06 22:34:11,321: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 6425 out tokens | 34.1s
+────────────────────────────────────────────────────────────
+```json
+{
+  "panels": [
+    {
+      "version": "2.0",
+      "canvas": {
+        "width": 800,
+        "height": 600,
+        "background": "#1A1825",
+        "mood": "dark"
+      },
+      "acts": [
+        {
+          "id": "problem-analysis",
+          "duration_ms": 3500,
+          "transition_in": {
+            "type": "fade",
+            "duration_ms": 400
+          },
+          "layout": {
+            "type": "cuts",
+            "cuts": [
+              {
+                "direction": "v",
+                "position": 0.5,
+                "angle": 1.5
               }
             ],
             "gap": 6,
@@ -1392,695 +1850,38 @@
           ],
           "cells": [
             {
-              "id": "top-left-old",
+              "id": "left-problem",
               "position": "0",
               "layers": [
                 {
-                  "id": "old-agents-bg",
+                  "id": "problem-bg",
                   "type": "background",
                   "opacity": 1,
                   "props": {
                     "gradient": [
-                      "#2A2838",
+                      "#0F0E17",
                       "#1A1825"
                     ],
-                    "pattern": "crosshatch",
+                    "pattern": "halftone",
                     "patternOpacity": 0.12
                   }
                 },
                 {
-                  "id": "chains-effect",
-                  "type": "effect",
-      …
+                  "id": "scene-left",
+                  "type": "illustration",
+                  "opacity": 0.9,
+                  "x": "50%",
+                  "y": "50%",
+                  "props": {
+                    "scene": "laboratory",
+                    "style": "neon",
+                    "primaryColor": "#1A1825",
+                    "accentColor": "#E8191A",
+                    "elements":…
 ────────────────────────────────────────────────────────────
-[2026-04-06 21:09:19,193: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6892 input tokens
-[2026-04-06 21:09:20,327: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:21,850: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:24,358: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2847 out tokens | 17.9s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "evolution-splash",
-          "duration_ms": 5500,
-          "transition_in": {
-            "type": "cut",
-            "duration_ms": 120
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-base",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#1A1825",
-                  "#2A1820",
-                  "#1A1825"
-                ],
-                "gradientAngle": 45,
-                "pattern": "manga_screen",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "vignette-layer",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "vignette",
-                "intensity": 0.6,
-                "color": "#E8191A"
-              }
-            },
-            {
-              "id": "speed-lines-radial",
-              "type": "effect",
-              "x": "50%",
-              "y": "45%",
-              "opacity": 0,
-              "props": {
-                "effect": "speed_lines",
-                "color": "#F5A62388",
-                "intensity": 0.7,
-                "direction": "radial"
-              }
-            },
-            {
-              "id": "hand-glow",
-              "type": "shape",
-              "x": "52%",
-              "y": "48%",
-              "opacity": 0,
-              "scale": 0.6,
-              "props": {
-                "shape": "circle",
-                "fill": "#E8191A44",
-                "stroke": "#F5A623",
-                "strokeWidth": 3
-              }
-            },
-            {
-              "id": "hand-silhouette",
-              "type": "sprite",
-   …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:25,369: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6803 input tokens
-[2026-04-06 21:09:27,705: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:31,849: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2515 out tokens | 13.9s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "engine-reveal",
-          "duration_ms": 5500,
-          "transition_in": {
-            "type": "iris",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "circuit-bg",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#1A1825",
-                  "#0F0E17"
-                ],
-                "pattern": "crosshatch",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "circuit-overlay",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F5A62340",
-                "intensity": 0.4
-              }
-            },
-            {
-              "id": "speed-lines-bg",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "speed_lines",
-                "color": "#E8191A",
-                "intensity": 0.5,
-                "direction": "radial"
-              }
-            },
-            {
-              "id": "gear-center",
-              "type": "sprite",
-              "x": "50%",
-              "y": "48%",
-              "opacity": 0,
-              "scale": 0.6,
-              "props": {
-                "character": "Engine",
-                "expression": "neutral",
-                "size": 120,
-                "silhouette": true
-              }
-            },
-            {
-              "id": "tool-glow-1",
-              "type": "effect",
-              "x": "32%",
-              "y": "35%",
-              "opacity": 0,
-              "props": {
-                "e…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:32,858: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6728 input tokens
-[2026-04-06 21:09:34,843: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:41,968: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 3783 out tokens | 22.8s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 400,
-        "height": 600,
-        "background": "#F5A62320",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "script-birth",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-gradient",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#FDE8C8"
-                ],
-                "pattern": "screentone",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "script-lines",
-              "type": "effect",
-              "x": "50%",
-              "y": "50%",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#F5A62380",
-                "intensity": 0.4
-              }
-            },
-            {
-              "id": "title",
-              "type": "text",
-              "x": "8%",
-              "y": "8%",
-              "opacity": 0,
-              "props": {
-                "content": "TOOL SYNTHESIS",
-                "fontSize": "clamp(1rem, 3.5vw, 1.6rem)",
-                "fontFamily": "display",
-                "color": "#1A1825",
-                "fontWeight": "bold"
-              }
-            },
-            {
-              "id": "main-text",
-              "type": "text",
-              "x": "8%",
-              "y": "22%",
-              "opacity": 0,
-              "props": {
-                "content": "Tools aren't pre-built libraries.\n\nThey're executable scripts the agent generates on-the-fly, tailored to the exact problem at hand.\n\nThe breakthrough is architectural:\n\nBy framing tools as simple shell scripts with cle…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:43,055: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6753 input tokens
-[2026-04-06 21:09:43,878: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2822 out tokens | 18.5s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F2E8D5",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "tool-synthesis-reveal",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-base",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#F5E8D0"
-                ],
-                "pattern": "crosshatch",
-                "patternOpacity": 0.05
-              }
-            },
-            {
-              "id": "grid-overlay",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "screentone",
-                "color": "#F5A62330",
-                "intensity": 0.15
-              }
-            },
-            {
-              "id": "chapter-label",
-              "type": "text",
-              "x": "8%",
-              "y": "4%",
-              "opacity": 0,
-              "props": {
-                "content": "CHAPTER 2.2: CUSTOM TOOL SYNTHESIS",
-                "fontSize": "clamp(0.65rem, 2.2vw, 0.85rem)",
-                "fontFamily": "label",
-                "color": "#F5A623",
-                "textAlign": "left"
-              }
-            },
-            {
-              "id": "title",
-              "type": "text",
-              "x": "8%",
-              "y": "10%",
-              "opacity": 0,
-              "props": {
-                "content": "CUSTOM TOOL STRUCTURE",
-                "fontSize": "clamp(1.3rem, 4.8vw, 2.1rem)",
-                "fontFamily": "display",
-                "color": "#1A1825",
-                "textAlign": "left"
-              }
-            },
-            {
-     …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:45,232: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:49,310: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 7271 out tokens | 36.8s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "revelation-spark",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-screentone",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#1A1825",
-                  "#2A1820"
-                ],
-                "pattern": "screentone",
-                "patternOpacity": 0.12
-              }
-            },
-            {
-              "id": "agent-silhouette",
-              "type": "sprite",
-              "x": "65%",
-              "y": "62%",
-              "opacity": 0,
-              "scale": 0.85,
-              "props": {
-                "character": "LIVE-SWE-AGENT",
-                "expression": "thoughtful",
-                "size": 68,
-                "silhouette": true
-              }
-            },
-            {
-              "id": "spark-effect",
-              "type": "effect",
-              "x": "72%",
-              "y": "45%",
-              "opacity": 0,
-              "props": {
-                "effect": "impact_burst",
-                "color": "#E8191A",
-                "intensity": 0.9
-              }
-            },
-            {
-              "id": "particles-creation",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "particles",
-                "color": "#E8191A",
-                "intensity": 0.6
-              }
-            },
-            {
-              "id": "line-1",
-              "type": "text",
-              "x": "8%",
-              "y": "12%",
-              "opacity": 0,
-              "p…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:49,316: INFO/MainProcess] ch5-pg1-p1: Injecting data_block for data panel
-[2026-04-06 21:09:51,995: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 4000 out tokens | 19.1s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "arena-setup",
-          "duration_ms": 5000,
-          "transition_in": {
-            "type": "iris",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "cuts",
-            "cuts": [
-              {
-                "direction": "v",
-                "position": 0.5,
-                "angle": 0
-              },
-              {
-                "direction": "h",
-                "position": 0.4,
-                "angle": 1.5,
-                "target": 0
-              },
-              {
-                "direction": "h",
-                "position": 0.6,
-                "angle": -1.5,
-                "target": 1
-              }
-            ],
-            "gap": 6,
-            "stagger_ms": 250
-          },
-          "layers": [
-            {
-              "id": "bg-arena",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#1A1825",
-                  "#0F0E17",
-                  "#2A2838"
-                ],
-                "gradientAngle": 135,
-                "pattern": "manga_screen",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "grid-floor",
-              "type": "shape",
-              "x": "0%",
-              "y": "65%",
-              "opacity": 0,
-              "props": {
-                "shape": "rect",
-                "fill": "none",
-                "stroke": "#E8191A",
-                "strokeWidth": 1
-              }
-            },
-            {
-              "id": "vignette-frame",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "vignette",
-                "intensity": 0.6
-              }
-            }
-    …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:09:52,001: WARNING/MainProcess] [LLM] JSON parse FAIL — raw content (14711 chars):
-'{\n  "panels": [\n    {\n      "version": "2.0",\n      "canvas": {\n        "width": 800,\n        "height": 600,\n        "background": "#1A1825",\n        "mood": "dark"\n      },\n      "acts": [\n        {\n          "id": "arena-setup",\n          "duration_ms": 5000,\n          "transition_in": {\n            "type": "iris",\n            "duration_ms": 600\n          },\n          "layout": {\n            "type": "cuts",\n            "cuts": [\n              {\n                "direction": "v",\n                "position": 0.5,\n                "angle": 0\n              },\n              {\n                "direction": "h",\n                "position": 0.4,\n                "angle": 1.5,\n                "target": 0\n              },\n              {\n                "direction": "h",\n                "position": 0.6,\n                "angle": -1.5,\n                "target": 1\n              }\n            ],\n            "gap": 6,\n            "stagger_ms": 250\n          },\n          "layers": [\n            {\n      '
-[2026-04-06 21:09:52,001: WARNING/MainProcess] [LLM] JSON parse failed (attempt 1/2), retrying…
-[2026-04-06 21:09:52,009: INFO/MainProcess] [LLM] → anthropic/claude-haiku-4.5 | ~6751 input tokens
-[2026-04-06 21:09:54,291: INFO/MainProcess] HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
-[2026-04-06 21:09:59,176: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2875 out tokens | 16.1s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#F2E8D5",
-        "mood": "light"
-      },
-      "acts": [
-        {
-          "id": "foundation-reveal",
-          "duration_ms": 7000,
-          "transition_in": {
-            "type": "fade",
-            "duration_ms": 500
-          },
-          "layout": {
-            "type": "cuts",
-            "cuts": [
-              {
-                "direction": "v",
-                "position": 0.58,
-                "angle": 1.8
-              }
-            ],
-            "gap": 6,
-            "stagger_ms": 250
-          },
-          "layers": [
-            {
-              "id": "bg-main",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#F2E8D5",
-                  "#EDE0CC"
-                ],
-                "pattern": "crosshatch",
-                "patternOpacity": 0.05
-              }
-            },
-            {
-              "id": "code-viz",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "screentone",
-                "color": "#F5A62330",
-                "intensity": 0.4
-              }
-            },
-            {
-              "id": "accent-line",
-              "type": "shape",
-              "x": "8%",
-              "y": "18%",
-              "opacity": 0,
-              "props": {
-                "shape": "line",
-                "fill": "none",
-                "stroke": "#F5A623",
-                "strokeWidth": 3
-              }
-            }
-          ],
-          "cells": [
-            {
-              "id": "left-data",
-              "position": "0",
-              "layers": [
-                {
-                  "id": "title-foundation",
-                  "type": "text",
-                  "x": "8%",
-                  "y": "8%",
-                  "opacity": 0,
-                  "pro…
-────────────────────────────────────────────────────────────
-[2026-04-06 21:10:05,919: INFO/MainProcess] [LLM] ← anthropic/claude-haiku-4.5 | 2683 out tokens | 13.9s
-────────────────────────────────────────────────────────────
-```json
-{
-  "panels": [
-    {
-      "version": "2.0",
-      "canvas": {
-        "width": 800,
-        "height": 600,
-        "background": "#1A1825",
-        "mood": "dark"
-      },
-      "acts": [
-        {
-          "id": "arena-setup",
-          "duration_ms": 3500,
-          "transition_in": {
-            "type": "iris",
-            "duration_ms": 600
-          },
-          "layout": {
-            "type": "full"
-          },
-          "layers": [
-            {
-              "id": "bg-arena",
-              "type": "background",
-              "opacity": 1,
-              "props": {
-                "gradient": [
-                  "#0F0E17",
-                  "#1A1825"
-                ],
-                "pattern": "manga_screen",
-                "patternOpacity": 0.08
-              }
-            },
-            {
-              "id": "grid-lines",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "screentone",
-                "color": "#F5A62330",
-                "intensity": 0.4
-              }
-            },
-            {
-              "id": "vignette-dark",
-              "type": "effect",
-              "opacity": 0,
-              "props": {
-                "effect": "vignette",
-                "intensity": 0.7
-              }
-            },
-            {
-              "id": "center-agent",
-              "type": "sprite",
-              "x": "50%",
-              "y": "62%",
-              "opacity": 0,
-              "scale": 0.6,
-              "props": {
-                "character": "LIVE-SWE-AGENT",
-                "expression": "determined",
-                "size": 80,
-                "silhouette": false
-              }
-            },
-            {
-              "id": "agent-left-1",
-              "type": "sprite",
-              "x": "18%",
-              "y": "65%",
-              "opacity": 0,
-              "scale": 0.35,
-              "props": {
-                "character": "mini-SWE-agent",
-              …
-────────────────────────────────────────────────────────────
-[2026-04-06 21:10:09,494: INFO/MainProcess] Saved 28 panels to living_panels collection
-[2026-04-06 21:10:09,772: INFO/MainProcess] Orchestrator done: 28 panels ok, 0 fallback, 355.8s
-[2026-04-06 21:10:10,175: INFO/MainProcess] Summary generation complete for book 69d11054c6768c333c38b352
-[2026-04-06 21:10:10,184: INFO/MainProcess] Task app.celery_worker.generate_summary_task[a52a59ae-a3a5-4638-bba0-ad2bdf20c84a] succeeded in 488.13444387499476s: None
-
-
+[2026-04-06 22:34:11,327: INFO/MainProcess] ch5-pg2-p0: Injecting missing speech bubbles
+[2026-04-06 22:34:14,575: INFO/MainProcess] Saved 26 panels to living_panels collection
+[2026-04-06 22:34:14,827: INFO/MainProcess] Orchestrator done: 26 panels ok, 0 fallback, 434.5s
+[2026-04-06 22:34:15,075: INFO/MainProcess] Summary generation complete for book 69d11054c6768c333c38b352
+[2026-04-06 22:34:15,085: INFO/MainProcess] Task app.celery_worker.generate_summary_task[3b03d035-4ccb-4790-9274-1a1edab53ab2] succeeded in 557.5981590829906s: None
 ````
