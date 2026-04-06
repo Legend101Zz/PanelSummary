@@ -1,7 +1,10 @@
 """Tests for DSL fixer — ensure fix_common_dsl_issues handles edge cases."""
 
 import pytest
-from app.generate_living_panels import fix_common_dsl_issues, validate_living_panel_dsl
+from app.generate_living_panels import (
+    fix_common_dsl_issues, validate_living_panel_dsl,
+    _contrast_ratio, _fix_text_color, _hex_to_rgb,
+)
 
 
 class TestDSLFixer:
@@ -202,3 +205,74 @@ class TestDSLFixer:
         fixed = fix_common_dsl_issues(bad)
         is_valid, errors = validate_living_panel_dsl(fixed)
         assert is_valid, f"Fixed DSL should validate but got: {errors}"
+
+
+class TestContrastEnforcement:
+    """Ensure text is always readable against its background."""
+
+    def test_hex_to_rgb(self):
+        assert _hex_to_rgb("#FF0000") == (255, 0, 0)
+        assert _hex_to_rgb("#000") == (0, 0, 0)
+        assert _hex_to_rgb("invalid") is None
+
+    def test_white_on_white_bad_contrast(self):
+        assert _contrast_ratio("#F0EEE8", "#F2E8D5") < 4.5
+
+    def test_ink_on_cream_good_contrast(self):
+        assert _contrast_ratio("#1A1825", "#F2E8D5") >= 4.5
+
+    def test_fixes_white_text_on_light_bg(self):
+        fixed = _fix_text_color("#F0EEE8", "#F2E8D5")
+        assert fixed == "#1A1825"  # Flipped to dark ink
+
+    def test_fixes_dark_text_on_dark_bg(self):
+        fixed = _fix_text_color("#1A1825", "#0F0E17")
+        assert fixed == "#F0EEE8"  # Flipped to light paper
+
+    def test_leaves_good_contrast_alone(self):
+        fixed = _fix_text_color("#1A1825", "#F2E8D5")
+        assert fixed == "#1A1825"  # Already good, untouched
+
+    def test_full_dsl_contrast_fix(self):
+        """White text on cream background gets auto-fixed in full pipeline."""
+        dsl = {
+            "canvas": {"width": 800, "height": 600, "background": "#F2E8D5", "mood": "light"},
+            "acts": [{
+                "id": "a", "duration_ms": 5000,
+                "layout": {"type": "full"},
+                "layers": [
+                    {"id": "bg", "type": "background", "opacity": 1,
+                     "props": {"gradient": ["#F2E8D5", "#EDE0CC"]}},
+                    {"id": "txt", "type": "text", "opacity": 0,
+                     "props": {"content": "Hello", "color": "#F0EEE8"}},
+                ],
+            }],
+        }
+        fixed = fix_common_dsl_issues(dsl)
+        txt = fixed["acts"][0]["layers"][1]["props"]
+        assert txt["color"] == "#1A1825"
+        assert "textShadow" in txt
+
+    def test_cell_text_gets_contrast_fix(self):
+        """Text inside cells also gets fixed."""
+        dsl = {
+            "canvas": {"width": 800, "height": 600, "background": "#1A1825", "mood": "dark"},
+            "acts": [{
+                "id": "a", "duration_ms": 5000,
+                "layout": {"type": "cuts", "cuts": [{"direction": "v", "position": 0.5}]},
+                "layers": [
+                    {"id": "bg", "type": "background", "opacity": 1,
+                     "props": {"gradient": ["#1A1825", "#0F0E17"]}},
+                ],
+                "cells": [{
+                    "id": "c0", "position": "0",
+                    "layers": [{
+                        "id": "dark-txt", "type": "text", "opacity": 0,
+                        "props": {"content": "Dark text on dark bg", "color": "#1A1825"},
+                    }],
+                }],
+            }],
+        }
+        fixed = fix_common_dsl_issues(dsl)
+        txt = fixed["acts"][0]["cells"][0]["layers"][0]["props"]
+        assert txt["color"] == "#F0EEE8"  # Flipped to light
