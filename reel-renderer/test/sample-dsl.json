@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "canvas": { "width": 1080, "height": 1920, "fps": 30, "background": "#0F0E17" },
+  "fonts": ["Dela Gothic One", "Outfit"],
+  "palette": {
+    "bg": "#0F0E17",
+    "fg": "#F0EEE8",
+    "accent": "#F5A623",
+    "accent2": "#E8191A",
+    "muted": "#5E5C78"
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "duration_ms": 4000,
+      "transition": { "type": "cut" },
+      "camera": { "zoom": [1.0, 1.03] },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "background",
+          "props": {
+            "gradient": ["#0F0E17", "#1A0A2E"],
+            "gradientAngle": 160,
+            "pattern": "halftone",
+            "patternOpacity": 0.06
+          }
+        },
+        {
+          "id": "speed",
+          "type": "effect",
+          "opacity": 0,
+          "props": { "effect": "speed_lines", "color": "#F5A623", "intensity": 0.3, "direction": "radial" }
+        },
+        {
+          "id": "hook-text",
+          "type": "text",
+          "x": "8%",
+          "y": "35%",
+          "opacity": 0,
+          "props": {
+            "content": "What if 73% of your habits are doomed to fail?",
+            "fontSize": "3rem",
+            "fontFamily": "Dela Gothic One",
+            "color": "#F0EEE8",
+            "maxWidth": "84%",
+            "lineHeight": 1.2
+          }
+        }
+      ],
+      "timeline": [
+        { "at": 0, "target": "speed", "animate": { "opacity": [0, 0.6] }, "duration": 400, "easing": "ease-out" },
+        { "at": 300, "target": "hook-text", "animate": { "opacity": [0, 1], "y": ["38%", "35%"] }, "duration": 700, "easing": "spring" }
+      ]
+    },
+    {
+      "id": "stat",
+      "duration_ms": 5000,
+      "transition": { "type": "wipe", "direction": "up", "duration_ms": 500 },
+      "layers": [
+        {
+          "id": "bg2",
+          "type": "background",
+          "props": { "gradient": ["#F2E8D5", "#EDE0CC"], "pattern": "crosshatch", "patternOpacity": 0.04 }
+        },
+        {
+          "id": "big-num",
+          "type": "counter",
+          "x": "50%",
+          "y": "28%",
+          "opacity": 0,
+          "props": { "from": 0, "to": 73, "suffix": "%", "fontSize": "8rem", "fontFamily": "Dela Gothic One", "color": "#E8191A", "textAlign": "center" }
+        },
+        {
+          "id": "stat-label",
+          "type": "text",
+          "x": "15%",
+          "y": "52%",
+          "opacity": 0,
+          "props": { "content": "of habit changes fail within the first week.", "fontSize": "1.5rem", "fontFamily": "Outfit", "color": "#1A1825", "textAlign": "center", "maxWidth": "70%" }
+        }
+      ],
+      "timeline": [
+        { "at": 200, "target": "big-num", "animate": { "opacity": [0, 1], "scale": [0.8, 1.0] }, "duration": 400, "easing": "spring" },
+        { "at": 300, "target": "big-num", "animate": { "countUp": true }, "duration": 2000, "easing": "ease-out" },
+        { "at": 2500, "target": "stat-label", "animate": { "opacity": [0, 1], "y": ["55%", "52%"] }, "duration": 500, "easing": "ease-out" }
+      ]
+    },
+    {
+      "id": "key-points",
+      "duration_ms": 6000,
+      "transition": { "type": "fade", "duration_ms": 400 },
+      "layers": [
+        {
+          "id": "bg3",
+          "type": "background",
+          "props": { "gradient": ["#0F0E17", "#17161F"] }
+        },
+        {
+          "id": "section-title",
+          "type": "text",
+          "x": "8%",
+          "y": "12%",
+          "opacity": 0,
+          "props": { "content": "THE FIX", "fontSize": "1rem", "fontFamily": "DotGothic16", "color": "#F5A623", "letterSpacing": "0.2em" }
+        },
+        {
+          "id": "points",
+          "type": "data_block",
+          "x": "8%",
+          "y": "22%",
+          "opacity": 0,
+          "props": {
+            "items": [
+              { "label": "Make it obvious", "value": "→ cue design" },
+              { "label": "Make it attractive", "value": "→ temptation bundling" },
+              { "label": "Make it easy", "value": "→ 2-minute rule" },
+              { "label": "Make it satisfying", "value": "→ reward loop" }
+            ],
+            "accentColor": "#F5A623",
+            "showIndex": true,
+            "staggerDelay": 300
+          }
+        }
+      ],
+      "timeline": [
+        { "at": 200, "target": "section-title", "animate": { "opacity": [0, 1] }, "duration": 300, "easing": "ease-out" },
+        { "at": 400, "target": "points", "animate": { "opacity": [0, 1] }, "duration": 300, "easing": "ease-out" }
+      ]
+    },
+    {
+      "id": "closer",
+      "duration_ms": 4000,
+      "transition": { "type": "zoom", "duration_ms": 600 },
+      "camera": { "zoom": [1.0, 1.05] },
+      "layers": [
+        {
+          "id": "bg4",
+          "type": "background",
+          "props": { "gradient": ["#1A0A2E", "#0F0E17"], "pattern": "halftone", "patternOpacity": 0.04 }
+        },
+        {
+          "id": "sfx",
+          "type": "effect",
+          "x": "50%",
+          "y": "25%",
+          "opacity": 0,
+          "props": { "effect": "sfx", "sfxText": "LEVEL UP!", "sfxSize": 56, "color": "#F5A623", "sfxRotate": -5 }
+        },
+        {
+          "id": "quote",
+          "type": "text",
+          "x": "10%",
+          "y": "45%",
+          "opacity": 0,
+          "props": {
+            "content": "\"You do not rise to the level of your goals. You fall to the level of your systems.\"",
+            "fontSize": "1.8rem",
+            "fontFamily": "Outfit",
+            "color": "#F0EEE8",
+            "maxWidth": "80%",
+            "lineHeight": 1.5,
+            "fontWeight": "300"
+          }
+        },
+        {
+          "id": "author",
+          "type": "text",
+          "x": "10%",
+          "y": "75%",
+          "opacity": 0,
+          "props": { "content": "— James Clear, Atomic Habits", "fontSize": "1rem", "fontFamily": "DotGothic16", "color": "#5E5C78" }
+        }
+      ],
+      "timeline": [
+        { "at": 100, "target": "sfx", "animate": { "opacity": [0, 1], "scale": [1.5, 1.0] }, "duration": 300, "easing": "bounce" },
+        { "at": 500, "target": "quote", "animate": { "opacity": [0, 1], "typewriter": true }, "duration": 2500, "easing": "ease-out" },
+        { "at": 3200, "target": "author", "animate": { "opacity": [0, 0.7] }, "duration": 400, "easing": "ease-out" }
+      ]
+    }
+  ],
+  "meta": {
+    "title": "The 73% Problem",
+    "book_title": "Atomic Habits",
+    "total_duration_ms": 19000,
+    "mood": "revelatory"
+  }
+}

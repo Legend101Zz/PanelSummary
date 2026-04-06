@@ -1,0 +1,23 @@
+{
+  "name": "reel-renderer",
+  "version": "1.0.0",
+  "description": "Video DSL → MP4 renderer using Remotion",
+  "private": true,
+  "scripts": {
+    "render": "npx remotion render src/index.ts ReelComposition",
+    "preview": "npx remotion preview src/index.ts",
+    "test-render": "npx remotion render src/index.ts ReelComposition test-output.mp4 --props=test/sample-dsl.json --width=1080 --height=1920 --fps=30"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/player": "^4.0.0",
+    "@remotion/transitions": "^4.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.4.0"
+  }
+}
