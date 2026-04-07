@@ -400,9 +400,24 @@ function SummaryRow({ summary, bookId, onDeleted }: { summary: SummaryListItem; 
   const opt = STYLE_OPTIONS.find(s => s.value === summary.style);
   const [deleting, setDeleting] = useState(false);
   const [generatingReels, setGeneratingReels] = useState(false);
+  const [generatingVideoReel, setGeneratingVideoReel] = useState(false);
   const [reelTaskId, setReelTaskId] = useState<string | null>(null);
   const [reelDone, setReelDone] = useState(false);
+  const [videoReelMsg, setVideoReelMsg] = useState<string | null>(null);
   const { apiKey, provider, model } = useAppStore();
+  const router = useRouter();
+
+  /** Get API key — prompt if missing */
+  const ensureApiKey = (): string | null => {
+    let key = apiKey;
+    if (!key) {
+      key = prompt("Enter your OpenRouter API key:");
+      if (!key) return null;
+      const store = useAppStore.getState();
+      store.setApiKey(key, store.provider, store.model ?? undefined);
+    }
+    return key;
+  };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -414,21 +429,13 @@ function SummaryRow({ summary, bookId, onDeleted }: { summary: SummaryListItem; 
 
   const handleGenerateReels = async (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    // Issue 5.2: Prompt for key if store is empty (don't use stale key silently)
-    let key = apiKey;
-    if (!key) {
-      key = prompt("Enter your OpenRouter API key to generate reels:");
-      if (!key) return;
-      // Persist to store so future calls reuse it
-      const store = useAppStore.getState();
-      store.setApiKey(key, store.provider, store.model ?? undefined);
-    }
+    const key = ensureApiKey();
+    if (!key) return;
     setGeneratingReels(true);
     try {
       const res = await generateReels(summary.id, { apiKey: key, provider: provider as LLMProvider, model: model ?? undefined });
       if (res.task_id) {
         setReelTaskId(res.task_id);
-        // Poll until done
         const poll = async () => {
           const status = await getJobStatus(res.task_id!);
           if (status.status === "success") { setReelDone(true); setGeneratingReels(false); onDeleted(); }
@@ -437,55 +444,119 @@ function SummaryRow({ summary, bookId, onDeleted }: { summary: SummaryListItem; 
         };
         poll();
       } else {
-        // Already had reels
         setReelDone(true); setGeneratingReels(false);
       }
     } catch { setGeneratingReels(false); }
   };
 
+  const handleGenerateVideoReel = async (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    const key = ensureApiKey();
+    if (!key) return;
+    setGeneratingVideoReel(true);
+    setVideoReelMsg("Starting...");
+    try {
+      const res = await generateVideoReel(summary.id, key, provider, model ?? undefined);
+      if (res.task_id) {
+        const poll = async () => {
+          const status = await getJobStatus(res.task_id);
+          setVideoReelMsg(status.message || "Generating...");
+          if (status.status === "success") {
+            setGeneratingVideoReel(false);
+            setVideoReelMsg(null);
+            router.push(`/video-reels?book=${bookId}`);
+          } else if (status.status === "failure") {
+            setGeneratingVideoReel(false);
+            setVideoReelMsg(null);
+            alert(`Video reel failed: ${status.error || "Unknown error"}`);
+          } else {
+            setTimeout(poll, 2500);
+          }
+        };
+        poll();
+      }
+    } catch (err: any) {
+      setGeneratingVideoReel(false);
+      setVideoReelMsg(null);
+      alert(`Error: ${err.message}`);
+    }
+  };
+
   const hasReels = summary.total_reels > 0 || reelDone;
 
   return (
-    <motion.div whileHover={{ x: 3 }} className="panel flex items-center justify-between px-4 py-3">
-      <Link href={`/books/${bookId}/manga?summary=${summary.id}`} className="flex items-center gap-3 flex-1 min-w-0">
-        <span className="text-xl">{opt?.emoji}</span>
-        <div className="min-w-0">
-          <p className="font-label capitalize" style={{ color: "var(--text-1)", fontSize: "11px" }}>{summary.style} Style</p>
-          <p className="text-label" style={{ fontSize: "9px" }}>
-            {summary.total_chapters} ch · {hasReels ? `${summary.total_reels} reels` : "no reels yet"}
-            {summary.estimated_cost_usd > 0 && ` · $${summary.estimated_cost_usd.toFixed(3)}`}
-          </p>
-        </div>
-      </Link>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <StatusBadge status={summary.status} />
-        {summary.status === "complete" && (
-          <>
-            <Link href={`/books/${bookId}/manga?summary=${summary.id}`} title="Read manga">
-              <BookOpen size={14} style={{ color: "var(--amber)" }} />
-            </Link>
-            {hasReels ? (
-              <Link href={`/reels?summary=${summary.id}`} title="View reels">
-                <Film size={14} style={{ color: "var(--red)" }} />
+    <motion.div whileHover={{ x: 3 }} className="panel px-4 py-3">
+      <div className="flex items-center justify-between">
+        <Link href={`/books/${bookId}/manga?summary=${summary.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="text-xl">{opt?.emoji}</span>
+          <div className="min-w-0">
+            <p className="font-label capitalize" style={{ color: "var(--text-1)", fontSize: "11px" }}>{summary.style} Style</p>
+            <p className="text-label" style={{ fontSize: "9px" }}>
+              {summary.total_chapters} ch · {hasReels ? `${summary.total_reels} reels` : "no reels yet"}
+              {summary.estimated_cost_usd > 0 && ` · $${summary.estimated_cost_usd.toFixed(3)}`}
+            </p>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <StatusBadge status={summary.status} />
+          {summary.status === "complete" && (
+            <>
+              <Link href={`/books/${bookId}/manga?summary=${summary.id}`} title="Read manga">
+                <BookOpen size={14} style={{ color: "var(--amber)" }} />
               </Link>
-            ) : (
+              {hasReels ? (
+                <Link href={`/reels?summary=${summary.id}`} title="View lesson reels">
+                  <Film size={14} style={{ color: "var(--red)" }} />
+                </Link>
+              ) : (
+                <button
+                  onClick={handleGenerateReels}
+                  disabled={generatingReels}
+                  title="Generate lesson reels"
+                  className="flex items-center gap-1 px-2 py-0.5 border"
+                  style={{ borderColor: "var(--red)", color: "var(--red)", fontSize: "8px", fontFamily: "var(--font-label)", opacity: generatingReels ? 0.6 : 1 }}
+                >
+                  {generatingReels ? <Loader2 size={10} className="animate-spin" /> : <Film size={10} />}
+                  {generatingReels ? "..." : "REELS"}
+                </button>
+              )}
+              {/* Video Reel generate button */}
               <button
-                onClick={handleGenerateReels}
-                disabled={generatingReels}
-                title="Generate reels"
+                onClick={handleGenerateVideoReel}
+                disabled={generatingVideoReel}
+                title="Generate a video reel from this summary"
                 className="flex items-center gap-1 px-2 py-0.5 border"
-                style={{ borderColor: "var(--red)", color: "var(--red)", fontSize: "8px", fontFamily: "var(--font-label)", opacity: generatingReels ? 0.6 : 1 }}
+                style={{
+                  borderColor: "var(--amber)",
+                  color: "var(--amber)",
+                  fontSize: "8px",
+                  fontFamily: "var(--font-label)",
+                  opacity: generatingVideoReel ? 0.6 : 1,
+                  background: generatingVideoReel ? "rgba(245,166,35,0.06)" : "transparent",
+                }}
               >
-                {generatingReels ? <Loader2 size={10} className="animate-spin" /> : <Film size={10} />}
-                {generatingReels ? "..." : "REELS"}
+                {generatingVideoReel ? <Loader2 size={10} className="animate-spin" /> : <Video size={10} />}
+                {generatingVideoReel ? "..." : "🎬 VIDEO"}
               </button>
-            )}
-          </>
-        )}
-        <button onClick={handleDelete} disabled={deleting} style={{ color: "var(--text-3)" }} title="Delete">
-          {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-        </button>
+            </>
+          )}
+          <button onClick={handleDelete} disabled={deleting} style={{ color: "var(--text-3)" }} title="Delete">
+            {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+          </button>
+        </div>
       </div>
+      {/* Progress message for video reel generation */}
+      {videoReelMsg && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          className="mt-2 flex items-center gap-2 px-2 py-1.5"
+          style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.15)" }}
+        >
+          <Loader2 size={10} className="animate-spin flex-shrink-0" style={{ color: "var(--amber)" }} />
+          <p className="font-label" style={{ color: "var(--amber)", fontSize: "9px" }}>{videoReelMsg}</p>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

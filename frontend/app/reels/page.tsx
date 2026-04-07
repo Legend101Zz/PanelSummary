@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { Film, Upload, Loader2 } from "lucide-react";
+import { Film, Upload, Loader2, Video } from "lucide-react";
 import Link from "next/link";
 import { getReels, getSummary } from "@/lib/api";
 import type { ReelLesson } from "@/lib/types";
@@ -67,8 +67,18 @@ function ReelsContent() {
         </h1>
         <p className="mb-8 max-w-sm mx-auto leading-relaxed"
           style={{ fontFamily: "var(--font-body)", color: "var(--text-3)", fontSize: "0.95rem" }}>
-          Upload a book, generate a summary, then come back here to binge-learn chapter by chapter.
+          These are text-based lesson reels from your manga summaries.
+          Upload a book, generate a summary, then generate reels.
         </p>
+
+        {/* Video Reels CTA */}
+        <Link href="/video-reels">
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            className="btn-secondary inline-flex gap-2 mb-8 py-2.5 px-5 text-sm">
+            <Video size={14} />
+            Video Reels
+          </motion.div>
+        </Link>
 
         {/* Steps */}
         <div className="flex flex-col gap-3 max-w-xs mx-auto mb-8 text-left">
