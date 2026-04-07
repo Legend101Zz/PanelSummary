@@ -124,7 +124,7 @@ export function LivingPanelEngine({
 }: LivingPanelEngineProps) {
   const [actIndex, setActIndex] = useState(0);
   const [actReady, setActReady] = useState(false);
-  const { canvas, acts } = dsl;
+  const { canvas, acts = [] } = dsl;
   const currentAct = acts[actIndex];
   const isLastAct = actIndex >= acts.length - 1;
 
