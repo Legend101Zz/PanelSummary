@@ -160,7 +160,9 @@ export interface VideoReel {
   mood: string;
   duration_ms: number;
   video_path: string;
+  render_status?: string;
   created_at: string;
+  dsl?: Record<string, any>; // Video DSL for browser-side rendering
   book?: {
     id: string;
     title: string;

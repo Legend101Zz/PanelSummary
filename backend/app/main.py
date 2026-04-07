@@ -1193,10 +1193,9 @@ async def generate_video_reel(summary_id: str, request: GenerateVideoReelRequest
 
 @app.get("/video-reels/{book_id}")
 async def get_video_reels_for_book(book_id: str):
-    """Get all rendered video reels for a specific book."""
+    """Get all video reels for a specific book (includes DSL for browser rendering)."""
     reels = await VideoReelDoc.find(
         VideoReelDoc.book_id == book_id,
-        VideoReelDoc.render_status == "complete",
     ).sort("reel_index").to_list()
 
     book = await Book.get(book_id)
@@ -1210,32 +1209,44 @@ async def get_video_reels_for_book(book_id: str):
     return {
         "book": book_info,
         "reels": [
-            {
-                "id": str(r.id),
-                "reel_index": r.reel_index,
-                "title": r.title,
-                "mood": r.mood,
-                "duration_ms": r.duration_ms,
-                "video_path": r.video_path,
-                "created_at": r.created_at.isoformat(),
-            }
+            _serialize_video_reel(r, book_info)
             for r in reels
         ],
         "total": len(reels),
     }
 
 
+def _serialize_video_reel(r, book_info: dict | None = None, total_in_book: int | None = None) -> dict:
+    """Serialize a VideoReelDoc to API response dict. Includes DSL for browser rendering."""
+    result = {
+        "id": str(r.id),
+        "reel_index": r.reel_index,
+        "title": r.title,
+        "mood": r.mood,
+        "duration_ms": r.duration_ms,
+        "video_path": r.video_path if r.render_status == "complete" else "",
+        "render_status": r.render_status,
+        "created_at": r.created_at.isoformat(),
+    }
+    # Always include DSL so browser can render without MP4
+    if r.dsl:
+        result["dsl"] = r.dsl
+    if book_info:
+        result["book"] = book_info
+    if total_in_book is not None:
+        result["total_reels_in_book"] = total_in_book
+    return result
+
+
 @app.get("/video-reels")
 async def get_all_video_reels(limit: int = 20, offset: int = 0):
     """
     Get video reels from ALL books for the infinite vertical feed.
-    Returns reels interleaved from multiple books for variety.
+    Includes DSL for browser-side rendering when MP4 isn't available.
     """
     all_reels = []
 
-    reels = await VideoReelDoc.find(
-        VideoReelDoc.render_status == "complete"
-    ).sort("-created_at").to_list()
+    reels = await VideoReelDoc.find().sort("-created_at").to_list()
 
     for reel in reels:
         book = await Book.get(reel.book_id)
@@ -1246,23 +1257,11 @@ async def get_all_video_reels(limit: int = 20, offset: int = 0):
             "cover_image_id": book.cover_image_id,
         } if book else {}
 
-        # Count total reels for this book (for horizontal dots)
         book_total = await VideoReelDoc.find(
             VideoReelDoc.book_id == reel.book_id,
-            VideoReelDoc.render_status == "complete",
         ).count()
 
-        all_reels.append({
-            "id": str(reel.id),
-            "reel_index": reel.reel_index,
-            "title": reel.title,
-            "mood": reel.mood,
-            "duration_ms": reel.duration_ms,
-            "video_path": reel.video_path,
-            "book": book_info,
-            "total_reels_in_book": book_total,
-            "created_at": reel.created_at.isoformat(),
-        })
+        all_reels.append(_serialize_video_reel(reel, book_info, book_total))
 
     total = len(all_reels)
     page = all_reels[offset:offset + limit]
