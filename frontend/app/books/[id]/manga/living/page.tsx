@@ -22,6 +22,44 @@ import type { V4Page } from "@/components/V4Engine";
 import type { Summary } from "@/lib/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
 import { SAMPLE_LIVING_PANELS } from "@/lib/sample-living-book";
+import type { V4Panel } from "@/components/V4Engine/types";
+
+/**
+ * Reconstruct V4Page[] from flat V4 panel dicts.
+ * When v4_pages wasn't saved to DB, we can still render
+ * by grouping the flat panel list into pages (3 panels per page).
+ */
+function reconstructV4Pages(panels: Record<string, unknown>[]): V4Page[] {
+  // Group by chapter_index, then batch into pages of 1-3 panels
+  const byChapter = new Map<number, Record<string, unknown>[]>();
+  for (const p of panels) {
+    const ch = (p.chapter_index as number) ?? 0;
+    if (!byChapter.has(ch)) byChapter.set(ch, []);
+    byChapter.get(ch)!.push(p);
+  }
+
+  const pages: V4Page[] = [];
+  let pageIdx = 0;
+
+  for (const [chIdx, chPanels] of [...byChapter.entries()].sort((a, b) => a[0] - b[0])) {
+    // Batch into pages of up to 3 panels
+    for (let i = 0; i < chPanels.length; i += 3) {
+      const batch = chPanels.slice(i, i + 3);
+      const layout = batch.length === 1 ? "full"
+        : batch.length === 2 ? "grid-2"
+        : "grid-3";
+      pages.push({
+        version: "4.0",
+        page_index: pageIdx++,
+        chapter_index: chIdx,
+        layout: layout as V4Page["layout"],
+        panels: batch as unknown as V4Panel[],
+      });
+    }
+  }
+
+  return pages;
+}
 
 export default function LivingMangaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -66,13 +104,25 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
               const detectedEngine = lpData.engine || "v2";
               setEngine(detectedEngine as "v2" | "v4");
 
-              if (detectedEngine === "v4" && lpData.v4_pages?.length) {
-                setV4Pages(lpData.v4_pages as V4Page[]);
-                setDemoMode(false);
+              if (detectedEngine === "v4") {
+                // V4 engine: prefer v4_pages, else reconstruct from flat panels
+                if (lpData.v4_pages?.length) {
+                  setV4Pages(lpData.v4_pages as V4Page[]);
+                  setDemoMode(false);
+                } else if (lpData.living_panels?.length) {
+                  // Reconstruct V4 pages from flat V4 panel list
+                  const pages = reconstructV4Pages(lpData.living_panels);
+                  setV4Pages(pages);
+                  setDemoMode(false);
+                } else {
+                  setDemoMode(true);
+                  setLivingPanels(SAMPLE_LIVING_PANELS);
+                  setEngine("v2"); // fallback to demo mode
+                }
               } else if (lpData.living_panels && lpData.living_panels.length > 0) {
                 setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
                 if (lpData.source === "fallback") {
-                  setDemoMode(false); // fallback but still real data
+                  setDemoMode(false);
                 }
               } else {
                 setDemoMode(true);

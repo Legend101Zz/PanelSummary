@@ -648,6 +648,36 @@ async def cancel_job(task_id: str):
     return {"message": "Job cancellation requested", "cancelled": True}
 
 
+def _reconstruct_v4_pages(panels: list[dict]) -> list[dict]:
+    """
+    Reconstruct V4 page dicts from flat panel list.
+    Groups by chapter, batches into pages of up to 3 panels.
+    Used when v4_pages wasn't persisted to the summary document.
+    """
+    from collections import defaultdict
+    by_chapter: dict[int, list[dict]] = defaultdict(list)
+    for p in panels:
+        ch = p.get("chapter_index", 0)
+        by_chapter[ch].append(p)
+
+    pages = []
+    page_idx = 0
+    for ch_idx in sorted(by_chapter.keys()):
+        ch_panels = by_chapter[ch_idx]
+        for i in range(0, len(ch_panels), 3):
+            batch = ch_panels[i:i + 3]
+            layout = "full" if len(batch) == 1 else "grid-2" if len(batch) == 2 else "grid-3"
+            pages.append({
+                "version": "4.0",
+                "page_index": page_idx,
+                "chapter_index": ch_idx,
+                "layout": layout,
+                "panels": batch,
+            })
+            page_idx += 1
+    return pages
+
+
 @app.get("/summary/{summary_id}/all-living-panels")
 async def get_all_living_panels(summary_id: str):
     """
@@ -665,16 +695,23 @@ async def get_all_living_panels(summary_id: str):
     ).sort("+panel_index").to_list()
 
     if panel_docs:
+        engine = getattr(summary, "engine", "v2")
         result = {
             "summary_id": summary_id,
             "total_panels": len(panel_docs),
             "living_panels": [doc.dsl for doc in panel_docs],
             "source": "orchestrator",
-            "engine": getattr(summary, "engine", "v2"),
+            "engine": engine,
         }
         # Include v4 page data for page-level rendering
-        if getattr(summary, "v4_pages", None):
-            result["v4_pages"] = summary.v4_pages
+        v4_pages = getattr(summary, "v4_pages", None)
+        if v4_pages:
+            result["v4_pages"] = v4_pages
+        elif engine == "v4":
+            # Reconstruct v4_pages from flat panel list when not saved to DB
+            result["v4_pages"] = _reconstruct_v4_pages(
+                [doc.dsl for doc in panel_docs]
+            )
         return result
 
     # LEGACY: check embedded living_panels on BookSummary

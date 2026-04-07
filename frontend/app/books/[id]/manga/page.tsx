@@ -14,6 +14,9 @@ import { getSummary, getAllLivingPanels } from "@/lib/api";
 import type { Summary } from "@/lib/types";
 import { MangaReader } from "@/components/MangaReader";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
+import { V4PageRenderer } from "@/components/V4Engine";
+import type { V4Page } from "@/components/V4Engine";
+import type { V4Panel } from "@/components/V4Engine/types";
 import type { LivingPanelDSL } from "@/lib/living-panel-types";
 import { SAMPLE_LIVING_PANELS } from "@/lib/sample-living-book";
 import { motion, AnimatePresence } from "motion/react";
@@ -21,6 +24,33 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback } from "react";
 
 type ReaderMode = "living" | "classic";
+
+/**
+ * Reconstruct V4Page[] from flat V4 panel dicts.
+ * Used when v4_pages wasn't saved to DB.
+ */
+function reconstructV4Pages(panels: Record<string, unknown>[]): V4Page[] {
+  const byChapter = new Map<number, Record<string, unknown>[]>();
+  for (const p of panels) {
+    const ch = (p.chapter_index as number) ?? 0;
+    if (!byChapter.has(ch)) byChapter.set(ch, []);
+    byChapter.get(ch)!.push(p);
+  }
+  const pages: V4Page[] = [];
+  let pageIdx = 0;
+  for (const [chIdx, chPanels] of [...byChapter.entries()].sort((a, b) => a[0] - b[0])) {
+    for (let i = 0; i < chPanels.length; i += 3) {
+      const batch = chPanels.slice(i, i + 3);
+      const layout = batch.length === 1 ? "full" : batch.length === 2 ? "grid-2" : "grid-3";
+      pages.push({
+        version: "4.0", page_index: pageIdx++, chapter_index: chIdx,
+        layout: layout as V4Page["layout"],
+        panels: batch as unknown as V4Panel[],
+      });
+    }
+  }
+  return pages;
+}
 
 export default function MangaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -35,6 +65,8 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
 
   // Living panel state
   const [livingPanels, setLivingPanels] = useState<LivingPanelDSL[]>([]);
+  const [v4Pages, setV4Pages] = useState<V4Page[]>([]);
+  const [engine, setEngine] = useState<"v2" | "v4">("v2");
   const [livingLoaded, setLivingLoaded] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
   const [panelIdx, setPanelIdx] = useState(0);
@@ -66,7 +98,23 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
 
     getAllLivingPanels(summaryId)
       .then((lpData) => {
-        if (lpData.living_panels && lpData.living_panels.length > 0) {
+        const detectedEngine = lpData.engine || "v2";
+        setEngine(detectedEngine as "v2" | "v4");
+
+        if (detectedEngine === "v4") {
+          if (lpData.v4_pages?.length) {
+            setV4Pages(lpData.v4_pages as V4Page[]);
+            setDemoMode(false);
+          } else if (lpData.living_panels?.length) {
+            const pages = reconstructV4Pages(lpData.living_panels);
+            setV4Pages(pages);
+            setDemoMode(false);
+          } else {
+            setLivingPanels(SAMPLE_LIVING_PANELS);
+            setDemoMode(true);
+            setEngine("v2");
+          }
+        } else if (lpData.living_panels && lpData.living_panels.length > 0) {
           setLivingPanels(lpData.living_panels as LivingPanelDSL[]);
           setDemoMode(lpData.source === "fallback");
         } else {
@@ -82,7 +130,7 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
   }, [summaryId, livingLoaded]);
 
   // Navigation
-  const totalPanels = livingPanels.length;
+  const totalPanels = engine === "v4" ? v4Pages.length : livingPanels.length;
   const goNext = useCallback(() => {
     if (panelIdx < totalPanels - 1) setPanelIdx(p => p + 1);
   }, [panelIdx, totalPanels]);
@@ -152,6 +200,7 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
 
   // Living mode
   const currentDSL = livingPanels[panelIdx];
+  const currentV4Page = v4Pages[panelIdx];
   const isFirst = panelIdx === 0;
   const isLast = panelIdx >= totalPanels - 1;
 
@@ -189,7 +238,9 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           padding: "0 12px",
         }}>
-          {currentDSL?.meta?.narrative_beat || ""}
+          {engine === "v4"
+            ? `Page ${panelIdx + 1}`
+            : (currentDSL?.meta?.narrative_beat || "")}
         </span>
 
         <div className="flex items-center gap-3" style={{ minWidth: 160, justifyContent: "flex-end" }}>
@@ -220,7 +271,18 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
         </button>
 
         <div className="flex-1 min-w-0 flex items-center justify-center p-2 sm:p-4">
-          {currentDSL ? (
+          {engine === "v4" && currentV4Page ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={panelIdx}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="w-full h-full max-w-4xl"
+              >
+                <V4PageRenderer page={currentV4Page} />
+              </motion.div>
+            </AnimatePresence>
+          ) : currentDSL ? (
             <AnimatePresence mode="wait">
               <motion.div
                 key={panelIdx}
@@ -248,7 +310,7 @@ export default function MangaPage({ params }: { params: Promise<{ id: string }> 
 
       {/* Page dots */}
       <div className="flex items-center justify-center gap-1 py-2">
-        {livingPanels.map((_, i) => (
+        {(engine === "v4" ? v4Pages : livingPanels).map((_, i) => (
           <button
             key={i} onClick={() => setPanelIdx(i)}
             className="rounded-full transition-all"
