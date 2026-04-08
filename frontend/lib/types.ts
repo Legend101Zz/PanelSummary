@@ -254,6 +254,11 @@ export interface JobStatusResponse {
   panels_total: number;
   cost_so_far: number;
   estimated_total_cost: number | null;
+  reel_cost?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    estimated_cost_usd?: number;
+  } | null;
 }
 
 export interface ReelsPageResponse {

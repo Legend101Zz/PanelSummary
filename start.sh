@@ -3,6 +3,7 @@
 # PanelSummary — Start Script
 # Run this once to bring up everything:
 #   backend (FastAPI + Celery) + frontend (Next.js)
+#   + reel renderer deps (optional, for MP4 export)
 #
 # Usage:  ./start.sh
 # Stop:   ./stop.sh
@@ -14,6 +15,7 @@ set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND="$ROOT/backend"
 FRONTEND="$ROOT/frontend"
+REEL_RENDERER="$ROOT/reel-renderer"
 
 # ─── Colors ─────────────────────────────────────────────────
 CYAN="\033[0;36m"
@@ -33,6 +35,7 @@ banner() {
 
 step() { echo "${YELLOW}▶ $1${RESET}"; }
 ok()   { echo "${GREEN}✓ $1${RESET}"; }
+warn() { echo "${YELLOW}⚠ $1${RESET}"; }
 err()  { echo "${RED}✗ $1${RESET}"; exit 1; }
 
 banner
@@ -93,6 +96,31 @@ if [ ! -d "node_modules" ]; then
   ok "npm packages installed"
 fi
 
+# ─── Reel Renderer — install deps if present ─────────────────
+if [ -d "$REEL_RENDERER" ]; then
+  step "Setting up Reel Renderer (Remotion)..."
+  cd "$REEL_RENDERER"
+  if [ ! -d "node_modules" ]; then
+    npm install --silent 2>/dev/null && ok "Reel renderer deps installed" || warn "Reel renderer install failed (MP4 export won't work, but DSL live preview still works)"
+  else
+    ok "Reel renderer deps ready"
+  fi
+  # Check if ffmpeg is available (needed for MP4 rendering)
+  if command -v ffmpeg > /dev/null 2>&1; then
+    ok "ffmpeg found — MP4 video export enabled"
+    REEL_MP4=true
+  else
+    warn "ffmpeg not found — MP4 export disabled (DSL browser preview still works)"
+    warn "  Install: brew install ffmpeg"
+    REEL_MP4=false
+  fi
+else
+  warn "reel-renderer/ not found — video reels use DSL live preview only"
+  REEL_MP4=false
+fi
+
+cd "$FRONTEND"
+
 step "Starting Next.js frontend..."
 npm run dev > /tmp/frontend.log 2>&1 &
 FRONTEND_PID=$!
@@ -121,6 +149,12 @@ echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━
 $BACKEND_OK  && echo "${GREEN}  ✓ Backend   → http://localhost:8000${RESET}"  || echo "${RED}  ✗ Backend failed — check: tail -f /tmp/backend.log${RESET}"
 $FRONTEND_OK && echo "${GREEN}  ✓ Frontend  → http://localhost:3000${RESET}"  || echo "${RED}  ✗ Frontend failed — check: tail -f /tmp/frontend.log${RESET}"
 echo "${GREEN}  ✓ API Docs  → http://localhost:8000/docs${RESET}"
+echo "${GREEN}  ✓ Reels Hub → http://localhost:3000/video-reels${RESET}"
+if [ "$REEL_MP4" = true ]; then
+  echo "${GREEN}  ✓ MP4 Export enabled (ffmpeg + Remotion)${RESET}"
+else
+  echo "${YELLOW}  ⚠ MP4 Export off — reels play via DSL live preview${RESET}"
+fi
 echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
 echo "  Logs:  tail -f /tmp/backend.log"

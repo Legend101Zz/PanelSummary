@@ -94,8 +94,16 @@ async def get_db():
     db = client[settings.db_name]
     await init_beanie(database=db, document_models=[Book, BookSummary, LivingPanelDoc, JobStatus])
     return db
-async def update_job_status(task_id: str, status: str, progress: int, message: str, result_id: str = None, error: str = None):
-    """Update the JobStatus document in MongoDB"""
+async def update_job_status(
+    task_id: str, status: str, progress: int, message: str,
+    result_id: str = None, error: str = None, **extra,
+):
+    """Update the JobStatus document in MongoDB.
+
+    Extra kwargs (cost_so_far, reel_cost, phase, etc.) are stored
+    as top-level fields on the JobStatus document so the frontend
+    can display them in real time.
+    """
     from app.models import JobStatus
     job = await JobStatus.find_one(JobStatus.celery_task_id == task_id)
     if job:
@@ -107,6 +115,9 @@ async def update_job_status(task_id: str, status: str, progress: int, message: s
             job.result_id = result_id
         if error:
             job.error = error
+        # Merge any extra structured data (cost, phase, etc.)
+        for k, v in extra.items():
+            setattr(job, k, v)
         await job.save()
 # TASK 1: PDF PARSING
 
@@ -324,6 +335,17 @@ def generate_video_reel_task(
                 book_author=book_author,
                 style=summary.style,
                 llm_client=llm,
+            )
+
+            # Report cost to frontend
+            cost_usd = cost_info.get("estimated_cost_usd", 0)
+            in_tok = cost_info.get("input_tokens", 0)
+            out_tok = cost_info.get("output_tokens", 0)
+            await update_job_status(
+                self.request.id, "progress", 40,
+                f"DSL generated · {in_tok + out_tok:,} tokens · ${cost_usd:.4f}",
+                cost_so_far=cost_usd,
+                reel_cost=cost_info,
             )
 
             # 7. Determine reel index

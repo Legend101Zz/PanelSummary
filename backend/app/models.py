@@ -367,6 +367,7 @@ class JobStatus(Document):
     panels_total: int = 0                     # total panels planned
     cost_so_far: float = 0.0                  # accumulated cost in USD
     estimated_total_cost: Optional[float] = None  # estimated final cost
+    reel_cost: Optional[dict] = None              # reel generation cost details
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

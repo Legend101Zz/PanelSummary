@@ -144,6 +144,7 @@ class JobStatusResponse(BaseModel):
     panels_total: int = 0
     cost_so_far: float = 0.0
     estimated_total_cost: Optional[float] = None
+    reel_cost: Optional[dict] = None  # {input_tokens, output_tokens, estimated_cost_usd}
 
 
 # ============================================================
@@ -438,6 +439,7 @@ async def get_job_status(task_id: str):
         panels_total=job.panels_total,
         cost_so_far=job.cost_so_far,
         estimated_total_cost=job.estimated_total_cost,
+        reel_cost=job.reel_cost,
     )
 
 

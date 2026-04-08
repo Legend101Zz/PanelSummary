@@ -1,25 +1,28 @@
 /**
- * /video-reels — Video Reel Hub
- * ================================
+ * /video-reels — Video Reel Hub (v2)
+ * =====================================
  * Handles three modes:
  *
  * 1. ?book=<id>  → Show reels for that book + "Generate More" button
  * 2. No params   → Global feed of all video reels from all books
  * 3. No reels    → Empty state with instructions
  *
- * The reel player itself (ReelVideoPlayer) handles:
- * ↕ vertical scroll-snap = different books
- * ↔ horizontal swipe = same book, next reel
+ * v2 improvements:
+ * - Full provider/model selector (matches book detail page UX)
+ * - Real-time cost display during generation
+ * - Better progress indicators with phase tracking
  */
 
 "use client";
 
-import React, { useEffect, useState, Suspense, useCallback } from "react";
+import React, { useEffect, useState, Suspense, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Video, Loader2, Plus, ArrowLeft, Film,
   Upload, CheckCircle, AlertCircle, Sparkles,
+  Lock, Eye, EyeOff, ExternalLink, Clapperboard,
+  DollarSign, Zap, Hash,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -28,7 +31,9 @@ import {
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { ReelVideoPlayer } from "@/components/ReelVideoPlayer";
+import { ModelSelector } from "@/components/ModelSelector";
 import type { VideoReel, LLMProvider } from "@/lib/types";
+
 
 function VideoReelsContent() {
   const searchParams = useSearchParams();
@@ -43,39 +48,61 @@ function VideoReelsContent() {
   // Generation state
   const [generating, setGenerating] = useState(false);
   const [genMsg, setGenMsg] = useState<string | null>(null);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genCost, setGenCost] = useState<{
+    input_tokens?: number;
+    output_tokens?: number;
+    estimated_cost_usd?: number;
+  } | null>(null);
   const [memoryExhausted, setMemoryExhausted] = useState(false);
   const [summaryId, setSummaryId] = useState<string | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
 
-  const { apiKey, provider, model } = useAppStore();
+  // API key / provider / model — mirroring book detail page UX
+  const { apiKey, provider, model, setApiKey } = useAppStore();
+  const [localKey, setLocalKey] = useState(apiKey ?? "");
+  const [localProv, setLocalProv] = useState<LLMProvider>(
+    provider === "openai" ? "openrouter" : provider,
+  );
+  const [localModel, setLocalModel] = useState(model ?? "google/gemini-2.5-flash");
+  const [showKey, setShowKey] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [showConfig, setShowConfig] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync from store when it changes
+  useEffect(() => {
+    if (apiKey) setLocalKey(apiKey);
+    if (model) setLocalModel(model);
+  }, [apiKey, model]);
+
+  // Auto-expand config if no API key is set
+  useEffect(() => {
+    if (!localKey) setShowConfig(true);
+  }, [localKey]);
 
   const loadReels = useCallback(async () => {
     try {
       if (bookId) {
-        // Load book info
         try {
           const book = await getBook(bookId);
           setBookTitle(book.title);
         } catch {}
 
-        // Find summary for this book (needed for generation)
         try {
           const sums = await getBookSummaries(bookId);
           const complete = sums.find((s: any) => s.status === "complete");
           if (complete) setSummaryId(complete.id);
         } catch {}
 
-        // Load existing video reels
         const data = await getVideoReelsForBook(bookId);
         setReels(data.reels);
 
-        // Check memory
         try {
           const mem = await getReelMemory(bookId);
           setMemoryExhausted(mem.exhausted);
         } catch {}
       } else {
-        // Global feed
         const data = await getVideoReels(0, 50);
         setReels(data.reels);
       }
@@ -88,14 +115,28 @@ function VideoReelsContent() {
 
   useEffect(() => { loadReels(); }, [loadReels]);
 
-  /** Generate a new video reel */
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearTimeout(pollingRef.current);
+    };
+  }, []);
+
+  /** Generate a new video reel with full validation */
   const handleGenerate = async () => {
-    let key = apiKey;
+    const key = localKey.trim();
     if (!key) {
-      key = prompt("Enter your OpenRouter API key:");
-      if (!key) return;
-      const store = useAppStore.getState();
-      store.setApiKey(key, store.provider, store.model ?? undefined);
+      setKeyError("Enter your API key above");
+      setShowConfig(true);
+      return;
+    }
+    if (localProv === "openai" && !key.startsWith("sk-")) {
+      setKeyError("OpenAI keys start with sk-");
+      return;
+    }
+    if (localProv === "openrouter" && !key.startsWith("sk-or")) {
+      setKeyError("OpenRouter keys start with sk-or");
+      return;
     }
 
     if (!summaryId) {
@@ -103,30 +144,43 @@ function VideoReelsContent() {
       return;
     }
 
+    // Save to store
+    setKeyError(null);
+    setApiKey(key, localProv, localModel);
     setGenerating(true);
-    setGenMsg("Starting video reel generation...");
+    setGenMsg("Queuing reel generation...");
+    setGenProgress(0);
+    setGenCost(null);
 
     try {
-      const res = await generateVideoReel(summaryId, key, provider, model ?? undefined);
+      const res = await generateVideoReel(summaryId, key, localProv, localModel);
       if (res.task_id) {
         const poll = async () => {
           try {
             const status = await getJobStatus(res.task_id);
             setGenMsg(status.message || "Generating...");
+            setGenProgress(status.progress || 0);
+
+            // Update cost from structured data
+            if (status.reel_cost) {
+              setGenCost(status.reel_cost);
+            } else if (status.cost_so_far > 0) {
+              setGenCost({ estimated_cost_usd: status.cost_so_far });
+            }
+
             if (status.status === "success") {
               setGenerating(false);
               setGenMsg(null);
-              // Reload reels
               await loadReels();
             } else if (status.status === "failure") {
               setGenerating(false);
               setGenMsg(null);
               setError(`Generation failed: ${status.error || "Unknown error"}`);
             } else {
-              setTimeout(poll, 2500);
+              pollingRef.current = setTimeout(poll, 2000);
             }
           } catch {
-            setTimeout(poll, 3000);
+            pollingRef.current = setTimeout(poll, 3000);
           }
         };
         poll();
@@ -189,14 +243,143 @@ function VideoReelsContent() {
         )}
 
         {/* Error */}
-        {error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="panel p-4 mb-6 flex items-center gap-3"
-            style={{ borderColor: "var(--red)" }}
-          >
-            <AlertCircle size={16} style={{ color: "var(--red)" }} />
-            <p className="font-label" style={{ color: "var(--red)", fontSize: "10px" }}>{error}</p>
-            <button onClick={() => setError(null)} className="ml-auto" style={{ color: "var(--text-3)" }}>✕</button>
+        <AnimatePresence>
+          {error && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+              className="panel p-4 mb-6 flex items-center gap-3"
+              style={{ borderColor: "var(--red)" }}
+            >
+              <AlertCircle size={16} style={{ color: "var(--red)" }} />
+              <p className="font-label flex-1" style={{ color: "var(--red)", fontSize: "10px" }}>{error}</p>
+              <button onClick={() => setError(null)} style={{ color: "var(--text-3)" }}>✕</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── API Key + Model Configuration ──────────────────── */}
+        {bookId && summaryId && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <button
+              onClick={() => setShowConfig((s) => !s)}
+              className="w-full panel flex items-center justify-between px-4 py-3 transition-colors"
+              style={{
+                borderColor: localKey ? "var(--border)" : "rgba(245,166,35,0.4)",
+                background: showConfig ? "var(--surface)" : "transparent",
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Zap size={14} style={{ color: localKey ? "var(--amber)" : "var(--text-3)" }} />
+                <span className="font-label" style={{ fontSize: "11px", color: "var(--text-1)" }}>
+                  {localKey ? "AI Configuration" : "Set up AI to generate reels"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {localKey && (
+                  <span className="text-label px-2 py-0.5" style={{
+                    background: "rgba(245,166,35,0.08)", color: "var(--amber)", fontSize: "8px",
+                  }}>
+                    {localProv === "openai" ? "OpenAI" : "OpenRouter"} · {localModel.split("/").pop()}
+                  </span>
+                )}
+                <motion.span
+                  animate={{ rotate: showConfig ? 180 : 0 }}
+                  style={{ color: "var(--text-3)", fontSize: 12 }}
+                >
+                  ▾
+                </motion.span>
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {showConfig && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="panel p-5 flex flex-col gap-4 border-t-0" style={{ borderColor: "var(--border)" }}>
+                    {/* Provider tabs */}
+                    <div className="flex gap-2">
+                      {(["openrouter", "openai"] as LLMProvider[]).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => !generating && setLocalProv(p)}
+                          disabled={generating}
+                          className="flex-1 py-1.5 font-label border transition-all"
+                          style={{
+                            fontSize: "10px",
+                            borderColor: localProv === p ? "var(--amber)" : "var(--border)",
+                            background: localProv === p ? "rgba(245,166,35,0.08)" : "var(--surface-2)",
+                            color: localProv === p ? "var(--amber)" : "var(--text-3)",
+                          }}
+                        >
+                          {p === "openrouter" ? "OpenRouter" : "OpenAI"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* API Key */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Lock size={10} style={{ color: "var(--text-3)" }} />
+                        <span className="text-label">API KEY (never stored on server)</span>
+                        <a
+                          href={localProv === "openai" ? "https://platform.openai.com/api-keys" : "https://openrouter.ai/keys"}
+                          target="_blank" rel="noopener noreferrer"
+                          className="ml-auto flex items-center gap-1 text-label hover:underline"
+                          style={{ color: "var(--blue)", fontSize: "9px" }}
+                        >
+                          Get key <ExternalLink size={8} />
+                        </a>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showKey ? "text" : "password"}
+                          value={localKey}
+                          onChange={(e) => { setLocalKey(e.target.value); setKeyError(null); }}
+                          disabled={generating}
+                          placeholder={localProv === "openai" ? "sk-proj-…" : "sk-or-v1-…"}
+                          className="w-full px-3 py-2.5 pr-9 text-sm border outline-none font-label"
+                          style={{
+                            background: "var(--surface-2)", color: "var(--text-1)", fontSize: "11px",
+                            borderColor: keyError ? "var(--red)" : localKey ? "var(--amber)" : "var(--border)",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowKey((s) => !s)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                          style={{ color: "var(--text-3)" }}
+                        >
+                          {showKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                        </button>
+                      </div>
+                      {keyError && (
+                        <p className="font-label mt-1" style={{ color: "var(--red)", fontSize: "9px" }}>{keyError}</p>
+                      )}
+                    </div>
+
+                    {/* Model selector (OpenRouter only) */}
+                    {localProv === "openrouter" && (
+                      <div>
+                        <p className="text-label mb-1.5">MODEL</p>
+                        <ModelSelector
+                          apiKey={localKey}
+                          value={localModel}
+                          onChange={setLocalModel}
+                          disabled={generating}
+                        />
+                      </div>
+                    )}
+
+                    <p className="text-label" style={{ fontSize: "8px" }}>
+                      Reel generation uses ~1 LLM call. Typical cost: $0.001–$0.01 depending on model.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
@@ -222,22 +405,54 @@ function VideoReelsContent() {
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="panel flex items-center gap-4 px-4 py-3 cursor-pointer"
-                  onClick={() => { setShowPlayer(true); }}
+                  className="panel flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors"
+                  onClick={() => setShowPlayer(true)}
+                  style={{ borderColor: "var(--border)" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--amber)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
                 >
-                  {/* Thumbnail placeholder */}
-                  <div className="w-12 h-16 flex-shrink-0 flex items-center justify-center"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                    <Video size={16} style={{ color: "var(--amber)" }} />
+                  {/* Thumbnail */}
+                  <div
+                    className="w-12 h-16 flex-shrink-0 flex items-center justify-center"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                  >
+                    {reel.render_status === "complete" ? (
+                      <Film size={16} style={{ color: "var(--amber)" }} />
+                    ) : reel.dsl ? (
+                      <Clapperboard size={16} style={{ color: "var(--blue, #0053e2)" }} />
+                    ) : (
+                      <Video size={16} style={{ color: "var(--text-3)" }} />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-label" style={{ color: "var(--text-1)", fontSize: "11px" }}>
                       {reel.title || `Reel ${(reel.reel_index ?? 0) + 1}`}
                     </p>
-                    <p className="text-label" style={{ fontSize: "9px" }}>
-                      {reel.duration_ms > 0 ? `${Math.round(reel.duration_ms / 1000)}s` : ""}
-                      {reel.mood ? ` · ${reel.mood}` : ""}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-label" style={{ fontSize: "9px" }}>
+                        {reel.duration_ms > 0 ? `${Math.round(reel.duration_ms / 1000)}s` : ""}
+                        {reel.mood ? ` · ${reel.mood}` : ""}
+                      </span>
+                      {/* Render status badge */}
+                      <span
+                        className="text-label px-1.5 py-0.5"
+                        style={{
+                          fontSize: "7px",
+                          background: reel.render_status === "complete"
+                            ? "rgba(42,135,3,0.1)"
+                            : reel.dsl
+                              ? "rgba(0,83,226,0.1)"
+                              : "rgba(245,166,35,0.1)",
+                          color: reel.render_status === "complete"
+                            ? "var(--green, #2a8703)"
+                            : reel.dsl
+                              ? "var(--blue, #0053e2)"
+                              : "var(--amber)",
+                        }}
+                      >
+                        {reel.render_status === "complete" ? "MP4" : reel.dsl ? "DSL LIVE" : "PENDING"}
+                      </span>
+                    </div>
                   </div>
                   <span className="font-label flex-shrink-0" style={{ color: "var(--text-3)", fontSize: "9px" }}>
                     {String((reel.reel_index ?? 0) + 1).padStart(2, "0")}
@@ -248,7 +463,7 @@ function VideoReelsContent() {
           </motion.div>
         )}
 
-        {/* Generation Progress */}
+        {/* ── Generation Progress ─────────────────────────── */}
         <AnimatePresence>
           {generating && genMsg && (
             <motion.div
@@ -260,23 +475,62 @@ function VideoReelsContent() {
             >
               <div className="flex items-center gap-3 mb-3">
                 <Loader2 size={16} className="animate-spin" style={{ color: "var(--amber)" }} />
-                <p className="font-label" style={{ color: "var(--amber)", fontSize: "10px" }}>GENERATING VIDEO REEL</p>
+                <p className="font-label flex-1" style={{ color: "var(--amber)", fontSize: "10px" }}>
+                  GENERATING VIDEO REEL
+                </p>
+                <span className="font-label" style={{ color: "var(--text-3)", fontSize: "9px" }}>
+                  {genProgress}%
+                </span>
               </div>
-              <p className="font-label" style={{ color: "var(--text-2)", fontSize: "11px" }}>{genMsg}</p>
+
+              <p className="font-label" style={{ color: "var(--text-2)", fontSize: "11px" }}>
+                {genMsg}
+              </p>
+
               {/* Progress bar */}
-              <div className="mt-3 h-1 w-full" style={{ background: "var(--border)" }}>
+              <div className="mt-3 h-1.5 w-full" style={{ background: "var(--border)" }}>
                 <motion.div
-                  animate={{ width: ["0%", "60%", "80%", "90%"] }}
-                  transition={{ duration: 30, ease: "linear" }}
+                  animate={{ width: `${genProgress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
                   className="h-full"
                   style={{ background: "var(--amber)" }}
                 />
               </div>
+
+              {/* Cost breakdown */}
+              {genCost && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-4 flex items-center gap-4"
+                  style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign size={10} style={{ color: "var(--amber)" }} />
+                    <span className="font-label" style={{ color: "var(--text-1)", fontSize: "11px" }}>
+                      ${(genCost.estimated_cost_usd || 0).toFixed(4)}
+                    </span>
+                  </div>
+                  {genCost.input_tokens != null && (
+                    <div className="flex items-center gap-1.5">
+                      <Hash size={9} style={{ color: "var(--text-3)" }} />
+                      <span className="text-label" style={{ fontSize: "9px" }}>
+                        {((genCost.input_tokens || 0) + (genCost.output_tokens || 0)).toLocaleString()} tokens
+                      </span>
+                    </div>
+                  )}
+                  {genCost.input_tokens != null && (
+                    <span className="text-label" style={{ fontSize: "8px" }}>
+                      ({(genCost.input_tokens || 0).toLocaleString()} in · {(genCost.output_tokens || 0).toLocaleString()} out)
+                    </span>
+                  )}
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Generate Button — only shown for specific book with a summary */}
+        {/* Generate Button */}
         {bookId && summaryId && !memoryExhausted && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <motion.button
@@ -341,7 +595,7 @@ function VideoReelsContent() {
           </motion.div>
         )}
 
-        {/* Global empty state (no book param, no reels anywhere) */}
+        {/* Global empty state */}
         {!bookId && reels.length === 0 && !loading && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center pt-10">
             <motion.div
@@ -354,12 +608,17 @@ function VideoReelsContent() {
             </motion.div>
 
             <p className="chapter-badge mb-4 inline-flex">VIDEO REELS</p>
-            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 6vw, 3.5rem)", color: "var(--text-1)", lineHeight: 1.1, marginBottom: 12 }}>
+            <h1 style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2rem, 6vw, 3.5rem)",
+              color: "var(--text-1)", lineHeight: 1.1, marginBottom: 12,
+            }}>
               NO VIDEO REELS YET.
             </h1>
             <p className="mb-8 max-w-sm mx-auto leading-relaxed"
               style={{ fontFamily: "var(--font-body)", color: "var(--text-3)", fontSize: "0.95rem" }}>
-              Upload a book → generate a summary → then create video reels. Each reel is a 30-60s video with catchy insights from the book.
+              Upload a book → generate a summary → then create video reels.
+              Each reel is a 30-60s animated short with catchy insights from the book.
             </p>
 
             <div className="flex flex-col gap-3 max-w-xs mx-auto mb-8 text-left">
@@ -368,7 +627,7 @@ function VideoReelsContent() {
                 { n: "02", label: "Generate a manga summary" },
                 { n: "03", label: "Click 🎬 VIDEO on any summary" },
                 { n: "04", label: "Video reels appear here ✓" },
-              ].map(step => (
+              ].map((step) => (
                 <div key={step.n} className="flex items-center gap-3 panel px-3 py-2.5">
                   <span className="font-label w-6 flex-shrink-0" style={{ color: "var(--amber)", fontSize: "10px" }}>
                     {step.n}
