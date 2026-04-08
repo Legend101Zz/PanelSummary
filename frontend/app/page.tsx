@@ -1,24 +1,21 @@
 "use client";
 
 /**
- * HOMEPAGE v3 — "The Attention Economy Problem"
- * ===============================================
- * A story told through scroll, game, and manga panels.
- *
- * STRUCTURE:
- *  ① COLD OPEN   — The problem statement, raw and bold
- *  ② THE GAME    — "Attention Gauntlet" — try to read without distracting
- *  ③ THE PIVOT   — But manga... manga works. Here's why.
- *  ④ HOW IT WORKS— Upload → AI → Manga (3 steps)
- *  ⑤ LIBRARY     — Manga shelf
- *  ⑥ CTA         — Final push
- *  ⑦ BOOK FOOTER — Open book closing illustration
+ * HOMEPAGE — "The Attention Economy Problem"
+ * ============================================
+ * ① COLD OPEN   — The problem, raw
+ * ② STATS       — Hard numbers
+ * ③ THE GAME    — Attention Gauntlet
+ * ④ THE PIVOT   — But manga works
+ * ⑤ MANGA SHELF — Your books
+ * ⑥ CTA         — Upload
+ * ⑦ COLOPHON    — The last page
  */
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView } from "motion/react";
-import { Upload, Film, Video, BookOpen, ArrowRight, ArrowDown } from "lucide-react";
+import { Upload, Film, Video, ArrowRight, ArrowDown } from "lucide-react";
 import { listBooks, checkHealth } from "@/lib/api";
 import type { BookListItem } from "@/lib/types";
 import dynamic from "next/dynamic";
@@ -26,10 +23,10 @@ import dynamic from "next/dynamic";
 const AttentionGame = dynamic(() => import("@/components/HomePage/AttentionGame"), { ssr: false });
 const MangaPivotSection = dynamic(() => import("@/components/HomePage/MangaPivotSection"), { ssr: false });
 const MangaShelf = dynamic(() => import("@/components/HomePage/MangaShelf"), { ssr: false });
-const BookFooter = dynamic(() => import("@/components/HomePage/BookFooter"), { ssr: false });
+const Colophon = dynamic(() => import("@/components/HomePage/Colophon"), { ssr: false });
 
 // ============================================================
-// REVEAL — animate children on scroll into view
+// REVEAL
 // ============================================================
 
 function Reveal({ children, className = "", delay = 0 }: {
@@ -51,7 +48,7 @@ function Reveal({ children, className = "", delay = 0 }: {
 }
 
 // ============================================================
-// STAT COUNTER — animated number
+// STAT COUNTER
 // ============================================================
 
 function StatCounter({ end, suffix = "", label, duration = 2000 }: {
@@ -79,70 +76,16 @@ function StatCounter({ end, suffix = "", label, duration = 2000 }: {
       <span ref={ref} style={{
         fontFamily: "var(--font-display)",
         fontSize: "clamp(2rem, 6vw, 3.5rem)",
-        color: "var(--amber)",
-        lineHeight: 1,
+        color: "var(--amber)", lineHeight: 1,
       }}>
         {val}{suffix}
       </span>
       <p style={{
-        fontFamily: "var(--font-label)",
-        fontSize: 9,
-        color: "var(--text-3)",
-        letterSpacing: "0.2em",
-        marginTop: 6,
+        fontFamily: "var(--font-label)", fontSize: 9,
+        color: "var(--text-3)", letterSpacing: "0.2em", marginTop: 6,
       }}>
         {label}
       </p>
-    </div>
-  );
-}
-
-// ============================================================
-// STEP CARD
-// ============================================================
-
-function StepCard({ num, title, desc, accent, icon }: {
-  num: string; title: string; desc: string; accent: string; icon: React.ReactNode;
-}) {
-  return (
-    <div
-      className="relative p-6 border-2 transition-all"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--surface)",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = accent;
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-      }}
-    >
-      <span style={{
-        position: "absolute", bottom: 8, right: 10,
-        fontFamily: "var(--font-display)", fontSize: "4rem",
-        lineHeight: 1, pointerEvents: "none", zIndex: 0, opacity: 0.07, color: accent,
-      }}>{num}</span>
-
-      <div className="relative z-10 flex items-center gap-3 mb-3">
-        <div style={{
-          width: 36, height: 36,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          border: `2px solid ${accent}`, color: accent,
-        }}>
-          {icon}
-        </div>
-        <h3 style={{
-          fontFamily: "var(--font-display)", fontSize: "1.1rem", color: "var(--text-1)",
-        }}>{title}</h3>
-      </div>
-
-      <p className="relative z-10" style={{
-        fontFamily: "var(--font-body)", fontSize: "0.85rem",
-        color: "var(--text-2)", lineHeight: 1.7,
-      }}>{desc}</p>
     </div>
   );
 }
@@ -237,7 +180,7 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* § 1 — THE STATS */}
+      {/* § 1 — STATS */}
       <section className="py-16 px-4">
         <Reveal>
           <div className="max-w-4xl mx-auto">
@@ -286,82 +229,10 @@ export default function HomePage() {
       {/* § 3 — THE PIVOT */}
       <MangaPivotSection />
 
-      {/* § 4 — THE PIPELINE */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <div className="text-center mb-14">
-              <span className="chapter-badge inline-flex mb-3">THE PIPELINE</span>
-              <h2 style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(1.8rem, 5vw, 3rem)",
-                color: "var(--text-1)", lineHeight: 1,
-              }}>
-                PDF IN<span style={{ color: "var(--text-3)", margin: "0 12px" }}>·</span>
-                <span style={{ color: "var(--amber)" }}>MANGA OUT</span>
-              </h2>
-              <p style={{
-                fontFamily: "var(--font-body)", fontSize: "0.9rem",
-                color: "var(--text-3)", maxWidth: 440,
-                margin: "10px auto 0", lineHeight: 1.6,
-              }}>
-                Three steps. One AI call per chapter. Your book, reimagined.
-              </p>
-            </div>
-          </Reveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Reveal delay={0.1}>
-              <StepCard
-                num="01" title="DROP THE PDF"
-                desc="Any book, any length. Docling + PyMuPDF detect chapters, extract structure, and build a knowledge graph of concepts and characters."
-                accent="var(--amber)" icon={<Upload size={18} />}
-              />
-            </Reveal>
-            <Reveal delay={0.2}>
-              <StepCard
-                num="02" title="AI DISTILLS"
-                desc="One LLM call per chapter. Canonical summaries, character bibles, emotional arcs — the book's DNA, compressed and understood."
-                accent="var(--red)" icon={<BookOpen size={18} />}
-              />
-            </Reveal>
-            <Reveal delay={0.3}>
-              <StepCard
-                num="03" title="READ · WATCH · SCROLL"
-                desc="Swipeable manga panels with characters and dialogue. Animated Living Panels. 30-second video reels. Choose your format."
-                accent="var(--teal)" icon={<Film size={18} />}
-              />
-            </Reveal>
-          </div>
-
-          {/* Cost callout */}
-          <Reveal delay={0.4}>
-            <div className="mt-6 p-4 border flex flex-col sm:flex-row items-start sm:items-center gap-3"
-              style={{
-                borderColor: "rgba(245,166,35,0.2)",
-                background: "rgba(245,166,35,0.03)",
-              }}>
-              <span style={{
-                fontFamily: "var(--font-label)", fontSize: 9,
-                color: "var(--amber)", letterSpacing: "0.15em",
-                border: "1px solid rgba(245,166,35,0.3)", padding: "2px 8px", flexShrink: 0,
-              }}>YOUR KEY</span>
-              <p style={{
-                fontFamily: "var(--font-body)", fontSize: "0.8rem",
-                color: "var(--text-2)", lineHeight: 1.6,
-              }}>
-                Bring your own OpenAI or OpenRouter key. We never store it.
-                Cost per book: <span style={{ color: "var(--amber)" }}>$0.02–$0.15</span>.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* § 5 — MANGA SHELF */}
+      {/* § 4 — MANGA SHELF */}
       <MangaShelf books={books} />
 
-      {/* § 6 — FINAL CTA */}
+      {/* § 5 — CTA */}
       <section className="relative py-24 px-4 overflow-hidden">
         <div className="absolute inset-0" style={{
           background: "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(232,25,26,0.04) 0%, transparent 100%)",
@@ -408,22 +279,16 @@ export default function HomePage() {
             {books.length > 0 && (
               <div className="mt-4 flex gap-3 flex-wrap justify-center">
                 <Link href="/reels">
-                  <motion.span
-                    whileHover={{ scale: 1.03 }}
-                    className="btn-secondary text-sm inline-flex gap-2 px-6 py-3"
-                  >
-                    <Film size={14} />
-                    Lesson Reels
+                  <motion.span whileHover={{ scale: 1.03 }}
+                    className="btn-secondary text-sm inline-flex gap-2 px-6 py-3">
+                    <Film size={14} /> Lesson Reels
                   </motion.span>
                 </Link>
                 <Link href="/video-reels">
-                  <motion.span
-                    whileHover={{ scale: 1.03 }}
+                  <motion.span whileHover={{ scale: 1.03 }}
                     className="text-sm inline-flex gap-2 px-6 py-3 border items-center font-label transition-colors"
-                    style={{ borderColor: "var(--amber)", color: "var(--amber)", background: "var(--surface)", fontSize: "11px" }}
-                  >
-                    <Video size={14} />
-                    Video Reels
+                    style={{ borderColor: "var(--amber)", color: "var(--amber)", background: "var(--surface)", fontSize: "11px" }}>
+                    <Video size={14} /> Video Reels
                   </motion.span>
                 </Link>
               </div>
@@ -432,8 +297,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* § 7 — BOOK FOOTER */}
-      <BookFooter />
+      {/* § 6 — COLOPHON */}
+      <Colophon />
     </div>
   );
 }
