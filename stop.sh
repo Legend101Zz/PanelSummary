@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 # Stop all PanelSummary services
-# Kills: FastAPI, Celery workers, Next.js dev server
+# Kills: FastAPI, Celery workers, Next.js dev server, Remotion renders
 # Safe: Never kills Microsoft Teams (port 8080) or code-puppy
 
 CYAN="\033[0;36m"; GREEN="\033[0;32m"; YELLOW="\033[1;33m"; RESET="\033[0m"; BOLD="\033[1m"
@@ -34,6 +34,14 @@ pkill -f "uvicorn app.main" 2>/dev/null || true
 # Next.js dev server in our frontend directory
 pkill -f "next dev.*PanelSummary" 2>/dev/null || true
 pkill -f "next-server" 2>/dev/null || true
+
+# Reel renderer (Remotion) — orphaned renders from killed Celery
+REMOTION_PIDS=$(ps aux | grep -E 'remotion render' | grep -v grep | grep -v 'code-puppy' | awk '{print $2}')
+if [ -n "$REMOTION_PIDS" ]; then
+  echo "${YELLOW}Killing stale Remotion renders: $REMOTION_PIDS${RESET}"
+  echo "$REMOTION_PIDS" | xargs kill -9 2>/dev/null || true
+  echo "${GREEN}✓ Remotion renders killed${RESET}"
+fi
 
 # ─── Step 4: Free up port 8000 (but NOT 8080 = Teams) ──────
 PORT_8000_PID=$(lsof -ti:8000 2>/dev/null | head -1)
