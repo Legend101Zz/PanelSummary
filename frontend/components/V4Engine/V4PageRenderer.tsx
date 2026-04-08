@@ -28,15 +28,18 @@ const LAYOUT_STYLES: Record<V4PageLayout, React.CSSProperties> = {
   full: {
     display: "flex",
     flexDirection: "column",
+    justifyContent: "center",
   },
   vertical: {
     display: "flex",
     flexDirection: "column",
+    justifyContent: "center",
     gap: 6,
   },
   "grid-2": {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   "grid-3": {
@@ -44,18 +47,21 @@ const LAYOUT_STYLES: Record<V4PageLayout, React.CSSProperties> = {
     gridTemplateColumns: "2fr 1fr",
     gridTemplateRows: "1fr 1fr",
     gap: 6,
+    alignContent: "center",
   },
   "grid-4": {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gridTemplateRows: "1fr 1fr",
     gap: 6,
+    alignContent: "center",
   },
   asymmetric: {
     display: "grid",
     gridTemplateColumns: "3fr 2fr",
     gridTemplateRows: "1fr 1fr",
     gap: 6,
+    alignContent: "center",
   },
 };
 
