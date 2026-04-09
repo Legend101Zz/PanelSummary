@@ -317,6 +317,17 @@ export function getVideoReelUrl(bookId: string, reelId: string): string {
 }
 
 /**
+ * Delete a single video reel.
+ */
+export async function deleteVideoReel(
+  bookId: string,
+  reelId: string,
+): Promise<{ ok: boolean; message: string }> {
+  const response = await api.delete(`/video-reels/${bookId}/${reelId}`);
+  return response.data;
+}
+
+/**
  * Check reel generation memory for a book.
  */
 export async function getReelMemory(

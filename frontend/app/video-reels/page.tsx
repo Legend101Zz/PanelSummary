@@ -21,17 +21,20 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Video, Loader2, Plus, ArrowLeft, Film,
   Upload, CheckCircle, AlertCircle, Sparkles,
-  Lock, Eye, EyeOff, ExternalLink, Clapperboard,
+  Lock, Eye, EyeOff, ExternalLink,
   DollarSign, Zap, Hash,
 } from "lucide-react";
 import Link from "next/link";
 import {
   getVideoReels, getVideoReelsForBook, generateVideoReel,
   getReelMemory, getJobStatus, getBook, getBookSummaries,
+  deleteVideoReel,
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { ReelVideoPlayer } from "@/components/ReelVideoPlayer";
 import { ModelSelector } from "@/components/ModelSelector";
+import { DeleteReelModal } from "@/components/DeleteReelModal";
+import { ReelCard } from "@/components/ReelCard";
 import type { VideoReel, LLMProvider } from "@/lib/types";
 
 
@@ -57,6 +60,10 @@ function VideoReelsContent() {
   const [memoryExhausted, setMemoryExhausted] = useState(false);
   const [summaryId, setSummaryId] = useState<string | null>(null);
   const [showPlayer, setShowPlayer] = useState(false);
+
+  // Delete state
+  const [deleteTarget, setDeleteTarget] = useState<VideoReel | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // API key / provider / model — mirroring book detail page UX
   const { apiKey, provider, model, setApiKey } = useAppStore();
@@ -201,6 +208,21 @@ function VideoReelsContent() {
     }
   };
 
+  /** Delete a reel with confirmation */
+  const handleDelete = async () => {
+    if (!deleteTarget || !deleteTarget.book?.id) return;
+    setDeleting(true);
+    try {
+      await deleteVideoReel(deleteTarget.book.id, deleteTarget.id);
+      setDeleteTarget(null);
+      await loadReels();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete reel");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // If we have reels and user wants to watch them
   if (showPlayer && reels.length > 0) {
     return (
@@ -266,7 +288,7 @@ function VideoReelsContent() {
         </AnimatePresence>
 
         {/* ── API Key + Model Configuration ──────────────────── */}
-        {bookId && summaryId && (
+        {bookId && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <button
               onClick={() => setShowConfig((s) => !s)}
@@ -409,64 +431,13 @@ function VideoReelsContent() {
 
             <div className="flex flex-col gap-2">
               {reels.map((reel, i) => (
-                <motion.div
+                <ReelCard
                   key={reel.id}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="panel flex items-center gap-4 px-4 py-3 cursor-pointer transition-colors"
-                  onClick={() => setShowPlayer(true)}
-                  style={{ borderColor: "var(--border)" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--amber)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-                >
-                  {/* Thumbnail */}
-                  <div
-                    className="w-12 h-16 flex-shrink-0 flex items-center justify-center"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
-                  >
-                    {reel.render_status === "complete" ? (
-                      <Film size={16} style={{ color: "var(--amber)" }} />
-                    ) : reel.dsl ? (
-                      <Clapperboard size={16} style={{ color: "var(--blue, #0053e2)" }} />
-                    ) : (
-                      <Video size={16} style={{ color: "var(--text-3)" }} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-label" style={{ color: "var(--text-1)", fontSize: "11px" }}>
-                      {reel.title || `Reel ${(reel.reel_index ?? 0) + 1}`}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-label" style={{ fontSize: "9px" }}>
-                        {reel.duration_ms > 0 ? `${Math.round(reel.duration_ms / 1000)}s` : ""}
-                        {reel.mood ? ` · ${reel.mood}` : ""}
-                      </span>
-                      {/* Render status badge */}
-                      <span
-                        className="text-label px-1.5 py-0.5"
-                        style={{
-                          fontSize: "7px",
-                          background: reel.render_status === "complete"
-                            ? "rgba(42,135,3,0.1)"
-                            : reel.dsl
-                              ? "rgba(0,83,226,0.1)"
-                              : "rgba(245,166,35,0.1)",
-                          color: reel.render_status === "complete"
-                            ? "var(--green, #2a8703)"
-                            : reel.dsl
-                              ? "var(--blue, #0053e2)"
-                              : "var(--amber)",
-                        }}
-                      >
-                        {reel.render_status === "complete" ? "MP4" : reel.dsl ? "DSL LIVE" : "PENDING"}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="font-label flex-shrink-0" style={{ color: "var(--text-3)", fontSize: "9px" }}>
-                    {String((reel.reel_index ?? 0) + 1).padStart(2, "0")}
-                  </span>
-                </motion.div>
+                  reel={reel}
+                  index={i}
+                  onWatch={() => setShowPlayer(true)}
+                  onDelete={() => setDeleteTarget(reel)}
+                />
               ))}
             </div>
           </motion.div>
@@ -540,7 +511,7 @@ function VideoReelsContent() {
         </AnimatePresence>
 
         {/* Generate Button */}
-        {bookId && summaryId && !memoryExhausted && (
+        {bookId && !memoryExhausted && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -655,6 +626,14 @@ function VideoReelsContent() {
           </motion.div>
         )}
       </div>
+
+      {/* ── Delete Confirmation Modal ─────────────────────── */}
+      <DeleteReelModal
+        reel={deleteTarget}
+        deleting={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

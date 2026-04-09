@@ -1306,6 +1306,37 @@ async def serve_video_reel(book_id: str, reel_id: str):
     )
 
 
+@app.delete("/video-reels/{book_id}/{reel_id}")
+async def delete_video_reel(book_id: str, reel_id: str):
+    """Delete a single video reel and its rendered video file."""
+    reel = await VideoReelDoc.get(reel_id)
+    if not reel or reel.book_id != book_id:
+        raise HTTPException(status_code=404, detail="Reel not found")
+
+    # Delete rendered MP4 if it exists
+    if reel.video_path:
+        settings = get_settings()
+        storage_base = settings.storage_dir or str(Path(settings.pdf_dir).parent)
+        video_file = Path(storage_base) / reel.video_path
+        if video_file.exists():
+            video_file.unlink()
+
+    # Remove from reel memory's used content IDs so content can be reused
+    if reel.source_content_ids:
+        memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
+        if memory:
+            memory.used_content_ids = [
+                cid for cid in memory.used_content_ids
+                if cid not in reel.source_content_ids
+            ]
+            memory.total_reels_generated = max(0, memory.total_reels_generated - 1)
+            memory.exhausted = False  # Content freed up
+            await memory.save()
+
+    await reel.delete()
+    return {"ok": True, "message": "Reel deleted"}
+
+
 @app.get("/video-reels/memory/{book_id}")
 async def get_reel_memory(book_id: str):
     """Check reel generation memory — how much content is left."""
