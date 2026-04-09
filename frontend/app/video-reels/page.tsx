@@ -87,13 +87,20 @@ function VideoReelsContent() {
         try {
           const book = await getBook(bookId);
           setBookTitle(book.title);
-        } catch {}
+        } catch (e) {
+          console.warn("[video-reels] Failed to load book info:", e);
+        }
 
         try {
           const sums = await getBookSummaries(bookId);
-          const complete = sums.find((s: any) => s.status === "complete");
-          if (complete) setSummaryId(complete.id);
-        } catch {}
+          // Accept 'complete' or 'generating' (in-progress summaries still have content)
+          const best = sums.find((s: any) => s.status === "complete")
+            || sums.find((s: any) => s.status === "generating")
+            || (sums.length > 0 ? sums[0] : null);
+          if (best) setSummaryId(best.id);
+        } catch (e) {
+          console.warn("[video-reels] Failed to load summaries:", e);
+        }
 
         const data = await getVideoReelsForBook(bookId);
         setReels(data.reels);
@@ -101,7 +108,9 @@ function VideoReelsContent() {
         try {
           const mem = await getReelMemory(bookId);
           setMemoryExhausted(mem.exhausted);
-        } catch {}
+        } catch (e) {
+          console.warn("[video-reels] Failed to load reel memory:", e);
+        }
       } else {
         const data = await getVideoReels(0, 50);
         setReels(data.reels);

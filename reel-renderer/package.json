@@ -4,9 +4,9 @@
   "description": "Video DSL → MP4 renderer using Remotion",
   "private": true,
   "scripts": {
-    "render": "npx remotion render src/index.ts ReelComposition",
-    "preview": "npx remotion preview src/index.ts",
-    "test-render": "npx remotion render src/index.ts ReelComposition test-output.mp4 --props=test/sample-dsl.json --width=1080 --height=1920 --fps=30"
+    "render": "npx remotion render src/index.tsx ReelComposition",
+    "preview": "npx remotion preview src/index.tsx",
+    "test-render": "npx remotion render src/index.tsx ReelComposition test-output.mp4 --props=test/sample-dsl.json --width=1080 --height=1920 --fps=30"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

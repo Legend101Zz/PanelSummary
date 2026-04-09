@@ -1193,6 +1193,9 @@ async def generate_video_reel(summary_id: str, request: GenerateVideoReelRequest
     return {"task_id": task.id, "message": "Video reel generation started"}
 
 
+# ── Fixed routes BEFORE parameterized /{book_id} to avoid shadowing ──
+
+
 @app.get("/video-reels/{book_id}")
 async def get_video_reels_for_book(book_id: str):
     """Get all video reels for a specific book (includes DSL for browser rendering)."""

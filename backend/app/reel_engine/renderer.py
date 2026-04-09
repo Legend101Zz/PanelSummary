@@ -70,7 +70,7 @@ def render_video_reel(
 
         cmd = [
             "npx", "remotion", "render",
-            "src/index.ts",
+            "src/index.tsx",
             "ReelComposition",
             str(output_path),
             f"--props={dsl_path}",

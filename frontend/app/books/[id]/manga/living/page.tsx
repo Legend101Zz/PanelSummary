@@ -11,10 +11,10 @@
  * URL: /books/{id}/manga/living?summary={summaryId}
  */
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, type PanInfo } from "motion/react";
 import { getSummary, getAllLivingPanels } from "@/lib/api";
 import { LivingPanelEngine, LivingPanelStyles } from "@/components/LivingPanel";
 import { V4PageRenderer } from "@/components/V4Engine";
@@ -165,6 +165,30 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
     return () => window.removeEventListener("keydown", handler);
   }, [goNext, goPrev]);
 
+  // ============================================================
+  // SWIPE GESTURES (horizontal = prev/next, vertical = chapter skip)
+  // ============================================================
+
+  const [swipeDir, setSwipeDir] = useState<"left" | "right" | null>(null);
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    const SWIPE_THRESHOLD = 50;
+    const absX = Math.abs(info.offset.x);
+    const absY = Math.abs(info.offset.y);
+
+    // Only register horizontal swipes (ignore mostly-vertical drags)
+    if (absX > SWIPE_THRESHOLD && absX > absY * 1.2) {
+      if (info.offset.x < 0) {
+        goNext();
+        setSwipeDir("left");
+      } else {
+        goPrev();
+        setSwipeDir("right");
+      }
+      setTimeout(() => setSwipeDir(null), 300);
+    }
+  }, [goNext, goPrev]);
+
   const onActChange = useCallback((current: number, total: number) => {
     setActInfo({ current: current + 1, total });
   }, []);
@@ -298,16 +322,24 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
           <ChevronLeft size={24} />
         </button>
 
-        {/* Panel canvas */}
-        <div className="flex-1 min-w-0 flex items-center justify-center p-2 sm:p-4">
+        {/* Panel canvas — swipeable */}
+        <motion.div
+          className="flex-1 min-w-0 flex items-center justify-center p-2 sm:p-4 touch-pan-y"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.15}
+          onDragEnd={handleDragEnd}
+          style={{ cursor: "grab" }}
+          whileDrag={{ cursor: "grabbing" }}
+        >
           {engine === "v4" && currentV4Page ? (
             <AnimatePresence mode="wait">
               <motion.div
                 key={`v4-${panelIdx}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, x: swipeDir === "left" ? 80 : swipeDir === "right" ? -80 : 0 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: swipeDir === "left" ? -80 : swipeDir === "right" ? 80 : 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 className="w-full h-full max-w-4xl"
               >
                 <V4PageRenderer page={currentV4Page} />
@@ -317,10 +349,10 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
             <AnimatePresence mode="wait">
               <motion.div
                 key={panelIdx}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
+                initial={{ opacity: 0, x: swipeDir === "left" ? 80 : swipeDir === "right" ? -80 : 0 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: swipeDir === "left" ? -80 : swipeDir === "right" ? 80 : 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
                 className="w-full h-full max-w-4xl"
               >
                 <LivingPanelEngine
@@ -335,7 +367,7 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
               No panels available
             </p>
           )}
-        </div>
+        </motion.div>
 
         {/* Right nav edge */}
         <button
@@ -356,7 +388,7 @@ export default function LivingMangaPage({ params }: { params: Promise<{ id: stri
 
       {/* Page dots */}
       <div className="flex items-center justify-center gap-1 py-2">
-        {livingPanels.map((_, i) => (
+        {Array.from({ length: totalPanels }).map((_, i) => (
           <button
             key={i}
             onClick={() => setPanelIdx(i)}
