@@ -6,7 +6,8 @@
  * Used inside the GeneratePanel when provider = "openrouter".
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, ChevronDown, X, ExternalLink } from "lucide-react";
 import axios from "axios";
@@ -93,6 +94,34 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     if (open) load();
   }, [open, load]);
 
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+
+  // Measure trigger position when dropdown opens
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 2,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-model-dropdown]") && !triggerRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
   const allFiltered = models.filter(m => {
     const q = search.toLowerCase();
     if (!q) return showAll || FEATURED_IDS.some(id => m.id === id);
@@ -105,6 +134,7 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     <div className="relative">
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setOpen(o => !o)}
         disabled={disabled}
@@ -139,16 +169,25 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
         </div>
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — portaled to body to escape overflow:hidden parents */}
       <AnimatePresence>
-        {open && (
+        {open && typeof document !== "undefined" && createPortal(
           <motion.div
+            data-model-dropdown
             initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 right-0 top-full z-50 border overflow-hidden shadow-2xl"
-            style={{ transformOrigin: "top", background: "var(--surface)", borderColor: "var(--border-2)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+            className="fixed z-[9999] border shadow-2xl"
+            style={{
+              transformOrigin: "top",
+              background: "var(--surface)",
+              borderColor: "var(--border-2)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              width: dropdownPos.width,
+            }}
           >
             {/* Search */}
             <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "var(--border)" }}>
@@ -246,7 +285,8 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
                 openrouter.ai <ExternalLink size={8} />
               </a>
             </div>
-          </motion.div>
+          </motion.div>,
+          document.body,
         )}
       </AnimatePresence>
     </div>
