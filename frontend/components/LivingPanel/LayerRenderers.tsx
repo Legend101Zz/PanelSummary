@@ -142,10 +142,16 @@ export function TextRenderer({
     mono: "'DotGothic16', monospace",
   };
 
+  // When rendered inside a CutLayout cell, a CSS custom property
+  // --cell-font-scale is set on the parent. We read it to shrink
+  // fonts proportionally so text doesn't overflow small sub-panels.
+  // Falls back to 1 (no scaling) when the panel is full-size.
+  const cellScale = "var(--cell-font-scale, 1)";
+
   return (
     <div
       style={{
-        fontSize: props.fontSize || "1rem",
+        fontSize: `calc(${props.fontSize || "1rem"} * ${cellScale})`,
         fontFamily: fontMap[props.fontFamily || "body"],
         color: props.color || "#1A1825",
         textAlign: props.textAlign || "left",
@@ -154,9 +160,8 @@ export function TextRenderer({
         textShadow: props.textShadow || "0 1px 2px rgba(0,0,0,0.3)",
         letterSpacing: props.letterSpacing,
         whiteSpace: "pre-wrap" as const,
-        // Prevent text from overflowing panel bounds
-        overflow: "hidden" as const,
-        maxHeight: "75%",
+        // Let LayerWrapper handle overflow clipping (single source of truth).
+        // Adding a second maxHeight here causes double-clipping in sub-panels.
         wordBreak: "break-word" as const,
       }}
     >
@@ -197,11 +202,12 @@ export function SpeechBubbleRenderer({
   }, [props.text, props.typewriter, props.typewriterSpeed, isAnimating]);
 
   return (
-    <MangaBubble
-      variant={props.style}
-      tail={props.tailDirection || "bottom"}
-      maxWidth={props.maxWidth || 240}
-    >
+    <div style={{ fontSize: "calc(1em * var(--cell-font-scale, 1))" }}>
+      <MangaBubble
+        variant={props.style}
+        tail={props.tailDirection || "bottom"}
+        maxWidth={props.maxWidth || 240}
+      >
       {props.character && props.style !== "narrator" && (
         <span
           style={{
@@ -222,6 +228,7 @@ export function SpeechBubbleRenderer({
         <span style={{ opacity: 0.3 }}>█</span>
       )}
     </MangaBubble>
+    </div>
   );
 }
 

@@ -264,9 +264,9 @@ def _enforce_text_contrast(dsl: dict) -> None:
 def _enforce_text_limits(layer: dict, is_cell: bool = False) -> None:
     """Enforce text length limits to prevent overflow.
 
-    Full panels can hold ~200 chars of body text comfortably.
-    Cell panels (sub-panels) can hold ~100 chars.
-    Speech bubbles should be even shorter (~120/80 chars).
+    Limits are scaled by font size — large display text overflows
+    faster than small body text. Cells get stricter limits because
+    they're physically smaller.
 
     When text is too long, we truncate at the last sentence boundary
     and add an ellipsis.
@@ -276,31 +276,35 @@ def _enforce_text_limits(layer: dict, is_cell: bool = False) -> None:
 
     if ltype == "text":
         content = props.get("content", "")
-        max_len = 120 if is_cell else 220
-        if len(content) > max_len:
-            # Truncate at last sentence boundary
-            truncated = content[:max_len]
-            for sep in ('. ', '\n', '! ', '? ', '; '):
-                last_sep = truncated.rfind(sep)
-                if last_sep > max_len * 0.4:
-                    truncated = truncated[:last_sep + 1]
-                    break
-            props["content"] = truncated.rstrip() + "…"
-            logger.debug(
-                f"Text truncated: {len(content)} → {len(props['content'])} chars"
-            )
+        # Scale limit by font size — big fonts overflow faster
+        font_size = props.get("fontSize", 16)
+        if isinstance(font_size, str):
+            # Parse "clamp(...)" or "1.4rem" → rough pixel equivalent
+            font_size = 16  # safe default for string sizes
+        base_limit = 100 if is_cell else 200
+        # Larger font → fewer chars fit. 16px is baseline.
+        scale = max(0.5, min(1.5, 16 / max(font_size, 8)))
+        max_len = int(base_limit * scale)
+        _truncate_field(props, "content", content, max_len)
 
     elif ltype == "speech_bubble":
         text = props.get("text", "")
-        max_len = 80 if is_cell else 140
-        if len(text) > max_len:
-            truncated = text[:max_len]
-            for sep in ('. ', '! ', '? ', ', '):
-                last_sep = truncated.rfind(sep)
-                if last_sep > max_len * 0.4:
-                    truncated = truncated[:last_sep + 1]
-                    break
-            props["text"] = truncated.rstrip() + "…"
+        max_len = 70 if is_cell else 130
+        _truncate_field(props, "text", text, max_len)
+
+
+def _truncate_field(props: dict, key: str, text: str, max_len: int) -> None:
+    """Truncate a text field at a sentence boundary."""
+    if len(text) <= max_len:
+        return
+    truncated = text[:max_len]
+    for sep in ('. ', '\n', '! ', '? ', '; ', ', '):
+        last_sep = truncated.rfind(sep)
+        if last_sep > max_len * 0.4:
+            truncated = truncated[:last_sep + 1]
+            break
+    props[key] = truncated.rstrip() + "…"
+    logger.debug(f"Text truncated: {len(text)} → {len(props[key])} chars")
 
 
 def fix_common_dsl_issues(dsl: dict) -> dict:
@@ -386,6 +390,18 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
             # Enforce text length limits to prevent overflow
             _enforce_text_limits(layer, is_cell=False)
 
+        # ── Strip ghost layers: empty/unknown type after alias resolution ──
+        # Truncated JSON recovery can leave layers with type=''. These render
+        # as nothing and silently swallow content. Remove them now.
+        before_count = len(act.get("layers", []))
+        act["layers"] = [
+            l for l in act.get("layers", [])
+            if l.get("type") in VALID_LAYER_TYPES
+        ]
+        stripped = before_count - len(act["layers"])
+        if stripped:
+            logger.info(f"Stripped {stripped} ghost layer(s) with invalid types from act {ai}")
+
         # Ensure timeline steps have required fields
         for step in act.get("timeline", []):
             step.setdefault("duration", 500)
@@ -406,7 +422,9 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
                 cell["position"] = str(cell["position"])
             elif cell.get("position") is None:
                 cell["position"] = str(ci)
-            # Prevent empty cells — add a subtle screentone if no layers
+            # Prevent empty cells — add a screentone background AND check
+            # if any sibling cells have readable text. An empty cell next to
+            # a text-rich cell is likely a missing-content bug, not intentional.
             if not cell.get("layers"):
                 cell["layers"] = [{
                     "id": f"cell-{ai}-{ci}-fill",
@@ -417,6 +435,9 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
                         "intensity": 0.06,
                     },
                 }]
+                logger.info(
+                    f"Act {ai} cell {ci} was empty — filled with screentone"
+                )
             for li, layer in enumerate(cell.get("layers", [])):
                 layer.setdefault("props", {})
                 layer.setdefault("id", f"cell-{ai}-{ci}-layer-{li}")
@@ -424,6 +445,11 @@ def fix_common_dsl_issues(dsl: dict) -> dict:
                     layer["opacity"] = 0
                 # Cells are smaller — stricter text limits
                 _enforce_text_limits(layer, is_cell=True)
+            # Strip ghost layers from cells too
+            cell["layers"] = [
+                l for l in cell.get("layers", [])
+                if l.get("type") in VALID_LAYER_TYPES
+            ]
             # Fix cell timelines too
             for step in cell.get("timeline", []):
                 step.setdefault("duration", 500)

@@ -428,6 +428,24 @@ def _dedup_list(items: list) -> list:
     return result
 
 
+def _is_trivial_chapter(ch: dict, empty_signals: set[str]) -> bool:
+    """Return True if a chapter has no real content.
+
+    Checks narrative_summary and one_liner for known empty-chapter
+    phrases that the LLM produces when the PDF parser hands it a
+    title page or section header with no body text.
+    """
+    summary = (ch.get("narrative_summary") or "").lower()
+    one_liner = (ch.get("one_liner") or "").lower()
+    combined = f"{summary} {one_liner}"
+
+    # Very short summaries are suspicious — real chapters have >30 chars
+    if len(summary.strip()) < 20:
+        return True
+
+    return any(signal in combined for signal in empty_signals)
+
+
 async def plan_manga(
     canonical_chapters: list[dict],
     book_synopsis: dict,
@@ -449,6 +467,32 @@ async def plan_manga(
     """
     # ── 1C: Consolidate inflated chapters for short documents ──
     canonical_chapters = consolidate_short_chapters(canonical_chapters)
+
+    # ── Filter out empty/trivial chapters ──
+    # The PDF parser sometimes creates chapters from title pages or section
+    # headers with no body text. The LLM then produces placeholder summaries
+    # like "Empty chapter — no content" which become filler panels. Strip
+    # them before planning so they don't waste panel budget.
+    _EMPTY_SIGNALS = {
+        "no content", "empty chapter", "no source material",
+        "awaiting chapter content", "awaiting content",
+        "no readable content", "unable to extract",
+    }
+    before_filter = len(canonical_chapters)
+    canonical_chapters = [
+        ch for ch in canonical_chapters
+        if not _is_trivial_chapter(ch, _EMPTY_SIGNALS)
+    ]
+    if len(canonical_chapters) < before_filter:
+        skipped = before_filter - len(canonical_chapters)
+        logger.info(
+            f"Filtered {skipped} empty/trivial chapter(s) "
+            f"({before_filter} → {len(canonical_chapters)})"
+        )
+    # Safety: never plan with zero chapters
+    if not canonical_chapters:
+        logger.warning("All chapters were empty — restoring originals")
+        canonical_chapters = consolidate_short_chapters(canonical_chapters)
 
     style_key = style.value if hasattr(style, 'value') else str(style)
     style_hint = STYLE_PLANNING_HINTS.get(style_key, STYLE_PLANNING_HINTS["manga"])

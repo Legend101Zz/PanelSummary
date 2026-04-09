@@ -427,6 +427,10 @@ function LayerWrapper({
     );
   }
 
+  // Text/speech_bubble layers get gentler overflow handling;
+  // other layers (sprite, shape) are hard-clipped.
+  const isTextLayer = layer.type === "text" || layer.type === "speech_bubble" || layer.type === "data_block";
+
   return (
     <motion.div
       className="absolute"
@@ -434,9 +438,8 @@ function LayerWrapper({
         zIndex: layer.zIndex ?? (10 + index),
         cursor: clickable ? "pointer" : "inherit",
         transformOrigin: layer.origin || "center center",
-        // 2D: Prevent layers from rendering outside panel bounds
-        maxWidth: "90%",
-        maxHeight: "85%",
+        maxWidth: "92%",
+        maxHeight: isTextLayer ? "90%" : "85%",
         overflow: "hidden" as const,
         willChange: "transform, opacity",
       }}

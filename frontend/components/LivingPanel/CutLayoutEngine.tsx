@@ -202,6 +202,15 @@ export function CutLayout({
         const cell = cells[i];
         if (!cell) return null;
 
+        // Expose region size as CSS custom properties so child text
+        // layers can scale fonts proportionally to available space.
+        // A cell that's 40% of the canvas is smaller than full — text
+        // should shrink to avoid overflow.
+        const regionScale = Math.min(region.w, region.h);
+        const fontScale = regionScale < 0.4 ? 0.78
+          : regionScale < 0.6 ? 0.88
+          : 1;
+
         return (
           <motion.div
             key={cell.id}
@@ -212,7 +221,11 @@ export function CutLayout({
               width: `${region.w * 100}%`,
               height: `${region.h * 100}%`,
               padding: gutter,
-            }}
+              // Let child text layers read this for font scaling
+              "--cell-font-scale": fontScale,
+              "--cell-region-w": region.w,
+              "--cell-region-h": region.h,
+            } as React.CSSProperties}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{

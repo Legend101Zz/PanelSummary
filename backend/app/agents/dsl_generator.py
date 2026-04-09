@@ -39,6 +39,20 @@ logger = logging.getLogger(__name__)
 # 2C: POST-GENERATION DSL ENFORCEMENT
 # ============================================================
 
+def _get_injection_target(act: dict) -> dict:
+    """Return the right container for injected layers.
+
+    When the layout is 'cuts' with existing cells, inject into the
+    FIRST cell so content is visible inside the sub-panel rather
+    than hidden behind cell backgrounds at the act level.
+    """
+    is_cuts = act.get("layout", {}).get("type") == "cuts"
+    cells = act.get("cells", [])
+    if is_cuts and cells:
+        return cells[0]
+    return act
+
+
 def _enforce_content_requirements(
     dsl: dict,
     assignment: PanelAssignment,
@@ -47,6 +61,9 @@ def _enforce_content_requirements(
 
     The LLM sometimes generates a dialogue panel with no sprites or speech bubbles,
     or a splash panel with no effects. This safety net injects missing elements.
+
+    When the layout uses cuts (sub-panels), content is injected INTO cells
+    so it's visible inside the panel regions — not hidden behind them.
     """
     if not dsl.get("acts"):
         return dsl
@@ -62,12 +79,13 @@ def _enforce_content_requirements(
 
     # ── Dialogue panels MUST have sprites + speech bubbles ──
     if content_type == "dialogue":
+        target = _get_injection_target(first_act)
         if "sprite" not in layer_types and assignment.dialogue:
             logger.info(f"{assignment.panel_id}: Injecting missing sprites for dialogue")
-            _inject_dialogue_sprites(first_act, assignment)
+            _inject_dialogue_sprites(target, assignment)
         if "speech_bubble" not in layer_types and assignment.dialogue:
             logger.info(f"{assignment.panel_id}: Injecting missing speech bubbles")
-            _inject_dialogue_bubbles(first_act, assignment)
+            _inject_dialogue_bubbles(target, assignment)
 
     # ── Splash panels SHOULD have at least one effect ──
     if content_type == "splash":
@@ -84,7 +102,8 @@ def _enforce_content_requirements(
         concepts = [c.strip() for c in assignment.text_content.split("|") if c.strip()]
         if concepts:
             logger.info(f"{assignment.panel_id}: Injecting data_block for data panel")
-            _inject_data_block(first_act, concepts)
+            target = _get_injection_target(first_act)
+            _inject_data_block(target, concepts)
 
     # ── Enforce layout hint: if planner said "cuts", at least one act should have cuts ──
     if assignment.layout_hint == "cuts":
@@ -107,15 +126,16 @@ def _enforce_content_requirements(
 
     if not has_readable:
         text = assignment.text_content or assignment.narrative_beat or ""
+        target = _get_injection_target(first_act)
         if content_type == "splash" and text:
             logger.info(f"{assignment.panel_id}: Injecting title text for splash")
-            _inject_title_text(first_act, text)
+            _inject_title_text(target, text)
         elif content_type == "narration" and text:
             logger.info(f"{assignment.panel_id}: Injecting narration text")
-            _inject_narration_text(first_act, text, assignment)
+            _inject_narration_text(target, text, assignment)
         elif text:
             logger.info(f"{assignment.panel_id}: Injecting fallback caption")
-            _inject_narration_text(first_act, text, assignment)
+            _inject_narration_text(target, text, assignment)
 
     return dsl
 
@@ -507,11 +527,17 @@ async def generate_page_dsls(
 
     temperature = _page_temperature(page_panels)
 
+    # Scale token budget with panel count AND complexity.
+    # Cut-layout panels produce ~2x more tokens than full panels.
+    has_cuts = any(p.layout_hint == "cuts" for p in page_panels)
+    base_tokens = 5000 if has_cuts else 4000
+    max_tokens = base_tokens * len(page_panels)
+
     try:
         result = await llm_client.chat_with_retry(
             system_prompt=system_prompt,
             user_message=user_message,
-            max_tokens=4000 * len(page_panels),  # scale with panel count
+            max_tokens=max_tokens,
             temperature=temperature,
             json_mode=True,
         )
@@ -606,10 +632,14 @@ async def generate_panel_dsl(
     )
 
     try:
+        # Cuts panels need more tokens for cell structures
+        is_cuts = assignment.layout_hint == "cuts"
+        token_budget = 4500 if is_cuts else 3500
+
         result = await llm_client.chat_with_retry(
             system_prompt=system_prompt,
             user_message=user_message,
-            max_tokens=3000,
+            max_tokens=token_budget,
             temperature=temperature,
             json_mode=True,
         )
