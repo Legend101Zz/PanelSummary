@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 async def get_or_create_memory(book_id: str, summary_id: str) -> BookReelMemory:
     """Get existing memory or create a fresh one."""
-    memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
+    memory = await BookReelMemory.find_one({"book_id": book_id})
     if memory:
         return memory
 
@@ -37,7 +37,7 @@ async def mark_content_used(
     content_ids: list[str],
 ) -> None:
     """Mark content IDs as used after a reel is generated."""
-    memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
+    memory = await BookReelMemory.find_one({"book_id": book_id})
     if not memory:
         logger.warning(f"No memory found for book {book_id}")
         return
@@ -56,7 +56,7 @@ async def check_exhaustion(
     total_available: int,
 ) -> bool:
     """Check if all content has been exhausted for a book."""
-    memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
+    memory = await BookReelMemory.find_one({"book_id": book_id})
     if not memory:
         return False
 
