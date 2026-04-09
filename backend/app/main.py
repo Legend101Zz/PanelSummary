@@ -1195,6 +1195,13 @@ async def generate_video_reel(summary_id: str, request: GenerateVideoReelRequest
 
 # ── Fixed routes BEFORE parameterized /{book_id} to avoid shadowing ──
 
+@app.get("/video-reels/renderer-status")
+async def check_renderer_status():
+    """Check if the reel-renderer is set up and ready."""
+    from app.reel_engine.renderer import check_renderer_ready
+    ready, message = check_renderer_ready()
+    return {"ready": ready, "message": message}
+
 
 @app.get("/video-reels/{book_id}")
 async def get_video_reels_for_book(book_id: str):
@@ -1352,11 +1359,3 @@ async def get_reel_memory(book_id: str):
         "used_content_count": len(memory.used_content_ids),
         "exhausted": memory.exhausted,
     }
-
-
-@app.get("/video-reels/renderer-status")
-async def check_renderer_status():
-    """Check if the reel-renderer is set up and ready."""
-    from app.reel_engine.renderer import check_renderer_ready
-    ready, message = check_renderer_ready()
-    return {"ready": ready, "message": message}

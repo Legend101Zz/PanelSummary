@@ -210,10 +210,15 @@ function VideoReelsContent() {
 
   /** Delete a reel with confirmation */
   const handleDelete = async () => {
-    if (!deleteTarget || !deleteTarget.book?.id) return;
+    if (!deleteTarget) return;
+    const targetBookId = deleteTarget.book?.id || bookId;
+    if (!targetBookId) {
+      setError("Cannot determine which book this reel belongs to.");
+      return;
+    }
     setDeleting(true);
     try {
-      await deleteVideoReel(deleteTarget.book.id, deleteTarget.id);
+      await deleteVideoReel(targetBookId, deleteTarget.id);
       setDeleteTarget(null);
       await loadReels();
     } catch (err: any) {

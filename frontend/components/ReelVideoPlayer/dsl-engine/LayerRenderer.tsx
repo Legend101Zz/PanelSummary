@@ -520,10 +520,16 @@ function getPatternCSS(pattern: string): string {
 // ── Main LayerRenderer ──────────────────────────────────────
 
 export const LayerRenderer: React.FC<LayerProps> = ({
-  layer,
+  layer: rawLayer,
   sceneLocalMs,
   timeline,
 }) => {
+  // Defensive: ensure props always exists (LLM might omit it)
+  const layer = useMemo(
+    () => ({ ...rawLayer, props: rawLayer.props || {} }),
+    [rawLayer],
+  );
+
   const animStyle = useMemo(
     () => computeAnimatedStyle(layer, sceneLocalMs, timeline),
     [layer, sceneLocalMs, timeline],
