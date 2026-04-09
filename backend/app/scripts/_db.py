@@ -20,7 +20,7 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 from app.config import Settings, get_settings
-from app.models import Book, BookSummary, JobStatus, LivingPanelDoc
+from app.models import Book, BookSummary, JobStatus, LivingPanelDoc, VideoReelDoc, BookReelMemory
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -32,6 +32,9 @@ async def connect():
     db = client[settings.db_name]
     await init_beanie(
         database=db,
-        document_models=[Book, BookSummary, LivingPanelDoc, JobStatus],
+        document_models=[
+            Book, BookSummary, LivingPanelDoc, JobStatus,
+            VideoReelDoc, BookReelMemory,
+        ],
     )
     return settings

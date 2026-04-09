@@ -6,7 +6,7 @@
  * Used inside the GeneratePanel when provider = "openrouter".
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, ChevronDown, X, ExternalLink } from "lucide-react";
 import axios from "axios";
@@ -93,18 +93,11 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     if (open) load();
   }, [open, load]);
 
-  const [visibleCount, setVisibleCount] = useState(5);
-  const listRef = useRef<HTMLDivElement>(null);
-
-  // Reset visible count when search changes
-  useEffect(() => setVisibleCount(5), [search]);
-
   const allFiltered = models.filter(m => {
     const q = search.toLowerCase();
     if (!q) return showAll || FEATURED_IDS.some(id => m.id === id);
     return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q);
   });
-  const filtered = allFiltered.slice(0, visibleCount);
 
   const selected = models.find(m => m.id === value);
 
@@ -175,18 +168,18 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               )}
             </div>
 
-            {/* List */}
-            <div ref={listRef} className="overflow-y-auto" style={{ maxHeight: "280px" }}>
+            {/* List — scrollable, renders all filtered items */}
+            <div className="overflow-y-auto" style={{ maxHeight: "320px" }}>
               {loading ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   LOADING MODELS…
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : allFiltered.length === 0 ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   NO MODELS FOUND
                 </div>
               ) : (
-                filtered.map(m => (
+                allFiltered.map(m => (
                   <button
                     key={m.id}
                     onClick={() => { onChange(m.id); setOpen(false); }}
@@ -237,20 +230,6 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
                 ))
               )}
             </div>
-
-            {/* Load more — outside scroll container so it never bounces */}
-            {!loading && allFiltered.length > visibleCount && (
-              <button
-                onMouseDown={e => e.preventDefault()}
-                onClick={() => setVisibleCount(n => n + 5)}
-                className="w-full py-2 text-label transition-colors"
-                style={{ fontSize: "9px", color: "var(--amber)", background: "var(--surface-2)", borderTop: "1px solid var(--border)" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(245,166,35,0.08)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "var(--surface-2)")}
-              >
-                LOAD MORE · {allFiltered.length - visibleCount} remaining
-              </button>
-            )}
 
             {/* Footer */}
             <div className="flex items-center justify-between px-3 py-2 border-t" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>

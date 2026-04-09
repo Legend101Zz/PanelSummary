@@ -87,12 +87,15 @@ async def get_db():
     """Get MongoDB database connection"""
     from app.config import get_settings
     from beanie import init_beanie
-    from app.models import Book, BookSummary, LivingPanelDoc, JobStatus
+    from app.models import Book, BookSummary, LivingPanelDoc, JobStatus, VideoReelDoc, BookReelMemory
 
     settings = get_settings()
     client = AsyncIOMotorClient(settings.mongodb_url)
     db = client[settings.db_name]
-    await init_beanie(database=db, document_models=[Book, BookSummary, LivingPanelDoc, JobStatus])
+    await init_beanie(database=db, document_models=[
+        Book, BookSummary, LivingPanelDoc, JobStatus,
+        VideoReelDoc, BookReelMemory,
+    ])
     return db
 async def update_job_status(
     task_id: str, status: str, progress: int, message: str,
