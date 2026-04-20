@@ -95,21 +95,55 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
   }, [open, load]);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPos, setDropdownPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxHeight: 420,
+    placement: "bottom" as "bottom" | "top",
+  });
 
-  // Measure trigger position when dropdown opens
+  // Compute trigger position + flip-up if no room below
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportH = window.innerHeight;
+    const GUTTER = 12;
+    const PREFERRED_H = 420;
+
+    const spaceBelow = viewportH - rect.bottom - GUTTER;
+    const spaceAbove = rect.top - GUTTER;
+
+    // Prefer below; flip up only if below is too cramped AND above has more room
+    const placement: "bottom" | "top" =
+      spaceBelow < 220 && spaceAbove > spaceBelow ? "top" : "bottom";
+
+    const available = placement === "bottom" ? spaceBelow : spaceAbove;
+    const maxHeight = Math.max(220, Math.min(PREFERRED_H, available));
+
+    setDropdownPos({
+      top: placement === "bottom" ? rect.bottom + 4 : rect.top - maxHeight - 4,
+      left: rect.left,
+      width: rect.width,
+      maxHeight,
+      placement,
+    });
+  }, []);
+
+  // Measure on open + on scroll/resize while open
   useEffect(() => {
-    if (open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownPos({
-        top: rect.bottom + 2,
-        left: rect.left,
-        width: rect.width,
-      });
-    }
-  }, [open]);
+    if (!open) return;
+    updatePosition();
+    const handler = () => updatePosition();
+    window.addEventListener("scroll", handler, true);
+    window.addEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("scroll", handler, true);
+      window.removeEventListener("resize", handler);
+    };
+  }, [open, updatePosition]);
 
-  // Close on outside click
+  // Close on outside click + ESC
   useEffect(() => {
     if (!open) return;
     const handleClick = (e: MouseEvent) => {
@@ -118,8 +152,15 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
         setOpen(false);
       }
     };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, [open]);
 
   const allFiltered = models.filter(m => {
@@ -174,19 +215,20 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
         {open && typeof document !== "undefined" && createPortal(
           <motion.div
             data-model-dropdown
-            initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
+            initial={{ opacity: 0, y: dropdownPos.placement === "top" ? 6 : -6, scaleY: 0.95 }}
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
+            exit={{ opacity: 0, y: dropdownPos.placement === "top" ? 6 : -6, scaleY: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] border shadow-2xl"
+            className="fixed z-[9999] border shadow-2xl flex flex-col"
             style={{
-              transformOrigin: "top",
+              transformOrigin: dropdownPos.placement === "top" ? "bottom" : "top",
               background: "var(--surface)",
               borderColor: "var(--border-2)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
               top: dropdownPos.top,
               left: dropdownPos.left,
               width: dropdownPos.width,
+              maxHeight: dropdownPos.maxHeight,
             }}
           >
             {/* Search */}
@@ -207,8 +249,8 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               )}
             </div>
 
-            {/* List — scrollable, renders all filtered items */}
-            <div className="overflow-y-auto" style={{ maxHeight: "320px" }}>
+            {/* List — scrollable, fills remaining space inside maxHeight */}
+            <div className="overflow-y-auto flex-1 min-h-0">
               {loading ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   LOADING MODELS…
