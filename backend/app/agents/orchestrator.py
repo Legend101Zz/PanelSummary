@@ -79,7 +79,11 @@ class MangaOrchestrator:
         cancel_check: Optional[Callable] = None,
         image_budget: int = 5,
         max_concurrent: int = MAX_CONCURRENT_DSL_AGENTS,
-        engine: str = "v2",   # "v2" (verbose DSL) or "v4" (semantic intent)
+        engine: str = "v2",   # "v2" | "v4" | "auto" (per-page routing)
+        # Optional sprite generation params — safe defaults = disabled
+        book_id: str = "",
+        image_dir: str = "",
+        image_api_key: str = "",
     ):
         self.llm = llm_client
         self.style = style
@@ -89,6 +93,9 @@ class MangaOrchestrator:
         self.image_budget = image_budget
         self.max_concurrent = max_concurrent
         self.engine = engine
+        self.book_id = book_id
+        self.image_dir = image_dir
+        self.image_api_key = image_api_key
         self._semaphore = asyncio.Semaphore(max_concurrent)
         self._cancel_cache_time: float = 0
         self._cancel_cached: bool = False
@@ -268,6 +275,57 @@ class MangaOrchestrator:
         if self._is_cancelled():
             return empty_result()
 
+        # ── PHASE 2b: Character Sprite Generation (optional) ──
+        # Generates 1 portrait image per main character (max 4 calls).
+        # Results are injected post-hoc into every DSL that references that character —
+        # giving the manga consistent character visuals without changing LLM prompts.
+        character_sprites: dict[str, str] = {}   # char_name → relative image path
+        if self.image_api_key and self.book_id and self.image_dir and manga_blueprint:
+            try:
+                import os
+                import re
+                from app.image_generator import generate_character_sprite, MAX_SPRITES_PER_BOOK
+                characters = manga_blueprint.get("characters", [])
+                max_sprites = min(MAX_SPRITES_PER_BOOK, len(characters))
+                self._report(16, f"Generating {max_sprites} character sprites...", "sprites")
+                for char in characters[:max_sprites]:
+                    name = char.get("name", "")
+                    if not name:
+                        continue
+                    safe_name = re.sub(r"[^a-z0-9]", "_", name.lower())
+                    fname = f"sprites/char_{safe_name}.png"
+                    out_path = os.path.join(self.image_dir, self.book_id, fname)
+                    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                    ok = await generate_character_sprite(
+                        character=char,
+                        style=self.style.value if hasattr(self.style, "value") else str(self.style),
+                        api_key=self.image_api_key,
+                        output_path=out_path,
+                    )
+                    if ok:
+                        character_sprites[name] = f"{self.book_id}/{fname}"
+                        logger.info(f"Sprite generated for '{name}' → {fname}")
+                    else:
+                        logger.warning(f"Sprite generation failed for '{name}'")
+
+                # Propagate sprite_url into bible characters for downstream DSL context
+                if character_sprites:
+                    for char in manga_bible.get("characters", []):
+                        name = char.get("name", "")
+                        if name in character_sprites:
+                            char["sprite_url"] = character_sprites[name]
+                    self._report(
+                        17,
+                        f"Sprites: {len(character_sprites)}/{max_sprites} generated",
+                        "sprites",
+                        {"sprites_generated": len(character_sprites)},
+                    )
+            except Exception as e:
+                logger.warning(f"Character sprite generation failed (non-fatal): {e}")
+
+        if self._is_cancelled():
+            return empty_result()
+
         # ── PHASE 3: Planning + Cost Estimate ──
         self._report(18, "Planning manga panel structure...", "planning")
 
@@ -395,6 +453,11 @@ class MangaOrchestrator:
         # Build chapter ending context for cross-chapter continuity (issue 2.6)
         chapter_endings = self._extract_chapter_endings(canonical_chapters)
 
+        # Pre-compute visual continuity hints (read-only, safe for parallel use)
+        visual_context_map = self._build_visual_context_map(
+            manga_plan, canonical_chapters, manga_blueprint
+        )
+
         # Fire all pages in parallel (semaphore controls concurrency)
         page_tasks = [
             self._generate_page_with_semaphore(
@@ -405,6 +468,7 @@ class MangaOrchestrator:
                 prev_chapter_ending=chapter_endings.get(
                     panels[0].chapter_index - 1
                 ) if panels[0].panel_index == 0 else None,
+                visual_context=visual_context_map.get(panels[0].chapter_index),
             )
             for _page_key, panels in sorted(page_groups.items())
         ]
@@ -454,6 +518,9 @@ class MangaOrchestrator:
             for i, panel_result in enumerate(page_result):
                 assignment = page_panels[i] if i < len(page_panels) else None
                 dsl = panel_result.get("dsl")
+                # Inject character sprite URLs post-hoc (no-op if no sprites generated)
+                if dsl and character_sprites:
+                    self._inject_sprite_urls(dsl, character_sprites)
 
                 if dsl:
                     living_panels.append(dsl)
@@ -516,6 +583,149 @@ class MangaOrchestrator:
 
     # ── Helpers ───────────────────────────────────────────────
 
+    # Panel types that justify the verbose V2 DSL (animation-heavy, character-rich)
+    _V2_PANEL_TYPES = frozenset({"splash", "dialogue", "montage"})
+
+    @staticmethod
+    def _inject_sprite_urls(dsl: dict, sprite_map: dict[str, str]) -> dict:
+        """Post-hoc injection of sprite_url into sprite layers.
+
+        Walks the V2 DSL and inserts sprite_url into any sprite layer whose
+        character name has a generated portrait. This runs AFTER the LLM
+        generates the DSL — never changes what the LLM sees.
+
+        Safe to call with an empty sprite_map (no-op).
+        """
+        if not sprite_map or not isinstance(dsl, dict):
+            return dsl
+
+        def _inject_layers(layers: list) -> None:
+            for layer in layers:
+                if not isinstance(layer, dict):
+                    continue
+                if layer.get("type") == "sprite":
+                    char_name = (layer.get("props") or {}).get("character", "")
+                    if char_name in sprite_map:
+                        layer.setdefault("props", {})
+                        layer["props"]["sprite_url"] = f"/images/{sprite_map[char_name]}"
+
+        for act in dsl.get("acts", []):
+            if not isinstance(act, dict):
+                continue
+            _inject_layers(act.get("layers", []))
+            for cell in act.get("cells", []):
+                if isinstance(cell, dict):
+                    _inject_layers(cell.get("layers", []))
+
+    @staticmethod
+    def _build_visual_context_map(
+        manga_plan: "MangaPlan",
+        canonical_chapters: list[dict],
+        manga_blueprint: Optional[dict],
+    ) -> dict[int, str]:
+        """Pre-compute a read-only visual continuity hint per chapter.
+
+        This is computed BEFORE parallel DSL generation fires so every page task
+        can access it without locks or shared mutable state.
+
+        Each hint tells the DSL generator:
+        - Where this chapter sits in the 3-act arc
+        - What mood the chapter should carry
+        - Whether to shift tone from the previous chapter
+        - Whether pacing weight is imbalanced (too many heavy or too many light panels)
+        """
+        from collections import Counter, defaultdict
+
+        n = len(canonical_chapters)
+        if n == 0:
+            return {}
+
+        context_map: dict[int, str] = {}
+
+        # Extract per-chapter mood from blueprint scenes (first scene per chapter)
+        chapter_moods: dict[int, str] = {}
+        if manga_blueprint:
+            for scene in manga_blueprint.get("scenes", []):
+                idx = scene.get("chapter_source", 0)
+                if idx not in chapter_moods and scene.get("mood"):
+                    chapter_moods[idx] = scene["mood"]
+
+        # Count panel type distribution per chapter (from the plan)
+        type_counts: dict[int, Counter] = defaultdict(Counter)
+        for p in manga_plan.panels:
+            type_counts[p.chapter_index][p.content_type] += 1
+
+        for i, ch in enumerate(canonical_chapters):
+            idx = ch.get("chapter_index", i)
+            arc_pos = i / max(n - 1, 1)  # 0.0 = opening, 1.0 = final chapter
+
+            # 3-act position label
+            if arc_pos < 0.33:
+                act = "act-one (setup/introduction)"
+            elif arc_pos < 0.67:
+                act = "act-two (confrontation/complexity)"
+            else:
+                act = "act-three (resolution/payoff)"
+
+            # Mood contrast hint — nudge away from repeating the same tone
+            prev_mood = chapter_moods.get(idx - 1, "")
+            curr_mood = chapter_moods.get(idx, "")
+            contrast_hint = ""
+            if prev_mood and curr_mood and prev_mood == curr_mood:
+                contrast_hint = (
+                    f"Previous chapter was also '{prev_mood}' — "
+                    f"find a subtle tonal shift to avoid repetition."
+                )
+            elif prev_mood and curr_mood:
+                contrast_hint = (
+                    f"Previous chapter was '{prev_mood}', this is '{curr_mood}' — "
+                    f"lean into the contrast."
+                )
+
+            # Pacing balance hint
+            counts = type_counts.get(idx, Counter())
+            heavy = counts.get("splash", 0) + counts.get("montage", 0)
+            light = (counts.get("narration", 0) + counts.get("data", 0)
+                     + counts.get("transition", 0))
+            balance_hint = ""
+            if heavy > 2 and light == 0:
+                balance_hint = (
+                    "Many heavy panels, no light ones — ensure at least one "
+                    "quiet/atmospheric moment for pacing contrast."
+                )
+            elif light > heavy + 2:
+                balance_hint = (
+                    "Many light panels — keep energy up with at least one "
+                    "high-impact visual moment."
+                )
+
+            parts = [f"NARRATIVE ARC: {act} (position {arc_pos:.1f}/1.0)"]
+            if curr_mood:
+                parts.append(f"Chapter mood: {curr_mood}")
+            if contrast_hint:
+                parts.append(contrast_hint)
+            if balance_hint:
+                parts.append(balance_hint)
+
+            context_map[idx] = "\n".join(parts)
+
+        return context_map
+
+    def _choose_engine_for_page(self, page_panels: list[PanelAssignment]) -> str:
+        """Per-page engine routing for 'auto' mode.
+
+        V2 (verbose DSL) is used when a page contains any expressive panel type
+        that benefits from fine-grained animation control (splash, dialogue, montage).
+        V4 (semantic intent) is used for simpler pages (narration, data, transition,
+        concept) where the reduced token cost and higher LLM compliance matter more.
+
+        Explicit 'v2' or 'v4' engine settings bypass this entirely.
+        """
+        if self.engine != "auto":
+            return self.engine
+        page_types = {p.content_type for p in page_panels}
+        return "v2" if page_types & self._V2_PANEL_TYPES else "v4"
+
     @staticmethod
     def _group_panels_by_page(
         panels: list[PanelAssignment],
@@ -550,6 +760,7 @@ class MangaOrchestrator:
         chapter_summary: Optional[dict],
         total_panels: int = 1,
         prev_chapter_ending: Optional[str] = None,
+        visual_context: Optional[str] = None,
     ) -> list[dict]:
         """Generate DSLs for one page with concurrency limiting."""
         async with self._semaphore:
@@ -559,7 +770,9 @@ class MangaOrchestrator:
                     for _ in page_panels
                 ]
 
-            if self.engine == "v4":
+            effective_engine = self._choose_engine_for_page(page_panels)
+
+            if effective_engine == "v4":
                 result = await generate_v4_page(
                     page_panels=page_panels,
                     llm_client=self.llm,
@@ -567,6 +780,7 @@ class MangaOrchestrator:
                     manga_bible=manga_bible,
                     chapter_summary=chapter_summary,
                     prev_chapter_ending=prev_chapter_ending,
+                    visual_context=visual_context,
                 )
                 # V4 returns a single page dict; wrap each panel as a result
                 page_data = result.get("page", {})
@@ -592,6 +806,7 @@ class MangaOrchestrator:
                     manga_bible=manga_bible,
                     chapter_summary=chapter_summary,
                     prev_chapter_ending=prev_chapter_ending,
+                    visual_context=visual_context,
                 )
 
             # Track cost

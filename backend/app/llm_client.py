@@ -194,14 +194,14 @@ class LLMClient:
 
         except APIError as e:
             logger.error(f"LLM API error: {e}")
-            # 429 — surface immediately so the worker can mark the task failed
+            # 429 — surface immediately so the worker can mark the task failed.
+            # Re-raise original error (RateLimitError constructor requires SDK internals).
             status = getattr(e, "status_code", None)
             if status == 429:
-                raise RateLimitError(
+                logger.warning(
                     f"Rate limit hit on model '{self.model}'. "
-                    "Switch to a less-loaded model (e.g. google/gemini-2.0-flash-001 or qwen/qwq-32b) "
-                    "or add credits at openrouter.ai/settings/integrations."
-                ) from e
+                    "Switch to a less-loaded model or add credits at openrouter.ai."
+                )
             raise
 
     def _parse_json_response(self, content: str) -> Optional[dict | list]:

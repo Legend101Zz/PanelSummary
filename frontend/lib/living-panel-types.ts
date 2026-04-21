@@ -177,6 +177,7 @@ export interface SpriteLayer extends LayerBase {
     signatureColor?: string;   // character's accent color
     signatureSymbol?: string;  // SVG path for character icon
     aura?: "energy" | "calm" | "dark" | "fire" | "ice" | "none";
+    sprite_url?: string;       // pre-generated portrait image (overrides SVG silhouette)
   };
 }
 

@@ -88,18 +88,59 @@ export function BackgroundRenderer({ layer }: { layer: BackgroundLayer }) {
 
 export function SpriteRenderer({ layer }: { layer: SpriteLayer }) {
   const { props } = layer;
-  const isDark = props.silhouette;
+  const size = props.size || 64;
 
-  // Map facing to a default pose if no explicit pose given
+  // If a generated portrait exists, render it — falls back to SVG silhouette
+  // so books generated without image sprites are unaffected.
+  if (props.sprite_url) {
+    // Sprite URLs are stored as relative paths (/images/...) in the DSL.
+    // Resolve against the backend API URL (same pattern as lib/api.ts).
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const spriteSrc = props.sprite_url.startsWith("/")
+      ? `${apiBase}${props.sprite_url}`
+      : props.sprite_url;
+    return (
+      <div className="flex flex-col items-center gap-1" style={{ width: size * 1.2 }}>
+        <img
+          src={spriteSrc}
+          alt={props.character || "Character"}
+          style={{
+            width: size,
+            height: size,
+            objectFit: "contain",
+            // silhouette mode: turn portrait into a solid ink silhouette
+            filter: props.silhouette ? "brightness(0)" : undefined,
+            // multiply blend: portrait integrates naturally onto paper backgrounds
+            mixBlendMode: "multiply",
+          }}
+        />
+        {props.showName !== false && (
+          <span
+            style={{
+              fontSize: Math.max(8, size * 0.14),
+              fontFamily: "var(--font-label, monospace)",
+              color: props.signatureColor || "#1A1825",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              opacity: 0.7,
+            }}
+          >
+            {props.character}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Original SVG silhouette path — unchanged for all existing panels
   const pose = props.pose || (props.facing === "left" ? "thinking" : "standing");
-
   return (
     <MangaCharacter
       name={props.character || "Character"}
       expression={props.expression || "neutral"}
       pose={pose}
-      size={props.size || 64}
-      ink={isDark ? "#000" : "#1A1825"}
+      size={size}
+      ink={props.silhouette ? "#000" : "#1A1825"}
       showName={props.showName !== false}
       signatureColor={props.signatureColor}
       aura={props.aura || "none"}

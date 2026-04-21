@@ -512,6 +512,18 @@ def generate_summary_task(
             content = "\n\n".join(
                 section.content for section in chapter.sections
             )
+            word_count_raw = len(content.split())
+
+            # Skip chapters with almost no content (author credits, blank pages, etc.)
+            # These have < 30 words and don't produce meaningful manga panels — the LLM
+            # just over-dramatizes a list of names into a fake hero splash.
+            if word_count_raw < 30:
+                logger.info(
+                    f"Skipping chapter {i + 1} '{chapter.title[:40]}' "
+                    f"({word_count_raw} words — likely metadata/credits page)"
+                )
+                continue
+
             chapter_dict = {
                 "index": chapter.index,
                 "title": chapter.title,
@@ -522,7 +534,7 @@ def generate_summary_task(
 
             # Build user message with running context (P0)
             # 3B: Add content-length guidance for short sections
-            word_count = len(content.split())
+            word_count = word_count_raw  # already computed above
             length_guidance = get_content_length_guidance(word_count)
             chapter_text = format_chapter_for_llm(chapter_dict)
             if length_guidance:
@@ -702,6 +714,10 @@ def generate_summary_task(
             image_budget=5,
             max_concurrent=4,
             engine=engine,
+            # Sprite generation: only when caller enabled image gen
+            book_id=book_id if generate_images else "",
+            image_dir=_cs_s.image_dir if generate_images else "",
+            image_api_key=api_key if generate_images else "",
         )
         logger.info(f"Using {engine} orchestrator (understand → design → generate)")
 
@@ -833,10 +849,10 @@ def generate_summary_task(
         await summary_doc.save()
 
         n_chars = len(manga_bible_dict.get("characters", [])) if manga_bible_dict else 0
-        n_living = len(summary_doc.living_panels) if hasattr(summary_doc, 'living_panels') and summary_doc.living_panels else 0
+        n_living = summary_doc.panel_count  # panels stored in LivingPanelDoc collection
         await update_job_status(
             self.request.id, "success", 100,
-            f"Done! {n_living} living panels, {n_chars} characters, {len(canonical_chapters)} chapters. Cost: ~${total_cost:.4f}",
+            f"Done! {n_living} panels, {n_chars} characters, {len(canonical_chapters)} chapters. Cost: ~${total_cost:.4f}",
             result_id=str(summary_doc.id),
         )
 

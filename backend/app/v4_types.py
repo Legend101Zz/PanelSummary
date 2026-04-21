@@ -53,12 +53,14 @@ class V4Panel:
     # These are set by the engine, not the LLM
     panel_id: str = ""
     chapter_index: int = 0
+    page_index: int = 0
 
     def to_dict(self) -> dict:
         d: dict = {
             "type": self.type,
             "panel_id": self.panel_id,
             "chapter_index": self.chapter_index,
+            "page_index": self.page_index,
             "emphasis": self.emphasis,
         }
         if self.scene:

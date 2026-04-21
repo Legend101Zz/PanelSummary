@@ -137,7 +137,52 @@ def _enforce_content_requirements(
             logger.info(f"{assignment.panel_id}: Injecting fallback caption")
             _inject_narration_text(target, text, assignment)
 
+    # ── Sanitize cuts layout: strip content layers from act level when cells have content ──
+    # The LLM frequently duplicates content at both act-level layers (full-canvas) AND inside
+    # cells. Act-level layers in a cuts layout are rendered behind all cells (background/effects
+    # only). Sprites, text, and speech bubbles placed there show through every cell at once.
+    _sanitize_cuts_layout(dsl)
+
     return dsl
+
+
+def _sanitize_cuts_layout(dsl: dict) -> None:
+    """Remove content layers from act.layers when cells own the content.
+
+    Any layout that uses cells (cuts, split-h, split-v, grid-2x2, etc.) renders
+    act.layers as a full-canvas backdrop behind all cells. The LLM often duplicates
+    sprites/text/bubbles at both act level AND cell level — causing double rendering.
+
+    Rule: if cells have content, strip all non-canvas layers from act.layers.
+    Canvas-only layer types (background, effect, shape, illustration) are safe to keep.
+    """
+    _CANVAS_LAYER_TYPES = {"background", "effect", "shape", "scene_transition", "illustration"}
+    # Layouts that don't use cells — act.layers IS the content, don't strip
+    _CELL_FREE_LAYOUTS = {"full", "overlap"}
+
+    for act in dsl.get("acts", []):
+        layout_type = act.get("layout", {}).get("type", "full")
+        if layout_type in _CELL_FREE_LAYOUTS:
+            continue
+        cells = act.get("cells", [])
+        if not cells:
+            continue
+        # Only sanitize if cells actually have content layers
+        cells_have_content = any(
+            any(l.get("type") not in _CANVAS_LAYER_TYPES for l in cell.get("layers", []))
+            for cell in cells
+        )
+        if not cells_have_content:
+            continue
+        # Strip content layers from act-level — keep only canvas-wide layers
+        original = act.get("layers", [])
+        act["layers"] = [l for l in original if l.get("type") in _CANVAS_LAYER_TYPES]
+        removed = len(original) - len(act["layers"])
+        if removed:
+            logger.debug(
+                f"sanitize_cells_layout ({layout_type}): "
+                f"removed {removed} duplicate act-level layers"
+            )
 
 
 def _inject_dialogue_sprites(
@@ -425,9 +470,11 @@ def _build_single_panel_context(
         if assignment.character:
             for ch in manga_bible.get("characters", []):
                 if ch["name"] == assignment.character:
+                    sig = f" | color:{ch['signature_color']}" if ch.get("signature_color") else ""
+                    aura = f" | aura:{ch['aura']}" if ch.get("aura", "none") not in ("", "none") else ""
                     parts.append(
                         f"Character style: {ch.get('speech_style', '')} "
-                        f"/ {ch.get('visual_description', '')[:100]}"
+                        f"/ {ch.get('visual_description', '')[:100]}{sig}{aura}"
                     )
                     break
 
@@ -480,6 +527,7 @@ async def generate_page_dsls(
     manga_bible: Optional[dict] = None,
     chapter_summary: Optional[dict] = None,
     prev_chapter_ending: Optional[str] = None,
+    visual_context: Optional[str] = None,
 ) -> list[dict]:
     """
     Generate DSLs for ALL panels on a single page in one LLM call.
@@ -522,6 +570,13 @@ async def generate_page_dsls(
     if prev_chapter_ending:
         user_message = (
             f"Previous chapter ended with: {prev_chapter_ending}\n\n"
+            + user_message
+        )
+
+    # Prepend visual continuity context if provided (pre-computed, read-only)
+    if visual_context:
+        user_message = (
+            f"=== VISUAL CONTINUITY ===\n{visual_context}\n\n"
             + user_message
         )
 

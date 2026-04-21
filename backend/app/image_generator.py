@@ -149,6 +149,52 @@ async def generate_panel_image(
 
 
 MAX_IMAGES_PER_BOOK = 4  # Cost control: max AI images per book
+MAX_SPRITES_PER_BOOK = 4  # Cost control: max character portrait sprites per book
+
+
+async def generate_character_sprite(
+    character: dict,
+    style: str,
+    api_key: str,
+    output_path: str,
+    image_model: str = None,
+) -> bool:
+    """Generate a reusable character portrait sprite for a manga character.
+
+    This is called ONCE per character during blueprint phase and the resulting
+    image is injected into every DSL panel featuring that character — giving
+    the manga consistent character visuals across all panels.
+
+    Args:
+        character: Blueprint character dict with 'visual_description', 'name', etc.
+        style: Manga style key (manga/noir/minimalist/comedy/academic)
+        api_key: OpenRouter API key
+        output_path: Where to save the PNG
+        image_model: Override image model (falls back to DEFAULT_IMAGE_MODEL)
+    """
+    name = character.get("name", "character")
+    visual_desc = character.get("visual_description", name)
+    # Truncate to avoid overly long prompts
+    visual_desc = visual_desc[:300]
+
+    style_hint = STYLE_SUFFIXES.get(style, STYLE_SUFFIXES["manga"])
+    prompt = (
+        f"{visual_desc}. "
+        f"Manga character portrait, centered, upper body visible, "
+        f"white or transparent background, "
+        f"black and white ink art, bold clean outlines, expressive face. "
+        f"Style: {style_hint}."
+    )[:500]
+
+    logger.info(f"Generating character sprite for '{name}'")
+    return await generate_panel_image(
+        visual_description=prompt,
+        style=style,
+        api_key=api_key,
+        output_path=output_path,
+        panel_type="portrait",   # → aspect "1:1" (square portrait)
+        image_model=image_model,
+    )
 
 
 def _distribute_budget(eligible: list, max_images: int) -> list:

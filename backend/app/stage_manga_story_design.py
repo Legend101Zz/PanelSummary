@@ -568,8 +568,10 @@ def blueprint_to_bible(blueprint: dict, canonical_chapters: list[dict]) -> dict:
             }
 
     return {
+        "manga_title": blueprint.get("manga_title", ""),
         "world_description": world.get("setting", ""),
         "color_palette": world.get("visual_style", ""),
+        "core_metaphor": world.get("core_metaphor", ""),
         "characters": [
             {
                 "name": c.get("name", ""),
@@ -577,6 +579,11 @@ def blueprint_to_bible(blueprint: dict, canonical_chapters: list[dict]) -> dict:
                 "visual_description": c.get("visual_description", ""),
                 "speech_style": c.get("speech_style", ""),
                 "represents": c.get("based_on", ""),
+                # These were previously dropped — now preserved so DSL generators
+                # can inject signature colours and auras into sprite layers
+                "signature_color": c.get("signature_color", ""),
+                "aura": c.get("aura", "none"),
+                "default_pose": c.get("default_pose", "standing"),
             }
             for c in characters
         ],

@@ -153,6 +153,15 @@ agent HOW to make it interesting. Think about:
 - The rhythm of layouts IS the pacing. Full→cuts→cuts→full creates energy.
   Full→full→full→full is a slideshow, not manga.
 
+## PACING RHYTHM (panel weight — like musical dynamics):
+Panels have weight: heavy (splash, montage) | medium (dialogue, concept) | light (narration, data, transition)
+- NEVER plan 3+ consecutive heavy panels in one chapter.
+- NEVER plan a chapter with zero light panels — readers need breathing room.
+- Ideal chapter arc: heavy(splash) → medium(dialogue) → medium(dialogue) → light(narration/data) → heavy(montage/transition)
+- A chapter that is ALL dialogue is as bad as all-splash. Vary the weight.
+- Light panels make heavy panels feel heavier. Contrast IS drama.
+- If a chapter has 5+ panels, at least 1 MUST be light type.
+
 Return JSON:
 {{
   "chapters": [

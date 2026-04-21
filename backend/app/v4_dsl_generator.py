@@ -105,9 +105,11 @@ def _build_v4_page_prompt(
         page_chars = {p.character for p in page_panels if p.character}
         for ch in manga_bible.get("characters", []):
             if ch["name"] in page_chars:
+                sig = f" [color:{ch['signature_color']}]" if ch.get("signature_color") else ""
+                aura = f" [aura:{ch['aura']}]" if ch.get("aura", "none") not in ("", "none") else ""
                 parts.append(
                     f"CHARACTER {ch['name']}: {ch.get('role', '')} — "
-                    f"{ch.get('speech_style', '')}"
+                    f"{ch.get('speech_style', '')}{sig}{aura}"
                 )
 
     # Chapter context
@@ -157,6 +159,7 @@ def _make_v4_fallback_panel(assignment: PanelAssignment) -> V4Panel:
         type=assignment.content_type if assignment.content_type in PANEL_TYPES else "narration",
         panel_id=assignment.panel_id,
         chapter_index=assignment.chapter_index,
+        page_index=assignment.page_index,
         mood=assignment.visual_mood or "light",
         emphasis="medium",
     )
@@ -264,6 +267,7 @@ async def generate_v4_page(
     manga_bible: Optional[dict] = None,
     chapter_summary: Optional[dict] = None,
     prev_chapter_ending: Optional[str] = None,
+    visual_context: Optional[str] = None,
 ) -> dict:
     """
     Generate a V4 DSL page for all panels in one LLM call.
@@ -281,6 +285,9 @@ async def generate_v4_page(
 
     if prev_chapter_ending:
         user_prompt = f"Previous chapter ended: {prev_chapter_ending}\n\n" + user_prompt
+
+    if visual_context:
+        user_prompt = f"=== VISUAL CONTINUITY ===\n{visual_context}\n\n" + user_prompt
 
     temperature = _page_temperature(page_panels)
 
@@ -317,10 +324,11 @@ async def generate_v4_page(
         page = validate_v4_page(parsed, page_index)
         page.chapter_index = page_panels[0].chapter_index
 
-        # Inject panel IDs and chapter indices
+        # Inject panel IDs, chapter indices, and page indices
         for i, (panel, assignment) in enumerate(zip(page.panels, page_panels)):
             panel.panel_id = assignment.panel_id
             panel.chapter_index = assignment.chapter_index
+            panel.page_index = assignment.page_index
 
         # If LLM returned fewer panels than requested, fill with fallbacks
         if len(page.panels) < len(page_panels):
