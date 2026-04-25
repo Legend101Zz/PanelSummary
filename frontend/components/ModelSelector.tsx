@@ -163,9 +163,12 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     };
   }, [open]);
 
+  const featuredMatches = models.filter(m =>
+    FEATURED_IDS.some(id => m.id === id || m.id.startsWith(id + ":") || m.id.startsWith(id + "-"))
+  );
   const allFiltered = models.filter(m => {
     const q = search.toLowerCase();
-    if (!q) return showAll || FEATURED_IDS.some(id => m.id === id);
+    if (!q) return showAll || featuredMatches.length === 0 || featuredMatches.includes(m);
     return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q) || m.provider.toLowerCase().includes(q);
   });
 
@@ -229,6 +232,7 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               left: dropdownPos.left,
               width: dropdownPos.width,
               maxHeight: dropdownPos.maxHeight,
+              overflow: "hidden",
             }}
           >
             {/* Search */}
