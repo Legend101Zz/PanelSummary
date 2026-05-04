@@ -15,9 +15,16 @@ interface SplashPanelProps {
   panel: V4Panel;
   palette: typeof DEFAULT_PALETTE;
   asset?: V4CharacterAsset | null;
+  /**
+   * Phase 4: when the panel has a painted backdrop, skip the synthetic
+   * character placeholder — the painted art already shows the character at
+   * higher fidelity. We keep the title + narration text since those are
+   * lettering, exactly like a real splash page.
+   */
+  hasPaintedBackdrop?: boolean;
 }
 
-export function SplashPanel({ panel, palette, asset }: SplashPanelProps) {
+export function SplashPanel({ panel, palette, asset, hasPaintedBackdrop = false }: SplashPanelProps) {
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col items-center justify-center">
       {/* Speed lines effect */}
@@ -36,8 +43,9 @@ export function SplashPanel({ panel, palette, asset }: SplashPanelProps) {
         />
       )}
 
-      {/* Character silhouette (if present) */}
-      {panel.character && (
+      {/* Character silhouette (if present) — skipped when the painted backdrop
+          already shows the character (Phase 4). */}
+      {panel.character && !hasPaintedBackdrop && (
         <motion.div
           className="relative z-10 mb-4"
           initial={{ scale: 0.8, opacity: 0 }}

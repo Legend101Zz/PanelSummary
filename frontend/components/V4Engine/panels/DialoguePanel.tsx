@@ -15,6 +15,13 @@ interface DialoguePanelProps {
   panel: V4Panel;
   palette: typeof DEFAULT_PALETTE;
   assets?: V4CharacterAsset[];
+  /**
+   * Phase 4: when true, the dialogue bubbles render WITHOUT the avatar disc
+   * because the painted backdrop already shows the speakers. Bubbles still
+   * keep the small name tag so the reader knows who's talking; that's
+   * exactly what real manga letterers do over painted panels.
+   */
+  hasPaintedBackdrop?: boolean;
 }
 
 function normalizeAssetKey(value: string | undefined): string {
@@ -51,12 +58,14 @@ function SpeechBubble({
   isRight,
   palette,
   asset,
+  showAvatar,
 }: {
   line: V4DialogueLine;
   index: number;
   isRight: boolean;
   palette: typeof DEFAULT_PALETTE;
   asset: V4CharacterAsset | null;
+  showAvatar: boolean;
 }) {
   const emotionStyle = EMOTION_STYLES[line.emotion || "neutral"] || EMOTION_STYLES.neutral;
 
@@ -67,29 +76,33 @@ function SpeechBubble({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: index * 0.3 }}
     >
-      {/* Character tag / reusable sprite */}
+      {/* Character tag / reusable sprite. Avatar disc is suppressed when the
+          painted backdrop already shows the speaker (Phase 4); we keep the
+          small name tag because manga lettering still labels who's talking. */}
       <div className="shrink-0 flex flex-col items-center gap-1 max-w-20">
-        <div
-          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
-          style={{
-            color: emotionStyle.borderColor,
-            background: `${emotionStyle.borderColor}15`,
-            border: `1px solid ${emotionStyle.borderColor}40`,
-          }}
-        >
-          {asset?.image_url ? (
-            <img
-              src={asset.image_url}
-              alt={`${line.who} ${line.emotion || "neutral"}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <span style={{ fontFamily: "var(--font-label, monospace)", fontSize: "0.62rem" }}>
-              {line.who.slice(0, 2).toUpperCase()}
-            </span>
-          )}
-        </div>
+        {showAvatar && (
+          <div
+            className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
+            style={{
+              color: emotionStyle.borderColor,
+              background: `${emotionStyle.borderColor}15`,
+              border: `1px solid ${emotionStyle.borderColor}40`,
+            }}
+          >
+            {asset?.image_url ? (
+              <img
+                src={asset.image_url}
+                alt={`${line.who} ${line.emotion || "neutral"}`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <span style={{ fontFamily: "var(--font-label, monospace)", fontSize: "0.62rem" }}>
+                {line.who.slice(0, 2).toUpperCase()}
+              </span>
+            )}
+          </div>
+        )}
         <div
           className="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider uppercase max-w-full"
           style={{
@@ -143,7 +156,7 @@ function SpeechBubble({
   );
 }
 
-export function DialoguePanel({ panel, palette, assets = [] }: DialoguePanelProps) {
+export function DialoguePanel({ panel, palette, assets = [], hasPaintedBackdrop = false }: DialoguePanelProps) {
   const lines = panel.lines || [];
 
   return (
@@ -173,6 +186,7 @@ export function DialoguePanel({ panel, palette, assets = [] }: DialoguePanelProp
           isRight={i % 2 === 1}
           palette={palette}
           asset={findLineAsset(line, assets)}
+          showAvatar={!hasPaintedBackdrop}
         />
       ))}
 

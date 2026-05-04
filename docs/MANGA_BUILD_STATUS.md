@@ -18,6 +18,7 @@ shipped** so the next session knows exactly where to pick up.
 | 2 | Source-fact extraction + first quality gate | ✅ shipped |
 | 3 | Character art-direction (LLM authored) + library idempotency | ✅ shipped |
 | 4 | **Multimodal panel rendering** (sprite-conditioned image gen) | ✅ shipped |
+| 4.1 | Front-end V4 painted-panel layer + text scrim | ✅ shipped |
 
 Test count went from **332 → 366** during Phase 4 (no regressions).
 
@@ -155,8 +156,10 @@ Pick from the deep-dive plan:
 * **Phase 10 panel-level quality gate** — once we have rendered panels,
   add an OCR/CLIP-style check that the rendered panel actually contains
   the characters it should.
-* **Frontend V4 upgrade (Phase 11)** — render the new `image_path` field
-  in the page viewer; today the field is emitted but the front-end ignores it.
+* **Frontend V4 upgrade (Phase 11)** — ✅ **shipped**. The viewer now
+  layers `image_path` as a panel backdrop with a bottom-aligned text scrim
+  for legibility, and suppresses the redundant synthetic placeholder
+  avatars when painted art is present.
 
 When picking the next phase, run `pytest -q` first to confirm 366 still
 pass; that's the green baseline you're starting from.

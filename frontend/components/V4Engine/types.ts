@@ -94,6 +94,20 @@ export interface V4Panel {
   expression?: V4Expression;
   effects?: string[];
   emphasis?: V4Emphasis;
+  /**
+   * Phase 4: relative path to the painted panel art (under settings.image_dir).
+   * Optional — when present, the renderer layers this image as the panel
+   * backdrop and overlays text/dialogue on top, mimicking real manga where
+   * speech bubbles sit ON the art, not next to it. When absent, the renderer
+   * falls back to the synthetic mood-driven background.
+   */
+  image_path?: string;
+  /**
+   * Phase 4: aspect ratio the panel art was generated at (e.g. "2:3", "1:1").
+   * Used by the page layout to size the panel container so the painted art
+   * isn't squashed.
+   */
+  image_aspect_ratio?: string;
 }
 
 // ── Page Layout ────────────────────────────────

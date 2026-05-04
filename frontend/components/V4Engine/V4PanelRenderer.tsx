@@ -17,6 +17,7 @@ import { DialoguePanel } from "./panels/DialoguePanel";
 import { NarrationPanel } from "./panels/NarrationPanel";
 import { DataPanel } from "./panels/DataPanel";
 import { TransitionPanel } from "./panels/TransitionPanel";
+import { PaintedPanelBackdrop } from "./PaintedPanelBackdrop";
 
 interface V4PanelRendererProps {
   panel: V4Panel;
@@ -60,13 +61,19 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAsset
     [panel, characterAssets],
   );
 
+  // Phase 4: when the multimodal renderer painted this panel, use the
+  // painted art as the backdrop and tell sub-renderers to skip their
+  // synthetic character placeholders (which would otherwise duplicate the
+  // painted character at lower fidelity).
+  const hasPaintedBackdrop = Boolean(panel.image_path);
+
   // Choose the right sub-renderer
   const content = useMemo(() => {
     switch (panel.type) {
       case "splash":
-        return <SplashPanel panel={panel} palette={palette} asset={panelAsset} />;
+        return <SplashPanel panel={panel} palette={palette} asset={panelAsset} hasPaintedBackdrop={hasPaintedBackdrop} />;
       case "dialogue":
-        return <DialoguePanel panel={panel} palette={palette} assets={characterAssets} />;
+        return <DialoguePanel panel={panel} palette={palette} assets={characterAssets} hasPaintedBackdrop={hasPaintedBackdrop} />;
       case "data":
         return <DataPanel panel={panel} palette={palette} />;
       case "transition":
@@ -77,7 +84,7 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAsset
       default:
         return <NarrationPanel panel={panel} palette={palette} />;
     }
-  }, [panel, palette, panelAsset, characterAssets]);
+  }, [panel, palette, panelAsset, characterAssets, hasPaintedBackdrop]);
 
   return (
     <motion.div
@@ -99,6 +106,26 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAsset
       role="img"
       aria-label={_buildAriaLabel(panel)}
     >
+      {/* Painted panel art (Phase 4) — sits at z-0 behind every other layer.
+          When absent, the parent's mood-driven background colour shows. */}
+      {hasPaintedBackdrop && panel.image_path && (
+        <PaintedPanelBackdrop imagePath={panel.image_path} />
+      )}
+
+      {/* Bottom-aligned dark scrim improves text legibility when text overlays
+          painted art. We only paint it when there IS painted art behind, to
+          avoid darkening the synthetic palette panels for no reason. */}
+      {hasPaintedBackdrop && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2"
+          style={{
+            background: `linear-gradient(to top, ${palette.bg}cc 0%, ${palette.bg}66 50%, transparent 100%)`,
+            zIndex: 1,
+          }}
+          aria-hidden
+        />
+      )}
+
       {/* Screentone pattern overlay */}
       {panel.effects?.includes("screentone") && (
         <div
