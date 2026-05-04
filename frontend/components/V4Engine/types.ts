@@ -90,6 +90,14 @@ export interface V4Panel {
   lines?: V4DialogueLine[];
   data_items?: V4DataItem[];
   character?: string;
+  /**
+   * Phase 7: full list of characters visually present in the panel. The
+   * backend storyboarder authors this; the multimodal panel renderer uses
+   * it to attach one reference sheet per id. The viewer can use it to label
+   * a panel with multiple speakers' name tags or to look up a richer asset
+   * for each character without inferring from dialogue lines.
+   */
+  character_ids?: string[];
   pose?: V4Pose;
   expression?: V4Expression;
   effects?: string[];
@@ -118,7 +126,14 @@ export type V4PageLayout =
   | "grid-3"
   | "grid-4"
   | "asymmetric"
-  | "full";
+  | "full"
+  /**
+   * Phase C1: when ``gutter_grid`` is authored by ``page_composition_stage``
+   * the layout token becomes ``"custom"``. Older renderers that don't yet
+   * understand ``gutter_grid`` fall back to a default layout instead of
+   * mis-applying ``"asymmetric"`` against custom widths.
+   */
+  | "custom";
 
 export interface V4Page {
   version: "4.0";
@@ -126,6 +141,24 @@ export interface V4Page {
   chapter_index: number;
   layout: V4PageLayout;
   panels: V4Panel[];
+  /**
+   * Phase C1: rows of integer percentages (each row sums to 100). The
+   * renderer reads this to build a CSS Grid; absent or empty means
+   * "use the legacy panel-count layout". RTL flow is applied at render
+   * time via ``direction: rtl`` on the page container.
+   */
+  gutter_grid?: number[][];
+  /**
+   * Phase C1: panel id of the bottom-left page-turn beat. The renderer
+   * highlights this cell (subtle border) so editors can see the
+   * cliffhanger anchor at a glance during QA.
+   */
+  page_turn_panel_id?: string;
+  /**
+   * Phase C1: the LLM's one-line rationale for this page's composition.
+   * Surfaced in the QA dashboard, not in the reader UI.
+   */
+  composition_notes?: string;
 }
 
 // ── Mood → Visual Mapping ──────────────────────

@@ -10,6 +10,8 @@
 import { motion } from "motion/react";
 import type { V4CharacterAsset, V4Panel, V4DialogueLine } from "../types";
 import { DEFAULT_PALETTE } from "../types";
+import { findAssetForCharacter } from "../assetLookup";
+import { SpeechBubble, type SpeechBubbleVariant } from "../SpeechBubble";
 
 interface DialoguePanelProps {
   panel: V4Panel;
@@ -24,21 +26,22 @@ interface DialoguePanelProps {
   hasPaintedBackdrop?: boolean;
 }
 
-function normalizeAssetKey(value: string | undefined): string {
-  return (value || "").trim().toLowerCase().replace(/\s+/g, "_");
+function findLineAsset(line: V4DialogueLine, assets: V4CharacterAsset[]): V4CharacterAsset | null {
+  return findAssetForCharacter(line.who, line.emotion, assets);
 }
 
-function findLineAsset(line: V4DialogueLine, assets: V4CharacterAsset[]): V4CharacterAsset | null {
-  const who = normalizeAssetKey(line.who);
-  const emotion = normalizeAssetKey(line.emotion || "neutral");
-  return assets.find(asset => (
-    normalizeAssetKey(asset.character_id) === who
-    && normalizeAssetKey(asset.expression || "neutral") === emotion
-    && asset.image_url
-  )) || assets.find(asset => (
-    normalizeAssetKey(asset.character_id) === who
-    && asset.image_url
-  )) || null;
+/**
+ * Pick a bubble variant from the line's emotion. Most lines are plain
+ * speech; ``shocked`` gets the spiky shout shape, ``thinking`` gets
+ * the cloud. Anything we don't have a strong opinion about falls back
+ * to plain speech — that's the YAGNI default.
+ */
+function variantForEmotion(emotion: string | undefined): SpeechBubbleVariant {
+  if (!emotion) return "speech";
+  const e = emotion.toLowerCase();
+  if (e === "shocked" || e === "angry") return "shout";
+  if (e === "thinking" || e === "thought" || e === "melancholy") return "thought";
+  return "speech";
 }
 
 const EMOTION_STYLES: Record<string, { borderColor: string; fontStyle: string }> = {
@@ -52,7 +55,7 @@ const EMOTION_STYLES: Record<string, { borderColor: string; fontStyle: string }>
   smirk:      { borderColor: "#F5A623", fontStyle: "italic" },
 };
 
-function SpeechBubble({
+function SpeechBubbleRow({
   line,
   index,
   isRight,
@@ -68,6 +71,16 @@ function SpeechBubble({
   showAvatar: boolean;
 }) {
   const emotionStyle = EMOTION_STYLES[line.emotion || "neutral"] || EMOTION_STYLES.neutral;
+  const variant = variantForEmotion(line.emotion);
+  // Tail points BACK toward the speaker's avatar / name tag column,
+  // so the bubble visually anchors to whoever is talking. When the
+  // avatar is hidden (painted backdrop), point the tail down at the
+  // bottom edge — the painted character is somewhere below.
+  const tailSide: "left" | "right" | "bottom" = !showAvatar
+    ? "bottom"
+    : isRight
+      ? "right"
+      : "left";
 
   return (
     <motion.div
@@ -76,9 +89,9 @@ function SpeechBubble({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: index * 0.3 }}
     >
-      {/* Character tag / reusable sprite. Avatar disc is suppressed when the
-          painted backdrop already shows the speaker (Phase 4); we keep the
-          small name tag because manga lettering still labels who's talking. */}
+      {/* Speaker column — avatar disc (when no painted backdrop) plus
+          a small name tag. Real manga letterers always identify the
+          speaker even on painted pages, so the tag stays. */}
       <div className="shrink-0 flex flex-col items-center gap-1 max-w-20">
         {showAvatar && (
           <div
@@ -97,7 +110,12 @@ function SpeechBubble({
                 loading="lazy"
               />
             ) : (
-              <span style={{ fontFamily: "var(--font-label, monospace)", fontSize: "0.62rem" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-label, monospace)",
+                  fontSize: "0.62rem",
+                }}
+              >
                 {line.who.slice(0, 2).toUpperCase()}
               </span>
             )}
@@ -119,38 +137,43 @@ function SpeechBubble({
         </div>
       </div>
 
-      {/* Bubble */}
-      <div
-        className="relative px-3 py-2 rounded-lg max-w-[75%]"
-        style={{
-          background: isRight ? `${palette.accent}12` : `${palette.text}08`,
-          border: `1.5px solid ${emotionStyle.borderColor}40`,
-          borderRadius: isRight ? "12px 4px 12px 12px" : "4px 12px 12px 12px",
-        }}
-      >
-        <p
+      {/* SVG speech bubble. Width set in CSS so the SVG scales
+          responsively; height auto-grows with text inside. */}
+      <div style={{ flex: 1, minWidth: 0, maxWidth: "75%" }}>
+        <SpeechBubble
+          tailSide={tailSide}
+          tailOffset={0.5}
+          variant={variant}
+          strokeColor={emotionStyle.borderColor}
+          fillColor={
+            variant === "thought"
+              ? `${palette.text}10`
+              : isRight
+                ? `${palette.accent}18`
+                : `${palette.text}0d`
+          }
+          strokeWidth={variant === "shout" ? 3 : 2}
+          ariaLabel={`${line.who} says ${line.says}`}
           style={{
-            color: palette.text,
-            fontFamily: "var(--font-body, sans-serif)",
-            fontSize: "clamp(0.7rem, 1.3vw, 0.85rem)",
-            fontStyle: emotionStyle.fontStyle,
-            lineHeight: 1.4,
-            margin: 0,
+            width: "100%",
+            minHeight: 56,
           }}
         >
-          {line.says}
-        </p>
-
-        {/* Tail */}
-        <div
-          className="absolute top-2 w-0 h-0"
-          style={{
-            [isRight ? "right" : "left"]: -6,
-            borderTop: `6px solid transparent`,
-            borderBottom: `6px solid transparent`,
-            [isRight ? "borderLeft" : "borderRight"]: `6px solid ${emotionStyle.borderColor}40`,
-          }}
-        />
+          <p
+            style={{
+              color: palette.text,
+              fontFamily: "var(--font-body, sans-serif)",
+              fontSize: "clamp(0.7rem, 1.3vw, 0.85rem)",
+              fontStyle: emotionStyle.fontStyle,
+              fontWeight: variant === "shout" ? 700 : 400,
+              lineHeight: 1.4,
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            {line.says}
+          </p>
+        </SpeechBubble>
       </div>
     </motion.div>
   );
@@ -179,7 +202,7 @@ export function DialoguePanel({ panel, palette, assets = [], hasPaintedBackdrop 
 
       {/* Dialogue lines */}
       {lines.map((line, i) => (
-        <SpeechBubble
+        <SpeechBubbleRow
           key={`${line.who}-${i}`}
           line={line}
           index={i}

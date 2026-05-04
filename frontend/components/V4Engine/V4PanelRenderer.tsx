@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import type { V4CharacterAsset, V4Panel, V4Emphasis } from "./types";
 import { MOOD_PALETTES, DEFAULT_PALETTE, EMPHASIS_WEIGHTS } from "./types";
+import { findAssetForCharacter } from "./assetLookup";
 
 import { SplashPanel } from "./panels/SplashPanel";
 import { DialoguePanel } from "./panels/DialoguePanel";
@@ -18,6 +19,7 @@ import { NarrationPanel } from "./panels/NarrationPanel";
 import { DataPanel } from "./panels/DataPanel";
 import { TransitionPanel } from "./panels/TransitionPanel";
 import { PaintedPanelBackdrop } from "./PaintedPanelBackdrop";
+import { SfxLayer } from "./SfxLayer";
 
 interface V4PanelRendererProps {
   panel: V4Panel;
@@ -25,24 +27,6 @@ interface V4PanelRendererProps {
   /** Stagger delay for entry animation */
   staggerDelay?: number;
   characterAssets?: V4CharacterAsset[];
-}
-
-function normalizeAssetKey(value: string | undefined): string {
-  return (value || "").trim().toLowerCase().replace(/\s+/g, "_");
-}
-
-function findPanelAsset(panel: V4Panel, assets: V4CharacterAsset[]): V4CharacterAsset | null {
-  const character = normalizeAssetKey(panel.character);
-  if (!character) return null;
-  const expression = normalizeAssetKey(panel.expression || "neutral");
-  return assets.find(asset => (
-    normalizeAssetKey(asset.character_id) === character
-    && normalizeAssetKey(asset.expression || "neutral") === expression
-    && asset.image_url
-  )) || assets.find(asset => (
-    normalizeAssetKey(asset.character_id) === character
-    && asset.image_url
-  )) || null;
 }
 
 /**
@@ -57,8 +41,8 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAsset
   const emphasis = (panel.emphasis || "medium") as V4Emphasis;
   const weight = EMPHASIS_WEIGHTS[emphasis];
   const panelAsset = useMemo(
-    () => findPanelAsset(panel, characterAssets),
-    [panel, characterAssets],
+    () => findAssetForCharacter(panel.character, panel.expression, characterAssets),
+    [panel.character, panel.expression, characterAssets],
   );
 
   // Phase 4: when the multimodal renderer painted this panel, use the
@@ -138,6 +122,13 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAsset
       )}
 
       {content}
+
+      {/* Phase C5: SFX overlay sits above the content layer so big
+          BOOM/CRACK letters land ON the panel art, the way real manga
+          letterers place sound effects. ``effects`` is the same field
+          that drives screentone/sparkle below; SfxLayer just picks the
+          tokens it recognises and ignores the rest. */}
+      <SfxLayer effects={panel.effects} accent={palette.accent} baseDelay={staggerDelay + 0.2} />
 
       {/* Sparkle effect */}
       {panel.effects?.includes("sparkle") && (

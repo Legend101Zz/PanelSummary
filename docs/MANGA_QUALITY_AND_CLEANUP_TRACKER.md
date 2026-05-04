@@ -40,10 +40,10 @@
 | Step | Status | Notes |
 | --- | --- | --- |
 | C1 — `page_composition_stage` | ✅ done | New `PageComposition`/`SliceComposition` domain types; one LLM call per slice, coerced + empty-fallback. `V4Page` now carries `gutter_grid`, `page_turn_panel_id`, `composition_notes`; mapper applies emphasis overrides. |
-| C2 — RTL reading-flow validator | ⬜ todo | extend `manga_dsl.py` |
-| C3 — frontend RTL grid using `gutter_grid` | ⬜ todo | edit `V4PageRenderer.tsx` |
-| C4 — SVG speech bubble with tail | ⬜ todo | new `SpeechBubble.tsx` |
-| C5 — SFX layer | ⬜ todo | new `SfxLayer.tsx` |
+| C2 — RTL reading-flow validator | ✅ done | New `validate_composition_against_rtl` in `manga_dsl.py` + `rtl_composition_validation_stage`. Three issue codes: `DSL_RTL_PAGE_TURN_NOT_LAST`, `DSL_RTL_TBC_NOT_PAGE_TURN`, `DSL_RTL_PAGE_TURN_NARROW`. All warnings (composer can override) but appear on the canonical QualityReport. |
+| C3 — frontend RTL grid using `gutter_grid` | ✅ done | New `page_layout.ts` helper; `V4PageRenderer` renders one CSS sub-grid per gutter row with `direction: rtl`; falls back to legacy panel-count layout when composition absent. New `showPageTurnAnchor` QA prop highlights cliffhanger cell. |
+| C4 — SVG speech bubble with tail | ✅ done | New `SpeechBubble.tsx` (SVG path body + triangular tail; speech / thought / shout variants; tail side+offset configurable). `DialoguePanel` now uses it. Tail side is auto-derived per line. |
+| C5 — SFX layer | ✅ done | New `SfxLayer.tsx` reads recognised SFX tokens from existing `effects` array (no schema change). Impact tokens render big + accent + with `!`; soft tokens render with `…`. Stable per-token rotation/position. |
 
 ### Phase D — Codebase cleanup
 
@@ -78,6 +78,8 @@ Deferred until A–E ship.
 | 2026-05-04 | Phase B partial (B1, B3) | 401 → 411 | (pending) |
 | 2026-05-04 | Phase B2 (sprite quality vision gate) | 411 → 425 | (pending) |
 | 2026-05-04 | Phase C1 (page composition stage + V4 grid) | 425 → 435 | (pending) |
+| 2026-05-04 | Phase C2 (RTL composition validators + stage) | 435 → 448 | (pending) |
+| 2026-05-04 | Phase C3–C5 (RTL grid renderer, SVG bubbles, SFX layer) | 448 → 448 (frontend) | (pending) |
 
 ---
 
