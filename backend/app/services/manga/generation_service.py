@@ -39,6 +39,7 @@ from app.manga_pipeline.stages import (
     panel_rendering_stage,
     quality_gate_stage,
     quality_repair_stage,
+    rtl_composition_validation_stage,
     script_repair_stage,
     script_review_stage,
     source_fact_extraction_stage,
@@ -219,6 +220,10 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         # draft) and BEFORE storyboard_to_v4 (which reads the composition
         # to fill V4Page.layout / .gutter_grid).
         page_composition_stage.run,
+        # Phase C2: RTL flow validator over the composition. Issues land
+        # on the same QualityReport so the existing repair tooling and
+        # QA dashboard see them without a parallel report shape.
+        rtl_composition_validation_stage.run,
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
     ]

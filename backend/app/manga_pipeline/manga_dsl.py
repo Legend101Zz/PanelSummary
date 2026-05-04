@@ -28,8 +28,11 @@ from dataclasses import dataclass
 from app.domain.manga import (
     ArcRole,
     ArcSliceEntry,
+    PageComposition,
+    PanelPurpose,
     QualityIssue,
     ShotType,
+    SliceComposition,
     StoryboardPage,
     StoryboardPanel,
 )
@@ -401,4 +404,175 @@ def validate_storyboard_against_dsl(
     issues.extend(_validate_shot_variety(pages))
     must_cover = arc_entry.must_cover_fact_ids if arc_entry else []
     issues.extend(_validate_anchor_facts(pages, must_cover))
+    return issues
+
+
+# --- RTL composition validators (Phase C2) -----------------------------------
+#
+# These run AFTER ``page_composition_stage`` and validate that the LLM-authored
+# gutter grid actually obeys manga reading-flow conventions. They do not
+# duplicate ``PageComposition``'s own validators (which check structural sanity
+# like "cells == panel_count"); these are *editorial* checks about whether the
+# layout is GOOD manga, not just legal manga.
+#
+# All issues are issued at warning severity by default — a layout that the
+# composer chose deliberately should not block the slice. The repair stage
+# can pick up warnings if the user has ``repair_warnings_too`` enabled, but
+# the default is to surface them in the QA dashboard and ship.
+
+
+def _row_for_panel_id(
+    composition: PageComposition,
+    panel_id: str,
+) -> tuple[int, int, int] | None:
+    """Return ``(row_index, col_index, row_cell_count)`` for ``panel_id``.
+
+    ``col_index`` is the position WITHIN the row in panel_order order, which
+    by stage convention is RTL: col 0 is the rightmost cell of the row.
+    Returns None when the panel is not in panel_order — callers treat that
+    as "nothing to validate".
+    """
+    pos = 0
+    for row_index, row in enumerate(composition.gutter_grid):
+        row_cells = len(row.cell_widths_pct)
+        if pos <= 0:
+            pass
+        if panel_id in composition.panel_order[pos : pos + row_cells]:
+            col_index = composition.panel_order[pos : pos + row_cells].index(panel_id)
+            return row_index, col_index, row_cells
+        pos += row_cells
+    return None
+
+
+def _validate_page_turn_anchor(
+    page: StoryboardPage,
+    composition: PageComposition,
+) -> list[QualityIssue]:
+    """Page-turn panel must be the LAST cell read on the page (bottom-left).
+
+    Manga reads top-right → bottom-left. The last cell the eye lands on is
+    the leftmost cell of the bottom row, which in our RTL panel_order is
+    the FINAL entry. If the composer puts the page_turn anchor anywhere
+    else, the cliffhanger reads mid-page and loses its punch.
+    """
+    if not composition.page_turn_panel_id:
+        return []
+    if not composition.panel_order:
+        return []
+    if composition.panel_order[-1] != composition.page_turn_panel_id:
+        return [
+            QualityIssue(
+                severity="warning",
+                code="DSL_RTL_PAGE_TURN_NOT_LAST",
+                message=(
+                    f"page {page.page_index}: page_turn_panel_id "
+                    f"{composition.page_turn_panel_id!r} is not the last cell "
+                    "in panel_order; in RTL flow the page-turn beat MUST be "
+                    "the bottom-left cell (the final entry in panel_order)"
+                ),
+                artifact_id=page.page_id,
+            )
+        ]
+    return []
+
+
+def _validate_tbc_at_page_turn(
+    page: StoryboardPage,
+    composition: PageComposition,
+) -> list[QualityIssue]:
+    """TO_BE_CONTINUED panels must occupy the page-turn cell.
+
+    A TBC panel anywhere except the bottom-left reads as "continued" before
+    the reader has finished the page — a hard editorial defect. We surface
+    it as a warning rather than an error because some experimental layouts
+    intentionally subvert the convention; the repair stage can elevate.
+    """
+    tbc_panels = [
+        panel for panel in page.panels if panel.purpose == PanelPurpose.TO_BE_CONTINUED
+    ]
+    if not tbc_panels:
+        return []
+    if not composition.panel_order:
+        return []
+    last_panel_id = composition.panel_order[-1]
+    issues: list[QualityIssue] = []
+    for panel in tbc_panels:
+        if panel.panel_id != last_panel_id:
+            issues.append(
+                QualityIssue(
+                    severity="warning",
+                    code="DSL_RTL_TBC_NOT_PAGE_TURN",
+                    message=(
+                        f"page {page.page_index}: TO_BE_CONTINUED panel "
+                        f"{panel.panel_id!r} is not the page-turn cell; the "
+                        "cliffhanger should be the last beat on the page"
+                    ),
+                    artifact_id=panel.panel_id,
+                )
+            )
+    return issues
+
+
+def _validate_page_turn_cell_width(
+    page: StoryboardPage,
+    composition: PageComposition,
+) -> list[QualityIssue]:
+    """Page-turn cell must not be the narrowest in its row.
+
+    Visual weight matters. A 20%-wide cliffhanger next to an 80% cell
+    reads like a footnote, not a hook. We flag a warning when the
+    page-turn cell is strictly narrower than every other cell in its
+    row; ties pass.
+    """
+    if not composition.page_turn_panel_id:
+        return []
+    coords = _row_for_panel_id(composition, composition.page_turn_panel_id)
+    if coords is None:
+        return []
+    row_index, col_index, row_cells = coords
+    if row_cells <= 1:
+        return []  # only cell in the row is by definition not narrowest
+    widths = composition.gutter_grid[row_index].cell_widths_pct
+    page_turn_width = widths[col_index]
+    other_widths = [w for i, w in enumerate(widths) if i != col_index]
+    if page_turn_width < min(other_widths):
+        return [
+            QualityIssue(
+                severity="warning",
+                code="DSL_RTL_PAGE_TURN_NARROW",
+                message=(
+                    f"page {page.page_index}: page-turn cell is {page_turn_width}% "
+                    f"wide — narrower than every other cell in its row "
+                    f"({other_widths}). The cliffhanger needs visual weight."
+                ),
+                artifact_id=page.page_id,
+            )
+        ]
+    return []
+
+
+def validate_composition_against_rtl(
+    *,
+    pages: list[StoryboardPage],
+    composition: SliceComposition | None,
+) -> list[QualityIssue]:
+    """Run RTL composition validators across a slice's pages.
+
+    When ``composition`` is None or every page composition is the default
+    (empty) placeholder, we return no issues — the legacy panel-count layout
+    has no notion of cell positions to validate.
+    """
+    if composition is None:
+        return []
+    pages_by_index = {page.page_index: page for page in pages}
+    issues: list[QualityIssue] = []
+    for page_comp in composition.pages:
+        if page_comp.is_default:
+            continue
+        page = pages_by_index.get(page_comp.page_index)
+        if page is None:
+            continue  # composition references a non-existent storyboard page
+        issues.extend(_validate_page_turn_anchor(page, page_comp))
+        issues.extend(_validate_tbc_at_page_turn(page, page_comp))
+        issues.extend(_validate_page_turn_cell_width(page, page_comp))
     return issues
