@@ -51,6 +51,63 @@ const MODEL_BADGES: Record<string, { label: string; color: string }> = {
   "qwen/qwen3.5-397b-a17b":     { label: "🐢 Slow (~60s)", color: "#ea1100" },
 };
 
+const POPULAR_MODELS: ORModel[] = [
+  {
+    id: "google/gemini-2.5-flash",
+    name: "Google: Gemini 2.5 Flash",
+    context_length: 1_048_576,
+    input_price_per_1m: 0.3,
+    output_price_per_1m: 2.5,
+    is_free: false,
+    provider: "google",
+  },
+  {
+    id: "google/gemini-2.0-flash-001",
+    name: "Google: Gemini 2.0 Flash",
+    context_length: 1_048_576,
+    input_price_per_1m: 0.1,
+    output_price_per_1m: 0.4,
+    is_free: false,
+    provider: "google",
+  },
+  {
+    id: "openai/gpt-4o-mini",
+    name: "OpenAI: GPT-4o-mini",
+    context_length: 128_000,
+    input_price_per_1m: 0.15,
+    output_price_per_1m: 0.6,
+    is_free: false,
+    provider: "openai",
+  },
+  {
+    id: "anthropic/claude-3.5-sonnet",
+    name: "Anthropic: Claude 3.5 Sonnet",
+    context_length: 200_000,
+    input_price_per_1m: 3,
+    output_price_per_1m: 15,
+    is_free: false,
+    provider: "anthropic",
+  },
+  {
+    id: "qwen/qwen3-235b-a22b",
+    name: "Qwen: Qwen3 235B A22B",
+    context_length: 131_072,
+    input_price_per_1m: 0.13,
+    output_price_per_1m: 0.6,
+    is_free: false,
+    provider: "qwen",
+  },
+  {
+    id: "deepseek/deepseek-chat",
+    name: "DeepSeek: DeepSeek Chat",
+    context_length: 64_000,
+    input_price_per_1m: 0.14,
+    output_price_per_1m: 0.28,
+    is_free: false,
+    provider: "deepseek",
+  },
+];
+
 function priceLabel(m: ORModel): string {
   if (m.is_free) return "FREE";
   const inp = m.input_price_per_1m;
@@ -100,9 +157,9 @@ function normalizeOpenRouterModels(rawModels: RawOpenRouterModel[]): ORModel[] {
     .sort((a, b) => Number(b.is_free) - Number(a.is_free) || a.input_price_per_1m - b.input_price_per_1m);
 }
 
-async function fetchModelsWithFallback(): Promise<ORModel[]> {
+async function fetchModelsWithFallback(apiKey: string): Promise<ORModel[]> {
   try {
-    const proxied = await fetchOpenRouterModels("");
+    const proxied = await fetchOpenRouterModels(apiKey.trim());
     return proxied.models ?? [];
   } catch {
     const response = await axios.get("https://openrouter.ai/api/v1/models", { timeout: 15000 });
@@ -117,7 +174,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export function ModelSelector({ value, onChange, disabled }: Props) {
+export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
   const [open, setOpen]         = useState(false);
   const [models, setModels]     = useState<ORModel[]>([]);
   const [loading, setLoading]   = useState(false);
@@ -131,17 +188,24 @@ export function ModelSelector({ value, onChange, disabled }: Props) {
     setLoading(true);
     setLoadError(null);
     try {
-      const nextModels = await fetchModelsWithFallback();
-      setModels(nextModels);
+      const nextModels = await fetchModelsWithFallback(apiKey);
+      setModels(nextModels.length > 0 ? nextModels : POPULAR_MODELS);
       if (nextModels.length === 0) {
-        setLoadError("OpenRouter returned zero usable text models");
+        setLoadError("OpenRouter returned zero usable text models; showing popular models");
       }
     } catch {
-      setLoadError("Could not load OpenRouter models");
+      setModels(POPULAR_MODELS);
+      setLoadError("Could not load OpenRouter models; showing popular models");
     } finally {
       setLoading(false);
     }
-  }, [loading, models.length]);
+  }, [apiKey, loading, models.length]);
+
+  useEffect(() => {
+    setModels([]);
+    setLoadError(null);
+    setShowAll(false);
+  }, [apiKey]);
 
   useEffect(() => {
     if (open) load();
@@ -317,7 +381,7 @@ export function ModelSelector({ value, onChange, disabled }: Props) {
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   LOADING MODELS…
                 </div>
-              ) : loadError ? (
+              ) : loadError && models.length === 0 ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--red)", fontSize: "10px" }}>
                   <p>{loadError}</p>
                   <button
@@ -388,6 +452,12 @@ export function ModelSelector({ value, onChange, disabled }: Props) {
                 ))
               )}
             </div>
+
+            {loadError && models.length > 0 && (
+              <div className="px-3 py-1.5 border-t text-label" style={{ borderColor: "var(--border)", color: "var(--amber)", fontSize: "8px" }}>
+                {loadError}
+              </div>
+            )}
 
             {/* Footer */}
             <div className="flex items-center justify-between px-3 py-2 border-t" style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}>
