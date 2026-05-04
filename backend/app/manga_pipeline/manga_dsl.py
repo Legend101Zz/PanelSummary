@@ -182,6 +182,12 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
     must_cover = ", ".join(arc_entry.must_cover_fact_ids) if arc_entry else ""
     closing_hook = arc_entry.closing_hook if arc_entry else ""
 
+    # Phase 4.4: shot-variety prompt copy lives next to the validators
+    # in shot_variety.py so the LLM sees the SAME thresholds the
+    # validators enforce. Lazy import keeps the existing module
+    # import graph unchanged.
+    from app.manga_pipeline.shot_variety import render_shot_variety_prompt_fragment
+
     return (
         "MANGA_DSL_CONSTRAINTS (these are HARD limits, not suggestions):\n"
         f"- arc role: {role_label}\n"
@@ -197,6 +203,7 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
         f"- dialogue per page: at most {dialogue.max_lines_per_page} lines\n"
         f"- shot variety across the slice: at least "
         f"{MIN_DISTINCT_SHOT_TYPES_PER_SLICE} distinct shot types\n"
+        f"{render_shot_variety_prompt_fragment()}\n"
         "- reading flow: top-right to bottom-left unless project options say "
         "otherwise\n"
         "- every storyboard panel that carries a source idea MUST list its "

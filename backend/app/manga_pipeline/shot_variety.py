@@ -124,10 +124,58 @@ def evaluate_shot_variety(pages: list[StoryboardPage]) -> list[QualityIssue]:
     """Run every Phase 4.3 shot-variety check; return a flat issue list.
 
     Single entry point for ``manga_dsl.validate_storyboard_against_dsl`` to
-    call. Keeps the integration boundary one type wide \u2014 same pattern as
+    call. Keeps the integration boundary one type wide — same pattern as
     the other validators.
     """
     issues: list[QualityIssue] = []
     issues.extend(evaluate_shot_dominance(pages))
     issues.extend(evaluate_establishing_coverage(pages))
     return issues
+
+
+# --- Phase 4.4: prompt copy lives next to the validators --------------------
+#
+# The LLM was previously told only "at least N distinct shot types" — a
+# rule that lets a 25-MEDIUM-and-2-tokens slice pass. The 4.3 validators
+# enforce more, so the prompt MUST tell the LLM about more, otherwise we
+# are measuring the storyboarder against rules it has never seen and the
+# repair loop becomes the only path to compliance.
+#
+# This fragment is composed into ``render_dsl_prompt_fragment`` so the
+# storyboarder, the script writer, and the beat-sheet writer all see the
+# same shot guidance. The thresholds reference the module constants
+# above so a future tweak (e.g. dominance to 65%) updates the validator
+# AND the prompt in one edit.
+
+# Maximum number of consecutive panels at the same shot type before the
+# storyboarder is reading editorially flat. Pure prompt guidance — no
+# validator yet because consecutive runs are noisy on short slices and
+# the dominance check already catches the slice-wide failure mode.
+MAX_CONSECUTIVE_SAME_SHOT_TYPE = 2
+
+
+def render_shot_variety_prompt_fragment() -> str:
+    """Return the storyboarder-facing shot-variety directives.
+
+    Returned as a multi-line string, no leading/trailing newline, so the
+    caller controls how it joins into the larger DSL fragment. Bullets
+    are formatted to match the surrounding fragment style (``- `` prefix).
+
+    The directives mirror, in plain English, what the validators in this
+    module enforce — plus one LLM-only rule about consecutive shots that
+    we don't validate (too noisy on short slices).
+    """
+    dominance_pct = int(DOMINANCE_THRESHOLD * 100)
+    return (
+        f"- shot rotation: vary shot_type panel-to-panel; do not stack more "
+        f"than {MAX_CONSECUTIVE_SAME_SHOT_TYPE} consecutive panels at the "
+        f"same shot type\n"
+        f"- shot dominance ceiling: no single shot_type may exceed "
+        f"{dominance_pct}% of the slice's panels (avoid 'wall of MEDIUM' even "
+        f"when other types are sprinkled in)\n"
+        "- establishing beat: every slice must contain at least one WIDE or "
+        "EXTREME_WIDE panel so the reader sees the surrounding space\n"
+        "- shot choice follows editorial purpose: REVEAL and REACTION beats "
+        "want CLOSE_UP or EXTREME_CLOSE_UP; SETUP and TRANSITION want WIDE "
+        "or MEDIUM; INSERT for object/text inserts; SYMBOLIC for motifs"
+    )

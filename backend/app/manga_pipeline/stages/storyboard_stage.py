@@ -23,9 +23,18 @@ where dialogue/narration belongs.
 
 Storyboard discipline:
 - manga flow is top-right to bottom-left unless project options say otherwise
-- vary shot types: wide, medium, close-up, insert, symbolic
+- vary shot types panel-to-panel; pro manga rotates between WIDE / MEDIUM /
+  CLOSE_UP / EXTREME_CLOSE_UP / INSERT / SYMBOLIC rather than camping on one
+- every slice opens with (or contains) at least one establishing beat
+  (WIDE or EXTREME_WIDE) so the reader knows where they are; in-medias-res
+  openings are fine as long as the establishing beat lands soon after
+- shot_type follows editorial intent: REVEAL/REACTION want CLOSE_UP or
+  EXTREME_CLOSE_UP; SETUP/TRANSITION want WIDE or MEDIUM; INSERT for
+  object/text inserts; SYMBOLIC for motifs
 - avoid wall-of-text panels
-- each panel must have a clear purpose
+- each panel must have a clear ``purpose`` AND a one-sentence ``composition``
+  framing note; the renderer reads both verbatim and cannot recover them
+  from action/dialogue alone
 - preserve source_fact_ids when a panel carries source meaning
 - use the character/world bible for visual consistency
 - include a To Be Continued panel only when the script/source requires it

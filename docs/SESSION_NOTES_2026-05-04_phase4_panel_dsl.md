@@ -331,30 +331,99 @@ Six commits. Each commit leaves the suite green and `tsc --noEmit` clean.
 
 ## Next session pickup point
 
-4.4 — production-grade storyboarder prompt (LLM-first shot design).
-4.3 added the *measurement* (DSL_SHOT_TYPE_DOMINANCE +
-DSL_NO_ESTABLISHING_SHOT warnings); 4.4 is the *intervention* that
-moves the LLM toward authoring varied shots in the first place,
-instead of relying on the repair loop to nudge it after the fact.
+4.5 — wire flip + frontend rebuild on RenderedPage. The big one. This
+is the no-going-back commit so it gets a fresh session.
 
-Concrete:
-* Beef up `app/manga_pipeline/manga_dsl.render_dsl_prompt_fragment`
-  (or whichever helper bakes the per-panel instructions into the
-  storyboarder system prompt) to include:
-  * an explicit shot-type rotation guideline ("vary shot_type panel
-    to panel; no more than two consecutive panels at the same shot
-    type");
-  * a 'every slice opens or contains an establishing beat' rule;
-  * a one-line 'editorial purpose drives shot choice' note.
-* Pin the prompt fragment shape with a snapshot test in
-  `tests/test_storyboarder_prompt_v2.py` so silent prompt drift
-  shows up in code review (we've been bitten by this before).
-* Eyeball one real generation after 4.4 lands to confirm the new
-  4.3 warnings drop in frequency on representative slices.
+Concrete (per the refined plan above):
+* Delete `context.v4_pages`, `_sync_v4_shadow` in panel_rendering_stage,
+  and the `storyboard_to_v4_stage` from the orchestrator.
+* Persistence (`MangaPageDoc.v4_page` and friends) needs to read from
+  `RenderedPage` directly. Audit every `v4_pages` reader in
+  `app/services/manga/` first; the audit list lives in 4.2's commit
+  log if you need a starting point.
+* Frontend (`frontend/src/pages/manga/` and `frontend/src/components/manga/`)
+  currently renders V4Page dicts. New wire format is `RenderedPage` —
+  expose a thin DTO from `app/api/manga/` that mirrors the typed model
+  and rebuild the viewer components against it. WCAG 2.2 AA still applies.
+* Land all of this behind a feature flag if at all possible — a single
+  PR that flips persistence + frontend at once is hard to roll back.
+* Tests: every existing `v4_pages` test in `backend/tests/` either
+  migrates to RenderedPage or deletes if 4.2 already has a typed twin.
 
-Do NOT start 4.5 (delete v4_pages, flip the wire, rebuild V4
-frontend on RenderedPage) yet. 4.4 wants to ride the v4 shadow so
-you can A/B-eyeball generations side by side.
+Do NOT start 4.5 until you've eyeballed at least one real generation
+with the 4.4 prompt to confirm shot variety actually improved — the
+v4 shadow is your safety net for that A/B comparison.
+
+### Watch list
+* `backend/app/manga_pipeline/manga_dsl.py` is at **595 lines**, five
+  lines under the 600 ceiling. Any further additions there must go
+  into sibling modules (the `shot_variety.py` precedent works well).
+  Splitting `manga_dsl.py` for its own sake hurts cohesion — don't
+  do it just to hit a number.
+
+### 4.4 — storyboarder prompt rev (the editorial intervention) ✅
+
+**The gap 4.4 closed**
+* Pre-4.4 the LLM was told only "at least 3 distinct shot types". The
+  4.3 dominance + establishing-coverage validators were enforcing
+  rules the storyboarder had never seen — so compliance only happened
+  via the repair loop, after a wasted generation.
+* 4.4 puts the same thresholds into the prompt the storyboarder reads,
+  so the first-pass output is closer to what the validators want.
+
+**Files extended**
+* `app/manga_pipeline/shot_variety.py` (+50 lines):
+  * `MAX_CONSECUTIVE_SAME_SHOT_TYPE = 2` — LLM-only rule (no
+    validator; consecutive runs are noisy on short sli
+  * `render_shot_variety_prompt_fragment()` — returns a four-bullet
+    block: rotation cap, dominance ceiling (referencing
+    `DOMINANCE_THRESHOLD` so a future tweak updates prompt + validator
+    in one edit), establishing-beat requirement, and the
+    purpose-drives-shot pairing rules. No leading/trailing newline so
+    the caller controls join behaviour.
+* `app/manga_pipeline/manga_dsl.py` (+9 lines, now 595/600 — see
+  watch list above):
+  * `render_dsl_prompt_fragment` composes
+    `render_shot_variety_prompt_fragment()` after the legacy
+    cardinality line. Lazy import keeps the import graph unchanged.
+* `app/manga_pipeline/stages/storyboard_stage.py` (~10 line edit):
+  * `SYSTEM_PROMPT` rewritten to include shot rotation, establishing-
+    beat-with-in-medias-res-exception, purpose-drives-shot, AND a
+    'each panel needs a one-sentence composition framing note'
+    requirement that backs the Phase 4.2 prompt builder (which reads
+    composition prose verbatim and cannot recover it from
+    action/dialogue).
+
+**Files added**
+* `tests/test_storyboarder_prompt_v2.py` (12 tests). Pinned by
+  *substring* not whole-text snapshot — verbatim snapshots train
+  reviewers to rubber-stamp diffs; substring asserts only break when
+  a specific invariant gets dropped. Pins:
+  * `render_shot_variety_prompt_fragment` mentions rotation with the
+    `MAX_CONSECUTIVE_SAME_SHOT_TYPE` value, dominance ceiling with
+ `DOMINANCE_THRESHOLD` percent, establishing beat with
+    WIDE/EXTREME_WIDE, purpose-drives-shot pairings.
+  * Style: no leading/trailing newline, every line starts with `- `.
+  * `render_dsl_prompt_fragment` composes the shot-variety fragment
+    AND keeps the legacy 'distinct shot types' line (backwards
+    compat — the cardinality validator still fires).
+  * `storyboard_stage.SYSTEM_PROMPT` mentions shot rotation,
+    establishing beat (with in-medias-res exception), purpose-driven
+    shot, and per-panel composition framing.
+
+**Result**
+* 397 passed (was 385; +12 new). tsc clean. No frontend changes.
+* Zero behaviour changes outside the prompt copy — every existing test
+  passed unchanged, which means no test had been pinning the prompt
+  text. That hole is now closed.
+* Commit: `v2 Phase 4: 4.4 — storyboarder prompt teaches the LLM the 4.3 rules`
+
+**Eyeball-test reminder**
+Before starting 4.5, run one real generation with 4.4 active and
+check the slice's QualityReport for `DSL_SHOT_TYPE_DOMINANCE` /
+`DSL_NO_ESTABLISHING_SHOT` warnings. If the warnings still fire on
+representative slices, the prompt needs another tuning pass before
+the v4 shadow comes down — you want the safety net while you iterate.
 
 ### 4.3 — shot-variety editorial floor ✅
 
