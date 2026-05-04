@@ -1,10 +1,24 @@
 """Manga application services."""
 
+from app.services.manga.arc_slice_planning_service import (
+    ArcSlicePlan,
+    choose_next_arc_slice,
+    remaining_arc_entries,
+    slice_progress_summary,
+)
 from app.services.manga.asset_image_service import (
     build_asset_prompt,
     build_asset_relative_path,
     generate_asset_image_doc,
     persist_asset_prompt_doc,
+)
+from app.services.manga.book_understanding_service import (
+    book_chapters_to_canonical,
+    build_book_understanding_stages,
+    generate_book_understanding,
+    load_understanding_result,
+    project_understanding_is_ready,
+    serialize_llm_trace as serialize_book_understanding_trace,
 )
 from app.services.manga.generation_service import (
     build_generation_options,
@@ -29,24 +43,34 @@ from app.services.manga.source_slice_service import (
 )
 
 __all__ = [
+    "ArcSlicePlan",
+    "book_chapters_to_canonical",
     "build_asset_prompt",
     "build_asset_relative_path",
+    "build_book_understanding_stages",
     "build_empty_continuity",
     "build_generation_options",
     "build_project_seed",
     "build_page_source_slice",
     "build_source_text_for_slice",
     "build_v2_generation_stages",
+    "choose_next_arc_slice",
     "choose_next_page_slice",
     "generate_asset_image_doc",
+    "generate_book_understanding",
     "generate_project_slice",
     "get_or_create_project",
     "load_fact_registry",
     "load_project_ledger",
+    "load_understanding_result",
+    "project_understanding_is_ready",
+    "remaining_arc_entries",
     "collect_storyboard_fact_ids",
     "persist_asset_prompt_doc",
     "run_quality_gate",
     "make_project_doc",
+    "serialize_book_understanding_trace",
     "serialize_llm_trace",
+    "slice_progress_summary",
     "serialize_project",
 ]

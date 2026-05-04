@@ -1,5 +1,12 @@
 """Manga adaptation domain foundation."""
 
+from app.domain.manga.book_understanding import (
+    ArcOutline,
+    ArcRole,
+    ArcSliceEntry,
+    BookSynopsis,
+    BookUnderstandingBundle,
+)
 from app.domain.manga.artifacts import (
     AdaptationPlan,
     Beat,
@@ -48,6 +55,11 @@ from app.domain.manga.types import (
 
 __all__ = [
     "AdaptationPlan",
+    "ArcOutline",
+    "ArcRole",
+    "ArcSliceEntry",
+    "BookSynopsis",
+    "BookUnderstandingBundle",
     "Beat",
     "BeatSheet",
     "CharacterAssetPlan",

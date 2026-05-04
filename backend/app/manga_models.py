@@ -28,11 +28,22 @@ class MangaProjectDoc(Document):
     status: str = "pending"
 
     project_options: dict[str, Any] = Field(default_factory=dict)
+    book_synopsis: dict[str, Any] = Field(default_factory=dict)
+    arc_outline: dict[str, Any] = Field(default_factory=dict)
     adaptation_plan: dict[str, Any] = Field(default_factory=dict)
     character_world_bible: dict[str, Any] = Field(default_factory=dict)
     fact_registry: list[dict[str, Any]] = Field(default_factory=list)
     continuity_ledger: dict[str, Any] = Field(default_factory=dict)
     coverage: dict[str, Any] = Field(default_factory=dict)
+
+    # Lifecycle flags for the run-once book-understanding phase.
+    # ``understanding_status`` transitions: pending -> running -> ready | failed.
+    # ``bible_locked`` is True once the global character/world bible has been
+    # accepted; per-slice stages must read it instead of regenerating it.
+    understanding_status: str = "pending"
+    understanding_error: str = ""
+    bible_locked: bool = False
+    book_understanding_traces: list[dict[str, Any]] = Field(default_factory=list)
 
     legacy_summary_id: str | None = None
     active_version: int = 1

@@ -25,6 +25,9 @@ class LLMStageName(str, Enum):
     """Canonical names for model-backed manga pipeline stages."""
 
     SOURCE_FACT_EXTRACTION = "source_fact_extraction"
+    WHOLE_BOOK_SYNOPSIS = "whole_book_synopsis"
+    BOOK_FACT_REGISTRY = "book_fact_registry"
+    ARC_OUTLINE = "arc_outline"
     ADAPTATION_PLANNING = "adaptation_planning"
     CHARACTER_WORLD_BIBLE = "character_world_bible"
     BEAT_SHEET = "beat_sheet"

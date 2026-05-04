@@ -20,6 +20,7 @@ from app.services.manga import (
     choose_next_page_slice,
     get_or_create_project,
     load_project_ledger,
+    project_understanding_is_ready,
     serialize_project,
 )
 
@@ -45,6 +46,21 @@ class GenerateMangaSliceRequest(BaseModel):
     generate_images: bool = False
     image_model: str | None = None
     options: dict[str, Any] = Field(default_factory=dict)
+
+
+class GenerateBookUnderstandingRequest(BaseModel):
+    api_key: str = Field(min_length=1)
+    provider: str = "openai"
+    model: str | None = None
+    options: dict[str, Any] = Field(default_factory=dict)
+    force: bool = False
+
+
+class StartBookUnderstandingResponse(BaseModel):
+    project: dict[str, Any]
+    task_id: str | None
+    message: str
+    already_ready: bool
 
 
 class MangaProjectResponse(BaseModel):
@@ -219,6 +235,79 @@ async def preview_next_source_slice(project_id: str, request: NextSourceSliceReq
     )
 
 
+@router.post("/manga-projects/{project_id}/book-understanding", response_model=StartBookUnderstandingResponse)
+async def start_book_understanding(project_id: str, request: GenerateBookUnderstandingRequest):
+    """Run (or re-run) the book-level understanding pipeline for a project.
+
+    Idempotent: if the project already has a complete understanding bundle and
+    ``force`` is False, this returns immediately without queueing a job. The
+    same task is automatically queued by ``generate-slice`` if understanding
+    is missing, so the UI rarely needs to call this endpoint directly except
+    to force a rebuild after auditing the persisted artifacts.
+    """
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+
+    book = await Book.get(project.book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found for manga project")
+    if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
+        raise HTTPException(status_code=400, detail=f"Book is not parsed yet: {book.status}")
+
+    if project_understanding_is_ready(project) and not request.force:
+        return StartBookUnderstandingResponse(
+            project=serialize_project(project),
+            task_id=None,
+            message="Book understanding already complete.",
+            already_ready=True,
+        )
+
+    active_job = await JobStatus.find_one(
+        JobStatus.result_id == project_id,
+        JobStatus.job_type == "generate_book_understanding",
+        In(JobStatus.status, ["pending", "progress"]),  # type: ignore[arg-type]
+    )
+    if active_job:
+        return StartBookUnderstandingResponse(
+            project=serialize_project(project),
+            task_id=active_job.celery_task_id,
+            message="A book-understanding job is already running for this project.",
+            already_ready=False,
+        )
+
+    from app.celery_manga_tasks import generate_book_understanding_task
+
+    task = generate_book_understanding_task.delay(
+        project_id=project_id,
+        api_key=request.api_key,
+        provider=request.provider,
+        model=request.model,
+        options=request.options,
+        force=request.force,
+    )
+    job_status = JobStatus(
+        celery_task_id=task.id,
+        job_type="generate_book_understanding",
+        status="pending",
+        progress=0,
+        message="Queued manga v2 book understanding…",
+        result_id=project_id,
+        phase="queued",
+    )
+    await job_status.insert()
+
+    project.understanding_status = "running"
+    await project.save()
+
+    return StartBookUnderstandingResponse(
+        project=serialize_project(project),
+        task_id=task.id,
+        message="Book understanding generation started.",
+        already_ready=False,
+    )
+
+
 @router.post("/manga-projects/{project_id}/generate-slice", response_model=StartMangaSliceGenerationResponse)
 async def generate_next_manga_slice(project_id: str, request: GenerateMangaSliceRequest):
     """Queue the next v2 manga slice for background generation."""
@@ -231,6 +320,19 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
         raise HTTPException(status_code=404, detail="Book not found for manga project")
     if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
         raise HTTPException(status_code=400, detail=f"Book is not parsed yet: {book.status}")
+
+    # Preflight: book-level understanding must be complete before a slice can
+    # safely descend from it. We refuse to start a slice when understanding
+    # is missing or failed; the caller should run /book-understanding first.
+    if not project_understanding_is_ready(project):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Book understanding is not ready for this project (status="
+                f"{project.understanding_status!r}). Call "
+                "POST /manga-projects/{id}/book-understanding first."
+            ),
+        )
 
     active_job = await JobStatus.find_one(
         JobStatus.result_id == project_id,

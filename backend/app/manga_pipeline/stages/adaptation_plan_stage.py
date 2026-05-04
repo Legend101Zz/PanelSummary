@@ -54,7 +54,18 @@ def _build_user_message(context: PipelineContext) -> str:
 
 
 async def run(context: PipelineContext) -> PipelineContext:
-    """Generate and validate an adaptation plan using the configured LLM."""
+    """Generate and validate an adaptation plan using the configured LLM.
+
+    Read-through: when a book-level adaptation plan was already loaded into
+    the context (because the project completed its book-understanding phase),
+    we keep that plan untouched. The whole point of the book phase is that
+    every slice descends from the same plan; regenerating here would defeat
+    that and reintroduce the protagonist-drift bug we are fixing.
+    """
+    if context.adaptation_plan is not None:
+        # The plan came from the project's locked book-understanding bundle.
+        # No LLM call, no trace — preserves cost and continuity.
+        return context
     if context.llm_client is None:
         raise ValueError("adaptation planning requires context.llm_client")
     if not context.fact_registry:

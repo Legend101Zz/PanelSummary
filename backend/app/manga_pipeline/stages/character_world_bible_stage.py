@@ -54,7 +54,15 @@ def _build_user_message(context: PipelineContext) -> str:
 
 
 async def run(context: PipelineContext) -> PipelineContext:
-    """Generate and validate the character/world bible using the configured LLM."""
+    """Generate and validate the character/world bible using the configured LLM.
+
+    Read-through: when the project bible is locked (book understanding ran
+    and produced a frozen bible), we keep the loaded bible. Regenerating it
+    per slice is exactly the visual-drift bug Phase 1 fixes.
+    """
+    if context.bible_locked and context.character_bible is not None:
+        # Frozen bible from the book-understanding phase. Honour the lock.
+        return context
     if context.llm_client is None:
         raise ValueError("character/world bible requires context.llm_client")
     if not context.fact_registry:

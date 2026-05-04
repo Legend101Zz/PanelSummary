@@ -1,13 +1,3 @@
-"""Revamp pipeline stages.
-
-Concrete LLM-backed stages will land here incrementally. Keep each stage small,
-with one job and obvious inputs/outputs. No hydra functions, please.
-
-Layout:
-- ``stages/`` (this directory): per-slice stages.
-- ``stages/book/``: book-level (run-once-per-project) stages.
-"""
-
 from app.manga_pipeline.stages.book import (
     arc_outline_stage,
     book_fact_registry_stage,
@@ -23,3 +13,10 @@ __all__ = [
     "global_character_world_bible_stage",
     "whole_book_synopsis_stage",
 ]
+"""Book-level (run-once-per-project) manga pipeline stages.
+
+These stages produce stable artifacts that every per-slice generation reads
+from. They run before any slice is generated and do not mutate per-slice
+state in the pipeline context. Keep them small and read-only with respect
+to slice fields.
+"""

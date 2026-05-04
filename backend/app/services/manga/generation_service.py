@@ -11,7 +11,17 @@ from collections.abc import Awaitable, Callable
 from inspect import isawaitable
 from typing import Any, Protocol
 
-from app.domain.manga import MangaAssetSpec, SliceRole, SourceFact, SourceSlice, update_ledger_after_slice
+from app.domain.manga import (
+    AdaptationPlan,
+    ArcOutline,
+    BookSynopsis,
+    CharacterWorldBible,
+    MangaAssetSpec,
+    SliceRole,
+    SourceFact,
+    SourceSlice,
+    update_ledger_after_slice,
+)
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.manga_pipeline import PipelineContext, run_pipeline_context
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
@@ -20,6 +30,7 @@ from app.manga_pipeline.stages import (
     beat_sheet_stage,
     character_asset_plan_stage,
     character_world_bible_stage,
+    dsl_validation_stage,
     manga_script_stage,
     quality_gate_stage,
     quality_repair_stage,
@@ -28,6 +39,10 @@ from app.manga_pipeline.stages import (
     storyboard_to_v4_stage,
 )
 from app.models import Book, BookChapter, BookSection
+from app.services.manga.arc_slice_planning_service import (
+    ArcSlicePlan,
+    choose_next_arc_slice,
+)
 from app.services.manga.asset_image_service import build_generated_asset_doc, build_prompt_asset_doc
 from app.services.manga.project_service import load_project_ledger
 from app.services.manga.source_slice_service import choose_next_page_slice
@@ -114,6 +129,29 @@ def load_fact_registry(project: MangaProjectDoc) -> list[SourceFact]:
     return [SourceFact(**fact) for fact in project.fact_registry]
 
 
+def _hydrate_book_artifacts_into_context(
+    *,
+    project: MangaProjectDoc,
+    context: PipelineContext,
+) -> None:
+    """Copy persisted book-level artifacts into the per-slice pipeline context.
+
+    Per-slice stages read these as immutable. The context is mutable only as a
+    Python object; the *contract* is that the slice pipeline must not write to
+    these fields. Read-through stages (adaptation_plan, character_world_bible,
+    source_fact_extraction) check for these fields and short-circuit.
+    """
+    if project.book_synopsis:
+        context.book_synopsis = BookSynopsis(**project.book_synopsis)
+    if project.adaptation_plan:
+        context.adaptation_plan = AdaptationPlan(**project.adaptation_plan)
+    if project.character_world_bible:
+        context.character_bible = CharacterWorldBible(**project.character_world_bible)
+    if project.arc_outline:
+        context.arc_outline = ArcOutline(**project.arc_outline)
+    context.bible_locked = bool(project.bible_locked)
+
+
 def build_generation_options(
     *,
     project: MangaProjectDoc,
@@ -134,7 +172,13 @@ def build_generation_options(
 
 
 def build_v2_generation_stages():
-    """Return the ordered production v2 manga generation stages."""
+    """Return the ordered production v2 manga generation stages.
+
+    The DSL validation stage sits BETWEEN storyboard and the first quality
+    gate so that DSL violations (panel count, dialogue budget, anchor facts,
+    shot variety) are merged into the same ``QualityReport`` the existing
+    repair stage already consumes. We do not invent a parallel issue type.
+    """
     return [
         source_fact_extraction_stage.run,
         adaptation_plan_stage.run,
@@ -142,8 +186,10 @@ def build_v2_generation_stages():
         beat_sheet_stage.run,
         manga_script_stage.run,
         storyboard_stage.run,
+        dsl_validation_stage.run,
         quality_gate_stage.run,
         quality_repair_stage.run,
+        dsl_validation_stage.run,
         quality_gate_stage.run,
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
@@ -207,6 +253,48 @@ async def _build_asset_docs(
     return asset_docs
 
 
+def _pick_next_slice(
+    *,
+    project: MangaProjectDoc,
+    book: Book,
+    ledger,
+    page_window: int,
+) -> tuple[SourceSlice, ArcSlicePlan | None]:
+    """Choose the next slice using the arc outline when available.
+
+    Phase 2 promotes the arc outline to the source of truth. The legacy
+    page-window slicer is preserved for projects predating book understanding
+    so existing rows keep generating; new projects always go arc-first because
+    ``project_understanding_is_ready`` is enforced by the API endpoint.
+
+    Returns the chosen ``SourceSlice`` and (when available) the ``ArcSlicePlan``
+    that produced it. Returning the plan lets the caller hydrate
+    ``context.arc_entry`` so per-slice prompts honour the arc role.
+    """
+    if project.arc_outline:
+        arc_outline = ArcOutline(**project.arc_outline)
+        plan = choose_next_arc_slice(
+            book_id=str(book.id),
+            chapters=book.chapters,
+            ledger=ledger,
+            arc_outline=arc_outline,
+        )
+        if plan is None:
+            raise ValueError("manga project arc outline is already fully covered")
+        return plan.source_slice, plan
+
+    legacy_slice = choose_next_page_slice(
+        book_id=str(book.id),
+        total_pages=book.total_pages,
+        chapters=book.chapters,
+        ledger=ledger,
+        page_window=page_window,
+    )
+    if legacy_slice is None:
+        raise ValueError("manga project source is already fully covered")
+    return legacy_slice, None
+
+
 async def generate_project_slice(
     *,
     project: MangaProjectDoc,
@@ -220,15 +308,12 @@ async def generate_project_slice(
     """Generate, validate, render, and persist the next manga source slice."""
     await _emit_progress(progress_callback, 3, "Selecting next source pages…", "source")
     ledger = load_project_ledger(project)
-    source_slice = choose_next_page_slice(
-        book_id=str(book.id),
-        total_pages=book.total_pages,
-        chapters=book.chapters,
+    source_slice, arc_plan = _pick_next_slice(
+        project=project,
+        book=book,
         ledger=ledger,
         page_window=page_window,
     )
-    if source_slice is None:
-        raise ValueError("manga project source is already fully covered")
 
     await _emit_progress(progress_callback, 6, "Extracting source text for slice…", "source")
     source_text = build_source_text_for_slice(book.chapters, source_slice)
@@ -250,6 +335,11 @@ async def generate_project_slice(
         llm_client=llm_client,
         fact_registry=load_fact_registry(project),
     )
+    _hydrate_book_artifacts_into_context(project=project, context=context)
+    if arc_plan is not None:
+        # Stamp the arc entry onto the context so per-slice stages can read
+        # the headline beat, must-cover facts, and closing hook directly.
+        context.arc_entry = arc_plan.arc_entry
 
     stages = build_v2_generation_stages()
 
@@ -313,9 +403,12 @@ async def generate_project_slice(
         last_page_hook=final_context.storyboard_pages[-1].page_turn_hook if final_context.storyboard_pages else "",
     )
     project.fact_registry = [fact.model_dump(mode="json") for fact in final_context.fact_registry]
-    if final_context.adaptation_plan:
+    # Book-level artifacts are read-only after the understanding phase. We
+    # only write them here when they were missing (legacy projects upgraded
+    # in-place); never overwrite a locked bible.
+    if final_context.adaptation_plan and not project.adaptation_plan:
         project.adaptation_plan = final_context.adaptation_plan.model_dump(mode="json")
-    if final_context.character_bible:
+    if final_context.character_bible and not project.bible_locked:
         project.character_world_bible = final_context.character_bible.model_dump(mode="json")
     project.continuity_ledger = updated_ledger.model_dump(mode="json")
     project.coverage = {

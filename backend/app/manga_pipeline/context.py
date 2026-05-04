@@ -7,7 +7,10 @@ from typing import Any
 
 from app.domain.manga import (
     AdaptationPlan,
+    ArcOutline,
+    ArcSliceEntry,
     BeatSheet,
+    BookSynopsis,
     CharacterWorldBible,
     ContinuityLedger,
     MangaAssetSpec,
@@ -42,6 +45,15 @@ class PipelineContext:
     knowledge_doc: dict[str, Any] = field(default_factory=dict)
     fact_registry: list[SourceFact] = field(default_factory=list)
     new_fact_ids: list[str] = field(default_factory=list)
+
+    # Book-level artifacts authored ONCE per project before any slice runs.
+    # When present, downstream per-slice stages MUST treat these as immutable
+    # context: they read them, never overwrite them.
+    book_synopsis: BookSynopsis | None = None
+    arc_outline: ArcOutline | None = None
+    arc_entry: ArcSliceEntry | None = None
+    bible_locked: bool = False
+
     adaptation_plan: AdaptationPlan | None = None
     character_bible: CharacterWorldBible | None = None
     beat_sheet: BeatSheet | None = None

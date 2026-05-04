@@ -54,6 +54,12 @@ def test_serialize_project_exposes_control_plane_fields():
         project_options={},
         adaptation_plan={},
         character_world_bible={},
+        book_synopsis={},
+        arc_outline={},
+        understanding_status="pending",
+        understanding_error="",
+        bible_locked=False,
+        book_understanding_traces=[],
         fact_registry=[],
         continuity_ledger={"project_id": "pending"},
         coverage={},
@@ -70,3 +76,8 @@ def test_serialize_project_exposes_control_plane_fields():
     assert payload["fact_count"] == 0
     assert payload["continuity_ledger"]["project_id"] == "pending"
     assert payload["active_version"] == 1
+    # Phase 1: book-understanding fields surface to the API/UI.
+    assert payload["understanding_status"] == "pending"
+    assert payload["bible_locked"] is False
+    assert payload["book_synopsis"] == {}
+    assert payload["arc_outline"] == {}
