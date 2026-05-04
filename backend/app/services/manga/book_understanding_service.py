@@ -282,6 +282,58 @@ async def generate_book_understanding(
         art_direction=result.art_direction,
         image_api_key=image_api_key,
     )
+
+    # Phase B2: editorial QA on the freshly generated sprites.
+    # We only run the gate when image generation actually happened (a
+    # prompt-only library has no bytes to look at). The gate also pulls
+    # in regenerate_asset_doc as the auto-retry callback so genuinely
+    # unusable assets get one more shot before being surfaced as
+    # "failed" in the Character Library UI.
+    should_run_sprite_gate = (
+        bool(options.get("generate_images")) and bool(image_api_key)
+    )
+    if should_run_sprite_gate:
+        await _emit_progress(
+            progress_callback,
+            97,
+            "Reviewing character sprites for quality…",
+            "sprite_quality_gate",
+        )
+        from app.services.manga.character_library_service import regenerate_asset_doc
+        from app.services.manga.sprite_quality_gate import (
+            apply_sprite_quality_gate,
+        )
+        from app.services.manga.vision_client_factory import (
+            build_default_vision_client,
+        )
+
+        # Text-LLM api_key doubles as the vision api_key today — the
+        # provider key (OpenRouter / OpenAI) covers both endpoints.
+        text_api_key = options.get("api_key") if isinstance(options, dict) else None
+        vision_key = text_api_key or image_api_key
+        if vision_key:
+            vision_client = build_default_vision_client(
+                api_key=str(vision_key),
+                project_options=options,
+            )
+
+            async def _regen(asset_doc):
+                return await regenerate_asset_doc(
+                    project=project,
+                    bible=result.character_bible,
+                    asset_doc=asset_doc,
+                    image_api_key=image_api_key,
+                    art_direction=result.art_direction,
+                )
+
+            await apply_sprite_quality_gate(
+                project=project,
+                bible=result.character_bible,
+                vision_client=vision_client,
+                regenerate_asset=_regen,
+                art_direction=result.art_direction,
+            )
+
     await _emit_progress(progress_callback, 100, "Book understanding complete.", "ready")
     return result
 

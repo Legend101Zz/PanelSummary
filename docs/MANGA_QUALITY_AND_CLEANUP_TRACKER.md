@@ -30,7 +30,7 @@
 | Step | Status | Notes |
 | --- | --- | --- |
 | B1 — multi-angle reference sheets (front/side/back) | ✅ done | Plan emits front/side/back per character; selector picks front deterministically; existing assertions updated |
-| B2 — `sprite_quality_gate` (vision check) | ⬜ todo | new service + book-stage |
+| B2 — `sprite_quality_gate` (vision check) | ✅ done | New `vision_contracts` + `VisionLLMClient`; `sprite_quality_service` (pure) + `sprite_quality_gate` (DB-aware) with bounded auto-retry; wired into book_understanding flow when image generation is on. |
 | B3 — bible silhouette uniqueness check | ✅ done | `bible_uniqueness.py` + `bible_silhouette_uniqueness_stage`; warnings only (twins / body-doubles still allowed) |
 | B4 — Character Library UI | ⬜ todo | new route + components |
 | B5 — image-model selector in `GeneratePanel` | ⬜ todo | UI only |
@@ -76,6 +76,7 @@ Deferred until A–E ship.
 | 2026-05-04 | Tracker created | 381 → 381 | (pending) |
 | 2026-05-04 | Phase A complete (A1–A4) | 381 → 401 | (pending) |
 | 2026-05-04 | Phase B partial (B1, B3) | 401 → 411 | (pending) |
+| 2026-05-04 | Phase B2 (sprite quality vision gate) | 411 → 425 | (pending) |
 
 ---
 

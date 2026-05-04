@@ -126,7 +126,30 @@ class MangaAssetDoc(Document):
     model: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+    # Phase B2: editorial QA outcome of the sprite quality gate.
+    # ``status`` mirrors ``AssetSpriteReview.status`` semantics:
+    #   * "ready"            — passes all checks; safe to feed into panel
+    #     rendering as a conditioning reference.
+    #   * "review_required"  — only warnings (e.g. silhouette match score ≤ 3,
+    #     soft warnings on background). Still usable; surfaced amber in the UI.
+    #   * "failed"           — at least one error-level check; the renderer
+    #     skips this asset and the UI prompts a regenerate.
+    #   * "" (default)       — the gate has not yet run.
+    # ``pinned`` lets a user fix a preferred reference per character; the
+    # selector in panel_rendering_service prefers pinned assets over any
+    # auto-selected default. ``regen_count`` tracks how many times the user
+    # asked for a redo — surfaced in cost telemetry, never used as a gate.
+    # ``last_quality_checks`` stores the most recent SpriteCheck list as
+    # plain dicts so the Library UI can render the failure reasons without
+    # re-running the gate.
+    status: str = ""
+    pinned: bool = False
+    regen_count: int = 0
+    silhouette_match_score: int | None = None
+    last_quality_checks: list[dict[str, Any]] = Field(default_factory=list)
+
     created_at: datetime = Field(default_factory=_now)
+    updated_at: datetime = Field(default_factory=_now)
 
     class Settings:
         name = "manga_assets"

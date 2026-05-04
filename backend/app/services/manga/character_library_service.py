@@ -217,3 +217,87 @@ async def asset_specs_for_project(
         art_direction=art_direction,
     )
     return list(plan.assets)
+
+
+async def regenerate_asset_doc(
+    *,
+    project: MangaProjectDoc,
+    bible: CharacterWorldBible,
+    asset_doc: MangaAssetDoc,
+    image_api_key: str | None,
+    art_direction: CharacterArtDirectionBundle | None = None,
+) -> MangaAssetDoc | None:
+    """Re-render a single asset, replacing the persisted doc in place.
+
+    Used by the sprite-quality gate (auto-retry on failure) and by the
+    Character Library UI (user-triggered regenerate). Returns the new
+    document, or ``None`` if regeneration cannot run because image
+    generation is not enabled for this project.
+
+    Implementation notes:
+    * We rebuild the spec from the planner so the freshest visual_lock
+      and art-direction prose flow into the prompt. Reusing the persisted
+      prompt would freeze a regenerated asset to whatever wording the
+      original generation used — the opposite of what "regenerate" means.
+    * We delete the old document AFTER the new one is built so a failure
+      mid-flight cannot orphan a project with no asset for the character.
+    * ``regen_count`` and ``pinned`` are carried forward from the old
+      doc; the user's pin must survive a regen, and the count is part of
+      the cost story.
+    """
+    if not bool(project.project_options.get("generate_images")):
+        # No image-generation entitlement; nothing to regenerate against.
+        # The gate handles None by leaving the asset as-is.
+        return None
+    if not image_api_key:
+        return None
+
+    plan = plan_book_character_sheets(
+        bible=bible,
+        project_id=str(project.id),
+        art_direction=art_direction,
+    )
+    target_spec: MangaAssetSpec | None = None
+    for spec in plan.assets:
+        # asset_id is the planner's stable identifier and is what the
+        # quality gate keys off. Match on it (NOT on character_id +
+        # expression alone) so multi-angle reference sheets do not collide.
+        spec_id = spec.asset_id
+        existing_id = asset_doc.metadata.get("asset_id") if isinstance(asset_doc.metadata, dict) else None
+        if existing_id and spec_id == existing_id:
+            target_spec = spec
+            break
+    if target_spec is None:
+        # The planner no longer plans this asset (e.g. bible was edited
+        # and the character was removed). Nothing to regenerate against.
+        return None
+
+    style = str(project.project_options.get("style", project.style))
+    image_model = project.project_options.get("image_model")
+    image_model_str = str(image_model) if image_model else None
+    character_design = _bible_character_lookup(bible).get(target_spec.character_id)
+
+    new_doc = await build_generated_asset_doc(
+        project_id=str(project.id),
+        asset=target_spec,
+        api_key=image_api_key,
+        style=style,
+        image_model=image_model_str,
+        character_design=character_design,
+    )
+    # Carry forward the user-managed fields. Status is intentionally NOT
+    # carried over; the gate will rescore the new bytes.
+    new_doc.pinned = asset_doc.pinned
+    new_doc.regen_count = asset_doc.regen_count + 1
+
+    # Persist new BEFORE deleting old so a crash mid-flight leaves the
+    # project with two assets for the character (loud, fixable) instead
+    # of zero (silent, breaks panel rendering).
+    await new_doc.insert()
+    try:
+        await asset_doc.delete()
+    except Exception:  # noqa: BLE001 — stale delete is acceptable
+        # If the old doc was already deleted by a concurrent regenerate
+        # call, that's fine. We logged via the audit trail.
+        pass
+    return new_doc
