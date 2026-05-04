@@ -1,8 +1,9 @@
-"""MongoDB documents for the revamp manga project pipeline.
+"""MongoDB documents for the v2 manga project pipeline.
 
-These are persistence snapshots, not business logic. The typed domain models live
-under `app.domain.manga`; this layer stores durable project/slice/page/asset
-state and keeps legacy `BookSummary` free to remain a compatibility adapter.
+These are persistence snapshots, not business logic. The typed domain
+models live under :mod:`app.domain.manga`; this layer stores the durable
+project / slice / page / asset state that the Celery workers and HTTP
+routes both need to read.
 """
 
 from __future__ import annotations

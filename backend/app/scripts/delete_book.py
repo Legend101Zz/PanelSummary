@@ -4,10 +4,9 @@ delete_book.py — Nuclear option: delete a book and ALL related data.
 =====================================================================
 Deletes:
   • Book document
-  • All BookSummary documents for this book
-  • All LivingPanelDoc documents for those summaries
-  • All JobStatus docs linked to the book or its summaries
-  • Local filesystem images (cover, page renders, generated images)
+  • All MangaProjectDoc / MangaSliceDoc / MangaPageDoc / MangaAssetDoc for it
+  • All JobStatus docs linked to the book or its manga projects
+  • Local filesystem images (cover, page renders, generated assets)
 
 Usage:
     python scripts/delete_book.py <book_id>
@@ -23,20 +22,10 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 
-def red(s: str) -> str:
-    return f"\033[91m{s}\033[0m"
-
-
-def green(s: str) -> str:
-    return f"\033[92m{s}\033[0m"
-
-
-def yellow(s: str) -> str:
-    return f"\033[93m{s}\033[0m"
-
-
-def dim(s: str) -> str:
-    return f"\033[2m{s}\033[0m"
+def red(s: str) -> str:    return f"\033[91m{s}\033[0m"
+def green(s: str) -> str:  return f"\033[92m{s}\033[0m"
+def yellow(s: str) -> str: return f"\033[93m{s}\033[0m"
+def dim(s: str) -> str:    return f"\033[2m{s}\033[0m"
 
 
 async def main():
@@ -47,8 +36,10 @@ async def main():
     book_id = sys.argv[1]
     force = "--force" in sys.argv
 
-    from app.scripts._db import (Book, BookSummary, JobStatus, LivingPanelDoc,
-                                 connect)
+    from app.scripts._db import (
+        Book, JobStatus, MangaAssetDoc, MangaPageDoc,
+        MangaProjectDoc, MangaSliceDoc, connect,
+    )
     settings = await connect()
 
     # --- Fetch the book ---
@@ -57,46 +48,49 @@ async def main():
         print(red(f"\n  ✘ Book '{book_id}' not found.\n"))
         sys.exit(1)
 
-    # --- Collect related data ---
-    summaries = await BookSummary.find(BookSummary.book_id == book_id).to_list()
-    summary_ids = [str(s.id) for s in summaries]
+    # --- Collect related v2 manga data ---
+    projects = await MangaProjectDoc.find(MangaProjectDoc.book_id == book_id).to_list()
+    project_ids = [str(p.id) for p in projects]
 
-    panel_count = 0
-    for sid in summary_ids:
-        panel_count += await LivingPanelDoc.find(
-            LivingPanelDoc.summary_id == sid
-        ).count()
+    slice_count = 0
+    page_count = 0
+    asset_count = 0
+    for pid in project_ids:
+        slice_count += await MangaSliceDoc.find(MangaSliceDoc.project_id == pid).count()
+        page_count += await MangaPageDoc.find(MangaPageDoc.project_id == pid).count()
+        asset_count += await MangaAssetDoc.find(MangaAssetDoc.project_id == pid).count()
 
-    # Job statuses linked to book or summaries
-    celery_ids = set()
+    # Job statuses linked to book or projects
+    celery_ids: set[str] = set()
     if book.celery_task_id:
         celery_ids.add(book.celery_task_id)
-    for s in summaries:
-        if s.celery_task_id:
-            celery_ids.add(s.celery_task_id)
+    for p in projects:
+        for sl in await MangaSliceDoc.find(MangaSliceDoc.project_id == str(p.id)).to_list():
+            tid = getattr(sl, "celery_task_id", None)
+            if tid:
+                celery_ids.add(tid)
 
     job_count = 0
-    if celery_ids:
-        for cid in celery_ids:
-            job_count += await JobStatus.find(
-                JobStatus.celery_task_id == cid
-            ).count()
+    for cid in celery_ids:
+        job_count += await JobStatus.find(JobStatus.celery_task_id == cid).count()
 
-    # Check for local images
+    # Check for local images (book parse renders + generated character assets)
     image_dir = os.path.join(settings.image_dir, book_id)
     has_images = os.path.isdir(image_dir)
-    image_files = []
+    image_files: list[str] = []
     if has_images:
         for root, _, files in os.walk(image_dir):
             image_files.extend(files)
 
     # --- Show what will be deleted ---
     print()
-    print(f"  {yellow('BOOK')}:            {book.title} {dim(f'({book_id})')}") 
+    print(f"  {yellow('BOOK')}:            {book.title} {dim(f'({book_id})')}")
     print(f"  {yellow('Chapters')}:        {book.total_chapters}")
     print(f"  {yellow('Pages')}:           {book.total_pages}")
-    print(f"  {yellow('Summaries')}:       {len(summaries)}")
-    print(f"  {yellow('Living Panels')}:   {panel_count}")
+    print(f"  {yellow('Manga Projects')}:  {len(projects)}")
+    print(f"  {yellow('Manga Slices')}:    {slice_count}")
+    print(f"  {yellow('Manga Pages')}:     {page_count}")
+    print(f"  {yellow('Manga Assets')}:    {asset_count}")
     print(f"  {yellow('Job Statuses')}:    {job_count}")
     print(f"  {yellow('Image Files')}:     {len(image_files)} {dim(f'in {image_dir}') if has_images else ''}")
     print()
@@ -107,40 +101,36 @@ async def main():
             print(dim("  Aborted."))
             sys.exit(0)
 
-    # --- Delete in correct order (leaves before roots) ---
-    deleted = {"panels": 0, "summaries": 0, "jobs": 0, "images": 0}
+    # --- Delete in dependency order (leaves before roots) ---
+    deleted = {"assets": 0, "pages": 0, "slices": 0, "projects": 0, "jobs": 0, "images": 0}
 
-    # 1. Living panels
-    for sid in summary_ids:
-        result = await LivingPanelDoc.find(
-            LivingPanelDoc.summary_id == sid
-        ).delete()
-        deleted["panels"] += getattr(result, "deleted_count", 0)
+    for pid in project_ids:
+        r = await MangaAssetDoc.find(MangaAssetDoc.project_id == pid).delete()
+        deleted["assets"] += getattr(r, "deleted_count", 0)
+        r = await MangaPageDoc.find(MangaPageDoc.project_id == pid).delete()
+        deleted["pages"] += getattr(r, "deleted_count", 0)
+        r = await MangaSliceDoc.find(MangaSliceDoc.project_id == pid).delete()
+        deleted["slices"] += getattr(r, "deleted_count", 0)
 
-    # 2. Summaries
-    for s in summaries:
-        await s.delete()
-        deleted["summaries"] += 1
+    for p in projects:
+        await p.delete()
+        deleted["projects"] += 1
 
-    # 3. Job statuses
     for cid in celery_ids:
-        result = await JobStatus.find(
-            JobStatus.celery_task_id == cid
-        ).delete()
-        deleted["jobs"] += getattr(result, "deleted_count", 0)
+        r = await JobStatus.find(JobStatus.celery_task_id == cid).delete()
+        deleted["jobs"] += getattr(r, "deleted_count", 0)
 
-    # 4. Local images
     if has_images:
         shutil.rmtree(image_dir, ignore_errors=True)
         deleted["images"] = len(image_files)
 
-    # 5. The book itself
     await book.delete()
 
-    # --- Report ---
     print(f"  {green('✔')} Book deleted")
-    print(f"  {green('✔')} {deleted['summaries']} summaries removed")
-    print(f"  {green('✔')} {deleted['panels']} living panels removed")
+    print(f"  {green('✔')} {deleted['projects']} manga projects removed")
+    print(f"  {green('✔')} {deleted['slices']} slices removed")
+    print(f"  {green('✔')} {deleted['pages']} pages removed")
+    print(f"  {green('✔')} {deleted['assets']} assets removed")
     print(f"  {green('✔')} {deleted['jobs']} job statuses removed")
     print(f"  {green('✔')} {deleted['images']} image files removed")
     print()

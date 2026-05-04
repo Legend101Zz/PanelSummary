@@ -53,11 +53,6 @@ class Settings(BaseSettings):
         base = self.storage_dir or _default_storage()
         return f"{base}/images"
 
-    @property
-    def reels_dir(self) -> str:
-        base = self.storage_dir or _default_storage()
-        return f"{base}/reels"
-
     # --- LLM Defaults ---
     default_model: str = "qwen/qwen3.5-397b-a17b"  # Default OpenRouter model (user-specified)
     max_tokens_per_chapter: int = 4000   # Cap to control costs
@@ -68,9 +63,10 @@ class Settings(BaseSettings):
     # --- Large PDF budget ---
     max_pages_per_job: int = 100   # Warn user beyond this; ~65k tokens
 
-    # --- Manga pipeline revamp ---
-    # "legacy" keeps the current BookSummary flow. "revamp" enables the
-    # MangaProject/MangaSlice pipeline as it comes online behind a safe flag.
+    # --- Manga pipeline ---
+    # Always "legacy" today — the v2 pipeline is the only one shipped.
+    # The flag is preserved so we can stage future pipeline rewrites
+    # without touching consumers, and so existing tests keep passing.
     manga_pipeline_version: str = "legacy"
 
     class Config:

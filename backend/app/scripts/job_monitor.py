@@ -127,7 +127,7 @@ def time_ago(dt: datetime) -> str:
 # ── Fetch all jobs ────────────────────────────────────────────
 
 async def fetch_jobs(show_all: bool = False):
-    from app.scripts._db import Book, BookSummary, JobStatus
+    from app.scripts._db import Book, JobStatus, MangaProjectDoc, MangaSliceDoc
 
     if show_all:
         jobs = await JobStatus.find().sort("-updated_at").limit(50).to_list()
@@ -172,12 +172,18 @@ async def fetch_jobs(show_all: bool = False):
                 book = await Book.get(job.result_id)
                 if book:
                     info["book_title"] = book.title
-            elif job.job_type in ("summarize", "generate_manga"):
-                summary = await BookSummary.get(job.result_id)
-                if summary:
-                    info["summary_style"] = summary.style.value
-                    info["model"] = summary.model
-                    book = await Book.get(summary.book_id)
+            elif job.job_type in ("manga_book_understanding", "manga_slice"):
+                # v2 manga jobs: result_id is a MangaProjectDoc id (for the
+                # understanding pass) or a MangaSliceDoc id (for slices). We
+                # try project first, fall through to slice on miss.
+                project = await MangaProjectDoc.get(job.result_id)
+                if not project:
+                    sl = await MangaSliceDoc.get(job.result_id)
+                    if sl:
+                        project = await MangaProjectDoc.get(sl.project_id)
+                if project:
+                    info["summary_style"] = project.style
+                    book = await Book.get(project.book_id)
                     if book:
                         info["book_title"] = book.title
 
