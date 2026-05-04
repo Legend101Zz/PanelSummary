@@ -281,6 +281,26 @@ class StoryboardPage(BaseModel):
         return self
 
 
+class StoryboardArtifact(BaseModel):
+    """LLM-authored page thumbnails/storyboard for one manga source slice."""
+
+    slice_id: str
+    pages: list[StoryboardPage] = Field(default_factory=list)
+    thumbnail_notes: str = ""
+
+    @model_validator(mode="after")
+    def storyboard_needs_pages_and_stable_indices(self) -> "StoryboardArtifact":
+        if not self.slice_id.strip():
+            raise ValueError("storyboard artifact needs a slice_id")
+        if not self.pages:
+            raise ValueError("storyboard artifact needs at least one page")
+        expected = list(range(len(self.pages)))
+        actual = [page.page_index for page in self.pages]
+        if actual != expected:
+            raise ValueError("storyboard page_index values must be contiguous from 0")
+        return self
+
+
 class QualityIssue(BaseModel):
     severity: str
     code: str

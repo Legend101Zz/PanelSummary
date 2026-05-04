@@ -1,0 +1,87 @@
+"""LLM-backed storyboard/thumbnail stage for manga v2."""
+
+from __future__ import annotations
+
+import json
+
+from app.domain.manga import StoryboardArtifact
+from app.manga_pipeline.context import PipelineContext
+from app.manga_pipeline.llm_contracts import (
+    LLMStageName,
+    StructuredLLMRequest,
+    build_json_contract_prompt,
+    run_structured_llm_stage,
+)
+
+SYSTEM_PROMPT = """You are a manga storyboard artist and page-flow director.
+
+Convert a validated manga script into page thumbnails. You are not rendering art;
+you are deciding page rhythm, panel composition, shot variety, reader flow, and
+where dialogue/narration belongs.
+
+Storyboard discipline:
+- manga flow is top-right to bottom-left unless project options say otherwise
+- vary shot types: wide, medium, close-up, insert, symbolic
+- avoid wall-of-text panels
+- each panel must have a clear purpose
+- preserve source_fact_ids when a panel carries source meaning
+- use the character/world bible for visual consistency
+- include a To Be Continued panel only when the script/source requires it
+
+The renderer will consume this storyboard. Do not leave story decisions for the
+renderer to invent.
+"""
+
+
+def _build_user_message(context: PipelineContext) -> str:
+    if context.adaptation_plan is None:
+        raise ValueError("storyboard requires context.adaptation_plan")
+    if context.character_bible is None:
+        raise ValueError("storyboard requires context.character_bible")
+    if context.beat_sheet is None:
+        raise ValueError("storyboard requires context.beat_sheet")
+    if context.manga_script is None:
+        raise ValueError("storyboard requires context.manga_script")
+
+    payload = {
+        "book_id": context.book_id,
+        "project_id": context.project_id,
+        "source_slice": context.source_slice.model_dump(mode="json"),
+        "adaptation_plan": context.adaptation_plan.model_dump(mode="json"),
+        "character_world_bible": context.character_bible.model_dump(mode="json"),
+        "beat_sheet": context.beat_sheet.model_dump(mode="json"),
+        "manga_script": context.manga_script.model_dump(mode="json"),
+        "source_facts": [fact.model_dump(mode="json") for fact in context.fact_registry],
+        "project_options": context.options,
+    }
+    return (
+        "Create storyboard pages for this manga script. Produce page-level "
+        "thumbnail guidance and panel-by-panel composition/action/dialogue.\n\n"
+        f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{build_json_contract_prompt(StoryboardArtifact)}"
+    )
+
+
+async def run(context: PipelineContext) -> PipelineContext:
+    """Generate and validate source-grounded storyboard pages using the LLM."""
+    if context.llm_client is None:
+        raise ValueError("storyboard requires context.llm_client")
+    if not context.fact_registry:
+        raise ValueError("storyboard requires source facts")
+
+    request = StructuredLLMRequest(
+        stage_name=LLMStageName.STORYBOARD,
+        system_prompt=SYSTEM_PROMPT,
+        user_message=_build_user_message(context),
+        max_tokens=int(context.options.get("storyboard_max_tokens", 10000)),
+        temperature=float(context.options.get("storyboard_temperature", 0.75)),
+        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+    )
+    result = await run_structured_llm_stage(
+        client=context.llm_client,
+        request=request,
+        output_type=StoryboardArtifact,
+    )
+    context.storyboard_pages = result.artifact.pages
+    context.record_llm_trace(result.trace)
+    return context
