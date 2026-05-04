@@ -31,11 +31,15 @@ from app.manga_pipeline.stages import (
     beat_sheet_stage,
     character_asset_plan_stage,
     character_world_bible_stage,
+    continuity_gate_stage,
     dsl_validation_stage,
     manga_script_stage,
+    panel_quality_gate_stage,
     panel_rendering_stage,
     quality_gate_stage,
     quality_repair_stage,
+    script_repair_stage,
+    script_review_stage,
     source_fact_extraction_stage,
     storyboard_stage,
     storyboard_to_v4_stage,
@@ -194,17 +198,32 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         character_world_bible_stage.run,
         beat_sheet_stage.run,
         manga_script_stage.run,
+        # Phase A: editor pass + repair on the SCRIPT, before storyboard
+        # spends LLM tokens turning bad dialogue into bad panels.
+        script_review_stage.run,
+        script_repair_stage.run,
         storyboard_stage.run,
         dsl_validation_stage.run,
+        # Phase A: continuity checks (arc must-cover, prior hook, protagonist
+        # presence) merge into the same QualityReport the existing repair loop
+        # consumes. Same one-tool, one-issue-stream principle as DSL.
+        continuity_gate_stage.run,
         quality_gate_stage.run,
         quality_repair_stage.run,
         dsl_validation_stage.run,
+        continuity_gate_stage.run,
         quality_gate_stage.run,
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
     ]
     if with_panel_rendering:
         stages.append(panel_rendering_stage.run)
+        # Phase 10: structural panel-level gate runs ONLY when panel rendering
+        # was scheduled — it has nothing to evaluate otherwise. Putting it in
+        # the same conditional makes the dependency explicit; the stage's own
+        # body is also defensive (it short-circuits when there's no renderer
+        # summary), but enforcing the order here is the cleaner contract.
+        stages.append(panel_quality_gate_stage.run)
     return stages
 
 

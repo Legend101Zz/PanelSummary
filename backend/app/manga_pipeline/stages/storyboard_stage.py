@@ -13,6 +13,7 @@ from app.manga_pipeline.llm_contracts import (
     run_structured_llm_stage,
 )
 from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
+from app.manga_pipeline.prompt_fragments import render_protagonist_contract_block
 
 SYSTEM_PROMPT = """You are a manga storyboard artist and page-flow director.
 
@@ -28,6 +29,21 @@ Storyboard discipline:
 - preserve source_fact_ids when a panel carries source meaning
 - use the character/world bible for visual consistency
 - include a To Be Continued panel only when the script/source requires it
+
+Character presence (CRITICAL for the multimodal renderer):
+- ``character_ids`` lists characters VISUALLY PRESENT in the panel.
+  This is not the same as characters mentioned by name in the dialogue.
+- If the panel shows the empty laboratory while two characters argue
+  off-panel, ``character_ids`` is EMPTY and the dialogue still belongs
+  to those characters by ``speaker_id``.
+- If the panel shows a character reacting to news from someone off-panel,
+  only the on-panel character belongs in ``character_ids``.
+- Every character_id must exactly match a ``character_id`` from the
+  character_world_bible. Do not invent new characters here — if you need
+  one, that's a script defect; raise a To Be Continued or restructure.
+- The system will auto-add dialogue speakers to ``character_ids`` because
+  speaking implies presence. You do not have to add them yourself, but
+  if you do, do not omit any non-speaking characters that are also on stage.
 
 The renderer will consume this storyboard. Do not leave story decisions for the
 renderer to invent.
@@ -59,6 +75,7 @@ def _build_user_message(context: PipelineContext) -> str:
     return (
         "Create storyboard pages for this manga script. Produce page-level "
         "thumbnail guidance and panel-by-panel composition/action/dialogue.\n\n"
+        f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
         f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
         f"{build_json_contract_prompt(StoryboardArtifact)}"

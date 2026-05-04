@@ -33,6 +33,7 @@ from app.domain.manga.artifacts import (
     StoryboardPage,
     StoryboardPanel,
 )
+from app.domain.manga.script_review import ScriptIssue, ScriptReviewReport
 from app.domain.manga.continuity import (
     build_continuation_prompt_context,
     should_add_to_be_continued,
@@ -67,6 +68,8 @@ __all__ = [
     "BookUnderstandingBundle",
     "Beat",
     "BeatSheet",
+    "ScriptIssue",
+    "ScriptReviewReport",
     "CharacterArtDirection",
     "CharacterArtDirectionBundle",
     "CharacterAssetPlan",

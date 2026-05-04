@@ -17,6 +17,7 @@ from app.domain.manga import (
     MangaAssetSpec,
     MangaScript,
     QualityReport,
+    ScriptReviewReport,
     SourceFact,
     SourceSlice,
     StoryboardPage,
@@ -63,6 +64,10 @@ class PipelineContext:
     art_direction: CharacterArtDirectionBundle | None = None
     beat_sheet: BeatSheet | None = None
     manga_script: MangaScript | None = None
+    # Phase A: editorial review of the generated script. Populated by
+    # script_review_stage; consumed by script_repair_stage and any later
+    # stage that wants to surface voice/tension warnings.
+    script_review: ScriptReviewReport | None = None
     storyboard_pages: list[StoryboardPage] = field(default_factory=list)
     asset_specs: list[MangaAssetSpec] = field(default_factory=list)
     v4_pages: list[dict[str, Any]] = field(default_factory=list)
