@@ -128,6 +128,55 @@ export interface MangaChapter {
   panels: MangaPanel[];  // legacy
 }
 
+// ── REVAMP manga project / continuation types ──
+export type SourceSliceMode = "pages" | "chapters" | "sections";
+
+export interface SourceRange {
+  page_start?: number | null;
+  page_end?: number | null;
+  chapter_start?: number | null;
+  chapter_end?: number | null;
+  section_ids: string[];
+}
+
+export interface SourceSlice {
+  slice_id: string;
+  book_id: string;
+  mode: SourceSliceMode;
+  source_range: SourceRange;
+  word_count: number;
+  is_partial_chapter_start: boolean;
+  is_partial_chapter_end: boolean;
+}
+
+export interface MangaProject {
+  id: string;
+  book_id: string;
+  style: string;
+  engine: "v4" | string;
+  title: string;
+  status: string;
+  project_options: Record<string, unknown>;
+  adaptation_plan: Record<string, unknown>;
+  character_world_bible: Record<string, unknown>;
+  fact_count: number;
+  continuity_ledger: Record<string, unknown>;
+  coverage: Record<string, unknown>;
+  legacy_summary_id: string | null;
+  active_version: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MangaProjectResponse {
+  project: MangaProject;
+}
+
+export interface NextSourceSliceResponse {
+  source_slice: SourceSlice | null;
+  fully_covered: boolean;
+}
+
 // ============================================================
 // REELS TYPES
 // ============================================================

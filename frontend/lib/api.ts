@@ -20,6 +20,8 @@ import type {
   UploadResponse,
   SummaryStyle,
   LLMProvider,
+  MangaProjectResponse,
+  NextSourceSliceResponse,
 } from "./types";
 
 // The base URL for all API calls
@@ -170,6 +172,44 @@ export async function getBookSummaries(bookId: string): Promise<SummaryListItem[
  */
 export async function getSummary(summaryId: string): Promise<Summary> {
   const response = await api.get<Summary>(`/summary/${summaryId}`);
+  return response.data;
+}
+
+// ============================================================
+// MANGA PROJECT ENDPOINTS — revamp control plane
+// ============================================================
+
+export async function createMangaProject(
+  bookId: string,
+  options: {
+    style?: SummaryStyle | string;
+    engine?: "v4" | string;
+    title?: string;
+    projectOptions?: Record<string, unknown>;
+  } = {},
+): Promise<MangaProjectResponse> {
+  const response = await api.post<MangaProjectResponse>(`/books/${bookId}/manga-projects`, {
+    style: options.style ?? "manga",
+    engine: options.engine ?? "v4",
+    title: options.title ?? "",
+    project_options: options.projectOptions ?? {},
+  });
+  return response.data;
+}
+
+export async function getMangaProject(projectId: string): Promise<MangaProjectResponse> {
+  const response = await api.get<MangaProjectResponse>(`/manga-projects/${projectId}`);
+  return response.data;
+}
+
+export async function previewNextSourceSlice(
+  projectId: string,
+  pageWindow = 10,
+): Promise<NextSourceSliceResponse> {
+  const response = await api.post<NextSourceSliceResponse>(
+    `/manga-projects/${projectId}/next-source-slice`,
+    { page_window: pageWindow },
+  );
   return response.data;
 }
 
