@@ -10,7 +10,7 @@ import asyncio
 import pytest
 
 from app.domain.manga import ContinuityLedger, SourceRange, SourceSlice, SourceSliceMode
-from app.manga_pipeline import PipelineContext, run_pipeline_stages
+from app.manga_pipeline import PipelineContext, run_pipeline_context, run_pipeline_stages
 
 
 def _context() -> PipelineContext:
@@ -46,6 +46,16 @@ def test_run_pipeline_stages_applies_stages_in_order():
     assert calls == ["one", "two"]
     assert result.source_slice.slice_id == "slice_001"
     assert result.v4_pages == [{"page_index": 0, "version": "4.0"}]
+
+
+def test_run_pipeline_context_returns_enriched_context():
+    async def stage(context: PipelineContext) -> PipelineContext:
+        context.options["seen"] = True
+        return context
+
+    result = asyncio.run(run_pipeline_context(_context(), [stage]))
+
+    assert result.options["seen"] is True
 
 
 def test_run_pipeline_stages_propagates_stage_failure():

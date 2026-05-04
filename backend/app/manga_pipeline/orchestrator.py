@@ -9,17 +9,25 @@ from app.manga_pipeline.context import PipelineContext, PipelineResult
 MangaPipelineStage = Callable[[PipelineContext], Awaitable[PipelineContext]]
 
 
-async def run_pipeline_stages(
+async def run_pipeline_context(
     context: PipelineContext,
     stages: list[MangaPipelineStage],
-) -> PipelineResult:
-    """Run ordered pipeline stages and return the final result.
+) -> PipelineContext:
+    """Run ordered pipeline stages and return the enriched context.
 
-    Stages are explicit and testable. If a stage wants to do IO, that IO lives
-    in that stage, not secretly in the orchestrator. Revolutionary stuff,
-    apparently.
+    Persistence code needs typed intermediate artifacts, not just rendered pages.
+    Returning context here keeps the orchestrator thin while avoiding global state
+    or sneaky database writes inside creative stages.
     """
     current = context
     for stage in stages:
         current = await stage(current)
-    return current.result()
+    return current
+
+
+async def run_pipeline_stages(
+    context: PipelineContext,
+    stages: list[MangaPipelineStage],
+) -> PipelineResult:
+    """Run ordered pipeline stages and return the final public result."""
+    return (await run_pipeline_context(context, stages)).result()

@@ -13,7 +13,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
-from app.manga_pipeline.orchestrator import MangaPipelineStage, run_pipeline_stages
+from app.manga_pipeline.orchestrator import MangaPipelineStage, run_pipeline_context, run_pipeline_stages
 
 __all__ = [
     "LLMOutputValidationError",
@@ -24,6 +24,7 @@ __all__ = [
     "StructuredLLMRequest",
     "StructuredLLMResult",
     "build_json_contract_prompt",
+    "run_pipeline_context",
     "run_pipeline_stages",
     "run_structured_llm_stage",
 ]
