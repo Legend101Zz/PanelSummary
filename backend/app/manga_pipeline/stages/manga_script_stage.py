@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from app.domain.manga import MangaScript
+from app.domain.manga import MangaScript, build_continuation_prompt_context
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.llm_contracts import (
     LLMStageName,
@@ -13,7 +13,10 @@ from app.manga_pipeline.llm_contracts import (
     run_structured_llm_stage,
 )
 from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
-from app.manga_pipeline.prompt_fragments import render_protagonist_contract_block
+from app.manga_pipeline.prompt_fragments import (
+    render_protagonist_contract_block,
+    render_voice_cards_block,
+)
 
 SYSTEM_PROMPT = """You are a professional manga scriptwriter adapting dense source material.
 
@@ -51,10 +54,36 @@ def _build_user_message(context: PipelineContext) -> str:
         "source_has_more": bool(context.options.get("source_has_more", False)),
         "project_options": context.options,
     }
+    # Phase 2.3: feed the writer the same continuity context the beat sheet
+    # already gets. Without this block the script LLM has no idea what
+    # happened in earlier slices except via the beat sheet's headline
+    # `recap_for_next_slice`/`last_page_hook` strings, so it routinely
+    # contradicts character knowledge state and re-introduces resolved
+    # threads. The helper is cheap (pure string construction) and caps the
+    # known-fact list so we do not silently inflate the prompt budget.
+    continuity_block = ""
+    has_prior = bool(
+        context.prior_continuity is not None
+        and context.prior_continuity.covered_source_ranges
+    )
+    if has_prior:
+        continuity_block = (
+            build_continuation_prompt_context(
+                title=context.adaptation_plan.title or "",
+                logline=context.adaptation_plan.logline or "",
+                ledger=context.prior_continuity,
+                facts=context.fact_registry,
+                source_slice=context.source_slice,
+            )
+            + "\n\n"
+        )
+
     return (
         "Write the manga script for this source slice. Produce scenes with "
         "scene descriptions, action, concise dialogue, and source fact IDs.\n\n"
+        f"{continuity_block}"
         f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
+        f"{render_voice_cards_block(context.voice_cards)}\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
         f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
         f"{build_json_contract_prompt(MangaScript)}"

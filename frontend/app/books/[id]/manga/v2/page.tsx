@@ -16,6 +16,7 @@ import {
 import type { MangaAssetDoc, MangaProject, MangaProjectPageDoc, MangaSliceDoc } from "@/lib/types";
 import { V4PageRenderer } from "@/components/V4Engine";
 import type { V4CharacterAsset, V4Page } from "@/components/V4Engine";
+import { BookSpine } from "@/components/BookSpine";
 
 function rangeLabel(page: MangaProjectPageDoc | null): string {
   if (!page) return "No source range";
@@ -31,6 +32,23 @@ function getQualitySummary(slice: MangaSliceDoc | null): string {
   if (passed === true) return issues ? `Passed with ${issues} note(s)` : "Passed deterministic QA";
   if (passed === false) return `Failed QA with ${issues} issue(s)`;
   return "Quality report recorded";
+}
+
+// Phase 2.6: surface the fact-coverage data the continuity gate now
+// stamps onto the QualityReport. Returns null when the report has not
+// recorded coverage so the caller can fall back to its previous label.
+function getFactCoverageLabel(slice: MangaSliceDoc | null): string | null {
+  const report = slice?.quality_report as Record<string, unknown> | undefined;
+  if (!report) return null;
+  const grounded = Array.isArray(report.grounded_fact_ids) ? report.grounded_fact_ids.length : 0;
+  const missing = Array.isArray(report.missing_fact_ids) ? report.missing_fact_ids.length : 0;
+  if (grounded === 0 && missing === 0) return null;
+  // "5/7 critical facts covered" reads better than "5 grounded, 2 missing";
+  // we compute the denominator from grounded + missing because the gate
+  // only puts arc-must-cover facts in `missing` (it never penalises a slice
+  // for citing extra facts beyond the must-cover list).
+  const total = grounded + missing;
+  return `${grounded}/${total} critical facts covered`;
 }
 
 export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -204,6 +222,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
         </section>
 
         <aside className="flex flex-col gap-4">
+          <BookSpine project={project} />
           <section className="border p-4" style={{ borderColor: "#2E2C3F", background: "#17161F" }}>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-display flex items-center gap-2" style={{ color: "#ffc220" }}>
@@ -252,6 +271,11 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
                 <div key={slice.id} className="border p-3" style={{ borderColor: "#2E2C3F" }}>
                   <p className="font-label" style={{ color: "#F0EEE8", fontSize: "0.68rem" }}>Slice {slice.slice_index + 1} · {slice.slice_role}</p>
                   <p className="mt-1" style={{ color: "#A8A6C0", fontSize: "0.72rem" }}>{getQualitySummary(slice)}</p>
+                  {getFactCoverageLabel(slice) && (
+                    <p className="mt-1 font-label" style={{ color: "#ffc220", fontSize: "0.65rem" }}>
+                      {getFactCoverageLabel(slice)}
+                    </p>
+                  )}
                 </div>
               ))}
               {slices.length === 0 && <p style={{ color: "#A8A6C0", fontSize: "0.8rem" }}>No slices generated yet.</p>}

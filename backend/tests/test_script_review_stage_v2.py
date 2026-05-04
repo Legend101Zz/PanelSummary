@@ -58,7 +58,17 @@ def _context(
     llm_client: FakeLLMClient,
     extra_dialogue: list[ScriptLine] | None = None,
 ) -> PipelineContext:
-    dialogue = [ScriptLine(speaker_id="kai", text="The same key stops working.")]
+    dialogue = [
+        # Phase 2.4: dialogue lines must cite at least one of the beat's
+        # source_fact_ids or the new grounding validator (correctly) flags
+        # the scene as ungrounded. The fixture's beat below references
+        # f001 so we cite f001 here.
+        ScriptLine(
+            speaker_id="kai",
+            text="The same key stops working.",
+            source_fact_ids=["f001"],
+        )
+    ]
     if extra_dialogue:
         dialogue.extend(extra_dialogue)
     context = PipelineContext(

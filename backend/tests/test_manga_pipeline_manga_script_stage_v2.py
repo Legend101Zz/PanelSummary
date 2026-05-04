@@ -166,3 +166,45 @@ def test_manga_script_stage_rejects_wall_of_text_dialogue():
 
     with pytest.raises(Exception, match="manga_script"):
         asyncio.run(manga_script_stage.run(context))
+
+
+def test_manga_script_stage_includes_continuity_block_when_ledger_has_history():
+    """Phase 2.3 invariant: when prior_continuity has covered ranges, the
+    writer prompt MUST include the literal `MANGA CONTINUITY SO FAR:` marker.
+    Without this block the writer has no idea what happened in earlier
+    slices and routinely contradicts character knowledge state."""
+    client = FakeLLMClient(_valid_script())
+    context = _context(client)
+    # Stamp a covered range onto the ledger to mimic "this is slice 2".
+    context.prior_continuity.add_covered_range(
+        SourceRange(page_start=1, page_end=10)
+    )
+    context.prior_continuity.last_page_hook = "Kai pockets the cracked key."
+    context.prior_continuity.recap_for_next_slice = (
+        "Kai discovered the key fails at scale."
+    )
+
+    asyncio.run(manga_script_stage.run(context))
+
+    user_message = client.calls[0]["user_message"]
+    assert "MANGA CONTINUITY SO FAR:" in user_message
+    # And the recap seed must be carried into the prompt so the writer
+    # picks up the thread (otherwise we paid for a continuity block that
+    # said nothing).
+    assert "Kai discovered the key fails at scale." in user_message
+
+
+def test_manga_script_stage_omits_continuity_block_for_first_slice():
+    """Symmetrical guard: a fresh project (no covered ranges) must NOT
+    include the continuity marker. We do not want the writer LLM to
+    hallucinate prior events on slice 1 just because the prompt mentions
+    'continuity so far'."""
+    client = FakeLLMClient(_valid_script())
+    context = _context(client)
+    # Fresh ledger — no covered ranges.
+    assert context.prior_continuity.covered_source_ranges == []
+
+    asyncio.run(manga_script_stage.run(context))
+
+    user_message = client.calls[0]["user_message"]
+    assert "MANGA CONTINUITY SO FAR:" not in user_message

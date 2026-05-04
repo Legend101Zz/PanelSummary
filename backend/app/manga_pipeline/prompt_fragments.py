@@ -13,7 +13,7 @@ exactly how the codebase ended up scattered the first time.
 
 from __future__ import annotations
 
-from app.domain.manga import AdaptationPlan, BookSynopsis
+from app.domain.manga import AdaptationPlan, BookSynopsis, CharacterVoiceCardBundle
 
 
 def render_protagonist_contract_block(
@@ -44,5 +44,40 @@ def render_protagonist_contract_block(
         "Every scene must serve at least one of: WANTS, WHY THEY CANNOT, "
         "or WHAT THEY DO. Scenes that drift into unrelated exposition are "
         "defects, not creative liberty."
+    )
+    return "\n".join(lines)
+
+
+def render_voice_cards_block(voice_cards: CharacterVoiceCardBundle | None) -> str:
+    """Return a Markdown block that contracts each character's speech style.
+
+    Returns an empty string when no cards are present so callers can
+    unconditionally splice the result into a prompt without conditional
+    plumbing on the call-site (DRY).
+
+    The block format is deliberately compact: the script stage already
+    carries scene descriptions and per-panel context; voice cards are an
+    additional constraint, not a replacement for the script payload.
+    """
+    if voice_cards is None or not voice_cards.cards:
+        return ""
+    lines: list[str] = [
+        "VOICE CARDS (one per character; do not let two voices collapse into one):",
+    ]
+    for card in voice_cards.cards:
+        lines.append(f"- {card.name} [{card.character_id}]")
+        lines.append(f"  attitude: {card.core_attitude}")
+        lines.append(f"  rhythm: {card.speech_rhythm}")
+        if card.vocabulary_do:
+            lines.append("  uses: " + ", ".join(card.vocabulary_do[:8]))
+        if card.vocabulary_dont:
+            lines.append("  avoids: " + ", ".join(card.vocabulary_dont[:6]))
+        if card.example_lines:
+            lines.append("  cadence anchors:")
+            for example in card.example_lines[:4]:
+                lines.append(f"    • \"{example}\"")
+    lines.append(
+        "Anchors are tone references, not lines to quote. Write fresh dialogue "
+        "that matches each character's rhythm and vocabulary."
     )
     return "\n".join(lines)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.domain.manga.artifacts import MangaScript, StoryboardPage
 from app.domain.manga.types import ContinuityLedger, SliceRole, SourceFact, SourceSlice
 
 
@@ -89,3 +90,59 @@ def update_ledger_after_slice(
     ledger.last_page_hook = last_page_hook.strip()
     ledger.version += 1
     return ledger
+
+
+# ---------------------------------------------------------------------------
+# Phase 2.2 — deterministic recap seed.
+#
+# The previous code path stuffed `manga_script.scenes[-1].action` (a stage
+# direction, e.g. "Kai turns away from the chalkboard, pen still in hand.")
+# into the next slice's `recap_for_next_slice`. That isn't a recap — it's a
+# camera note. Swapping it for a tiny pure helper means:
+#   * the next slice's beat sheet sees "WHAT JUST HAPPENED" instead of
+#     "WHERE THE CAMERA POINTED",
+#   * the helper is testable in isolation (pure inputs in, plain string out),
+#   * we never re-enter the LLM just to author a one-liner the storyboard
+#     and script already contain.
+# ---------------------------------------------------------------------------
+
+_RECAP_MAX_LEN = 240
+
+
+def build_recap_seed(
+    *,
+    manga_script: MangaScript | None,
+    storyboard_pages: list[StoryboardPage] | None,
+) -> str:
+    """Compose the next-slice recap from the closing scene + the page-turn hook.
+
+    Strategy (kept dumb on purpose):
+        1. Take the LAST scene's ``scene_goal`` if present — that is the
+           writer's own one-line summary of what the scene was for.
+        2. Append the LAST storyboard page's ``page_turn_hook`` — that is
+           where the slice *left* the reader emotionally.
+        3. Trim to ``_RECAP_MAX_LEN`` so the next slice's prompt budget
+           is not silently inflated.
+
+    When either input is missing the helper degrades quietly to whatever it
+    has, so a renderer-only smoke test still gets a usable seed.
+    """
+    parts: list[str] = []
+    if manga_script is not None and manga_script.scenes:
+        last_scene = manga_script.scenes[-1]
+        # scene_goal is a one-line writer summary; action is stage direction.
+        # Prefer the goal so the recap reads as "what we resolved" not
+        # "where the camera was pointed".
+        seed = last_scene.scene_goal.strip() or last_scene.action.strip()
+        if seed:
+            parts.append(seed)
+    if storyboard_pages:
+        hook = storyboard_pages[-1].page_turn_hook.strip()
+        if hook:
+            parts.append(f"Cliffhanger: {hook}")
+    recap = " \u2014 ".join(parts).strip()
+    if len(recap) > _RECAP_MAX_LEN:
+        # Hard cap rather than sentence-aware truncation: callers do not
+        # render this verbatim, they feed it to the next prompt as context.
+        recap = recap[: _RECAP_MAX_LEN - 1].rstrip() + "\u2026"
+    return recap

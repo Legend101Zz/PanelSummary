@@ -21,6 +21,7 @@ from app.domain.manga import (
     ArcOutline,
     BookSynopsis,
     CharacterArtDirectionBundle,
+    CharacterVoiceCardBundle,
     CharacterWorldBible,
     QualityIssue,
     SourceFact,
@@ -42,6 +43,7 @@ class BookUnderstandingResult:
     adaptation_plan: AdaptationPlan
     character_bible: CharacterWorldBible
     art_direction: CharacterArtDirectionBundle
+    voice_cards: CharacterVoiceCardBundle
     arc_outline: ArcOutline
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
 
@@ -76,6 +78,7 @@ class BookUnderstandingContext:
     adaptation_plan: AdaptationPlan | None = None
     character_bible: CharacterWorldBible | None = None
     art_direction: CharacterArtDirectionBundle | None = None
+    voice_cards: CharacterVoiceCardBundle | None = None
     arc_outline: ArcOutline | None = None
 
     # Phase B3: warnings (silhouette/costume clashes) the uniqueness stage
@@ -101,6 +104,10 @@ class BookUnderstandingContext:
             raise RuntimeError(
                 "book understanding result requires LLM-authored art direction"
             )
+        if self.voice_cards is None:
+            raise RuntimeError(
+                "book understanding result requires LLM-authored character voice cards"
+            )
         if self.arc_outline is None:
             raise RuntimeError("book understanding result requires an arc outline")
         if not self.fact_registry:
@@ -111,6 +118,7 @@ class BookUnderstandingContext:
             adaptation_plan=self.adaptation_plan,
             character_bible=self.character_bible,
             art_direction=self.art_direction,
+            voice_cards=self.voice_cards,
             arc_outline=self.arc_outline,
             llm_traces=list(self.llm_traces),
         )

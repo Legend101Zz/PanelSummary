@@ -8,12 +8,15 @@ import { AlertCircle, BookOpen, Brush, Eye, Image as ImageIcon, Loader2, Sparkle
 import {
   createMangaProject,
   generateMangaProjectSlice,
+  getMangaProject,
   listBookMangaProjects,
   pollUntilComplete,
   previewNextSourceSlice,
+  startBookUnderstanding,
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import type { Book, LLMProvider, MangaProject, NextSourceSliceResponse } from "@/lib/types";
+import { BookSpine } from "@/components/BookSpine";
 
 // Phase B5: each model carries cost/quality intent so the picker is
 // a buying decision, not a code-name guess. ``tier`` is what the user
@@ -76,10 +79,30 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   const [message, setMessage] = useState("Loading v2 manga projects…");
   const [error, setError] = useState<string | null>(null);
 
+  // Phase 1 polish: the book-understanding spine is run-once-per-project.
+  // We track its lifecycle here so the UI can:
+  //  * auto-fire it the first time a project is opened (no extra clicks),
+  //  * block slice generation until it is ready (the backend would 409 anyway),
+  //  * surface its progress to the user.
+  const [understandingBusy, setUnderstandingBusy] = useState(false);
+  const [understandingProgress, setUnderstandingProgress] = useState<number | null>(null);
+
   const selectedProject = useMemo(
     () => projects.find(project => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   );
+
+  const understandingStatus = selectedProject?.understanding_status ?? "pending";
+  const understandingReady = understandingStatus === "ready";
+  const understandingFailed = understandingStatus === "failed";
+
+  // Refresh the project shape after long-running ops so the BookSpine
+  // re-renders with the freshest understanding bundle. We mutate the
+  // projects array in place rather than refetching the whole list to
+  // keep the dropdown selection stable.
+  const replaceProject = useCallback((next: MangaProject) => {
+    setProjects(prev => prev.map(item => (item.id === next.id ? next : item)));
+  }, []);
 
   const refreshProjects = useCallback(async () => {
     setLoading(true);
@@ -107,6 +130,73 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       .then(setNextSlice)
       .catch(() => setNextSlice(null));
   }, [selectedProjectId, pageWindow]);
+
+  // Kick off the book-understanding spine for a project. The backend route
+  // is idempotent (returns already_ready=true with no task when nothing to
+  // do), so the auto-trigger effect below can fire safely on every project
+  // selection without spamming jobs.
+  const runBookUnderstanding = useCallback(
+    async (project: MangaProject, options: { force?: boolean } = {}): Promise<MangaProject> => {
+      const key = apiKey?.trim();
+      if (!key) {
+        // Surface the missing-key error only on explicit rebuild; the
+        // silent auto-trigger should not nag a user mid-setup.
+        if (options.force) {
+          setError("Enter your API key in the main Generate Summary panel first.");
+        }
+        return project;
+      }
+
+      setUnderstandingBusy(true);
+      setError(null);
+      try {
+        setUnderstandingProgress(0);
+        setMessage("Reading the whole book to author the spine\u2026");
+        const queued = await startBookUnderstanding(project.id, {
+          apiKey: key,
+          provider: provider as LLMProvider,
+          model: model ?? undefined,
+          extraOptions: { style: selectedStyle },
+          force: options.force ?? false,
+        });
+        setMessage(queued.message);
+        if (queued.task_id) {
+          await pollUntilComplete(
+            queued.task_id,
+            status => {
+              setUnderstandingProgress(status.progress);
+              setMessage(status.message || `Reading the book\u2026 ${status.progress}%`);
+            },
+            1500,
+            20 * 60 * 1000,
+          );
+        }
+        const refreshed = await getMangaProject(project.id);
+        replaceProject(refreshed.project);
+        setMessage("Book spine ready. Slice generation is unlocked.");
+        return refreshed.project;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Book understanding failed");
+        return project;
+      } finally {
+        setUnderstandingBusy(false);
+        setUnderstandingProgress(null);
+      }
+    },
+    [apiKey, provider, model, selectedStyle, replaceProject],
+  );
+
+  // Auto-fire the spine pipeline whenever a project is selected and its
+  // understanding has not yet completed. We deliberately wait for the API
+  // key \u2014 firing without one would bounce off the backend with a misleading
+  // error.
+  useEffect(() => {
+    if (!selectedProject) return;
+    if (understandingBusy) return;
+    if (selectedProject.understanding_status !== "pending") return;
+    if (!apiKey?.trim()) return;
+    void runBookUnderstanding(selectedProject);
+  }, [selectedProject, apiKey, understandingBusy, runBookUnderstanding]);
 
   const ensureProject = async (): Promise<MangaProject> => {
     if (selectedProject) return selectedProject;
@@ -148,6 +238,18 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
     setError(null);
     try {
       const project = await ensureProject();
+
+      // Backend refuses /generate-slice when the spine is not ready. Run
+      // (or wait for) the spine here so the user gets one continuous
+      // "generate manga" interaction rather than a 409 surprise.
+      let resolvedProject = project;
+      if (resolvedProject.understanding_status !== "ready") {
+        resolvedProject = await runBookUnderstanding(resolvedProject);
+        if (resolvedProject.understanding_status !== "ready") {
+          setMessage("Book spine did not complete \u2014 cannot generate the slice.");
+          return;
+        }
+      }
       setJobProgress(0);
       setMessage("Queued structured manga: facts → script → storyboard → QA → assets…");
       const queued = await generateMangaProjectSlice(project.id, {
@@ -323,11 +425,46 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
             <button type="button" onClick={handleCreateProject} disabled={busy} className="btn-secondary justify-center py-2.5 gap-2">
               <BookOpen size={14} /> Open V2
             </button>
-            <button type="button" onClick={handleGenerateSlice} disabled={busy || nextSlice?.fully_covered} className="btn-primary justify-center py-2.5 gap-2">
+            <button type="button" onClick={handleGenerateSlice} disabled={busy || understandingBusy || nextSlice?.fully_covered} className="btn-primary justify-center py-2.5 gap-2">
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Brush size={14} />}
-              Generate slice
+              {understandingReady ? "Generate slice" : "Read book + generate slice"}
             </button>
           </div>
+
+          {selectedProject && (
+            <BookSpine
+              project={selectedProject}
+              onRebuild={() => runBookUnderstanding(selectedProject, { force: true })}
+              rebuilding={understandingBusy}
+            />
+          )}
+
+          {understandingProgress !== null && (
+            <div className="flex flex-col gap-1" aria-live="polite">
+              <div className="h-1.5 overflow-hidden rounded-full" style={{ background: "var(--border)" }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={false}
+                  animate={{ width: `${Math.max(0, Math.min(100, understandingProgress))}%` }}
+                  style={{ background: "#ffc220" }}
+                />
+              </div>
+              <p className="font-label" style={{ color: "var(--text-3)", fontSize: "8px" }}>
+                Reading the book: {understandingProgress}%
+              </p>
+            </div>
+          )}
+
+          {understandingFailed && !understandingBusy && (
+            <button
+              type="button"
+              onClick={() => selectedProject && runBookUnderstanding(selectedProject, { force: true })}
+              className="btn-secondary justify-center py-2 gap-2"
+              style={{ borderColor: "#ea1100", color: "#ffb3ad" }}
+            >
+              Retry book understanding
+            </button>
+          )}
 
           {selectedProject && (
             <div className="grid grid-cols-2 gap-2">

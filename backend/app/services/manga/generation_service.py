@@ -16,11 +16,13 @@ from app.domain.manga import (
     ArcOutline,
     BookSynopsis,
     CharacterArtDirectionBundle,
+    CharacterVoiceCardBundle,
     CharacterWorldBible,
     MangaAssetSpec,
     SliceRole,
     SourceFact,
     SourceSlice,
+    build_recap_seed,
     update_ledger_after_slice,
 )
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
@@ -157,6 +159,8 @@ def _hydrate_book_artifacts_into_context(
         context.character_bible = CharacterWorldBible(**project.character_world_bible)
     if project.character_art_direction:
         context.art_direction = CharacterArtDirectionBundle(**project.character_art_direction)
+    if project.character_voice_cards:
+        context.voice_cards = CharacterVoiceCardBundle(**project.character_voice_cards)
     if project.arc_outline:
         context.arc_outline = ArcOutline(**project.arc_outline)
     context.bible_locked = bool(project.bible_locked)
@@ -476,12 +480,26 @@ async def generate_project_slice(
     for asset_doc in asset_docs:
         await asset_doc.insert()
 
+    # Phase 2.1 + 2.2 — the previous call passed the ledger positionally
+    # AND used the old `recap=` keyword that does not exist on the
+    # function signature. The first slice never reached this branch (no
+    # prior ledger to update meaningfully); slice 2 onwards crashed with
+    # TypeError. We now (a) keyword-pass everything and (b) compute the
+    # recap seed from the *resolved scene goal + closing hook* via the
+    # pure helper, instead of pasting the last scene's stage direction.
     updated_ledger = update_ledger_after_slice(
-        ledger,
+        ledger=ledger,
         source_slice=source_slice,
         new_fact_ids=final_context.new_fact_ids,
-        recap=final_context.manga_script.scenes[-1].action if final_context.manga_script else "",
-        last_page_hook=final_context.storyboard_pages[-1].page_turn_hook if final_context.storyboard_pages else "",
+        recap_for_next_slice=build_recap_seed(
+            manga_script=final_context.manga_script,
+            storyboard_pages=final_context.storyboard_pages,
+        ),
+        last_page_hook=(
+            final_context.storyboard_pages[-1].page_turn_hook
+            if final_context.storyboard_pages
+            else ""
+        ),
     )
     project.fact_registry = [fact.model_dump(mode="json") for fact in final_context.fact_registry]
     # Book-level artifacts are read-only after the understanding phase. We

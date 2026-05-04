@@ -15,6 +15,7 @@ import type {
   SummaryStyle,
   LLMProvider,
   StartMangaSliceGenerationResponse,
+  StartBookUnderstandingResponse,
   MangaProjectAssetsResponse,
   MangaProjectPagesResponse,
   MangaProjectResponse,
@@ -185,6 +186,34 @@ export async function previewNextSourceSlice(
   const response = await api.post<NextSourceSliceResponse>(
     `/manga-projects/${projectId}/next-source-slice`,
     { page_window: pageWindow },
+  );
+  return response.data;
+}
+
+// Kick off (or re-run with force=true) the run-once book understanding
+// pipeline for a project. The backend response is the source of truth for
+// whether a job was newly queued (already_ready === false) or short-circuited
+// because the spine already exists. Caller decides whether to poll the task.
+export async function startBookUnderstanding(
+  projectId: string,
+  options: {
+    apiKey: string;
+    provider: LLMProvider;
+    model?: string;
+    extraOptions?: Record<string, unknown>;
+    force?: boolean;
+  },
+): Promise<StartBookUnderstandingResponse> {
+  const response = await api.post<StartBookUnderstandingResponse>(
+    `/manga-projects/${projectId}/book-understanding`,
+    {
+      api_key: options.apiKey,
+      provider: options.provider,
+      model: options.model,
+      options: options.extraOptions ?? {},
+      force: options.force ?? false,
+    },
+    { timeout: 30000 },
   );
   return response.data;
 }

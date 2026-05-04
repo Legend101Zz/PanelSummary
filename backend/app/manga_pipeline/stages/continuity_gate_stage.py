@@ -92,23 +92,44 @@ def _closing_page_has_tbc(pages: list[StoryboardPage]) -> bool:
 
 
 def _merge_issues_into_report(
-    existing: QualityReport | None, new_issues: list[QualityIssue]
+    existing: QualityReport | None,
+    new_issues: list[QualityIssue],
+    *,
+    grounded_fact_ids: set[str] | None = None,
+    missing_fact_ids: set[str] | None = None,
 ) -> QualityReport:
     """Merge new issues into an existing report (same shape as
     dsl_validation_stage._merge_issues_into_report — kept duplicated to
-    avoid a cross-import for one tiny helper)."""
+    avoid a cross-import for one tiny helper).
+
+    Phase 2.5: this helper now also populates ``grounded_fact_ids`` and
+    ``missing_fact_ids`` on the merged report. The continuity gate is the
+    only place in the pipeline that has *both* the storyboard's cited
+    facts and the arc entry's must-cover list, so this is where the
+    coverage data has to land.
+
+    We MERGE rather than REPLACE: if an upstream stage already populated
+    these sets (it doesn't today, but the contract should not depend on
+    that), we union, not overwrite.
+    """
+    grounded = sorted(grounded_fact_ids or set())
+    missing = sorted(missing_fact_ids or set())
     if existing is None:
         return QualityReport(
             passed=not any(issue.severity == "error" for issue in new_issues),
             issues=list(new_issues),
+            grounded_fact_ids=grounded,
+            missing_fact_ids=missing,
         )
     combined = list(existing.issues) + list(new_issues)
     has_error = any(issue.severity == "error" for issue in combined)
+    merged_grounded = sorted(set(existing.grounded_fact_ids) | set(grounded))
+    merged_missing = sorted(set(existing.missing_fact_ids) | set(missing))
     return QualityReport(
         passed=not has_error,
         issues=combined,
-        grounded_fact_ids=list(existing.grounded_fact_ids),
-        missing_fact_ids=list(existing.missing_fact_ids),
+        grounded_fact_ids=merged_grounded,
+        missing_fact_ids=merged_missing,
         notes=existing.notes,
     )
 
@@ -269,5 +290,23 @@ async def run(context: PipelineContext) -> PipelineContext:
             )
         )
 
-    context.quality_report = _merge_issues_into_report(context.quality_report, issues)
+    # Phase 2.5: the storyboard's per-panel cited facts and the arc
+    # entry's must-cover list together tell us what landed and what got
+    # dropped. Surface that into the QualityReport so the QA panel can
+    # show "5/7 critical facts covered" without re-deriving it.
+    cited_in_storyboard = _all_panel_fact_ids(context.storyboard_pages)
+    arc_must_cover_set = set(arc_must_cover)
+    grounded_for_arc = (
+        cited_in_storyboard & arc_must_cover_set
+        if arc_must_cover_set
+        else cited_in_storyboard
+    )
+    missing_for_arc = arc_must_cover_set - cited_in_storyboard
+
+    context.quality_report = _merge_issues_into_report(
+        context.quality_report,
+        issues,
+        grounded_fact_ids=grounded_for_arc,
+        missing_fact_ids=missing_for_arc,
+    )
     return context

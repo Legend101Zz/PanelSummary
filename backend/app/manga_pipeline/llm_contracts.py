@@ -31,6 +31,7 @@ class LLMStageName(str, Enum):
     ADAPTATION_PLANNING = "adaptation_planning"
     CHARACTER_WORLD_BIBLE = "character_world_bible"
     CHARACTER_ART_DIRECTION = "character_art_direction"
+    CHARACTER_VOICE_CARDS = "character_voice_cards"
     BEAT_SHEET = "beat_sheet"
     MANGA_SCRIPT = "manga_script"
     SCRIPT_REVIEW = "script_review"

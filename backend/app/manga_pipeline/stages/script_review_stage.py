@@ -36,7 +36,12 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.services.manga.grounding_validator import validate_grounding
 from app.services.manga.voice_validator import validate_voice
+from app.manga_pipeline.prompt_fragments import (
+    render_protagonist_contract_block,
+    render_voice_cards_block,
+)
 
 
 SYSTEM_PROMPT = """You are a senior manga editor reviewing a draft script.
@@ -120,6 +125,8 @@ def _build_user_message(context: PipelineContext) -> str:
         "Review the draft manga script as a senior manga editor. Surface every "
         "editorial defect you would block at table read. Be specific and cite "
         "scene_id / line_index when the defect is line-level.\n\n"
+        f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
+        f"{render_voice_cards_block(context.voice_cards)}\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
         f"{build_json_contract_prompt(ScriptReviewReport)}"
     )
@@ -150,6 +157,17 @@ async def run(context: PipelineContext) -> PipelineContext:
         bible=context.character_bible,
         arc_role=arc_role,
     )
+    # Phase 2.4: also seed the report with grounding heuristics so the
+    # editor LLM (and the repair stage that follows) sees both voice AND
+    # grounding defects in the same pass. Order does not matter — we
+    # dedupe by (code, scene_id, line_index, speaker_id) below.
+    if context.beat_sheet is not None:
+        heuristic_issues.extend(
+            validate_grounding(
+                script=context.manga_script,
+                beat_sheet=context.beat_sheet,
+            )
+        )
 
     request = StructuredLLMRequest(
         stage_name=LLMStageName.SCRIPT_REVIEW,

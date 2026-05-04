@@ -286,3 +286,35 @@ def test_continuity_gate_requires_storyboard_pages():
 
     with pytest.raises(ValueError, match="storyboard_pages"):
         asyncio.run(continuity_gate_stage.run(context))
+
+
+# ---------------------------------------------------------------------------
+# Phase 2.5 — fact-coverage data is surfaced on the QualityReport so the QA
+# panel can render "5/7 critical facts covered" without re-deriving it.
+# ---------------------------------------------------------------------------
+
+
+def test_continuity_gate_populates_grounded_and_missing_fact_ids():
+    """A storyboard that cites f001 against an arc that requires f001 + f002
+    should land grounded={f001}, missing={f002} on the report."""
+    arc = _arc(must_cover=["f001", "f002"])  # storyboard only cites f001
+    context = _context(pages=[_page()], arc=arc)
+
+    result = asyncio.run(continuity_gate_stage.run(context))
+
+    assert result.quality_report is not None
+    assert set(result.quality_report.grounded_fact_ids) == {"f001"}
+    assert set(result.quality_report.missing_fact_ids) == {"f002"}
+
+
+def test_continuity_gate_grounded_set_is_empty_when_no_arc_must_cover():
+    """When the arc has no must-cover list, the gate falls back to citing
+    every fact the storyboard mentions — useful coverage data, no warnings."""
+    arc = _arc(must_cover=["f001"])  # only f001 required, storyboard cites f001
+    context = _context(pages=[_page()], arc=arc)
+
+    result = asyncio.run(continuity_gate_stage.run(context))
+
+    assert result.quality_report is not None
+    assert result.quality_report.missing_fact_ids == []
+    assert "f001" in result.quality_report.grounded_fact_ids

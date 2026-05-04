@@ -12,6 +12,7 @@ from app.domain.manga import (
     BeatSheet,
     BookSynopsis,
     CharacterArtDirectionBundle,
+    CharacterVoiceCardBundle,
     CharacterWorldBible,
     ContinuityLedger,
     MangaAssetSpec,
@@ -63,6 +64,10 @@ class PipelineContext:
     # Read by character_asset_plan_stage and panel_rendering_stage so prompts
     # carry both the bible's identity lock AND the LLM's art direction.
     art_direction: CharacterArtDirectionBundle | None = None
+    # Phase 1 polish: per-character speech-style cards. Read by the script
+    # stage so each character keeps a distinct dialogue voice. Read-only at
+    # the slice tier — the bundle is authored once during book understanding.
+    voice_cards: CharacterVoiceCardBundle | None = None
     beat_sheet: BeatSheet | None = None
     manga_script: MangaScript | None = None
     # Phase A: editorial review of the generated script. Populated by
