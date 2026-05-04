@@ -52,6 +52,10 @@ class MangaProjectResponse(BaseModel):
     project: dict[str, Any]
 
 
+class MangaProjectsResponse(BaseModel):
+    projects: list[dict[str, Any]]
+
+
 class NextSourceSliceResponse(BaseModel):
     source_slice: dict[str, Any] | None
     fully_covered: bool
@@ -141,6 +145,16 @@ async def create_manga_project(book_id: str, request: CreateMangaProjectRequest)
         project_options=request.project_options,
     )
     return MangaProjectResponse(project=serialize_project(project))
+
+
+@router.get("/books/{book_id}/manga-projects", response_model=MangaProjectsResponse)
+async def list_book_manga_projects(book_id: str):
+    book = await Book.get(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    projects = await MangaProjectDoc.find(MangaProjectDoc.book_id == book_id).sort("-updated_at").to_list()
+    return MangaProjectsResponse(projects=[serialize_project(project) for project in projects])
 
 
 @router.get("/manga-projects/{project_id}", response_model=MangaProjectResponse)
