@@ -22,8 +22,10 @@ from app.domain.manga import (
     CharacterDesign,
     CharacterWorldBible,
     PanelPurpose,
+    PanelRenderArtifact,
     QualityIssue,
     QualityReport,
+    RenderedPage,
     ScriptLine,
     ShotType,
     StoryboardPage,
@@ -376,6 +378,65 @@ def _context_with_v4_pages_and_bible(
         options=options,
         character_bible=bible,
         v4_pages=[page],
+        # Phase 4.2: the gate now reads context.rendered_pages. Mirror
+        # the v4 panel into a typed RenderedPage / PanelRenderArtifact
+        # so the test exercises the same stage behaviour without having
+        # to author two parallel data structures by hand.
+        rendered_pages=[
+            _rendered_page_for_test(
+                panel_character_ids=panel_character_ids,
+                rendered=rendered_panels,
+                with_summary=with_summary,
+            )
+        ],
+    )
+
+
+def _rendered_page_for_test(
+    *, panel_character_ids: list[str], rendered: bool, with_summary: bool = True
+) -> RenderedPage:
+    """Build a RenderedPage that mirrors the v4 page used by the legacy helper.
+
+    ``with_summary=False`` represents the "image gen was off" branch: the
+    artifact stays in its empty default state (no path, no error). The
+    gate's short-circuit treats this as 'nothing to evaluate' — same
+    semantic as the old 'no renderer_summary present' short-circuit it
+    replaces.
+
+    ``rendered=False, with_summary=True`` represents the "renderer ran
+    but failed" branch: the artifact carries an error string and no
+    image_path. The gate enters its evaluation loop in that case.
+    """
+    panel = StoryboardPanel(
+        panel_id="p1",
+        scene_id="s1",
+        purpose=PanelPurpose.EXPLANATION,
+        shot_type=ShotType.MEDIUM,
+        composition="two characters facing off in mid-shot",
+        action="placeholder action so the panel validates",
+        narration="",
+        dialogue=[],
+        character_ids=list(panel_character_ids),
+    )
+    page = StoryboardPage(page_id="page-0", page_index=0, panels=[panel])
+    if not with_summary:
+        # "Image generation was off" — leave artifact empty so the gate
+        # short-circuits the same way it did when no renderer_summary
+        # was present.
+        artifact = PanelRenderArtifact(
+            requested_character_count=len({c for c in panel_character_ids if c}),
+        )
+    else:
+        artifact = PanelRenderArtifact(
+            image_path="manga_panels/proj/slice/page_00/p1.png" if rendered else "",
+            image_aspect_ratio="1:1" if rendered else "",
+            used_reference_assets=["alpha"] if rendered else [],
+            requested_character_count=len({c for c in panel_character_ids if c}),
+            error="" if rendered else "boom",
+        )
+    return RenderedPage(
+        storyboard_page=page,
+        panel_artifacts={"p1": artifact},
     )
 
 

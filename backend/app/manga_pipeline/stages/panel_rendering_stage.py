@@ -1,13 +1,17 @@
-"""Phase 4 stage — multimodal panel art rendering.
+"""Phase 4 stage \u2014 multimodal panel art rendering.
 
-Runs after ``storyboard_to_v4_stage``. Reads ``context.v4_pages`` (the V4 dicts
-produced by the storyboard mapper) and asks the panel-rendering service to
-populate ``image_path`` on each panel using multimodal image generation
-conditioned on the project's character library.
+Phase 4.2 rewrite: the stage now consumes ``context.rendered_pages``
+(typed RenderedPage / PanelRenderArtifact) directly. The image_path
+and reference assets land on each panel's typed
+``PanelRenderArtifact``; the legacy ``context.v4_pages`` dict list is
+kept in sync via a tail shadow loop so persistence and the V4 frontend
+keep working until the wire flip in Phase 4.5 deletes both. The
+shadow has a defined deletion point in the next phase \u2014 it is a
+migration bridge, not a permanent abstraction.
 
-The orchestrator only includes this stage when image generation is enabled
-AND an API key is configured. There is **no in-stage fallback**: by the time
-this stage runs, image rendering is the contract.
+The orchestrator only includes this stage when image generation is
+enabled AND an API key is configured. There is no in-stage fallback:
+by the time this stage runs, image rendering is the contract.
 """
 
 from __future__ import annotations
@@ -19,12 +23,40 @@ from app.manga_pipeline.context import PipelineContext
 logger = logging.getLogger(__name__)
 
 
+def _sync_v4_shadow(context: PipelineContext) -> None:
+    """Copy artifact metadata back onto context.v4_pages by panel_id.
+
+    Phase 4.5 deletes both this function and ``context.v4_pages``.
+    Until then, persistence (MangaPageDoc.v4_page) and the V4 frontend
+    expect the rendered image_path on the V4 dict, so we mirror it.
+    Match is on ``panel_id`` because the V4 mapper preserves storyboard
+    panel ids verbatim \u2014 there is no separate identifier space.
+    """
+    if not context.v4_pages:
+        return
+    artifact_by_panel_id = {
+        panel_id: artifact
+        for rendered_page in context.rendered_pages
+        for panel_id, artifact in rendered_page.panel_artifacts.items()
+    }
+    for v4_page in context.v4_pages:
+        for v4_panel in v4_page.get("panels", []) or []:
+            artifact = artifact_by_panel_id.get(v4_panel.get("panel_id"))
+            if artifact is None or not artifact.is_rendered:
+                continue
+            v4_panel["image_path"] = artifact.image_path
+            v4_panel["image_aspect_ratio"] = artifact.image_aspect_ratio
+
+
 async def run(context: PipelineContext) -> PipelineContext:
-    """Render every panel in ``context.v4_pages`` in place."""
+    """Render every panel in ``context.rendered_pages`` in place."""
     if context.character_bible is None:
         raise ValueError("panel rendering requires context.character_bible")
-    if not context.v4_pages:
-        raise ValueError("panel rendering requires context.v4_pages")
+    if not context.rendered_pages:
+        raise ValueError(
+            "panel rendering requires context.rendered_pages "
+            "(rendered_page_assembly_stage must run first)"
+        )
 
     image_api_key = context.options.get("image_api_key")
     if not image_api_key:
@@ -38,12 +70,12 @@ async def run(context: PipelineContext) -> PipelineContext:
     # Lazy imports: keeps the stage importable in tests that don't have the
     # service-layer transitively available.
     from app.services.manga.character_library_service import list_project_assets
-    from app.services.manga.panel_rendering_service import render_pages
+    from app.services.manga.storyboard_panel_renderer import render_rendered_pages
 
     library_assets = await list_project_assets(context.project_id)
 
-    summary = await render_pages(
-        pages=context.v4_pages,
+    summary = await render_rendered_pages(
+        rendered_pages=context.rendered_pages,
         project_id=context.project_id,
         slice_id=context.source_slice.slice_id,
         bible=context.character_bible,
@@ -55,7 +87,7 @@ async def run(context: PipelineContext) -> PipelineContext:
     )
 
     if summary.failed and not summary.rendered:
-        # Total failure is hard error — every panel failing means the model
+        # Total failure is hard error \u2014 every panel failing means the model
         # config is wrong; surface it rather than persist text-only pages.
         first_error = next((res.error for res in summary.results if res.error), "unknown")
         raise RuntimeError(
@@ -69,6 +101,11 @@ async def run(context: PipelineContext) -> PipelineContext:
             summary.total,
             context.source_slice.slice_id,
         )
+
+    # Mirror artifact metadata onto the legacy v4_pages dict list so
+    # persistence + frontend keep rendering during the Phase 4.5
+    # migration window. Deleted in 4.5 alongside context.v4_pages.
+    _sync_v4_shadow(context)
 
     # Stash the per-panel summary so the persistence layer can include it
     # in the slice doc's metadata for debugging without making it part of

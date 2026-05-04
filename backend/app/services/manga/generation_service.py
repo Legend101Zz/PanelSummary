@@ -41,6 +41,7 @@ from app.manga_pipeline.stages import (
     panel_rendering_stage,
     quality_gate_stage,
     quality_repair_stage,
+    rendered_page_assembly_stage,
     rtl_composition_validation_stage,
     script_repair_stage,
     script_review_stage,
@@ -230,6 +231,14 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         rtl_composition_validation_stage.run,
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
+        # Phase 4.2: assemble the typed RenderedPage surface the new
+        # rendering stage and quality gate consume. Sits AFTER
+        # storyboard_to_v4 (which still produces the legacy v4_pages
+        # shadow read by persistence + the V4 frontend until the wire
+        # flip in Phase 4.5) and BEFORE panel rendering. Pure
+        # projection: storyboard_pages + slice_composition →
+        # context.rendered_pages.
+        rendered_page_assembly_stage.run,
     ]
     if with_panel_rendering:
         stages.append(panel_rendering_stage.run)

@@ -238,8 +238,114 @@ Six commits. Each commit leaves the suite green and `tsc --noEmit` clean.
 * Convention noted: this repo has no `conftest.py`; every test file
   hand-inserts `backend/` onto `sys.path`. Followed the pattern.
 
+### 4.2 — storyboard-panel renderer + gate read RenderedPage ✅
+
+**Files added**
+* `app/services/manga/storyboard_panel_renderer.py` (354 lines) —
+  the new render path. Sits next to (not inside) the legacy
+  `panel_rendering_service.py` because that file is at 503 lines and
+  inlining the new path would push it past 600. The two are NOT
+  parallel APIs serving the same caller — legacy is the deprecated
+  path, the new file is the migration target. Both vanish into one
+  module again in 4.5 once the legacy path is deleted.
+  * `_SHOT_TYPE_ASPECT_RATIO`: 21:9 EXTREME_WIDE / 16:9 WIDE / 4:3
+    MEDIUM / 4:5 CLOSE_UP / 9:16 EXTREME_CLOSE_UP / 1:1 INSERT /
+    3:2 SYMBOLIC. Unknown shot types raise instead of defaulting to
+    1:1 — the entire reason 4.2 exists is that the old role-keyed
+    table silently flattened framing intent.
+  * `aspect_ratio_for_storyboard_panel(panel)` is the only allowed
+    accessor; the table itself is private.
+  * `build_storyboard_panel_prompt` includes `panel.purpose`,
+    `panel.shot_type`, AND `panel.composition` verbatim — the three
+    fields the V4 projection used to drop. Stable section order so
+    prompt diffs in production logs are content diffs, not layout
+    diffs.
+  * `render_rendered_pages` mutates each `PanelRenderArtifact` in
+    place AND returns the same `PageRenderingSummary` shape the QA
+    gate already consumes (so summary plumbing is unchanged).
+  * Helpers (`build_asset_lookup`,
+    `select_reference_paths_for_characters`, `build_panel_relative_path`,
+    `_bible_lock_block`, `_art_direction_recipe_block`,
+    `PanelRenderResult`, `PageRenderingSummary`) imported from the
+    legacy module — single source of truth, deleted in 4.5.
+
+* `tests/test_panel_pipeline_phase4_2_v2.py` (27 new tests):
+  * Assembly stage — 1:1 mapping, artifact slot per panel,
+    composition lookup by `page_index` (not list order), missing
+    composition tolerated, empty `storyboard_pages` raises.
+  * Aspect-ratio table — every `ShotType` enum value covered, table
+    keys equal the enum set (a coverage invariant; adding a variant
+    without updating the table fails the test).
+  * Prompt content — purpose/shot included, composition prose
+    verbatim, dialogue rendered with speaker + intent, bible lock
+    present per-character, unknown characters silently omitted (the
+    QA gate flags those, not the prompt builder).
+  * `evaluate_rendered_pages` — unknown character (error), no
+    reference attached (warning, not error — panel still ships),
+    success-without-path (error — wiring bug), failure-with-path
+    (error — wiring bug), clean render emits zero issues.
+  * `panel_rendering_stage` end-to-end (monkeypatched renderer +
+    tmp image_dir) — verifies artifacts get image_path AND the v4
+    shadow sync mirrors that path back onto the legacy v4 dict by
+    panel_id. Also verifies the stage raises when `rendered_pages`
+    is empty (wiring-bug guard, not a silent no-op).
+  * `panel_quality_gate_stage` — short-circuit fires when every
+    artifact is in default state (image gen was off), runs when any
+    artifact has been touched.
+
+**Files rewritten / extended**
+* `app/manga_pipeline/stages/panel_rendering_stage.py` (~135 lines) —
+  consumes `context.rendered_pages` directly. New `_sync_v4_shadow`
+  tail mirrors per-panel image_path / aspect_ratio onto
+  `context.v4_pages` keyed by `panel_id`. Both the helper and the
+  shadow are deleted in 4.5 alongside `context.v4_pages`. The stage
+  raises `ValueError` when `rendered_pages` is empty rather than
+  silently no-opping — 4.2 makes the assembly stage mandatory.
+* `app/manga_pipeline/stages/panel_quality_gate_stage.py` — added
+  `_evaluate_storyboard_panel` and `evaluate_rendered_pages` (typed
+  twins of the v4-shape evaluators, kept around so 4.5 has a clean
+  lift-and-delete). Rewrote `run()` to read from `rendered_pages`;
+  the short-circuit triggers off any artifact whose `is_rendered` or
+  `error` flag is set, so 'image gen was disabled' (every artifact in
+  default state) still no-ops the gate the same way the old
+  `_renderer_results` empty check did.
+* `app/services/manga/generation_service.py` — wired
+  `rendered_page_assembly_stage` into `build_v2_generation_stages`
+  AFTER `storyboard_to_v4_stage` (the legacy projection still runs
+  during the migration window so persistence + V4 frontend keep
+  working).
+
+**Test churn (existing tests adjusted, not deleted)**
+* `tests/test_panel_quality_gate_stage_v2.py`: helper
+  `_context_with_v4_pages_and_bible` now also populates a typed
+  `RenderedPage` mirroring the v4 panel — same input shape, both
+  surfaces. Added `_rendered_page_for_test` builder. Legacy v4-shape
+  unit tests for `_evaluate_panel` / `evaluate_v4_pages` keep
+  running (they pin the legacy helpers we keep until 4.5).
+* `tests/test_manga_generation_service_v2.py`: stage-order
+  expectation updated to include `rendered_page_assembly_stage`.
+
+**Result**
+* 370 passed (up from 343 baseline; +27 new). tsc clean.
+* No frontend changes — the v4 shadow keeps the V4 viewer happy.
+
 ## Next session pickup point
-* If this session ends mid-phase, the pickup is whichever of 4.1–4.6 is
-  open — each deliverable is independently green and committable. The
-  hardest one is 4.5 (wire flip + frontend); start fresh on it if it
-  hasn't been begun, never half-flip the wire.
+
+4.3 — shot-variety DSL validators (the editorial floor). Per the
+refined plan in this doc:
+
+* Add a slice-wide `shot_type` distribution check to the storyboard
+  DSL validator: warn when >70% of panels in a slice share the same
+  `shot_type`, and warn when zero panels have an `EXTREME_WIDE` or
+  `WIDE` 'establishing' beat at the start of a scene.
+* Land the checks in `app/services/manga/storyboard_validation*` (or
+  whichever module owns the DSL validator the gate calls) so they
+  flow through the existing `QualityReport` — do NOT invent a
+  parallel signal pipe.
+* Tests in a fresh `tests/test_shot_variety_dsl_v2.py`.
+
+Do NOT start 4.4 (production-grade storyboarder prompt) until 4.3 is
+in place — 4.3's warnings are how we'll measure whether 4.4's prompt
+actually moves the needle on shot variety. Definitely do NOT start
+4.5 (wire flip) yet; 4.3 + 4.4 want to ride the v4 shadow first so
+we can A/B-eyeball generations side-by-side.

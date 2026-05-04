@@ -115,6 +115,11 @@ def test_build_v2_generation_stages_has_expected_order():
         "rtl_composition_validation_stage",
         "character_asset_plan_stage",
         "storyboard_to_v4_stage",
+        # Phase 4.2: assemble the typed RenderedPage surface the new
+        # rendering stage and quality gate consume. Sits AFTER the
+        # legacy v4 mapping (which still produces the v4_pages shadow
+        # persistence + the V4 frontend read until 4.5).
+        "rendered_page_assembly_stage",
     ]
 
 

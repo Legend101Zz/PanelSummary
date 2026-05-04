@@ -33,7 +33,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.domain.manga import QualityIssue, QualityReport
+from app.domain.manga import (
+    PanelRenderArtifact,
+    QualityIssue,
+    QualityReport,
+    RenderedPage,
+    StoryboardPanel,
+)
 from app.manga_pipeline.context import PipelineContext
 
 logger = logging.getLogger(__name__)
@@ -175,6 +181,115 @@ def evaluate_v4_pages(
     return issues
 
 
+def _evaluate_storyboard_panel(
+    *,
+    panel: StoryboardPanel,
+    artifact: PanelRenderArtifact | None,
+    page_index: int,
+    bible_ids: set[str],
+) -> list[QualityIssue]:
+    """Phase 4.2 — the typed twin of ``_evaluate_panel``.
+
+    Same three checks (unknown character, no reference attached, render
+    success/failure invariants) but reads from typed fields so the gate
+    cannot disagree with the renderer about what was attempted.
+    ``artifact`` is ``None`` when the orchestrator scheduled the gate
+    without rendering — the run() handler short-circuits before
+    reaching here, so reaching this branch with None means a wiring
+    bug and we treat it as 'no artifact' (only character checks fire).
+    """
+    issues: list[QualityIssue] = []
+    panel_id = panel.panel_id or f"page{page_index}_panel?"
+    character_ids = [cid.strip() for cid in panel.character_ids if cid and cid.strip()]
+
+    # 1. Storyboarder hallucinations — character_ids the bible doesn't
+    #    define mean the renderer could never have found a reference.
+    if bible_ids:
+        for cid in character_ids:
+            if cid not in bible_ids:
+                issues.append(
+                    _issue(
+                        "error",
+                        "panel_unknown_character",
+                        f"Panel references character '{cid}' which is not in the character bible.",
+                        panel_id,
+                    )
+                )
+
+    if artifact is None:
+        return issues
+
+    # 2. Renderer-result vs claimed-presence consistency. If the panel
+    #    rendered cleanly but no reference assets were attached AND the
+    #    storyboard said characters were on-stage, the painted character
+    #    will drift. Warning, not error — the panel still ships.
+    if not artifact.error and character_ids and not artifact.used_reference_assets:
+        issues.append(
+            _issue(
+                "warning",
+                "panel_no_reference_attached",
+                (
+                    "Panel claimed visible characters but no reference "
+                    "sheets were attached; painted character may drift."
+                ),
+                panel_id,
+            )
+        )
+
+    # 3. Render success/failure invariants. Cleanly rendered panels MUST
+    #    carry an image_path; failed panels must NOT. Either inconsistency
+    #    is a bug in the persistence path, not user-fixable.
+    has_path = bool(artifact.image_path)
+    had_error = bool(artifact.error)
+    if had_error and has_path:
+        issues.append(
+            _issue(
+                "error",
+                "panel_failed_but_has_path",
+                "Panel rendering reported failure yet image_path was set.",
+                panel_id,
+            )
+        )
+    if not had_error and not has_path:
+        issues.append(
+            _issue(
+                "error",
+                "panel_rendered_without_path",
+                "Panel rendering reported success but image_path is missing.",
+                panel_id,
+            )
+        )
+    return issues
+
+
+def evaluate_rendered_pages(
+    *,
+    rendered_pages: list[RenderedPage],
+    bible_ids: set[str],
+) -> list[QualityIssue]:
+    """Walk every panel on every rendered page and collect quality issues.
+
+    Phase 4.2: the typed twin of ``evaluate_v4_pages``. Reads the panel
+    artifact straight off the ``RenderedPage`` instead of joining the
+    renderer-summary results list back to the V4 dict by panel_id. One
+    fewer place where the gate and the renderer can disagree.
+    """
+    issues: list[QualityIssue] = []
+    for rendered_page in rendered_pages:
+        page_index = rendered_page.storyboard_page.page_index
+        for panel in rendered_page.storyboard_page.panels:
+            artifact = rendered_page.panel_artifacts.get(panel.panel_id)
+            issues.extend(
+                _evaluate_storyboard_panel(
+                    panel=panel,
+                    artifact=artifact,
+                    page_index=page_index,
+                    bible_ids=bible_ids,
+                )
+            )
+    return issues
+
+
 def _merge_into_report(
     existing: QualityReport | None,
     new_issues: list[QualityIssue],
@@ -200,22 +315,29 @@ def _merge_into_report(
 
 async def run(context: PipelineContext) -> PipelineContext:
     """Inspect rendered panels for structural defects; mutate quality report."""
-    if not context.v4_pages:
+    if not context.rendered_pages:
         # Nothing to evaluate; an upstream stage failed loudly already.
         return context
 
-    renderer_results = _renderer_results(context)
-    if not renderer_results:
-        # Image generation was not scheduled for this run \u2014 nothing to do.
-        # We do NOT inject "image gen disabled" issues because that's a
-        # project-level decision, not a slice-level defect.
+    # Phase 4.2: detect whether image generation actually ran by
+    # asking the typed artifacts directly. If every artifact is still
+    # in its empty default state, the orchestrator skipped panel
+    # rendering for this run and there are no result-derived defects
+    # to surface. Character-id sanity could still be checked here, but
+    # the storyboard quality_gate_stage already covers that on the
+    # scriptside; skipping prevents duplicate issues in the report.
+    rendered_or_errored = any(
+        artifact.is_rendered or bool(artifact.error)
+        for rendered_page in context.rendered_pages
+        for artifact in rendered_page.panel_artifacts.values()
+    )
+    if not rendered_or_errored:
         return context
 
     bible_ids = _bible_character_ids(context)
-    new_issues = evaluate_v4_pages(
-        v4_pages=context.v4_pages,
+    new_issues = evaluate_rendered_pages(
+        rendered_pages=context.rendered_pages,
         bible_ids=bible_ids,
-        renderer_results=renderer_results,
     )
     # Phase 3.3: surface the slice-wide sprite-bank hit-rate as a single
     # warning when it dips below the threshold. We piggyback on the

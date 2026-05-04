@@ -18,6 +18,7 @@ from app.domain.manga import (
     MangaAssetSpec,
     MangaScript,
     QualityReport,
+    RenderedPage,
     ScriptReviewReport,
     SliceComposition,
     SourceFact,
@@ -81,6 +82,14 @@ class PipelineContext:
     slice_composition: SliceComposition | None = None
     asset_specs: list[MangaAssetSpec] = field(default_factory=list)
     v4_pages: list[dict[str, Any]] = field(default_factory=list)
+    # Phase 4.2: typed end-to-end render contract. Authored by the
+    # rendered_page_assembly_stage by zipping storyboard_pages +
+    # slice_composition; mutated in place by panel_rendering_stage as
+    # each panel's PanelRenderArtifact gets its image_path. The v4_pages
+    # list above is a transitional shadow kept in sync at the end of
+    # rendering so persistence + the V4 frontend keep working until the
+    # wire flip in 4.5; both are deleted then.
+    rendered_pages: list[RenderedPage] = field(default_factory=list)
     quality_report: QualityReport | None = None
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
 
