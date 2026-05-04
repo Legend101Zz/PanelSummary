@@ -15,6 +15,7 @@ from app.domain.manga import (
     AdaptationPlan,
     ArcOutline,
     BookSynopsis,
+    CharacterArtDirectionBundle,
     CharacterWorldBible,
     MangaAssetSpec,
     SliceRole,
@@ -32,6 +33,7 @@ from app.manga_pipeline.stages import (
     character_world_bible_stage,
     dsl_validation_stage,
     manga_script_stage,
+    panel_rendering_stage,
     quality_gate_stage,
     quality_repair_stage,
     source_fact_extraction_stage,
@@ -147,6 +149,8 @@ def _hydrate_book_artifacts_into_context(
         context.adaptation_plan = AdaptationPlan(**project.adaptation_plan)
     if project.character_world_bible:
         context.character_bible = CharacterWorldBible(**project.character_world_bible)
+    if project.character_art_direction:
+        context.art_direction = CharacterArtDirectionBundle(**project.character_art_direction)
     if project.arc_outline:
         context.arc_outline = ArcOutline(**project.arc_outline)
     context.bible_locked = bool(project.bible_locked)
@@ -171,15 +175,20 @@ def build_generation_options(
     return options
 
 
-def build_v2_generation_stages():
+def build_v2_generation_stages(*, with_panel_rendering: bool = False):
     """Return the ordered production v2 manga generation stages.
 
     The DSL validation stage sits BETWEEN storyboard and the first quality
     gate so that DSL violations (panel count, dialogue budget, anchor facts,
     shot variety) are merged into the same ``QualityReport`` the existing
     repair stage already consumes. We do not invent a parallel issue type.
+
+    Phase 4: when ``with_panel_rendering`` is True, the multimodal panel
+    rendering stage is appended. The orchestrator (not the stage) decides
+    whether image generation is in scope, so the stage list itself reflects
+    that choice — there is no in-stage "is image gen on?" branch.
     """
-    return [
+    stages = [
         source_fact_extraction_stage.run,
         adaptation_plan_stage.run,
         character_world_bible_stage.run,
@@ -194,6 +203,9 @@ def build_v2_generation_stages():
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
     ]
+    if with_panel_rendering:
+        stages.append(panel_rendering_stage.run)
+    return stages
 
 
 async def _emit_progress(
@@ -357,6 +369,13 @@ async def generate_project_slice(
         source_has_more=source_has_more,
         extra_options={**(extra_options or {}), "source_text": source_text},
     )
+    # Phase 4: surface the image API key into the context so the panel
+    # rendering stage can pick it up. The stage stays pure (no globals); the
+    # orchestrator decides whether to schedule it AND whether to share the
+    # key, in one place.
+    should_render_panel_art = bool(options.get("generate_images")) and bool(image_api_key)
+    if should_render_panel_art:
+        options["image_api_key"] = image_api_key
     context = PipelineContext(
         book_id=str(book.id),
         project_id=str(project.id),
@@ -372,7 +391,7 @@ async def generate_project_slice(
         # the headline beat, must-cover facts, and closing hook directly.
         context.arc_entry = arc_plan.arc_entry
 
-    stages = build_v2_generation_stages()
+    stages = build_v2_generation_stages(with_panel_rendering=should_render_panel_art)
 
     async def report_stage(completed: int, total: int, label: str) -> None:
         progress = 10 + int((completed / max(total, 1)) * 70)

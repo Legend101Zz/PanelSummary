@@ -32,6 +32,11 @@ class MangaProjectDoc(Document):
     arc_outline: dict[str, Any] = Field(default_factory=dict)
     adaptation_plan: dict[str, Any] = Field(default_factory=dict)
     character_world_bible: dict[str, Any] = Field(default_factory=dict)
+    # Phase 3: LLM-authored art direction enrichment of the bible.
+    # The bible owns IDENTITY (visual_lock, silhouette, outfit). The art
+    # direction owns RENDERING INTENT (lens, lighting, color story, expression
+    # repertoire). Both layers are spliced into every prompt — defense in depth.
+    character_art_direction: dict[str, Any] = Field(default_factory=dict)
     fact_registry: list[dict[str, Any]] = Field(default_factory=list)
     continuity_ledger: dict[str, Any] = Field(default_factory=dict)
     coverage: dict[str, Any] = Field(default_factory=dict)

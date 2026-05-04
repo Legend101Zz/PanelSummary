@@ -16,6 +16,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.domain.manga import (
+    CharacterArtDirectionBundle,
     CharacterDesign,
     CharacterWorldBible,
     MangaAssetSpec,
@@ -130,21 +131,26 @@ async def ensure_book_character_sheets(
     *,
     project: MangaProjectDoc,
     bible: CharacterWorldBible,
+    art_direction: CharacterArtDirectionBundle | None = None,
     image_api_key: str | None = None,
     progress_callback: SheetProgressCallback | None = None,
     options: CharacterSheetPlanOptions | None = None,
 ) -> list[MangaAssetDoc]:
     """Idempotently materialize the book-level character sheets.
 
-    Calling twice with the same bible is a no-op. Calling with a bible that
-    introduces a new character only generates that character's sheets. This
-    is the function the book-understanding service calls after the bible is
-    locked, and the same function the API endpoint calls when the user
-    explicitly asks for sheets.
+    Calling twice with the same bible+art_direction is a no-op. When the bible
+    introduces a new character, only that character's sheets are generated.
+
+    The ``art_direction`` argument carries the LLM-authored rendering intent
+    (lens, lighting, color story, expression repertoire). When omitted (legacy
+    projects), the planner emits a degraded plan based on the bible alone.
+    The bible's visual_lock is mechanically appended to every prompt either
+    way.
     """
     plan = plan_book_character_sheets(
         bible=bible,
         project_id=str(project.id),
+        art_direction=art_direction,
         options=options,
     )
     existing_ids = await existing_asset_id_set(str(project.id))
@@ -194,6 +200,7 @@ async def asset_specs_for_project(
     *,
     project: MangaProjectDoc,
     bible: CharacterWorldBible,
+    art_direction: CharacterArtDirectionBundle | None = None,
 ) -> list[MangaAssetSpec]:
     """Return the typed spec list that matches the project's persisted library.
 
@@ -204,5 +211,9 @@ async def asset_specs_for_project(
     prose if the bible was unlocked + edited (which today only happens
     behind a force flag, but the design supports it).
     """
-    plan = plan_book_character_sheets(bible=bible, project_id=str(project.id))
+    plan = plan_book_character_sheets(
+        bible=bible,
+        project_id=str(project.id),
+        art_direction=art_direction,
+    )
     return list(plan.assets)

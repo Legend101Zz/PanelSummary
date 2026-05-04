@@ -11,6 +11,7 @@ from app.domain.manga import (
     ArcSliceEntry,
     BeatSheet,
     BookSynopsis,
+    CharacterArtDirectionBundle,
     CharacterWorldBible,
     ContinuityLedger,
     MangaAssetSpec,
@@ -56,6 +57,10 @@ class PipelineContext:
 
     adaptation_plan: AdaptationPlan | None = None
     character_bible: CharacterWorldBible | None = None
+    # Phase 3: LLM-authored rendering intent for every bible character.
+    # Read by character_asset_plan_stage and panel_rendering_stage so prompts
+    # carry both the bible's identity lock AND the LLM's art direction.
+    art_direction: CharacterArtDirectionBundle | None = None
     beat_sheet: BeatSheet | None = None
     manga_script: MangaScript | None = None
     storyboard_pages: list[StoryboardPage] = field(default_factory=list)

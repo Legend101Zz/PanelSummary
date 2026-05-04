@@ -7,6 +7,11 @@ from app.domain.manga.book_understanding import (
     BookSynopsis,
     BookUnderstandingBundle,
 )
+from app.domain.manga.art_direction import (
+    CharacterArtDirection,
+    CharacterArtDirectionBundle,
+    ExpressionDirection,
+)
 from app.domain.manga.artifacts import (
     AdaptationPlan,
     Beat,
@@ -62,11 +67,14 @@ __all__ = [
     "BookUnderstandingBundle",
     "Beat",
     "BeatSheet",
+    "CharacterArtDirection",
+    "CharacterArtDirectionBundle",
     "CharacterAssetPlan",
     "CharacterDesign",
     "CharacterContinuityState",
     "CharacterWorldBible",
     "EmotionalTone",
+    "ExpressionDirection",
     "ContinuityLedger",
     "CurrentStoryState",
     "FactImportance",

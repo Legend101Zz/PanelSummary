@@ -20,6 +20,7 @@ from app.domain.manga import (
     AdaptationPlan,
     ArcOutline,
     BookSynopsis,
+    CharacterArtDirectionBundle,
     CharacterWorldBible,
     SourceFact,
 )
@@ -39,6 +40,7 @@ class BookUnderstandingResult:
     fact_registry: list[SourceFact]
     adaptation_plan: AdaptationPlan
     character_bible: CharacterWorldBible
+    art_direction: CharacterArtDirectionBundle
     arc_outline: ArcOutline
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
 
@@ -72,6 +74,7 @@ class BookUnderstandingContext:
     fact_registry: list[SourceFact] = field(default_factory=list)
     adaptation_plan: AdaptationPlan | None = None
     character_bible: CharacterWorldBible | None = None
+    art_direction: CharacterArtDirectionBundle | None = None
     arc_outline: ArcOutline | None = None
 
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
@@ -87,6 +90,10 @@ class BookUnderstandingContext:
             raise RuntimeError("book understanding result requires an adaptation plan")
         if self.character_bible is None:
             raise RuntimeError("book understanding result requires a character bible")
+        if self.art_direction is None:
+            raise RuntimeError(
+                "book understanding result requires LLM-authored art direction"
+            )
         if self.arc_outline is None:
             raise RuntimeError("book understanding result requires an arc outline")
         if not self.fact_registry:
@@ -96,6 +103,7 @@ class BookUnderstandingContext:
             fact_registry=list(self.fact_registry),
             adaptation_plan=self.adaptation_plan,
             character_bible=self.character_bible,
+            art_direction=self.art_direction,
             arc_outline=self.arc_outline,
             llm_traces=list(self.llm_traces),
         )

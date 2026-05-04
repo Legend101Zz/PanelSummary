@@ -32,6 +32,7 @@ from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 from app.manga_pipeline.stages.book import (
     arc_outline_stage,
     book_fact_registry_stage,
+    character_art_direction_stage,
     global_adaptation_plan_stage,
     global_character_world_bible_stage,
     whole_book_synopsis_stage,
@@ -52,6 +53,10 @@ def build_book_understanding_stages():
         book_fact_registry_stage.run,
         global_adaptation_plan_stage.run,
         global_character_world_bible_stage.run,
+        # Art direction depends on the bible being locked. It runs BEFORE the
+        # arc outline because the outline doesn't need it; ordering is set by
+        # actual data dependency, not aesthetics.
+        character_art_direction_stage.run,
         arc_outline_stage.run,
     ]
 
@@ -121,6 +126,7 @@ def _persist_understanding_to_project(
     project.fact_registry = [fact.model_dump(mode="json") for fact in result.fact_registry]
     project.adaptation_plan = result.adaptation_plan.model_dump(mode="json")
     project.character_world_bible = result.character_bible.model_dump(mode="json")
+    project.character_art_direction = result.art_direction.model_dump(mode="json")
     project.arc_outline = result.arc_outline.model_dump(mode="json")
     project.book_understanding_traces = [serialize_llm_trace(trace) for trace in result.llm_traces]
     project.bible_locked = True
@@ -141,6 +147,8 @@ def project_understanding_is_ready(project: MangaProjectDoc) -> bool:
     if not project.adaptation_plan:
         return False
     if not project.character_world_bible:
+        return False
+    if not project.character_art_direction:
         return False
     if not project.arc_outline:
         return False
@@ -266,6 +274,7 @@ async def generate_book_understanding(
     await ensure_book_character_sheets(
         project=project,
         bible=result.character_bible,
+        art_direction=result.art_direction,
         image_api_key=image_api_key,
     )
     await _emit_progress(progress_callback, 100, "Book understanding complete.", "ready")
@@ -278,6 +287,7 @@ def _hydrate_existing_result(project: MangaProjectDoc) -> BookUnderstandingResul
         AdaptationPlan,
         ArcOutline,
         BookSynopsis,
+        CharacterArtDirectionBundle,
         CharacterWorldBible,
         SourceFact,
     )
@@ -287,6 +297,7 @@ def _hydrate_existing_result(project: MangaProjectDoc) -> BookUnderstandingResul
         fact_registry=[SourceFact(**fact) for fact in project.fact_registry],
         adaptation_plan=AdaptationPlan(**project.adaptation_plan),
         character_bible=CharacterWorldBible(**project.character_world_bible),
+        art_direction=CharacterArtDirectionBundle(**project.character_art_direction),
         arc_outline=ArcOutline(**project.arc_outline),
         llm_traces=[],
     )

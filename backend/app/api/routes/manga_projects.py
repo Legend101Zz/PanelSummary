@@ -13,7 +13,7 @@ from beanie.operators import In
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.domain.manga import CharacterWorldBible, SourceSlice
+from app.domain.manga import CharacterArtDirectionBundle, CharacterWorldBible, SourceSlice
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
 from app.services.manga import (
@@ -263,10 +263,16 @@ async def materialize_character_sheets(
         )
 
     bible = CharacterWorldBible(**project.character_world_bible)
+    art_direction = (
+        CharacterArtDirectionBundle(**project.character_art_direction)
+        if project.character_art_direction
+        else None
+    )
     before = await list_project_assets(str(project.id))
     after = await ensure_book_character_sheets(
         project=project,
         bible=bible,
+        art_direction=art_direction,
         image_api_key=request.image_api_key,
     )
     return CharacterSheetsResponse(

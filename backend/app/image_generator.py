@@ -125,6 +125,119 @@ async def generate_image_with_model(
     return False
 
 
+async def generate_image_with_references(
+    *,
+    prompt: str,
+    reference_image_paths: list[str],
+    api_key: str,
+    output_path: str,
+    image_model: str,
+    aspect_ratio: str = "1:1",
+) -> bool:
+    """Generate an image using one or more reference PNGs as multimodal input.
+
+    The Gemini Nano Banana family on OpenRouter accepts ``image_url`` parts in
+    the chat message, which is exactly what we need to feed character sprite
+    sheets as visual conditioning when rendering a panel. The model uses the
+    references to keep characters visually consistent across panels without
+    us having to fine-tune anything.
+
+    Failure modes (no silent fallback):
+    - The selected model is not on the multimodal allow-list -> raise.
+    - A reference image path doesn't exist -> raise.
+    - The model call returns no image -> return False (caller decides).
+    """
+    if "gemini" not in image_model:
+        # Only Gemini image models on OpenRouter accept image_url inputs today.
+        # Adding a non-multimodal model here would silently drop the references
+        # and produce a panel that ignores the character library.
+        raise ValueError(
+            f"image model '{image_model}' is not multimodal; cannot accept reference images"
+        )
+
+    content_parts: list[dict[str, object]] = [{"type": "text", "text": prompt[:1500]}]
+    for ref_path in reference_image_paths:
+        if not os.path.exists(ref_path):
+            raise FileNotFoundError(f"reference image not found: {ref_path}")
+        with open(ref_path, "rb") as fp:
+            ref_b64 = base64.b64encode(fp.read()).decode("ascii")
+        content_parts.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{ref_b64}"},
+            }
+        )
+
+    payload = {
+        "model": image_model,
+        "messages": [{"role": "user", "content": content_parts}],
+        "modalities": ["image", "text"],
+        "image_config": {"aspect_ratio": aspect_ratio},
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "HTTP-Referer": "https://panelsummary.app",
+                "X-Title": "PanelSummary",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+
+    if resp.status_code != 200:
+        logger.warning(
+            "OpenRouter multimodal image %s HTTP %s: %s",
+            image_model,
+            resp.status_code,
+            resp.text[:200],
+        )
+        return False
+
+    data = resp.json()
+    choices = data.get("choices", [])
+    if not choices:
+        return False
+
+    message = choices[0].get("message", {})
+    image_urls: list[str] = []
+    for image in message.get("images", []) or []:
+        url = image.get("image_url", {}).get("url", "")
+        if url:
+            image_urls.append(url)
+    response_content = message.get("content", "")
+    if isinstance(response_content, list):
+        for part in response_content:
+            if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
+                url = (part.get("image_url") or {}).get("url", "")
+                if url:
+                    image_urls.append(url)
+
+    for img_url in image_urls:
+        if img_url.startswith("data:image"):
+            _, b64 = img_url.split(",", 1)
+            img_bytes = base64.b64decode(b64)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "wb") as fp:
+                fp.write(img_bytes)
+            logger.info(
+                "Multimodal panel image saved (%sKB) via %s with %s reference(s): %s",
+                len(img_bytes) // 1024,
+                image_model,
+                len(reference_image_paths),
+                output_path,
+            )
+            return True
+
+    logger.warning(
+        "No image payload returned from multimodal image model %s",
+        image_model,
+    )
+    return False
+
+
 async def generate_panel_image(
     visual_description: str,
     style: str,
