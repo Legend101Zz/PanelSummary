@@ -146,8 +146,9 @@ Implemented concrete v2 LLM stages:
 - `character_asset_plan_stage.py`
 
 Concrete LLM-backed stage adapters are now in place for the v2 backend spine.
-Next implementation step is the image-model execution layer that consumes
-`MangaAssetSpec` records and stores generated reusable character sheets/variants.
+The first image-model execution layer now consumes `MangaAssetSpec` records and
+stores generated reusable character sheets/variants when `generate_images=true`.
+It is strict by design: no local placeholder fallback and no silent model switch.
 
 Each adapter uses the structured contract runner and is unit verified with a
 fake model before being wired into real jobs.

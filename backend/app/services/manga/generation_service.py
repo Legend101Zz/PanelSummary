@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from app.domain.manga import ContinuityLedger, SliceRole, SourceFact, SourceSlice, update_ledger_after_slice
-from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
+from app.manga_models import MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.manga_pipeline import PipelineContext, run_pipeline_context
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 from app.manga_pipeline.stages import (
@@ -26,6 +26,7 @@ from app.manga_pipeline.stages import (
     storyboard_to_v4_stage,
 )
 from app.models import Book, BookChapter, BookSection
+from app.services.manga.asset_image_service import generate_asset_image_doc, persist_asset_prompt_doc
 from app.services.manga.project_service import load_project_ledger
 from app.services.manga.source_slice_service import choose_next_page_slice
 
@@ -150,6 +151,7 @@ async def generate_project_slice(
     book: Book,
     llm_client: LLMModelClient,
     page_window: int = 10,
+    image_api_key: str | None = None,
     extra_options: dict[str, Any] | None = None,
 ) -> tuple[MangaSliceDoc, list[MangaPageDoc]]:
     """Generate, validate, render, and persist the next manga source slice."""
@@ -220,18 +222,25 @@ async def generate_project_slice(
         await page_doc.insert()
         page_docs.append(page_doc)
 
+    should_generate_images = bool(options.get("generate_images"))
+    if should_generate_images and not image_api_key:
+        raise ValueError("character asset image generation requires an image_api_key")
     for asset in final_context.asset_specs:
-        asset_doc = MangaAssetDoc(
-            project_id=str(project.id),
-            character_id=asset.character_id,
-            asset_type=asset.asset_type,
-            expression=asset.expression,
-            image_path=asset.image_path,
-            prompt=asset.prompt,
-            model=asset.model or str(options.get("image_model") or ""),
-            metadata={"asset_id": asset.asset_id},
-        )
-        await asset_doc.insert()
+        if should_generate_images:
+            await generate_asset_image_doc(
+                project_id=str(project.id),
+                asset=asset,
+                api_key=image_api_key or "",
+                style=str(options.get("style", project.style)),
+                image_model=str(options.get("image_model")) if options.get("image_model") else None,
+            )
+        else:
+            await persist_asset_prompt_doc(
+                project_id=str(project.id),
+                asset=asset,
+                style=str(options.get("style", project.style)),
+                image_model=str(options.get("image_model")) if options.get("image_model") else None,
+            )
 
     updated_ledger = update_ledger_after_slice(
         ledger,

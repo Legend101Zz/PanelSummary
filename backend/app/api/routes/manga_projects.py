@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from app.domain.manga import SourceSlice
 from app.llm_client import LLMClient
-from app.manga_models import MangaPageDoc, MangaProjectDoc, MangaSliceDoc
+from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, ProcessingStatus
 from app.services.manga import (
     choose_next_page_slice,
@@ -43,6 +43,8 @@ class GenerateMangaSliceRequest(BaseModel):
     provider: str = "openai"
     model: str | None = None
     page_window: int = Field(default=10, ge=1, le=100)
+    generate_images: bool = False
+    image_model: str | None = None
     options: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -67,6 +69,10 @@ class MangaProjectSlicesResponse(BaseModel):
 
 class MangaProjectPagesResponse(BaseModel):
     pages: list[dict[str, Any]]
+
+
+class MangaProjectAssetsResponse(BaseModel):
+    assets: list[dict[str, Any]]
 
 
 def _serialize_source_slice(source_slice: SourceSlice | None) -> dict[str, Any] | None:
@@ -101,6 +107,21 @@ def _serialize_page_doc(page: MangaPageDoc) -> dict[str, Any]:
         "source_range": page.source_range,
         "v4_page": page.v4_page,
         "created_at": page.created_at.isoformat(),
+    }
+
+
+def _serialize_asset_doc(asset: MangaAssetDoc) -> dict[str, Any]:
+    return {
+        "id": str(asset.id),
+        "project_id": asset.project_id,
+        "character_id": asset.character_id,
+        "asset_type": asset.asset_type,
+        "expression": asset.expression,
+        "image_path": asset.image_path,
+        "prompt": asset.prompt,
+        "model": asset.model,
+        "metadata": asset.metadata,
+        "created_at": asset.created_at.isoformat(),
     }
 
 
@@ -148,6 +169,16 @@ async def list_manga_project_pages(project_id: str):
 
     pages = await MangaPageDoc.find(MangaPageDoc.project_id == project_id).sort("page_index").to_list()
     return MangaProjectPagesResponse(pages=[_serialize_page_doc(page) for page in pages])
+
+
+@router.get("/manga-projects/{project_id}/assets", response_model=MangaProjectAssetsResponse)
+async def list_manga_project_assets(project_id: str):
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+
+    assets = await MangaAssetDoc.find(MangaAssetDoc.project_id == project_id).sort("character_id").to_list()
+    return MangaProjectAssetsResponse(assets=[_serialize_asset_doc(asset) for asset in assets])
 
 
 @router.post("/manga-projects/{project_id}/next-source-slice", response_model=NextSourceSliceResponse)
@@ -199,12 +230,17 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
         model=request.model,
     )
     try:
+        generation_options = dict(request.options)
+        generation_options["generate_images"] = request.generate_images
+        if request.image_model:
+            generation_options["image_model"] = request.image_model
         slice_doc, page_docs = await generate_project_slice(
             project=project,
             book=book,
             llm_client=llm_client,
             page_window=request.page_window,
-            extra_options=request.options,
+            image_api_key=request.api_key,
+            extra_options=generation_options,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

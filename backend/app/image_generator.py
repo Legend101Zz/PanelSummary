@@ -51,6 +51,80 @@ STYLE_SUFFIXES = {
 }
 
 
+async def generate_image_with_model(
+    *,
+    prompt: str,
+    api_key: str,
+    output_path: str,
+    image_model: str,
+    aspect_ratio: str = "1:1",
+) -> bool:
+    """Generate an image with exactly the requested model.
+
+    Manga v2 uses this strict helper for reusable character assets. It avoids
+    silently switching models because visual consistency matters more than
+    returning "some" image. If the selected model fails, the caller can surface a
+    clear asset-generation error instead of hiding quality drift.
+    """
+    modalities = ["image", "text"] if "gemini" in image_model else ["image"]
+    payload = {
+        "model": image_model,
+        "messages": [{"role": "user", "content": prompt[:1200]}],
+        "modalities": modalities,
+    }
+    if "gemini" in image_model:
+        payload["image_config"] = {"aspect_ratio": aspect_ratio}
+
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        resp = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "HTTP-Referer": "https://panelsummary.app",
+                "X-Title": "PanelSummary",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+
+    if resp.status_code != 200:
+        logger.warning("OpenRouter image %s HTTP %s: %s", image_model, resp.status_code, resp.text[:200])
+        return False
+
+    data = resp.json()
+    choices = data.get("choices", [])
+    if not choices:
+        return False
+
+    message = choices[0].get("message", {})
+    image_urls: list[str] = []
+    for image in message.get("images", []) or []:
+        url = image.get("image_url", {}).get("url", "")
+        if url:
+            image_urls.append(url)
+
+    content = message.get("content", "")
+    if isinstance(content, list):
+        for part in content:
+            if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
+                url = (part.get("image_url") or {}).get("url", "")
+                if url:
+                    image_urls.append(url)
+
+    for img_url in image_urls:
+        if img_url.startswith("data:image"):
+            _, b64 = img_url.split(",", 1)
+            img_bytes = base64.b64decode(b64)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "wb") as f:
+                f.write(img_bytes)
+            logger.info("Strict image saved (%sKB) via %s: %s", len(img_bytes) // 1024, image_model, output_path)
+            return True
+
+    logger.warning("No image payload returned from strict image model %s", image_model)
+    return False
+
+
 async def generate_panel_image(
     visual_description: str,
     style: str,
