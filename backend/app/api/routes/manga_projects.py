@@ -13,10 +13,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.domain.manga import SourceSlice
+from app.llm_client import LLMClient
 from app.manga_models import MangaProjectDoc
 from app.models import Book, ProcessingStatus
 from app.services.manga import (
     choose_next_page_slice,
+    generate_project_slice,
     get_or_create_project,
     load_project_ledger,
     serialize_project,
@@ -36,6 +38,14 @@ class NextSourceSliceRequest(BaseModel):
     page_window: int = Field(default=10, ge=1, le=100)
 
 
+class GenerateMangaSliceRequest(BaseModel):
+    api_key: str = Field(min_length=1)
+    provider: str = "openai"
+    model: str | None = None
+    page_window: int = Field(default=10, ge=1, le=100)
+    options: dict[str, Any] = Field(default_factory=dict)
+
+
 class MangaProjectResponse(BaseModel):
     project: dict[str, Any]
 
@@ -43,6 +53,12 @@ class MangaProjectResponse(BaseModel):
 class NextSourceSliceResponse(BaseModel):
     source_slice: dict[str, Any] | None
     fully_covered: bool
+
+
+class GenerateMangaSliceResponse(BaseModel):
+    project: dict[str, Any]
+    slice: dict[str, Any]
+    pages: list[dict[str, Any]]
 
 
 def _serialize_source_slice(source_slice: SourceSlice | None) -> dict[str, Any] | None:
@@ -99,4 +115,68 @@ async def preview_next_source_slice(project_id: str, request: NextSourceSliceReq
     return NextSourceSliceResponse(
         source_slice=_serialize_source_slice(source_slice),
         fully_covered=source_slice is None,
+    )
+
+
+@router.post("/manga-projects/{project_id}/generate-slice", response_model=GenerateMangaSliceResponse)
+async def generate_next_manga_slice(project_id: str, request: GenerateMangaSliceRequest):
+    """Generate the next v2 manga slice for a project.
+
+    This endpoint intentionally uses the configured LLM. It does not provide a
+    local fallback manga path; invalid model output is repaired by the model or
+    returned as a generation error.
+    """
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+
+    book = await Book.get(project.book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found for manga project")
+    if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
+        raise HTTPException(status_code=400, detail=f"Book is not parsed yet: {book.status}")
+
+    llm_client = LLMClient(
+        api_key=request.api_key,
+        provider=request.provider,
+        model=request.model,
+    )
+    try:
+        slice_doc, page_docs = await generate_project_slice(
+            project=project,
+            book=book,
+            llm_client=llm_client,
+            page_window=request.page_window,
+            extra_options=request.options,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return GenerateMangaSliceResponse(
+        project=serialize_project(project),
+        slice={
+            "id": str(slice_doc.id),
+            "project_id": slice_doc.project_id,
+            "book_id": slice_doc.book_id,
+            "source_slice": slice_doc.source_slice,
+            "slice_index": slice_doc.slice_index,
+            "slice_role": slice_doc.slice_role,
+            "status": slice_doc.status,
+            "new_fact_ids": slice_doc.new_fact_ids,
+            "quality_report": slice_doc.quality_report,
+            "llm_traces": slice_doc.llm_traces,
+            "created_at": slice_doc.created_at.isoformat(),
+        },
+        pages=[
+            {
+                "id": str(page.id),
+                "project_id": page.project_id,
+                "slice_id": page.slice_id,
+                "page_index": page.page_index,
+                "source_range": page.source_range,
+                "v4_page": page.v4_page,
+                "created_at": page.created_at.isoformat(),
+            }
+            for page in page_docs
+        ],
     )
