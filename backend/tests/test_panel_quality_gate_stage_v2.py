@@ -377,3 +377,68 @@ def _context_with_v4_pages_and_bible(
         character_bible=bible,
         v4_pages=[page],
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3.3 — sprite-bank hit-rate warning surfaces on QualityReport.
+# ---------------------------------------------------------------------------
+
+
+def _ctx_with_hit_rate(hit_rate: float | None, requested: int = 5, resolved: int = 1) -> PipelineContext:
+    """Minimal context that triggers the gate's hit-rate branch.
+
+    We reuse the standard helper for the panel/page bones and overlay a
+    panel_rendering_summary with the hit-rate we care about. Building a
+    second helper would duplicate the bible/v4_pages plumbing for a
+    one-line difference.
+    """
+    ctx = _context_with_v4_pages_and_bible(rendered_panels=True, with_summary=True)
+    ctx.options["panel_rendering_summary"] = {
+        "rendered": 1,
+        "failed": 0,
+        "character_slots_requested": requested,
+        "character_slots_resolved": resolved,
+        "sprite_bank_hit_rate": hit_rate,
+        "results": [
+            {
+                "panel_id": "p1",
+                "page_index": 0,
+                "image_path": "manga_panels/proj/slice/page_00/p1.png",
+                "aspect_ratio": "1:1",
+                "error": "",
+                "used_reference_assets": ["alpha"],
+                "requested_character_count": 1,
+            }
+        ],
+    }
+    return ctx
+
+
+def test_panel_quality_gate_warns_on_low_sprite_bank_hit_rate():
+    ctx = _ctx_with_hit_rate(0.2, requested=5, resolved=1)
+    asyncio.run(panel_quality_gate_stage.run(ctx))
+    assert ctx.quality_report is not None
+    codes = {issue.code for issue in ctx.quality_report.issues}
+    assert "sprite_bank_low_hit_rate" in codes
+    # Warnings should NOT flip passed=False — that would refuse to ship a
+    # slice over a soft signal. Errors do; warnings explain.
+    assert ctx.quality_report.passed is True
+
+
+def test_panel_quality_gate_silent_when_hit_rate_above_threshold():
+    """At 0.8 the bank is doing its job; no warning should land."""
+    ctx = _ctx_with_hit_rate(0.8, requested=5, resolved=4)
+    asyncio.run(panel_quality_gate_stage.run(ctx))
+    assert ctx.quality_report is not None
+    codes = {issue.code for issue in ctx.quality_report.issues}
+    assert "sprite_bank_low_hit_rate" not in codes
+
+
+def test_panel_quality_gate_silent_when_hit_rate_is_none():
+    """None means 'no panel asked for a character' — celebrating that as
+    a 100% hit-rate is misleading; not warning is correct."""
+    ctx = _ctx_with_hit_rate(None, requested=0, resolved=0)
+    asyncio.run(panel_quality_gate_stage.run(ctx))
+    assert ctx.quality_report is not None
+    codes = {issue.code for issue in ctx.quality_report.issues}
+    assert "sprite_bank_low_hit_rate" not in codes

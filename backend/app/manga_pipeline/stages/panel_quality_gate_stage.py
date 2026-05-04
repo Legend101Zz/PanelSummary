@@ -38,6 +38,14 @@ from app.manga_pipeline.context import PipelineContext
 
 logger = logging.getLogger(__name__)
 
+# Phase 3.3: when the sprite-bank hit-rate dips below this threshold the
+# gate emits a slice-level warning so the editor sees "only 40% of
+# panels found a reference asset" without trawling per-panel logs.
+# Threshold is 0.6 because below that we are essentially trusting the
+# image model to invent a consistent character every panel — the exact
+# failure mode the sprite bank exists to prevent.
+SPRITE_BANK_HIT_RATE_WARN_THRESHOLD = 0.6
+
 
 def _issue(
     severity: str, code: str, message: str, artifact_id: str = ""
@@ -209,6 +217,28 @@ async def run(context: PipelineContext) -> PipelineContext:
         bible_ids=bible_ids,
         renderer_results=renderer_results,
     )
+    # Phase 3.3: surface the slice-wide sprite-bank hit-rate as a single
+    # warning when it dips below the threshold. We piggyback on the
+    # existing QualityReport instead of inventing a parallel metric pipe
+    # because every other slice-level QA signal already lives there —
+    # one source of truth for the editor UI to render.
+    summary = context.options.get("panel_rendering_summary") or {}
+    if isinstance(summary, dict):
+        hit_rate = summary.get("sprite_bank_hit_rate")
+        if isinstance(hit_rate, (int, float)) and hit_rate < SPRITE_BANK_HIT_RATE_WARN_THRESHOLD:
+            requested = int(summary.get("character_slots_requested") or 0)
+            resolved = int(summary.get("character_slots_resolved") or 0)
+            new_issues.append(
+                _issue(
+                    "warning",
+                    "sprite_bank_low_hit_rate",
+                    (
+                        f"Sprite-bank hit-rate is {hit_rate:.0%} "
+                        f"({resolved}/{requested} character slots resolved). "
+                        "Painted characters will drift; check the Library for missing sheets."
+                    ),
+                )
+            )
     if new_issues:
         logger.info(
             "panel quality gate: %s issue(s) for slice %s",
