@@ -20,6 +20,7 @@ if _backend_dir not in sys.path:
     sys.path.insert(0, _backend_dir)
 
 from app.config import Settings, get_settings
+from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, BookSummary, JobStatus, LivingPanelDoc, VideoReelDoc, BookReelMemory
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -35,6 +36,7 @@ async def connect():
         document_models=[
             Book, BookSummary, LivingPanelDoc, JobStatus,
             VideoReelDoc, BookReelMemory,
+            MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
         ],
     )
     return settings

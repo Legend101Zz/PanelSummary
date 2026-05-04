@@ -33,6 +33,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
 from app.config import get_settings
+from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import (
     Book, BookSummary, LivingPanelDoc, JobStatus, ProcessingStatus, SummaryStyle,
     VideoReelDoc, BookReelMemory,
@@ -80,7 +81,11 @@ async def startup_event():
 
     await init_beanie(
         database=db,
-        document_models=[Book, BookSummary, LivingPanelDoc, JobStatus, VideoReelDoc, BookReelMemory],
+        document_models=[
+            Book, BookSummary, LivingPanelDoc, JobStatus,
+            VideoReelDoc, BookReelMemory,
+            MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
+        ],
     )
 
     os.makedirs(settings.upload_dir, exist_ok=True)

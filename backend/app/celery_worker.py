@@ -87,6 +87,7 @@ async def get_db():
     """Get MongoDB database connection"""
     from app.config import get_settings
     from beanie import init_beanie
+    from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
     from app.models import Book, BookSummary, LivingPanelDoc, JobStatus, VideoReelDoc, BookReelMemory
 
     settings = get_settings()
@@ -95,6 +96,7 @@ async def get_db():
     await init_beanie(database=db, document_models=[
         Book, BookSummary, LivingPanelDoc, JobStatus,
         VideoReelDoc, BookReelMemory,
+        MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
     ])
     return db
 async def update_job_status(
