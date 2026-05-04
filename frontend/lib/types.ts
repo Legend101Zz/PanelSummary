@@ -214,6 +214,15 @@ export interface MangaProjectPagesResponse {
   pages: MangaProjectPageDoc[];
 }
 
+export interface MangaAssetQualityCheck {
+  // Mirror of backend SpriteCheck — kept loose because the backend
+  // can add new check kinds without us shipping a frontend release.
+  check: string;
+  severity: "ok" | "warning" | "error" | string;
+  details?: string;
+  [key: string]: unknown;
+}
+
 export interface MangaAssetDoc {
   id: string;
   project_id: string;
@@ -224,11 +233,23 @@ export interface MangaAssetDoc {
   prompt: string;
   model: string;
   metadata: Record<string, unknown>;
+  // Phase B2 sprite-quality gate fields surfaced for the Library UI:
+  status: "" | "ready" | "review_required" | "failed" | string;
+  pinned: boolean;
+  regen_count: number;
+  silhouette_match_score: number | null;
+  last_quality_checks: MangaAssetQualityCheck[];
   created_at: string;
+  updated_at?: string;
 }
 
 export interface MangaProjectAssetsResponse {
   assets: MangaAssetDoc[];
+}
+
+export interface AssetMutationResponse {
+  // Null when regen was requested but the project lacks generate_images.
+  asset: MangaAssetDoc | null;
 }
 
 export interface StartMangaSliceGenerationResponse {

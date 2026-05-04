@@ -1,0 +1,219 @@
+"""Phase 10 \u2014 panel-level quality gate.
+
+Runs immediately after ``panel_rendering_stage``. The renderer reports per-panel
+results in ``context.options['panel_rendering_summary']``; this stage pairs that
+log with the bible and the V4 page graph to surface **structural** defects:
+
+* characters the storyboard claimed but the bible doesn't define (storyboarder
+  hallucination \u2014 the renderer can never find an asset for them);
+* panels where ``character_ids`` was non-empty but the renderer attached zero
+  reference assets (the painted character will drift because the model is
+  guessing);
+* panels that came back without an ``image_path`` after a ``rendered`` count
+  (impossible by contract, but we check defensively because silent
+  inconsistencies between ``summary.rendered`` and the panel dicts would mean
+  the persistence layer ships broken pages).
+
+This is **not** a vision check \u2014 we do not ask another model to confirm the
+character actually appears in the painted panel. That belongs in a later
+phase. Here we only catch defects we can see deterministically from the
+artifacts in hand.
+
+Design rules:
+
+* The stage **never re-renders**. It can only flag.
+* Issues are appended to the slice's ``QualityReport`` so all manga quality
+  signals live in one place. We don't spawn a parallel report type.
+* The stage is no-op when ``panel_rendering_stage`` was not scheduled, so the
+  orchestrator can include it unconditionally without paying for image gen.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+from app.domain.manga import QualityIssue, QualityReport
+from app.manga_pipeline.context import PipelineContext
+
+logger = logging.getLogger(__name__)
+
+
+def _issue(
+    severity: str, code: str, message: str, artifact_id: str = ""
+) -> QualityIssue:
+    return QualityIssue(
+        severity=severity, code=code, message=message, artifact_id=artifact_id
+    )
+
+
+def _bible_character_ids(context: PipelineContext) -> set[str]:
+    if context.character_bible is None:
+        return set()
+    return {character.character_id for character in context.character_bible.characters}
+
+
+def _renderer_results(context: PipelineContext) -> list[dict[str, Any]]:
+    summary = context.options.get("panel_rendering_summary") or {}
+    results = summary.get("results") if isinstance(summary, dict) else None
+    return list(results or [])
+
+
+def _result_lookup(
+    results: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    return {str(result.get("panel_id", "")): result for result in results if result.get("panel_id")}
+
+
+def _evaluate_panel(
+    *,
+    panel: dict[str, Any],
+    page_index: int,
+    bible_ids: set[str],
+    result: dict[str, Any] | None,
+) -> list[QualityIssue]:
+    """Return all issues found for one panel.
+
+    Pure: takes the panel + its renderer result + the set of bible ids and
+    returns issues. Easy to test in isolation; no I/O, no globals.
+    """
+    issues: list[QualityIssue] = []
+    panel_id = str(panel.get("panel_id") or f"page{page_index}_panel?")
+    raw_character_ids = panel.get("character_ids") or []
+    character_ids = [str(cid).strip() for cid in raw_character_ids if str(cid).strip()]
+
+    # 1. Storyboarder hallucinations \u2014 character_ids that the bible doesn't
+    #    define mean the renderer could never have found a reference asset.
+    if bible_ids:
+        unknown = [cid for cid in character_ids if cid not in bible_ids]
+        for cid in unknown:
+            issues.append(
+                _issue(
+                    "error",
+                    "panel_unknown_character",
+                    f"Panel references character '{cid}' which is not in the character bible.",
+                    panel_id,
+                )
+            )
+
+    # 2. Renderer-result vs claimed-presence consistency. If the panel was
+    #    rendered (no error) but no reference assets were attached AND the
+    #    storyboard said characters were on-stage, the painted character will
+    #    drift. We log a warning, not an error \u2014 the panel still ships, but
+    #    the operator should know.
+    if result is not None and not result.get("error"):
+        used_refs = list(result.get("used_reference_assets") or [])
+        if character_ids and not used_refs:
+            issues.append(
+                _issue(
+                    "warning",
+                    "panel_no_reference_attached",
+                    (
+                        "Panel claimed visible characters but no reference "
+                        "sheets were attached; painted character may drift."
+                    ),
+                    panel_id,
+                )
+            )
+
+    # 3. Renderer success/failure invariants. Panels rendered cleanly must
+    #    carry an ``image_path``; failed panels must NOT carry one. Either
+    #    inconsistency is a bug in the persistence path, not user-fixable.
+    has_path = bool(panel.get("image_path"))
+    if result is not None:
+        had_error = bool(result.get("error"))
+        if had_error and has_path:
+            issues.append(
+                _issue(
+                    "error",
+                    "panel_failed_but_has_path",
+                    "Panel rendering reported failure yet image_path was set.",
+                    panel_id,
+                )
+            )
+        if not had_error and not has_path:
+            issues.append(
+                _issue(
+                    "error",
+                    "panel_rendered_without_path",
+                    "Panel rendering reported success but image_path is missing.",
+                    panel_id,
+                )
+            )
+    return issues
+
+
+def evaluate_v4_pages(
+    *,
+    v4_pages: list[dict[str, Any]],
+    bible_ids: set[str],
+    renderer_results: list[dict[str, Any]],
+) -> list[QualityIssue]:
+    """Walk every panel on every page and collect quality issues."""
+    lookup = _result_lookup(renderer_results)
+    issues: list[QualityIssue] = []
+    for page in v4_pages:
+        page_index = int(page.get("page_index", 0))
+        for panel in page.get("panels", []) or []:
+            panel_id = str(panel.get("panel_id") or "")
+            issues.extend(
+                _evaluate_panel(
+                    panel=panel,
+                    page_index=page_index,
+                    bible_ids=bible_ids,
+                    result=lookup.get(panel_id),
+                )
+            )
+    return issues
+
+
+def _merge_into_report(
+    existing: QualityReport | None,
+    new_issues: list[QualityIssue],
+) -> QualityReport:
+    """Combine the panel-level issues with whatever the prior gate produced.
+
+    We never replace the upstream report \u2014 the storyboard quality_gate_stage
+    already checked thesis facts and continuation hooks. This stage adds
+    panel-level issues on top and recomputes ``passed``.
+    """
+    if existing is None:
+        existing = QualityReport(passed=True, issues=[])
+    combined = list(existing.issues) + list(new_issues)
+    has_error = any(issue.severity == "error" for issue in combined)
+    return QualityReport(
+        passed=not has_error,
+        issues=combined,
+        grounded_fact_ids=list(existing.grounded_fact_ids),
+        missing_fact_ids=list(existing.missing_fact_ids),
+        notes=existing.notes,
+    )
+
+
+async def run(context: PipelineContext) -> PipelineContext:
+    """Inspect rendered panels for structural defects; mutate quality report."""
+    if not context.v4_pages:
+        # Nothing to evaluate; an upstream stage failed loudly already.
+        return context
+
+    renderer_results = _renderer_results(context)
+    if not renderer_results:
+        # Image generation was not scheduled for this run \u2014 nothing to do.
+        # We do NOT inject "image gen disabled" issues because that's a
+        # project-level decision, not a slice-level defect.
+        return context
+
+    bible_ids = _bible_character_ids(context)
+    new_issues = evaluate_v4_pages(
+        v4_pages=context.v4_pages,
+        bible_ids=bible_ids,
+        renderer_results=renderer_results,
+    )
+    if new_issues:
+        logger.info(
+            "panel quality gate: %s issue(s) for slice %s",
+            len(new_issues),
+            context.source_slice.slice_id,
+        )
+    context.quality_report = _merge_into_report(context.quality_report, new_issues)
+    return context

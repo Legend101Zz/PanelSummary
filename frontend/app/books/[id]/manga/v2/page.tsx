@@ -205,9 +205,20 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
 
         <aside className="flex flex-col gap-4">
           <section className="border p-4" style={{ borderColor: "#2E2C3F", background: "#17161F" }}>
-            <h2 className="font-display flex items-center gap-2" style={{ color: "#ffc220" }}>
-              <ImageIcon size={16} /> Character assets
-            </h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-display flex items-center gap-2" style={{ color: "#ffc220" }}>
+                <ImageIcon size={16} /> Character assets
+              </h2>
+              {project && (
+                <Link
+                  href={`/books/${bookId}/manga/v2/characters?project=${project.id}`}
+                  className="font-label"
+                  style={{ color: "#ffc220", fontSize: "0.65rem" }}
+                >
+                  Open library →
+                </Link>
+              )}
+            </div>
             {assets.length === 0 ? (
               <p className="mt-3 text-sm" style={{ color: "#A8A6C0" }}>
                 No assets yet. Enable character asset generation in the Manga V2 Lab.

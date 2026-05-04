@@ -1,0 +1,379 @@
+"""Phase 7 + 10 tests \u2014 storyboard precision and panel-level quality gate.
+
+We test the unit behaviours that the new pipeline depends on:
+
+* StoryboardPanel auto-includes dialogue speakers in ``character_ids``.
+* The storyboard \u2192 V4 mapper carries the full ``character_ids`` list through.
+* V4Panel.to_dict round-trips ``character_ids``.
+* The panel quality gate stage flags hallucinated characters, missing reference
+  attachments, and renderer/state mismatches \u2014 and is a no-op when image
+  generation didn't run.
+* build_v2_generation_stages includes the gate after panel rendering when
+  ``with_panel_rendering=True``.
+
+We avoid network or filesystem; the gate is pure over the panel + result + bible.
+"""
+
+from __future__ import annotations
+
+import asyncio
+
+from app.domain.manga import (
+    CharacterDesign,
+    CharacterWorldBible,
+    PanelPurpose,
+    QualityIssue,
+    QualityReport,
+    ScriptLine,
+    ShotType,
+    StoryboardPage,
+    StoryboardPanel,
+)
+from app.domain.manga.types import SourceRange, SourceSlice, SourceSliceMode
+from app.manga_pipeline.context import PipelineContext
+from app.manga_pipeline.stages import panel_quality_gate_stage
+from app.manga_pipeline.stages.panel_quality_gate_stage import (
+    _evaluate_panel,
+    _merge_into_report,
+    evaluate_v4_pages,
+)
+from app.rendering.v4 import storyboard_page_to_v4
+from app.services.manga.generation_service import build_v2_generation_stages
+from app.v4_types import validate_v4_panel
+
+
+# ---------------------------------------------------------------------------
+# Phase 7 \u2014 storyboard precision
+# ---------------------------------------------------------------------------
+
+
+def _line(speaker: str, text: str) -> ScriptLine:
+    return ScriptLine(speaker_id=speaker, text=text)
+
+
+def _panel(
+    *,
+    panel_id: str = "p1",
+    scene_id: str = "s1",
+    purpose: PanelPurpose = PanelPurpose.EXPLANATION,
+    shot_type: ShotType = ShotType.MEDIUM,
+    composition: str = "two characters facing off in mid-shot",
+    action: str = "they argue",
+    dialogue: list[ScriptLine] | None = None,
+    character_ids: list[str] | None = None,
+) -> StoryboardPanel:
+    return StoryboardPanel(
+        panel_id=panel_id,
+        scene_id=scene_id,
+        purpose=purpose,
+        shot_type=shot_type,
+        composition=composition,
+        action=action,
+        dialogue=dialogue or [],
+        character_ids=character_ids or [],
+    )
+
+
+def test_storyboard_panel_auto_includes_dialogue_speakers():
+    panel = _panel(
+        dialogue=[_line("alpha", "we have to move"), _line("beta", "not yet")],
+        character_ids=["alpha"],
+    )
+    # Speakers always count as visually present; beta gets added even though
+    # the LLM forgot to list them.
+    assert panel.character_ids == ["alpha", "beta"]
+
+
+def test_storyboard_panel_keeps_listed_silent_characters():
+    # A non-speaking character explicitly listed must survive the auto-merge.
+    panel = _panel(
+        dialogue=[_line("alpha", "look at this")],
+        character_ids=["alpha", "ghost-witness"],
+    )
+    assert panel.character_ids == ["alpha", "ghost-witness"]
+
+
+def test_storyboard_panel_dedupes_and_preserves_order():
+    panel = _panel(
+        dialogue=[_line("alpha", "one"), _line("alpha", "two")],
+        character_ids=["alpha"],
+    )
+    assert panel.character_ids == ["alpha"]
+
+
+def test_storyboard_to_v4_mapper_passes_full_character_ids():
+    panel = _panel(
+        character_ids=["alpha", "beta"],
+        dialogue=[_line("alpha", "go"), _line("beta", "wait")],
+    )
+    page = StoryboardPage(page_id="pg-0", page_index=0, panels=[panel])
+
+    v4 = storyboard_page_to_v4(page).to_dict()
+    panels = v4["panels"]
+    assert panels[0]["character"] == "alpha"  # primary unchanged
+    assert panels[0]["character_ids"] == ["alpha", "beta"]
+
+
+def test_v4_panel_dict_round_trips_character_ids():
+    raw = {
+        "type": "dialogue",
+        "panel_id": "p1",
+        "character": "alpha",
+        "character_ids": ["alpha", "beta"],
+        "lines": [{"who": "alpha", "says": "hi"}],
+    }
+    panel = validate_v4_panel(raw)
+    assert panel.character_ids == ["alpha", "beta"]
+    assert panel.to_dict()["character_ids"] == ["alpha", "beta"]
+
+
+# ---------------------------------------------------------------------------
+# Phase 10 \u2014 panel-level quality gate
+# ---------------------------------------------------------------------------
+
+
+def _bible(*ids: str) -> CharacterWorldBible:
+    return CharacterWorldBible(
+        slice_id="slice-1",
+        world_summary="A test world.",
+        visual_style="clean ink lines",
+        characters=[
+            CharacterDesign(
+                character_id=cid,
+                name=cid.title(),
+                role="protagonist" if i == 0 else "supporting",
+                visual_lock=f"{cid} looks distinct",
+                silhouette_notes="tall narrow",
+                outfit_notes="dark coat",
+                hair_or_face_notes="short hair",
+            )
+            for i, cid in enumerate(ids)
+        ],
+    )
+
+
+def test_panel_gate_flags_unknown_characters():
+    issues = _evaluate_panel(
+        panel={
+            "panel_id": "p1",
+            "character_ids": ["alpha", "ghost"],
+        },
+        page_index=0,
+        bible_ids={"alpha"},
+        result={"used_reference_assets": ["alpha"], "error": ""},
+    )
+    codes = {issue.code for issue in issues}
+    assert "panel_unknown_character" in codes
+    # Should not also flag missing references because alpha is matched.
+    assert "panel_no_reference_attached" not in codes
+
+
+def test_panel_gate_warns_when_no_references_attached():
+    issues = _evaluate_panel(
+        panel={
+            "panel_id": "p1",
+            "character_ids": ["alpha"],
+            "image_path": "manga_panels/proj/slice/page_00/p1.png",
+        },
+        page_index=0,
+        bible_ids={"alpha"},
+        result={
+            "panel_id": "p1",
+            "used_reference_assets": [],
+            "error": "",
+            "image_path": "manga_panels/proj/slice/page_00/p1.png",
+        },
+    )
+    codes = {issue.code for issue in issues}
+    assert "panel_no_reference_attached" in codes
+    # warning, not error \u2014 panel still ships
+    severities = {issue.severity for issue in issues if issue.code == "panel_no_reference_attached"}
+    assert severities == {"warning"}
+
+
+def test_panel_gate_does_not_warn_when_no_characters_claimed():
+    # A scenery-only panel with no characters is fine to render with no refs.
+    issues = _evaluate_panel(
+        panel={
+            "panel_id": "p1",
+            "character_ids": [],
+            "image_path": "manga_panels/proj/slice/page_00/p1.png",
+        },
+        page_index=0,
+        bible_ids={"alpha"},
+        result={
+            "panel_id": "p1",
+            "used_reference_assets": [],
+            "error": "",
+            "image_path": "manga_panels/proj/slice/page_00/p1.png",
+        },
+    )
+    assert issues == []
+
+
+def test_panel_gate_flags_renderer_state_inconsistencies():
+    # Failed panel that somehow has an image_path \u2014 invariant violation.
+    issues = _evaluate_panel(
+        panel={
+            "panel_id": "p1",
+            "character_ids": [],
+            "image_path": "manga_panels/proj/slice/page_00/p1.png",
+        },
+        page_index=0,
+        bible_ids=set(),
+        result={"error": "renderer returned False"},
+    )
+    assert any(issue.code == "panel_failed_but_has_path" for issue in issues)
+
+    # Successful panel that didn't write an image_path \u2014 also a violation.
+    issues = _evaluate_panel(
+        panel={"panel_id": "p1", "character_ids": []},
+        page_index=0,
+        bible_ids=set(),
+        result={"error": ""},
+    )
+    assert any(issue.code == "panel_rendered_without_path" for issue in issues)
+
+
+def test_panel_gate_skips_when_no_renderer_summary():
+    # Image generation was off \u2014 stage should be a no-op.
+    context = _context_with_v4_pages_and_bible(rendered_panels=False, with_summary=False)
+    asyncio.run(panel_quality_gate_stage.run(context))
+    # No quality report mutation: it stays None when nothing else set it.
+    assert context.quality_report is None
+
+
+def test_panel_gate_merges_into_existing_quality_report():
+    context = _context_with_v4_pages_and_bible(
+        rendered_panels=True,
+        with_summary=True,
+        unknown_character=True,
+    )
+    context.quality_report = QualityReport(
+        passed=True,
+        issues=[QualityIssue(severity="warning", code="prior", message="prior issue")],
+    )
+    asyncio.run(panel_quality_gate_stage.run(context))
+    report = context.quality_report
+    assert report is not None
+    codes = {issue.code for issue in report.issues}
+    # Both the prior warning and the new error must coexist.
+    assert "prior" in codes
+    assert "panel_unknown_character" in codes
+    assert report.passed is False  # has an error now
+
+
+def test_evaluate_v4_pages_walks_every_panel():
+    pages = [
+        {
+            "page_index": 0,
+            "panels": [
+                {"panel_id": "p1", "character_ids": ["ghost"]},
+                {"panel_id": "p2", "character_ids": []},
+            ],
+        }
+    ]
+    issues = evaluate_v4_pages(
+        v4_pages=pages,
+        bible_ids={"alpha"},
+        renderer_results=[],
+    )
+    # p1 has unknown character; p2 is fine.
+    assert any(i.artifact_id == "p1" for i in issues)
+    assert all(i.artifact_id != "p2" for i in issues)
+
+
+def test_merge_report_from_none_starts_passing_unless_error():
+    issues = [QualityIssue(severity="warning", code="x", message="m")]
+    report = _merge_into_report(None, issues)
+    assert report.passed is True
+
+    err_issues = [QualityIssue(severity="error", code="y", message="m")]
+    report = _merge_into_report(None, err_issues)
+    assert report.passed is False
+
+
+# ---------------------------------------------------------------------------
+# Pipeline wiring
+# ---------------------------------------------------------------------------
+
+
+def test_panel_quality_gate_runs_after_panel_rendering_when_enabled():
+    names = [
+        stage.__module__.rsplit(".", 1)[-1]
+        for stage in build_v2_generation_stages(with_panel_rendering=True)
+    ]
+    assert "panel_rendering_stage" in names
+    assert "panel_quality_gate_stage" in names
+    assert names.index("panel_quality_gate_stage") == names.index("panel_rendering_stage") + 1
+
+
+def test_panel_quality_gate_absent_when_panel_rendering_off():
+    names = [
+        stage.__module__.rsplit(".", 1)[-1]
+        for stage in build_v2_generation_stages(with_panel_rendering=False)
+    ]
+    assert "panel_rendering_stage" not in names
+    assert "panel_quality_gate_stage" not in names
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _context_with_v4_pages_and_bible(
+    *,
+    rendered_panels: bool,
+    with_summary: bool,
+    unknown_character: bool = False,
+) -> PipelineContext:
+    bible = _bible("alpha")
+    panel_character_ids = ["alpha"]
+    if unknown_character:
+        # Avoid the StoryboardPanel auto-merge by writing the V4 dict directly.
+        panel_character_ids = ["alpha", "ghost"]
+
+    page = {
+        "page_index": 0,
+        "panels": [
+            {
+                "panel_id": "p1",
+                "character_ids": panel_character_ids,
+                "image_path": "manga_panels/proj/slice/page_00/p1.png" if rendered_panels else "",
+            }
+        ],
+    }
+    options: dict = {}
+    if with_summary:
+        options["panel_rendering_summary"] = {
+            "rendered": 1 if rendered_panels else 0,
+            "failed": 0 if rendered_panels else 1,
+            "results": [
+                {
+                    "panel_id": "p1",
+                    "page_index": 0,
+                    "image_path": "manga_panels/proj/slice/page_00/p1.png" if rendered_panels else "",
+                    "aspect_ratio": "1:1" if rendered_panels else "",
+                    "error": "" if rendered_panels else "boom",
+                    "used_reference_assets": ["alpha"] if rendered_panels else [],
+                }
+            ],
+        }
+
+    return PipelineContext(
+        book_id="book-1",
+        project_id="proj",
+        source_slice=SourceSlice(
+            slice_id="slice-1",
+            book_id="book-1",
+            mode=SourceSliceMode.PAGES,
+            source_range=SourceRange(page_start=1, page_end=2),
+        ),
+        prior_continuity=__import__("app.domain.manga", fromlist=["ContinuityLedger"]).ContinuityLedger(
+            project_id="proj"
+        ),
+        options=options,
+        character_bible=bible,
+        v4_pages=[page],
+    )

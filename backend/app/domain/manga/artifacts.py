@@ -267,7 +267,17 @@ class StoryboardPanel(BaseModel):
     dialogue: list[ScriptLine] = Field(default_factory=list)
     narration: str = ""
     source_fact_ids: list[str] = Field(default_factory=list)
-    character_ids: list[str] = Field(default_factory=list)
+    character_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Characters VISUALLY PRESENT in the panel \u2014 not characters"
+            " merely mentioned in dialogue or narration. Used by the"
+            " multimodal panel renderer to choose which character reference"
+            " sheets to attach as conditioning. The validator auto-includes"
+            " every dialogue speaker because a character that is talking is"
+            " by definition on stage."
+        ),
+    )
 
     @model_validator(mode="after")
     def panel_needs_readable_content(self) -> "StoryboardPanel":
@@ -279,6 +289,21 @@ class StoryboardPanel(BaseModel):
             raise ValueError("panel needs composition guidance")
         if not (self.action.strip() or self.dialogue or self.narration.strip()):
             raise ValueError("panel needs action, dialogue, or narration")
+        # Phase 7: every speaker is visually present by definition. We do this
+        # mechanically rather than relying on the LLM to remember, because
+        # forgetting one speaker means the renderer never sees that
+        # character's reference sheet and the panel drifts off-model.
+        seen: set[str] = set(self.character_ids)
+        merged: list[str] = list(self.character_ids)
+        for line in self.dialogue:
+            speaker = line.speaker_id.strip()
+            if speaker and speaker not in seen:
+                merged.append(speaker)
+                seen.add(speaker)
+        # Use object.__setattr__ because we're inside a frozen-style model
+        # validator chain; pydantic v2 treats post-validators as a new copy
+        # so plain assignment also works, but this is the safe form.
+        object.__setattr__(self, "character_ids", merged)
         return self
 
 

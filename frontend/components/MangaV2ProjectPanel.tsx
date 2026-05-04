@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { AlertCircle, BookOpen, Brush, Eye, Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, BookOpen, Brush, Eye, Image as ImageIcon, Loader2, Sparkles, Users } from "lucide-react";
 
 import {
   createMangaProject,
@@ -15,11 +15,42 @@ import {
 import { useAppStore } from "@/lib/store";
 import type { Book, LLMProvider, MangaProject, NextSourceSliceResponse } from "@/lib/types";
 
-const IMAGE_MODELS = [
-  { id: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
-  { id: "google/gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Preview" },
-  { id: "google/gemini-3-pro-image-preview", label: "Gemini 3 Pro Image" },
+// Phase B5: each model carries cost/quality intent so the picker is
+// a buying decision, not a code-name guess. ``tier`` is what the user
+// actually cares about; the id is what we ship to OpenRouter.
+// Keep this list small (3-5) — every option here is a recommendation
+// we'd stand behind, not an exhaustive catalog.
+const IMAGE_MODELS: Array<{
+  id: string;
+  label: string;
+  tier: "BUDGET" | "BALANCED" | "BEST";
+  blurb: string;
+}> = [
+  {
+    id: "google/gemini-2.5-flash-image",
+    label: "Gemini 2.5 Flash Image",
+    tier: "BUDGET",
+    blurb: "Cheapest. Good for early iterations on a new book.",
+  },
+  {
+    id: "google/gemini-3.1-flash-image-preview",
+    label: "Gemini 3.1 Flash Preview",
+    tier: "BALANCED",
+    blurb: "Better silhouette adherence than 2.5; same speed class.",
+  },
+  {
+    id: "google/gemini-3-pro-image-preview",
+    label: "Gemini 3 Pro Image",
+    tier: "BEST",
+    blurb: "Sharpest sprites. Use when you're shipping the final library.",
+  },
 ];
+
+const TIER_COLORS: Record<string, string> = {
+  BUDGET: "#A8A6C0",
+  BALANCED: "#0053e2",
+  BEST: "#ffc220",
+};
 
 function describeSlice(nextSlice: NextSourceSliceResponse | null): string {
   if (!nextSlice) return "Preview the next source slice before generating.";
@@ -233,15 +264,36 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           </label>
 
           {generateImages && (
-            <select
-              value={imageModel}
-              onChange={event => setImageModel(event.target.value)}
-              className="w-full px-3 py-2 border bg-transparent font-label"
-              style={{ borderColor: "#2a8703", color: "var(--text-1)", fontSize: "11px" }}
-              aria-label="Image model"
-            >
-              {IMAGE_MODELS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
-            </select>
+            <div className="flex flex-col gap-1.5">
+              <select
+                value={imageModel}
+                onChange={event => setImageModel(event.target.value)}
+                className="w-full px-3 py-2 border bg-transparent font-label"
+                style={{ borderColor: "#2a8703", color: "var(--text-1)", fontSize: "11px" }}
+                aria-label="Image model"
+              >
+                {IMAGE_MODELS.map(item => (
+                  <option key={item.id} value={item.id}>
+                    [{item.tier}] {item.label}
+                  </option>
+                ))}
+              </select>
+              {(() => {
+                // Surface a one-line blurb for whatever model is selected
+                // so users don't have to read external docs to compare.
+                const selected = IMAGE_MODELS.find(item => item.id === imageModel);
+                if (!selected) return null;
+                return (
+                  <p className="font-label" style={{ color: TIER_COLORS[selected.tier], fontSize: "9px" }}>
+                    {selected.blurb}
+                  </p>
+                );
+              })()}
+              <p className="font-label" style={{ color: "var(--text-3)", fontSize: "8px", lineHeight: 1.4 }}>
+                A vision-based sprite-quality gate auto-flags bad sheets so you can
+                regenerate them in the Character Library before they hit panels.
+              </p>
+            </div>
           )}
 
           {message && <p className="font-label" style={{ color: "var(--text-3)", fontSize: "9px", lineHeight: 1.5 }}>{message}</p>}
@@ -278,14 +330,24 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           </div>
 
           {selectedProject && (
-            <button
-              type="button"
-              onClick={() => router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`)}
-              className="flex items-center justify-center gap-2 py-2 border font-label"
-              style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
-            >
-              <Eye size={13} /> Read generated v2 pages
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`)}
+                className="flex items-center justify-center gap-2 py-2 border font-label"
+                style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
+              >
+                <Eye size={13} /> Read pages
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push(`/books/${book.id}/manga/v2/characters?project=${selectedProject.id}`)}
+                className="flex items-center justify-center gap-2 py-2 border font-label"
+                style={{ borderColor: "#ffc220", color: "#ffc220", fontSize: "10px" }}
+              >
+                <Users size={13} /> Character library
+              </button>
+            </div>
           )}
         </>
       )}

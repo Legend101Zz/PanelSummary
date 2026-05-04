@@ -32,8 +32,8 @@
 | B1 — multi-angle reference sheets (front/side/back) | ✅ done | Plan emits front/side/back per character; selector picks front deterministically; existing assertions updated |
 | B2 — `sprite_quality_gate` (vision check) | ✅ done | New `vision_contracts` + `VisionLLMClient`; `sprite_quality_service` (pure) + `sprite_quality_gate` (DB-aware) with bounded auto-retry; wired into book_understanding flow when image generation is on. |
 | B3 — bible silhouette uniqueness check | ✅ done | `bible_uniqueness.py` + `bible_silhouette_uniqueness_stage`; warnings only (twins / body-doubles still allowed) |
-| B4 — Character Library UI | ⬜ todo | new route + components |
-| B5 — image-model selector in `GeneratePanel` | ⬜ todo | UI only |
+| B4 — Character Library UI | ✅ done | New route `/books/[id]/manga/v2/characters`; new components `CharacterLibrary/AssetCard.tsx` + page; backend extended with per-asset `regenerate` + `pin` endpoints; serializer surfaces B2 status/score/checks; 6 new tests pin the serializer schema |
+| B5 — image-model selector in `GeneratePanel` | ✅ done | `MangaV2ProjectPanel.tsx` picker now shows tier badges (BUDGET/BALANCED/BEST) + per-model blurb + B2 vision-gate disclosure; same 3 vetted Gemini options |
 
 ### Phase C — Page composition
 
@@ -80,6 +80,7 @@ Deferred until A–E ship.
 | 2026-05-04 | Phase C1 (page composition stage + V4 grid) | 425 → 435 | (pending) |
 | 2026-05-04 | Phase C2 (RTL composition validators + stage) | 435 → 448 | (pending) |
 | 2026-05-04 | Phase C3–C5 (RTL grid renderer, SVG bubbles, SFX layer) | 448 → 448 (frontend) | (pending) |
+| 2026-05-04 | Phase B4 + B5 (Character Library UI + image-model picker) | 448 → 454 | (pending) |
 
 ---
 

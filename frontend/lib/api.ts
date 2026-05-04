@@ -27,6 +27,7 @@ import type {
   MangaProjectSlicesResponse,
   MangaProjectsResponse,
   NextSourceSliceResponse,
+  AssetMutationResponse,
 } from "./types";
 
 // The base URL for all API calls
@@ -224,6 +225,50 @@ export async function listMangaProjectPages(projectId: string): Promise<MangaPro
 
 export async function listMangaProjectAssets(projectId: string): Promise<MangaProjectAssetsResponse> {
   const response = await api.get<MangaProjectAssetsResponse>(`/manga-projects/${projectId}/assets`);
+  return response.data;
+}
+
+// Re-trigger the project-level character library materialization. Idempotent
+// at the planner level (won't replace existing assets) — use it to fill in
+// missing sheets after enabling generate_images on a project that didn't
+// have it on initially.
+export async function materializeCharacterSheets(
+  projectId: string,
+  imageApiKey: string | null,
+): Promise<{ assets: import("./types").MangaAssetDoc[]; generated_count: number }> {
+  const response = await api.post(`/manga-projects/${projectId}/character-sheets`, {
+    image_api_key: imageApiKey,
+  });
+  return response.data;
+}
+
+// Per-asset regenerate. Hits the image model again and replaces the doc
+// in place (carrying forward pin + bumping regen_count). Used by the
+// Character Library card's "Regenerate" button.
+export async function regenerateMangaAsset(
+  projectId: string,
+  assetId: string,
+  imageApiKey: string,
+): Promise<AssetMutationResponse> {
+  const response = await api.post<AssetMutationResponse>(
+    `/manga-projects/${projectId}/assets/${assetId}/regenerate`,
+    { image_api_key: imageApiKey },
+  );
+  return response.data;
+}
+
+// Toggle the user's pin on an asset. Pinned assets win the panel
+// renderer's selection over fresher unpinned alternatives. Cheap call
+// (no image model), so the UI can be optimistic about it.
+export async function setMangaAssetPin(
+  projectId: string,
+  assetId: string,
+  pinned: boolean,
+): Promise<AssetMutationResponse> {
+  const response = await api.post<AssetMutationResponse>(
+    `/manga-projects/${projectId}/assets/${assetId}/pin`,
+    { pinned },
+  );
   return response.data;
 }
 

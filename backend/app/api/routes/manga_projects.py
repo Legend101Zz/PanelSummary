@@ -13,6 +13,8 @@ from beanie.operators import In
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from datetime import UTC, datetime
+
 from app.domain.manga import CharacterArtDirectionBundle, CharacterWorldBible, SourceSlice
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
@@ -26,9 +28,20 @@ from app.services.manga import (
 from app.services.manga.character_library_service import (
     ensure_book_character_sheets,
     list_project_assets,
+    regenerate_asset_doc,
 )
 
 router = APIRouter(tags=["manga-projects"])
+
+
+def _now_utc() -> datetime:
+    """Single source of truth for UTC timestamps in this module.
+
+    Defined here rather than imported from manga_models because the
+    pin endpoint is the only consumer in this file and we want zero
+    coupling to the model module's private helpers.
+    """
+    return datetime.now(UTC)
 
 
 class CreateMangaProjectRequest(BaseModel):
@@ -119,6 +132,40 @@ class CharacterSheetsResponse(BaseModel):
     )
 
 
+class RegenerateAssetRequest(BaseModel):
+    """Body for the per-asset regenerate endpoint (Phase B4).
+
+    The image_api_key is required because regen ALWAYS goes back to the
+    image model — there is no point in regenerating a prompt-only doc.
+    The endpoint 409s if the project does not have ``generate_images``
+    enabled rather than silently producing a no-op.
+    """
+
+    image_api_key: str
+
+
+class AssetMutationResponse(BaseModel):
+    """Single-asset response shared by regenerate + pin endpoints.
+
+    Returns the post-mutation asset doc (or null when regen ran but
+    the project's image-gen entitlement was off and the service
+    declined to act). The single shape keeps the frontend's typing
+    one branch wide.
+    """
+
+    asset: dict[str, Any] | None
+
+
+class PinAssetRequest(BaseModel):
+    """Body for the pin/unpin toggle endpoint.
+
+    Boolean rather than enum because pinning has exactly two states; an
+    enum here would be ceremony for ceremony's sake.
+    """
+
+    pinned: bool
+
+
 def _serialize_source_slice(source_slice: SourceSlice | None) -> dict[str, Any] | None:
     if source_slice is None:
         return None
@@ -155,6 +202,11 @@ def _serialize_page_doc(page: MangaPageDoc) -> dict[str, Any]:
 
 
 def _serialize_asset_doc(asset: MangaAssetDoc) -> dict[str, Any]:
+    # Phase B4: the Character Library UI consumes the QA fields the gate
+    # writes back (status / pinned / regen_count / silhouette_match_score /
+    # last_quality_checks). Including them in the serializer is the cheapest
+    # way to power the UI's status badges and tooltip explanations
+    # without a second round-trip per asset.
     return {
         "id": str(asset.id),
         "project_id": asset.project_id,
@@ -165,7 +217,13 @@ def _serialize_asset_doc(asset: MangaAssetDoc) -> dict[str, Any]:
         "prompt": asset.prompt,
         "model": asset.model,
         "metadata": asset.metadata,
+        "status": asset.status,
+        "pinned": asset.pinned,
+        "regen_count": asset.regen_count,
+        "silhouette_match_score": asset.silhouette_match_score,
+        "last_quality_checks": asset.last_quality_checks,
         "created_at": asset.created_at.isoformat(),
+        "updated_at": asset.updated_at.isoformat(),
     }
 
 
@@ -279,6 +337,93 @@ async def materialize_character_sheets(
         assets=[_serialize_asset_doc(doc) for doc in after],
         generated_count=max(len(after) - len(before), 0),
     )
+
+
+@router.post(
+    "/manga-projects/{project_id}/assets/{asset_id}/regenerate",
+    response_model=AssetMutationResponse,
+)
+async def regenerate_manga_asset(
+    project_id: str,
+    asset_id: str,
+    request: RegenerateAssetRequest,
+) -> AssetMutationResponse:
+    """Regenerate a single character sheet via the image model (Phase B4).
+
+    Why per-asset instead of "regenerate the library"?
+    * Cost. The library can be 8-12 assets; the user usually only
+      hates ONE of them.
+    * Pin preservation. The library-wide ``character-sheets`` endpoint
+      is idempotent on the planner's stable id so it can't replace an
+      existing asset; this endpoint deliberately replaces the doc in
+      place via ``regenerate_asset_doc`` and carries forward the pin.
+
+    Returns the new asset (with ``regen_count`` bumped) so the UI can
+    swap the card without a second round trip.
+    """
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+    if not project.character_world_bible:
+        raise HTTPException(
+            status_code=409,
+            detail="Project has no character world bible yet; run book-understanding first.",
+        )
+    if not bool(project.project_options.get("generate_images")):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Project does not have generate_images enabled; "
+                "call /character-sheets first with image_api_key."
+            ),
+        )
+
+    asset = await MangaAssetDoc.get(asset_id)
+    if not asset or asset.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Asset not found in this project")
+
+    bible = CharacterWorldBible(**project.character_world_bible)
+    art_direction = (
+        CharacterArtDirectionBundle(**project.character_art_direction)
+        if project.character_art_direction
+        else None
+    )
+    new_doc = await regenerate_asset_doc(
+        project=project,
+        bible=bible,
+        asset_doc=asset,
+        image_api_key=request.image_api_key,
+        art_direction=art_direction,
+    )
+    return AssetMutationResponse(
+        asset=_serialize_asset_doc(new_doc) if new_doc else None,
+    )
+
+
+@router.post(
+    "/manga-projects/{project_id}/assets/{asset_id}/pin",
+    response_model=AssetMutationResponse,
+)
+async def set_manga_asset_pin(
+    project_id: str,
+    asset_id: str,
+    request: PinAssetRequest,
+) -> AssetMutationResponse:
+    """Pin / unpin an asset (Phase B4).
+
+    Pinning tells the panel renderer to prefer THIS asset for the
+    character even when a fresher one would auto-win. The flag is a
+    user-facing override; we deliberately keep it as a separate
+    endpoint so that pin doesn't cost an image-model call (which
+    ``regenerate`` does).
+    """
+    asset = await MangaAssetDoc.get(asset_id)
+    if not asset or asset.project_id != project_id:
+        raise HTTPException(status_code=404, detail="Asset not found in this project")
+    asset.pinned = request.pinned
+    asset.updated_at = _now_utc()
+    await asset.save()
+    return AssetMutationResponse(asset=_serialize_asset_doc(asset))
 
 
 @router.post("/manga-projects/{project_id}/next-source-slice", response_model=NextSourceSliceResponse)
