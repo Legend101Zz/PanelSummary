@@ -6,7 +6,7 @@
  * Used inside the GeneratePanel when provider = "openrouter".
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, ChevronDown, X, ExternalLink } from "lucide-react";
@@ -73,20 +73,24 @@ interface Props {
 }
 
 export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
-  const [open, setOpen]       = useState(false);
-  const [models, setModels]   = useState<ORModel[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch]   = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [open, setOpen]         = useState(false);
+  const [models, setModels]     = useState<ORModel[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [search, setSearch]     = useState("");
+  const [showAll, setShowAll]   = useState(false);
 
   const load = useCallback(async () => {
     if (models.length > 0) return;
     setLoading(true);
+    setLoadError(false);
     try {
       const key = encodeURIComponent(apiKey);
       const r = await axios.get(`${API_URL}/openrouter/models?api_key=${key}`);
       setModels(r.data.models ?? []);
-    } catch {}
+    } catch {
+      setLoadError(true);
+    }
     setLoading(false);
   }, [apiKey, models.length]);
 
@@ -130,8 +134,10 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
     });
   }, []);
 
-  // Measure on open + on scroll/resize while open
-  useEffect(() => {
+  // Measure on open + on scroll/resize while open.
+  // useLayoutEffect ensures position is calculated before the browser paints,
+  // so the dropdown never renders at the default (0,0,width:0) position.
+  useLayoutEffect(() => {
     if (!open) return;
     updatePosition();
     const handler = () => updatePosition();
@@ -222,7 +228,7 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
             animate={{ opacity: 1, y: 0, scaleY: 1 }}
             exit={{ opacity: 0, y: dropdownPos.placement === "top" ? 6 : -6, scaleY: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-[9999] border shadow-2xl flex flex-col"
+            className="fixed z-[9999] border shadow-2xl"
             style={{
               transformOrigin: dropdownPos.placement === "top" ? "bottom" : "top",
               background: "var(--surface)",
@@ -231,7 +237,6 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               top: dropdownPos.top,
               left: dropdownPos.left,
               width: dropdownPos.width,
-              maxHeight: dropdownPos.maxHeight,
               overflow: "hidden",
             }}
           >
@@ -253,11 +258,15 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
               )}
             </div>
 
-            {/* List — scrollable, fills remaining space inside maxHeight */}
-            <div className="overflow-y-auto flex-1 min-h-0">
+            {/* List — scrollable with explicit pixel height so it always shows */}
+            <div className="overflow-y-auto" style={{ maxHeight: Math.max(120, dropdownPos.maxHeight - 90) }}>
               {loading ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
                   LOADING MODELS…
+                </div>
+              ) : loadError ? (
+                <div className="text-center py-6 text-label" style={{ color: "var(--red)", fontSize: "10px" }}>
+                  FAILED TO LOAD — check backend is running
                 </div>
               ) : allFiltered.length === 0 ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
