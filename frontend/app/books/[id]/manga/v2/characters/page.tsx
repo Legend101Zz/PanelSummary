@@ -44,7 +44,7 @@ import {
   materializeCharacterSheets,
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
-import type { MangaAssetDoc, MangaProject } from "@/lib/types";
+import type { MangaAssetDoc, MangaProject, MissingExpression } from "@/lib/types";
 import { AssetCard } from "@/components/CharacterLibrary/AssetCard";
 
 // Loose mirror of backend CharacterDesign — kept as `any`-friendly
@@ -127,6 +127,11 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
 
   const [project, setProject] = useState<MangaProject | null>(null);
   const [assets, setAssets] = useState<MangaAssetDoc[]>([]);
+  // Phase 3.1: planner gaps from the same /assets call. State-owned at
+  // page level (not derived from `assets`) because the gap list is
+  // computed server-side against the planner output, not just the rows
+  // we happen to have in memory.
+  const [missingExpressions, setMissingExpressions] = useState<MissingExpression[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filling, setFilling] = useState(false);
@@ -152,6 +157,7 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
       ]);
       setProject(projectRes.project);
       setAssets(assetRes.assets);
+      setMissingExpressions(assetRes.missing_expressions ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load character library");
     } finally {
@@ -181,6 +187,17 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
     try {
       const result = await materializeCharacterSheets(project.id, key);
       setAssets(result.assets);
+      // "Fill missing" reruns the planner; the gap list is implicitly
+      // empty afterwards (anything still missing is the user's choice
+      // not to provide an API key for image gen). Refresh from /assets
+      // so the UI shows whatever the server now considers a gap.
+      try {
+        const refreshed = await listMangaProjectAssets(project.id);
+        setMissingExpressions(refreshed.missing_expressions ?? []);
+      } catch {
+        // Non-fatal: leave the prior gap list in place rather than
+        // false-clear it on a transient list-call failure.
+      }
       setFillMessage(
         result.generated_count > 0
           ? `Filled in ${result.generated_count} missing sheet${result.generated_count > 1 ? "s" : ""}.`
@@ -262,6 +279,18 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
           <StatusPill icon={<AlertCircle size={14} />} label="Review" count={tallies.review} fg="#995213" />
           <StatusPill icon={<XCircle size={14} />} label="Failed" count={tallies.failed} fg="#ea1100" />
           <StatusPill icon={<Sparkles size={14} />} label="Unchecked" count={tallies.unchecked} fg="#A8A6C0" />
+          {/* Phase 3.1: "Missing" is structurally different from the four
+              status tallies (it counts gaps, not asset rows) so we use the
+              same pill component but feed it a different source-of-truth
+              count. Hidden when zero to avoid celebrating a non-event. */}
+          {missingExpressions.length > 0 && (
+            <StatusPill
+              icon={<AlertCircle size={14} />}
+              label="Missing"
+              count={missingExpressions.length}
+              fg="#ea1100"
+            />
+          )}
 
           <div className="flex-1" />
 
@@ -320,6 +349,47 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
               {group.character && (
                 <CharacterProfile character={group.character} />
               )}
+
+              {/* Phase 3.1: missing-expression chips. Calling these out per
+                  character is more useful than a global "N gaps" badge
+                  because the user fixes them in the same place they curate
+                  the assets. We split reference-sheet vs expression copy
+                  because they fail differently: a missing reference sheet
+                  is a regenerate, a missing expression is a planner gap. */}
+              {(() => {
+                const gaps = missingExpressions.filter(g => g.character_id === group.characterId);
+                if (gaps.length === 0) return null;
+                return (
+                  <div
+                    className="flex flex-wrap items-center gap-2 border px-3 py-2"
+                    style={{ borderColor: "#995213", background: "rgba(255,194,32,0.08)" }}
+                  >
+                    <AlertCircle size={13} style={{ color: "#995213" }} />
+                    <span className="font-label" style={{ color: "#995213", fontSize: "0.65rem" }}>
+                      MISSING
+                    </span>
+                    {gaps.map((gap, idx) => (
+                      <span
+                        key={`${gap.character_id}-${gap.asset_type}-${gap.expression}-${idx}`}
+                        className="px-2 py-0.5 border"
+                        style={{
+                          borderColor: gap.asset_type === "reference_sheet" ? "#ea1100" : "#995213",
+                          color: gap.asset_type === "reference_sheet" ? "#ea1100" : "#F0EEE8",
+                          fontSize: "0.6rem",
+                        }}
+                        title={
+                          gap.asset_type === "reference_sheet"
+                            ? "Reference sheet missing \u2014 panel renderer has nothing to condition on. Run 'Fill missing sheets'."
+                            : "Expression missing \u2014 panels asking for it will fall back to the reference sheet."
+                        }
+                      >
+                        {gap.expression}
+                        {gap.asset_type === "reference_sheet" ? " (ref)" : ""}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {group.assets.map(asset => (

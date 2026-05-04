@@ -297,6 +297,17 @@ export interface MangaAssetDoc {
 
 export interface MangaProjectAssetsResponse {
   assets: MangaAssetDoc[];
+  // Phase 3.1: planner-asked-for-but-not-persisted gaps. Empty when the
+  // bible has no characters or every spec has a doc.
+  missing_expressions: MissingExpression[];
+}
+
+export interface MissingExpression {
+  character_id: string;
+  expression: string;
+  // "reference_sheet" or "expression" — lets the UI render different
+  // copy for "missing front view" vs "missing panicked face".
+  asset_type: string;
 }
 
 export interface AssetMutationResponse {

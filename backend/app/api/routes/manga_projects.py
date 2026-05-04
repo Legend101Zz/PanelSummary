@@ -11,8 +11,9 @@ from typing import Any
 
 from beanie.operators import In
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
+import logging
 from datetime import UTC, datetime
 
 from app.domain.manga import CharacterArtDirectionBundle, CharacterWorldBible, SourceSlice
@@ -30,6 +31,10 @@ from app.services.manga.character_library_service import (
     list_project_assets,
     regenerate_asset_doc,
 )
+from app.services.manga.character_sheet_planner import plan_book_character_sheets
+from app.services.manga.expression_coverage import compute_missing_expressions
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["manga-projects"])
 
@@ -109,6 +114,12 @@ class MangaProjectPagesResponse(BaseModel):
 
 class MangaProjectAssetsResponse(BaseModel):
     assets: list[dict[str, Any]]
+    # Phase 3.1: spec→asset coverage gaps. Populated by re-running the
+    # planner against the persisted docs so the Library UI can render
+    # "Kai is missing: panicked, contemplative" without needing a second
+    # round-trip. Empty list when the bible has no characters yet OR every
+    # planned spec has a doc — the UI treats both the same way.
+    missing_expressions: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class GenerateCharacterSheetsRequest(BaseModel):
@@ -294,7 +305,42 @@ async def list_manga_project_assets(project_id: str):
         raise HTTPException(status_code=404, detail="Manga project not found")
 
     assets = await MangaAssetDoc.find(MangaAssetDoc.project_id == project_id).sort("character_id").to_list()
-    return MangaProjectAssetsResponse(assets=[_serialize_asset_doc(asset) for asset in assets])
+
+    # Phase 3.1: surface coverage gaps. The compute is pure (no LLM, no I/O)
+    # so doing it on every list call is fine; replanning here also means a
+    # bible edit is reflected in "what's missing" without needing the
+    # sprite-quality gate to run first.
+    missing: list[dict[str, Any]] = []
+    bible_dict = project.character_world_bible if isinstance(project.character_world_bible, dict) else None
+    if bible_dict and bible_dict.get("characters"):
+        try:
+            bible = CharacterWorldBible.model_validate(bible_dict)
+            art_direction = (
+                CharacterArtDirectionBundle.model_validate(project.character_art_direction)
+                if isinstance(project.character_art_direction, dict)
+                and project.character_art_direction.get("characters")
+                else None
+            )
+            plan = plan_book_character_sheets(
+                bible=bible,
+                project_id=str(project.id),
+                art_direction=art_direction,
+            )
+            gaps = compute_missing_expressions(plan=plan, persisted=assets)
+            missing = [gap.model_dump() for gap in gaps]
+        except (ValueError, ValidationError) as exc:
+            # A malformed bible/art direction shouldn't break the Library
+            # listing — the page is still useful without the gap section.
+            logger.warning(
+                "[ASSETS] coverage compute skipped for project %s: %s",
+                project.id,
+                exc,
+            )
+
+    return MangaProjectAssetsResponse(
+        assets=[_serialize_asset_doc(asset) for asset in assets],
+        missing_expressions=missing,
+    )
 
 
 @router.post("/manga-projects/{project_id}/character-sheets", response_model=CharacterSheetsResponse)

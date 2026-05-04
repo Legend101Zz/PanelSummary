@@ -170,7 +170,12 @@ export function AssetCard({ asset, projectId, apiKey, onAssetUpdated }: AssetCar
           </p>
           <p className="font-label truncate" style={{ color: "#A8A6C0", fontSize: "0.65rem" }}>
             {asset.expression || asset.asset_type}
-            {asset.silhouette_match_score !== null && ` · silhouette ${asset.silhouette_match_score}/5`}
+            {/* Phase 3.2: silhouette and outfit are independent signals.
+                We surface them as two slash-separated stars so the user
+                can read "silhouette OK, outfit drift" at a glance and
+                regenerate only when the costume axis fails. */}
+            {asset.silhouette_match_score !== null && ` · sil ${asset.silhouette_match_score}/5`}
+            {asset.outfit_match_score !== null && ` · fit ${asset.outfit_match_score}/5`}
             {asset.regen_count > 0 && ` · regen ×${asset.regen_count}`}
           </p>
         </div>
