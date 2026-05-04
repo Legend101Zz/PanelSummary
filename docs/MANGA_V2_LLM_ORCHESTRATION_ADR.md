@@ -143,12 +143,11 @@ Implemented concrete v2 LLM stages:
 - `manga_script_stage.py`
 - `storyboard_stage.py`
 - `quality_repair_stage.py`
+- `character_asset_plan_stage.py`
 
-Next implementation step:
+Concrete LLM-backed stage adapters are now in place for the v2 backend spine.
+Next implementation step is the image-model execution layer that consumes
+`MangaAssetSpec` records and stores generated reusable character sheets/variants.
 
-Build concrete LLM-backed stage adapters for:
-
-1. character asset prompt generation
-
-Each adapter should use the structured contract runner and should be integration
-verified with a fake model before being wired into real jobs.
+Each adapter uses the structured contract runner and is unit verified with a
+fake model before being wired into real jobs.

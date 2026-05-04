@@ -10,12 +10,13 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from app.domain.manga import ContinuityLedger, SliceRole, SourceFact, SourceSlice, update_ledger_after_slice
-from app.manga_models import MangaPageDoc, MangaProjectDoc, MangaSliceDoc
+from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.manga_pipeline import PipelineContext, run_pipeline_context
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 from app.manga_pipeline.stages import (
     adaptation_plan_stage,
     beat_sheet_stage,
+    character_asset_plan_stage,
     character_world_bible_stage,
     manga_script_stage,
     quality_gate_stage,
@@ -138,6 +139,7 @@ def build_v2_generation_stages():
         quality_gate_stage.run,
         quality_repair_stage.run,
         quality_gate_stage.run,
+        character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
     ]
 
@@ -217,6 +219,19 @@ async def generate_project_slice(
         )
         await page_doc.insert()
         page_docs.append(page_doc)
+
+    for asset in final_context.asset_specs:
+        asset_doc = MangaAssetDoc(
+            project_id=str(project.id),
+            character_id=asset.character_id,
+            asset_type=asset.asset_type,
+            expression=asset.expression,
+            image_path=asset.image_path,
+            prompt=asset.prompt,
+            model=asset.model or str(options.get("image_model") or ""),
+            metadata={"asset_id": asset.asset_id},
+        )
+        await asset_doc.insert()
 
     updated_ledger = update_ledger_after_slice(
         ledger,

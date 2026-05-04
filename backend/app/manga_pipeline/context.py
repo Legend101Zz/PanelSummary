@@ -10,6 +10,7 @@ from app.domain.manga import (
     BeatSheet,
     CharacterWorldBible,
     ContinuityLedger,
+    MangaAssetSpec,
     MangaScript,
     QualityReport,
     SourceFact,
@@ -46,6 +47,7 @@ class PipelineContext:
     beat_sheet: BeatSheet | None = None
     manga_script: MangaScript | None = None
     storyboard_pages: list[StoryboardPage] = field(default_factory=list)
+    asset_specs: list[MangaAssetSpec] = field(default_factory=list)
     v4_pages: list[dict[str, Any]] = field(default_factory=list)
     quality_report: QualityReport | None = None
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)

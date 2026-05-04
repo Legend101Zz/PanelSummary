@@ -97,6 +97,7 @@ def test_build_v2_generation_stages_has_expected_order():
         "quality_gate_stage",
         "quality_repair_stage",
         "quality_gate_stage",
+        "character_asset_plan_stage",
         "storyboard_to_v4_stage",
     ]
 

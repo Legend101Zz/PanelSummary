@@ -11,7 +11,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from app.domain.manga.types import SourceFact
+from app.domain.manga.types import MangaAssetSpec, SourceFact
 
 
 class EmotionalTone(str, Enum):
@@ -146,6 +146,25 @@ class CharacterWorldBible(BaseModel):
             raise ValueError("world bible needs a visual style")
         if not self.characters:
             raise ValueError("world bible needs at least one character")
+        return self
+
+
+class CharacterAssetPlan(BaseModel):
+    """LLM-authored plan for reusable character/image-model assets."""
+
+    project_id: str
+    assets: list[MangaAssetSpec] = Field(default_factory=list)
+    consistency_notes: str = ""
+
+    @model_validator(mode="after")
+    def asset_plan_needs_prompts(self) -> "CharacterAssetPlan":
+        if not self.project_id.strip():
+            raise ValueError("character asset plan needs a project_id")
+        if not self.assets:
+            raise ValueError("character asset plan needs at least one asset")
+        missing_prompts = [asset.asset_id for asset in self.assets if not asset.prompt.strip()]
+        if missing_prompts:
+            raise ValueError("every character asset needs an image-model prompt")
         return self
 
 
