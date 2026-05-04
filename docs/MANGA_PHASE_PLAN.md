@@ -1,12 +1,15 @@
 # Manga Phase Plan — Story Quality Roadmap
 
-> Companion doc to `MANGA_QUALITY_AND_CLEANUP_PLAN.md` and the
-> `manga_creation_system_review_and_plan/` folder. Where those go wide,
-> this one tracks the **5 narrative-quality phases** I (Comreton) am
-> driving in the rolling sessions with Mrigesh, in priority order.
+> Canonical roadmap for the manga generation rebuild. Companion docs
+> (`MANGA_QUALITY_AND_CLEANUP_PLAN.md`, the
+> `manga_creation_system_review_and_plan/` folder) were deleted in the
+> 2026-05-04 cleanup commit (`5c49054`); this file and
+> `MANGA_V2_LLM_ORCHESTRATION_ADR.md` are the only planning docs.
 >
-> Each phase ships in one PR, leaves the test count strictly higher,
-> and never breaks the green build.
+> The plan tracks the **5 narrative-quality phases** Comreton is driving
+> in rolling sessions with Mrigesh, in priority order. Each phase ships
+> in one PR, leaves the test count strictly higher, and never breaks
+> the green build.
 
 ---
 
@@ -127,7 +130,7 @@ remember what came before it.
 **Theme:** characters look like *the same person* on every panel and
 are silhouette-distinct from each other.
 
-**Already done (per `MANGA_QUALITY_AND_CLEANUP_TRACKER.md` Phase B):**
+**Already done in earlier rebuild work (now baseline):**
 - B1 multi-angle reference sheets, B2 sprite vision gate, B3 silhouette
   uniqueness, B4 Character Library UI, B5 image-model picker.
 
@@ -161,21 +164,100 @@ are silhouette-distinct from each other.
 
 ---
 
-## Phase 4 — Panel-Craft DSL Upgrade
+## Phase 4 — Panel-Craft DSL Upgrade ⏳ in progress
 
-**Theme:** stop letting the LLM author panel layouts in prose. The
-DSL already exists (`manga_dsl.py`); make it the *only* way panels are
-specified, and teach it the things real manga editors check.
+**Theme:** collapse the v2/v4 panel surface into ONE structured DSL the
+storyboarder LLM emits, the page-composition stage consumes, and the
+panel renderer treats as gospel — with deliberate shot-type variety
+the way pro manga does.
 
-Targets:
-- Shot-type variety budget per page (no 4 medium shots in a row).
-- "Page turn earns the reveal" rule: the page-turn panel must change
-  emotional tone.
-- DialogueBudget per arc role (already partially there) extended to
-  enforce a *whitespace-to-ink* ratio derived from panel area.
-- Panel composition annotations (gutters, sub-grids) become part of
-  the storyboard contract instead of the post-storyboard LLM step they
-  are now (Phase C1 of the cleanup tracker).
+### Why this is the next phase
+
+The pipeline currently carries panels in two parallel shapes:
+
+* `StoryboardPanel` (Pydantic, `app/domain/manga/artifacts.py`) — rich,
+  validated, LLM-authored. Carries `purpose`, `shot_type`, `composition`
+  prose, `action`, `dialogue`, `narration`, `character_ids`,
+  `source_fact_ids`.
+* `V4Panel` (dataclass, `app/v4_types.py`) — thinner, hand-rolled
+  renderer wire format. Carries `type` (splash/dialogue/narration/...),
+  `mood`, `scene`, `pose`, ``, `effects`, `emphasis`.
+
+They are bridged by `app/rendering/v4/storyboard_mapper.py`, which is a
+**lossy projection**. `shot_type`, `purpose`, `composition` prose, and
+`source_fact_ids` are silently discarded. The renderer keys aspect ratio
+off `V4Panel.type` (panel role), not `shot_type` — so an `EXTREME_WIDE`
+framed `dialogue` panel renders 1:1 and the storyboarder's framing
+intent is lost. The only shot-variety enforcement is slice-wide
+`MIN_DISTINCT_SHOT_TYPES_PER_SLICE = 3`, which is too coarse to stop
+four mediums in a row or a flat page-turn cell.
+
+### Locked design decisions
+
+* **One DSL, no projection layer.** `StoryboardPanel` is the canonical
+  panel artifact. The renderer consumes it directly; the wire format
+  serialises it directly; the frontend types match it directly. V4 is
+  deleted, not aliased.
+* **Pre-render and post-render artifacts are separated.**
+  `StoryboardPanel` stays creative-only (LLM authors it). A new
+  `PanelRenderArtifact` (per-panel `image_path`, `image_aspect_ratio`,
+  `used_reference_assets`) carries the renderer's output. They live
+  side-by-side inside a new composite `RenderedPage` model. This is
+  the SOLID boundary: the storyboard never mutates after render.
+* **LLM-first shot design.** The storyboarder prompt gets
+  production-grade shot guidance (when to pick each shot, page-turn
+  punch rule, rhythm rules, per-arc-role exemplars), not platitudes.
+  Validators enforce the floor; the LLM owns the creative ceiling.
+* **Aspect ratio is keyed off `shot_type`.** Every shot type maps to a
+  framing-true aspect ratio (extreme-wide → 21:9, close-up → 4:5,
+  insert → 1:1, etc.) so framing intent survives all the way to the
+  image model.
+* **Persistence rename, not dual-read.** `MangaPageDoc.v4_page`
+  becomes `MangaPageDoc.rendered_page` with a typed shape. A one-shot
+  migration script handles existing dev data; we do not accumulate a
+  legacy compatibility codepath.
+
+### Phase 4 deliverables
+
+| ID | Deliverable | Layer | Status |
+| --- | --- | --- | --- |
+| 4.1 | `RenderedPage` + `PanelRenderArtifact` domain models; `panel_rendering_service` rewritten to consume `StoryboardPanel`; aspect ratio keyed off `shot_type` | domain + service | ⏳ |
+| 4.2 | `panel_rendering_stage` + `panel_quality_gate_stage` consume `RenderedPage`; new tiny `rendered_page_assembly_stage`; `storyboard_to_v4_stage` deleted | pipeline | ⏳ |
+| 4.3 | Three new shot-variety validators (`DSL_REPEATED_SHOT_RUN`, `DSL_PAGE_TURN_NO_PUNCH`, `DSL_PAGE_FLAT_SHOTS`) in `manga_dsl.py` | dsl | ⏳ |
+| 4.4 | Storyboarder system prompt rewritten with production-grade shot-design guidance; DSL fragment lists every validator code | prompts | ⏳ |
+| 4.5 | Wire flip: `MangaPageDoc.v4_page` → `rendered_page`; API rename; `app/v4_types.py` + `app/rendering/v4/` deleted; frontend `V4Engine/` replaced by `MangaReader/`; one-shot migration script | persistence + api + frontend | ⏳ |
+| 4.6 | Docs + scoreboard close-out commit | docs | ⏳ |
+
+### Phase 4 invariants (will be tested)
+
+* `RenderedPage` round-trips losslessly through `model_dump`/
+  `model_validate`; every `StoryboardPanel.panel_id` has a matching
+  artifact slot.
+* `aspect_ratio_for_panel(panel)` returns the documented ratio for every
+  `ShotType` enum value; an unknown shot type raises (not silently 1:1).
+* `build_panel_prompt` includes the storyboard's `composition` prose
+  verbatim and names the panel's `purpose` and `shot_type` in the
+  prompt body.
+* The new shot-variety validators each fire on a positive case and stay
+  silent on a negative case; reading order respects
+  `SliceComposition.panel_order` when present.
+* The storyboarder system prompt names every shot-variety validator
+  code so the model sees the rules AND the per-rule failure surface.
+* Persistence reads `rendered_page` from `MangaPageDoc`; the v4 field
+  is gone. A migrated dev document loads cleanly.
+* Frontend `tsc --noEmit` is clean after the wire flip; the reader
+  renders a painted panel against a `RenderedPage` payload.
+
+### Phase 4 non-goals (parking lot, not in scope)
+
+* An LLM-driven shot-design critic stage. Validators + the upgraded
+  storyboarder prompt are the floor. Add the critic only if real
+  generations show variety still drifts after Phase 4.
+* Per-page or per-character emotional-arc validation. That belongs in
+  Phase 5 (page composition & lettering).
+* Dual-read or feature-flag the v4 → rendered_page rename. We commit to
+  the new shape.
+
 
 ---
 
@@ -201,11 +283,11 @@ Targets:
 - Each phase opens its own PR.
 - `pytest -q` MUST be green before merge. Frontend `tsc --noEmit`
   MUST be clean.
-- Tracker rows in `MANGA_QUALITY_AND_CLEANUP_TRACKER.md` flip to ✅
-  only after the test suite proves the deliverable.
+- A deliverable flips from ⏳ to ✅ only after the test suite proves
+  it (a focused test file in `backend/tests/test_*_v2.py` pinning the
+  invariant).
 - Anything not in this doc is YAGNI for the current sprint. New ideas
-  go to the "parking lot" at the bottom of the tracker, not into the
-  in-progress phase.
+  go to the "parking lot" at the bottom of THIS file.
 
 ---
 
@@ -216,5 +298,6 @@ Targets:
 - Per-character art-style memory across PROJECTS (so a returning
   protagonist looks the same in book 2). Defer; needs a new identity
   store.
-- Music / SFX timing for an animated reader. Out of scope for the
-  manga product; tracked under `REEL_ENGINE_PLAN.md`.
+- LLM-driven shot-design critic stage (re-grades each panel's shot
+  choice against its emotional context). Defer until Phase 4 ships and
+  we see whether DSL validators + upgraded prompt are sufficient.
