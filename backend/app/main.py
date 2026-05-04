@@ -26,7 +26,6 @@ from typing import Optional
 from beanie import init_beanie
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
@@ -34,6 +33,7 @@ from app.api.routes.jobs import router as jobs_router
 from app.api.routes.living_panels import router as living_panels_router
 from app.api.routes.manga_projects import router as manga_projects_router
 from app.api.routes.media import router as media_router
+from app.api.routes.reels import router as reels_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import (
@@ -70,6 +70,7 @@ app.include_router(jobs_router)
 app.include_router(living_panels_router)
 app.include_router(manga_projects_router)
 app.include_router(media_router)
+app.include_router(reels_router)
 
 # MongoDB connection (created once at startup)
 motor_client: AsyncIOMotorClient = None
@@ -109,10 +110,6 @@ async def shutdown_event():
     if motor_client:
         motor_client.close()
 
-
-# ============================================================
-# REQUEST / RESPONSE MODELS
-# ============================================================
 
 class UploadResponse(BaseModel):
     book_id: str
@@ -157,10 +154,6 @@ class JobStatusResponse(BaseModel):
     estimated_total_cost: Optional[float] = None
     reel_cost: Optional[dict] = None  # {input_tokens, output_tokens, estimated_cost_usd}
 
-
-# ============================================================
-# ENDPOINTS
-# ============================================================
 
 @app.get("/health")
 async def health_check():
@@ -599,320 +592,3 @@ async def delete_summary(summary_id: str):
     panels_removed = getattr(deleted_panels, "deleted_count", 0) if deleted_panels else 0
     return {"deleted": summary_id, "panels_removed": panels_removed}
 
-
-class GenerateReelsRequest(BaseModel):
-    api_key: str
-    provider: str = "openrouter"
-    model: Optional[str] = None
-
-
-@app.post("/summary/{summary_id}/generate-reels")
-async def generate_reels_for_summary(summary_id: str, request: GenerateReelsRequest):
-    """
-    Trigger on-demand reel generation for an already-complete manga summary.
-    Reels are NOT generated automatically with the manga — the user triggers this.
-    """
-    summary = await BookSummary.get(summary_id)
-    if not summary:
-        raise HTTPException(status_code=404, detail="Summary not found")
-
-    if summary.status != ProcessingStatus.COMPLETE:
-        raise HTTPException(status_code=400, detail="Summary is not yet complete")
-
-    if summary.reels:
-        return {"message": "Reels already exist", "reel_count": len(summary.reels), "task_id": None}
-
-    from app.celery_worker import generate_reels_task
-
-    task = generate_reels_task.delay(
-        summary_id=summary_id,
-        api_key=request.api_key,
-        provider=request.provider,
-        model=request.model,
-    )
-
-    job_status = JobStatus(
-        celery_task_id=task.id,
-        job_type="generate_reels",
-        status="pending",
-        progress=0,
-        message="Starting reel generation...",
-        result_id=summary_id,
-    )
-    await job_status.insert()
-
-    return {"task_id": task.id, "message": "Reel generation started"}
-
-
-@app.get("/reels")
-async def get_all_reels(
-    limit: int = 20,
-    offset: int = 0,
-    style: Optional[str] = None,
-):
-    """
-    Get reels from ALL books for the infinite scroll feed.
-    This powers the "discover" vertical scroll experience.
-
-    Returns reels interleaved from multiple books for variety.
-    """
-    query = {"status": "complete"}
-    if style:
-        query["style"] = style
-
-    summaries = await BookSummary.find(
-        BookSummary.status == ProcessingStatus.COMPLETE
-    ).to_list()
-
-    # Flatten all reels from all books
-    all_reels = []
-    for summary in summaries:
-        # Get book info for context
-        book = await Book.get(summary.book_id)
-        book_info = {
-            "id": str(book.id),
-            "title": book.title,
-            "author": book.author,
-            "cover_image_id": book.cover_image_id,
-        } if book else {}
-
-        for reel in summary.reels:
-            all_reels.append({
-                "reel_index": reel.reel_index,
-                "chapter_index": reel.chapter_index,
-                "lesson_title": reel.lesson_title,
-                "hook": reel.hook,
-                "key_points": reel.key_points,
-                "visual_theme": reel.visual_theme,
-                "duration_seconds": reel.duration_seconds,
-                "style": reel.style,
-                "summary_id": str(summary.id),
-                "book": book_info,
-                # Position info for horizontal swipe
-                "total_reels_in_book": len(summary.reels),
-            })
-
-    # Simple interleaving for variety (in production: use proper recommendation)
-    # Sort by creation time (newest books first) then take page
-    total = len(all_reels)
-    page = all_reels[offset:offset + limit]
-
-    return {
-        "reels": page,
-        "total": total,
-        "offset": offset,
-        "limit": limit,
-        "has_more": offset + limit < total,
-    }
-
-
-# ============================================================
-# VIDEO REELS — DSL-driven rendered video reels
-# ============================================================
-
-class GenerateVideoReelRequest(BaseModel):
-    api_key: str
-    provider: str = "openrouter"
-    model: Optional[str] = None
-
-
-@app.post("/summary/{summary_id}/generate-video-reel")
-async def generate_video_reel(summary_id: str, request: GenerateVideoReelRequest):
-    """
-    Generate a new video reel for a book. Each call produces one reel
-    from unused content. Memory ensures no repeats.
-    """
-    summary = await BookSummary.get(summary_id)
-    if not summary:
-        raise HTTPException(status_code=404, detail="Summary not found")
-    if summary.status != ProcessingStatus.COMPLETE:
-        raise HTTPException(status_code=400, detail="Summary must be complete first")
-
-    from app.celery_worker import generate_video_reel_task
-
-    task = generate_video_reel_task.delay(
-        summary_id=summary_id,
-        api_key=request.api_key,
-        provider=request.provider,
-        model=request.model,
-    )
-
-    job = JobStatus(
-        celery_task_id=task.id,
-        job_type="generate_video_reel",
-        status="pending",
-        progress=0,
-        message="Starting video reel generation...",
-        result_id=summary_id,
-    )
-    await job.insert()
-
-    return {"task_id": task.id, "message": "Video reel generation started"}
-
-
-# ── Fixed routes BEFORE parameterized /{book_id} to avoid shadowing ──
-
-@app.get("/video-reels/renderer-status")
-async def check_renderer_status():
-    """Check if the reel-renderer is set up and ready."""
-    from app.reel_engine.renderer import check_renderer_ready
-    ready, message = check_renderer_ready()
-    return {"ready": ready, "message": message}
-
-
-@app.get("/video-reels/{book_id}")
-async def get_video_reels_for_book(book_id: str):
-    """Get all video reels for a specific book (includes DSL for browser rendering)."""
-    reels = await VideoReelDoc.find(
-        VideoReelDoc.book_id == book_id,
-    ).sort("reel_index").to_list()
-
-    book = await Book.get(book_id)
-    book_info = {
-        "id": str(book.id),
-        "title": book.title,
-        "author": book.author,
-        "cover_image_id": book.cover_image_id,
-    } if book else {}
-
-    return {
-        "book": book_info,
-        "reels": [
-            _serialize_video_reel(r, book_info)
-            for r in reels
-        ],
-        "total": len(reels),
-    }
-
-
-def _serialize_video_reel(r, book_info: dict | None = None, total_in_book: int | None = None) -> dict:
-    """Serialize a VideoReelDoc to API response dict. Includes DSL for browser rendering."""
-    result = {
-        "id": str(r.id),
-        "reel_index": r.reel_index,
-        "title": r.title,
-        "mood": r.mood,
-        "duration_ms": r.duration_ms,
-        "video_path": r.video_path if r.render_status == "complete" else "",
-        "render_status": r.render_status,
-        "created_at": r.created_at.isoformat(),
-    }
-    # Always include DSL so browser can render without MP4
-    if r.dsl:
-        result["dsl"] = r.dsl
-    if book_info:
-        result["book"] = book_info
-    if total_in_book is not None:
-        result["total_reels_in_book"] = total_in_book
-    return result
-
-
-@app.get("/video-reels")
-async def get_all_video_reels(limit: int = 20, offset: int = 0):
-    """
-    Get video reels from ALL books for the infinite vertical feed.
-    Includes DSL for browser-side rendering when MP4 isn't available.
-    """
-    all_reels = []
-
-    reels = await VideoReelDoc.find().sort("-created_at").to_list()
-
-    for reel in reels:
-        book = await Book.get(reel.book_id)
-        book_info = {
-            "id": str(book.id),
-            "title": book.title,
-            "author": book.author,
-            "cover_image_id": book.cover_image_id,
-        } if book else {}
-
-        book_total = await VideoReelDoc.find(
-            VideoReelDoc.book_id == reel.book_id,
-        ).count()
-
-        all_reels.append(_serialize_video_reel(reel, book_info, book_total))
-
-    total = len(all_reels)
-    page = all_reels[offset:offset + limit]
-
-    return {
-        "reels": page,
-        "total": total,
-        "offset": offset,
-        "limit": limit,
-        "has_more": offset + limit < total,
-    }
-
-
-@app.get("/video-reels/{book_id}/{reel_id}/video")
-async def serve_video_reel(book_id: str, reel_id: str):
-    """Serve the rendered MP4 video file."""
-    reel = await VideoReelDoc.get(reel_id)
-    if not reel or reel.book_id != book_id:
-        raise HTTPException(status_code=404, detail="Reel not found")
-    if reel.render_status != "complete" or not reel.video_path:
-        raise HTTPException(status_code=404, detail="Video not yet rendered")
-
-    settings = get_settings()
-    storage_base = settings.storage_dir or str(Path(settings.pdf_dir).parent)
-    video_file = Path(storage_base) / reel.video_path
-
-    if not video_file.exists():
-        raise HTTPException(status_code=404, detail="Video file not found on disk")
-
-    return FileResponse(
-        str(video_file),
-        media_type="video/mp4",
-        headers={
-            "Cache-Control": "public, max-age=604800",
-            "Accept-Ranges": "bytes",
-        },
-    )
-
-
-@app.delete("/video-reels/{book_id}/{reel_id}")
-async def delete_video_reel(book_id: str, reel_id: str):
-    """Delete a single video reel and its rendered video file."""
-    reel = await VideoReelDoc.get(reel_id)
-    if not reel or reel.book_id != book_id:
-        raise HTTPException(status_code=404, detail="Reel not found")
-
-    # Delete rendered MP4 if it exists
-    if reel.video_path:
-        settings = get_settings()
-        storage_base = settings.storage_dir or str(Path(settings.pdf_dir).parent)
-        video_file = Path(storage_base) / reel.video_path
-        if video_file.exists():
-            video_file.unlink()
-
-    # Remove from reel memory's used content IDs so content can be reused
-    if reel.source_content_ids:
-        memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
-        if memory:
-            memory.used_content_ids = [
-                cid for cid in memory.used_content_ids
-                if cid not in reel.source_content_ids
-            ]
-            memory.total_reels_generated = max(0, memory.total_reels_generated - 1)
-            memory.exhausted = False  # Content freed up
-            await memory.save()
-
-    await reel.delete()
-    return {"ok": True, "message": "Reel deleted"}
-
-
-@app.get("/video-reels/memory/{book_id}")
-async def get_reel_memory(book_id: str):
-    """Check reel generation memory — how much content is left."""
-    memory = await BookReelMemory.find_one(BookReelMemory.book_id == book_id)
-    if not memory:
-        return {
-            "total_reels_generated": 0,
-            "used_content_count": 0,
-            "exhausted": False,
-        }
-    return {
-        "total_reels_generated": memory.total_reels_generated,
-        "used_content_count": len(memory.used_content_ids),
-        "exhausted": memory.exhausted,
-    }
