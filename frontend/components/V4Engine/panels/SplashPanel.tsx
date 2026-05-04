@@ -8,15 +8,16 @@
  */
 
 import { motion } from "motion/react";
-import type { V4Panel } from "../types";
-import { MOOD_PALETTES, DEFAULT_PALETTE } from "../types";
+import type { V4CharacterAsset, V4Panel } from "../types";
+import { DEFAULT_PALETTE } from "../types";
 
 interface SplashPanelProps {
   panel: V4Panel;
   palette: typeof DEFAULT_PALETTE;
+  asset?: V4CharacterAsset | null;
 }
 
-export function SplashPanel({ panel, palette }: SplashPanelProps) {
+export function SplashPanel({ panel, palette, asset }: SplashPanelProps) {
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col items-center justify-center">
       {/* Speed lines effect */}
@@ -44,18 +45,27 @@ export function SplashPanel({ panel, palette }: SplashPanelProps) {
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
         >
           <div
-            className="w-24 h-32 rounded-lg flex items-center justify-center"
+            className="w-28 h-36 rounded-lg flex items-center justify-center overflow-hidden"
             style={{
               background: `linear-gradient(135deg, ${palette.accent}40, ${palette.accent}10)`,
               border: `2px solid ${palette.accent}60`,
             }}
           >
-            <span
-              className="text-xs font-bold tracking-wider uppercase"
-              style={{ color: palette.accent, fontFamily: "var(--font-label, monospace)" }}
-            >
-              {panel.character}
-            </span>
+            {asset?.image_url ? (
+              <img
+                src={asset.image_url}
+                alt={`${panel.character} character asset`}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <span
+                className="text-xs font-bold tracking-wider uppercase"
+                style={{ color: palette.accent, fontFamily: "var(--font-label, monospace)" }}
+              >
+                {panel.character}
+              </span>
+            )}
           </div>
         </motion.div>
       )}

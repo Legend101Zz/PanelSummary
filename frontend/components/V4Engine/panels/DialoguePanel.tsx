@@ -8,12 +8,30 @@
  */
 
 import { motion } from "motion/react";
-import type { V4Panel, V4DialogueLine } from "../types";
+import type { V4CharacterAsset, V4Panel, V4DialogueLine } from "../types";
 import { DEFAULT_PALETTE } from "../types";
 
 interface DialoguePanelProps {
   panel: V4Panel;
   palette: typeof DEFAULT_PALETTE;
+  assets?: V4CharacterAsset[];
+}
+
+function normalizeAssetKey(value: string | undefined): string {
+  return (value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function findLineAsset(line: V4DialogueLine, assets: V4CharacterAsset[]): V4CharacterAsset | null {
+  const who = normalizeAssetKey(line.who);
+  const emotion = normalizeAssetKey(line.emotion || "neutral");
+  return assets.find(asset => (
+    normalizeAssetKey(asset.character_id) === who
+    && normalizeAssetKey(asset.expression || "neutral") === emotion
+    && asset.image_url
+  )) || assets.find(asset => (
+    normalizeAssetKey(asset.character_id) === who
+    && asset.image_url
+  )) || null;
 }
 
 const EMOTION_STYLES: Record<string, { borderColor: string; fontStyle: string }> = {
@@ -32,11 +50,13 @@ function SpeechBubble({
   index,
   isRight,
   palette,
+  asset,
 }: {
   line: V4DialogueLine;
   index: number;
   isRight: boolean;
   palette: typeof DEFAULT_PALETTE;
+  asset: V4CharacterAsset | null;
 }) {
   const emotionStyle = EMOTION_STYLES[line.emotion || "neutral"] || EMOTION_STYLES.neutral;
 
@@ -47,22 +67,43 @@ function SpeechBubble({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.4, delay: index * 0.3 }}
     >
-      {/* Character tag */}
-      <div
-        className="shrink-0 px-2 py-1 rounded text-xs font-bold tracking-wider uppercase"
-        style={{
-          color: emotionStyle.borderColor,
-          background: `${emotionStyle.borderColor}15`,
-          border: `1px solid ${emotionStyle.borderColor}30`,
-          fontFamily: "var(--font-label, monospace)",
-          fontSize: "0.6rem",
-          maxWidth: "5rem",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {line.who}
+      {/* Character tag / reusable sprite */}
+      <div className="shrink-0 flex flex-col items-center gap-1 max-w-20">
+        <div
+          className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
+          style={{
+            color: emotionStyle.borderColor,
+            background: `${emotionStyle.borderColor}15`,
+            border: `1px solid ${emotionStyle.borderColor}40`,
+          }}
+        >
+          {asset?.image_url ? (
+            <img
+              src={asset.image_url}
+              alt={`${line.who} ${line.emotion || "neutral"}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <span style={{ fontFamily: "var(--font-label, monospace)", fontSize: "0.62rem" }}>
+              {line.who.slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        </div>
+        <div
+          className="px-1.5 py-0.5 rounded text-xs font-bold tracking-wider uppercase max-w-full"
+          style={{
+            color: emotionStyle.borderColor,
+            background: `${emotionStyle.borderColor}15`,
+            fontFamily: "var(--font-label, monospace)",
+            fontSize: "0.52rem",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {line.who}
+        </div>
       </div>
 
       {/* Bubble */}
@@ -102,7 +143,7 @@ function SpeechBubble({
   );
 }
 
-export function DialoguePanel({ panel, palette }: DialoguePanelProps) {
+export function DialoguePanel({ panel, palette, assets = [] }: DialoguePanelProps) {
   const lines = panel.lines || [];
 
   return (
@@ -131,6 +172,7 @@ export function DialoguePanel({ panel, palette }: DialoguePanelProps) {
           index={i}
           isRight={i % 2 === 1}
           palette={palette}
+          asset={findLineAsset(line, assets)}
         />
       ))}
 

@@ -20,7 +20,7 @@ import type {
   UploadResponse,
   SummaryStyle,
   LLMProvider,
-  GenerateMangaSliceResponse,
+  StartMangaSliceGenerationResponse,
   MangaProjectAssetsResponse,
   MangaProjectPagesResponse,
   MangaProjectResponse,
@@ -249,8 +249,8 @@ export async function generateMangaProjectSlice(
     imageModel?: string;
     extraOptions?: Record<string, unknown>;
   },
-): Promise<GenerateMangaSliceResponse> {
-  const response = await api.post<GenerateMangaSliceResponse>(
+): Promise<StartMangaSliceGenerationResponse> {
+  const response = await api.post<StartMangaSliceGenerationResponse>(
     `/manga-projects/${projectId}/generate-slice`,
     {
       api_key: options.apiKey,
@@ -261,7 +261,7 @@ export async function generateMangaProjectSlice(
       image_model: options.imageModel ?? null,
       options: options.extraOptions ?? {},
     },
-    { timeout: 10 * 60 * 1000 },
+    { timeout: 30000 },
   );
   return response.data;
 }

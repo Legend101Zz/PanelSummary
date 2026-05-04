@@ -9,7 +9,7 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import type { V4Panel, V4Emphasis } from "./types";
+import type { V4CharacterAsset, V4Panel, V4Emphasis } from "./types";
 import { MOOD_PALETTES, DEFAULT_PALETTE, EMPHASIS_WEIGHTS } from "./types";
 
 import { SplashPanel } from "./panels/SplashPanel";
@@ -23,12 +23,31 @@ interface V4PanelRendererProps {
   index: number;
   /** Stagger delay for entry animation */
   staggerDelay?: number;
+  characterAssets?: V4CharacterAsset[];
+}
+
+function normalizeAssetKey(value: string | undefined): string {
+  return (value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function findPanelAsset(panel: V4Panel, assets: V4CharacterAsset[]): V4CharacterAsset | null {
+  const character = normalizeAssetKey(panel.character);
+  if (!character) return null;
+  const expression = normalizeAssetKey(panel.expression || "neutral");
+  return assets.find(asset => (
+    normalizeAssetKey(asset.character_id) === character
+    && normalizeAssetKey(asset.expression || "neutral") === expression
+    && asset.image_url
+  )) || assets.find(asset => (
+    normalizeAssetKey(asset.character_id) === character
+    && asset.image_url
+  )) || null;
 }
 
 /**
  * Render a single V4 panel with mood-driven palette and ink border.
  */
-export function V4PanelRenderer({ panel, index, staggerDelay = 0 }: V4PanelRendererProps) {
+export function V4PanelRenderer({ panel, index, staggerDelay = 0, characterAssets = [] }: V4PanelRendererProps) {
   const palette = useMemo(
     () => MOOD_PALETTES[panel.mood || ""] || DEFAULT_PALETTE,
     [panel.mood],
@@ -36,14 +55,18 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0 }: V4PanelRende
 
   const emphasis = (panel.emphasis || "medium") as V4Emphasis;
   const weight = EMPHASIS_WEIGHTS[emphasis];
+  const panelAsset = useMemo(
+    () => findPanelAsset(panel, characterAssets),
+    [panel, characterAssets],
+  );
 
   // Choose the right sub-renderer
   const content = useMemo(() => {
     switch (panel.type) {
       case "splash":
-        return <SplashPanel panel={panel} palette={palette} />;
+        return <SplashPanel panel={panel} palette={palette} asset={panelAsset} />;
       case "dialogue":
-        return <DialoguePanel panel={panel} palette={palette} />;
+        return <DialoguePanel panel={panel} palette={palette} assets={characterAssets} />;
       case "data":
         return <DataPanel panel={panel} palette={palette} />;
       case "transition":
@@ -54,7 +77,7 @@ export function V4PanelRenderer({ panel, index, staggerDelay = 0 }: V4PanelRende
       default:
         return <NarrationPanel panel={panel} palette={palette} />;
     }
-  }, [panel, palette]);
+  }, [panel, palette, panelAsset, characterAssets]);
 
   return (
     <motion.div

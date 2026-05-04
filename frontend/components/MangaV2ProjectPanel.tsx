@@ -9,6 +9,7 @@ import {
   createMangaProject,
   generateMangaProjectSlice,
   listBookMangaProjects,
+  pollUntilComplete,
   previewNextSourceSlice,
 } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
@@ -40,6 +41,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   const [imageModel, setImageModel] = useState(IMAGE_MODELS[0].id);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [jobProgress, setJobProgress] = useState<number | null>(null);
   const [message, setMessage] = useState("Loading v2 manga projects…");
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +102,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       setError(err instanceof Error ? err.message : "Failed to create project");
     } finally {
       setBusy(false);
+      setJobProgress(null);
     }
   };
 
@@ -114,8 +117,9 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
     setError(null);
     try {
       const project = await ensureProject();
-      setMessage("Generating structured manga: facts → script → storyboard → QA → assets…");
-      await generateMangaProjectSlice(project.id, {
+      setJobProgress(0);
+      setMessage("Queued structured manga: facts → script → storyboard → QA → assets…");
+      const queued = await generateMangaProjectSlice(project.id, {
         apiKey: key,
         provider: provider as LLMProvider,
         model: model ?? undefined,
@@ -124,6 +128,11 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
         imageModel: generateImages ? imageModel : undefined,
         extraOptions: { style: selectedStyle },
       });
+      setMessage(queued.message);
+      await pollUntilComplete(queued.task_id, status => {
+        setJobProgress(status.progress);
+        setMessage(status.message || `Generating manga… ${status.progress}%`);
+      }, 1500, 20 * 60 * 1000);
       setMessage("Slice generated. Opening the v2 manga reader…");
       await refreshProjects();
       router.push(`/books/${book.id}/manga/v2?project=${project.id}`);
@@ -132,6 +141,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       setMessage("Generation stopped before persistence. Good: no weird half-manga saved.");
     } finally {
       setBusy(false);
+      setJobProgress(null);
     }
   };
 
@@ -235,6 +245,21 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           )}
 
           {message && <p className="font-label" style={{ color: "var(--text-3)", fontSize: "9px", lineHeight: 1.5 }}>{message}</p>}
+          {jobProgress !== null && (
+            <div className="flex flex-col gap-1" aria-live="polite">
+              <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--border)" }}>
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={false}
+                  animate={{ width: `${Math.max(0, Math.min(100, jobProgress))}%` }}
+                  style={{ background: "#0053e2" }}
+                />
+              </div>
+              <p className="font-label" style={{ color: "var(--text-3)", fontSize: "8px" }}>
+                Background job progress: {jobProgress}%
+              </p>
+            </div>
+          )}
           {error && (
             <div className="flex items-start gap-2 p-3 border" style={{ borderColor: "#ea1100", background: "rgba(234,17,0,0.08)", color: "#ffb3ad" }}>
               <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />

@@ -15,7 +15,7 @@ import {
 } from "@/lib/api";
 import type { MangaAssetDoc, MangaProject, MangaProjectPageDoc, MangaSliceDoc } from "@/lib/types";
 import { V4PageRenderer } from "@/components/V4Engine";
-import type { V4Page } from "@/components/V4Engine";
+import type { V4CharacterAsset, V4Page } from "@/components/V4Engine";
 
 function rangeLabel(page: MangaProjectPageDoc | null): string {
   if (!page) return "No source range";
@@ -89,6 +89,12 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
     [currentPage?.slice_id, slices],
   );
   const v4Page = currentPage?.v4_page as unknown as V4Page | undefined;
+  const characterAssets = useMemo<V4CharacterAsset[]>(() => assets.map(asset => ({
+    character_id: asset.character_id,
+    expression: asset.expression,
+    asset_type: asset.asset_type,
+    image_url: getImageUrl(asset.image_path),
+  })), [assets]);
   const canPrev = pageIndex > 0;
   const canNext = pageIndex < pages.length - 1;
 
@@ -161,7 +167,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
           <div className="flex-1 border shadow-2xl" style={{ borderColor: "#2E2C3F", background: "#F8F3E7" }}>
             {v4Page ? (
               <div className="mx-auto h-[78vh] max-h-[920px] aspect-[2/3]">
-                <V4PageRenderer page={v4Page} />
+                <V4PageRenderer page={v4Page} characterAssets={characterAssets} />
               </div>
             ) : (
               <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6" style={{ color: "#2A2A2A" }}>

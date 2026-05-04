@@ -12,12 +12,13 @@
  */
 
 import { useMemo } from "react";
-import type { V4Page, V4PageLayout } from "./types";
+import type { V4CharacterAsset, V4Page, V4PageLayout } from "./types";
 import { V4PanelRenderer } from "./V4PanelRenderer";
 
 interface V4PageRendererProps {
   page: V4Page;
   className?: string;
+  characterAssets?: V4CharacterAsset[];
 }
 
 /**
@@ -82,7 +83,7 @@ function getGridPlacement(
   return undefined;
 }
 
-export function V4PageRenderer({ page, className = "" }: V4PageRendererProps) {
+export function V4PageRenderer({ page, className = "", characterAssets = [] }: V4PageRendererProps) {
   const layoutStyle = useMemo(
     () => LAYOUT_STYLES[page.layout] || LAYOUT_STYLES.vertical,
     [page.layout],
@@ -117,6 +118,7 @@ export function V4PageRenderer({ page, className = "" }: V4PageRendererProps) {
             panel={panel}
             index={i}
             staggerDelay={i * 0.12}
+            characterAssets={characterAssets}
           />
         </div>
       ))}

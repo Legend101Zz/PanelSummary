@@ -72,6 +72,13 @@ export interface V4DataItem {
   value?: string;
 }
 
+export interface V4CharacterAsset {
+  character_id: string;
+  expression?: string;
+  asset_type?: string;
+  image_url: string | null;
+}
+
 export interface V4Panel {
   type: V4PanelType;
   panel_id?: string;

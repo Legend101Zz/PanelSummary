@@ -231,10 +231,10 @@ export interface MangaProjectAssetsResponse {
   assets: MangaAssetDoc[];
 }
 
-export interface GenerateMangaSliceResponse {
+export interface StartMangaSliceGenerationResponse {
   project: MangaProject;
-  slice: MangaSliceDoc;
-  pages: MangaProjectPageDoc[];
+  task_id: string;
+  message: string;
 }
 
 // ============================================================
