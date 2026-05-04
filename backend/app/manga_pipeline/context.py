@@ -1,0 +1,55 @@
+"""Pipeline context for the revamp manga generation flow."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from app.domain.manga import (
+    AdaptationPlan,
+    BeatSheet,
+    CharacterWorldBible,
+    ContinuityLedger,
+    MangaScript,
+    QualityReport,
+    SourceFact,
+    SourceSlice,
+    StoryboardPage,
+)
+
+
+@dataclass
+class PipelineResult:
+    source_slice: SourceSlice
+    v4_pages: list[dict[str, Any]]
+    quality_report: QualityReport | None
+    new_fact_ids: list[str] = field(default_factory=list)
+
+
+@dataclass
+class PipelineContext:
+    book_id: str
+    project_id: str
+    source_slice: SourceSlice
+    prior_continuity: ContinuityLedger
+    options: dict[str, Any] = field(default_factory=dict)
+
+    canonical_chapters: list[dict[str, Any]] = field(default_factory=list)
+    knowledge_doc: dict[str, Any] = field(default_factory=dict)
+    fact_registry: list[SourceFact] = field(default_factory=list)
+    new_fact_ids: list[str] = field(default_factory=list)
+    adaptation_plan: AdaptationPlan | None = None
+    character_bible: CharacterWorldBible | None = None
+    beat_sheet: BeatSheet | None = None
+    manga_script: MangaScript | None = None
+    storyboard_pages: list[StoryboardPage] = field(default_factory=list)
+    v4_pages: list[dict[str, Any]] = field(default_factory=list)
+    quality_report: QualityReport | None = None
+
+    def result(self) -> PipelineResult:
+        return PipelineResult(
+            source_slice=self.source_slice,
+            v4_pages=self.v4_pages,
+            quality_report=self.quality_report,
+            new_fact_ids=self.new_fact_ids,
+        )
