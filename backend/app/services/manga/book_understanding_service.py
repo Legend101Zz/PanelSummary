@@ -34,6 +34,7 @@ from app.manga_pipeline.stages.book import (
     bible_silhouette_uniqueness_stage,
     book_fact_registry_stage,
     character_art_direction_stage,
+    character_voice_cards_stage,
     global_adaptation_plan_stage,
     global_character_world_bible_stage,
     whole_book_synopsis_stage,
@@ -62,6 +63,10 @@ def build_book_understanding_stages():
         # arc outline because the outline doesn't need it; ordering is set by
         # actual data dependency, not aesthetics.
         character_art_direction_stage.run,
+        # Voice cards also depend on the bible (for character ids/roles) and
+        # the adaptation plan (for narrative role grounding). They are read
+        # by every per-slice script stage to keep dialogue distinct.
+        character_voice_cards_stage.run,
         arc_outline_stage.run,
     ]
 
@@ -132,6 +137,7 @@ def _persist_understanding_to_project(
     project.adaptation_plan = result.adaptation_plan.model_dump(mode="json")
     project.character_world_bible = result.character_bible.model_dump(mode="json")
     project.character_art_direction = result.art_direction.model_dump(mode="json")
+    project.character_voice_cards = result.voice_cards.model_dump(mode="json")
     project.arc_outline = result.arc_outline.model_dump(mode="json")
     project.book_understanding_traces = [serialize_llm_trace(trace) for trace in result.llm_traces]
     project.bible_locked = True
@@ -154,6 +160,8 @@ def project_understanding_is_ready(project: MangaProjectDoc) -> bool:
     if not project.character_world_bible:
         return False
     if not project.character_art_direction:
+        return False
+    if not project.character_voice_cards:
         return False
     if not project.arc_outline:
         return False
@@ -345,6 +353,7 @@ def _hydrate_existing_result(project: MangaProjectDoc) -> BookUnderstandingResul
         ArcOutline,
         BookSynopsis,
         CharacterArtDirectionBundle,
+        CharacterVoiceCardBundle,
         CharacterWorldBible,
         SourceFact,
     )
@@ -355,6 +364,7 @@ def _hydrate_existing_result(project: MangaProjectDoc) -> BookUnderstandingResul
         adaptation_plan=AdaptationPlan(**project.adaptation_plan),
         character_bible=CharacterWorldBible(**project.character_world_bible),
         art_direction=CharacterArtDirectionBundle(**project.character_art_direction),
+        voice_cards=CharacterVoiceCardBundle(**project.character_voice_cards),
         arc_outline=ArcOutline(**project.arc_outline),
         llm_traces=[],
     )

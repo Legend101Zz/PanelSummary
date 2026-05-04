@@ -71,6 +71,7 @@ def serialize_project(project: MangaProjectDoc) -> dict[str, Any]:
         "project_options": project.project_options,
         "adaptation_plan": project.adaptation_plan,
         "character_world_bible": project.character_world_bible,
+        "character_voice_cards": project.character_voice_cards,
         "book_synopsis": project.book_synopsis,
         "arc_outline": project.arc_outline,
         "understanding_status": project.understanding_status,

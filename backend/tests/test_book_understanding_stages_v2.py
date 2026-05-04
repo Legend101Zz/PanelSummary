@@ -31,6 +31,7 @@ from app.manga_pipeline import BookUnderstandingContext
 from app.manga_pipeline.stages.book import (
     arc_outline_stage,
     book_fact_registry_stage,
+    character_voice_cards_stage,
     global_adaptation_plan_stage,
     global_character_world_bible_stage,
     whole_book_synopsis_stage,
@@ -386,3 +387,66 @@ def test_arc_outline_stage_rejects_mismatched_book_id():
 
     with pytest.raises(ValueError, match="book_id must match"):
         asyncio.run(arc_outline_stage.run(context))
+
+
+def _valid_voice_cards_payload() -> dict[str, Any]:
+    return {
+        "cards": [
+            {
+                "character_id": "kai",
+                "name": "Kai",
+                "core_attitude": "Curious and stubborn; trusts patterns over slogans.",
+                "speech_rhythm": "Short clipped lines that pivot to a question.",
+                "vocabulary_do": ["constraint", "tradeoff", "ship it"],
+                "vocabulary_dont": ["synergy", "frankly"],
+                "example_lines": [
+                    "Constraint flipped on us.",
+                    "Cheap fix or right fix?",
+                ],
+            }
+        ],
+    }
+
+
+def test_character_voice_cards_stage_requires_bible():
+    payload = _valid_voice_cards_payload()
+    client = FakeLLMClient(payload)
+    context = _context(client)
+    context.synopsis = BookSynopsis(**_valid_synopsis_payload())
+    context.adaptation_plan = AdaptationPlan(**_valid_adaptation_plan_payload())
+    # bible deliberately missing — the stage MUST refuse rather than guess.
+
+    with pytest.raises(ValueError, match="bible"):
+        asyncio.run(character_voice_cards_stage.run(context))
+
+
+def test_character_voice_cards_stage_filters_unknown_character_ids():
+    # The system prompt forbids inventing characters but we still want a
+    # safety net: cards bound to non-bible characters should be dropped.
+    payload = _valid_voice_cards_payload()
+    payload["cards"].append(
+        {
+            "character_id": "ghost",
+            "name": "Ghost",
+            "core_attitude": "Drifts through scenes whispering nothing useful.",
+            "speech_rhythm": "Slow, ellipses-heavy.",
+            "vocabulary_do": ["...", "perhaps"],
+            "vocabulary_dont": ["definitely"],
+            "example_lines": ["...perhaps.", "...maybe later."],
+        }
+    )
+    client = FakeLLMClient(payload)
+    context = _context(client)
+    context.synopsis = BookSynopsis(**_valid_synopsis_payload())
+    context.adaptation_plan = AdaptationPlan(**_valid_adaptation_plan_payload())
+    context.character_bible = CharacterWorldBible(**_valid_bible_payload())
+
+    asyncio.run(character_voice_cards_stage.run(context))
+
+    assert context.voice_cards is not None
+    assert [card.character_id for card in context.voice_cards.cards] == ["kai"]
+    # Trace recorded so observability covers the new stage.
+    assert any(
+        trace.stage_name.value == "character_voice_cards"
+        for trace in context.llm_traces
+    )

@@ -54,6 +54,7 @@ def test_serialize_project_exposes_control_plane_fields():
         project_options={},
         adaptation_plan={},
         character_world_bible={},
+        character_voice_cards={},
         book_synopsis={},
         arc_outline={},
         understanding_status="pending",
@@ -81,3 +82,4 @@ def test_serialize_project_exposes_control_plane_fields():
     assert payload["bible_locked"] is False
     assert payload["book_synopsis"] == {}
     assert payload["arc_outline"] == {}
+    assert payload["character_voice_cards"] == {}
