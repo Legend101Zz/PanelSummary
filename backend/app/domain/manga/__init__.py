@@ -34,6 +34,7 @@ from app.domain.manga.artifacts import (
     StoryboardPanel,
 )
 from app.domain.manga.script_review import ScriptIssue, ScriptReviewReport
+from app.domain.manga.voice_cards import CharacterVoiceCard, CharacterVoiceCardBundle
 from app.domain.manga.page_composition import (
     MAX_CELLS_PER_ROW,
     MAX_ROWS_PER_PAGE,
@@ -43,6 +44,7 @@ from app.domain.manga.page_composition import (
 )
 from app.domain.manga.sprite_quality import (
     AssetSpriteReview,
+    MissingExpression,
     SpriteCheck,
     SpriteCheckCode,
     SpriteCheckSeverity,
@@ -50,6 +52,7 @@ from app.domain.manga.sprite_quality import (
 )
 from app.domain.manga.continuity import (
     build_continuation_prompt_context,
+    build_recap_seed,
     should_add_to_be_continued,
     update_ledger_after_slice,
 )
@@ -96,6 +99,8 @@ __all__ = [
     "SpriteQualityReport",
     "CharacterArtDirection",
     "CharacterArtDirectionBundle",
+    "CharacterVoiceCard",
+    "CharacterVoiceCardBundle",
     "CharacterAssetPlan",
     "CharacterDesign",
     "CharacterContinuityState",
@@ -130,6 +135,7 @@ __all__ = [
     "StoryboardPanel",
     "StoryThread",
     "build_continuation_prompt_context",
+    "build_recap_seed",
     "should_add_to_be_continued",
     "update_ledger_after_slice",
     "merge_fact_registry",

@@ -74,6 +74,11 @@ class PanelRenderResult:
     aspect_ratio: str = ""
     error: str = ""
     used_reference_assets: list[str] = field(default_factory=list)
+    # Phase 3.3: how many character slots the panel ASKED for (the union of
+    # the panel's character_ids list, deduplicated). Together with
+    # len(used_reference_assets) this lets us compute the sprite-bank
+    # hit-rate without re-deriving the panel's character set.
+    requested_character_count: int = 0
 
 
 @dataclass
@@ -88,6 +93,37 @@ class PageRenderingSummary:
     def total(self) -> int:
         return self.rendered + self.failed
 
+    @property
+    def character_slots_requested(self) -> int:
+        """Phase 3.3: total number of character slots across all panels.
+
+        A "slot" is one (panel, character_id) pair. We aggregate from the
+        per-result counts so the property stays a pure projection — the
+        renderer is the source of truth for what the panel asked for.
+        """
+        return sum(result.requested_character_count for result in self.results)
+
+    @property
+    def character_slots_resolved(self) -> int:
+        """Phase 3.3: total number of character slots that resolved to a real
+        reference asset (not prompt-only fallback)."""
+        return sum(len(result.used_reference_assets) for result in self.results)
+
+    @property
+    def sprite_bank_hit_rate(self) -> float | None:
+        """Phase 3.3: ratio of resolved slots to requested slots, in [0, 1].
+
+        Returns None when no panel asked for any character (e.g. an entire
+        slice of narration-only panels). A None signals "not applicable";
+        a 0.0 signals "every panel asked for a character but the library
+        had nothing for any of them" — those are very different stories
+        and we do not want callers to confuse them.
+        """
+        requested = self.character_slots_requested
+        if requested == 0:
+            return None
+        return self.character_slots_resolved / requested
+
 
 def build_asset_lookup(assets: list[MangaAssetDoc]) -> dict[str, dict[str, MangaAssetDoc]]:
     """Group asset docs by ``character_id`` then by ``asset_type``.
@@ -101,6 +137,13 @@ def build_asset_lookup(assets: list[MangaAssetDoc]) -> dict[str, dict[str, Manga
     whatever's there. Without this preference order the dict ends up with
     whichever angle was loaded last — nondeterministic and a flaky-test
     factory.
+
+    Phase 3.4: a user-pinned asset trumps the angle-preference order. The
+    "lock pose" affordance in the Character Library UI is meaningless if the
+    selector silently overrides the user's choice. Pinning an asset of an
+    unexpected type (e.g. an expression) is also honoured: a user who pins
+    a 3/4 hero shot of "determined" probably picked it BECAUSE it conditions
+    panels better than the bland turnaround.
     """
     # asset_type -> expression preference order. Anything not in the list
     # gets a stable insertion-order fallback.
@@ -116,6 +159,15 @@ def build_asset_lookup(assets: list[MangaAssetDoc]) -> dict[str, dict[str, Manga
     for character_id, by_type in grouped.items():
         per_type: dict[str, MangaAssetDoc] = {}
         for asset_type, docs in by_type.items():
+            # Phase 3.4: a pinned doc always wins, regardless of angle. We
+            # take the FIRST pinned doc per type because the API enforces
+            # at most one pinned per (character, asset_type) at write time;
+            # if a race produced two, taking the first is deterministic and
+            # the next user pin will resolve it.
+            pinned_doc = next((doc for doc in docs if getattr(doc, "pinned", False)), None)
+            if pinned_doc is not None:
+                per_type[asset_type] = pinned_doc
+                continue
             if asset_type == REFERENCE_ASSET_TYPE and len(docs) > 1:
                 # Pick by angle preference; fall back to first.
                 docs_by_label = {doc.expression: doc for doc in docs}
@@ -330,6 +382,9 @@ async def _render_one_panel(
         asset_lookup=asset_lookup,
         image_root=image_root,
     )
+    # Phase 3.3: count what the panel asked for ONCE, after dedup, so the
+    # requested-vs-resolved comparison is apples to apples.
+    requested_character_count = len({c for c in character_ids if c})
     aspect = aspect_ratio_for_panel(panel)
     prompt = build_panel_prompt(
         panel=panel,
@@ -361,6 +416,7 @@ async def _render_one_panel(
             page_index=page_index,
             error=f"renderer raised: {exc}",
             used_reference_assets=[char_id for char_id, _ in references],
+            requested_character_count=requested_character_count,
         )
 
     if not ok:
@@ -369,6 +425,7 @@ async def _render_one_panel(
             page_index=page_index,
             error="renderer returned False",
             used_reference_assets=[char_id for char_id, _ in references],
+            requested_character_count=requested_character_count,
         )
 
     panel["image_path"] = relative_path
@@ -379,6 +436,7 @@ async def _render_one_panel(
         image_path=relative_path,
         aspect_ratio=aspect,
         used_reference_assets=[char_id for char_id, _ in references],
+        requested_character_count=requested_character_count,
     )
 
 

@@ -30,6 +30,8 @@ from app.domain.manga import (
 )
 from app.manga_models import MangaAssetDoc, MangaProjectDoc
 from app.manga_pipeline.vision_contracts import VisionModelClient
+from app.services.manga.character_sheet_planner import plan_book_character_sheets
+from app.services.manga.expression_coverage import compute_missing_expressions
 from app.services.manga.sprite_quality_service import (
     SpriteQualityServiceConfig,
     review_sprite_assets,
@@ -160,12 +162,68 @@ async def apply_sprite_quality_gate(
         len(last_report.asset_reviews),
         sum(1 for r in last_report.asset_reviews if r.status == "failed"),
     )
+    # Phase 3.1: compute the spec→asset coverage gap. We do this AFTER
+    # the auto-retry loop, not inside it, because regenerating an asset
+    # that exists cannot close a gap (a gap is a missing asset, period).
+    # The planner output is the single source of truth for what SHOULD
+    # exist; we replan here to pick up any bible edits that happened
+    # between the original materialisation and now.
+    last_report = _attach_coverage_gaps(
+        report=last_report,
+        project=project,
+        bible=bible,
+        art_direction=art_direction,
+        persisted=asset_docs,
+    )
     return last_report
 
 
 # ---------------------------------------------------------------------------
 # Internal helpers.
 # ---------------------------------------------------------------------------
+
+
+def _attach_coverage_gaps(
+    *,
+    report: SpriteQualityReport,
+    project: MangaProjectDoc,
+    bible: CharacterWorldBible,
+    art_direction: CharacterArtDirectionBundle | None,
+    persisted: list[MangaAssetDoc],
+) -> SpriteQualityReport:
+    """Replan and surface missing-expression gaps on the report.
+
+    The gap list is attached to ``SpriteQualityReport.missing_expressions``;
+    we ALSO append one synthetic ``SPRITE_EXPRESSION_MISSING`` warning per
+    affected character to a synthesised review row so consumers that only
+    iterate over ``asset_reviews`` (e.g. older UI) still see a signal
+    without reading the new field.
+
+    Why a synthetic review row instead of attaching the warning to a real
+    asset: there IS no asset — the whole point is that one was never
+    materialised. Inventing an asset_id ("missing__kai__panicked") would
+    break callers that expect asset_id to round-trip back to a doc.
+    """
+    try:
+        plan = plan_book_character_sheets(
+            bible=bible,
+            project_id=str(project.id),
+            art_direction=art_direction,
+        )
+    except ValueError as exc:
+        # Bible has no characters or project_id is empty. The gate is not
+        # the place to crash on that; log and return the report unchanged
+        # so the caller decides what to do with a degenerate plan.
+        logger.warning(
+            "[SPRITE-QA] coverage planner refused to plan: %s", exc
+        )
+        return report
+
+    gaps = compute_missing_expressions(plan=plan, persisted=persisted)
+    if not gaps:
+        return report
+    report.missing_expressions = gaps
+    return report
 
 
 async def _load_character_asset_docs(*, project_id: str) -> list[MangaAssetDoc]:
@@ -234,6 +292,7 @@ async def _persist_report_to_assets(
             continue
         doc.status = review.status
         doc.silhouette_match_score = review.silhouette_match_score
+        doc.outfit_match_score = review.outfit_match_score
         doc.last_quality_checks = [c.model_dump() for c in review.checks]
         await doc.save()
 

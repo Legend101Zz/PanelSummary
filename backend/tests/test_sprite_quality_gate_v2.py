@@ -55,6 +55,7 @@ class _FakeAssetDoc:
     regen_count: int = 0
     status: str = ""
     silhouette_match_score: int | None = None
+    outfit_match_score: int | None = None
     last_quality_checks: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     saved_count: int = 0
@@ -114,7 +115,9 @@ def _passing() -> dict[str, Any]:
         "background_is_plain": True,
         "has_text_or_watermark": False,
         "silhouette_match_score": 5,
+        "outfit_match_score": 5,
         "silhouette_notes": "matches",
+        "outfit_notes": "matches",
     }
 
 
@@ -140,6 +143,18 @@ def _patch_loader(monkeypatch, asset_docs: list[_FakeAssetDoc]) -> None:
     monkeypatch.setattr(mod, "_load_character_asset_docs", fake_load)
 
 
+def _stub_no_coverage_gaps(monkeypatch) -> None:
+    """Phase 3.1 coverage check is its own concern — stub it out for the
+    per-asset tests so they keep testing the per-asset path. Tests that
+    care about coverage exercise ``compute_missing_expressions`` directly.
+    """
+    from app.services.manga import sprite_quality_gate as mod
+
+    monkeypatch.setattr(
+        mod, "compute_missing_expressions", lambda **_: []
+    )
+
+
 # ---------------------------------------------------------------------------
 # Tests.
 # ---------------------------------------------------------------------------
@@ -156,6 +171,7 @@ def test_gate_passes_writes_status_to_asset(tmp_path, monkeypatch):
         metadata={"asset_id": "kai__reference_front"},
     )
     _patch_loader(monkeypatch, [asset])
+    _stub_no_coverage_gaps(monkeypatch)
 
     async def regenerate(_doc):
         raise AssertionError("regenerate must not run on a passing asset")
@@ -188,6 +204,7 @@ def test_gate_retries_failed_asset_until_budget_exhausted(tmp_path, monkeypatch)
         metadata={"asset_id": "kai__reference_front"},
     )
     _patch_loader(monkeypatch, [asset])
+    _stub_no_coverage_gaps(monkeypatch)
 
     # Vision keeps reporting text-in-image; regen callback always returns
     # the same doc (simulating: the image model produces the same kind of
@@ -236,6 +253,7 @@ def test_gate_ignores_regen_when_callback_returns_none(tmp_path, monkeypatch):
         metadata={"asset_id": "kai__reference_front"},
     )
     _patch_loader(monkeypatch, [asset])
+    _stub_no_coverage_gaps(monkeypatch)
 
     async def regenerate(_doc):
         # Simulates "image generation disabled" \u2014 the orchestrator
@@ -263,6 +281,7 @@ def test_gate_ignores_regen_when_callback_returns_none(tmp_path, monkeypatch):
 def test_gate_no_assets_returns_empty_report(monkeypatch):
     project = _FakeProject(id="p1", project_options={"generate_images": True})
     _patch_loader(monkeypatch, [])
+    _stub_no_coverage_gaps(monkeypatch)
 
     async def regenerate(_doc):
         return None

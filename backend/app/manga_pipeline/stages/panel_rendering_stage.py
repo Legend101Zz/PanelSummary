@@ -76,6 +76,12 @@ async def run(context: PipelineContext) -> PipelineContext:
     context.options["panel_rendering_summary"] = {
         "rendered": summary.rendered,
         "failed": summary.failed,
+        # Phase 3.3: surface the sprite-bank hit-rate so the QA panel and
+        # frontend can render "7/9 character slots resolved" without
+        # re-deriving it from the per-panel results list.
+        "character_slots_requested": summary.character_slots_requested,
+        "character_slots_resolved": summary.character_slots_resolved,
+        "sprite_bank_hit_rate": summary.sprite_bank_hit_rate,
         "results": [
             {
                 "panel_id": result.panel_id,
@@ -84,6 +90,7 @@ async def run(context: PipelineContext) -> PipelineContext:
                 "aspect_ratio": result.aspect_ratio,
                 "error": result.error,
                 "used_reference_assets": result.used_reference_assets,
+                "requested_character_count": result.requested_character_count,
             }
             for result in summary.results
         ],

@@ -38,6 +38,11 @@ class MangaProjectDoc(Document):
     # direction owns RENDERING INTENT (lens, lighting, color story, expression
     # repertoire). Both layers are spliced into every prompt — defense in depth.
     character_art_direction: dict[str, Any] = Field(default_factory=dict)
+    # Phase 1 polish: per-character speech-style cards. Keeps every
+    # protagonist/antagonist/mentor sounding like THEMSELVES instead of the
+    # default "flat encyclopedia narrator" voice the script LLM defaults to
+    # when given only a character name. Stamped into the script prompt.
+    character_voice_cards: dict[str, Any] = Field(default_factory=dict)
     fact_registry: list[dict[str, Any]] = Field(default_factory=list)
     continuity_ledger: dict[str, Any] = Field(default_factory=dict)
     coverage: dict[str, Any] = Field(default_factory=dict)
@@ -147,6 +152,10 @@ class MangaAssetDoc(Document):
     pinned: bool = False
     regen_count: int = 0
     silhouette_match_score: int | None = None
+    # Phase 3.2: separate score for costume adherence; see SpriteQuality
+    # gate's vision prompt. Persisted so the Library UI can show two
+    # ratings and the regenerate flow can target the failing axis.
+    outfit_match_score: int | None = None
     last_quality_checks: list[dict[str, Any]] = Field(default_factory=list)
 
     created_at: datetime = Field(default_factory=_now)

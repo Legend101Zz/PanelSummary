@@ -68,6 +68,11 @@ PREFERRED_DIMENSION_PX = 768
 # perception of "this is a person".
 SILHOUETTE_MATCH_WARN_THRESHOLD = 3
 
+# Phase 3.2: separate threshold for outfit/costume adherence. Same
+# semantics as silhouette: <= warns. Kept distinct so a future tuning of
+# one does not silently move the other.
+OUTFIT_MATCH_WARN_THRESHOLD = 3
+
 
 @dataclass(frozen=True)
 class SpriteQualityServiceConfig:
@@ -80,6 +85,7 @@ class SpriteQualityServiceConfig:
     min_dimension_px: int = MIN_DIMENSION_PX
     preferred_dimension_px: int = PREFERRED_DIMENSION_PX
     silhouette_match_warn_threshold: int = SILHOUETTE_MATCH_WARN_THRESHOLD
+    outfit_match_warn_threshold: int = OUTFIT_MATCH_WARN_THRESHOLD
     # Image base directory. Asset specs/docs hold paths *relative* to this
     # root; the service resolves them when reading the file. Injected so
     # tests do not need to set environment variables.
@@ -107,19 +113,25 @@ Return EXACTLY this JSON shape, with no surrounding prose:
   "is_single_character": true | false,
   "background_is_plain": true | false,
   "has_text_or_watermark": true | false,
-  "silhouette_match_score": <integer 1\u20135>,
-  "silhouette_notes": "<\u2264 200 chars: what matches or differs>"
+  "silhouette_match_score": <integer 1–5>,
+  "outfit_match_score": <integer 1–5>,
+  "silhouette_notes": "<≤ 200 chars: what matches or differs>",
+  "outfit_notes": "<≤ 200 chars: what matches or differs about the costume>"
 }
 
 Definitions:
-* ``is_single_character`` \u2014 true iff exactly one character is depicted.
+* ``is_single_character`` — true iff exactly one character is depicted.
   Background props/scenery do not count as characters.
-* ``background_is_plain`` \u2014 true iff the background is a flat colour or
+* ``background_is_plain`` — true iff the background is a flat colour or
   a soft gradient suitable for use as a turnaround sheet.
-* ``has_text_or_watermark`` \u2014 true if any letters, numbers, signature,
+* ``has_text_or_watermark`` — true if any letters, numbers, signature,
   or watermark are visible anywhere in the image.
-* ``silhouette_match_score`` \u2014 5 = perfect match to the description
-  provided in the user message; 1 = clearly a different character.
+* ``silhouette_match_score`` — 5 = body shape, hair, and overall
+  outline perfectly match the description; 1 = clearly a different
+  body type or hair style.
+* ``outfit_match_score`` — 5 = the costume (clothing, accessories,
+  signature props named in the bible) is exactly what was described;
+  1 = the costume contradicts the description.
 """
 
 
@@ -290,6 +302,7 @@ async def _review_one_asset(
 
     # ---- vision call ---------------------------------------------------
     silhouette_score: int | None = None
+    outfit_score: int | None = None
     try:
         vision_result = await _run_vision_check(
             spec=spec,
@@ -332,6 +345,23 @@ async def _review_one_asset(
                         ),
                     )
                 )
+        # Phase 3.2: parse the new outfit_match_score and turn a low score
+        # into its own warning so the UI/regen prompt can target costume
+        # drift without redrawing the whole character.
+        outfit_raw = vision_result.get("outfit_match_score")
+        if isinstance(outfit_raw, int) and 1 <= outfit_raw <= 5:
+            outfit_score = outfit_raw
+            if outfit_score <= cfg.outfit_match_warn_threshold:
+                checks.append(
+                    SpriteCheck(
+                        code="SPRITE_OUTFIT_MISMATCH",
+                        severity="warning",
+                        message=(
+                            f"Outfit match score is {outfit_score}/5. Notes: "
+                            f"{vision_result.get('outfit_notes', '').strip()}"
+                        ),
+                    )
+                )
 
     return AssetSpriteReview(
         asset_id=spec.asset_id,
@@ -339,6 +369,7 @@ async def _review_one_asset(
         image_path=image_path_rel,
         checks=checks,
         silhouette_match_score=silhouette_score,
+        outfit_match_score=outfit_score,
     )
 
 

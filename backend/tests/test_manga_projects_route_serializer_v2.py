@@ -40,6 +40,10 @@ def _doc(**overrides) -> SimpleNamespace:
         pinned=False,
         regen_count=0,
         silhouette_match_score=4,
+        # Phase 3.2: outfit/costume score is independent of silhouette
+        # so the UI can show two ratings and the regenerate flow can
+        # target the failing axis.
+        outfit_match_score=4,
         last_quality_checks=[],
         created_at=datetime(2026, 5, 4, 10, 0, 0, tzinfo=UTC),
         updated_at=datetime(2026, 5, 4, 10, 5, 0, tzinfo=UTC),
@@ -59,6 +63,7 @@ def test_serializer_emits_phase_b2_qa_fields():
         "pinned",
         "regen_count",
         "silhouette_match_score",
+        "outfit_match_score",
         "last_quality_checks",
     ):
         assert field in payload, f"missing field {field!r}"
@@ -90,6 +95,24 @@ def test_serializer_handles_silhouette_match_score_of_zero_correctly():
     doc = _doc(silhouette_match_score=0)
     payload = _serialize_asset_doc(doc)
     assert payload["silhouette_match_score"] == 0
+
+
+def test_serializer_handles_outfit_match_score_independently_of_silhouette():
+    """Phase 3.2: silhouette can pass while outfit fails (or vice versa).
+    The serializer must round-trip BOTH scores without crossing wires.
+    """
+    doc = _doc(silhouette_match_score=5, outfit_match_score=2)
+    payload = _serialize_asset_doc(doc)
+    assert payload["silhouette_match_score"] == 5
+    assert payload["outfit_match_score"] == 2
+
+
+def test_serializer_handles_unset_outfit_match_score():
+    """Mirror of the unset-silhouette test \u2014 None must round-trip
+    so the UI can show 'not rated yet' instead of a misleading 0."""
+    doc = _doc(outfit_match_score=None)
+    payload = _serialize_asset_doc(doc)
+    assert payload["outfit_match_score"] is None
 
 
 def test_serializer_handles_unset_silhouette_match_score():

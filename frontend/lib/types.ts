@@ -101,8 +101,15 @@ export interface MangaProject {
   title: string;
   status: string;
   project_options: Record<string, unknown>;
-  adaptation_plan: Record<string, unknown>;
-  character_world_bible: Record<string, unknown>;
+  adaptation_plan: AdaptationPlan | Record<string, never>;
+  character_world_bible: CharacterWorldBible | Record<string, never>;
+  character_voice_cards: CharacterVoiceCardBundle | Record<string, never>;
+  book_synopsis: BookSynopsis | Record<string, never>;
+  arc_outline: ArcOutline | Record<string, never>;
+  understanding_status: "pending" | "running" | "ready" | "failed" | string;
+  understanding_error: string;
+  bible_locked: boolean;
+  book_understanding_traces: Record<string, unknown>[];
   fact_count: number;
   continuity_ledger: Record<string, unknown>;
   coverage: Record<string, unknown>;
@@ -110,6 +117,105 @@ export interface MangaProject {
   active_version: number;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================
+// BOOK UNDERSTANDING TYPES — shape mirrors backend domain models.
+// We deliberately type only the fields the UI renders; everything
+// else stays as `unknown`/optional so a backend additive change
+// does not snap the frontend.
+// ============================================================
+
+export interface BookSynopsis {
+  title?: string;
+  author_voice?: string;
+  intended_reader?: string;
+  central_thesis: string;
+  logline: string;
+  structural_signal?: string;
+  themes?: string[];
+  key_concepts?: string[];
+  emotional_arc?: string[];
+  notable_evidence?: string[];
+}
+
+export interface ProtagonistContract {
+  who: string;
+  wants: string;
+  why_cannot_have_it: string;
+  what_they_do: string;
+}
+
+export interface AdaptationPlan {
+  title?: string;
+  logline: string;
+  central_thesis: string;
+  protagonist_contract: ProtagonistContract;
+  important_fact_ids?: string[];
+  emotional_journey?: string[];
+  intellectual_journey?: string[];
+  memorable_metaphors?: string[];
+}
+
+export interface ArcSliceEntry {
+  slice_number: number;
+  role: string;
+  beat_summary: string;
+  emotional_target?: string;
+  key_fact_ids?: string[];
+}
+
+export interface ArcOutline {
+  book_id: string;
+  target_slice_count: number;
+  structure: string;
+  notes?: string;
+  entries: ArcSliceEntry[];
+}
+
+export interface BookCharacter {
+  character_id: string;
+  name: string;
+  role: string;
+  represents?: string;
+  personality?: string;
+  strengths?: string[];
+  flaws?: string[];
+  visual_lock?: string;
+  silhouette_notes?: string;
+  outfit_notes?: string;
+  hair_or_face_notes?: string;
+  speech_style?: string;
+}
+
+export interface CharacterWorldBible {
+  world_summary?: string;
+  visual_style?: string;
+  recurring_motifs?: string[];
+  characters: BookCharacter[];
+  palette_notes?: string;
+  lettering_notes?: string;
+}
+
+export interface CharacterVoiceCard {
+  character_id: string;
+  name: string;
+  core_attitude: string;
+  speech_rhythm: string;
+  vocabulary_do: string[];
+  vocabulary_dont: string[];
+  example_lines: string[];
+}
+
+export interface CharacterVoiceCardBundle {
+  cards: CharacterVoiceCard[];
+}
+
+export interface StartBookUnderstandingResponse {
+  project: MangaProject;
+  task_id: string | null;
+  message: string;
+  already_ready: boolean;
 }
 
 export interface MangaProjectResponse {
@@ -182,6 +288,8 @@ export interface MangaAssetDoc {
   pinned: boolean;
   regen_count: number;
   silhouette_match_score: number | null;
+  // Phase 3.2: independent costume-adherence score from the vision gate.
+  outfit_match_score: number | null;
   last_quality_checks: MangaAssetQualityCheck[];
   created_at: string;
   updated_at?: string;

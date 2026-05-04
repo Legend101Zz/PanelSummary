@@ -221,6 +221,10 @@ def _serialize_asset_doc(asset: MangaAssetDoc) -> dict[str, Any]:
         "pinned": asset.pinned,
         "regen_count": asset.regen_count,
         "silhouette_match_score": asset.silhouette_match_score,
+        # Phase 3.2: surfaces costume adherence as a separate signal so the
+        # Library UI can show "silhouette OK, outfit drift" without joining
+        # back to last_quality_checks.
+        "outfit_match_score": asset.outfit_match_score,
         "last_quality_checks": asset.last_quality_checks,
         "created_at": asset.created_at.isoformat(),
         "updated_at": asset.updated_at.isoformat(),

@@ -43,8 +43,10 @@ SpriteCheckCode = Literal[
     "SPRITE_BACKGROUND_NOT_PLAIN",  # vision LLM reports cluttered bg
     "SPRITE_HAS_TEXT",              # vision LLM detected captions/letters
     "SPRITE_SILHOUETTE_MISMATCH",   # vision LLM reports outfit/silhouette drift
+    "SPRITE_OUTFIT_MISMATCH",       # Phase 3.2: vision LLM reports costume drift
     "SPRITE_MULTIPLE_CHARACTERS",   # >1 character in a single-character sheet
     "SPRITE_VISION_CALL_FAILED",    # vision LLM threw; treat as warning
+    "SPRITE_EXPRESSION_MISSING",    # Phase 3.1: planner asked for an expression that was never materialised
 ]
 
 
@@ -84,6 +86,12 @@ class AssetSpriteReview(BaseModel):
     # only cheap heuristic checks fired). Surfaced in the UI as a star
     # rating to help the user decide whether to keep or regenerate.
     silhouette_match_score: int | None = None
+    # Phase 3.2: independent score for COSTUME adherence. Silhouette is
+    # mostly body-shape and hair; outfit is what the character is wearing.
+    # We rate them separately because the failure modes are different
+    # ("image is the right person but wrong jacket" should regen with a
+    # costume-tightened prompt, not redraw the whole character).
+    outfit_match_score: int | None = None
 
     @property
     def status(self) -> Literal["ready", "review_required", "failed"]:
@@ -103,6 +111,28 @@ class AssetSpriteReview(BaseModel):
         return "ready"
 
 
+class MissingExpression(BaseModel):
+    """One planned expression that has no materialised asset.
+
+    Phase 3.1: the planner emits a spec for every expression the art
+    direction asked for. If image-generation throws or a doc is
+    deleted, the spec stays on paper but the asset bytes are gone.
+    The coverage helper turns that gap into one of these rows so the
+    gate surfaces it as a SPRITE_EXPRESSION_MISSING warning AND the
+    Library UI can render "Kai missing: panicked, contemplative"
+    without joining the planner output back to the asset list at
+    render time.
+
+    Why a separate model from ``SpriteCheck``: a check belongs to AN
+    asset; a coverage gap belongs to NO asset (it is the absence). We
+    refuse to overload the asset-review type just to save a few lines.
+    """
+
+    character_id: str
+    expression: str
+    asset_type: str = "expression"
+
+
 class SpriteQualityReport(BaseModel):
     """Aggregate report for every asset in a single quality-gate run.
 
@@ -111,16 +141,27 @@ class SpriteQualityReport(BaseModel):
     """
 
     asset_reviews: list[AssetSpriteReview] = Field(default_factory=list)
+    # Phase 3.1: spec→asset coverage gaps. Surfaced separately from
+    # ``asset_reviews`` because the gap IS the absence of an asset; there
+    # is no asset_id to attach a check to. The gate also adds one
+    # synthetic SPRITE_EXPRESSION_MISSING check per gap so downstream
+    # consumers that already iterate over checks keep working unchanged.
+    missing_expressions: list[MissingExpression] = Field(default_factory=list)
 
     @property
     def passed(self) -> bool:
-        """True iff every asset is at least ``review_required`` (no errors).
+        """True iff every asset is at least ``review_required`` (no errors)
+        AND there are no expression coverage gaps.
 
-        The gate auto-retries on ``failed`` assets up to a bounded retry
-        count; ``passed=False`` after all retries means the book stays
-        out of "ready" until a human intervenes.
+        Coverage gaps are warnings at the per-asset level (the renderer
+        falls back to the reference sheet when an expression is missing)
+        but they DO count against the report's overall pass: shipping a
+        "complete" library with holes in the expression matrix is
+        exactly the kind of regression Phase 3.1 is meant to prevent.
         """
-        return all(r.status != "failed" for r in self.asset_reviews)
+        if any(r.status == "failed" for r in self.asset_reviews):
+            return False
+        return not self.missing_expressions
 
     def status_for_asset(self, asset_id: str) -> str | None:
         for review in self.asset_reviews:
