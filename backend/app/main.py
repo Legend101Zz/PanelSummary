@@ -23,18 +23,17 @@ import os
 from datetime import datetime
 from typing import Optional
 
-import httpx
 from beanie import init_beanie
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.living_panels import router as living_panels_router
 from app.api.routes.manga_projects import router as manga_projects_router
+from app.api.routes.media import router as media_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import (
@@ -70,6 +69,7 @@ app.add_middleware(
 app.include_router(jobs_router)
 app.include_router(living_panels_router)
 app.include_router(manga_projects_router)
+app.include_router(media_router)
 
 # MongoDB connection (created once at startup)
 motor_client: AsyncIOMotorClient = None
@@ -642,148 +642,6 @@ async def generate_reels_for_summary(summary_id: str, request: GenerateReelsRequ
     await job_status.insert()
 
     return {"task_id": task.id, "message": "Reel generation started"}
-
-
-@app.get("/image-models")
-async def get_image_models():
-    """Return the list of supported image generation models (cheapest first)."""
-    from app.image_generator import IMAGE_GENERATION_MODELS, DEFAULT_IMAGE_MODEL
-    return {"models": IMAGE_GENERATION_MODELS, "default": DEFAULT_IMAGE_MODEL}
-
-
-@app.get("/openrouter/models")
-async def get_openrouter_models(api_key: str = ""):
-    """
-    Proxy the OpenRouter model list.
-    Returns filtered, enriched model info with pricing.
-    Uses user-provided key or the server's OPENROUTER_API_KEY.
-    """
-    key = api_key or settings.openrouter_api_key
-    headers = {"Content-Type": "application/json"}
-    if key:
-        headers["Authorization"] = f"Bearer {key}"
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get("https://openrouter.ai/api/v1/models", headers=headers)
-        if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail="OpenRouter API error")
-
-        all_models = resp.json().get("data", [])
-
-        # Filter to text generation models with reasonable context
-        filtered = []
-        for m in all_models:
-            ctx = m.get("context_length", 0)
-            if ctx < 4000:
-                continue
-            arch = m.get("architecture", {})
-            # Skip image-only or embedding models
-            modality = arch.get("modality", "text->text")
-            if "text" not in modality:
-                continue
-
-            pricing = m.get("pricing", {})
-            try:
-                input_price  = float(pricing.get("prompt", "0")) * 1_000_000
-                output_price = float(pricing.get("completion", "0")) * 1_000_000
-            except (ValueError, TypeError):
-                input_price = output_price = 0.0
-
-            filtered.append({
-                "id":           m["id"],
-                "name":         m.get("name", m["id"]),
-                "context_length": ctx,
-                "input_price_per_1m":  round(input_price, 4),
-                "output_price_per_1m": round(output_price, 4),
-                "is_free":      input_price == 0 and output_price == 0,
-                "provider":     m["id"].split("/")[0] if "/" in m["id"] else "unknown",
-            })
-
-        # Sort: free first, then by input price
-        filtered.sort(key=lambda x: (not x["is_free"], x["input_price_per_1m"]))
-
-        return {"models": filtered, "total": len(filtered)}
-
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="OpenRouter request timed out")
-
-
-@app.get("/images/{image_path:path}")
-async def get_image(image_path: str):
-    """
-    Serve images from local filesystem.
-    image_path is relative to settings.image_dir, e.g. "{book_id}/cover.png"
-    """
-    full_path = os.path.join(settings.image_dir, image_path)
-    if not os.path.isfile(full_path):
-        raise HTTPException(status_code=404, detail="Image not found")
-    return FileResponse(
-        full_path,
-        media_type="image/png",
-        headers={"Cache-Control": "public, max-age=86400"},
-    )
-
-
-@app.get("/books/{book_id}/pdf/info")
-async def get_pdf_info(book_id: str):
-    """Return PDF metadata needed by the reader (total pages, title)."""
-    book = await Book.get(book_id)
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-    pdf_path = os.path.join(settings.pdf_dir, f"{book.pdf_hash}.pdf")
-    if not os.path.isfile(pdf_path):
-        raise HTTPException(status_code=404, detail="PDF file not found on disk")
-    import fitz
-    doc = fitz.open(pdf_path)
-    total = len(doc)
-    doc.close()
-    return {"book_id": book_id, "title": book.title, "total_pages": total, "pdf_hash": book.pdf_hash}
-
-
-@app.get("/books/{book_id}/pdf/page/{page_num}")
-async def get_pdf_page(book_id: str, page_num: int, scale: float = 2.0):
-    """
-    Render one PDF page as a PNG and return it.
-    Pages are cached in storage/images/{book_id}/pdfpage_{n}.png so they're
-    only rendered once. The frontend lazy-loads pages on demand.
-    """
-    if page_num < 1:
-        raise HTTPException(status_code=400, detail="Page numbers start at 1")
-
-    book = await Book.get(book_id)
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    cache_path = os.path.join(settings.image_dir, book_id, f"pdfpage_{page_num}.png")
-
-    # Serve cached version if available
-    if os.path.isfile(cache_path):
-        return FileResponse(cache_path, media_type="image/png",
-                            headers={"Cache-Control": "public, max-age=604800"})
-
-    pdf_path = os.path.join(settings.pdf_dir, f"{book.pdf_hash}.pdf")
-    if not os.path.isfile(pdf_path):
-        raise HTTPException(status_code=404, detail="PDF not found on disk")
-
-    import fitz
-    doc = fitz.open(pdf_path)
-    if page_num > len(doc):
-        raise HTTPException(status_code=404, detail=f"Page {page_num} exceeds {len(doc)}")
-
-    page = doc[page_num - 1]
-    mat  = fitz.Matrix(scale, scale)
-    pix  = page.get_pixmap(matrix=mat)
-    img_bytes = pix.tobytes("png")
-    doc.close()
-
-    # Cache to disk
-    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-    with open(cache_path, "wb") as f:
-        f.write(img_bytes)
-
-    return Response(img_bytes, media_type="image/png",
-                    headers={"Cache-Control": "public, max-age=604800"})
 
 
 @app.get("/reels")
