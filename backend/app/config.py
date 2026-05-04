@@ -68,6 +68,11 @@ class Settings(BaseSettings):
     # --- Large PDF budget ---
     max_pages_per_job: int = 100   # Warn user beyond this; ~65k tokens
 
+    # --- Manga pipeline revamp ---
+    # "legacy" keeps the current BookSummary flow. "revamp" enables the
+    # MangaProject/MangaSlice pipeline as it comes online behind a safe flag.
+    manga_pipeline_version: str = "legacy"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
