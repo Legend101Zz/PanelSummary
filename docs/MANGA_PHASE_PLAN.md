@@ -122,7 +122,7 @@ remember what came before it.
 
 ---
 
-## Phase 3 — Sprite & Character Library Polish
+## Phase 3 — Sprite & Character Library Polish ✅ shipped (2026-05-04)
 
 **Theme:** characters look like *the same person* on every panel and
 are silhouette-distinct from each other.
@@ -133,18 +133,31 @@ are silhouette-distinct from each other.
 
 **Phase 3 here = the polish layer on top:**
 
-1. Per-character expression matrix (neutral / determined / stunned /
-   contemplative / panicked) — currently planned but not gated.
-2. Reference-sheet *acceptance interview*: a vision-LLM ranks each
-   generated front sheet against the bible's `silhouette_notes` and
-   `outfit_notes` and either accepts, regenerates with a refined
-   prompt, or escalates to the user via the Character Library UI.
-3. Sprite-bank hit-rate metric (% of panels that resolved a real
-   reference vs fell back to prompt-only).
-4. Frontend: "Lock pose / replace" affordance in the Character Library
-   UI so the user can pin the best sheet and ban the others.
+1. **Per-character expression matrix** — currently planned but not gated.
+   - `services/manga/expression_coverage.compute_missing_expressions`
+     (pure) compares planner output to persisted asset docs.
+   - `SpriteQualityReport.missing_expressions` + `passed=False` on gaps.
+   - `SPRITE_EXPRESSION_MISSING` check code.
+   - Library UI: per-character chip row + global "Missing N" pill.
+2. **Reference-sheet acceptance interview** — vision LLM scores costume
+   AND silhouette independently.
+   - Vision prompt asks for `outfit_match_score` + `outfit_notes`.
+   - `SPRITE_OUTFIT_MISMATCH` check code with its own threshold.
+   - `AssetSpriteReview.outfit_match_score` round-trips through the
+     serializer; AssetCard renders "sil X/5 · fit Y/5".
+3. **Sprite-bank hit-rate metric** — % of panel character-slots that
+   resolved a real reference vs fell back to prompt-only.
+   - `PanelRenderResult.requested_character_count` + summary props
+     `character_slots_requested/resolved/sprite_bank_hit_rate`.
+   - `panel_quality_gate_stage` emits `sprite_bank_low_hit_rate` warning
+     when ratio < 0.6 — surfaces in the existing slice QA list.
+4. **Lock-pose affordance** — user can pin the best sheet and the
+   selector honours it.
+   - `build_asset_lookup` picks pinned doc first, then angle preference.
+   - The pin button already existed in B4 — the selector now respects it.
 
-(Detail to be expanded when Phase 2 ships.)
+**Tests:** +15 across `test_phase3_sprite_polish_v2.py` and
+`test_panel_quality_gate_stage_v2.py`. 330 backend tests green.
 
 ---
 
