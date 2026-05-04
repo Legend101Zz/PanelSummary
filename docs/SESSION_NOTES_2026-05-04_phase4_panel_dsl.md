@@ -331,30 +331,35 @@ Six commits. Each commit leaves the suite green and `tsc --noEmit` clean.
 
 ## Next session pickup point
 
-4.5 — wire flip + frontend rebuild on RenderedPage. The big one. This
-is the no-going-back commit so it gets a fresh session.
+See `/docs/HANDOFF_PROMPT_2026-05-05_phase_4_5a.md` — it has the
+ready-to-paste prompt for the next puppy session AND the reading
+material for Mrigesh (final checks, eyeball-test recommendation,
+queue after 4.5a).
 
-Concrete (per the refined plan above):
-* Delete `context.v4_pages`, `_sync_v4_shadow` in panel_rendering_stage,
-  and the `storyboard_to_v4_stage` from the orchestrator.
-* Persistence (`MangaPageDoc.v4_page` and friends) needs to read from
-  `RenderedPage` directly. Audit every `v4_pages` reader in
-  `app/services/manga/` first; the audit list lives in 4.2's commit
-  log if you need a starting point.
-* Frontend (`frontend/src/pages/manga/` and `frontend/src/components/manga/`)
-  currently renders V4Page dicts. New wire format is `RenderedPage` —
-  expose a thin DTO from `app/api/manga/` that mirrors the typed model
-  and rebuild the viewer components against it. WCAG 2.2 AA still applies.
-* Land all of this behind a feature flag if at all possible — a single
-  PR that flips persistence + frontend at once is hard to roll back.
-* Tests: every existing `v4_pages` test in `backend/tests/` either
-  migrates to RenderedPage or deletes if 4.2 already has a typed twin.
+**TL;DR for the next session: Phase 4.5a (backend storage
+decoupling).** Phase 4.5 was vetoed as a single PR because a
+Beanie-schema migration + frontend rewrite + orchestrator stage
+deletion cannot all be one green commit. Decomposed into:
 
-Do NOT start 4.5 until you've eyeballed at least one real generation
-with the 4.4 prompt to confirm shot variety actually improved — the
-v4 shadow is your safety net for that A/B comparison.
+* **4.5a** — add `rendered_page` field on `MangaPageDoc` /
+  `PipelineResult` / API alongside the existing `v4_page`. No
+  deletions, no frontend changes, no Beanie migration (default
+  factory means legacy docs load fine). This is the next session.
+* **4.5b** — frontend cutover to `RenderedPage` DTO. Backend
+  untouched. Rollback = swap one prop.
+* **4.5c** — delete `v4_page` / `storyboard_to_v4_stage` /
+  `app/v4_types.py` / `app/rendering/v4/` / frontend `V4Engine/`.
+  One-shot Beanie migration script for any prod docs that pre-date
+  4.5a. The no-going-back commit.
 
-### Watch list
+**Eyeball-test reminder before kicking off the next session:** run
+one real generation with the 4.4 prompt active and check the slice's
+`QualityReport` for `DSL_SHOT_TYPE_DOMINANCE` / `DSL_NO_ESTABLISHING_SHOT`
+warning frequency. If they still fire on representative slices, queue
+a "4.4.1 prompt re-tune" before 4.5c (which removes the v4 safety
+net). 4.5a itself does NOT depend on this and can ship regardless.
+
+### Watch list (carry forward)
 * `backend/app/manga_pipeline/manga_dsl.py` is at **595 lines**, five
   lines under the 600 ceiling. Any further additions there must go
   into sibling modules (the `shot_variety.py` precedent works well).

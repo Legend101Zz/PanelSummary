@@ -164,7 +164,7 @@ are silhouette-distinct from each other.
 
 ---
 
-## Phase 4 — Panel-Craft DSL Upgrade ⏳ in progress
+## Phase 4 — Panel-Craft DSL Upgrade 🟡 4.1–4.4 shipped, 4.5–4.6 open
 
 **Theme:** collapse the v2/v4 panel surface into ONE structured DSL the
 storyboarder LLM emits, the page-composition stage consumes, and the
@@ -221,12 +221,68 @@ four mediums in a row or a flat page-turn cell.
 
 | ID | Deliverable | Layer | Status |
 | --- | --- | --- | --- |
-| 4.1 | `RenderedPage` + `PanelRenderArtifact` domain models; `panel_rendering_service` rewritten to consume `StoryboardPanel`; aspect ratio keyed off `shot_type` | domain + service | ⏳ |
-| 4.2 | `panel_rendering_stage` + `panel_quality_gate_stage` consume `RenderedPage`; new tiny `rendered_page_assembly_stage`; `storyboard_to_v4_stage` deleted | pipeline | ⏳ |
-| 4.3 | Three new shot-variety validators (`DSL_REPEATED_SHOT_RUN`, `DSL_PAGE_TURN_NO_PUNCH`, `DSL_PAGE_FLAT_SHOTS`) in `manga_dsl.py` | dsl | ⏳ |
-| 4.4 | Storyboarder system prompt rewritten with production-grade shot-design guidance; DSL fragment lists every validator code | prompts | ⏳ |
-| 4.5 | Wire flip: `MangaPageDoc.v4_page` → `rendered_page`; API rename; `app/v4_types.py` + `app/rendering/v4/` deleted; frontend `V4Engine/` replaced by `MangaReader/`; one-shot migration script | persistence + api + frontend | ⏳ |
+| 4.1 | `RenderedPage` + `PanelRenderArtifact` domain models; `panel_rendering_service` rewritten to consume `StoryboardPanel`; aspect ratio keyed off `shot_type` | domain + service | ✅ shipped |
+| 4.2 | `panel_rendering_stage` + `panel_quality_gate_stage` consume `RenderedPage`; new tiny `rendered_page_assembly_stage`; `storyboard_to_v4_stage` retained as a SHADOW (still produces `v4_pages` so persistence/frontend keep working until 4.5) | pipeline | ✅ shipped |
+| 4.3 | Shot-variety editorial floor in `app/manga_pipeline/shot_variety.py` (NEW sibling module — `manga_dsl.py` is at 595/600 lines): `DSL_SHOT_TYPE_DOMINANCE`, `DSL_NO_ESTABLISHING_SHOT`. **See “4.3 delta” below — shipped two validators instead of the three originally planned; the other three failure modes are deferred to 4.3-followups.** | dsl | ✅ shipped (with delta) |
+| 4.4 | `render_shot_variety_prompt_fragment()` co-located with the validators (drift between prompt + validator now structurally impossible); `storyboard_stage.SYSTEM_PROMPT` rewritten to teach rotation, establishing-beat, purpose-drives-shot, AND per-panel composition-prose requirement; 12 substring-snapshot tests pin the prompt copy | prompts | ✅ shipped |
+| 4.5 | Wire flip + frontend rebuild on `RenderedPage`. **Decomposed into 4.5a / 4.5b / 4.5c — see below.** Doing this as a single PR was attempted, vetoed for being un-rollback-able mid-session. | persistence + api + frontend | ⏳ in three sub-phases |
 | 4.6 | Docs + scoreboard close-out commit | docs | ⏳ |
+
+### 4.3 delta (honest call-out)
+
+The original 4.3 plan listed three validators — `DSL_REPEATED_SHOT_RUN`,
+`DSL_PAGE_TURN_NO_PUNCH`, `DSL_PAGE_FLAT_SHOTS`. The audit on real
+storyboards showed a different dominant failure mode ("wall of MEDIUM
+with two token exceptions, no establishing beat anywhere") that the
+original three would have missed because they're per-page or
+consecutive-run signals. We shipped instead:
+
+* `DSL_SHOT_TYPE_DOMINANCE` — slice-wide; > 70% of panels at one
+  `ShotType` (the "wall of MEDIUM" catcher). Skips slices < 5 panels.
+* `DSL_NO_ESTABLISHING_SHOT` — slice has zero `WIDE`/`EXTREME_WIDE`.
+
+Plus `MAX_CONSECUTIVE_SAME_SHOT_TYPE = 2` as a **prompt-only** rule
+(no validator) because consecutive runs are noisy on short slices and
+the LLM responds well to the explicit cap.
+
+**4.3 follow-ups (still open, parking lot below):**
+
+* `DSL_REPEATED_SHOT_RUN` — promote the prompt-only consecutive cap
+  into a real validator once we have data showing the prompt isn't
+  enough.
+* `DSL_PAGE_TURN_NO_PUNCH` — page-turn anchor cell must be a punchy
+  shot type (`CLOSE_UP` / `EXTREME_CLOSE_UP` / splash). Needs the
+  Phase C1 page-turn anchor (`SliceComposition.page_turn_panel_id`)
+  plumbed to the validator.
+* `DSL_PAGE_FLAT_SHOTS` — per-page version of dominance (no single
+  page should be all the same shot). Different signal from the
+  slice-wide check; both can fire on different content.
+
+### Phase 4.5 sub-decomposition (locked)
+
+4.5 was attempted as one PR; vetoed in-session because the README's
+"every commit green" rule cannot survive a single PR that simultaneously
+migrates a Beanie schema, deletes an orchestrator stage, AND rebuilds
+the frontend viewer. The safe shape is three sub-phases each landing
+on their own commit with `pytest -q` + `tsc --noEmit` green.
+
+* **4.5a — backend storage decoupling.** Add a `rendered_page` field
+  on `MangaPageDoc` (and `PipelineResult`) that mirrors the typed
+  `RenderedPage`. Persist BOTH `v4_page` and `rendered_page` for one
+  release. Surface both on the API. No frontend changes, no
+  deletions. Migration pattern: NEW field is opt-in; legacy docs
+  load fine because new field has `default_factory=dict`.
+* **4.5b — frontend cutover.** Frontend `V4Engine/` is renamed to
+  `MangaReader/` and re-typed against the `RenderedPage`-shaped DTO.
+  WCAG 2.2 AA still applies. API still returns both fields; backend
+  pipeline untouched. Rollback is "swap one prop on the page".
+* **4.5c — delete v4.** `context.v4_pages`, `_sync_v4_shadow`,
+  `storyboard_to_v4_stage`, `app/v4_types.py`, `app/rendering/v4/`,
+  `MangaPageDoc.v4_page`, frontend `V4Engine/` indices. One-shot
+  Beanie migration script for any prod docs that pre-date 4.5a.
+  This is the no-going-back commit.
+
+Do NOT compress these. Each sub-phase is a session.
 
 ### Phase 4 invariants (will be tested)
 
@@ -288,11 +344,68 @@ Targets:
   invariant).
 - Anything not in this doc is YAGNI for the current sprint. New ideas
   go to the "parking lot" at the bottom of THIS file.
+- **Do NOT reduce LLM usage to save cost.** This pipeline exists
+  because the LLM is good at things heuristics are bad at — voice
+  consistency, framing intent, character beats, editorial judgment.
+  Every time we replace an LLM call with a regex or a constant, we
+  lose ground. Cost optimisation is the wrong axis. Quality at the
+  ceiling of what the model can do is the axis. If a stage feels
+  expensive, the answer is usually "design around the model's
+  strengths" (better prompts, better grounding, narrower task), not
+  "cut the call".
+
+---
+
+## Manga-writer’s process → pipeline mapping (north-star checklist)
+
+The v2 pipeline is built to mirror how working manga writers actually
+structure a chapter. Use this section as the editorial checklist when
+planning new phases or auditing an existing slice. ✅ = covered today,
+⚠️ = partially covered, ❌ = gap (file an idea in the parking lot).
+
+| Writer’s step | Pipeline stage(s) | Status |
+| --- | --- | --- |
+| **Define key elements** — protagonist, want, obstacle, action | `whole_book_synopsis_stage` (logline, central thesis, protagonist contract) + `global_adaptation_plan_stage` | ✅ |
+| **Write a logline** — one-sentence story test | `BookSynopsis.logline` field, surfaced in frontend `<BookSpine>` | ✅ |
+| **Outline the plot** — beginning/middle/end via Ki-Sho-Ten-Ketsu | `arc_outline_stage` produces `ArcOutline` of `ArcSliceEntry`s tagged with `ArcRole` (KI / SHO / TEN / KETSU); `panel_budget_for(arc_role)` per-role budgets | ✅ |
+| **Write the script** — scenes + panel-by-panel action + dialogue | `beat_sheet_stage` → `manga_script_stage` → `script_review_stage` → `script_repair_stage` (LLM editor pass on dialogue before storyboard) | ✅ |
+| **Create character profiles** — appearance, personality, strengths, flaws | `global_character_world_bible_stage` (`CharacterWorldBible`) | ✅ |
+| **Visually distinct silhouettes** | `bible_silhouette_uniqueness_stage` (heuristic gate, no LLM — a *floor*, not a substitute for vision review) | ⚠️ heuristic only; vision LLM check is parking-lot |
+| **Character voice consistency** | `character_voice_cards_stage` + `render_voice_cards_block()` injected into every script-stage prompt | ✅ |
+| **Character art direction** | `character_art_direction_stage` + `character_asset_plan_stage` (per-slice plan) | ✅ |
+| **Draw character sheets** — multi-angle + expressions for consistency | turnaround sheets land via the sprite library (Phase 3); **expression sheets per character are not yet a stage** | ⚠️ turnaround ✅, expressions ❌ → parking lot |
+| **Create thumbnails** — page layout + pacing + dialogue placement | `storyboard_stage` (StoryboardPanel) + `page_composition_stage` (gutter grid + page-turn anchor) | ✅ |
+| **Reading flow** — top-right to bottom-left | `rtl_composition_validation_stage` + Phase C3 RTL grid renderer on the frontend | ✅ |
+| **Vary shot types** — close-up / medium / wide / establishing | `manga_dsl._validate_shot_variety` (cardinality) + `shot_variety.evaluate_shot_dominance` + `evaluate_establishing_coverage` (4.3) + `render_shot_variety_prompt_fragment` (4.4) | ✅ measurement + LLM-side intervention shipped; per-page + page-turn-punch follow-ups open |
+| **Penciling / inking / screentones** — the actual drawing | `panel_rendering_stage` (multimodal image gen) — single combined call, not separated by pass | ⚠️ one pass today; splitting passes is a Phase 5+ design question, **not** a cost-saving collapse |
+| **Lettering** — dialogue + SFX placement | Phase C4 SVG speech bubbles + Phase C5 SFX layer; deterministic bubble-tail aim + collision-aware SFX is **Phase 5 scope** | ⚠️ basic lettering shipped; production-grade lettering is Phase 5 |
+| **Get feedback** — show storyboards, iterate | `script_repair_stage` + `quality_repair_stage` are the in-loop critics today; vision-LLM page critic is Phase 5 | ⚠️ text critics ✅, vision critic Phase 5 |
+
+**Reading the table:** any row that is ⚠️ or ❌ is fair game for a
+future phase. Any row that is ✅ must STAY ✅ — if a refactor would
+regress one, the refactor is wrong.
 
 ---
 
 ## Parking lot
 
+- **4.3 follow-up validators** (deferred from the original 4.3 plan):
+  - `DSL_REPEATED_SHOT_RUN` — promote `MAX_CONSECUTIVE_SAME_SHOT_TYPE`
+    from prompt-only to a real validator once we have data showing the
+    prompt isn't carrying the load.
+  - `DSL_PAGE_TURN_NO_PUNCH` — page-turn anchor cell must be a punchy
+    shot type (CLOSE_UP / EXTREME_CLOSE_UP / splash). Wires into the
+    Phase C1 `SliceComposition.page_turn_panel_id` already on context.
+  - `DSL_PAGE_FLAT_SHOTS` — per-page version of dominance. Different
+    signal from the slice-wide check; both can fire on different content.
+- **Character expression sheets** — today’s sprite library carries
+  turnaround sheets but no per-character expression atlas (happy /
+  angry / surprised / etc.). When a panel’s storyboard mood doesn’t
+  match any reference expression the renderer is forced to invent one,
+  which is the leading cause of off-model faces in long slices.
+- **Vision-LLM bible silhouette check** — promote
+  `bible_silhouette_uniqueness_stage` from heuristic to a real vision
+  LLM call. Heuristic is the floor; the model is the ceiling.
 - Voice-card *enforcement* via reflection (LLM hears its own line read
   aloud and grades it). Defer until Phase 5 critic exists.
 - Per-character art-style memory across PROJECTS (so a returning
