@@ -9,16 +9,15 @@ from __future__ import annotations
 
 from typing import Any
 
+from beanie.operators import In
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.domain.manga import SourceSlice
-from app.llm_client import LLMClient
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
-from app.models import Book, ProcessingStatus
+from app.models import Book, JobStatus, ProcessingStatus
 from app.services.manga import (
     choose_next_page_slice,
-    generate_project_slice,
     get_or_create_project,
     load_project_ledger,
     serialize_project,
@@ -61,10 +60,10 @@ class NextSourceSliceResponse(BaseModel):
     fully_covered: bool
 
 
-class GenerateMangaSliceResponse(BaseModel):
+class StartMangaSliceGenerationResponse(BaseModel):
     project: dict[str, Any]
-    slice: dict[str, Any]
-    pages: list[dict[str, Any]]
+    task_id: str
+    message: str
 
 
 class MangaProjectSlicesResponse(BaseModel):
@@ -220,14 +219,9 @@ async def preview_next_source_slice(project_id: str, request: NextSourceSliceReq
     )
 
 
-@router.post("/manga-projects/{project_id}/generate-slice", response_model=GenerateMangaSliceResponse)
+@router.post("/manga-projects/{project_id}/generate-slice", response_model=StartMangaSliceGenerationResponse)
 async def generate_next_manga_slice(project_id: str, request: GenerateMangaSliceRequest):
-    """Generate the next v2 manga slice for a project.
-
-    This endpoint intentionally uses the configured LLM. It does not provide a
-    local fallback manga path; invalid model output is repaired by the model or
-    returned as a generation error.
-    """
+    """Queue the next v2 manga slice for background generation."""
     project = await MangaProjectDoc.get(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Manga project not found")
@@ -238,29 +232,46 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
     if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
         raise HTTPException(status_code=400, detail=f"Book is not parsed yet: {book.status}")
 
-    llm_client = LLMClient(
+    active_job = await JobStatus.find_one(
+        JobStatus.result_id == project_id,
+        JobStatus.job_type == "generate_manga_slice",
+        In(JobStatus.status, ["pending", "progress"]),  # type: ignore[arg-type]
+    )
+    if active_job:
+        return StartMangaSliceGenerationResponse(
+            project=serialize_project(project),
+            task_id=active_job.celery_task_id,
+            message="A manga slice is already being generated for this project.",
+        )
+
+    from app.celery_manga_tasks import generate_manga_slice_task
+
+    task = generate_manga_slice_task.delay(
+        project_id=project_id,
         api_key=request.api_key,
         provider=request.provider,
         model=request.model,
+        page_window=request.page_window,
+        generate_images=request.generate_images,
+        image_model=request.image_model,
+        options=request.options,
     )
-    try:
-        generation_options = dict(request.options)
-        generation_options["generate_images"] = request.generate_images
-        if request.image_model:
-            generation_options["image_model"] = request.image_model
-        slice_doc, page_docs = await generate_project_slice(
-            project=project,
-            book=book,
-            llm_client=llm_client,
-            page_window=request.page_window,
-            image_api_key=request.api_key,
-            extra_options=generation_options,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    job_status = JobStatus(
+        celery_task_id=task.id,
+        job_type="generate_manga_slice",
+        status="pending",
+        progress=0,
+        message="Queued manga v2 slice generation…",
+        result_id=project_id,
+        phase="queued",
+    )
+    await job_status.insert()
 
-    return GenerateMangaSliceResponse(
+    project.status = "generating"
+    await project.save()
+
+    return StartMangaSliceGenerationResponse(
         project=serialize_project(project),
-        slice=_serialize_slice_doc(slice_doc),
-        pages=[_serialize_page_doc(page) for page in page_docs],
+        task_id=task.id,
+        message="Manga v2 slice generation started.",
     )

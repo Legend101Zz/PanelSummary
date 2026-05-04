@@ -16,7 +16,7 @@ celery_app = Celery(
     "panelsummary",
     broker=REDIS_URL,
     backend=REDIS_URL,
-    include=["app.celery_worker"],
+    include=["app.celery_worker", "app.celery_manga_tasks"],
 )
 
 celery_app.conf.update(
