@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.domain.manga import SliceRole, should_add_to_be_continued
 from app.manga_pipeline.context import PipelineContext
-from app.services.manga import run_quality_gate
+from app.services.manga.quality_service import run_quality_gate
 
 
 async def run(context: PipelineContext) -> PipelineContext:

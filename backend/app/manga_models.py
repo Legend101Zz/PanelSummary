@@ -65,6 +65,7 @@ class MangaSliceDoc(Document):
     storyboard_pages: list[dict[str, Any]] = Field(default_factory=list)
     new_fact_ids: list[str] = Field(default_factory=list)
     quality_report: dict[str, Any] = Field(default_factory=dict)
+    llm_traces: list[dict[str, Any]] = Field(default_factory=list)
 
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
