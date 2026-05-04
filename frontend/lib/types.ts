@@ -2,11 +2,6 @@
  * types.ts — TypeScript Type Definitions
  * ========================================
  * All the "shapes" of data that flow between frontend and backend.
- * TypeScript uses these to catch mistakes before you run the code.
- *
- * WHY TYPES: If you rename a field in the backend and forget to update
- * the frontend, TypeScript will tell you immediately instead of breaking
- * silently at runtime.
  */
 
 // ============================================================
@@ -73,62 +68,11 @@ export interface BookListItem {
   created_at: string;
 }
 
+
 // ============================================================
-// MANGA TYPES
+// MANGA PROJECT TYPES — the v2 generation control plane
 // ============================================================
 
-// ── LEGACY panel types (backward compat) ──
-export type PanelLayout = "single" | "split" | "full" | "triple";
-export type PanelType = "title" | "scene" | "dialogue" | "action" | "recap" | "data";
-
-export interface DialogueLine {
-  character: string;
-  text: string;
-}
-
-export interface MangaPanel {
-  panel_index: number;
-  panel_type: PanelType;
-  layout: PanelLayout;
-  caption: string | null;
-  dialogue: DialogueLine[];
-  visual_description: string;
-  image_id: string | null;
-}
-
-// ── NEW page-based layout types ──
-export type PageLayout = "full" | "2-row" | "3-row" | "2-col" | "L-shape" | "T-shape" | "grid-4";
-export type PanelContentType = "narration" | "dialogue" | "splash" | "data" | "transition";
-export type Expression = "neutral" | "curious" | "shocked" | "determined" | "wise" | "thoughtful" | "excited" | "sad" | "angry";
-export type VisualMood = "dramatic-dark" | "warm-amber" | "cool-mystery" | "intense-red" | "calm-green" | "ethereal-purple";
-
-export interface PagePanel {
-  position: string;
-  content_type: PanelContentType;
-  text?: string | null;
-  dialogue: DialogueLine[];
-  visual_mood: VisualMood | string;
-  character?: string | null;
-  expression: Expression | string;
-  image_prompt?: string | null;
-  image_id?: string | null;
-}
-
-export interface MangaPage {
-  page_index: number;
-  layout: PageLayout;
-  panels: PagePanel[];
-}
-
-export interface MangaChapter {
-  chapter_index: number;
-  chapter_title: string;
-  style: SummaryStyle;
-  pages: MangaPage[];    // new page-based
-  panels: MangaPanel[];  // legacy
-}
-
-// ── REVAMP manga project / continuation types ──
 export type SourceSliceMode = "pages" | "chapters" | "sections";
 
 export interface SourceRange {
@@ -258,107 +202,6 @@ export interface StartMangaSliceGenerationResponse {
   message: string;
 }
 
-// ============================================================
-// REELS TYPES
-// ============================================================
-
-export interface ReelLesson {
-  reel_index: number;
-  chapter_index: number;
-  lesson_title: string;
-  hook: string;
-  key_points: string[];
-  visual_theme: string;
-  duration_seconds: number;
-  style: SummaryStyle;
-  // Added by the /reels endpoint
-  summary_id?: string;
-  book?: {
-    id: string;
-    title: string;
-    author: string | null;
-    cover_image_id: string | null;
-  };
-  total_reels_in_book?: number;
-}
-
-// ── VIDEO REELS (DSL-rendered MP4s) ──
-export interface VideoReel {
-  id: string;
-  reel_index: number;
-  title: string;
-  mood: string;
-  duration_ms: number;
-  video_path: string;
-  render_status?: string;
-  created_at: string;
-  dsl?: Record<string, any>; // Video DSL for browser-side rendering
-  book?: {
-    id: string;
-    title: string;
-    author: string | null;
-    cover_image_id: string | null;
-  };
-  total_reels_in_book?: number;
-}
-
-export interface VideoReelsResponse {
-  reels: VideoReel[];
-  total: number;
-  offset: number;
-  limit: number;
-  has_more: boolean;
-}
-
-export interface BookVideoReelsResponse {
-  book: {
-    id: string;
-    title: string;
-    author: string | null;
-    cover_image_id: string | null;
-  };
-  reels: VideoReel[];
-  total: number;
-}
-
-export interface ReelMemoryResponse {
-  total_reels_generated: number;
-  used_content_count: number;
-  exhausted: boolean;
-}
-
-// ============================================================
-// SUMMARY TYPES
-// ============================================================
-
-export interface CanonicalChapter {
-  chapter_index: number;
-  chapter_title: string;
-  one_liner: string;
-  key_concepts: string[];
-}
-
-export interface Summary {
-  id: string;
-  book_id: string;
-  style: SummaryStyle;
-  status: ProcessingStatus;
-  total_tokens_used: number;
-  estimated_cost_usd: number;
-  manga_chapters: MangaChapter[];
-  reels: ReelLesson[];
-  canonical_chapters: CanonicalChapter[];
-}
-
-export interface SummaryListItem {
-  id: string;
-  style: SummaryStyle;
-  status: ProcessingStatus;
-  total_chapters: number;
-  total_reels: number;
-  estimated_cost_usd: number;
-  created_at: string;
-}
 
 // ============================================================
 // API RESPONSE TYPES
@@ -384,20 +227,8 @@ export interface JobStatusResponse {
   panels_total: number;
   cost_so_far: number;
   estimated_total_cost: number | null;
-  reel_cost?: {
-    input_tokens?: number;
-    output_tokens?: number;
-    estimated_cost_usd?: number;
-  } | null;
 }
 
-export interface ReelsPageResponse {
-  reels: ReelLesson[];
-  total: number;
-  offset: number;
-  limit: number;
-  has_more: boolean;
-}
 
 // ============================================================
 // UI STATE TYPES

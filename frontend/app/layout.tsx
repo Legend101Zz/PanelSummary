@@ -5,13 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
-import { Upload, Film, BookOpen, Menu, X } from "lucide-react";
+import { Upload, BookOpen, Menu, X } from "lucide-react";
 
 // ─── CHAPTER NAMES (shown in nav for each route) ──────────────
 const CHAPTER_MAP: Record<string, string> = {
   "/":       "CH.00 — TITLE PAGE",
   "/upload": "CH.01 — THE UPLOAD",
-  "/reels":  "CH.02 — THE REEL FEED",
 };
 function getChapter(path: string) {
   if (path.startsWith("/books") && path.includes("/manga")) return "CH.03 — MANGA READER";
@@ -44,7 +43,6 @@ function MobileDrawer({ open, onClose, pathname }: { open: boolean; onClose: () 
               {[
                 { href: "/", label: "Title Page", icon: BookOpen },
                 { href: "/upload", label: "Upload", icon: Upload },
-                { href: "/reels", label: "Reels", icon: Film },
               ].map(({ href, label, icon: Icon }) => (
                 <Link key={href} href={href} onClick={onClose}>
                   <div className={`flex items-center gap-3 px-3 py-3 border transition-all ${pathname === href ? "border-amber-500" : "border-transparent hover:border-[var(--border)]"}`}
@@ -70,7 +68,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const isReels = pathname === "/reels";
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -89,8 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {/* ── NAV ────────────────────────────────────────────── */}
-        {!isReels && (
-          <header
+        <header
             className="fixed top-0 left-0 right-0 z-40 transition-all duration-300"
             style={{
               background: scrolled ? "rgba(15,14,23,0.92)" : "transparent",
@@ -134,9 +130,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/upload" className={`nav-link ${pathname === "/upload" ? "nav-link--active" : ""}`}>
                   Upload
                 </Link>
-                <Link href="/reels" className={`nav-link ${pathname === "/reels" ? "nav-link--active" : ""}`}>
-                  Reels
-                </Link>
                 <Link href="/upload">
                   <motion.div
                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -166,12 +159,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               transition={{ duration: 0.6, ease: "easeOut" }}
             />
           </header>
-        )}
 
         <MobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} pathname={pathname} />
 
         {/* Page content */}
-        <main style={{ paddingTop: isReels ? "0" : "3.5rem" }}>
+        <main style={{ paddingTop: "3.5rem" }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

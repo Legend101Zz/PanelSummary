@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView } from "motion/react";
-import { Upload, Film, Video, ArrowRight, ArrowDown } from "lucide-react";
+import { Upload, ArrowRight, ArrowDown } from "lucide-react";
 import { listBooks, checkHealth } from "@/lib/api";
 import type { BookListItem } from "@/lib/types";
 import dynamic from "next/dynamic";
@@ -275,24 +275,6 @@ export default function HomePage() {
                 <ArrowRight size={18} />
               </motion.div>
             </Link>
-
-            {books.length > 0 && (
-              <div className="mt-4 flex gap-3 flex-wrap justify-center">
-                <Link href="/reels">
-                  <motion.span whileHover={{ scale: 1.03 }}
-                    className="btn-secondary text-sm inline-flex gap-2 px-6 py-3">
-                    <Film size={14} /> Lesson Reels
-                  </motion.span>
-                </Link>
-                <Link href="/video-reels">
-                  <motion.span whileHover={{ scale: 1.03 }}
-                    className="text-sm inline-flex gap-2 px-6 py-3 border items-center font-label transition-colors"
-                    style={{ borderColor: "var(--amber)", color: "var(--amber)", background: "var(--surface)", fontSize: "11px" }}>
-                    <Video size={14} /> Video Reels
-                  </motion.span>
-                </Link>
-              </div>
-            )}
           </Reveal>
         </div>
       </section>
