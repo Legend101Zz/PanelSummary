@@ -95,6 +95,8 @@ def test_build_v2_generation_stages_has_expected_order():
         "manga_script_stage",
         "storyboard_stage",
         "quality_gate_stage",
+        "quality_repair_stage",
+        "quality_gate_stage",
         "storyboard_to_v4_stage",
     ]
 

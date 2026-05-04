@@ -142,13 +142,13 @@ Implemented concrete v2 LLM stages:
 - `beat_sheet_stage.py`
 - `manga_script_stage.py`
 - `storyboard_stage.py`
+- `quality_repair_stage.py`
 
 Next implementation step:
 
 Build concrete LLM-backed stage adapters for:
 
-1. quality repair generation when deterministic gates fail
-2. character asset prompt generation
+1. character asset prompt generation
 
 Each adapter should use the structured contract runner and should be integration
 verified with a fake model before being wired into real jobs.

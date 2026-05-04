@@ -19,6 +19,7 @@ from app.manga_pipeline.stages import (
     character_world_bible_stage,
     manga_script_stage,
     quality_gate_stage,
+    quality_repair_stage,
     source_fact_extraction_stage,
     storyboard_stage,
     storyboard_to_v4_stage,
@@ -134,6 +135,8 @@ def build_v2_generation_stages():
         beat_sheet_stage.run,
         manga_script_stage.run,
         storyboard_stage.run,
+        quality_gate_stage.run,
+        quality_repair_stage.run,
         quality_gate_stage.run,
         storyboard_to_v4_stage.run,
     ]
