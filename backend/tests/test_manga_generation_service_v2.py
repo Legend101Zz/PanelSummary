@@ -94,8 +94,13 @@ def test_build_v2_generation_stages_has_expected_order():
         "beat_sheet_stage",
         "manga_script_stage",
         "storyboard_stage",
+        # Phase 2: DSL validation runs immediately after storyboard so its
+        # issues join the same QualityReport the existing repair loop reads.
+        "dsl_validation_stage",
         "quality_gate_stage",
         "quality_repair_stage",
+        # Re-validate after repair so a sloppy fix cannot ship.
+        "dsl_validation_stage",
         "quality_gate_stage",
         "character_asset_plan_stage",
         "storyboard_to_v4_stage",

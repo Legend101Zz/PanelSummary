@@ -12,6 +12,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
 
 SYSTEM_PROMPT = """You are a professional manga scriptwriter adapting dense source material.
 
@@ -41,6 +42,7 @@ def _build_user_message(context: PipelineContext) -> str:
         "book_id": context.book_id,
         "project_id": context.project_id,
         "source_slice": context.source_slice.model_dump(mode="json"),
+        "arc_entry": context.arc_entry.model_dump(mode="json") if context.arc_entry else None,
         "adaptation_plan": context.adaptation_plan.model_dump(mode="json"),
         "character_world_bible": context.character_bible.model_dump(mode="json"),
         "beat_sheet": context.beat_sheet.model_dump(mode="json"),
@@ -52,6 +54,7 @@ def _build_user_message(context: PipelineContext) -> str:
         "Write the manga script for this source slice. Produce scenes with "
         "scene descriptions, action, concise dialogue, and source fact IDs.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
         f"{build_json_contract_prompt(MangaScript)}"
     )
 

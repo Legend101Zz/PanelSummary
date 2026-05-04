@@ -12,6 +12,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
 
 SYSTEM_PROMPT = """You are a manga story editor specializing in educational adaptations.
 
@@ -41,6 +42,7 @@ def _build_user_message(context: PipelineContext) -> str:
         "book_id": context.book_id,
         "project_id": context.project_id,
         "source_slice": context.source_slice.model_dump(mode="json"),
+        "arc_entry": context.arc_entry.model_dump(mode="json") if context.arc_entry else None,
         "adaptation_plan": context.adaptation_plan.model_dump(mode="json"),
         "character_world_bible": context.character_bible.model_dump(mode="json"),
         "source_facts": [fact.model_dump(mode="json") for fact in context.fact_registry],
@@ -53,6 +55,7 @@ def _build_user_message(context: PipelineContext) -> str:
         "Create the beat sheet for this manga source slice. Keep every beat "
         "source-grounded and useful for script/storyboard generation.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
         f"{build_json_contract_prompt(BeatSheet)}"
     )
 
