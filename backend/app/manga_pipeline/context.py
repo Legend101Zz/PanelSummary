@@ -18,6 +18,7 @@ from app.domain.manga import (
     MangaScript,
     QualityReport,
     ScriptReviewReport,
+    SliceComposition,
     SourceFact,
     SourceSlice,
     StoryboardPage,
@@ -69,6 +70,10 @@ class PipelineContext:
     # stage that wants to surface voice/tension warnings.
     script_review: ScriptReviewReport | None = None
     storyboard_pages: list[StoryboardPage] = field(default_factory=list)
+    # Phase C1: per-page composition (gutter grid + emphasis overrides +
+    # page-turn anchor) authored after the storyboard. Optional so legacy
+    # rendering paths (no composition stage) still produce a page.
+    slice_composition: SliceComposition | None = None
     asset_specs: list[MangaAssetSpec] = field(default_factory=list)
     v4_pages: list[dict[str, Any]] = field(default_factory=list)
     quality_report: QualityReport | None = None

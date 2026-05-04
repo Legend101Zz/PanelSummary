@@ -45,6 +45,12 @@ class V4Panel:
     lines: list[V4DialogueLine] = field(default_factory=list)
     data_items: list[V4DataItem] = field(default_factory=list)
     character: str = ""        # primary character shown
+    # Phase 7: full list of characters visually present in the panel. The
+    # multimodal panel renderer attaches one reference sheet per id, so an
+    # accurate list is the difference between an on-model painted panel and a
+    # drift. The mapper auto-fills this from the storyboard's character_ids;
+    # the LLM never authors V4 directly so we don't validate it from JSON.
+    character_ids: list[str] = field(default_factory=list)
     pose: str = ""             # character pose key
     expression: str = ""       # character expression
     effects: list[str] = field(default_factory=list)
@@ -91,6 +97,8 @@ class V4Panel:
             ]
         if self.character:
             d["character"] = self.character
+        if self.character_ids:
+            d["character_ids"] = list(self.character_ids)
         if self.pose:
             d["pose"] = self.pose
         if self.expression:
@@ -134,11 +142,25 @@ class V4Page:
     - 2 panels → vertical or grid-2
     - 3 panels → grid-3 or asymmetric
     - 4 panels → grid-4
+
+    Phase C1 fields
+    ---------------
+    ``gutter_grid`` and ``page_turn_panel_id`` carry the LLM-authored
+    composition through to the renderer. ``layout`` stays for backwards
+    compatibility (older renderers + test fixtures still read it); when
+    ``gutter_grid`` is present the new renderer ignores ``layout``.
+
+    The grid is stored as a list of rows of integer cell widths
+    (percentages summing to 100). RTL mapping happens in the
+    presentation layer; the data is direction-agnostic.
     """
     page_index: int
     chapter_index: int
     layout: str = "vertical"  # one of PAGE_LAYOUTS
     panels: list[V4Panel] = field(default_factory=list)
+    gutter_grid: list[list[int]] = field(default_factory=list)
+    page_turn_panel_id: str = ""
+    composition_notes: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -147,6 +169,9 @@ class V4Page:
             "chapter_index": self.chapter_index,
             "layout": self.layout,
             "panels": [p.to_dict() for p in self.panels],
+            "gutter_grid": [list(row) for row in self.gutter_grid],
+            "page_turn_panel_id": self.page_turn_panel_id,
+            "composition_notes": self.composition_notes,
         }
 
 
@@ -186,6 +211,7 @@ def validate_v4_panel(d: dict) -> V4Panel:
         lines=lines,
         data_items=data_items,
         character=str(d.get("character", ""))[:30],
+        character_ids=[str(cid)[:30] for cid in (d.get("character_ids") or []) if str(cid).strip()],
         pose=str(d.get("pose", ""))[:20],
         expression=str(d.get("expression", ""))[:20],
         effects=[str(e)[:20] for e in d.get("effects", [])[:5]],

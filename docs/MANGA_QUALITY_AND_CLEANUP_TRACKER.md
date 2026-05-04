@@ -39,7 +39,7 @@
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| C1 — `page_composition_stage` | ⬜ todo | new stage; produces `PageComposition` |
+| C1 — `page_composition_stage` | ✅ done | New `PageComposition`/`SliceComposition` domain types; one LLM call per slice, coerced + empty-fallback. `V4Page` now carries `gutter_grid`, `page_turn_panel_id`, `composition_notes`; mapper applies emphasis overrides. |
 | C2 — RTL reading-flow validator | ⬜ todo | extend `manga_dsl.py` |
 | C3 — frontend RTL grid using `gutter_grid` | ⬜ todo | edit `V4PageRenderer.tsx` |
 | C4 — SVG speech bubble with tail | ⬜ todo | new `SpeechBubble.tsx` |
@@ -77,6 +77,7 @@ Deferred until A–E ship.
 | 2026-05-04 | Phase A complete (A1–A4) | 381 → 401 | (pending) |
 | 2026-05-04 | Phase B partial (B1, B3) | 401 → 411 | (pending) |
 | 2026-05-04 | Phase B2 (sprite quality vision gate) | 411 → 425 | (pending) |
+| 2026-05-04 | Phase C1 (page composition stage + V4 grid) | 425 → 435 | (pending) |
 
 ---
 

@@ -36,6 +36,7 @@ class LLMStageName(str, Enum):
     SCRIPT_REVIEW = "script_review"
     SCRIPT_REPAIR = "script_repair"
     STORYBOARD = "storyboard"
+    PAGE_COMPOSITION = "page_composition"
     QUALITY_REPAIR = "quality_repair"
     CHARACTER_ASSET_PROMPTS = "character_asset_prompts"
 

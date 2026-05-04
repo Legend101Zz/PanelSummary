@@ -34,6 +34,13 @@ from app.domain.manga.artifacts import (
     StoryboardPanel,
 )
 from app.domain.manga.script_review import ScriptIssue, ScriptReviewReport
+from app.domain.manga.page_composition import (
+    MAX_CELLS_PER_ROW,
+    MAX_ROWS_PER_PAGE,
+    PageComposition,
+    PageGridRow,
+    SliceComposition,
+)
 from app.domain.manga.sprite_quality import (
     AssetSpriteReview,
     SpriteCheck,
@@ -76,8 +83,13 @@ __all__ = [
     "Beat",
     "BeatSheet",
     "AssetSpriteReview",
+    "MAX_CELLS_PER_ROW",
+    "MAX_ROWS_PER_PAGE",
+    "PageComposition",
+    "PageGridRow",
     "ScriptIssue",
     "ScriptReviewReport",
+    "SliceComposition",
     "SpriteCheck",
     "SpriteCheckCode",
     "SpriteCheckSeverity",

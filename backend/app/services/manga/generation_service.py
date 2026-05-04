@@ -34,6 +34,7 @@ from app.manga_pipeline.stages import (
     continuity_gate_stage,
     dsl_validation_stage,
     manga_script_stage,
+    page_composition_stage,
     panel_quality_gate_stage,
     panel_rendering_stage,
     quality_gate_stage,
@@ -213,6 +214,11 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         dsl_validation_stage.run,
         continuity_gate_stage.run,
         quality_gate_stage.run,
+        # Phase C1: page composition runs AFTER the second quality gate
+        # has settled (so we are composing the *final* storyboard, not a
+        # draft) and BEFORE storyboard_to_v4 (which reads the composition
+        # to fill V4Page.layout / .gutter_grid).
+        page_composition_stage.run,
         character_asset_plan_stage.run,
         storyboard_to_v4_stage.run,
     ]
