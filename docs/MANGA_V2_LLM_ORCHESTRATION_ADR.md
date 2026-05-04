@@ -134,16 +134,21 @@ Implemented foundation:
 - loud failure via `LLMOutputValidationError`
 - unit tests for success, repair, schema failure, and hard failure
 
+Implemented concrete v2 LLM stages:
+
+- `source_fact_extraction_stage.py`
+- `adaptation_plan_stage.py`
+
 Next implementation step:
 
 Build concrete LLM-backed stage adapters for:
 
-1. source fact extraction
-2. adaptation planning
-3. character/world bible generation
-4. beat sheet generation
-5. manga script generation
-6. storyboard generation
+1. character/world bible generation
+2. beat sheet generation
+3. manga script generation
+4. storyboard generation
+5. quality repair generation when deterministic gates fail
+6. character asset prompt generation
 
 Each adapter should use the structured contract runner and should be integration
 verified with a fake model before being wired into real jobs.

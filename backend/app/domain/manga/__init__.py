@@ -15,6 +15,7 @@ from app.domain.manga.artifacts import (
     QualityReport,
     ScriptLine,
     ShotType,
+    SourceFactExtraction,
     StoryboardPage,
     StoryboardPanel,
 )
@@ -70,6 +71,7 @@ __all__ = [
     "ShotType",
     "SliceRole",
     "SourceFact",
+    "SourceFactExtraction",
     "SourceRange",
     "SourceSlice",
     "SourceSliceMode",

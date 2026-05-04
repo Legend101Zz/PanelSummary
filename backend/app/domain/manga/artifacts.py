@@ -11,6 +11,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.domain.manga.types import SourceFact
+
 
 class EmotionalTone(str, Enum):
     CURIOUS = "curious"
@@ -82,6 +84,25 @@ class AdaptationPlan(BaseModel):
             raise ValueError("adaptation plan needs a central thesis")
         if not self.important_fact_ids:
             raise ValueError("adaptation plan needs important source facts")
+        return self
+
+
+class SourceFactExtraction(BaseModel):
+    """LLM-extracted source facts for one manga generation slice."""
+
+    slice_id: str
+    facts: list[SourceFact] = Field(default_factory=list)
+    extraction_notes: str = ""
+
+    @model_validator(mode="after")
+    def extraction_needs_grounded_facts(self) -> "SourceFactExtraction":
+        if not self.slice_id.strip():
+            raise ValueError("source fact extraction needs a slice_id")
+        if not self.facts:
+            raise ValueError("source fact extraction needs at least one fact")
+        mismatched = [fact.fact_id for fact in self.facts if fact.source_slice_id != self.slice_id]
+        if mismatched:
+            raise ValueError("all extracted facts must reference the extraction slice_id")
         return self
 
 
