@@ -58,6 +58,24 @@ def test_run_pipeline_context_returns_enriched_context():
     assert result.options["seen"] is True
 
 
+def test_run_pipeline_context_reports_stage_progress():
+    events: list[tuple[int, int, str]] = []
+
+    async def first_stage(context: PipelineContext) -> PipelineContext:
+        return context
+
+    async def second_stage(context: PipelineContext) -> PipelineContext:
+        return context
+
+    def record(completed: int, total: int, label: str) -> None:
+        events.append((completed, total, label))
+
+    result = asyncio.run(run_pipeline_context(_context(), [first_stage, second_stage], progress_callback=record))
+
+    assert result.book_id == "book_123"
+    assert events == [(1, 2, "test_manga_pipeline_orchestrator_v2"), (2, 2, "test_manga_pipeline_orchestrator_v2")]
+
+
 def test_run_pipeline_stages_propagates_stage_failure():
     async def bad_stage(context):
         raise RuntimeError("stage exploded")

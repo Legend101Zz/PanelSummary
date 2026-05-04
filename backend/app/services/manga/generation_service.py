@@ -7,10 +7,12 @@ source text, runs the ordered stages, and persists the resulting artifacts.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+from inspect import isawaitable
 from typing import Any, Protocol
 
-from app.domain.manga import ContinuityLedger, SliceRole, SourceFact, SourceSlice, update_ledger_after_slice
-from app.manga_models import MangaPageDoc, MangaProjectDoc, MangaSliceDoc
+from app.domain.manga import MangaAssetSpec, SliceRole, SourceFact, SourceSlice, update_ledger_after_slice
+from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.manga_pipeline import PipelineContext, run_pipeline_context
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 from app.manga_pipeline.stages import (
@@ -26,9 +28,12 @@ from app.manga_pipeline.stages import (
     storyboard_to_v4_stage,
 )
 from app.models import Book, BookChapter, BookSection
-from app.services.manga.asset_image_service import generate_asset_image_doc, persist_asset_prompt_doc
+from app.services.manga.asset_image_service import build_generated_asset_doc, build_prompt_asset_doc
 from app.services.manga.project_service import load_project_ledger
 from app.services.manga.source_slice_service import choose_next_page_slice
+
+
+GenerationProgressCallback = Callable[[int, str, str], Awaitable[None] | None]
 
 
 class ChapterWithSections(Protocol):
@@ -145,6 +150,63 @@ def build_v2_generation_stages():
     ]
 
 
+async def _emit_progress(
+    callback: GenerationProgressCallback | None,
+    progress: int,
+    message: str,
+    phase: str,
+) -> None:
+    if callback is None:
+        return
+    result = callback(progress, message, phase)
+    if isawaitable(result):
+        await result
+
+
+def _stage_message(stage_label: str) -> str:
+    readable = stage_label.replace("_", " ").title()
+    return f"Completed {readable}"
+
+
+async def _build_asset_docs(
+    *,
+    project: MangaProjectDoc,
+    asset_specs: list[MangaAssetSpec],
+    options: dict[str, Any],
+    image_api_key: str | None,
+    progress_callback: GenerationProgressCallback | None,
+) -> list[MangaAssetDoc]:
+    should_generate_images = bool(options.get("generate_images"))
+    if should_generate_images and not image_api_key:
+        raise ValueError("character asset image generation requires an image_api_key")
+
+    asset_docs: list[MangaAssetDoc] = []
+    total_assets = len(asset_specs)
+    for index, asset in enumerate(asset_specs, start=1):
+        await _emit_progress(
+            progress_callback,
+            84 + int((index / max(total_assets, 1)) * 8),
+            f"Preparing character asset {index}/{total_assets}: {asset.character_id}",
+            "assets",
+        )
+        if should_generate_images:
+            asset_docs.append(await build_generated_asset_doc(
+                project_id=str(project.id),
+                asset=asset,
+                api_key=image_api_key or "",
+                style=str(options.get("style", project.style)),
+                image_model=str(options.get("image_model")) if options.get("image_model") else None,
+            ))
+        else:
+            asset_docs.append(await build_prompt_asset_doc(
+                project_id=str(project.id),
+                asset=asset,
+                style=str(options.get("style", project.style)),
+                image_model=str(options.get("image_model")) if options.get("image_model") else None,
+            ))
+    return asset_docs
+
+
 async def generate_project_slice(
     *,
     project: MangaProjectDoc,
@@ -153,8 +215,10 @@ async def generate_project_slice(
     page_window: int = 10,
     image_api_key: str | None = None,
     extra_options: dict[str, Any] | None = None,
+    progress_callback: GenerationProgressCallback | None = None,
 ) -> tuple[MangaSliceDoc, list[MangaPageDoc]]:
     """Generate, validate, render, and persist the next manga source slice."""
+    await _emit_progress(progress_callback, 3, "Selecting next source pages…", "source")
     ledger = load_project_ledger(project)
     source_slice = choose_next_page_slice(
         book_id=str(book.id),
@@ -166,6 +230,7 @@ async def generate_project_slice(
     if source_slice is None:
         raise ValueError("manga project source is already fully covered")
 
+    await _emit_progress(progress_callback, 6, "Extracting source text for slice…", "source")
     source_text = build_source_text_for_slice(book.chapters, source_slice)
     if not source_text:
         raise ValueError("selected source slice has no extractable text")
@@ -186,9 +251,24 @@ async def generate_project_slice(
         fact_registry=load_fact_registry(project),
     )
 
-    final_context = await run_pipeline_context(context, build_v2_generation_stages())
+    stages = build_v2_generation_stages()
+
+    async def report_stage(completed: int, total: int, label: str) -> None:
+        progress = 10 + int((completed / max(total, 1)) * 70)
+        await _emit_progress(progress_callback, progress, _stage_message(label), label)
+
+    final_context = await run_pipeline_context(context, stages, progress_callback=report_stage)
     if final_context.quality_report and not final_context.quality_report.passed:
         raise ValueError("manga quality gate failed; LLM repair stage is required before persistence")
+
+    await _emit_progress(progress_callback, 82, "Preparing generated artifacts for persistence…", "persist")
+    asset_docs = await _build_asset_docs(
+        project=project,
+        asset_specs=final_context.asset_specs,
+        options=options,
+        image_api_key=image_api_key,
+        progress_callback=progress_callback,
+    )
 
     slice_index = len(ledger.covered_source_ranges)
     slice_doc = MangaSliceDoc(
@@ -222,25 +302,8 @@ async def generate_project_slice(
         await page_doc.insert()
         page_docs.append(page_doc)
 
-    should_generate_images = bool(options.get("generate_images"))
-    if should_generate_images and not image_api_key:
-        raise ValueError("character asset image generation requires an image_api_key")
-    for asset in final_context.asset_specs:
-        if should_generate_images:
-            await generate_asset_image_doc(
-                project_id=str(project.id),
-                asset=asset,
-                api_key=image_api_key or "",
-                style=str(options.get("style", project.style)),
-                image_model=str(options.get("image_model")) if options.get("image_model") else None,
-            )
-        else:
-            await persist_asset_prompt_doc(
-                project_id=str(project.id),
-                asset=asset,
-                style=str(options.get("style", project.style)),
-                image_model=str(options.get("image_model")) if options.get("image_model") else None,
-            )
+    for asset_doc in asset_docs:
+        await asset_doc.insert()
 
     updated_ledger = update_ledger_after_slice(
         ledger,
@@ -262,5 +325,6 @@ async def generate_project_slice(
     }
     project.status = "complete"
     await project.save()
+    await _emit_progress(progress_callback, 98, "Manga slice persisted successfully…", "complete")
 
     return slice_doc, page_docs

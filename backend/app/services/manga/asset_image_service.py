@@ -29,7 +29,7 @@ def build_asset_prompt(asset: MangaAssetSpec, style: str) -> str:
     ).strip()
 
 
-async def generate_asset_image_doc(
+async def build_generated_asset_doc(
     *,
     project_id: str,
     asset: MangaAssetSpec,
@@ -38,10 +38,11 @@ async def generate_asset_image_doc(
     image_model: str | None,
     image_generator: ImageGenerator = generate_image_with_model,
 ) -> MangaAssetDoc:
-    """Generate one asset image and persist its asset document.
+    """Generate one asset image and return an unsaved asset document.
 
     This is intentionally strict: no local placeholder fallback and no silent
-    model switching. If the image model fails, the caller receives a clear error.
+    model switching. The caller controls persistence ordering so page/slice docs
+    are not saved before required image assets succeed.
     """
     model = asset.model or image_model or DEFAULT_IMAGE_MODEL
     relative_path = build_asset_relative_path(project_id, asset)
@@ -68,6 +69,27 @@ async def generate_asset_image_doc(
         model=model,
         metadata={"asset_id": asset.asset_id, "generation": "strict_image_model"},
     )
+    return doc
+
+
+async def generate_asset_image_doc(
+    *,
+    project_id: str,
+    asset: MangaAssetSpec,
+    api_key: str,
+    style: str,
+    image_model: str | None,
+    image_generator: ImageGenerator = generate_image_with_model,
+) -> MangaAssetDoc:
+    """Generate one asset image, persist, and return its document."""
+    doc = await build_generated_asset_doc(
+        project_id=project_id,
+        asset=asset,
+        api_key=api_key,
+        style=style,
+        image_model=image_model,
+        image_generator=image_generator,
+    )
     await doc.insert()
     return doc
 
@@ -80,8 +102,26 @@ async def persist_asset_prompt_doc(
     image_model: str | None,
 ) -> MangaAssetDoc:
     """Persist a prompt-only asset doc when image generation is disabled."""
+    doc = await build_prompt_asset_doc(
+        project_id=project_id,
+        asset=asset,
+        style=style,
+        image_model=image_model,
+    )
+    await doc.insert()
+    return doc
+
+
+async def build_prompt_asset_doc(
+    *,
+    project_id: str,
+    asset: MangaAssetSpec,
+    style: str,
+    image_model: str | None,
+) -> MangaAssetDoc:
+    """Return an unsaved prompt-only asset doc when image generation is disabled."""
     model = asset.model or image_model or ""
-    doc = MangaAssetDoc(
+    return MangaAssetDoc(
         project_id=project_id,
         character_id=asset.character_id,
         asset_type=asset.asset_type,
@@ -91,5 +131,3 @@ async def persist_asset_prompt_doc(
         model=model,
         metadata={"asset_id": asset.asset_id, "generation": "prompt_only"},
     )
-    await doc.insert()
-    return doc
