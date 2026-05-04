@@ -25,6 +25,7 @@ import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
 import type { LogEntry } from "@/components/LogFeed";
 import { getImageModels } from "@/lib/api";
 import { GenerationFacts } from "@/components/GenerationFacts";
+import { MangaV2ProjectPanel } from "@/components/MangaV2ProjectPanel";
 import type { Book, SummaryListItem, SummaryStyle, LLMProvider } from "@/lib/types";
 
 // ─── GENERATE PANEL ─────────────────────────────────────────
@@ -675,9 +676,14 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           {/* Left */}
           <div className="flex flex-col gap-4">
             {isParsed && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <GeneratePanel book={book} onComplete={sid => router.push(`/books/${id}/manga?summary=${sid}`)} />
-              </motion.div>
+              <>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                  <GeneratePanel book={book} onComplete={sid => router.push(`/books/${id}/manga?summary=${sid}`)} />
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+                  <MangaV2ProjectPanel book={book} />
+                </motion.div>
+              </>
             )}
 
             {summaries.length > 0 && (

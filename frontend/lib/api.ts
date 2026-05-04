@@ -20,7 +20,12 @@ import type {
   UploadResponse,
   SummaryStyle,
   LLMProvider,
+  GenerateMangaSliceResponse,
+  MangaProjectAssetsResponse,
+  MangaProjectPagesResponse,
   MangaProjectResponse,
+  MangaProjectSlicesResponse,
+  MangaProjectsResponse,
   NextSourceSliceResponse,
 } from "./types";
 
@@ -197,8 +202,28 @@ export async function createMangaProject(
   return response.data;
 }
 
+export async function listBookMangaProjects(bookId: string): Promise<MangaProjectsResponse> {
+  const response = await api.get<MangaProjectsResponse>(`/books/${bookId}/manga-projects`);
+  return response.data;
+}
+
 export async function getMangaProject(projectId: string): Promise<MangaProjectResponse> {
   const response = await api.get<MangaProjectResponse>(`/manga-projects/${projectId}`);
+  return response.data;
+}
+
+export async function listMangaProjectSlices(projectId: string): Promise<MangaProjectSlicesResponse> {
+  const response = await api.get<MangaProjectSlicesResponse>(`/manga-projects/${projectId}/slices`);
+  return response.data;
+}
+
+export async function listMangaProjectPages(projectId: string): Promise<MangaProjectPagesResponse> {
+  const response = await api.get<MangaProjectPagesResponse>(`/manga-projects/${projectId}/pages`);
+  return response.data;
+}
+
+export async function listMangaProjectAssets(projectId: string): Promise<MangaProjectAssetsResponse> {
+  const response = await api.get<MangaProjectAssetsResponse>(`/manga-projects/${projectId}/assets`);
   return response.data;
 }
 
@@ -209,6 +234,34 @@ export async function previewNextSourceSlice(
   const response = await api.post<NextSourceSliceResponse>(
     `/manga-projects/${projectId}/next-source-slice`,
     { page_window: pageWindow },
+  );
+  return response.data;
+}
+
+export async function generateMangaProjectSlice(
+  projectId: string,
+  options: {
+    apiKey: string;
+    provider: LLMProvider;
+    model?: string;
+    pageWindow?: number;
+    generateImages?: boolean;
+    imageModel?: string;
+    extraOptions?: Record<string, unknown>;
+  },
+): Promise<GenerateMangaSliceResponse> {
+  const response = await api.post<GenerateMangaSliceResponse>(
+    `/manga-projects/${projectId}/generate-slice`,
+    {
+      api_key: options.apiKey,
+      provider: options.provider,
+      model: options.model,
+      page_window: options.pageWindow ?? 10,
+      generate_images: options.generateImages ?? false,
+      image_model: options.imageModel ?? null,
+      options: options.extraOptions ?? {},
+    },
+    { timeout: 10 * 60 * 1000 },
   );
   return response.data;
 }

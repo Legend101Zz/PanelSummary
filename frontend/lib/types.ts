@@ -177,6 +177,66 @@ export interface NextSourceSliceResponse {
   fully_covered: boolean;
 }
 
+export interface MangaProjectsResponse {
+  projects: MangaProject[];
+}
+
+export interface MangaSliceDoc {
+  id: string;
+  project_id: string;
+  book_id: string;
+  source_slice: SourceSlice;
+  slice_index: number;
+  slice_role: string;
+  status: string;
+  new_fact_ids: string[];
+  quality_report: Record<string, unknown>;
+  llm_traces: Record<string, unknown>[];
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface MangaProjectSlicesResponse {
+  slices: MangaSliceDoc[];
+}
+
+export interface MangaProjectPageDoc {
+  id: string;
+  project_id: string;
+  slice_id: string;
+  page_index: number;
+  source_range: SourceRange;
+  v4_page: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface MangaProjectPagesResponse {
+  pages: MangaProjectPageDoc[];
+}
+
+export interface MangaAssetDoc {
+  id: string;
+  project_id: string;
+  character_id: string;
+  asset_type: string;
+  expression: string;
+  image_path: string;
+  prompt: string;
+  model: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface MangaProjectAssetsResponse {
+  assets: MangaAssetDoc[];
+}
+
+export interface GenerateMangaSliceResponse {
+  project: MangaProject;
+  slice: MangaSliceDoc;
+  pages: MangaProjectPageDoc[];
+}
+
 // ============================================================
 // REELS TYPES
 // ============================================================
