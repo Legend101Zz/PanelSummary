@@ -223,6 +223,21 @@ Six commits. Each commit leaves the suite green and `tsc --noEmit` clean.
 ## Blockers
 * None — proceeding with 4.1.
 
+## Progress log
+
+### 4.1 — RenderedPage domain model + tests ✅
+* `app/domain/manga/render_view.py`: `PanelRenderArtifact`,
+  `RenderedPage`, `empty_rendered_page`. Pure Pydantic, I/O-free.
+* `app/domain/manga/__init__.py` re-exports the new symbols.
+* `tests/test_render_view_v2.py`: 13 invariants pinned (artifact slot
+  for every panel, no extras, composition page-index match, panel-order
+  permutation, RTL reading order from composition, dedup of
+  requested_character_count, model_dump round-trip).
+* Test count 330 → 343. tsc clean. No callers yet — the model is dead
+  code on its own; 4.2 wires it through the pipeline.
+* Convention noted: this repo has no `conftest.py`; every test file
+  hand-inserts `backend/` onto `sys.path`. Followed the pattern.
+
 ## Next session pickup point
 * If this session ends mid-phase, the pickup is whichever of 4.1–4.6 is
   open — each deliverable is independently green and committable. The

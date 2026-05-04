@@ -42,6 +42,11 @@ from app.domain.manga.page_composition import (
     PageGridRow,
     SliceComposition,
 )
+from app.domain.manga.render_view import (
+    PanelRenderArtifact,
+    RenderedPage,
+    empty_rendered_page,
+)
 from app.domain.manga.sprite_quality import (
     AssetSpriteReview,
     MissingExpression,
@@ -90,6 +95,9 @@ __all__ = [
     "MAX_ROWS_PER_PAGE",
     "PageComposition",
     "PageGridRow",
+    "PanelRenderArtifact",
+    "RenderedPage",
+    "empty_rendered_page",
     "ScriptIssue",
     "ScriptReviewReport",
     "SliceComposition",
