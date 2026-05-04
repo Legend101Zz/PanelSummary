@@ -331,21 +331,78 @@ Six commits. Each commit leaves the suite green and `tsc --noEmit` clean.
 
 ## Next session pickup point
 
-4.3 — shot-variety DSL validators (the editorial floor). Per the
-refined plan in this doc:
+4.4 — production-grade storyboarder prompt (LLM-first shot design).
+4.3 added the *measurement* (DSL_SHOT_TYPE_DOMINANCE +
+DSL_NO_ESTABLISHING_SHOT warnings); 4.4 is the *intervention* that
+moves the LLM toward authoring varied shots in the first place,
+instead of relying on the repair loop to nudge it after the fact.
 
-* Add a slice-wide `shot_type` distribution check to the storyboard
-  DSL validator: warn when >70% of panels in a slice share the same
-  `shot_type`, and warn when zero panels have an `EXTREME_WIDE` or
-  `WIDE` 'establishing' beat at the start of a scene.
-* Land the checks in `app/services/manga/storyboard_validation*` (or
-  whichever module owns the DSL validator the gate calls) so they
-  flow through the existing `QualityReport` — do NOT invent a
-  parallel signal pipe.
-* Tests in a fresh `tests/test_shot_variety_dsl_v2.py`.
+Concrete:
+* Beef up `app/manga_pipeline/manga_dsl.render_dsl_prompt_fragment`
+  (or whichever helper bakes the per-panel instructions into the
+  storyboarder system prompt) to include:
+  * an explicit shot-type rotation guideline ("vary shot_type panel
+    to panel; no more than two consecutive panels at the same shot
+    type");
+  * a 'every slice opens or contains an establishing beat' rule;
+  * a one-line 'editorial purpose drives shot choice' note.
+* Pin the prompt fragment shape with a snapshot test in
+  `tests/test_storyboarder_prompt_v2.py` so silent prompt drift
+  shows up in code review (we've been bitten by this before).
+* Eyeball one real generation after 4.4 lands to confirm the new
+  4.3 warnings drop in frequency on representative slices.
 
-Do NOT start 4.4 (production-grade storyboarder prompt) until 4.3 is
-in place — 4.3's warnings are how we'll measure whether 4.4's prompt
-actually moves the needle on shot variety. Definitely do NOT start
-4.5 (wire flip) yet; 4.3 + 4.4 want to ride the v4 shadow first so
-we can A/B-eyeball generations side-by-side.
+Do NOT start 4.5 (delete v4_pages, flip the wire, rebuild V4
+frontend on RenderedPage) yet. 4.4 wants to ride the v4 shadow so
+you can A/B-eyeball generations side by side.
+
+### 4.3 — shot-variety editorial floor ✅
+
+**Files added**
+* `app/manga_pipeline/shot_variety.py` (133 lines) — sibling to
+  `manga_dsl.py` because that file is at 588 lines and the new
+  checks are a different signal from the existing
+  `_validate_shot_variety` (which counts *distinct* shot types).
+  Pure functions:
+  * `evaluate_shot_dominance(pages, threshold=0.70, min_panels=5)` —
+    warns when one ShotType > 70% of slice panels. Strictly
+    greater-than (7/10 = 70% ships, 8/10 = 80% warns). Skips
+    slices < 5 panels because the dominance signal collapses to
+    'all panels distinct' on tiny slices, overlapping the
+    cardinality check.
+  * `evaluate_establishing_coverage(pages)` — warns when zero
+    panels in the slice are WIDE or EXTREME_WIDE. Per-slice
+    floor, not per-scene; in-medias-res openings stay legal.
+  * `evaluate_shot_variety(pages)` — single entry point for
+    `validate_storyboard_against_dsl` to call.
+  * Constants: `DOMINANCE_THRESHOLD = 0.70`,
+    `MIN_PANELS_FOR_DOMINANCE_CHECK = 5`,
+    `ESTABLISHING_SHOT_TYPES = {WIDE, EXTREME_WIDE}`.
+* `tests/test_shot_variety_dsl_v2.py` (15 tests):
+  * Dominance — warns at 80%, silent at 70% (boundary), silent at
+    60%, skipped on 4-panel slice, kwarg threshold tunable, kwarg
+    default matches module constant (drift guard).
+  * Establishing — warns when no WIDE/EXTREME_WIDE present, silent
+    with a single WIDE, silent with a single EXTREME_WIDE, silent
+    on empty slice. (Cannot construct a page with zero panels —
+    StoryboardPage's own validator forbids that, noted in the test.)
+  * Entry point — chains both checks, silent on a balanced slice.
+  * End-to-end — pinned through `validate_storyboard_against_dsl`
+    so a future refactor that forgets to call the new helper from
+    the DSL validator entry point fails a wiring test, not just
+    the unit tests.
+
+**Files extended**
+* `app/manga_pipeline/manga_dsl.py` — wired
+  `evaluate_shot_variety` into `validate_storyboard_against_dsl`
+  alongside the existing cardinality check. Lazy import inside the
+  function to keep `manga_dsl`'s import graph unchanged.
+
+**Result**
+* 385 passed (was 370; +15 new). tsc clean. No frontend changes —
+  warnings flow through `QualityReport` so the editor UI picks them
+  up via the existing dashboard wiring.
+* All existing storyboard fixtures already use varied shots, so
+  the new warnings are backwards-compatible (no existing test had
+  to be updated for content).
+* Commit: `v2 Phase 4: 4.3 — shot-variety editorial floor (dominance + establishing)`

@@ -402,6 +402,16 @@ def validate_storyboard_against_dsl(
         issues.extend(_validate_panel_count(page, panel_budget))
         issues.extend(_validate_dialogue_budget(page, dialogue_budget))
     issues.extend(_validate_shot_variety(pages))
+    # Phase 4.3: dominance + establishing-coverage checks. Live in a
+    # sibling module because manga_dsl.py is at its line-budget; the
+    # cardinality check above (DSL_LOW_SHOT_VARIETY) is a different
+    # signal we keep — it catches 'only 2 shot types in the entire
+    # slice', the new ones catch 'one shot type in 80% of panels' and
+    # 'no establishing beat anywhere'. The repair stage handles all
+    # three through the same QualityReport.
+    from app.manga_pipeline.shot_variety import evaluate_shot_variety
+
+    issues.extend(evaluate_shot_variety(pages))
     must_cover = arc_entry.must_cover_fact_ids if arc_entry else []
     issues.extend(_validate_anchor_facts(pages, must_cover))
     return issues
