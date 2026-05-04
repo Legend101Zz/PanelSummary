@@ -10,9 +10,8 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, ChevronDown, X, ExternalLink } from "lucide-react";
+import { fetchOpenRouterModels } from "@/lib/api";
 import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface ORModel {
   id: string;
@@ -65,6 +64,52 @@ function ctxLabel(n: number): string {
   return `${n} ctx`;
 }
 
+type RawOpenRouterModel = {
+  id?: string;
+  name?: string;
+  context_length?: number | string | null;
+  architecture?: { modality?: string | null } | null;
+  pricing?: { prompt?: string | number | null; completion?: string | number | null } | null;
+};
+
+function normalizeOpenRouterModels(rawModels: RawOpenRouterModel[]): ORModel[] {
+  return rawModels
+    .filter((model) => {
+      const contextLength = Number(model.context_length ?? 0);
+      const modality = String(model.architecture?.modality ?? "text->text");
+      return Boolean(model.id) && contextLength >= 4000 && modality.includes("text");
+    })
+    .map((model) => {
+      const pricing = model.pricing ?? {};
+      const inputPrice = Number.parseFloat(String(pricing.prompt ?? "0")) * 1_000_000;
+      const outputPrice = Number.parseFloat(String(pricing.completion ?? "0")) * 1_000_000;
+      const safeInputPrice = Number.isFinite(inputPrice) ? inputPrice : 0;
+      const safeOutputPrice = Number.isFinite(outputPrice) ? outputPrice : 0;
+      const id = String(model.id);
+
+      return {
+        id,
+        name: String(model.name ?? id),
+        context_length: Number(model.context_length ?? 0),
+        input_price_per_1m: Number(safeInputPrice.toFixed(4)),
+        output_price_per_1m: Number(safeOutputPrice.toFixed(4)),
+        is_free: safeInputPrice === 0 && safeOutputPrice === 0,
+        provider: id.includes("/") ? id.split("/")[0] : "unknown",
+      };
+    })
+    .sort((a, b) => Number(b.is_free) - Number(a.is_free) || a.input_price_per_1m - b.input_price_per_1m);
+}
+
+async function fetchModelsWithFallback(): Promise<ORModel[]> {
+  try {
+    const proxied = await fetchOpenRouterModels("");
+    return proxied.models ?? [];
+  } catch {
+    const response = await axios.get("https://openrouter.ai/api/v1/models", { timeout: 15000 });
+    return normalizeOpenRouterModels(response.data?.data ?? []);
+  }
+}
+
 interface Props {
   apiKey: string;
   value: string;
@@ -72,27 +117,31 @@ interface Props {
   disabled?: boolean;
 }
 
-export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
+export function ModelSelector({ value, onChange, disabled }: Props) {
   const [open, setOpen]         = useState(false);
   const [models, setModels]     = useState<ORModel[]>([]);
   const [loading, setLoading]   = useState(false);
-  const [loadError, setLoadError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch]     = useState("");
   const [showAll, setShowAll]   = useState(false);
 
   const load = useCallback(async () => {
-    if (models.length > 0) return;
+    if (models.length > 0 || loading) return;
+
     setLoading(true);
-    setLoadError(false);
+    setLoadError(null);
     try {
-      const key = encodeURIComponent(apiKey);
-      const r = await axios.get(`${API_URL}/openrouter/models?api_key=${key}`);
-      setModels(r.data.models ?? []);
+      const nextModels = await fetchModelsWithFallback();
+      setModels(nextModels);
+      if (nextModels.length === 0) {
+        setLoadError("OpenRouter returned zero usable text models");
+      }
     } catch {
-      setLoadError(true);
+      setLoadError("Could not load OpenRouter models");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [apiKey, models.length]);
+  }, [loading, models.length]);
 
   useEffect(() => {
     if (open) load();
@@ -186,7 +235,11 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => !disabled && setOpen(o => !o)}
+        onClick={() => {
+          if (disabled) return;
+          setOpen(o => !o);
+          void load();
+        }}
         disabled={disabled}
         className="w-full flex items-center justify-between px-3 py-2.5 text-sm border transition-colors"
         style={{
@@ -266,7 +319,18 @@ export function ModelSelector({ apiKey, value, onChange, disabled }: Props) {
                 </div>
               ) : loadError ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--red)", fontSize: "10px" }}>
-                  FAILED TO LOAD — check backend is running
+                  <p>{loadError}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModels([]);
+                      void load();
+                    }}
+                    className="mt-2 px-2 py-1 border"
+                    style={{ borderColor: "var(--red)", color: "var(--red)" }}
+                  >
+                    RETRY
+                  </button>
                 </div>
               ) : allFiltered.length === 0 ? (
                 <div className="text-center py-6 text-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
