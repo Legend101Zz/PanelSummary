@@ -256,7 +256,7 @@ def test_asset_ids_are_stable_across_legacy_and_llm_paths_for_same_labels():
 # --- coverage ---------------------------------------------------------------
 
 
-def test_each_character_gets_exactly_one_reference_sheet():
+def test_each_character_gets_a_full_reference_turnaround():
     plan = plan_book_character_sheets(
         bible=_bible(_kai(), _mira()),
         project_id="p1",
@@ -264,8 +264,21 @@ def test_each_character_gets_exactly_one_reference_sheet():
     )
 
     references = [s for s in plan.assets if s.asset_type == REFERENCE_ASSET_TYPE]
+    # Phase B1: every character carries a turnaround — front, side, back —
+    # so the artist can verify silhouette consistency without rerunning the
+    # image model.
     assert {r.character_id for r in references} == {"kai", "mira"}
-    assert len(references) == 2  # exactly one per character
+    assert len(references) == 6  # 2 characters × 3 angles
+    angles_per_character = {
+        char_id: sorted(
+            r.expression for r in references if r.character_id == char_id
+        )
+        for char_id in {"kai", "mira"}
+    }
+    assert angles_per_character == {
+        "kai": ["back", "front", "side"],
+        "mira": ["back", "front", "side"],
+    }
 
 
 def test_each_character_gets_one_expression_per_llm_authored_label():

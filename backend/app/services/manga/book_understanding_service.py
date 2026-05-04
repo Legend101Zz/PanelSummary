@@ -31,6 +31,7 @@ from app.manga_pipeline import (
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 from app.manga_pipeline.stages.book import (
     arc_outline_stage,
+    bible_silhouette_uniqueness_stage,
     book_fact_registry_stage,
     character_art_direction_stage,
     global_adaptation_plan_stage,
@@ -53,6 +54,10 @@ def build_book_understanding_stages():
         book_fact_registry_stage.run,
         global_adaptation_plan_stage.run,
         global_character_world_bible_stage.run,
+        # Phase B3: heuristic uniqueness check on the bible. Pure function,
+        # no LLM — must run AFTER the bible is locked but BEFORE art
+        # direction so its warnings can inform a future bible-revision UI.
+        bible_silhouette_uniqueness_stage.run,
         # Art direction depends on the bible being locked. It runs BEFORE the
         # arc outline because the outline doesn't need it; ordering is set by
         # actual data dependency, not aesthetics.

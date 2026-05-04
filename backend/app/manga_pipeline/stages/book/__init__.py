@@ -1,5 +1,6 @@
 from app.manga_pipeline.stages.book import (
     arc_outline_stage,
+    bible_silhouette_uniqueness_stage,
     book_fact_registry_stage,
     character_art_direction_stage,
     global_adaptation_plan_stage,
@@ -9,6 +10,7 @@ from app.manga_pipeline.stages.book import (
 
 __all__ = [
     "arc_outline_stage",
+    "bible_silhouette_uniqueness_stage",
     "book_fact_registry_stage",
     "character_art_direction_stage",
     "global_adaptation_plan_stage",

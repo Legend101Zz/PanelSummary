@@ -22,6 +22,7 @@ from app.domain.manga import (
     BookSynopsis,
     CharacterArtDirectionBundle,
     CharacterWorldBible,
+    QualityIssue,
     SourceFact,
 )
 from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
@@ -76,6 +77,12 @@ class BookUnderstandingContext:
     character_bible: CharacterWorldBible | None = None
     art_direction: CharacterArtDirectionBundle | None = None
     arc_outline: ArcOutline | None = None
+
+    # Phase B3: warnings (silhouette/costume clashes) the uniqueness stage
+    # surfaces. Kept on the context so the orchestrator can log them and a
+    # future UI can render them; we deliberately do not block the pipeline
+    # because some projects (twins, body-doubles) need similar silhouettes.
+    bible_warnings: list[QualityIssue] = field(default_factory=list)
 
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
 

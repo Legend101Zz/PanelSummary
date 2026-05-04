@@ -35,12 +35,15 @@ from app.services.manga.panel_rendering_service import (
 
 
 # Tests duck-type the asset doc so we don't need to bring up Beanie.
-# The renderer only reads ``character_id``, ``asset_type``, ``image_path``.
+# The renderer only reads ``character_id``, ``asset_type``, ``image_path``,
+# and ``expression`` (the last one only when picking among multiple
+# reference-sheet angles per character — Phase B1).
 @dataclass
 class _FakeAssetDoc:
     character_id: str
     asset_type: str
     image_path: str
+    expression: str = "neutral"
 
 
 _PROSE = (
@@ -118,11 +121,14 @@ def _art_direction() -> CharacterArtDirectionBundle:
     )
 
 
-def _asset_doc(*, character_id: str, asset_type: str, image_path: str) -> _FakeAssetDoc:
+def _asset_doc(
+    *, character_id: str, asset_type: str, image_path: str, expression: str = "neutral"
+) -> _FakeAssetDoc:
     return _FakeAssetDoc(
         character_id=character_id,
         asset_type=asset_type,
         image_path=image_path,
+        expression=expression,
     )
 
 
@@ -163,6 +169,54 @@ def test_build_asset_lookup_skips_docs_without_character_id():
         _asset_doc(character_id="", asset_type="reference_sheet", image_path="floating.png"),
     ]
     assert build_asset_lookup(docs) == {}
+
+
+def test_build_asset_lookup_prefers_front_when_multiple_reference_angles_exist():
+    # Phase B1: every character has 3 reference sheets (front/side/back).
+    # The selector must deterministically pick the front view as the
+    # canonical conditioning image — otherwise we get nondeterministic
+    # per-panel art that depends on dict-iteration order.
+    docs = [
+        _asset_doc(
+            character_id="agent",
+            asset_type="reference_sheet",
+            image_path="a/back.png",
+            expression="back",
+        ),
+        _asset_doc(
+            character_id="agent",
+            asset_type="reference_sheet",
+            image_path="a/side.png",
+            expression="side",
+        ),
+        _asset_doc(
+            character_id="agent",
+            asset_type="reference_sheet",
+            image_path="a/front.png",
+            expression="front",
+        ),
+    ]
+    lookup = build_asset_lookup(docs)
+    assert lookup["agent"]["reference_sheet"].image_path == "a/front.png"
+
+
+def test_build_asset_lookup_falls_back_to_side_when_front_missing():
+    docs = [
+        _asset_doc(
+            character_id="agent",
+            asset_type="reference_sheet",
+            image_path="a/side.png",
+            expression="side",
+        ),
+        _asset_doc(
+            character_id="agent",
+            asset_type="reference_sheet",
+            image_path="a/back.png",
+            expression="back",
+        ),
+    ]
+    lookup = build_asset_lookup(docs)
+    assert lookup["agent"]["reference_sheet"].image_path == "a/side.png"
 
 
 # ── select_reference_paths_for_characters ──────────────────────────────────

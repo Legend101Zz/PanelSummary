@@ -40,6 +40,31 @@ from app.domain.manga import (
 REFERENCE_ASSET_TYPE = "reference_sheet"
 EXPRESSION_ASSET_TYPE = "expression"
 
+# Phase B1: a real "model sheet" is a turnaround — front, side, back.
+# Each angle uses the same bible visual_lock and the same art-direction
+# header; only the framing prose changes. The downstream selector picks
+# the front view as the canonical conditioning image, but having all
+# three persisted means a) the artist can verify silhouette consistency
+# without rerunning the model and b) future stages can attach the side
+# or back view when the storyboard frames the character that way.
+REFERENCE_ANGLES: tuple[tuple[str, str], ...] = (
+    (
+        "front",
+        "Front-facing full-body model sheet, T-pose-friendly, neutral expression, "
+        "feet-to-head visible, plain white background.",
+    ),
+    (
+        "side",
+        "Three-quarter side view full-body model sheet, profile readable, "
+        "silhouette legible against plain white background.",
+    ),
+    (
+        "back",
+        "Back view full-body model sheet showing hair, costume back, and "
+        "silhouette from behind on plain white background.",
+    ),
+)
+
 # Used only when no art_direction is supplied (legacy projects that ran
 # book-understanding before Phase 3 shipped). New projects ALWAYS carry art
 # direction and use whatever expressions the LLM picked per character.
@@ -105,18 +130,26 @@ def _reference_prompt(
     *,
     character: CharacterDesign,
     direction: CharacterArtDirection | None,
+    angle_label: str,
+    angle_framing: str,
     world_summary: str,
     visual_style: str,
 ) -> str:
-    """Compose the reference sheet prompt — the canonical model sheet."""
+    """Compose the reference sheet prompt for a single angle of the turnaround.
+
+    The art-direction's ``reference_sheet_prose`` is the master directive
+    (color story, line weight philosophy). We append per-angle framing prose
+    so the image model knows whether to draw front, side, or back without
+    losing the master directive's intent.
+    """
     art_header = direction.reference_sheet_prose if direction else (
-        "Manga character reference sheet, front view, full body, neutral pose, "
-        "T-pose-friendly, plain white background, suitable as a model sheet "
-        "for downstream panel art."
+        "Manga character reference sheet, full body, T-pose-friendly, plain "
+        "white background, suitable as a model sheet for downstream panel art."
     )
     art_recipe = _art_direction_block(direction) if direction else ""
     return (
         f"{art_header} "
+        f"Angle: {angle_label}. {angle_framing} "
         f"{art_recipe} "
         f"World context: {world_summary}. "
         f"Style: {visual_style}. "
@@ -203,21 +236,36 @@ def _specs_for_character(
     before anything that conceptually inherits from it. (We do not actually
     chain image generations today, but the order future-proofs the contract.)
     """
-    specs: list[MangaAssetSpec] = [
-        MangaAssetSpec(
-            asset_id=_stable_asset_id(character.character_id, REFERENCE_ASSET_TYPE, "neutral"),
-            character_id=character.character_id,
-            asset_type=REFERENCE_ASSET_TYPE,
-            expression="neutral",
-            prompt=_reference_prompt(
-                character=character,
-                direction=direction,
-                world_summary=world_summary,
-                visual_style=visual_style,
-            ),
-            model=options.image_model or "",
+    specs: list[MangaAssetSpec] = []
+    # Phase B1: emit one reference sheet per angle so the library carries a
+    # full turnaround. The asset_id encodes the angle so re-runs are
+    # idempotent and the selector can pick a specific angle when needed.
+    for angle_label, angle_framing in REFERENCE_ANGLES:
+        specs.append(
+            MangaAssetSpec(
+                asset_id=_stable_asset_id(
+                    character.character_id, REFERENCE_ASSET_TYPE, angle_label
+                ),
+                character_id=character.character_id,
+                asset_type=REFERENCE_ASSET_TYPE,
+                # We persist the angle in the ``expression`` field because
+                # MangaAssetSpec does not have a dedicated angle slot, and
+                # bumping the schema for a single non-textual axis would
+                # ripple through persistence + asset selectors. The selector
+                # already treats reference_sheet expressions as labels, so
+                # this is the cheapest semantically-honest place to put it.
+                expression=angle_label,
+                prompt=_reference_prompt(
+                    character=character,
+                    direction=direction,
+                    angle_label=angle_label,
+                    angle_framing=angle_framing,
+                    world_summary=world_summary,
+                    visual_style=visual_style,
+                ),
+                model=options.image_model or "",
+            )
         )
-    ]
     for label, expression_direction in _expressions_for_character(
         character_id=character.character_id,
         direction=direction,

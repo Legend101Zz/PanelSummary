@@ -94,12 +94,39 @@ def build_asset_lookup(assets: list[MangaAssetDoc]) -> dict[str, dict[str, Manga
 
     We keep the inner dict by asset_type so the renderer can prefer reference
     sheets and fall back to expression sheets without scanning the list.
+
+    Phase B1: there are now multiple reference sheets per character (front,
+    side, back). The selector wants the FRONT view as the canonical
+    conditioning image, so we pick deterministically: front > side > back >
+    whatever's there. Without this preference order the dict ends up with
+    whichever angle was loaded last — nondeterministic and a flaky-test
+    factory.
     """
-    lookup: dict[str, dict[str, MangaAssetDoc]] = {}
+    # asset_type -> expression preference order. Anything not in the list
+    # gets a stable insertion-order fallback.
+    REFERENCE_ANGLE_PREFERENCE = ("front", "side", "back", "neutral")
+
+    grouped: dict[str, dict[str, list[MangaAssetDoc]]] = {}
     for doc in assets:
         if not doc.character_id:
             continue
-        lookup.setdefault(doc.character_id, {})[doc.asset_type] = doc
+        grouped.setdefault(doc.character_id, {}).setdefault(doc.asset_type, []).append(doc)
+
+    lookup: dict[str, dict[str, MangaAssetDoc]] = {}
+    for character_id, by_type in grouped.items():
+        per_type: dict[str, MangaAssetDoc] = {}
+        for asset_type, docs in by_type.items():
+            if asset_type == REFERENCE_ASSET_TYPE and len(docs) > 1:
+                # Pick by angle preference; fall back to first.
+                docs_by_label = {doc.expression: doc for doc in docs}
+                chosen = next(
+                    (docs_by_label[label] for label in REFERENCE_ANGLE_PREFERENCE if label in docs_by_label),
+                    docs[0],
+                )
+                per_type[asset_type] = chosen
+            else:
+                per_type[asset_type] = docs[0]
+        lookup[character_id] = per_type
     return lookup
 
 
