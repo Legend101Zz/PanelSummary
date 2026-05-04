@@ -31,3 +31,6 @@ log.txt
 
 # Storage / uploads
 storage/
+
+# TypeScript build cache
+*.tsbuildinfo
