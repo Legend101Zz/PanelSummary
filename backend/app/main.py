@@ -32,6 +32,7 @@ from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
+from app.api.routes.manga_projects import router as manga_projects_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import (
@@ -64,6 +65,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(manga_projects_router)
 
 # MongoDB connection (created once at startup)
 motor_client: AsyncIOMotorClient = None
