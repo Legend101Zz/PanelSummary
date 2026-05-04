@@ -221,14 +221,43 @@ async def _build_asset_docs(
     options: dict[str, Any],
     image_api_key: str | None,
     progress_callback: GenerationProgressCallback | None,
+    character_bible: CharacterWorldBible | None = None,
 ) -> list[MangaAssetDoc]:
+    """Materialize ONLY the asset specs missing from the project library.
+
+    Phase 3 invariant: the book-understanding service already populated the
+    canonical library when the bible was locked. Per-slice generation must
+    NOT duplicate those rows — doing so would burn image-model spend AND
+    produce slightly different images, breaking visual continuity.
+
+    Spec lookup is by the planner-stable ``asset_id`` stored in metadata.
+    """
+    from app.services.manga.character_library_service import (
+        existing_asset_id_set,
+        specs_missing_from_library,
+    )
+
     should_generate_images = bool(options.get("generate_images"))
     if should_generate_images and not image_api_key:
         raise ValueError("character asset image generation requires an image_api_key")
 
+    existing_ids = await existing_asset_id_set(str(project.id))
+    missing_specs = specs_missing_from_library(
+        planned_specs=list(asset_specs),
+        existing_asset_ids=existing_ids,
+    )
+    # Mechanically attach the bible's visual lock to every generated prompt.
+    # Without this, the asset prompt only carries whatever the planner wrote,
+    # which the image model is free to ignore. Looking up by character_id is
+    # safe even when the bible is None (we just skip the enrichment).
+    character_lookup = {
+        character.character_id: character
+        for character in (character_bible.characters if character_bible else [])
+    }
+
     asset_docs: list[MangaAssetDoc] = []
-    total_assets = len(asset_specs)
-    for index, asset in enumerate(asset_specs, start=1):
+    total_assets = len(missing_specs)
+    for index, asset in enumerate(missing_specs, start=1):
         await _emit_progress(
             progress_callback,
             84 + int((index / max(total_assets, 1)) * 8),
@@ -242,6 +271,7 @@ async def _build_asset_docs(
                 api_key=image_api_key or "",
                 style=str(options.get("style", project.style)),
                 image_model=str(options.get("image_model")) if options.get("image_model") else None,
+                character_design=character_lookup.get(asset.character_id),
             ))
         else:
             asset_docs.append(await build_prompt_asset_doc(
@@ -249,6 +279,7 @@ async def _build_asset_docs(
                 asset=asset,
                 style=str(options.get("style", project.style)),
                 image_model=str(options.get("image_model")) if options.get("image_model") else None,
+                character_design=character_lookup.get(asset.character_id),
             ))
     return asset_docs
 
@@ -358,6 +389,7 @@ async def generate_project_slice(
         options=options,
         image_api_key=image_api_key,
         progress_callback=progress_callback,
+        character_bible=final_context.character_bible,
     )
 
     slice_index = len(ledger.covered_source_ranges)

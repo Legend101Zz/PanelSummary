@@ -13,7 +13,7 @@ from beanie.operators import In
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.domain.manga import SourceSlice
+from app.domain.manga import CharacterWorldBible, SourceSlice
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
 from app.services.manga import (
@@ -22,6 +22,10 @@ from app.services.manga import (
     load_project_ledger,
     project_understanding_is_ready,
     serialize_project,
+)
+from app.services.manga.character_library_service import (
+    ensure_book_character_sheets,
+    list_project_assets,
 )
 
 router = APIRouter(tags=["manga-projects"])
@@ -92,6 +96,27 @@ class MangaProjectPagesResponse(BaseModel):
 
 class MangaProjectAssetsResponse(BaseModel):
     assets: list[dict[str, Any]]
+
+
+class GenerateCharacterSheetsRequest(BaseModel):
+    """Request body for the explicit character-sheet generation endpoint.
+
+    The image_api_key is only required when ``generate_images`` is True on the
+    project's options. Without it we still persist prompt-only docs so the
+    library is COMPLETE for the renderer; the user can re-trigger with images
+    later.
+    """
+
+    image_api_key: str | None = None
+
+
+class CharacterSheetsResponse(BaseModel):
+    """Library snapshot returned after a (potentially no-op) materialization."""
+
+    assets: list[dict[str, Any]]
+    generated_count: int = Field(
+        description="Number of new assets created in this call (0 when fully idempotent).",
+    )
 
 
 def _serialize_source_slice(source_slice: SourceSlice | None) -> dict[str, Any] | None:
@@ -208,6 +233,46 @@ async def list_manga_project_assets(project_id: str):
 
     assets = await MangaAssetDoc.find(MangaAssetDoc.project_id == project_id).sort("character_id").to_list()
     return MangaProjectAssetsResponse(assets=[_serialize_asset_doc(asset) for asset in assets])
+
+
+@router.post("/manga-projects/{project_id}/character-sheets", response_model=CharacterSheetsResponse)
+async def materialize_character_sheets(
+    project_id: str,
+    request: GenerateCharacterSheetsRequest,
+) -> CharacterSheetsResponse:
+    """Idempotently materialize the project's character sheet library.
+
+    The book-understanding pipeline already calls this for new projects; this
+    endpoint exists so the UI can:
+
+    * Retry sheet generation after an image-model outage without rerunning the
+      LLM-heavy book understanding.
+    * Switch a project from ``generate_images=False`` to ``True`` and fill in
+      the actual images without re-planning prompts.
+
+    Returns the full library AND the number of newly created assets so the
+    caller can tell whether real work happened.
+    """
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+    if not project.character_world_bible:
+        raise HTTPException(
+            status_code=409,
+            detail="Project has no character world bible yet; run book-understanding first.",
+        )
+
+    bible = CharacterWorldBible(**project.character_world_bible)
+    before = await list_project_assets(str(project.id))
+    after = await ensure_book_character_sheets(
+        project=project,
+        bible=bible,
+        image_api_key=request.image_api_key,
+    )
+    return CharacterSheetsResponse(
+        assets=[_serialize_asset_doc(doc) for doc in after],
+        generated_count=max(len(after) - len(before), 0),
+    )
 
 
 @router.post("/manga-projects/{project_id}/next-source-slice", response_model=NextSourceSliceResponse)

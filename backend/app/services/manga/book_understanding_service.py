@@ -253,6 +253,21 @@ async def generate_book_understanding(
 
     _persist_understanding_to_project(project=project, result=result)
     await project.save()
+    await _emit_progress(progress_callback, 95, "Materializing character sheet library…", "character_sheets")
+    # Phase 3: Generate the deterministic book-level character library
+    # immediately after the bible is locked. This is idempotent so retries
+    # never duplicate sheets, and it costs zero LLM calls (planner is pure).
+    # Image generation is opt-in via project_options.generate_images; without
+    # it we still persist prompt-only docs so the library is COMPLETE for the
+    # renderer's purposes.
+    from app.services.manga.character_library_service import ensure_book_character_sheets
+
+    image_api_key = options.get("image_api_key") if isinstance(options, dict) else None
+    await ensure_book_character_sheets(
+        project=project,
+        bible=result.character_bible,
+        image_api_key=image_api_key,
+    )
     await _emit_progress(progress_callback, 100, "Book understanding complete.", "ready")
     return result
 

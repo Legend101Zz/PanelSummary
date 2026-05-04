@@ -1,4 +1,15 @@
-"""Tests for the v2 LLM-backed character asset planning stage."""
+"""Tests for the character asset planning stage.
+
+Phase 3 contract: the stage is a thin deterministic shim over the planner.
+No LLM call, ever. The bible MUST be hydrated (book-understanding ran, OR
+legacy ``character_world_bible_stage`` ran upstream).
+
+These tests pin:
+* the deterministic happy path,
+* visual-lock prose mechanically lands in every spec,
+* idempotency,
+* the loud failure when the bible is missing.
+"""
 
 from __future__ import annotations
 
@@ -11,31 +22,55 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 
-from app.domain.manga import CharacterDesign, CharacterWorldBible, ContinuityLedger, SourceRange, SourceSlice, SourceSliceMode
+from app.domain.manga import (
+    CharacterDesign,
+    CharacterWorldBible,
+    ContinuityLedger,
+    SourceRange,
+    SourceSlice,
+    SourceSliceMode,
+)
 from app.manga_pipeline import PipelineContext
 from app.manga_pipeline.stages import character_asset_plan_stage
 
 
-class FakeLLMClient:
-    provider = "fake"
-    model = "fake-prompt-director"
+class ExplodingLLMClient:
+    """Any chat call would be a Phase 3 regression — explode loudly."""
 
-    def __init__(self, parsed: dict[str, Any]) -> None:
-        self.parsed = parsed
-        self.calls: list[dict[str, Any]] = []
+    provider = "exploding"
+    model = "must-not-be-called"
 
     async def chat(self, **kwargs: Any) -> dict[str, Any]:
-        self.calls.append(kwargs)
-        return {
-            "content": "{}",
-            "parsed": self.parsed,
-            "input_tokens": 333,
-            "output_tokens": 222,
-            "estimated_cost_usd": 0.005,
-        }
+        raise AssertionError(
+            "character_asset_plan_stage must NOT call the LLM in Phase 3"
+        )
 
 
-def _context(llm_client: FakeLLMClient | None = None) -> PipelineContext:
+def _bible() -> CharacterWorldBible:
+    return CharacterWorldBible(
+        world_summary="A shifting archive of forgotten methods.",
+        visual_style="Black ink with clean screentones.",
+        characters=[
+            CharacterDesign(
+                character_id="kai",
+                name="Kai",
+                role="protagonist",
+                visual_lock="short angular hair and bookmark scarf",
+                silhouette_notes="lean, tall, satchel always over left shoulder",
+                outfit_notes="dark coat, long crimson scarf",
+                hair_or_face_notes="angular black hair, sharp grey eyes",
+            ),
+            CharacterDesign(
+                character_id="mira",
+                name="Mira",
+                role="mentor",
+                visual_lock="silver braid and bronze monocle",
+            ),
+        ],
+    )
+
+
+def _context(*, bible: CharacterWorldBible | None) -> PipelineContext:
     context = PipelineContext(
         book_id="book_123",
         project_id="project_123",
@@ -46,67 +81,52 @@ def _context(llm_client: FakeLLMClient | None = None) -> PipelineContext:
             source_range=SourceRange(page_start=1, page_end=10),
         ),
         prior_continuity=ContinuityLedger(project_id="project_123"),
-        llm_client=llm_client,
+        # Hydrate an exploding client so a regression that re-introduces an
+        # LLM call fails the test instead of silently working.
+        llm_client=ExplodingLLMClient(),
         options={"image_model": "test-image-model"},
     )
-    context.character_bible = CharacterWorldBible(
-        world_summary="A shifting archive.",
-        visual_style="Black ink with clean screentones.",
-        characters=[
-            CharacterDesign(
-                character_id="kai",
-                name="Kai",
-                role="protagonist",
-                visual_lock="short angular hair and bookmark scarf",
-            )
-        ],
-    )
+    context.character_bible = bible
     return context
 
 
-def _valid_asset_plan() -> dict[str, Any]:
-    return {
-        "project_id": "project_123",
-        "consistency_notes": "Always keep Kai's bookmark scarf and angular hair.",
-        "assets": [
-            {
-                "asset_id": "asset_kai_neutral_sheet",
-                "character_id": "kai",
-                "asset_type": "character_sheet",
-                "expression": "neutral",
-                "prompt": "Manga character sheet of Kai, short angular hair, long bookmark scarf, front side back views, clean black ink screentones, white background.",
-                "model": "test-image-model",
-            }
-        ],
-    }
-
-
-def test_character_asset_plan_stage_calls_llm_and_records_trace():
-    client = FakeLLMClient(_valid_asset_plan())
-    context = _context(client)
+def test_stage_uses_deterministic_planner_and_does_not_touch_llm():
+    context = _context(bible=_bible())
 
     result = asyncio.run(character_asset_plan_stage.run(context))
 
-    assert result.asset_specs[0].asset_id == "asset_kai_neutral_sheet"
-    assert result.asset_specs[0].prompt.startswith("Manga character sheet")
-    assert result.llm_traces[0].stage_name.value == "character_asset_prompts"
-    assert "character_world_bible" in client.calls[0]["user_message"]
-    assert "JSON_SCHEMA" in client.calls[0]["user_message"]
+    assert result.llm_traces == []
+    # Two characters * (1 reference + 3 expressions) = 8 specs.
+    assert len(result.asset_specs) == 8
 
 
-def test_character_asset_plan_stage_requires_character_bible():
-    context = _context(FakeLLMClient(_valid_asset_plan()))
-    context.character_bible = None
+def test_specs_carry_visual_lock_in_prompt():
+    """Bible's visual_lock fields must reach the prompt mechanically."""
+    context = _context(bible=_bible())
+
+    result = asyncio.run(character_asset_plan_stage.run(context))
+    kai_specs = [spec for spec in result.asset_specs if spec.character_id == "kai"]
+
+    assert kai_specs, "Kai must have at least one spec"
+    for spec in kai_specs:
+        assert "bookmark scarf" in spec.prompt
+        assert "angular" in spec.prompt
+        assert "satchel" in spec.prompt  # silhouette_notes
+
+
+def test_specs_are_idempotent_across_runs():
+    """Same bible -> same asset_ids; the library service relies on this."""
+    result_a = asyncio.run(character_asset_plan_stage.run(_context(bible=_bible())))
+    result_b = asyncio.run(character_asset_plan_stage.run(_context(bible=_bible())))
+
+    ids_a = sorted(spec.asset_id for spec in result_a.asset_specs)
+    ids_b = sorted(spec.asset_id for spec in result_b.asset_specs)
+    assert ids_a == ids_b
+
+
+def test_stage_demands_a_hydrated_bible():
+    """Without a bible the stage must fail loudly so a misconfigured pipeline cannot ship."""
+    context = _context(bible=None)
 
     with pytest.raises(ValueError, match="character_bible"):
-        asyncio.run(character_asset_plan_stage.run(context))
-
-
-def test_character_asset_plan_stage_rejects_missing_prompt():
-    invalid = _valid_asset_plan()
-    invalid["assets"][0]["prompt"] = ""
-    context = _context(FakeLLMClient(invalid))
-    context.options["llm_validation_attempts"] = 1
-
-    with pytest.raises(Exception, match="character_asset_prompts"):
         asyncio.run(character_asset_plan_stage.run(context))
