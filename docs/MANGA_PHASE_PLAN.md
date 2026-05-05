@@ -164,7 +164,7 @@ are silhouette-distinct from each other.
 
 ---
 
-## Phase 4 — Panel-Craft DSL Upgrade 🟡 4.1–4.4 shipped, 4.5–4.6 open
+## Phase 4 — Panel-Craft DSL Upgrade ✅ 4.1–4.5c shipped; 4.5c.1 cleanup open
 
 **Theme:** collapse the v2/v4 panel surface into ONE structured DSL the
 storyboarder LLM emits, the page-composition stage consumes, and the
@@ -179,18 +179,15 @@ The pipeline currently carries panels in two parallel shapes:
   validated, LLM-authored. Carries `purpose`, `shot_type`, `composition`
   prose, `action`, `dialogue`, `narration`, `character_ids`,
   `source_fact_ids`.
-* `V4Panel` (dataclass, `app/v4_types.py`) — thinner, hand-rolled
-  renderer wire format. Carries `type` (splash/dialogue/narration/...),
-  `mood`, `scene`, `pose`, ``, `effects`, `emphasis`.
+* `V4Panel` (dataclass, deleted in 4.5c) — thinner, hand-rolled
+  renderer wire format that used to carry `type`, `mood`, `scene`,
+  `pose`, `effects`, and `emphasis`.
 
-They are bridged by `app/rendering/v4/storyboard_mapper.py`, which is a
-**lossy projection**. `shot_type`, `purpose`, `composition` prose, and
-`source_fact_ids` are silently discarded. The renderer keys aspect ratio
-off `V4Panel.type` (panel role), not `shot_type` — so an `EXTREME_WIDE`
-framed `dialogue` panel renders 1:1 and the storyboarder's framing
-intent is lost. The only shot-variety enforcement is slice-wide
-`MIN_DISTINCT_SHOT_TYPES_PER_SLICE = 3`, which is too coarse to stop
-four mediums in a row or a flat page-turn cell.
+They used to be bridged by `app/rendering/v4/storyboard_mapper.py`, a
+**lossy projection** that discarded `shot_type`, `purpose`,
+`composition` prose, and `source_fact_ids`. That bridge was deleted in
+4.5c. The renderer now reads the typed `RenderedPage` contract
+assembled from the storyboard directly.
 
 ### Locked design decisions
 
@@ -225,8 +222,9 @@ four mediums in a row or a flat page-turn cell.
 | 4.2 | `panel_rendering_stage` + `panel_quality_gate_stage` consume `RenderedPage`; new tiny `rendered_page_assembly_stage`; `storyboard_to_v4_stage` retained as a SHADOW (still produces `v4_pages` so persistence/frontend keep working until 4.5) | pipeline | ✅ shipped |
 | 4.3 | Shot-variety editorial floor in `app/manga_pipeline/shot_variety.py` (NEW sibling module — `manga_dsl.py` is at 595/600 lines): `DSL_SHOT_TYPE_DOMINANCE`, `DSL_NO_ESTABLISHING_SHOT`. **See “4.3 delta” below — shipped two validators instead of the three originally planned; the other three failure modes are deferred to 4.3-followups.** | dsl | ✅ shipped (with delta) |
 | 4.4 | `render_shot_variety_prompt_fragment()` co-located with the validators (drift between prompt + validator now structurally impossible); `storyboard_stage.SYSTEM_PROMPT` rewritten to teach rotation, establishing-beat, purpose-drives-shot, AND per-panel composition-prose requirement; 12 substring-snapshot tests pin the prompt copy | prompts | ✅ shipped |
-| 4.5 | Wire flip + frontend rebuild on `RenderedPage`. **Decomposed into 4.5a / 4.5b / 4.5c — see below.** Doing this as a single PR was attempted, vetoed for being un-rollback-able mid-session. | persistence + api + frontend | ⏳ in three sub-phases |
-| 4.6 | Docs + scoreboard close-out commit | docs | ⏳ |
+| 4.5 | Wire flip + frontend rebuild on `RenderedPage`. Decomposed into 4.5a / 4.5b / 4.5c so every commit stayed green. | persistence + api + frontend | ✅ shipped |
+| 4.5c.1 | Production cleanup: old-doc migration decision, frontend type tidy, visual smoke. | data + docs + frontend | ⏳ |
+| 4.6 | Docs + scoreboard close-out commit | docs | ✅ this handoff pass |
 
 ### 4.3 delta (honest call-out)
 
@@ -266,23 +264,21 @@ migrates a Beanie schema, deletes an orchestrator stage, AND rebuilds
 the frontend viewer. The safe shape is three sub-phases each landing
 on their own commit with `pytest -q` + `tsc --noEmit` green.
 
-* **4.5a — backend storage decoupling.** Add a `rendered_page` field
-  on `MangaPageDoc` (and `PipelineResult`) that mirrors the typed
-  `RenderedPage`. Persist BOTH `v4_page` and `rendered_page` for one
-  release. Surface both on the API. No frontend changes, no
-  deletions. Migration pattern: NEW field is opt-in; legacy docs
-  load fine because new field has `default_factory=dict`.
-* **4.5b — frontend cutover.** Frontend `V4Engine/` is renamed to
-  `MangaReader/` and re-typed against the `RenderedPage`-shaped DTO.
-  WCAG 2.2 AA still applies. API still returns both fields; backend
-  pipeline untouched. Rollback is "swap one prop on the page".
-* **4.5c — delete v4.** `context.v4_pages`, `_sync_v4_shadow`,
-  `storyboard_to_v4_stage`, `app/v4_types.py`, `app/rendering/v4/`,
-  `MangaPageDoc.v4_page`, frontend `V4Engine/` indices. One-shot
-  Beanie migration script for any prod docs that pre-date 4.5a.
-  This is the no-going-back commit.
+* **4.5a — backend storage decoupling.** Shipped. Added
+  `rendered_page` beside `v4_page`, dual-wrote for one release, and
+  surfaced both on the API.
+* **4.5b — frontend cutover.** Shipped. Added `MangaReader/` typed
+  against the `RenderedPage` DTO and wired the v2 reader through it.
+* **4.5c — delete v4.** Shipped. Deleted `context.v4_pages`, the v4
+  shadow sync, `storyboard_to_v4_stage`, `app/v4_types.py`,
+  `app/rendering/v4/`, `MangaPageDoc.v4_page`, and the old frontend
+  V4Engine surface.
+* **4.5c.1 — production cleanup.** Open. Decide whether old docs with
+  empty `rendered_page` need migration or can be regenerated/deleted;
+  remove stale frontend v4 type aliases; run the manual visual smoke.
 
-Do NOT compress these. Each sub-phase is a session.
+Do NOT reintroduce v4 as a compatibility layer. Old data is handled by
+an explicit one-shot migration or by documented regeneration/deletion.
 
 ### Phase 4 invariants (will be tested)
 

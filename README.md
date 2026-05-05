@@ -6,16 +6,18 @@
 >
 > **Stack:** Python 3.12 · FastAPI · Celery · MongoDB (Beanie) · uv · Next.js 14 · Tailwind
 >
-> **Status (2026-05-04):** Phases 1–3 of the rebuild shipped. Phases 4 & 5 open.
-> Single canonical roadmap: [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md).
+> **Status (2026-05-05):** Phases 1–3 shipped; Phase 4 is structurally complete through 4.5c (v4 deleted). Phase 5 remains planned.
+> Current handoff: [`docs/MANGA_REFACTOR_HANDOFF.md`](docs/MANGA_REFACTOR_HANDOFF.md). Canonical roadmap: [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md).
 
 ---
 
 ## TL;DR for a brand-new agent session
 
 You are picking up a focused refactor of the manga generation pipeline. Read
-this file once, then read [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md).
-Everything else in `docs/` was deleted because it was stale and confusing.
+this file once, then read [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md)
+and [`docs/MANGA_REFACTOR_HANDOFF.md`](docs/MANGA_REFACTOR_HANDOFF.md).
+The detailed running log is
+[`docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md`](docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md).
 
 **The user's complaint that started this refactor (verbatim, paraphrased):**
 
@@ -40,9 +42,12 @@ phased plan, and shipping Phases 1, 2, 3. Below is what each phase moved.
   etc.) that contradicted each other.
 
 **All of that is deleted.** Don't look for it in git history unless you have
-a specific reason — the new design supersedes it. The single roadmap is
-`docs/MANGA_PHASE_PLAN.md`. The single architectural ADR is
-`docs/MANGA_V2_LLM_ORCHESTRATION_ADR.md`.
+a specific reason — the new design supersedes it. Current docs are:
+
+* `docs/MANGA_PHASE_PLAN.md` — canonical roadmap.
+* `docs/MANGA_REFACTOR_HANDOFF.md` — current status + next-session prompt.
+* `docs/MANGA_V2_LLM_ORCHESTRATION_ADR.md` — architectural ADR.
+* `docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md` — running Phase 4 log.
 
 ---
 
@@ -57,7 +62,7 @@ a specific reason — the new design supersedes it. The single roadmap is
 | **1** | Book Spine — voice cards + character picker | ✅ shipped 2026-05-04 | `Phase 1:` |
 | **2** | Source Grounding & Memory — script lines must cite SourceFacts; recap seeds carry across slices | ✅ shipped 2026-05-04 | `Phase 2:` |
 | **3** | Sprite & Character Library Polish — expression coverage, outfit score, hit-rate metric, pinned-asset selector | ✅ shipped 2026-05-04 | `Phase 3:` |
-| **4** | Panel-Craft DSL Upgrade — collapse v2/v4 panel surface into one structured DSL; vary shot types deliberately | ⏳ next | `v2 Phase 4:` |
+| **4** | Panel-Craft DSL Upgrade — collapse v2/v4 panel surface into one structured DSL; vary shot types deliberately | ✅ 4.5c shipped; cleanup left | `v2 Phase 4:` |
 | **5** | Page Composition & Lettering — bubble shape semantics, SFX font catalogue, RTL flow critic | ⏳ planned | `v2 Phase 5:` |
 
 ### What Phase 1 did
