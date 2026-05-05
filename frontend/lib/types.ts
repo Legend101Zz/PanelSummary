@@ -97,7 +97,7 @@ export interface MangaProject {
   id: string;
   book_id: string;
   style: string;
-  engine: "v4" | string;
+  engine: string;
   title: string;
   status: string;
   project_options: Record<string, unknown>;
@@ -256,10 +256,9 @@ export interface MangaProjectPageDoc {
   slice_id: string;
   page_index: number;
   source_range: SourceRange;
-  // Phase 4.5c: ``v4_page`` is gone (deleted from the backend
-  // MangaPageDoc + API serializer). Pre-4.5a docs whose ``rendered_page``
-  // is the default empty dict narrow to null in the reader and surface
-  // the empty state — they are expected to be regenerated, not migrated.
+  // Phase 4.5c+: RenderedPage is the only page contract returned by
+  // the API. Legacy docs with an empty payload narrow to null in the
+  // reader and show the empty/regenerate state.
   rendered_page: Record<string, unknown>;
   created_at: string;
 }
@@ -366,8 +365,7 @@ export interface PanelRenderArtifact {
 export interface RenderedPage {
   storyboard_page: StoryboardPage;
   // Null when the composition stage gave up (no LLM gutter grid). The
-  // reader falls back to a panel-count layout in that case, matching
-  // the backend ``storyboard_mapper`` legacy path.
+  // reader falls back to a deterministic panel-count layout in that case.
   composition: PageComposition | null;
   // Keyed by ``panel_id``. The backend invariant is that every panel
   // id appears as a key (validated in ``RenderedPage._artifact_keys_match_panels``);

@@ -1,6 +1,6 @@
-# Manga Refactor Handoff — Status, Remaining Work, Next Prompt
+# Manga Refactor Handoff — Status and Remaining Work
 
-_Last updated: 2026-05-05 by `code-puppy-c30264`._
+_Last updated: 2026-05-05 by `code-puppy-52d940`._
 
 This is the fast-read handoff for the production-level manga refactor.
 It does not replace the canonical roadmap (`MANGA_PHASE_PLAN.md`) or
@@ -12,7 +12,8 @@ instead of spelunking 900+ lines of session archaeology. Tiny mercy.
 
 ## Executive state
 
-The refactor is structurally complete through **Phase 4.5c**.
+The refactor is structurally complete through **Phase 4.5c** and the
+safe Phase **4.5c.1** cleanup pass is partially shipped.
 
 The big architectural migration is done:
 
@@ -22,17 +23,20 @@ The big architectural migration is done:
 - `storyboard_to_v4_stage` is deleted.
 - `app/v4_types.py` and `app/rendering/v4/` are deleted.
 - The frontend v2 reader was already cut over to `MangaReader`.
-- Tests were green when committed:
-  - backend: `389 passed`
+- A dry-run-first one-shot migration helper exists for old pages with
+  empty `rendered_page` payloads.
+- `frontend/lib/types.ts` has no stale page fallback field or legacy V4
+  type aliases.
+- Tests were green in this cleanup pass:
+  - backend: `394 passed`
   - frontend: `npx tsc --noEmit` clean
 
 What remains is **production hardening**, not the core refactor:
 
-1. Decide how to handle old persisted `MangaPageDoc`s whose
-   `rendered_page` is still `{}`.
-2. Do a tiny frontend type cleanup for stale v4 fields/aliases.
-3. Run a manual end-to-end visual smoke test.
-4. Optionally start Phase 5 lettering/page-polish work.
+1. Run the migration helper against a reachable DB in dry-run mode and
+   decide whether to apply it or regenerate/delete old docs.
+2. Run a manual end-to-end visual smoke test.
+3. Optionally start Phase 5 lettering/page-polish work.
 
 ---
 
@@ -193,21 +197,22 @@ projection layer. No dead frontend engine pretending to be useful.
 
 ## Current quality signals
 
-Latest verified state at the 4.5c backend deletion commit:
+Latest verified state in the 4.5c.1 cleanup pass:
 
 ```bash
 cd backend && uv run \
   --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
   --allow-insecure-host pypi.ci.artifacts.walmart.com \
   pytest tests/ -q
-# 389 passed
+# 394 passed
 
 cd frontend && npx tsc --noEmit
 # clean
 ```
 
-Test count dropped from 397 to 389 because eight v4-only tests were
-deleted with the code they pinned. That is expected, not regression.
+Test count is now 394: 389 post-4.5c tests plus 5 focused tests for
+the dry-run migration helper. The earlier 397 → 389 drop was the
+expected deletion of eight v4-only tests with the code they pinned.
 
 ---
 
@@ -215,30 +220,49 @@ deleted with the code they pinned. That is expected, not regression.
 
 ### P0 — data migration decision
 
-Some docs generated before 4.5a may have:
+A DB probe from this workspace could not reach MongoDB:
 
-```json
-{"rendered_page": {}}
+```text
+DB_AVAILABLE=false
+ERROR=ServerSelectionTimeoutError: No replica set members found yet
 ```
 
-The code loads them safely because `rendered_page` has a default empty
-dict. But the reader needs a real `RenderedPage` to render old pages.
+So 4.5c.1 shipped a **safe dry-run migration helper** instead of
+pretending the data check ran:
 
-Next decision:
-
-- If old manga docs do not matter, delete/regenerate them.
-- If they matter, write a one-shot migration script.
-
-Suggested prod/preprod check:
-
-```javascript
-db.manga_pages.countDocuments({ rendered_page: {} })
-db.manga_pages.countDocuments({})
+```bash
+cd backend
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages
 ```
 
-If migration is needed, rebuild `rendered_page` from the persisted
-`MangaSliceDoc.snapshot` storyboard + composition where possible, then
-reattach image artifacts by `panel_id`.
+Apply only after reviewing dry-run output:
+
+```bash
+cd backend
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages --apply
+```
+
+What it does:
+
+- counts total pages and empty/missing `rendered_page` candidates,
+- groups candidates by `slice_id`,
+- rebuilds `RenderedPage` from persisted `MangaSliceDoc.storyboard_pages`,
+- creates empty `PanelRenderArtifact` slots by panel id,
+- validates through the domain model,
+- skips invalid/missing snapshots with a report instead of guessing.
+
+Important limitation: the current `MangaSliceDoc` schema persists
+`storyboard_pages` but not `slice_composition`, so rebuilt pages use
+`composition: null` and the reader's deterministic fallback layout.
+No image generation or filesystem artifact recovery is attempted.
+
+Decision still required once a DB is reachable: if dry-run reports a
+small/irrelevant old-doc set, delete/regenerate them; if it reports
+valuable old docs, review and run `--apply`.
 
 ### P0 — manual visual smoke
 
@@ -256,17 +280,13 @@ Confirm:
 Automated tests can prove the DTO shape. They cannot prove the page
 looks good. Sadly, pytest has no taste. Yet.
 
-### P1 — frontend type cleanup
+### P1 — frontend type cleanup ✅
 
-`frontend/lib/types.ts` still contains stale v4-era fields/aliases such
-as `MangaProjectPageDoc.v4_page`. Runtime no longer uses them, but they
-are now misleading.
-
-Do this after the migration decision or as a tiny standalone cleanup:
-
-- drop `MangaProjectPageDoc.v4_page`,
-- remove unused `V4*` type aliases,
-- run `npx tsc --noEmit`.
+Done in 4.5c.1. `frontend/lib/types.ts` now mirrors the post-v4 API
+surface: `MangaProjectPageDoc` carries `rendered_page` only, the
+project `engine` field is plain `string`, and the file has no `V4*`
+type aliases or stale page fallback wording. `npx tsc --noEmit` is
+clean.
 
 ### P1 — update any external docs/screenshots
 
@@ -302,62 +322,13 @@ That is feature polish, not a blocker for the v4 migration.
 - Run `npx tsc --noEmit` for frontend changes.
 - Commit only green states.
 
----
-
-## Suggested next-session prompt
-
-Copy/paste this into the next Code Puppy session:
-
-```text
-Hey buddy — continue the PanelSummary manga refactor cleanup.
-Project root: /Users/m0t0hu6/Library/CloudStorage/OneDrive-WalmartInc/Desktop/PanelSummary
-
-Before coding, do these in order:
-1. Run `git status --short` and `git log --oneline -12` so you know the real repo state.
-2. Read `/README.md` end-to-end.
-3. Read `/docs/MANGA_PHASE_PLAN.md` end-to-end.
-4. Read `/docs/MANGA_REFACTOR_HANDOFF.md` end-to-end.
-5. Read the last 120 lines of `/docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md`.
-6. Run backend tests:
-   cd backend && uv run \
-     --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-     --allow-insecure-host pypi.ci.artifacts.walmart.com \
-     pytest tests/ -q
-7. Run frontend typecheck:
-   cd frontend && npx tsc --noEmit
-
-Context:
-- Phase 4.5c code deletion is shipped.
-- `RenderedPage` is now the only backend/API page contract.
-- v4 backend/frontend surface is deleted.
-- The remaining production cleanup is data migration decision + frontend type tidy + manual visual smoke.
-
-Your task:
-A. First, inspect the data story. If a DB is available, count `MangaPageDoc`s with empty `rendered_page` vs total. If DB is not available, write a safe dry-run migration script but do not pretend it was executed.
-B. Based on that, either:
-   - write a one-shot migration script that rebuilds `rendered_page` from persisted slice snapshots, OR
-   - document the decision to delete/regenerate old docs.
-C. Then do the frontend type tidy: remove stale `v4_page` / unused V4 type aliases from `frontend/lib/types.ts`, with `tsc --noEmit` clean.
-D. Append results to `/docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md` and update `/docs/MANGA_REFACTOR_HANDOFF.md`.
-
-Rules:
-- Do not reintroduce `v4_page`, `v4_pages`, `V4Engine`, `app/v4_types.py`, or `app/rendering/v4/`.
-- Do not touch `manga_dsl.py` unless absolutely required; it is at the 600-line watch limit.
-- Every commit must be green.
-- Commit prefix: `v2 Phase 4: 4.5c.1 — ...`.
-- Be informal, but be pedantic about DRY/YAGNI/SOLID. No cursed migration spaghetti.
-
-When done, tell Mrigesh:
-- whether old docs need migration,
-- what script/cleanup shipped,
-- exact test results,
-- what remains before Phase 5.
-```
 
 ---
 
 ## Bottom line
 
 The hard part — deleting the split v4/rendered-page architecture — is
-done. What remains is the responsible adult work: data migration choice,
-visual smoke, and small type/doc polish.
+done. 4.5c.1 added the safe migration tool and cleaned the frontend
+types. What remains before Phase 5 is operational: run the migration
+helper against a reachable DB, choose apply vs regenerate/delete, and
+finish the manual visual smoke.

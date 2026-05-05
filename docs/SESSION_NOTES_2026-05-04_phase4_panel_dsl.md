@@ -994,3 +994,116 @@ proof". The remaining one is still owed:
 Or skip 4.5c.1 entirely and move to **Phase 5** if the manga
 phase plan opens a new chapter — the v4 surface is gone, the
 foundation is clean, and nothing in 4.5c blocks new feature work.
+
+---
+
+## 2026-05-05 — Phase 4.5c.1 cleanup (`code-puppy-52d940`)
+
+### Required startup ritual
+
+* `git status --short` showed a pre-existing modified
+  `docs/MANGA_REFACTOR_HANDOFF.md` (the suggested next-session prompt
+  had been removed). I preserved that change and layered this session's
+  handoff edits on top.
+* `git log --oneline -12` head was `cc46963 v2 Phase 4: 4.6 — document
+  refactor status and next-session handoff`.
+* Read end-to-end: `README.md`, `docs/MANGA_PHASE_PLAN.md`, and
+  `docs/MANGA_REFACTOR_HANDOFF.md`.
+* Read the last 120 lines of this running log.
+* Baseline checks before coding:
+  * backend: `389 passed, 1 warning`
+  * frontend: `npx tsc --noEmit` clean
+
+### Data story
+
+Attempted a read-only Mongo probe using the app settings with a short
+server-selection timeout. Result:
+
+```text
+DB_AVAILABLE=false
+DB_URL=mongodb+srv://appcluster.jbd00.mongodb.net/BookReel?retryWrites=true&w=majority
+DB_NAME=panelsummary
+ERROR=ServerSelectionTimeoutError: No replica set members found yet
+```
+
+So no real empty-vs-total production count was available from this
+workspace. I did **not** pretend otherwise. Tiny bar, important bar.
+
+### Migration decision
+
+Because the DB was unavailable, this session shipped a safe dry-run
+migration helper instead of applying anything:
+
+* New script: `backend/app/scripts/migrate_rendered_pages.py`
+* Focused tests: `backend/tests/test_migrate_rendered_pages_v2.py`
+
+The helper:
+
+* defaults to dry-run;
+* counts total pages and empty/missing `rendered_page` candidates;
+* groups candidates by `slice_id`;
+* rebuilds a typed `RenderedPage` from the owning
+  `MangaSliceDoc.storyboard_pages` snapshot;
+* seeds one empty `PanelRenderArtifact` per storyboard panel id;
+* validates through the domain model;
+* skips invalid/missing snapshots with a report instead of guessing;
+* only writes when explicitly run with `--apply`.
+
+Important limitation: `MangaSliceDoc` currently persists
+`storyboard_pages` but **not** `slice_composition`, so rebuilt pages use
+`composition: null` and the reader's deterministic fallback layout. No
+LLM calls, image generation, or filesystem artifact recovery happen in
+this migration. That is deliberate: boring migration > cursed data
+spaghetti.
+
+Run from `backend/`:
+
+```bash
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages
+```
+
+Apply only after reviewing dry-run output:
+
+```bash
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages --apply
+```
+
+### Frontend type tidy
+
+`frontend/lib/types.ts` now has no `v4_page`, `V4*`, `V4Engine`,
+`V4Page`, `V4Panel`, or `storyboard_mapper` residue. The API-facing
+page type carries `rendered_page` only, and `MangaProject.engine` is now
+a plain `string` instead of a stale literal union.
+
+### Docs updated
+
+* `docs/MANGA_REFACTOR_HANDOFF.md` now reflects 4.5c.1 status:
+  dry-run migration helper shipped, frontend type tidy done, visual
+  smoke still owed.
+* This running log was appended with the exact DB/test outcome.
+
+### Verification
+
+* Focused migration tests: `5 passed`.
+* Full backend suite:
+  * command: `cd backend && uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com pytest tests/ -q`
+  * result: **394 passed, 1 warning**.
+* Frontend typecheck:
+  * command: `cd frontend && npx tsc --noEmit`
+  * result: **clean**.
+
+### Next session pickup point
+
+1. From an environment that can reach Mongo, run the migration helper in
+   dry-run mode and capture the empty `rendered_page` count vs total.
+2. If dry-run shows valuable old docs, run `--apply`; if the old docs
+   are disposable, delete/regenerate them and document that decision.
+3. Run the manual visual smoke: generate one slice, open the v2 reader,
+   confirm non-blank page, bubbles, painted backdrop/fallback,
+   composition caption where applicable, RTL flow, and shot-variety QA.
+4. Then Phase 5 can start. No Phase 5 until the eyeball check, because
+   pytest still has no taste. Rude but true.
