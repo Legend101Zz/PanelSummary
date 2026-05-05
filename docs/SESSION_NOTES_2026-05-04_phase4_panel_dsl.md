@@ -480,3 +480,143 @@ the v4 shadow comes down — you want the safety net while you iterate.
   the new warnings are backwards-compatible (no existing test had
   to be updated for content).
 * Commit: `v2 Phase 4: 4.3 — shot-variety editorial floor (dominance + establishing)`
+
+---
+
+## Session 2026-05-05 — Phase 4.5a: backend storage decoupling ✅
+
+Agent: `code-puppy-b6a8a2` (continuing from `code-puppy-5ef9b7`).
+Driver: Mrigesh.
+
+### Goal
+
+Add a typed `rendered_page` field on `MangaPageDoc` + `PipelineResult`
++ the API response, populated from the typed `RenderedPage`, without
+touching the frontend or deleting anything. The safe-foundation step
+of the locked 4.5a / 4.5b / 4.5c decomposition. (Recap of why we
+decomposed: see "Phase 4.5 sub-decomposition (locked)" in
+`MANGA_PHASE_PLAN.md` — full 4.5 in one PR was vetoed because a
+Beanie-schema migration + frontend rewrite + orchestrator stage
+deletion can't all be one green commit.)
+
+### Pre-flight
+* `pytest tests/ -q` → **397 passed** ✅. `npx tsc --noEmit` → clean ✅.
+  Matches the end-of-4.4 scoreboard above.
+* Read `README.md` (12 rules, layout cheat-sheet) +
+  `MANGA_PHASE_PLAN.md` (north-star manga-writer mapping + locked 4.5
+  decomposition) + this session notes file end-to-end. No surprises.
+
+### Files extended (no new files except the test)
+
+* `app/manga_pipeline/context.py` — `PipelineResult` gains
+  `rendered_pages: list[dict[str, Any]]` (default empty list);
+  `PipelineContext.result()` now serialises every entry of
+  `context.rendered_pages` via `model_dump(mode="json")` so enums
+  (`ShotType.WIDE`, `PanelPurpose.SETUP`) hit Beanie / FastAPI as
+  strings without further coercion. Empty-list default is the
+  legitimate steady state when image generation is disabled.
+* `app/domain/manga/types.py` — `MangaPageArtifact.rendered_page:
+  dict[str, Any] = Field(default_factory=dict)` next to the existing
+  `v4_page`. The domain-layer twin of `MangaPageDoc` so the
+  storage-agnostic shape stays consistent with the Beanie shape.
+* `app/manga_models.py` — `MangaPageDoc.rendered_page: dict[str, Any]
+  = Field(default_factory=dict)`. The `default_factory` is the whole
+  point — every doc that pre-dates 4.5a loads cleanly without a
+  migration script. (Migration belongs to 4.5c, alongside the
+  `v4_page` removal.)
+* `app/services/manga/generation_service.py` — persistence loop now
+  pre-computes `rendered_page_dumps = [rp.model_dump(mode="json") for
+  rp in final_context.rendered_pages]` once, then writes both
+  `v4_page=v4_page` and `rendered_page=rendered_page_dump` on every
+  `MangaPageDoc(...)`. Index-aligned with `v4_pages` (both are seeded
+  from the same `storyboard_pages` list); short-circuits to `{}` when
+  `rendered_pages` is shorter than `v4_pages` so any code path that
+  skips the 4.2 assembly stage stays backwards-compatible rather than
+  index-erroring.
+* `app/api/routes/manga_projects.py` — `_serialize_page_doc` adds the
+  `"rendered_page": page.rendered_page` key. Adding a key (vs.
+  swapping) keeps the V4 reader's contract stable during the
+  migration window; rollback for 4.5b is literally swapping which
+  prop the new MangaReader reads.
+
+### Files added
+
+* `tests/test_phase4_5a_rendered_page_persistence_v2.py` (9 tests).
+  Each test has a one-sentence docstring per README rule 11. Pins:
+  * Default-factory invariants on `MangaPageDoc`,
+    `MangaPageArtifact`, `PipelineResult`. `MangaPageDoc` uses
+    `model_construct` to bypass Beanie's `init_beanie` guard so the
+    test stays a pure unit test (no Mongo, no event loop).
+  * `RenderedPage.model_dump(mode="json")` round-trips losslessly
+    through `model_validate`; `ShotType` / `PanelPurpose` emit as
+    `"wide"` / `"setup"` strings (the actual coercion the persistence
+    layer relies on).
+  * `MangaPageDoc(rendered_page=<dump>)` is a transparent dict
+    carrier — stored byte-for-byte, no mutation.
+  * `PipelineContext.result()` actually performs the dump on every
+    page in `context.rendered_pages`; empty list still produces a
+    valid `PipelineResult`.
+  * **Wire-guard via `inspect.getsource(generation_service)`** — both
+    `v4_page=v4_page,` and `rendered_page=rendered_page_dump,` appear
+    in the source. Cheaper than mocking out half of Mongo to drive
+    the full `generate_slice_artifacts` orchestration function. Drop
+    either kwarg and the test fails loudly with the exact missing
+    string.
+  * `_serialize_page_doc` surfaces both keys side-by-side in the API
+    payload.
+
+### Commit-by-commit (5 commits, each green at HEAD)
+
+1. `v2 Phase 4: 4.5a — domain layer carries rendered_page next to v4_page`
+   (`MangaPageArtifact` + `PipelineResult` + the dump in `result()`).
+2. `v2 Phase 4: 4.5a — MangaPageDoc carries rendered_page next to v4_page`
+   (Beanie field + WHY-comment naming the migration boundary at 4.5c).
+3. `v2 Phase 4: 4.5a — generation service writes both v4_page and rendered_page`
+   (the only behavioural change in the session).
+4. `v2 Phase 4: 4.5a — API exposes rendered_page next to v4_page`
+   (one-line addition to `_serialize_page_doc`).
+5. `v2 Phase 4: 4.5a — pin rendered_page persistence invariants (+9 tests)`
+   (the focused test file).
+
+### Result
+
+* **406 backend tests passed** (was 397; +9 new). `tsc --noEmit` clean.
+* Zero behaviour change for existing readers — V4 frontend untouched
+  and still consumes `v4_page` exactly as before. New field is purely
+  additive at every layer (domain, persistence, API).
+* 4.5a's contract is now provable from the test file alone: legacy
+  docs load, new docs round-trip, both fields ship on the wire.
+
+### Watch list (carried forward, plus an addition)
+
+* `backend/app/manga_pipeline/manga_dsl.py` is **still at 595 lines**
+  — we did not touch it this session (no DSL changes in 4.5a). The
+  `shot_variety.py` precedent remains the established pattern for new
+  validators; 4.5a had no need.
+* **New watch item:** the persistence loop in
+  `app/services/manga/generation_service.py` writes both fields in
+  parallel for now. When 4.5c lands, the loop should collapse back to
+  `rendered_page=` only and the `rendered_page_dumps` pre-compute can
+  go inline if the resulting body still fits comfortably. Don't
+  forget to delete the legacy `v4_page=v4_page,` substring guard in
+  `tests/test_phase4_5a_rendered_page_persistence_v2.py` at the same
+  time — it's a 4.5a-specific invariant and would falsely fail post-4.5c.
+
+### Next session pickup point
+
+**Phase 4.5b — frontend cutover.** Backend stays untouched. Rename
+`frontend/components/V4Engine/` to `MangaReader/` and re-type against
+the `RenderedPage`-shaped DTO that 4.5a now ships on the API. WCAG
+2.2 AA still applies. API still returns BOTH fields, so rollback is
+"swap one prop on the page". After 4.5b is green, 4.5c does the
+no-going-back deletes (`v4_page` field, `storyboard_to_v4_stage`,
+`app/v4_types.py`, `app/rendering/v4/`, the v4 shadow in
+`panel_rendering_stage`, and a one-shot Beanie migration script for
+prod docs that pre-date 4.5a).
+
+**Eyeball-test reminder still applies before 4.5c (NOT before 4.5b):**
+run one real generation with the 4.4 prompt active and check the
+slice's `QualityReport` for `DSL_SHOT_TYPE_DOMINANCE` /
+`DSL_NO_ESTABLISHING_SHOT` warning frequency. If they still fire on
+representative slices, queue a "4.4.1 prompt re-tune" before 4.5c
+(which removes the v4 safety net). 4.5b itself does NOT depend on this.
