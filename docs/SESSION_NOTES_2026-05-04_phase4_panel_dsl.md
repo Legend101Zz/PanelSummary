@@ -804,3 +804,193 @@ the next coding session, but required before the v4 deletion):**
 If the eyeball test surfaces a regression, queue a **4.5b.1 fix-up
 session** before 4.5c. The dual-write + V4 fallback means we are not
 under any pressure to ship 4.5c immediately.
+
+
+## Session 2026-05-05 (cont.) — Phase 4.5c: delete v4 backend surface ✅
+
+Same agent (`code-puppy-b6a8a2`), same session. Mrigesh asked to keep
+going through 4.5c after 4.5b landed and the V4Engine frontend
+chrome was folded into MangaReader (`b23e015`).
+
+### Process screw-up (own it)
+
+The handoff prompt this session received was the **stale 4.5a brief**
+— it asked for storage decoupling that 4.5a already shipped. I
+started typing into `manga_projects.py` before I read `git log`,
+which is exactly the wrong order. The tools picked up the in-flight
+4.5c working-tree changes from the prior session and I extended
+them coherently, but only because the in-flight work happened to
+match the documented 4.5c plan. **Lesson written here so the next
+session reads it: `git log --oneline` is the first read, before the
+prompt, before the README, before anything.**
+
+### Goal
+
+Close 4.5c steps 1, 2, 3, and 5 from the prior pickup-point
+checklist. (Step 4 — `rm -rf V4Engine` and chrome fold — already
+shipped in `b23e015`. Step 6 — Beanie migration script — is the
+sole carry-forward, see below.)
+
+### Pre-flight
+
+* `pytest tests/ -q` → **397 passed** ✅ (the 4.5b post-state).
+* `npx tsc --noEmit` → clean ✅.
+
+### Decision: 1 backend commit, not 4
+
+The pickup-point notes implied a per-checklist-item commit series
+(4 commits). Reality: the pieces are tightly coupled —
+`PipelineContext.v4_pages`, the `panel_rendering_stage` shadow
+loop, the `generation_service` dual-write, `storyboard_to_v4_stage`,
+`MangaPageDoc.v4_page`, and the API key all reference each other.
+A multi-step series would require either (a) staging tests against
+half-applied production code, or (b) red intermediate commits.
+Both violate "every commit green". One atomic backend commit + one
+session-notes commit is the honest answer; the commit message
+itemises the 4 checklist items it closes.
+
+### Files changed (one atomic backend commit, `df226b1`)
+
+**Storage / wire surface**
+
+* `app/manga_models.py` — drop `MangaPageDoc.v4_page`. Default
+  factory on `rendered_page` keeps pre-4.5a docs loading cleanly;
+  they surface as empty `rendered_page` and are expected to be
+  regenerated rather than migrated in place (see step 6).
+* `app/domain/manga/types.py` — drop `MangaPageArtifact.v4_page`
+  (the snapshot twin of `MangaPageDoc`).
+* `app/services/manga/generation_service.py` — collapse the
+  dual-write loop to `rendered_page=rendered_page_dump,` only. The
+  4.5a wire-guard test now flips polarity and asserts
+  `v4_page=v4_page,` is **gone** from the source.
+* `app/api/routes/manga_projects.py` — drop the `v4_page` key from
+  `_serialize_page_doc`. The HTTP response carries `rendered_page`
+  exclusively; 4.5b's `MangaPageRenderer` is the only reader.
+
+**Pipeline**
+
+* `app/manga_pipeline/context.py` — drop `v4_pages` from both
+  `PipelineContext` and `PipelineResult`. `result()` no longer
+  serialises a v4 list.
+* `app/manga_pipeline/stages/storyboard_to_v4_stage.py` — **deleted.**
+  Removed from `build_v2_generation_stages`; the storyboard now
+  flows directly into `rendered_page_assembly_stage`.
+* `app/manga_pipeline/stages/panel_rendering_stage.py` — strip the
+  v4 shadow-mirror loop. The typed `PanelRenderArtifact` mutation
+  is the only contract.
+* `app/manga_pipeline/stages/panel_quality_gate_stage.py` — strip
+  the dict-walking helpers (`_evaluate_panel`, `_renderer_results`,
+  `_result_lookup`, `evaluate_v4_pages`). `evaluate_rendered_pages`
+  (the typed walker shipped in 4.2) is now the only path. **From
+  225 lines down to ~88.**
+
+**Module sweep**
+
+* `app/v4_types.py` — **deleted** (255 lines).
+* `app/rendering/v4/storyboard_mapper.py` — **deleted** (194 lines).
+* `app/rendering/v4/__init__.py` — **deleted**.
+* `app/rendering/__init__.py` — **deleted** (now-empty package; YAGNI).
+
+**Tests**
+
+* `tests/test_storyboard_to_v4_v2.py` — **deleted.**
+* `tests/test_storyboard_to_v4_composition_v2.py` — **deleted.**
+* `tests/test_panel_pipeline_phase4_2_v2.py` — drop the v4-shadow-
+  mirror test + the `v4_pages=` plumbing on `_ctx`.
+* `tests/test_manga_generation_service_v2.py` — drop
+  `storyboard_to_v4_stage` from the expected stage order.
+* `tests/test_panel_quality_gate_stage_v2.py` — drop the dict-based
+  `_evaluate_panel` unit tests + the `evaluate_v4_pages` test + the
+  v4 mapper round-trip tests; rename the helper to
+  `_context_with_rendered_pages_and_bible`. **From ~478 lines down
+  to ~302.**
+* `tests/test_phase4_5a_rendered_page_persistence_v2.py` —
+  rewritten so the default-factory, round-trip, and wire-guard
+  invariants pin the post-4.5c shape. Wire guard now asserts
+  `v4_page=v4_page,` is **not** in source and `rendered_page=rendered_page_dump,`
+  **is**. API serialiser test asserts `"v4_page" not in payload`.
+* `tests/test_manga_pipeline_orchestrator_v2.py` — drop
+  `context.v4_pages.append`; use `context.options` to prove the
+  second stage ran (still mutable, still observable).
+* `tests/test_manga_pipeline_stages_v2.py` — drop the two
+  `storyboard_to_v4_stage` tests.
+
+### Result
+
+* **389 backend tests green.** Delta from 397: −8, which is exactly
+  the v4-only test count deleted above.
+* `npx tsc --noEmit` clean (no frontend changes — the 4.5b
+  `rendered_page` wire was already in place; deleting the parallel
+  `v4_page` key on the response object is a no-op for the v2 reader
+  which never read it).
+* Diffstat: **21 files, +144 / −1244.** Net −1100 lines of dead
+  code retired.
+
+### Watch list (carried forward)
+
+* `backend/app/manga_pipeline/manga_dsl.py` — still 595/600 lines,
+  still untouched. No DSL work happened in 4.5a / 4.5b / 4.5c. The
+  `shot_variety.py` precedent remains the documented split pattern.
+* `frontend/lib/types.ts` — TS still has `MangaProjectPageDoc.v4_page`
+  alongside `rendered_page`. Harmless (just a type that never gets a
+  value any more), but a tidy-up belongs in a 4.6 cleanup pass with
+  the rest of the legacy `V4*` type aliases that 4.5b forked from
+  rather than imported.
+
+### Carry-forward — 4.5c step 6 (Beanie migration script)
+
+**Not shipped this session.** The session-notes pickup point flagged
+this as "TBD when 4.5c starts — depends on prod-data state", and
+neither the agent nor the ad-hoc handoff has insight into the prod
+`MangaPageDoc` collection's distribution of pre-4.5a vs. post-4.5a
+docs. The harness for picking the right approach:
+
+* **If most prod docs are post-4.5a** (i.e. were generated after the
+  4.5a dual-write landed): the migration is a no-op for those, and
+  the small pre-4.5a residue can be either (a) regenerated by
+  re-running the slice, or (b) deleted outright. The session-notes
+  pickup point explicitly listed "accept a small dataset loss and
+  document it" as an option.
+* **If a meaningful fraction is pre-4.5a**: write a one-shot script
+  that walks `MangaPageDoc` where `rendered_page == {}`, looks up
+  the corresponding storyboard + composition (both still persisted
+  via `MangaSliceDoc.snapshot`), and reconstructs the
+  `RenderedPage` via the same `empty_rendered_page` +
+  `panel_rendering_stage` mutation path the live pipeline uses.
+  Image artifacts already on disk would be reattached by `panel_id`.
+
+Recommend Mrigesh check the prod collection distribution (
+`db.manga_pages.countDocuments({rendered_page: {}})` vs total)
+before deciding which path to ship as **4.5c.1**. Either is small
+(<150 lines) and isolated; this is a pure operations call, not a
+pipeline-design call.
+
+### Eyeball test (still owed before declaring 4.5 done)
+
+The 4.5b notes flagged three things to confirm visually before 4.5c.
+**Two of those are now moot** because the V4 fallback is gone —
+either MangaPageRenderer fires or the page is blank, and the
+network-tab check is replaced by "any v2 reader page that loads is
+proof". The remaining one is still owed:
+
+* **End-to-end: generate one slice, open the v2 reader, confirm the
+  `MangaPageRenderer` path renders a non-blank page with a bubble,
+  a backdrop, and (where applicable) the new `ConceptPanel`
+  composition-prose caption.** The shot-variety / DSL_SHOT_TYPE_DOMINANCE
+  / DSL_NO_ESTABLISHING_SHOT QualityReport check is also still
+  unverified-by-eye.
+
+### Next session pickup point
+
+**Phase 4.5c.1** — pick exactly one of:
+
+1. **Beanie migration script** (data) — see "Carry-forward" above.
+   Probably 30 minutes once the prod-data distribution is known.
+2. **Frontend type tidy-up** — drop `MangaProjectPageDoc.v4_page`
+   from `frontend/lib/types.ts` and any other legacy `V4*` aliases
+   the 4.5b fork left behind. ~15 minutes, zero behaviour change,
+   tsc-clean is the only check.
+
+Or skip 4.5c.1 entirely and move to **Phase 5** if the manga
+phase plan opens a new chapter — the v4 surface is gone, the
+foundation is clean, and nothing in 4.5c blocks new feature work.
