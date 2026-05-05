@@ -31,15 +31,13 @@ from app.manga_pipeline.llm_contracts import LLMInvocationTrace, LLMModelClient
 @dataclass
 class PipelineResult:
     source_slice: SourceSlice
-    v4_pages: list[dict[str, Any]]
     quality_report: QualityReport | None
     new_fact_ids: list[str] = field(default_factory=list)
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
-    # Phase 4.5a: typed sibling to ``v4_pages``. One serialised
-    # ``RenderedPage`` per page, in the same order. We carry both for the
-    # 4.5a -> 4.5c migration window so the V4 frontend keeps working
-    # untouched while 4.5b cuts the reader over to the new shape; 4.5c
-    # then deletes ``v4_pages`` and this becomes the only contract.
+    # Phase 4.5c: ``rendered_pages`` is the only page contract. The
+    # legacy ``v4_pages`` projection that lived alongside it through
+    # 4.5a/b is gone (along with ``storyboard_to_v4_stage`` and the V4
+    # frontend). Each entry is one ``RenderedPage.model_dump(mode="json")``.
     rendered_pages: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -87,14 +85,13 @@ class PipelineContext:
     # rendering paths (no composition stage) still produce a page.
     slice_composition: SliceComposition | None = None
     asset_specs: list[MangaAssetSpec] = field(default_factory=list)
-    v4_pages: list[dict[str, Any]] = field(default_factory=list)
-    # Phase 4.2: typed end-to-end render contract. Authored by the
-    # rendered_page_assembly_stage by zipping storyboard_pages +
+    # Phase 4.2 (post-4.5c): typed end-to-end render contract. Authored
+    # by ``rendered_page_assembly_stage`` from storyboard_pages +
     # slice_composition; mutated in place by panel_rendering_stage as
-    # each panel's PanelRenderArtifact gets its image_path. The v4_pages
-    # list above is a transitional shadow kept in sync at the end of
-    # rendering so persistence + the V4 frontend keep working until the
-    # wire flip in 4.5; both are deleted then.
+    # each panel's ``PanelRenderArtifact`` gets its ``image_path``. This
+    # is the only page-level structure the pipeline carries — the
+    # legacy ``v4_pages`` shadow was deleted in 4.5c along with the
+    # V4 frontend.
     rendered_pages: list[RenderedPage] = field(default_factory=list)
     quality_report: QualityReport | None = None
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
@@ -113,7 +110,6 @@ class PipelineContext:
         ]
         return PipelineResult(
             source_slice=self.source_slice,
-            v4_pages=self.v4_pages,
             quality_report=self.quality_report,
             new_fact_ids=self.new_fact_ids,
             llm_traces=self.llm_traces,

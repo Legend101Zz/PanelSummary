@@ -1,13 +1,11 @@
-"""Phase 4 stage \u2014 multimodal panel art rendering.
+"""Phase 4 stage — multimodal panel art rendering.
 
-Phase 4.2 rewrite: the stage now consumes ``context.rendered_pages``
-(typed RenderedPage / PanelRenderArtifact) directly. The image_path
+Phase 4.5c: the stage now consumes ``context.rendered_pages``
+(typed RenderedPage / PanelRenderArtifact) end-to-end. The image_path
 and reference assets land on each panel's typed
-``PanelRenderArtifact``; the legacy ``context.v4_pages`` dict list is
-kept in sync via a tail shadow loop so persistence and the V4 frontend
-keep working until the wire flip in Phase 4.5 deletes both. The
-shadow has a defined deletion point in the next phase \u2014 it is a
-migration bridge, not a permanent abstraction.
+``PanelRenderArtifact`` in place — there is no second projection to
+keep in sync. The legacy ``_sync_v4_shadow`` loop and
+``context.v4_pages`` were deleted alongside the V4 frontend.
 
 The orchestrator only includes this stage when image generation is
 enabled AND an API key is configured. There is no in-stage fallback:
@@ -21,31 +19,6 @@ import logging
 from app.manga_pipeline.context import PipelineContext
 
 logger = logging.getLogger(__name__)
-
-
-def _sync_v4_shadow(context: PipelineContext) -> None:
-    """Copy artifact metadata back onto context.v4_pages by panel_id.
-
-    Phase 4.5 deletes both this function and ``context.v4_pages``.
-    Until then, persistence (MangaPageDoc.v4_page) and the V4 frontend
-    expect the rendered image_path on the V4 dict, so we mirror it.
-    Match is on ``panel_id`` because the V4 mapper preserves storyboard
-    panel ids verbatim \u2014 there is no separate identifier space.
-    """
-    if not context.v4_pages:
-        return
-    artifact_by_panel_id = {
-        panel_id: artifact
-        for rendered_page in context.rendered_pages
-        for panel_id, artifact in rendered_page.panel_artifacts.items()
-    }
-    for v4_page in context.v4_pages:
-        for v4_panel in v4_page.get("panels", []) or []:
-            artifact = artifact_by_panel_id.get(v4_panel.get("panel_id"))
-            if artifact is None or not artifact.is_rendered:
-                continue
-            v4_panel["image_path"] = artifact.image_path
-            v4_panel["image_aspect_ratio"] = artifact.image_aspect_ratio
 
 
 async def run(context: PipelineContext) -> PipelineContext:
@@ -87,7 +60,7 @@ async def run(context: PipelineContext) -> PipelineContext:
     )
 
     if summary.failed and not summary.rendered:
-        # Total failure is hard error \u2014 every panel failing means the model
+        # Total failure is hard error — every panel failing means the model
         # config is wrong; surface it rather than persist text-only pages.
         first_error = next((res.error for res in summary.results if res.error), "unknown")
         raise RuntimeError(
@@ -101,11 +74,6 @@ async def run(context: PipelineContext) -> PipelineContext:
             summary.total,
             context.source_slice.slice_id,
         )
-
-    # Mirror artifact metadata onto the legacy v4_pages dict list so
-    # persistence + frontend keep rendering during the Phase 4.5
-    # migration window. Deleted in 4.5 alongside context.v4_pages.
-    _sync_v4_shadow(context)
 
     # Stash the per-panel summary so the persistence layer can include it
     # in the slice doc's metadata for debugging without making it part of

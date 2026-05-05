@@ -1,11 +1,14 @@
-"""Phase 4.2 stage \u2014 assemble RenderedPage from storyboard + composition.
+"""Phase 4.2 stage — assemble RenderedPage from storyboard + composition.
 
-Sits between ``page_composition_stage`` (and the legacy
-``storyboard_to_v4_stage``) and ``panel_rendering_stage``. Pure
-projection: no LLM calls, no I/O, no filesystem. Reads the storyboard
-pages and the optional slice composition; writes ``context.rendered_pages``
-with one ``RenderedPage`` per storyboard page, every page pre-seeded
-with empty ``PanelRenderArtifact`` slots.
+Sits between ``page_composition_stage`` and ``panel_rendering_stage``.
+Pure projection: no LLM calls, no I/O, no filesystem. Reads the
+storyboard pages and the optional slice composition; writes
+``context.rendered_pages`` with one ``RenderedPage`` per storyboard
+page, every page pre-seeded with empty ``PanelRenderArtifact`` slots.
+
+(Phase 4.5c removed the legacy ``storyboard_to_v4_stage`` that used
+to sit immediately before this one; this stage is now the only thing
+between the storyboard and the renderer.)
 
 Why a dedicated stage instead of inlining this into the renderer
 --------------------------------------------------------------

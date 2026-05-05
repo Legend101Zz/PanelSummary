@@ -31,7 +31,6 @@ Design rules:
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from app.domain.manga import (
     PanelRenderArtifact,
@@ -67,120 +66,6 @@ def _bible_character_ids(context: PipelineContext) -> set[str]:
     return {character.character_id for character in context.character_bible.characters}
 
 
-def _renderer_results(context: PipelineContext) -> list[dict[str, Any]]:
-    summary = context.options.get("panel_rendering_summary") or {}
-    results = summary.get("results") if isinstance(summary, dict) else None
-    return list(results or [])
-
-
-def _result_lookup(
-    results: list[dict[str, Any]],
-) -> dict[str, dict[str, Any]]:
-    return {str(result.get("panel_id", "")): result for result in results if result.get("panel_id")}
-
-
-def _evaluate_panel(
-    *,
-    panel: dict[str, Any],
-    page_index: int,
-    bible_ids: set[str],
-    result: dict[str, Any] | None,
-) -> list[QualityIssue]:
-    """Return all issues found for one panel.
-
-    Pure: takes the panel + its renderer result + the set of bible ids and
-    returns issues. Easy to test in isolation; no I/O, no globals.
-    """
-    issues: list[QualityIssue] = []
-    panel_id = str(panel.get("panel_id") or f"page{page_index}_panel?")
-    raw_character_ids = panel.get("character_ids") or []
-    character_ids = [str(cid).strip() for cid in raw_character_ids if str(cid).strip()]
-
-    # 1. Storyboarder hallucinations \u2014 character_ids that the bible doesn't
-    #    define mean the renderer could never have found a reference asset.
-    if bible_ids:
-        unknown = [cid for cid in character_ids if cid not in bible_ids]
-        for cid in unknown:
-            issues.append(
-                _issue(
-                    "error",
-                    "panel_unknown_character",
-                    f"Panel references character '{cid}' which is not in the character bible.",
-                    panel_id,
-                )
-            )
-
-    # 2. Renderer-result vs claimed-presence consistency. If the panel was
-    #    rendered (no error) but no reference assets were attached AND the
-    #    storyboard said characters were on-stage, the painted character will
-    #    drift. We log a warning, not an error \u2014 the panel still ships, but
-    #    the operator should know.
-    if result is not None and not result.get("error"):
-        used_refs = list(result.get("used_reference_assets") or [])
-        if character_ids and not used_refs:
-            issues.append(
-                _issue(
-                    "warning",
-                    "panel_no_reference_attached",
-                    (
-                        "Panel claimed visible characters but no reference "
-                        "sheets were attached; painted character may drift."
-                    ),
-                    panel_id,
-                )
-            )
-
-    # 3. Renderer success/failure invariants. Panels rendered cleanly must
-    #    carry an ``image_path``; failed panels must NOT carry one. Either
-    #    inconsistency is a bug in the persistence path, not user-fixable.
-    has_path = bool(panel.get("image_path"))
-    if result is not None:
-        had_error = bool(result.get("error"))
-        if had_error and has_path:
-            issues.append(
-                _issue(
-                    "error",
-                    "panel_failed_but_has_path",
-                    "Panel rendering reported failure yet image_path was set.",
-                    panel_id,
-                )
-            )
-        if not had_error and not has_path:
-            issues.append(
-                _issue(
-                    "error",
-                    "panel_rendered_without_path",
-                    "Panel rendering reported success but image_path is missing.",
-                    panel_id,
-                )
-            )
-    return issues
-
-
-def evaluate_v4_pages(
-    *,
-    v4_pages: list[dict[str, Any]],
-    bible_ids: set[str],
-    renderer_results: list[dict[str, Any]],
-) -> list[QualityIssue]:
-    """Walk every panel on every page and collect quality issues."""
-    lookup = _result_lookup(renderer_results)
-    issues: list[QualityIssue] = []
-    for page in v4_pages:
-        page_index = int(page.get("page_index", 0))
-        for panel in page.get("panels", []) or []:
-            panel_id = str(panel.get("panel_id") or "")
-            issues.extend(
-                _evaluate_panel(
-                    panel=panel,
-                    page_index=page_index,
-                    bible_ids=bible_ids,
-                    result=lookup.get(panel_id),
-                )
-            )
-    return issues
-
-
 def _evaluate_storyboard_panel(
     *,
     panel: StoryboardPanel,
@@ -188,11 +73,15 @@ def _evaluate_storyboard_panel(
     page_index: int,
     bible_ids: set[str],
 ) -> list[QualityIssue]:
-    """Phase 4.2 — the typed twin of ``_evaluate_panel``.
+    """Per-panel quality checks against a typed ``RenderedPage``.
 
-    Same three checks (unknown character, no reference attached, render
-    success/failure invariants) but reads from typed fields so the gate
-    cannot disagree with the renderer about what was attempted.
+    Used by ``evaluate_rendered_pages`` to walk the typed tree. Three
+    checks: unknown character (storyboard hallucinated a character_id
+    the bible doesn't define), no reference attached (storyboard said
+    a character was on-stage but the renderer attached no reference
+    sheet), render success/failure invariants (image_path consistent
+    with the renderer's success state). Reads typed fields directly so
+    the gate cannot disagree with the renderer about what was tried.
     ``artifact`` is ``None`` when the orchestrator scheduled the gate
     without rendering — the run() handler short-circuits before
     reaching here, so reaching this branch with None means a wiring
@@ -269,10 +158,10 @@ def evaluate_rendered_pages(
 ) -> list[QualityIssue]:
     """Walk every panel on every rendered page and collect quality issues.
 
-    Phase 4.2: the typed twin of ``evaluate_v4_pages``. Reads the panel
-    artifact straight off the ``RenderedPage`` instead of joining the
-    renderer-summary results list back to the V4 dict by panel_id. One
-    fewer place where the gate and the renderer can disagree.
+    Phase 4.5c: the only walker the gate exposes. The dict-based
+    ``evaluate_v4_pages`` was deleted alongside the V4 frontend, so
+    the gate reads typed artifacts off ``RenderedPage`` directly —
+    one fewer place where the gate and the renderer can disagree.
     """
     issues: list[QualityIssue] = []
     for rendered_page in rendered_pages:

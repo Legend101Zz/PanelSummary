@@ -1,28 +1,28 @@
-"""Phase 4.5a — rendered_page lives next to v4_page end-to-end.
+"""Phase 4.5a (post-4.5c) — rendered_page is the only persisted page contract.
 
 Pins the safe-foundation invariants the storage decoupling rests on:
 
-* The new ``rendered_page`` field defaults are **opt-in** — every legacy
-  doc / artifact / pipeline result loads cleanly without a Beanie
-  migration. (4.5c will write that migration when we delete v4.)
+* The ``rendered_page`` field default is **opt-in** — every legacy doc
+  / artifact / pipeline result loads cleanly without a Beanie
+  migration. Pre-4.5a docs whose ``rendered_page`` is the default
+  empty dict are expected to be regenerated, not migrated client-side.
 * A real ``RenderedPage`` round-trips losslessly through
   ``model_dump(mode="json")`` ⇄ ``model_validate``. This is the
-  contract the persistence layer and (eventually) the frontend rely on
-  to treat the dict as a typed shape.
-* The persistence write-site in ``generation_service`` passes BOTH
-  fields. We pin this with an ``inspect.getsource`` substring check
-  rather than mocking out half of Mongo, because the write-site is one
-  small loop inside a much larger orchestration function and a wiring
-  guard is the cheapest way to fail loudly if a future refactor drops
-  one of the kwargs.
+  contract the persistence layer and the frontend rely on to treat
+  the dict as a typed shape.
+* The persistence write-site in ``generation_service`` passes the
+  ``rendered_page=`` kwarg. We pin this with an ``inspect.getsource``
+  substring check rather than mocking out half of Mongo, because the
+  write-site is one small loop inside a much larger orchestration
+  function and a wiring guard is the cheapest way to fail loudly if a
+  future refactor drops the kwarg.
 * ``PipelineContext.result()`` actually performs the ``model_dump``
   serialisation — so the typed ``RenderedPage`` flows out of the
-  pipeline as JSON-ready dicts and downstream callers (the persistence
-  layer, the API, future tests) never have to think about enum
-  coercion.
-* The HTTP serialiser surfaces both keys side-by-side, so the V4
-  reader keeps consuming ``v4_page`` while 4.5b builds the new reader
-  on ``rendered_page`` without any backend change.
+  pipeline as JSON-ready dicts and downstream callers never have to
+  think about enum coercion.
+* The HTTP serialiser surfaces ``rendered_page`` as the only page
+  payload. (Phase 4.5c removed the ``v4_page`` key it briefly carried
+  alongside, alongside the V4 frontend that consumed it.)
 """
 
 from __future__ import annotations
@@ -110,30 +110,25 @@ def _ctx(*, rendered_pages: list[RenderedPage] | None = None) -> PipelineContext
 
 
 def test_manga_page_doc_rendered_page_defaults_to_empty_dict():
-    """Docs persisted before 4.5a must load cleanly — default is the legacy shape."""
+    """Docs persisted before 4.5a must load cleanly — default is an empty dict."""
     # ``model_construct`` bypasses Beanie's collection-init guard so we
     # can exercise the field defaults without spinning up a Mongo /
     # init_beanie context. Default factories still fire in v2's
     # ``model_construct`` so this is a real test of the field default.
     doc = MangaPageDoc.model_construct(project_id="p", slice_id="s", page_index=0)
     assert doc.rendered_page == {}
-    # Sanity: the legacy field is still default-empty too, so this doc
-    # constructs identically to what 4.5a's predecessor produced.
-    assert doc.v4_page == {}
 
 
 def test_manga_page_artifact_rendered_page_defaults_to_empty_dict():
     """The domain twin of MangaPageDoc carries the same default shape."""
     artifact = MangaPageArtifact(page_id="x", page_index=0)
     assert artifact.rendered_page == {}
-    assert artifact.v4_page == {}
 
 
 def test_pipeline_result_rendered_pages_defaults_to_empty_list():
     """A pipeline that never assembled a rendered page emits an empty list, not None."""
     result = PipelineResult(
         source_slice=_source_slice(),
-        v4_pages=[],
         quality_report=None,
     )
     assert result.rendered_pages == []
@@ -198,40 +193,33 @@ def test_pipeline_context_result_handles_empty_rendered_pages():
 # --- generation_service write-site wire guard --------------------------------
 
 
-def test_generation_service_persists_both_v4_page_and_rendered_page():
-    """The MangaPageDoc constructor in the persistence loop names BOTH fields.
+def test_generation_service_persists_rendered_page():
+    """The MangaPageDoc constructor in the persistence loop names ``rendered_page``.
 
     A wiring guard, not a behaviour test: the loop runs deep inside a
-    long Mongo-bound function, so we pin the kwargs at the source level.
-    Drop either kwarg and this fails loudly with the exact field name
-    that went missing.
+    long Mongo-bound function, so we pin the kwarg at the source level.
+    Drop the kwarg and this fails loudly with the exact field name that
+    went missing. (Phase 4.5c removed the parallel ``v4_page=v4_page``
+    kwarg this guard used to also pin.)
     """
     source = inspect.getsource(generation_service)
-    # Both kwargs appear inside the same MangaPageDoc(...) constructor
-    # call — the substring check would still pass if they drifted to
-    # different call sites, but we only have one MangaPageDoc(...) in
-    # generation_service.py and the surrounding loop is small enough
-    # that drift is visible in a single read.
-    assert "v4_page=v4_page," in source
     assert "rendered_page=rendered_page_dump," in source
+    # And the legacy kwarg must NOT come back accidentally during a
+    # rebase or revert — the V4 surface is gone for good.
+    assert "v4_page=v4_page," not in source
 
 
-# --- API serialiser surfaces both keys ---------------------------------------
+# --- API serialiser surfaces rendered_page as the only payload ---------------
 
 
-def test_serialize_page_doc_surfaces_both_v4_page_and_rendered_page():
-    """The HTTP response carries both shapes during the migration window."""
+def test_serialize_page_doc_surfaces_rendered_page_only():
+    """The HTTP response carries ``rendered_page`` and not the deleted ``v4_page``."""
     rp = _rendered_page()
     rendered_dump = rp.model_dump(mode="json")
-    # The legacy v4 dict is opaque to 4.5a — only its presence matters
-    # to this test. An empty placeholder dict is enough to verify the
-    # serialiser does not drop the key.
-    legacy_v4 = {"page_index": 0, "panels": []}
     doc = MangaPageDoc.model_construct(
         project_id="p",
         slice_id="s",
         page_index=0,
-        v4_page=legacy_v4,
         rendered_page=rendered_dump,
     )
     # ``id`` and ``created_at`` are auto-populated on real inserts; the
@@ -243,5 +231,6 @@ def test_serialize_page_doc_surfaces_both_v4_page_and_rendered_page():
 
     doc.created_at = datetime(2026, 5, 5, tzinfo=UTC)
     payload = _serialize_page_doc(doc)
-    assert payload["v4_page"] == legacy_v4
     assert payload["rendered_page"] == rendered_dump
+    # Phase 4.5c invariant: the V4 key is gone from the wire.
+    assert "v4_page" not in payload

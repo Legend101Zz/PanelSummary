@@ -207,11 +207,13 @@ def _serialize_page_doc(page: MangaPageDoc) -> dict[str, Any]:
         "slice_id": page.slice_id,
         "page_index": page.page_index,
         "source_range": page.source_range,
-        "v4_page": page.v4_page,
-        # Phase 4.5a: surface the typed RenderedPage dump alongside the
-        # legacy v4 dict. The frontend ignores it for now — 4.5b is the
-        # cutover. Adding a key (vs. swapping) means no contract break
-        # for the V4 reader during the migration window.
+        # Phase 4.5c: ``rendered_page`` is the only page payload. The
+        # legacy ``v4_page`` shadow was dropped from MangaPageDoc and
+        # the API response in the same commit; the V4 reader was
+        # deleted in 4.5c too, so no consumer is left to miss it.
+        # Pre-4.5a docs whose ``rendered_page`` is the default empty
+        # dict will be surfaced as such; the reader's narrow function
+        # treats them as 'no page yet'.
         "rendered_page": page.rendered_page,
         "created_at": page.created_at.isoformat(),
     }

@@ -254,10 +254,11 @@ class MangaPageArtifact(BaseModel):
     page_id: str
     page_index: int
     source_range: SourceRange | None = None
-    v4_page: dict[str, Any] = Field(default_factory=dict)
-    # Phase 4.5a: typed sibling to ``v4_page``. Serialised ``RenderedPage``
-    # (model_dump(mode="json")). Default factory keeps legacy artifacts
-    # constructible without arguments; 4.5c deletes ``v4_page`` outright.
+    # Phase 4.5c: ``rendered_page`` is the only payload. Stores
+    # ``RenderedPage.model_dump(mode="json")``. The legacy ``v4_page``
+    # dict was deleted in this commit alongside the V4 frontend; the
+    # default factory keeps construction parameter-free for tests and
+    # legacy snapshot deserialisation.
     rendered_page: dict[str, Any] = Field(default_factory=dict)
 
 

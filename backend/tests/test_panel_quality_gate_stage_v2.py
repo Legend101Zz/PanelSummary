@@ -35,13 +35,9 @@ from app.domain.manga.types import SourceRange, SourceSlice, SourceSliceMode
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.stages import panel_quality_gate_stage
 from app.manga_pipeline.stages.panel_quality_gate_stage import (
-    _evaluate_panel,
     _merge_into_report,
-    evaluate_v4_pages,
 )
-from app.rendering.v4 import storyboard_page_to_v4
 from app.services.manga.generation_service import build_v2_generation_stages
-from app.v4_types import validate_v4_panel
 
 
 # ---------------------------------------------------------------------------
@@ -103,32 +99,6 @@ def test_storyboard_panel_dedupes_and_preserves_order():
     assert panel.character_ids == ["alpha"]
 
 
-def test_storyboard_to_v4_mapper_passes_full_character_ids():
-    panel = _panel(
-        character_ids=["alpha", "beta"],
-        dialogue=[_line("alpha", "go"), _line("beta", "wait")],
-    )
-    page = StoryboardPage(page_id="pg-0", page_index=0, panels=[panel])
-
-    v4 = storyboard_page_to_v4(page).to_dict()
-    panels = v4["panels"]
-    assert panels[0]["character"] == "alpha"  # primary unchanged
-    assert panels[0]["character_ids"] == ["alpha", "beta"]
-
-
-def test_v4_panel_dict_round_trips_character_ids():
-    raw = {
-        "type": "dialogue",
-        "panel_id": "p1",
-        "character": "alpha",
-        "character_ids": ["alpha", "beta"],
-        "lines": [{"who": "alpha", "says": "hi"}],
-    }
-    panel = validate_v4_panel(raw)
-    assert panel.character_ids == ["alpha", "beta"]
-    assert panel.to_dict()["character_ids"] == ["alpha", "beta"]
-
-
 # ---------------------------------------------------------------------------
 # Phase 10 \u2014 panel-level quality gate
 # ---------------------------------------------------------------------------
@@ -154,99 +124,16 @@ def _bible(*ids: str) -> CharacterWorldBible:
     )
 
 
-def test_panel_gate_flags_unknown_characters():
-    issues = _evaluate_panel(
-        panel={
-            "panel_id": "p1",
-            "character_ids": ["alpha", "ghost"],
-        },
-        page_index=0,
-        bible_ids={"alpha"},
-        result={"used_reference_assets": ["alpha"], "error": ""},
-    )
-    codes = {issue.code for issue in issues}
-    assert "panel_unknown_character" in codes
-    # Should not also flag missing references because alpha is matched.
-    assert "panel_no_reference_attached" not in codes
-
-
-def test_panel_gate_warns_when_no_references_attached():
-    issues = _evaluate_panel(
-        panel={
-            "panel_id": "p1",
-            "character_ids": ["alpha"],
-            "image_path": "manga_panels/proj/slice/page_00/p1.png",
-        },
-        page_index=0,
-        bible_ids={"alpha"},
-        result={
-            "panel_id": "p1",
-            "used_reference_assets": [],
-            "error": "",
-            "image_path": "manga_panels/proj/slice/page_00/p1.png",
-        },
-    )
-    codes = {issue.code for issue in issues}
-    assert "panel_no_reference_attached" in codes
-    # warning, not error \u2014 panel still ships
-    severities = {issue.severity for issue in issues if issue.code == "panel_no_reference_attached"}
-    assert severities == {"warning"}
-
-
-def test_panel_gate_does_not_warn_when_no_characters_claimed():
-    # A scenery-only panel with no characters is fine to render with no refs.
-    issues = _evaluate_panel(
-        panel={
-            "panel_id": "p1",
-            "character_ids": [],
-            "image_path": "manga_panels/proj/slice/page_00/p1.png",
-        },
-        page_index=0,
-        bible_ids={"alpha"},
-        result={
-            "panel_id": "p1",
-            "used_reference_assets": [],
-            "error": "",
-            "image_path": "manga_panels/proj/slice/page_00/p1.png",
-        },
-    )
-    assert issues == []
-
-
-def test_panel_gate_flags_renderer_state_inconsistencies():
-    # Failed panel that somehow has an image_path \u2014 invariant violation.
-    issues = _evaluate_panel(
-        panel={
-            "panel_id": "p1",
-            "character_ids": [],
-            "image_path": "manga_panels/proj/slice/page_00/p1.png",
-        },
-        page_index=0,
-        bible_ids=set(),
-        result={"error": "renderer returned False"},
-    )
-    assert any(issue.code == "panel_failed_but_has_path" for issue in issues)
-
-    # Successful panel that didn't write an image_path \u2014 also a violation.
-    issues = _evaluate_panel(
-        panel={"panel_id": "p1", "character_ids": []},
-        page_index=0,
-        bible_ids=set(),
-        result={"error": ""},
-    )
-    assert any(issue.code == "panel_rendered_without_path" for issue in issues)
-
-
 def test_panel_gate_skips_when_no_renderer_summary():
     # Image generation was off \u2014 stage should be a no-op.
-    context = _context_with_v4_pages_and_bible(rendered_panels=False, with_summary=False)
+    context = _context_with_rendered_pages_and_bible(rendered_panels=False, with_summary=False)
     asyncio.run(panel_quality_gate_stage.run(context))
     # No quality report mutation: it stays None when nothing else set it.
     assert context.quality_report is None
 
 
 def test_panel_gate_merges_into_existing_quality_report():
-    context = _context_with_v4_pages_and_bible(
+    context = _context_with_rendered_pages_and_bible(
         rendered_panels=True,
         with_summary=True,
         unknown_character=True,
@@ -263,26 +150,6 @@ def test_panel_gate_merges_into_existing_quality_report():
     assert "prior" in codes
     assert "panel_unknown_character" in codes
     assert report.passed is False  # has an error now
-
-
-def test_evaluate_v4_pages_walks_every_panel():
-    pages = [
-        {
-            "page_index": 0,
-            "panels": [
-                {"panel_id": "p1", "character_ids": ["ghost"]},
-                {"panel_id": "p2", "character_ids": []},
-            ],
-        }
-    ]
-    issues = evaluate_v4_pages(
-        v4_pages=pages,
-        bible_ids={"alpha"},
-        renderer_results=[],
-    )
-    # p1 has unknown character; p2 is fine.
-    assert any(i.artifact_id == "p1" for i in issues)
-    assert all(i.artifact_id != "p2" for i in issues)
 
 
 def test_merge_report_from_none_starts_passing_unless_error():
@@ -324,28 +191,26 @@ def test_panel_quality_gate_absent_when_panel_rendering_off():
 # ---------------------------------------------------------------------------
 
 
-def _context_with_v4_pages_and_bible(
+def _context_with_rendered_pages_and_bible(
     *,
     rendered_panels: bool,
     with_summary: bool,
     unknown_character: bool = False,
 ) -> PipelineContext:
+    """Build the standard 'one panel + bible + optional render summary' fixture.
+
+    The helper used to be ``_context_with_v4_pages_and_bible`` and built
+    a parallel V4 dict alongside the typed ``RenderedPage``. Phase 4.5c
+    deleted the V4 surface, so the V4 dict + ``v4_pages=`` plumbing are
+    gone and the helper now builds only the typed page.
+    """
     bible = _bible("alpha")
     panel_character_ids = ["alpha"]
     if unknown_character:
-        # Avoid the StoryboardPanel auto-merge by writing the V4 dict directly.
+        # The bible doesn't define 'ghost', so the gate should flag the
+        # storyboard's character_ids as a hallucination.
         panel_character_ids = ["alpha", "ghost"]
 
-    page = {
-        "page_index": 0,
-        "panels": [
-            {
-                "panel_id": "p1",
-                "character_ids": panel_character_ids,
-                "image_path": "manga_panels/proj/slice/page_00/p1.png" if rendered_panels else "",
-            }
-        ],
-    }
     options: dict = {}
     if with_summary:
         options["panel_rendering_summary"] = {
@@ -377,11 +242,8 @@ def _context_with_v4_pages_and_bible(
         ),
         options=options,
         character_bible=bible,
-        v4_pages=[page],
-        # Phase 4.2: the gate now reads context.rendered_pages. Mirror
-        # the v4 panel into a typed RenderedPage / PanelRenderArtifact
-        # so the test exercises the same stage behaviour without having
-        # to author two parallel data structures by hand.
+        # Phase 4.5c: ``v4_pages=`` is gone. The gate reads
+        # ``context.rendered_pages`` exclusively now.
         rendered_pages=[
             _rendered_page_for_test(
                 panel_character_ids=panel_character_ids,
@@ -448,12 +310,12 @@ def _rendered_page_for_test(
 def _ctx_with_hit_rate(hit_rate: float | None, requested: int = 5, resolved: int = 1) -> PipelineContext:
     """Minimal context that triggers the gate's hit-rate branch.
 
-    We reuse the standard helper for the panel/page bones and overlay a
-    panel_rendering_summary with the hit-rate we care about. Building a
-    second helper would duplicate the bible/v4_pages plumbing for a
-    one-line difference.
+    Reuses ``_context_with_rendered_pages_and_bible`` for the panel/page
+    bones and overlays a panel_rendering_summary with the hit-rate we
+    care about. Building a second helper would duplicate the bible /
+    rendered_pages plumbing for a one-line difference.
     """
-    ctx = _context_with_v4_pages_and_bible(rendered_panels=True, with_summary=True)
+    ctx = _context_with_rendered_pages_and_bible(rendered_panels=True, with_summary=True)
     ctx.options["panel_rendering_summary"] = {
         "rendered": 1,
         "failed": 0,

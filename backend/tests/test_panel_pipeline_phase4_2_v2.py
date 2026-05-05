@@ -9,11 +9,14 @@ Pins the invariants of the new typed render path:
 * ``build_storyboard_panel_prompt`` includes purpose, shot type, and
   the LLM-authored composition prose verbatim \u2014 the three fields the
   V4 projection used to drop.
-* ``evaluate_rendered_pages`` walks the typed surface for the same
-  three structural defects the v4 evaluator checked.
-* ``panel_rendering_stage`` mutates artifacts AND mirrors them into
-  the v4 dict shadow so the legacy persistence + frontend keep working
-  during the 4.2 \u2192 4.5 migration window.
+* ``evaluate_rendered_pages`` walks the typed surface and surfaces
+  the same three structural defects the gate has always checked
+  (unknown character, no reference attached, render success/failure
+  invariants).
+* ``panel_rendering_stage`` mutates artifacts in place. The v4 dict
+  shadow loop that this stage maintained through 4.2-4.5b is gone
+  (deleted in 4.5c alongside the V4 frontend); ``RenderedPage`` is
+  the only contract now.
 """
 
 from __future__ import annotations
@@ -119,7 +122,6 @@ def _ctx(
     slice_composition: SliceComposition | None = None,
     bible: CharacterWorldBible | None = None,
     options: dict | None = None,
-    v4_pages: list[dict] | None = None,
 ) -> PipelineContext:
     return PipelineContext(
         book_id="book-1",
@@ -136,7 +138,6 @@ def _ctx(
         storyboard_pages=storyboard_pages or [],
         slice_composition=slice_composition,
         rendered_pages=rendered_pages or [],
-        v4_pages=v4_pages or [],
     )
 
 
@@ -353,78 +354,6 @@ def test_evaluate_rendered_pages_silent_on_clean_render():
         bible_ids={"aiko"},
     )
     assert issues == []
-
-
-# --- panel_rendering_stage v4 shadow sync ------------------------------------
-
-
-async def _fake_renderer_success(**kwargs) -> bool:
-    """Trivially-successful renderer; writes nothing, returns True."""
-    return True
-
-
-def test_panel_rendering_stage_mirrors_artifacts_into_v4_pages_shadow(monkeypatch, tmp_path):
-    """Until 4.5 lands, persistence + the V4 frontend must still see image_path on v4 dicts."""
-    panel = _panel("p", character_ids=["aiko"])
-    storyboard = _page([panel])
-    rendered = empty_rendered_page(storyboard_page=storyboard, composition=None)
-    # Simulate the legacy v4_pages shadow that storyboard_to_v4_stage
-    # would have produced \u2014 same panel_id is the join key.
-    v4_pages = [
-        {
-            "page_index": 0,
-            "panels": [
-                {"panel_id": "p", "character_ids": ["aiko"], "image_path": ""}
-            ],
-        }
-    ]
-    ctx = _ctx(
-        storyboard_pages=[storyboard],
-        rendered_pages=[rendered],
-        bible=_bible("aiko"),
-        v4_pages=v4_pages,
-        options={"image_api_key": "fake-key", "image_model": "fake-model"},
-    )
-
-    # Patch the lazy imports the stage performs at runtime.
-    async def _fake_list_assets(_project_id):
-        return []
-
-    monkeypatch.setattr(
-        "app.services.manga.character_library_service.list_project_assets",
-        _fake_list_assets,
-    )
-
-    async def _fake_render(**kwargs):
-        # The new stage delegates to render_rendered_pages, which calls
-        # this for every panel and reports success. We just need a True
-        # return so the artifact's image_path gets written.
-        return True
-
-    # Patch the renderer used by the new path AND make the image_dir a tmp.
-    from app.services.manga import storyboard_panel_renderer as renderer_mod
-
-    real_render = renderer_mod.render_rendered_pages
-
-    async def _patched_render_rendered_pages(**kwargs):
-        # Delegate to the *captured original* (not the module attribute,
-        # which is now this patch — calling the attribute would recurse).
-        kwargs["image_root"] = tmp_path
-        kwargs["panel_renderer"] = _fake_render
-        return await real_render(**kwargs)
-
-    monkeypatch.setattr(
-        renderer_mod, "render_rendered_pages", _patched_render_rendered_pages
-    )
-
-    asyncio.run(panel_rendering_stage.run(ctx))
-
-    artifact = ctx.rendered_pages[0].panel_artifacts["p"]
-    assert artifact.is_rendered, "the artifact must end up rendered"
-    # The shadow sync MUST mirror the artifact's path/aspect onto the v4 dict.
-    v4_panel = ctx.v4_pages[0]["panels"][0]
-    assert v4_panel["image_path"] == artifact.image_path
-    assert v4_panel["image_aspect_ratio"] == artifact.image_aspect_ratio
 
 
 def test_panel_rendering_stage_requires_rendered_pages():

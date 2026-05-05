@@ -114,11 +114,10 @@ def test_build_v2_generation_stages_has_expected_order():
         # Phase C2: RTL flow validator catches page-turn / TBC misplacements.
         "rtl_composition_validation_stage",
         "character_asset_plan_stage",
-        "storyboard_to_v4_stage",
-        # Phase 4.2: assemble the typed RenderedPage surface the new
-        # rendering stage and quality gate consume. Sits AFTER the
-        # legacy v4 mapping (which still produces the v4_pages shadow
-        # persistence + the V4 frontend read until 4.5).
+        # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
+        # the renderer + quality gate consume. The legacy
+        # ``storyboard_to_v4_stage`` that used to live above this entry
+        # was deleted in 4.5c alongside the V4 frontend.
         "rendered_page_assembly_stage",
     ]
 

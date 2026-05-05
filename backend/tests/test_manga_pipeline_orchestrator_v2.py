@@ -38,14 +38,17 @@ def test_run_pipeline_stages_applies_stages_in_order():
 
     async def stage_two(context):
         calls.append("two")
-        context.v4_pages.append({"page_index": 0, "version": "4.0"})
+        # Phase 4.5c: ``v4_pages`` is gone; use the still-public
+        # ``options`` channel to prove the second stage ran and the
+        # context is mutable across stages.
+        context.options["stage_two"] = True
         return context
 
     result = asyncio.run(run_pipeline_stages(_context(), [stage_one, stage_two]))
 
     assert calls == ["one", "two"]
     assert result.source_slice.slice_id == "slice_001"
-    assert result.v4_pages == [{"page_index": 0, "version": "4.0"}]
+    assert result.rendered_pages == []
 
 
 def test_run_pipeline_context_returns_enriched_context():

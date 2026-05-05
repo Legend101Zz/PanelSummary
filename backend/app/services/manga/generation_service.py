@@ -47,7 +47,6 @@ from app.manga_pipeline.stages import (
     script_review_stage,
     source_fact_extraction_stage,
     storyboard_stage,
-    storyboard_to_v4_stage,
 )
 from app.models import Book, BookChapter, BookSection
 from app.services.manga.arc_slice_planning_service import (
@@ -222,22 +221,21 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         quality_gate_stage.run,
         # Phase C1: page composition runs AFTER the second quality gate
         # has settled (so we are composing the *final* storyboard, not a
-        # draft) and BEFORE storyboard_to_v4 (which reads the composition
-        # to fill V4Page.layout / .gutter_grid).
+        # draft) and BEFORE rendered_page_assembly (which reads the
+        # composition to fill RenderedPage.composition).
         page_composition_stage.run,
         # Phase C2: RTL flow validator over the composition. Issues land
         # on the same QualityReport so the existing repair tooling and
         # QA dashboard see them without a parallel report shape.
         rtl_composition_validation_stage.run,
         character_asset_plan_stage.run,
-        storyboard_to_v4_stage.run,
-        # Phase 4.2: assemble the typed RenderedPage surface the new
-        # rendering stage and quality gate consume. Sits AFTER
-        # storyboard_to_v4 (which still produces the legacy v4_pages
-        # shadow read by persistence + the V4 frontend until the wire
-        # flip in Phase 4.5) and BEFORE panel rendering. Pure
+        # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
+        # the renderer + quality gate consume. Sits AFTER
+        # character_asset_plan_stage and BEFORE panel rendering. Pure
         # projection: storyboard_pages + slice_composition →
-        # context.rendered_pages.
+        # context.rendered_pages. (The legacy storyboard_to_v4_stage
+        # that used to live above this line was deleted in 4.5c along
+        # with the V4 frontend.)
         rendered_page_assembly_stage.run,
     ]
     if with_panel_rendering:
@@ -475,30 +473,18 @@ async def generate_project_slice(
 
     page_docs: list[MangaPageDoc] = []
     starting_page_index = int(project.coverage.get("page_count", 0))
-    # Phase 4.5a: serialise the typed RenderedPage surface alongside the
-    # legacy v4_page dict. Both flow into MangaPageDoc so the V4 frontend
-    # keeps reading what it always has while 4.5b cuts the new reader
-    # over to ``rendered_page``. ``mode="json"`` so ShotType / aspect
-    # enums hit Mongo as strings (Beanie does not coerce enum values).
-    # If ``rendered_pages`` is shorter than ``v4_pages`` (legacy code
-    # paths that skip rendered_page_assembly_stage), the extra slots get
-    # an empty dict — same default as a brand-new MangaPageDoc.
-    rendered_page_dumps = [
-        rendered_page.model_dump(mode="json")
-        for rendered_page in final_context.rendered_pages
-    ]
-    for offset, v4_page in enumerate(final_context.v4_pages):
-        rendered_page_dump = (
-            rendered_page_dumps[offset]
-            if offset < len(rendered_page_dumps)
-            else {}
-        )
+    # Phase 4.5c: ``rendered_page`` is the only persisted page contract.
+    # The legacy ``v4_page`` dict + the storyboard_to_v4 stage that
+    # produced it were deleted alongside the V4 frontend. ``mode="json"``
+    # so ShotType / aspect enums hit Mongo as strings (Beanie does not
+    # coerce enum values).
+    for offset, rendered_page in enumerate(final_context.rendered_pages):
+        rendered_page_dump = rendered_page.model_dump(mode="json")
         page_doc = MangaPageDoc(
             project_id=str(project.id),
             slice_id=str(slice_doc.id),
             page_index=starting_page_index + offset,
             source_range=source_slice.source_range.model_dump(mode="json"),
-            v4_page=v4_page,
             rendered_page=rendered_page_dump,
         )
         await page_doc.insert()

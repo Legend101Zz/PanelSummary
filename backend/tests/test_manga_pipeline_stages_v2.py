@@ -24,7 +24,7 @@ from app.domain.manga import (
     StoryboardPanel,
 )
 from app.manga_pipeline import PipelineContext
-from app.manga_pipeline.stages import quality_gate_stage, storyboard_to_v4_stage
+from app.manga_pipeline.stages import quality_gate_stage
 
 
 def _context() -> PipelineContext:
@@ -120,20 +120,3 @@ def test_quality_gate_stage_fails_without_script():
 
     with pytest.raises(ValueError, match="manga_script"):
         asyncio.run(quality_gate_stage.run(context))
-
-
-def test_storyboard_to_v4_stage_sets_v4_pages():
-    context = _context()
-    context.storyboard_pages = _storyboard()
-    context.options["chapter_index"] = 2
-
-    result = asyncio.run(storyboard_to_v4_stage.run(context))
-
-    assert result.v4_pages[0]["version"] == "4.0"
-    assert result.v4_pages[0]["chapter_index"] == 2
-    assert result.v4_pages[0]["panels"][1]["type"] == "transition"
-
-
-def test_storyboard_to_v4_stage_fails_without_storyboard():
-    with pytest.raises(ValueError, match="storyboard_pages"):
-        asyncio.run(storyboard_to_v4_stage.run(_context()))
