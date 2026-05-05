@@ -208,6 +208,11 @@ def _serialize_page_doc(page: MangaPageDoc) -> dict[str, Any]:
         "page_index": page.page_index,
         "source_range": page.source_range,
         "v4_page": page.v4_page,
+        # Phase 4.5a: surface the typed RenderedPage dump alongside the
+        # legacy v4 dict. The frontend ignores it for now — 4.5b is the
+        # cutover. Adding a key (vs. swapping) means no contract break
+        # for the V4 reader during the migration window.
+        "rendered_page": page.rendered_page,
         "created_at": page.created_at.isoformat(),
     }
 
