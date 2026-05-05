@@ -475,13 +475,31 @@ async def generate_project_slice(
 
     page_docs: list[MangaPageDoc] = []
     starting_page_index = int(project.coverage.get("page_count", 0))
+    # Phase 4.5a: serialise the typed RenderedPage surface alongside the
+    # legacy v4_page dict. Both flow into MangaPageDoc so the V4 frontend
+    # keeps reading what it always has while 4.5b cuts the new reader
+    # over to ``rendered_page``. ``mode="json"`` so ShotType / aspect
+    # enums hit Mongo as strings (Beanie does not coerce enum values).
+    # If ``rendered_pages`` is shorter than ``v4_pages`` (legacy code
+    # paths that skip rendered_page_assembly_stage), the extra slots get
+    # an empty dict — same default as a brand-new MangaPageDoc.
+    rendered_page_dumps = [
+        rendered_page.model_dump(mode="json")
+        for rendered_page in final_context.rendered_pages
+    ]
     for offset, v4_page in enumerate(final_context.v4_pages):
+        rendered_page_dump = (
+            rendered_page_dumps[offset]
+            if offset < len(rendered_page_dumps)
+            else {}
+        )
         page_doc = MangaPageDoc(
             project_id=str(project.id),
             slice_id=str(slice_doc.id),
             page_index=starting_page_index + offset,
             source_range=source_slice.source_range.model_dump(mode="json"),
             v4_page=v4_page,
+            rendered_page=rendered_page_dump,
         )
         await page_doc.insert()
         page_docs.append(page_doc)
