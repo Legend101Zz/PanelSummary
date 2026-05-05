@@ -257,7 +257,126 @@ export interface MangaProjectPageDoc {
   page_index: number;
   source_range: SourceRange;
   v4_page: Record<string, unknown>;
+  // Phase 4.5a: typed sibling to ``v4_page``. Always populated for newly
+  // generated pages (the backend persistence layer dual-writes both fields
+  // since 4.5a). Empty object for legacy docs that pre-date 4.5a \u2014 the
+  // reader page narrows to ``RenderedPage`` and falls back to the empty
+  // state when narrowing fails. 4.5c removes ``v4_page`` and tightens the
+  // type to ``RenderedPage`` outright.
+  rendered_page: Record<string, unknown>;
   created_at: string;
+}
+
+// ============================================================
+// MANGA RENDER VIEW \u2014 Phase 4.5b TS mirror of the backend
+// ``RenderedPage`` contract (``app/domain/manga/render_view.py``).
+//
+// These types describe the *shape* the API ships. Backend pydantic
+// models are the source of truth; if a field changes there, change it
+// here too. We mirror only the fields the renderer reads \u2014 anything
+// the renderer doesn't consume stays implicit. Drift cost: a missing
+// field surfaces as ``undefined`` at the consumer (the reader handles
+// that gracefully), never as a runtime crash.
+// ============================================================
+
+export type StoryboardShotType =
+  | "extreme_wide"
+  | "wide"
+  | "medium"
+  | "close_up"
+  | "extreme_close_up"
+  | "insert"
+  | "symbolic";
+
+export type StoryboardPanelPurpose =
+  | "setup"
+  | "explanation"
+  | "emotional_turn"
+  | "reveal"
+  | "transition"
+  | "recap"
+  | "to_be_continued";
+
+export interface StoryboardScriptLine {
+  speaker_id: string;
+  text: string;
+  // Author's intent for the line. The MangaReader maps this onto the
+  // SpeechBubble variant (shocked/angry \u2192 shout, thinking \u2192 thought,
+  // anything else \u2192 plain speech) so the lettering matches the line's
+  // emotional weight without the backend having to author bubble shapes.
+  intent?: string;
+  source_fact_ids?: string[];
+}
+
+export interface StoryboardPanel {
+  panel_id: string;
+  scene_id: string;
+  purpose: StoryboardPanelPurpose;
+  shot_type: StoryboardShotType;
+  // Free-form composition prose authored by the storyboarder. Surfaced
+  // in QA dashboards; the reader does not render it directly.
+  composition: string;
+  action?: string;
+  dialogue?: StoryboardScriptLine[];
+  narration?: string;
+  source_fact_ids?: string[];
+  // Characters VISUALLY PRESENT (not merely mentioned). The renderer
+  // attaches one reference sheet per id. The backend validator
+  // auto-includes every dialogue speaker, so this list is the
+  // authoritative on-stage roster for the panel.
+  character_ids?: string[];
+}
+
+export interface StoryboardPage {
+  page_id: string;
+  page_index: number;
+  panels: StoryboardPanel[];
+  page_turn_hook?: string;
+  reading_flow?: string;
+}
+
+export interface PageGridRow {
+  // Integer percentages summing to 100. Kept as ints (not fractions)
+  // because the renderer hands them straight to CSS Grid track sizes
+  // and integer percents avoid sub-pixel gutter seams.
+  cell_widths_pct: number[];
+}
+
+export interface PageComposition {
+  page_index: number;
+  gutter_grid: PageGridRow[];
+  panel_order: string[];
+  page_turn_panel_id?: string;
+  // Sparse map: panel_id \u2192 ``"low" | "medium" | "high"``. Overrides the
+  // storyboard's emphasis when the composition wants to promote a
+  // panel (e.g. give it a tall full-row cell as a splash).
+  panel_emphasis_overrides?: Record<string, string>;
+  composition_notes?: string;
+}
+
+export interface PanelRenderArtifact {
+  // Empty string means "not rendered yet" or "render skipped". The
+  // reader treats both the same way \u2014 fall back to the synthetic
+  // mood-driven backdrop. Non-empty + ``error`` empty means art is
+  // ready to layer behind the lettering.
+  image_path?: string;
+  image_aspect_ratio?: string;
+  used_reference_assets?: string[];
+  requested_character_count?: number;
+  error?: string;
+}
+
+export interface RenderedPage {
+  storyboard_page: StoryboardPage;
+  // Null when the composition stage gave up (no LLM gutter grid). The
+  // reader falls back to a panel-count layout in that case, matching
+  // the backend ``storyboard_mapper`` legacy path.
+  composition: PageComposition | null;
+  // Keyed by ``panel_id``. The backend invariant is that every panel
+  // id appears as a key (validated in ``RenderedPage._artifact_keys_match_panels``);
+  // the reader still defaults to an empty artifact on miss because
+  // legacy docs that pre-date Phase 4 have no artifacts at all.
+  panel_artifacts: Record<string, PanelRenderArtifact>;
 }
 
 export interface MangaProjectPagesResponse {
