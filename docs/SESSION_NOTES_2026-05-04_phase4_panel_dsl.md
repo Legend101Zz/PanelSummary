@@ -620,3 +620,187 @@ slice's `QualityReport` for `DSL_SHOT_TYPE_DOMINANCE` /
 `DSL_NO_ESTABLISHING_SHOT` warning frequency. If they still fire on
 representative slices, queue a "4.4.1 prompt re-tune" before 4.5c
 (which removes the v4 safety net). 4.5b itself does NOT depend on this.
+
+---
+
+## Session 2026-05-05 (cont.) — Phase 4.5b: frontend cutover ✅
+
+Same agent (`code-puppy-b6a8a2`), same session. Mrigesh asked to keep
+going through 4.5b after 4.5a landed.
+
+### Goal
+
+Build a `MangaReader/` component tree that consumes the typed
+`RenderedPage` field 4.5a now ships on every API response, then wire
+the v2 reader page through it. Backend untouched. V4Engine kept
+in-tree so legacy docs keep rendering and rollback is a one-line prop
+swap.
+
+### Pre-flight
+* `pytest tests/ -q` → **406 passed** ✅. `npx tsc --noEmit` → clean ✅.
+
+### Files added (all under `frontend/components/MangaReader/`)
+
+* `types.ts` (80 lines) — local visual constants: `PaletteKey`,
+  `MANGA_PALETTES`, `EMPHASIS_WEIGHTS`, `PanelKind`. Forked from
+  `V4Engine/types.ts` rather than imported so 4.5c can `rm -r
+  V4Engine/` without a frontend co-edit. `PanelKind` is the
+  four-entry union (`dialogue | narration | concept | transition`)
+  the dispatcher exhausts; intentionally no `splash` because the
+  legacy `storyboard_mapper` never emitted it from storyboard panels
+  and 4.5b is a behaviour-preserving cutover.
+* `derived_visuals.ts` (178 lines) — pure helpers mirroring the
+  backend `storyboard_mapper` rules: `derivePanelKind`,
+  `deriveEmphasis`, `emphasisOverrideFor`, `deriveEffects`,
+  `derivePaletteKey`, `artifactFor`, `primaryCharacter`. Each
+  function has a one-paragraph WHY pointing at the matching backend
+  invariant. `derivePaletteKey` is a single-return until a future
+  enrichment phase (the V4 reader's palette mapping was always
+  default-only too — preserving that visually for the cutover).
+* `page_layout.ts` (268 lines) — composition path + legacy
+  panel-count fallback, both reading from `RenderedPage`. Defensive
+  validator falls back to legacy on any malformed `gutter_grid`
+  (sums != 100, cell-count mismatch) — the same JSON might come from
+  a hand-edited dev fixture and a torn grid is worse than a default
+  vertical stack.
+* `asset_lookup.ts` (54 lines) — character-asset matching, forked
+  from V4Engine for the same 4.5c-deletion reason. Imports
+  `V4CharacterAsset` from V4Engine for now (4.5c renames + moves it).
+* `MangaPanelRenderer.tsx` (184 lines) — the dispatcher. `switch`
+  on `PanelKind` is exhaustive at the type level, so a future kind
+  addition surfaces as a tsc error here, never a silent fall-through.
+  Painted-backdrop short-circuit + `SfxLayer` + screentone match V4
+  verbatim.
+* `MangaPageRenderer.tsx` (161 lines) — top-level. RTL gutter-grid
+  path + legacy panel-count path + QA page-turn highlight. Same
+  `role` / `aria-label` hooks as `V4PageRenderer` so screen-reader
+  navigation is unchanged (WCAG 2.2 AA preserved).
+* `panels/{Dialogue,Narration,Concept,Transition}Panel.tsx` — four
+  sub-renderers consuming `StoryboardPanel` directly:
+  * `DialoguePanel` — `speaker_id` / `text` / `intent` (vs. V4's
+    `who` / `says` / `emotion`); same SVG bubble + avatar disc
+    treatment, same intent → variant table.
+  * `NarrationPanel` — atmospheric blockquote, primary character
+    name tag, optional `vignette` / `ink_wash` effects.
+  * `ConceptPanel` — symbolic / insert reveals. **Surfaces
+    `panel.composition` (the storyboarder's editorial intent prose)
+    as a small caption.** That field had no home in the V4 projection
+    and was lost; now it reaches the screen. Net new editorial
+    information visible to the reader, but rendered subtly so it
+    reads as a caption, not chrome.
+  * `TransitionPanel` — chapter / `to_be_continued` beats.
+
+### Files extended
+
+* `frontend/lib/types.ts` — adds the TS mirror of `RenderedPage`
+  and friends (`StoryboardPanel`, `StoryboardScriptLine`,
+  `StoryboardPage`, `PageGridRow`, `PageComposition`,
+  `PanelRenderArtifact`). Plus `MangaProjectPageDoc.rendered_page`
+  next to the existing `v4_page`. Loose `Record<string, unknown>`
+  on the wire, narrowed at the consumer — 4.5c will tighten to
+  `RenderedPage` once legacy docs are migrated. Now 523 lines
+  (was 404).
+* `frontend/app/books/[id]/manga/v2/page.tsx` — primary consumer
+  swapped:
+  * New `narrowRenderedPage(value)` helper: structural narrow from
+    the loose API payload. Returns a `RenderedPage` only when
+    `storyboard_page.panels` is a non-empty array; null for legacy
+    `{}` docs that pre-date 4.5a.
+  * `renderedPage` and `legacyV4Page` derived as memoised, mutually
+    exclusive `useMemo`s. JSX is a clean three-branch switch:
+    rendered → V4 fallback → empty state. **Rollback = swap one
+    expression in the JSX condition, every page falls back to
+    `V4PageRenderer`.**
+  * Imports reorganised; `V4PageRenderer` import kept under a
+    clearly-labelled legacy comment naming the 4.5c removal point.
+  * Now 337 lines (was 304; +33 for the narrow + fallback branch +
+    comments).
+
+### Files NOT touched (intentionally)
+
+* `frontend/components/V4Engine/` — still in-tree, still imported by
+  `MangaReader` for the shared `SpeechBubble` / `SfxLayer` /
+  `PaintedPanelBackdrop` primitives. 4.5c folds these into the new
+  tree atomically when V4Engine is removed. Forking them today would
+  double the cleanup at 4.5c.
+* Backend, anywhere. 4.5b is frontend-only.
+
+### Commit-by-commit (3 commits for 4.5b, each green at HEAD)
+
+1. `v2 Phase 4: 4.5b — TS mirror of RenderedPage contract`
+   (types only; no JSX, no behaviour change).
+2. `v2 Phase 4: 4.5b — MangaReader component tree (typed against RenderedPage)`
+   (component tree built but not wired; tsc clean).
+3. `v2 Phase 4: 4.5b — wire v2 reader page through MangaPageRenderer`
+   (the cutover; 1 line is all rollback needs to revert).
+
+### Result
+
+* **406 backend tests still green** (no backend changes). `tsc
+  --noEmit` clean. Visual behaviour preserved for all panels except
+  the new ConceptPanel caption surfacing `panel.composition` —
+  arguably an editorial *improvement* (intent reaches the screen)
+  but worth eyeball-confirming in the next manual smoke.
+* New code: 1450 lines across 11 MangaReader files + 119 lines of
+  TS types + 49 lines of consumer wiring/narrow. Every file ≤ 268
+  lines (largest is `page_layout.ts`).
+
+### Watch list (carried forward, with updates)
+
+* `backend/app/manga_pipeline/manga_dsl.py` — still 595/600 lines,
+  still untouched. No DSL work in 4.5a or 4.5b; the `shot_variety.py`
+  precedent remains the established pattern.
+* `app/services/manga/generation_service.py` dual-write loop — still
+  flagged for 4.5c collapse alongside the test substring guard
+  cleanup.
+* **New watch item:** the `ConceptPanel` composition-prose caption is
+  the only behaviourally-new element in 4.5b. If it visually competes
+  with the painted backdrop or the action headline, dial down the
+  opacity (currently `${palette.text}55`) or fence it behind a flag
+  before 4.5c lands. This is the only thing the eyeball test below
+  needs to actively look for.
+
+### Next session pickup point
+
+**Phase 4.5c — delete the v4 surface (no going back).** Concrete
+deliverables:
+
+1. Delete `backend/app/v4_types.py`, `backend/app/rendering/v4/`, the
+   v4 shadow in `panel_rendering_stage`, and
+   `backend/app/manga_pipeline/stages/storyboard_to_v4_stage.py`.
+2. Drop `MangaPageDoc.v4_page` (and the dual-write loop in
+   `generation_service.py` — collapse to `rendered_page=` only).
+3. Drop `MangaProjectPageDoc.v4_page` and the API key in
+   `_serialize_page_doc`.
+4. Remove the legacy V4 fallback in
+   `frontend/app/books/[id]/manga/v2/page.tsx` and the V4Engine
+   import. `rm -rf frontend/components/V4Engine/` after folding
+   `SpeechBubble` / `SfxLayer` / `PaintedPanelBackdrop` into
+   `frontend/components/MangaReader/chrome/` (or similar shared
+   home).
+5. Delete the 4.5a test substring guard in
+   `tests/test_phase4_5a_rendered_page_persistence_v2.py` for
+   `v4_page=v4_page,` — it would falsely fail.
+6. **One-shot Beanie migration script** for prod docs that pre-date
+   4.5a: walk every `MangaPageDoc` with empty `rendered_page`,
+   reconstruct from the existing storyboard + composition (the
+   storyboard is the LLM's authoritative artifact and is already
+   persisted). Or accept a small dataset loss and document it. TBD
+   when 4.5c starts — depends on prod-data state.
+
+**Eyeball-test reminder still applies before 4.5c (NOT urgent before
+the next coding session, but required before the v4 deletion):**
+
+* The 4.4 `QualityReport` shot-variety check (DSL_SHOT_TYPE_DOMINANCE
+  / DSL_NO_ESTABLISHING_SHOT) on a representative slice.
+* The new `ConceptPanel` composition-prose caption — does it read as
+  a caption or fight for attention?
+* End-to-end: generate one slice, open the v2 reader, confirm the new
+  `MangaPageRenderer` path is what's actually firing (network panel:
+  the page response should include `rendered_page` with non-empty
+  `storyboard_page.panels`; the reader should render through
+  MangaPageRenderer — toggle the React DevTools to confirm).
+
+If the eyeball test surfaces a regression, queue a **4.5b.1 fix-up
+session** before 4.5c. The dual-write + V4 fallback means we are not
+under any pressure to ship 4.5c immediately.
