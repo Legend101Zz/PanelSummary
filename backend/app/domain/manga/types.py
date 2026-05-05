@@ -255,6 +255,10 @@ class MangaPageArtifact(BaseModel):
     page_index: int
     source_range: SourceRange | None = None
     v4_page: dict[str, Any] = Field(default_factory=dict)
+    # Phase 4.5a: typed sibling to ``v4_page``. Serialised ``RenderedPage``
+    # (model_dump(mode="json")). Default factory keeps legacy artifacts
+    # constructible without arguments; 4.5c deletes ``v4_page`` outright.
+    rendered_page: dict[str, Any] = Field(default_factory=dict)
 
 
 class MangaSliceSnapshot(BaseModel):

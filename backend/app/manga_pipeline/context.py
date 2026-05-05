@@ -35,6 +35,12 @@ class PipelineResult:
     quality_report: QualityReport | None
     new_fact_ids: list[str] = field(default_factory=list)
     llm_traces: list[LLMInvocationTrace] = field(default_factory=list)
+    # Phase 4.5a: typed sibling to ``v4_pages``. One serialised
+    # ``RenderedPage`` per page, in the same order. We carry both for the
+    # 4.5a -> 4.5c migration window so the V4 frontend keeps working
+    # untouched while 4.5b cuts the reader over to the new shape; 4.5c
+    # then deletes ``v4_pages`` and this becomes the only contract.
+    rendered_pages: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -98,10 +104,18 @@ class PipelineContext:
         self.llm_traces.append(trace)
 
     def result(self) -> PipelineResult:
+        # ``mode="json"`` so enums (e.g. ShotType.WIDE) become strings the
+        # downstream Beanie / FastAPI layers can serialise without further
+        # coercion. Empty list is the legitimate steady-state when image
+        # generation is disabled (see panel_rendering_stage's no-op path).
+        rendered_pages_dump = [
+            page.model_dump(mode="json") for page in self.rendered_pages
+        ]
         return PipelineResult(
             source_slice=self.source_slice,
             v4_pages=self.v4_pages,
             quality_report=self.quality_report,
             new_fact_ids=self.new_fact_ids,
             llm_traces=self.llm_traces,
+            rendered_pages=rendered_pages_dump,
         )
