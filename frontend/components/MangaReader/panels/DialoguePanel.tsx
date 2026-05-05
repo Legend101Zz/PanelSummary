@@ -14,17 +14,17 @@
 
 import { motion } from "motion/react";
 import type { StoryboardPanel, StoryboardScriptLine } from "@/lib/types";
-import { SpeechBubble, type SpeechBubbleVariant } from "@/components/V4Engine/SpeechBubble";
+import { SpeechBubble, type SpeechBubbleVariant } from "../chrome/SpeechBubble";
 import type { MangaPalette } from "../types";
 import {
   findAssetForCharacter,
-  type V4CharacterAsset,
+  type MangaCharacterAsset,
 } from "../asset_lookup";
 
 interface DialoguePanelProps {
   panel: StoryboardPanel;
   palette: MangaPalette;
-  assets?: V4CharacterAsset[];
+  assets?: MangaCharacterAsset[];
   /**
    * When the panel has painted art behind the lettering, we hide the
    * synthetic avatar disc — the painted character is already on
@@ -61,8 +61,8 @@ const INTENT_STYLES: Record<string, { borderColor: string; fontStyle: string }> 
 
 function findLineAsset(
   line: StoryboardScriptLine,
-  assets: V4CharacterAsset[],
-): V4CharacterAsset | null {
+  assets: MangaCharacterAsset[],
+): MangaCharacterAsset | null {
   return findAssetForCharacter(line.speaker_id, line.intent, assets);
 }
 
@@ -71,7 +71,7 @@ interface SpeechBubbleRowProps {
   index: number;
   isRight: boolean;
   palette: MangaPalette;
-  asset: V4CharacterAsset | null;
+  asset: MangaCharacterAsset | null;
   showAvatar: boolean;
 }
 

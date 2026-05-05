@@ -2,21 +2,31 @@
  * MangaReader/asset_lookup.ts — character asset matching
  * ========================================================
  *
- * Identical lookup rules to ``V4Engine/assetLookup.ts``: lower-case +
- * collapse whitespace so ``"Alpha Wolf"`` matches ``"alpha_wolf"``,
- * exact character + expression first, character-only fallback second,
- * null third. Forked into the MangaReader namespace (rather than
- * imported from V4Engine) so 4.5c can delete V4Engine outright without
- * a frontend co-edit.
+ * Phase 4.5c update: the V4Engine import is gone. ``MangaCharacterAsset``
+ * lives here as the canonical presentation-time shape — same fields the
+ * legacy ``V4CharacterAsset`` had, renamed to drop the V4 namespace
+ * tag. The reader page adapts ``MangaAssetDoc`` (the on-the-wire shape)
+ * into this presentation shape; nothing else in the tree should know
+ * about MangaAssetDoc.
  *
- * The ``V4CharacterAsset`` shape is presentation-time and the same on
- * both sides; we keep importing it from the V4Engine for now. The
- * asset domain object lives in ``MangaAssetDoc`` (lib/types) and is
- * adapted into ``V4CharacterAsset`` by the v2 reader page itself.
- * Phase 4.5c will rename the type and move it here.
+ * Lookup rules unchanged from the V4 incarnation: lower-case + collapse
+ * whitespace so ``"Alpha Wolf"`` matches ``"alpha_wolf"``, exact
+ * character + expression first, character-only fallback second, null
+ * third. Assets without an ``image_url`` are skipped at every step —
+ * the reader cannot show what it cannot fetch.
  */
 
-import type { V4CharacterAsset } from "@/components/V4Engine";
+/**
+ * Presentation-time character asset. The reader page adapts the
+ * domain ``MangaAssetDoc`` into this shape so the renderer never
+ * touches the persistence model directly.
+ */
+export interface MangaCharacterAsset {
+  character_id: string;
+  expression?: string;
+  asset_type?: string;
+  image_url: string | null;
+}
 
 export function normalizeAssetKey(value: string | undefined): string {
   return (value || "").trim().toLowerCase().replace(/\s+/g, "_");
@@ -30,8 +40,8 @@ export function normalizeAssetKey(value: string | undefined): string {
 export function findAssetForCharacter(
   characterId: string | undefined,
   expression: string | undefined,
-  assets: V4CharacterAsset[],
-): V4CharacterAsset | null {
+  assets: MangaCharacterAsset[],
+): MangaCharacterAsset | null {
   const character = normalizeAssetKey(characterId);
   if (!character) return null;
   const expr = normalizeAssetKey(expression || "neutral");
@@ -50,5 +60,3 @@ export function findAssetForCharacter(
   );
   return characterMatch || null;
 }
-
-export type { V4CharacterAsset };

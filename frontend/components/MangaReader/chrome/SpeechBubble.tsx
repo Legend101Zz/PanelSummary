@@ -1,30 +1,20 @@
 "use client";
 
 /**
- * SpeechBubble \u2014 SVG speech bubble with a real tail (Phase C4).
- * ==============================================================
+ * MangaReader/chrome/SpeechBubble.tsx — SVG speech bubble with a real tail
+ * =========================================================================
  *
- * The previous DialoguePanel used an HTML ``<div>`` with a CSS
- * triangle for the tail. That works for tech demos and looks crude
- * when you put it next to a panel of painted manga: the tail had a
- * fixed position (top-right corner) and the bubble itself was a
- * rounded rectangle, never the slightly organic shape lettering
- * artists use.
+ * Folded into the MangaReader tree by Phase 4.5c (was
+ * `V4Engine/SpeechBubble.tsx`). Verbatim port — the lettering treatment
+ * is correct and worth preserving across the V4 deletion. Lives under
+ * `chrome/` because it is a presentational primitive shared by every
+ * panel sub-renderer; "chrome" matches the intent the way the legacy
+ * `V4Engine/` namespace did, but tied to MangaReader's lifecycle.
  *
- * This component renders the bubble + tail as one SVG path so:
- *
- * * The tail can point anywhere on the bubble's perimeter, which
- *   matters when the speaker's avatar (or, for painted panels, the
- *   painted character) is somewhere other than the corner.
- * * The bubble shape varies by intent (``speech`` is rounded;
- *   ``thought`` is cloud-like; ``shout`` is jagged/star-like) without
- *   needing a different DOM tree per variant.
- * * Stroke and fill are first-class props \u2014 the emotion palette in
- *   ``DialoguePanel`` flows straight through.
- *
- * The component is presentational only. It does NOT lay out text;
- * the parent positions a ``<foreignObject>`` (or just absolute-
- * positions text alongside the SVG) for accessibility-friendly text.
+ * No behaviour changes — same SVG path math, same accessibility
+ * scaffolding (children render in real DOM so screen readers + CSS
+ * inheritance keep working). 4.5c moves it; 4.5d / future polish can
+ * iterate on the shape.
  */
 
 import type { CSSProperties, ReactNode } from "react";
@@ -45,21 +35,19 @@ export interface SpeechBubbleProps {
   strokeColor: string;
   /** Fill colour. Usually a tinted version of ``strokeColor``. */
   fillColor: string;
-  /** Stroke width in SVG user units (the SVG is 100\u00d7100). */
+  /** Stroke width in SVG user units (the SVG is 100×100). */
   strokeWidth?: number;
   /** Optional inline CSS so the parent can absolutely-position the bubble. */
   style?: CSSProperties;
-  /**
-   * Children render inside a ``<foreignObject>`` so screen readers can
-   * still pick the dialogue up. The parent owns the text styling.
-   */
+  /** Lettering content. Rendered in real DOM (not foreignObject) so
+   *  screen readers, CSS inheritance, and selection all work. */
   children?: ReactNode;
   /** Used as the SVG title for accessibility tooling. */
   ariaLabel?: string;
 }
 
 /**
- * Build the SVG path for the bubble body + tail in a 100\u00d7100 viewbox.
+ * Build the SVG path for the bubble body + tail in a 100×100 viewbox.
  *
  * The body is a rounded rectangle inset by 6 units on each side so
  * stroke width up to 4 doesn't clip. The tail is a triangle attached
@@ -78,8 +66,8 @@ function buildBubblePath(
   const r = variant === "shout" ? 4 : variant === "thought" ? 16 : 10;
 
   // Rounded rectangle body, drawn clockwise from the top-left corner.
-  // We deliberately use sweep-flag 1 on the corner arcs so the inside
-  // of the bubble is well-defined for fill-rule:nonzero.
+  // Sweep-flag 1 on the corner arcs so fill-rule:nonzero treats the
+  // inside as filled.
   const body = [
     `M ${left + r} ${top}`,
     `L ${right - r} ${top}`,
@@ -93,10 +81,8 @@ function buildBubblePath(
     "Z",
   ].join(" ");
 
-  // Tail. Attach a triangular notch sitting on the bubble edge,
-  // pointing outward. ``tailOffset`` runs 0..1 along the chosen
-  // side; we clamp away from the corners so the tail doesn't fight
-  // the corner radius.
+  // Tail. Clamp the offset away from the corners so the tail never
+  // fights the corner radius.
   const o = Math.min(0.85, Math.max(0.15, tailOffset));
   const tailLen = variant === "shout" ? 14 : 10;
   const tailHalfBase = variant === "shout" ? 8 : 6;
@@ -122,8 +108,8 @@ function buildBubblePath(
 }
 
 /**
- * Thought-bubble extras: render small "puff" circles between the
- * speaker and the main bubble. Only used when ``variant === "thought"``.
+ * Thought-bubble extras: small "puff" circles between speaker and
+ * bubble. Only rendered when ``variant === "thought"``.
  */
 function ThoughtPuffs({
   tailSide,
@@ -139,7 +125,6 @@ function ThoughtPuffs({
   strokeWidth: number;
 }) {
   const o = Math.min(0.85, Math.max(0.15, tailOffset));
-  // Two puffs marching from the bubble edge outward in the tail direction.
   const inset = 6;
   const positions: { cx: number; cy: number; r: number }[] = [];
   if (tailSide === "left") {
@@ -193,7 +178,7 @@ export function SpeechBubble({
     <div
       style={{
         position: "relative",
-        // Default sizing: parent should override via ``style``.
+        // Default sizing; parent should override via ``style``.
         width: 200,
         height: 100,
         ...style,
@@ -209,8 +194,8 @@ export function SpeechBubble({
           inset: 0,
           width: "100%",
           height: "100%",
-          // ``overflow:visible`` so the tail and thought puffs can sit
-          // outside the bubble's bounding box without being clipped.
+          // ``overflow:visible`` so the tail and thought puffs sit
+          // outside the bubble bounding box without being clipped.
           overflow: "visible",
         }}
         aria-hidden={ariaLabel ? undefined : true}
@@ -232,9 +217,6 @@ export function SpeechBubble({
           />
         )}
       </svg>
-      {/* Text content sits in the DOM (not foreignObject) so it stays
-          selectable, screen-reader friendly, and inherits CSS \u2014 the
-          bubble SVG behind it scales to fit. */}
       <div
         style={{
           position: "relative",

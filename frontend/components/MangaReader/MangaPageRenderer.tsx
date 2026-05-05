@@ -26,12 +26,12 @@ import {
   artifactFor,
   emphasisOverrideFor,
 } from "./derived_visuals";
-import type { V4CharacterAsset } from "./asset_lookup";
+import type { MangaCharacterAsset } from "./asset_lookup";
 
 interface MangaPageRendererProps {
   page: RenderedPage;
   className?: string;
-  characterAssets?: V4CharacterAsset[];
+  characterAssets?: MangaCharacterAsset[];
   /**
    * QA-only: highlight the page-turn cell with a thin accent border so
    * editors can see the cliffhanger anchor at a glance. Defaults false

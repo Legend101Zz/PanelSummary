@@ -256,13 +256,10 @@ export interface MangaProjectPageDoc {
   slice_id: string;
   page_index: number;
   source_range: SourceRange;
-  v4_page: Record<string, unknown>;
-  // Phase 4.5a: typed sibling to ``v4_page``. Always populated for newly
-  // generated pages (the backend persistence layer dual-writes both fields
-  // since 4.5a). Empty object for legacy docs that pre-date 4.5a \u2014 the
-  // reader page narrows to ``RenderedPage`` and falls back to the empty
-  // state when narrowing fails. 4.5c removes ``v4_page`` and tightens the
-  // type to ``RenderedPage`` outright.
+  // Phase 4.5c: ``v4_page`` is gone (deleted from the backend
+  // MangaPageDoc + API serializer). Pre-4.5a docs whose ``rendered_page``
+  // is the default empty dict narrow to null in the reader and surface
+  // the empty state — they are expected to be regenerated, not migrated.
   rendered_page: Record<string, unknown>;
   created_at: string;
 }

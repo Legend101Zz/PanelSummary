@@ -33,10 +33,10 @@ import {
 } from "./types";
 import {
   findAssetForCharacter,
-  type V4CharacterAsset,
+  type MangaCharacterAsset,
 } from "./asset_lookup";
-import { PaintedPanelBackdrop } from "@/components/V4Engine/PaintedPanelBackdrop";
-import { SfxLayer } from "@/components/V4Engine/SfxLayer";
+import { PaintedPanelBackdrop } from "./chrome/PaintedPanelBackdrop";
+import { SfxLayer } from "./chrome/SfxLayer";
 import { DialoguePanel } from "./panels/DialoguePanel";
 import { NarrationPanel } from "./panels/NarrationPanel";
 import { ConceptPanel } from "./panels/ConceptPanel";
@@ -50,7 +50,7 @@ interface MangaPanelRendererProps {
   /** Stagger delay for the entry animation. */
   staggerDelay?: number;
   /** Character reference assets keyed by id+expression. */
-  characterAssets?: V4CharacterAsset[];
+  characterAssets?: MangaCharacterAsset[];
 }
 
 /**

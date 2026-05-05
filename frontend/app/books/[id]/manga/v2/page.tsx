@@ -21,14 +21,7 @@ import type {
   RenderedPage,
 } from "@/lib/types";
 import { MangaPageRenderer } from "@/components/MangaReader";
-import type { V4CharacterAsset } from "@/components/MangaReader";
-// Phase 4.5b: V4PageRenderer is kept as the legacy fallback path for
-// MangaPageDoc rows that pre-date 4.5a (their ``rendered_page`` field
-// is the default empty dict). Once 4.5c migrates legacy docs and
-// removes ``v4_page`` outright, this import — and the fallback branch
-// in the JSX below — go away in the same commit.
-import { V4PageRenderer } from "@/components/V4Engine";
-import type { V4Page } from "@/components/V4Engine";
+import type { MangaCharacterAsset } from "@/components/MangaReader";
 import { BookSpine } from "@/components/BookSpine";
 
 function rangeLabel(page: MangaProjectPageDoc | null): string {
@@ -64,13 +57,13 @@ function getFactCoverageLabel(slice: MangaSliceDoc | null): string | null {
   return `${grounded}/${total} critical facts covered`;
 }
 
-// Phase 4.5b: structural narrow from the API's loose ``Record<string, unknown>``
-// into the typed ``RenderedPage``. We check the smallest set of fields
-// the renderer actually consumes — storyboard_page.panels exists and
-// is an array — because legacy MangaPageDocs (pre-4.5a) carry the
-// default empty dict and we want them to flow into the V4 fallback,
-// not the new reader. Returning null is the legacy signal; everything
-// else round-trips back into ``RenderedPage`` shape via ``as``.
+// Phase 4.5c: structural narrow from the API's loose ``Record<string, unknown>``
+// into the typed ``RenderedPage``. The narrow returns null when the
+// payload is missing storyboard panels — the v2 reader treats that as
+// 'no page yet' and renders the empty state. Pre-4.5a docs land here
+// too: their ``rendered_page`` is the default empty dict, and 4.5c
+// removed the v4 fallback path on purpose (one source of truth for
+// the renderer; legacy docs will be rerun, not migrated client-side).
 function narrowRenderedPage(value: unknown): RenderedPage | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as { storyboard_page?: { panels?: unknown } };
@@ -135,23 +128,14 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
     () => slices.find(slice => slice.id === currentPage?.slice_id) ?? slices.at(-1) ?? null,
     [currentPage?.slice_id, slices],
   );
-  // Phase 4.5b: prefer the typed ``rendered_page`` (populated since
-  // Phase 4.5a's dual-write). Fall back to ``v4_page`` only when
-  // ``rendered_page`` is missing the storyboard panels — that's a
-  // legacy doc that pre-dates 4.5a. ``isRenderedPage`` is a structural
-  // narrow rather than a brand check because the API serves the field
-  // as ``Record<string, unknown>``; the structural test (does it have
-  // a storyboard_page with a panels list?) is the cheapest way to
-  // catch legacy/empty docs without parsing the whole tree.
+  // Phase 4.5c: ``rendered_page`` is the only contract. Pre-4.5a docs
+  // narrow to null and fall through to the empty state below; the
+  // ``v4_page`` fallback that lived here through 4.5b is gone.
   const renderedPage = useMemo<RenderedPage | null>(
     () => narrowRenderedPage(currentPage?.rendered_page),
     [currentPage?.rendered_page],
   );
-  const legacyV4Page = useMemo<V4Page | null>(
-    () => (renderedPage ? null : (currentPage?.v4_page as unknown as V4Page | undefined) ?? null),
-    [renderedPage, currentPage?.v4_page],
-  );
-  const characterAssets = useMemo<V4CharacterAsset[]>(() => assets.map(asset => ({
+  const characterAssets = useMemo<MangaCharacterAsset[]>(() => assets.map(asset => ({
     character_id: asset.character_id,
     expression: asset.expression,
     asset_type: asset.asset_type,
@@ -231,16 +215,11 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
               <div className="mx-auto h-[78vh] max-h-[920px] aspect-[2/3]">
                 <MangaPageRenderer page={renderedPage} characterAssets={characterAssets} />
               </div>
-            ) : legacyV4Page ? (
-              // Legacy doc fallback (pre-4.5a). Removed by 4.5c.
-              <div className="mx-auto h-[78vh] max-h-[920px] aspect-[2/3]">
-                <V4PageRenderer page={legacyV4Page} characterAssets={characterAssets} />
-              </div>
             ) : (
               <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6" style={{ color: "#2A2A2A" }}>
                 <Sparkles size={40} />
                 <h2 className="font-display mt-3 text-xl">No pages generated yet</h2>
-                <p className="mt-2 max-w-md">Generate a source slice from the book page. The new backend will persist V4 pages here.</p>
+                <p className="mt-2 max-w-md">Generate a source slice from the book page. The new backend will persist manga pages here.</p>
               </div>
             )}
           </div>

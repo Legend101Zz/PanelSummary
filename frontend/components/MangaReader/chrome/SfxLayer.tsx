@@ -1,35 +1,27 @@
 "use client";
 
 /**
- * SfxLayer \u2014 Sound-effect overlay for a panel (Phase C5).
+ * MangaReader/chrome/SfxLayer.tsx — sound-effect overlay
  * ========================================================
  *
- * Real manga uses big, hand-lettered sound effects (BOOM, CRACK,
- * SHHH...) as part of the art. Our backend currently emits a flat
- * ``effects: string[]`` per panel for visual treatments
- * (``screentone``, ``sparkle``, ``impact``...). This component reads
- * the same field but treats *recognised SFX tokens* as text overlays
- * to render on top of the panel art.
+ * Folded in by Phase 4.5c (was `V4Engine/SfxLayer.tsx`). The backend
+ * still emits a flat ``effects: string[]`` per panel; this layer
+ * picks the *recognised SFX tokens* out of it and lays them on top
+ * of the panel art. Keeping the dispatch client-side means storyboard
+ * authors only need to learn one rule: add a token to ``effects``,
+ * the frontend turns it into lettering.
  *
- * Keeping this client-side has two virtues:
- *
- * 1. The backend stays untouched. The same V4 schema that already
- *    drives mood and screentones now drives SFX too \u2014 no new field,
- *    no new validator, no new migration.
- * 2. We can iterate on visual treatment (rotation, jitter, font) without
- *    a backend roundtrip. Storyboard authors only need to learn one
- *    rule: "if you want a SFX, add the token to ``effects``".
- *
- * Tokens we recognise as SFX (everything else is treated as a visual
- * effect, same as before):
- *
+ * SFX vocabulary — IMPACT (loud, accent-coloured):
  *   ``boom``, ``bang``, ``crack``, ``crash``, ``slam``, ``thud``,
- *   ``pow``, ``zap``, ``whoosh``, ``shhh``, ``hush``, ``tap``,
- *   ``ding``, ``clang``, ``swoosh``, ``rumble``, ``flash``.
+ *   ``pow``, ``zap``, ``clang``, ``rumble``, ``flash``.
+ * SOFT (quiet, ellipsised):
+ *   ``shhh``, ``hush``, ``tap``, ``ding``.
+ * MOTION (treated like soft for now; stub for future slant/trail):
+ *   ``whoosh``, ``swoosh``.
  *
- * The token-to-display mapping uppercases the word and adds an
- * exclamation point for impact tokens; quiet tokens (``shhh``,
- * ``hush``, ``tap``) get an ellipsis instead.
+ * Pseudo-randomised on token + index so the same token always looks
+ * the same on a reload but two SFX on one panel get different
+ * rotations.
  */
 
 import { motion } from "motion/react";
@@ -60,11 +52,9 @@ const ALL_SFX_TOKENS = new Set<string>([
 ]);
 
 /**
- * Recognise SFX tokens from a panel's ``effects`` array. Returns the
- * lowercase tokens in original order. Anything not in our vocabulary
- * is dropped here \u2014 the panel renderer keeps consuming the full list
- * for screentone/sparkle/impact treatments, so non-SFX tokens still
- * flow through it.
+ * Filter a panel's ``effects`` list down to the SFX vocabulary, in
+ * original order. Non-SFX tokens (``screentone``, ``vignette`` etc.)
+ * stay in the panel renderer's effects list untouched.
  */
 export function extractSfxTokens(effects: string[] | undefined): string[] {
   if (!effects) return [];
@@ -84,17 +74,15 @@ interface SfxStyle {
 }
 
 /**
- * Decide how a single SFX token renders. We pseudo-randomise on the
- * token text + index so the same token always looks the same on a
- * reload, but two SFX on one panel get different rotations.
+ * Decide how a single SFX token renders. Stable hash on token + index
+ * so two reloads look identical but two SFX on one panel differ.
  */
 function styleForToken(token: string, index: number, accent: string): SfxStyle {
-  // Tiny stable hash so identical tokens look identical across reloads.
   let h = 0;
   for (const ch of token + String(index)) {
     h = (h * 31 + ch.charCodeAt(0)) | 0;
   }
-  const rotation = ((h % 21) - 10); // \u00b110\u00b0
+  const rotation = ((h % 21) - 10); // ±10°
   const xPick = ((h >> 5) % 60) + 5; // 5..65%
 
   const isImpact = IMPACT_TOKENS.has(token);
@@ -125,7 +113,7 @@ function styleForToken(token: string, index: number, accent: string): SfxStyle {
 }
 
 interface SfxLayerProps {
-  /** Pass the panel's full ``effects`` list \u2014 we'll pick the SFX tokens. */
+  /** Pass the panel's full ``effects`` list — we'll pick the SFX tokens. */
   effects: string[] | undefined;
   /** Used as the impact-token colour. Pass the panel's mood accent. */
   accent: string;
@@ -144,7 +132,7 @@ const SHARED_TEXT_STYLE: CSSProperties = {
   // so the text stays readable against busy painted backdrops without
   // turning into a sticker outline.
   paintOrder: "stroke fill",
-  WebkitTextStroke: "1px transparent", // overridden per-token below
+  WebkitTextStroke: "1px transparent",
 };
 
 export function SfxLayer({ effects, accent, baseDelay = 0 }: SfxLayerProps) {
