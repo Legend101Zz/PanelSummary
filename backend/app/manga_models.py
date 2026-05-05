@@ -109,6 +109,13 @@ class MangaPageDoc(Document):
     page_index: int
     source_range: dict[str, Any] = Field(default_factory=dict)
     v4_page: dict[str, Any] = Field(default_factory=dict)
+    # Phase 4.5a: typed sibling to ``v4_page``. Serialised ``RenderedPage``
+    # (``model_dump(mode="json")``). ``default_factory=dict`` is the whole
+    # point — every doc that pre-dates this field loads cleanly without a
+    # Beanie migration. The migration script lives in 4.5c, alongside the
+    # ``v4_page`` removal; until then both fields are written by the
+    # generation service so the V4 frontend keeps reading what it always has.
+    rendered_page: dict[str, Any] = Field(default_factory=dict)
 
     created_at: datetime = Field(default_factory=_now)
 
