@@ -39,6 +39,28 @@ What remains is **production hardening**, not the core refactor:
    slice.
 3. Optionally start Phase 5 lettering/page-polish work.
 
+### Mrigesh next-step instructions
+
+There is nothing more useful to do from this non-DB workspace. The code
+is green and the only unverified pieces require a session that can reach
+Mongo plus a real generated manga slice.
+
+Please start the next DB-capable agent/session with:
+
+```text
+Read the top-level README section "Mongo RenderedPage migration handoff".
+Run the migration helper in dry-run mode, capture total manga_pages vs
+empty rendered_page counts, and decide with Mrigesh whether to run
+--apply or delete/regenerate old docs. After that, generate one manga
+slice and manually smoke the v2 reader: non-blank page, bubbles,
+painted backdrop/fallback, composition caption where applicable, RTL
+flow, and shot-variety QA. Do not start Phase 5 until that smoke is
+recorded.
+```
+
+Expected commands are in `README.md`; do not copy/paste random Mongo
+shell snippets from memory. Tiny discipline, giant payoff.
+
 ---
 
 ## What we have been doing

@@ -1163,3 +1163,24 @@ README/docs changes.
 `docs/MANGA_REFACTOR_HANDOFF.md` now points DB-capable agents to the
 README commands and records that local frontend build smoke passed while
 real generated-slice visual smoke remains owed.
+
+---
+
+## 2026-05-05 — explicit Mrigesh pickup instructions (`code-puppy-52d940`)
+
+Mrigesh confirmed there is nothing else useful to verify from this
+workspace because Mongo access and real generated-slice visual smoke are
+blocked here. Added a `Mrigesh next-step instructions` section to
+`docs/MANGA_REFACTOR_HANDOFF.md`.
+
+The next DB-capable session should:
+
+1. Read the README section `Mongo RenderedPage migration handoff`.
+2. Run the migration helper in dry-run mode.
+3. Capture total `manga_pages` vs empty `rendered_page` count.
+4. Decide with Mrigesh whether to run `--apply` or delete/regenerate old
+   docs.
+5. Generate one slice and manually smoke the v2 reader.
+6. Only then start Phase 5.
+
+No code changes were made in this note-only follow-up.
