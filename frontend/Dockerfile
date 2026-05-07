@@ -1,16 +1,14 @@
 FROM node:20-alpine
 
+ENV NEXT_TELEMETRY_DISABLED=1
+
 WORKDIR /app
 
-# Copy package files first (cache optimization)
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0"]

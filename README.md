@@ -1,316 +1,350 @@
-# PanelSummary — PDF → Manga
+# PanelSummary
 
-> **One-line:** Upload a PDF; the backend distils it into a manga that captures
-> the gist of the source so a reader who likes comics gets the same essence
-> they'd get from reading the book.
->
-> **Stack:** Python 3.12 · FastAPI · Celery · MongoDB (Beanie) · uv · Next.js 14 · Tailwind
->
-> **Status (2026-05-05):** Phases 1–3 shipped; Phase 4 is structurally complete through 4.5c.1 (v4 deleted, dry-run migration helper + frontend type tidy shipped). Phase 5 remains planned.
-> Current handoff: [`docs/MANGA_REFACTOR_HANDOFF.md`](docs/MANGA_REFACTOR_HANDOFF.md). Canonical roadmap: [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md).
+PanelSummary turns a PDF into a source-grounded manga adaptation.
 
----
+Upload a book, let the backend parse it, build a manga project, run a book-level
+understanding pass, generate manga slices, and read the result in a Next.js
+manga reader. The current app is focused on manga generation; legacy summary,
+living-panel, and reel UI surfaces are not part of the active product.
 
-## TL;DR for a brand-new agent session
-
-You are picking up a focused refactor of the manga generation pipeline. Read
-this file once, then read [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md)
-and [`docs/MANGA_REFACTOR_HANDOFF.md`](docs/MANGA_REFACTOR_HANDOFF.md).
-The detailed running log is
-[`docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md`](docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md).
-
-**The user's complaint that started this refactor (verbatim, paraphrased):**
-
-> "Codebase is loose. Manga we generate is average. Dialogue is incoherent.
-> Sprite characters are weak even though we have image-model capability.
-> Is our DSL approach right? A great manga has a defined protagonist,
-> logline, structured plot (Ki-Sho-Ten-Ketsu), distinct silhouettes,
-> consistent character sheets, varied shot types. Critically analyse the
-> whole flow and give me a plan."
-
-We responded by gutting the dead code (Phase D — already done), writing the
-phased plan, and shipping Phases 1, 2, 3. Below is what each phase moved.
+Tiny slogan: **PDF in, manga out, fewer hallucinated nonsense goblins.**
 
 ---
 
-## What was here BEFORE the refactor (so you know what's gone)
+## What the app does
 
-* Two parallel rendering engines: **V2 (verbose DSL)** and **V4 (semantic intent)**.
-* Legacy surfaces: BookSummary, LivingPanel, video reels, Reel Engine.
-* A shifting collection of plan/tracker docs (`MANGA_REVAMP_PLAN.md`,
-  `MANGA_QUALITY_AND_CLEANUP_PLAN.md`, `manga_creation_system_review_and_plan/`,
-  etc.) that contradicted each other.
+PanelSummary is built around one production flow:
 
-**All of that is deleted.** Don't look for it in git history unless you have
-a specific reason — the new design supersedes it. Current docs are:
+1. **Upload PDF** — parse and cache a book by file hash.
+2. **Create manga project** — persistent adaptation workspace for that book.
+3. **Build book spine** — synopsis, facts, character/world bible, art direction,
+   arc outline, and voice cards.
+4. **Generate manga slice** — pick the next source page range and adapt it into
+   grounded script, storyboard, page composition, assets, and pages.
+5. **Read manga** — render persisted `RenderedPage` payloads in the frontend.
+6. **Manage character assets** — materialize, regenerate, pin, and QA character
+   library entries.
 
-* `docs/MANGA_PHASE_PLAN.md` — canonical roadmap.
-* `docs/MANGA_REFACTOR_HANDOFF.md` — current status + remaining-work handoff.
-* `docs/MANGA_V2_LLM_ORCHESTRATION_ADR.md` — architectural ADR.
-* `docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md` — running Phase 4 log.
-
----
-
-## The five-phase rebuild
-
-> Phases follow the order a real manga writer would: **story → characters →
-> sprites → panels → letters**. Solving panel art before the story is grounded
-> in source facts produces the exact incoherence the user complained about.
-
-| # | Theme | Status | Commit prefix |
-|---|---|---|---|
-| **1** | Book Spine — voice cards + character picker | ✅ shipped 2026-05-04 | `Phase 1:` |
-| **2** | Source Grounding & Memory — script lines must cite SourceFacts; recap seeds carry across slices | ✅ shipped 2026-05-04 | `Phase 2:` |
-| **3** | Sprite & Character Library Polish — expression coverage, outfit score, hit-rate metric, pinned-asset selector | ✅ shipped 2026-05-04 | `Phase 3:` |
-| **4** | Panel-Craft DSL Upgrade — collapse v2/v4 panel surface into one structured DSL; vary shot types deliberately | ✅ 4.5c.1 shipped; DB apply + visual smoke left | `v2 Phase 4:` |
-| **5** | Page Composition & Lettering — bubble shape semantics, SFX font catalogue, RTL flow critic | ⏳ planned | `v2 Phase 5:` |
-
-### What Phase 1 did
-* `domain/manga/voice_cards.py` — `VoiceCard` model (speech_register,
-  taboo_phrases, signature_lines).
-* `pipeline/stages/book/character_voice_cards_stage.py` — synthesises voice
-  cards from the bible + arc outline.
-* `frontend/components/BookSpine.tsx` — spine-style character chooser in v2.
-
-### What Phase 2 did
-* `services/manga/grounding_validator.py` — pure helper; flags script lines
-  whose claims aren't backed by `SourceFact` IDs.
-* `domain/manga/continuity.py` — recap-seed builder + ledger updater for
-  cross-slice memory.
-* `pipeline/stages/manga_script_stage` + `script_review_stage` +
-  `continuity_gate_stage` — wired into the typed pipeline contract.
-* Frontend: slice cards now show recap and grounding warnings in the v2 panel.
-
-### What Phase 3 did (this session)
-* **3.1 Expression coverage gate** — `services/manga/expression_coverage.py`
-  (pure). `SpriteQualityReport.missing_expressions` + `passed=False` on gaps.
-  `SPRITE_EXPRESSION_MISSING` check code. Library UI: per-character chips +
-  global "Missing N" pill.
-* **3.2 Outfit acceptance** — vision LLM now scores **costume independently**
-  from silhouette. `outfit_match_score`, `SPRITE_OUTFIT_MISMATCH` code,
-  AssetCard renders "sil X/5 · fit Y/5".
-* **3.3 Sprite-bank hit-rate** — `PanelRenderResult.requested_character_count`
-  + summary props. `panel_quality_gate_stage` emits
-  `sprite_bank_low_hit_rate` warning when ratio < 0.6.
-* **3.4 Selector honours `pinned`** — `build_asset_lookup` picks the pinned
-  doc first, then falls back to the front/side/back angle preference.
-
-**Test scoreboard at end of Phase 3:** **330 backend tests green**; `tsc --noEmit` clean.
+The system is intentionally pipeline-shaped. Each stage has one job, and the
+reader consumes one page contract. DRY, YAGNI, SOLID — yes, even for comics.
 
 ---
 
-## What is LEFT to do
+## Current status
 
-### Phase 4.5c.1 — operational close-out
+- Backend/API page contract: `RenderedPage`.
+- Frontend reader: `frontend/components/MangaReader/`.
+- Core refactor code: complete and green locally.
+- Remaining production handoff: DB migration decision + real visual smoke.
 
-Core code cleanup is done: `RenderedPage` is the only backend/API page
-contract, the v4 backend/frontend surface is deleted, a dry-run-first
-migration helper exists, and frontend types are tidy.
-
-Still owed before Phase 5:
-
-1. Run the DB migration helper from an environment that can reach Mongo
-   and decide `--apply` vs delete/regenerate old docs.
-2. Run the manual visual smoke: generate one slice, open the v2 reader,
-   confirm a non-blank page, bubbles, painted backdrop/fallback,
-   composition caption where applicable, RTL flow, and shot-variety QA.
-
-### Phase 5 — Page Composition & Lettering
-Bubble shape semantics (thought vs shout vs whisper), SFX font catalogue,
-right-to-left flow critic. Detail lives in `docs/MANGA_PHASE_PLAN.md`.
+Operational next steps live in [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) so
+this README can stay focused on project setup and day-to-day development.
 
 ---
 
-## Refactor rules (NON-NEGOTIABLE — read before editing anything)
+## Tech stack
 
-These are the rules this refactor was held to. New session: stay on them.
-
-1. **Zen of Python applies to all code, not just Python.** Explicit > implicit;
-   simple > clever; flat > nested; readability > brevity.
-2. **Files ≤ 600 lines.** If it grows past that, split — but never split
-   purely to hit a number if cohesion suffers.
-3. **DRY, YAGNI, SOLID.** No speculative abstractions. No "we might need this
-   later" hooks.
-4. **Comments explain WHY, not WHAT.** The code shows what. Explain the
-   trade-off, the alternative you rejected, the failure mode the choice
-   prevents. Look at any file in `app/services/manga/` or
-   `app/domain/manga/` for the established voice.
-5. **Every behavioural change is pinned by a test.** The pattern is:
-   * Pure helpers (`grounding_validator`, `expression_coverage`) get
-     `tests/test_<thing>_v2.py` with focused asserts and a one-sentence
-     docstring per test explaining the invariant being pinned.
-   * Stages get a fixture builder + `asyncio.run(stage.run(ctx))` + assert
-     on the mutation (`ctx.quality_report`, `ctx.options`, etc.).
-6. **Domain layer stays I/O-free.** No Mongo, no LLM, no filesystem in
-   `app/domain/manga/`. Helpers in `app/services/manga/` may import the
-   domain but never the other way.
-7. **Pure functions over classes** unless the class earns its keep with state.
-   `compute_missing_expressions`, `build_asset_lookup` are functions because
-   they have no state; `SpriteQualityServiceConfig` is a model because it
-   bundles tuneable defaults that change together.
-8. **Commit often, with a phase prefix.** Format:
-   ```
-   v2 Phase N: <one-line summary>
-   <blank>
-   - bullet of what moved
-   - bullet of why
-   - test scoreboard at end
-   ```
-   Going forward use the **`v2 Phase N`** prefix (Phases 1–3 used `Phase N:`
-   without the v2 prefix; new phases get the prefix because we're now
-   exclusively in the v2 path — the v1/v4 surfaces are gone).
-9. **Never force-push.** Roll forward with new commits.
-10. **Tests must pass before every commit.** Run:
-    ```
-    cd backend && uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com pytest tests/ -q
-    cd frontend && npx tsc --noEmit
-    ```
-11. **Wire-format pinned by tests.** When you add a field to a serializer
-    or pipeline contract, add an invariant test. `test_phase3_sprite_polish_v2.py`
-    has examples (`test_vision_prompt_asks_for_both_scores` is the cheapest
-    pattern — string `in` system prompt).
-12. **Walmart environment.** `uv` everywhere; never touch
-    `~/.code-puppy-venv`; install with the artifactory `--index-url` shown
-    in rule 10.
+| Layer | Tech |
+|---|---|
+| Frontend | Next.js 15, React 19, Tailwind, TypeScript |
+| Backend | Python 3.12, FastAPI, Pydantic, Beanie |
+| Jobs | Celery |
+| Broker/cache | Redis |
+| Database | MongoDB |
+| Package managers | `uv`, `npm` |
+| Optional future video | Remotion under `reel-renderer/` |
 
 ---
 
-## What you (new agent) should do at the START of your session
+## Repository layout
 
-1. **Read this file. Read `docs/MANGA_PHASE_PLAN.md`.** Stop and confirm
-   you understand which phase is next before writing any code.
-2. **Run the test suite** to confirm the tree is green before touching it
-   (rule 10 commands).
-3. **Create a session notes doc.** Path:
-   `docs/SESSION_NOTES_<YYYY-MM-DD>_<short-topic>.md`.
-   Inside, log: what you set out to do, decisions you made, blockers you
-   hit, tests you added. End with "next session pickup point".
-4. **Pick the next phase** (Phase 4 unless told otherwise) and **expand the
-   detail in `docs/MANGA_PHASE_PLAN.md`** before you write code. The user
-   will read that section to confirm scope.
-5. **Commit early, commit often** with `v2 Phase 4: …` prefix. Three small
-   commits beat one big one every time.
-
----
-
-## Layout cheat sheet
-
-```
-backend/
-  app/
-    api/routes/manga_projects.py       # all v2 HTTP endpoints
-    domain/manga/                      # I/O-free models + pure helpers
-      artifacts.py                       core LLM-authored types (Beat, Script, Storyboard, ...)
-      sprite_quality.py                  SpriteCheck, AssetSpriteReview, MissingExpression, SpriteQualityReport
-      continuity.py                      recap-seed builder, ledger update
-      voice_cards.py                     VoiceCard
-      ...
-    manga_pipeline/
-      context.py                       PipelineContext (mutable bag the stages read/write)
-      stages/                          one file per stage, each with `async def run(ctx) -> ctx`
-        book/                            book-level stages (arc outline, voice cards, ...)
-        manga_script_stage.py
-        script_review_stage.py
-        continuity_gate_stage.py
-        panel_rendering_stage.py
-        panel_quality_gate_stage.py
-    services/manga/
-      grounding_validator.py             pure: lines vs SourceFacts
-      expression_coverage.py             pure: planner specs vs persisted docs
-      sprite_quality_service.py          vision LLM call + check translation
-      sprite_quality_gate.py             persistence-aware orchestrator
-      panel_rendering_service.py         multimodal panel renderer + selectors
-      character_library_service.py       asset doc CRUD
-      ...
-    manga_models.py                    Beanie Documents (MangaProjectDoc, MangaAssetDoc, ...)
-  tests/                              one test file per module, suffix _v2
-
-frontend/
-  app/books/[id]/manga/v2/             v2 reader + Character Library page
-  components/CharacterLibrary/         AssetCard
-  components/MangaV2ProjectPanel.tsx   slice cards (recap, grounding warnings, QA list)
-  components/BookSpine.tsx             character picker
-  lib/api.ts, lib/types.ts             single API surface
-
-docs/
-  MANGA_PHASE_PLAN.md                  CANONICAL roadmap — read this
-  MANGA_V2_LLM_ORCHESTRATION_ADR.md    why the pipeline is LLM-first
-  SESSION_NOTES_<date>_<topic>.md      you create one per session
+```text
+PanelSummary/
+  backend/
+    app/
+      main.py                     FastAPI app
+      api/routes/                 HTTP routers
+      domain/manga/               I/O-free manga domain models
+      manga_pipeline/             contexts, orchestrators, stages
+      services/manga/             persistence-aware manga services
+      scripts/                    admin scripts
+    tests/                        backend test suite
+    Dockerfile
+  frontend/
+    app/                          Next.js routes
+    components/                   UI components and MangaReader
+    lib/                          API client and DTO types
+    Dockerfile
+  docs/
+    ARCHITECTURE.md               system overview
+    BACKEND_FLOW.md               backend in depth
+    FRONTEND_FLOW.md              frontend in depth
+    NEXT_STEPS.md                 DB/manual-smoke handoff
+    REEL_RENDERER.md              future reel renderer notes
+  reel-renderer/                  parked Remotion experiment
+  storage/                        local PDFs/images
+  start.sh                        local dev starter
+  stop.sh                         local dev stopper
+  docker-compose.yml              local container stack
 ```
 
 ---
 
-## Mongo `RenderedPage` migration handoff
+## Prerequisites
 
-This workspace cannot reach the Atlas cluster over VPN, so the repo
-ships instructions for a later session/agent that has DB access. Do not
-pretend the migration ran unless the command below actually reaches
-Mongo and reports counts. Tiny honesty, huge blast-radius reduction.
+For local development without Docker:
 
-Run dry-run from `backend/`:
+- macOS or Linux shell with `zsh`,
+- Python 3.12,
+- [`uv`](https://github.com/astral-sh/uv),
+- Node 20+; Node 24 is recommended,
+- npm,
+- Redis,
+- MongoDB reachable from `MONGODB_URL`,
+- LLM provider API key supplied in the UI when generating.
+
+Walmart environment note: use the Walmart Python index for `uv` commands:
 
 ```bash
-uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+--index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+--allow-insecure-host pypi.ci.artifacts.walmart.com
+```
+
+Do not install dependencies into the Code Puppy venv. This repo owns its own
+`backend/.venv`. Yes, dependency isolation is boring. Boring is how weekends
+survive.
+
+---
+
+## Quick start: local scripts
+
+From the repo root:
+
+```bash
+./start.sh
+```
+
+This starts:
+
+- Redis, if available through Homebrew and not already running,
+- FastAPI at <http://localhost:8000>,
+- API docs at <http://localhost:8000/docs>,
+- Celery worker,
+- Next.js at <http://localhost:3000>.
+
+Logs:
+
+```bash
+tail -f /tmp/panelsummary-backend.log
+tail -f /tmp/panelsummary-celery.log
+tail -f /tmp/panelsummary-frontend.log
+```
+
+Stop local services:
+
+```bash
+./stop.sh
+```
+
+`stop.sh` stops only app PIDs and ports 8000/3000. It intentionally does not
+kill port 8080, Teams, or Code Puppy. We are trying to run software, not start a
+workplace incident.
+
+---
+
+## Manual local setup
+
+Use this if you do not want the helper scripts.
+
+### Backend
+
+```bash
+cd backend
+uv venv .venv --python 3.12
+uv pip install \
+  --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
   --allow-insecure-host pypi.ci.artifacts.walmart.com \
-  python -m app.scripts.migrate_rendered_pages
+  -r requirements.txt
+source .venv/bin/activate
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Review the output:
-
-* `Total manga_pages` — total pages in scope.
-* `Empty rendered_page` — pages needing migration.
-* `Planned rebuilds` — pages that can be rebuilt from
-  `MangaSliceDoc.storyboard_pages`.
-* `Skipped candidates` — pages needing human decision because the
-  owning slice/storyboard snapshot is missing or invalid.
-
-Apply only after reviewing dry-run output:
+In a second terminal:
 
 ```bash
-uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com \
-  python -m app.scripts.migrate_rendered_pages --apply
+cd backend
+source .venv/bin/activate
+celery -A app.celery_worker worker --loglevel=info --pool=solo
 ```
 
-Optional project-scoped run:
+### Frontend
 
 ```bash
-uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com \
-  python -m app.scripts.migrate_rendered_pages --project-id <manga_project_id>
+cd frontend
+npm ci
+npm run dev
 ```
 
-What the script does and does not do:
-
-* ✅ Rebuilds a valid `RenderedPage` from persisted storyboard pages.
-* ✅ Creates empty `PanelRenderArtifact` slots by panel id.
-* ✅ Validates every rebuilt payload through the domain model.
-* ✅ Defaults to dry-run and writes only with `--apply`.
-* ❌ Does not call LLMs or image generation.
-* ❌ Does not recover unpersisted `slice_composition`; migrated pages
-  use `composition: null` and the reader fallback layout.
-
-If dry-run shows a tiny disposable old-doc set, it is acceptable to
-regenerate/delete those docs instead of applying the migration. Document
-whichever choice is made in `docs/MANGA_REFACTOR_HANDOFF.md` and the
-running session notes.
+Open <http://localhost:3000>.
 
 ---
 
-## Quick test command (memorise this)
+## Docker setup
+
+Docker Compose starts Mongo, Redis, backend, Celery, and frontend:
 
 ```bash
-cd backend && \
-  uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com pytest tests/ -q
+docker compose up --build
 ```
 
-Last green count: **394 passed** (2026-05-05 Phase 4.5c.1).
+Open:
+
+- frontend: <http://localhost:3000>,
+- backend: <http://localhost:8000>,
+- API docs: <http://localhost:8000/docs>.
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+Remove local Docker data volumes only when you intentionally want to wipe local
+Mongo/storage state:
+
+```bash
+docker compose down -v
+```
+
+The compose file mounts:
+
+- Mongo data in `mongo_data`,
+- generated PDFs/images in `storage_data`,
+- temporary uploads in `pdf_uploads`.
 
 ---
 
-## Author / contact
+## Environment variables
 
-Refactor authored by `code-puppy-0c26ab` for **Mrigesh Thakur**, on top of
-the existing PanelSummary codebase. The Phase 1–3 commits in `git log`
-tell the story end-to-end if you want context for any specific decision.
+The backend reads settings from environment variables or `backend/.env`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `MONGODB_URL` | `mongodb://localhost:27017` | Mongo connection string |
+| `DB_NAME` | `panelsummary` | database name |
+| `REDIS_URL` | `redis://localhost:6379` | Celery broker/backend URL |
+| `CORS_ORIGINS` | `http://localhost:3000` | comma-separated allowed origins |
+| `STORAGE_DIR` | auto-detected `storage/` | generated PDFs/images base |
+| `UPLOAD_DIR` | `/tmp/uploads` | temporary upload location |
+| `SECRET_KEY` | dev value | app secret for local use |
+| `OPENROUTER_API_KEY` | empty | model-list proxy key, optional |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | frontend API base URL |
+
+Example `backend/.env`:
+
+```env
+MONGODB_URL=mongodb://localhost:27017
+DB_NAME=panelsummary
+REDIS_URL=redis://localhost:6379
+CORS_ORIGINS=http://localhost:3000
+STORAGE_DIR=../storage
+UPLOAD_DIR=/tmp/uploads
+SECRET_KEY=dev-secret-change-me
+```
+
+Never commit real API keys or sensitive PDFs. The `.gitignore` excludes common
+env and generated dependency folders, but humans still have to human.
+
+---
+
+## Common user workflow
+
+1. Start the stack.
+2. Open <http://localhost:3000>.
+3. Upload a PDF.
+4. Wait for parsing to complete.
+5. Open the book page.
+6. Create or load a manga project.
+7. Run book understanding.
+8. Generate a source slice.
+9. Open the manga reader.
+10. Review the character library if assets need repair/pinning.
+
+If manga generation fails, check:
+
+- `/tmp/panelsummary-celery.log`,
+- `/tmp/panelsummary-backend.log`,
+- job status in the UI,
+- API docs for the exact endpoint response.
+
+---
+
+## Testing and validation
+
+### Backend
+
+```bash
+cd backend
+uv run \
+  --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  pytest tests/ -q
+```
+
+### Frontend
+
+```bash
+cd frontend
+npx tsc --noEmit
+npm run build
+```
+
+### Scripts and Docker config
+
+```bash
+zsh -n start.sh
+zsh -n stop.sh
+docker compose config
+```
+
+`docker compose config` requires Docker locally. If Docker is unavailable, at
+least keep the YAML readable and review the service names/ports.
+
+---
+
+## Documentation
+
+Start here:
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture.
+- [`docs/BACKEND_FLOW.md`](docs/BACKEND_FLOW.md) — backend flow in depth.
+- [`docs/FRONTEND_FLOW.md`](docs/FRONTEND_FLOW.md) — frontend flow in depth.
+- [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) — current DB/manual-smoke handoff.
+- [`docs/REEL_RENDERER.md`](docs/REEL_RENDERER.md) — future reel renderer notes.
+
+The old phase/session archaeology docs were intentionally removed. Git history
+still has them if you need the museum tour.
+
+---
+
+## Development principles
+
+- Keep production code cohesive and small.
+- Prefer pure helpers over stateful classes unless state earns its keep.
+- Domain models stay I/O-free.
+- Do not add compatibility branches for deleted contracts.
+- Every behavior change gets a focused test.
+- Run backend and frontend checks before committing.
+- Commit green states only.
+- Never force-push.
+
+If a future feature is not wired end-to-end, document it as future work instead
+of advertising a button that leads nowhere. Dead buttons are UX jump scares.
+
+---
+
+## Future reel renderer
+
+A Remotion experiment lives under `reel-renderer/`, but it is not wired into the
+current app. See [`docs/REEL_RENDERER.md`](docs/REEL_RENDERER.md) before adding
+any reel UI, startup script, or backend job.

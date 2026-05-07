@@ -1,6 +1,7 @@
 """Tests for Phase 3 — sprite & character library polish.
 
-Pins the invariants in `docs/MANGA_PHASE_PLAN.md` for:
+Pins the sprite and character-library invariants documented in
+`docs/BACKEND_FLOW.md` for:
   3.1 expression coverage gate (compute_missing_expressions)
   3.2 outfit acceptance check (vision LLM scores costume separately)
   3.3 sprite-bank hit-rate metric (PageRenderingSummary)

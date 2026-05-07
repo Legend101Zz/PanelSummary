@@ -1,7 +1,7 @@
 """Tests for the Phase 2 source-grounding & memory deliverables.
 
-Pins the invariants spelled out in `docs/MANGA_PHASE_PLAN.md` so a
-future change cannot silently regress them.
+Pins the source-grounding and continuity invariants documented in
+`docs/BACKEND_FLOW.md` so future changes cannot silently regress them.
 """
 
 from __future__ import annotations
