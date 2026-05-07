@@ -6,7 +6,7 @@
 >
 > **Stack:** Python 3.12 · FastAPI · Celery · MongoDB (Beanie) · uv · Next.js 14 · Tailwind
 >
-> **Status (2026-05-05):** Phases 1–3 shipped; Phase 4 is structurally complete through 4.5c (v4 deleted). Phase 5 remains planned.
+> **Status (2026-05-05):** Phases 1–3 shipped; Phase 4 is structurally complete through 4.5c.1 (v4 deleted, dry-run migration helper + frontend type tidy shipped). Phase 5 remains planned.
 > Current handoff: [`docs/MANGA_REFACTOR_HANDOFF.md`](docs/MANGA_REFACTOR_HANDOFF.md). Canonical roadmap: [`docs/MANGA_PHASE_PLAN.md`](docs/MANGA_PHASE_PLAN.md).
 
 ---
@@ -45,7 +45,7 @@ phased plan, and shipping Phases 1, 2, 3. Below is what each phase moved.
 a specific reason — the new design supersedes it. Current docs are:
 
 * `docs/MANGA_PHASE_PLAN.md` — canonical roadmap.
-* `docs/MANGA_REFACTOR_HANDOFF.md` — current status + next-session prompt.
+* `docs/MANGA_REFACTOR_HANDOFF.md` — current status + remaining-work handoff.
 * `docs/MANGA_V2_LLM_ORCHESTRATION_ADR.md` — architectural ADR.
 * `docs/SESSION_NOTES_2026-05-04_phase4_panel_dsl.md` — running Phase 4 log.
 
@@ -62,7 +62,7 @@ a specific reason — the new design supersedes it. Current docs are:
 | **1** | Book Spine — voice cards + character picker | ✅ shipped 2026-05-04 | `Phase 1:` |
 | **2** | Source Grounding & Memory — script lines must cite SourceFacts; recap seeds carry across slices | ✅ shipped 2026-05-04 | `Phase 2:` |
 | **3** | Sprite & Character Library Polish — expression coverage, outfit score, hit-rate metric, pinned-asset selector | ✅ shipped 2026-05-04 | `Phase 3:` |
-| **4** | Panel-Craft DSL Upgrade — collapse v2/v4 panel surface into one structured DSL; vary shot types deliberately | ✅ 4.5c shipped; cleanup left | `v2 Phase 4:` |
+| **4** | Panel-Craft DSL Upgrade — collapse v2/v4 panel surface into one structured DSL; vary shot types deliberately | ✅ 4.5c.1 shipped; DB apply + visual smoke left | `v2 Phase 4:` |
 | **5** | Page Composition & Lettering — bubble shape semantics, SFX font catalogue, RTL flow critic | ⏳ planned | `v2 Phase 5:` |
 
 ### What Phase 1 did
@@ -101,19 +101,23 @@ a specific reason — the new design supersedes it. Current docs are:
 
 ## What is LEFT to do
 
-### Phase 4 — Panel-Craft DSL Upgrade (next)
-The user's biggest live complaint. Current state has v2 and v4 panel
-representations scattered across the codebase. Goal: **one structured panel
-DSL** that the storyboarder LLM emits, the page-composition stage consumes,
-and the panel renderer treats as gospel. Within that, force shot-type variety
-(close-up vs medium vs wide) the way pro manga does.
+### Phase 4.5c.1 — operational close-out
 
-Detail to expand when Phase 4 starts. The expansion lives in
-`docs/MANGA_PHASE_PLAN.md` under "Phase 4 — Panel-Craft DSL Upgrade".
+Core code cleanup is done: `RenderedPage` is the only backend/API page
+contract, the v4 backend/frontend surface is deleted, a dry-run-first
+migration helper exists, and frontend types are tidy.
+
+Still owed before Phase 5:
+
+1. Run the DB migration helper from an environment that can reach Mongo
+   and decide `--apply` vs delete/regenerate old docs.
+2. Run the manual visual smoke: generate one slice, open the v2 reader,
+   confirm a non-blank page, bubbles, painted backdrop/fallback,
+   composition caption where applicable, RTL flow, and shot-variety QA.
 
 ### Phase 5 — Page Composition & Lettering
 Bubble shape semantics (thought vs shout vs whisper), SFX font catalogue,
-right-to-left flow critic. Detail to expand when Phase 4 ships.
+right-to-left flow critic. Detail lives in `docs/MANGA_PHASE_PLAN.md`.
 
 ---
 
@@ -236,6 +240,63 @@ docs/
 
 ---
 
+## Mongo `RenderedPage` migration handoff
+
+This workspace cannot reach the Atlas cluster over VPN, so the repo
+ships instructions for a later session/agent that has DB access. Do not
+pretend the migration ran unless the command below actually reaches
+Mongo and reports counts. Tiny honesty, huge blast-radius reduction.
+
+Run dry-run from `backend/`:
+
+```bash
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages
+```
+
+Review the output:
+
+* `Total manga_pages` — total pages in scope.
+* `Empty rendered_page` — pages needing migration.
+* `Planned rebuilds` — pages that can be rebuilt from
+  `MangaSliceDoc.storyboard_pages`.
+* `Skipped candidates` — pages needing human decision because the
+  owning slice/storyboard snapshot is missing or invalid.
+
+Apply only after reviewing dry-run output:
+
+```bash
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages --apply
+```
+
+Optional project-scoped run:
+
+```bash
+uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
+  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+  python -m app.scripts.migrate_rendered_pages --project-id <manga_project_id>
+```
+
+What the script does and does not do:
+
+* ✅ Rebuilds a valid `RenderedPage` from persisted storyboard pages.
+* ✅ Creates empty `PanelRenderArtifact` slots by panel id.
+* ✅ Validates every rebuilt payload through the domain model.
+* ✅ Defaults to dry-run and writes only with `--apply`.
+* ❌ Does not call LLMs or image generation.
+* ❌ Does not recover unpersisted `slice_composition`; migrated pages
+  use `composition: null` and the reader fallback layout.
+
+If dry-run shows a tiny disposable old-doc set, it is acceptable to
+regenerate/delete those docs instead of applying the migration. Document
+whichever choice is made in `docs/MANGA_REFACTOR_HANDOFF.md` and the
+running session notes.
+
+---
+
 ## Quick test command (memorise this)
 
 ```bash
@@ -244,7 +305,7 @@ cd backend && \
   --allow-insecure-host pypi.ci.artifacts.walmart.com pytest tests/ -q
 ```
 
-Last green count: **330 passed** (2026-05-04 end-of-Phase-3).
+Last green count: **394 passed** (2026-05-05 Phase 4.5c.1).
 
 ---
 

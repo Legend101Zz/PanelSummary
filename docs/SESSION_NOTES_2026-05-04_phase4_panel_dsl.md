@@ -1107,3 +1107,59 @@ a plain `string` instead of a stale literal union.
    composition caption where applicable, RTL flow, and shot-variety QA.
 4. Then Phase 5 can start. No Phase 5 until the eyeball check, because
    pytest still has no taste. Rude but true.
+
+---
+
+## 2026-05-05 — Phase 4.5c.1 README handoff + local smoke (`code-puppy-52d940`)
+
+### User direction
+
+Mrigesh confirmed Mongo will not be reachable from this VPN/workspace
+and asked to store migration instructions in a README so another
+DB-capable session agent can run them later, then do whatever remains
+after that.
+
+### README handoff added
+
+Updated the top-level `README.md` with a dedicated
+`Mongo RenderedPage migration handoff` section. It includes:
+
+* dry-run command for `python -m app.scripts.migrate_rendered_pages`,
+* `--apply` command,
+* optional `--project-id` scoped command,
+* explanation of `Total manga_pages`, `Empty rendered_page`,
+  `Planned rebuilds`, and `Skipped candidates`,
+* explicit warning not to claim the migration ran unless Mongo is
+  reachable and the command reports counts,
+* limitation that migrated pages use `composition: null` because
+  `slice_composition` was not persisted on `MangaSliceDoc`.
+
+Also refreshed stale README status copy so it now says Phase 4.5c.1 is
+shipped and the remaining work is DB apply/regenerate decision + real
+visual smoke.
+
+### What could be done locally after delegating DB migration
+
+The true manual visual smoke still needs a real generated slice from a
+reachable backend/DB. This workspace cannot produce that because Mongo
+is unavailable. I did the strongest non-DB local smoke instead:
+
+```bash
+cd frontend && npx tsc --noEmit && npm run build
+```
+
+Result:
+
+* `npx tsc --noEmit` clean.
+* `next build` completed successfully.
+* Dynamic route `/books/[id]/manga/v2` built successfully.
+
+This does **not** replace the real visual smoke. It only proves the v2
+reader compiles and builds in production mode after the type tidy and
+README/docs changes.
+
+### Handoff updated
+
+`docs/MANGA_REFACTOR_HANDOFF.md` now points DB-capable agents to the
+README commands and records that local frontend build smoke passed while
+real generated-slice visual smoke remains owed.

@@ -33,9 +33,10 @@ The big architectural migration is done:
 
 What remains is **production hardening**, not the core refactor:
 
-1. Run the migration helper against a reachable DB in dry-run mode and
-   decide whether to apply it or regenerate/delete old docs.
-2. Run a manual end-to-end visual smoke test.
+1. Have the DB-capable follow-up agent run the README migration handoff
+   commands and decide whether to apply or regenerate/delete old docs.
+2. Run a manual end-to-end visual smoke test against a real generated
+   slice.
 3. Optionally start Phase 5 lettering/page-polish work.
 
 ---
@@ -262,11 +263,23 @@ No image generation or filesystem artifact recovery is attempted.
 
 Decision still required once a DB is reachable: if dry-run reports a
 small/irrelevant old-doc set, delete/regenerate them; if it reports
-valuable old docs, review and run `--apply`.
+valuable old docs, review and run `--apply`. The exact commands are now
+also stored in the top-level `README.md` so a DB-capable follow-up
+session can execute them without spelunking docs.
 
 ### P0 — manual visual smoke
 
-Generate one slice and open the v2 reader.
+Generate one slice and open the v2 reader. This could not be completed
+from the current workspace because the app cannot reach Mongo, but the
+frontend production build was run as a non-DB smoke and passed:
+
+```bash
+cd frontend && npx tsc --noEmit && npm run build
+# ✓ Compiled successfully
+# route /books/[id]/manga/v2 built successfully
+```
+
+Still required with real data:
 
 Confirm:
 
@@ -328,7 +341,8 @@ That is feature polish, not a blocker for the v4 migration.
 ## Bottom line
 
 The hard part — deleting the split v4/rendered-page architecture — is
-done. 4.5c.1 added the safe migration tool and cleaned the frontend
-types. What remains before Phase 5 is operational: run the migration
-helper against a reachable DB, choose apply vs regenerate/delete, and
-finish the manual visual smoke.
+done. 4.5c.1 added the safe migration tool, cleaned the frontend
+types, and documented DB-run instructions in the README. What remains
+before Phase 5 is operational: have a DB-capable session choose apply
+vs regenerate/delete, then finish the real generated-slice visual
+smoke.
