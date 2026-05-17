@@ -237,7 +237,7 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
         <Sparkles size={42} style={{ color: "#ffc220" }} />
         <h1 className="font-display text-2xl">No manga project yet</h1>
         <p style={{ color: "#A8A6C0", maxWidth: 520 }}>
-          Create a v2 manga project for this book first — the library lives inside a project.
+          Create a manga workspace for this book first. The library lives inside that workspace.
         </p>
         <Link href={`/books/${bookId}`} className="px-4 py-2 border" style={{ borderColor: "#ffc220", color: "#ffc220" }}>
           Back to book
@@ -322,7 +322,7 @@ export default function CharacterLibraryPage({ params }: { params: Promise<{ id:
             <Sparkles size={32} className="mx-auto mb-3" style={{ color: "#ffc220" }} />
             <p style={{ color: "#F0EEE8" }}>No character sheets yet.</p>
             <p className="mt-2" style={{ color: "#A8A6C0", fontSize: "0.8rem" }}>
-              Run book understanding from the Manga V2 Lab, then come back here.
+              Run book understanding from the Manga pipeline, then come back here.
             </p>
           </div>
         ) : (

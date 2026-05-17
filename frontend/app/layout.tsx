@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -84,7 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="description" content="Turn any PDF into swipeable manga panels and lesson reels" />
         <meta name="theme-color" content="#0F0E17" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {/* ── NAV ────────────────────────────────────────────── */}
         <header
             className="fixed top-0 left-0 right-0 z-40 transition-all duration-300"

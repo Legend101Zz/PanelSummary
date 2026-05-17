@@ -249,6 +249,63 @@ def _serialize_asset_doc(asset: MangaAssetDoc) -> dict[str, Any]:
     }
 
 
+def _serialize_job_doc(job: JobStatus | None) -> dict[str, Any] | None:
+    if job is None:
+        return None
+    return {
+        "task_id": job.celery_task_id,
+        "job_type": job.job_type,
+        "status": job.status,
+        "progress": job.progress,
+        "message": job.message,
+        "result_id": job.result_id,
+        "error": job.error,
+        "phase": job.phase,
+        "panels_done": job.panels_done,
+        "panels_total": job.panels_total,
+        "cost_so_far": job.cost_so_far,
+        "estimated_total_cost": job.estimated_total_cost,
+        "created_at": job.created_at.isoformat(),
+        "updated_at": job.updated_at.isoformat(),
+    }
+
+
+async def _latest_job(project_id: str, job_type: str) -> JobStatus | None:
+    return await JobStatus.find_one(
+        JobStatus.result_id == project_id,
+        JobStatus.job_type == job_type,
+        sort=[("updated_at", -1)],
+    )
+
+
+async def _active_job(project_id: str, job_type: str) -> JobStatus | None:
+    return await JobStatus.find_one(
+        JobStatus.result_id == project_id,
+        JobStatus.job_type == job_type,
+        In(JobStatus.status, ["pending", "progress"]),  # type: ignore[arg-type]
+        sort=[("updated_at", -1)],
+    )
+
+
+async def _serialize_project_with_jobs(project: MangaProjectDoc) -> dict[str, Any]:
+    project_id = str(project.id)
+    active_understanding = await _active_job(project_id, "generate_book_understanding")
+    active_slice = await _active_job(project_id, "generate_manga_slice")
+    latest_understanding = await _latest_job(project_id, "generate_book_understanding")
+    latest_slice = await _latest_job(project_id, "generate_manga_slice")
+
+    payload = serialize_project(project)
+    payload["active_jobs"] = {
+        "book_understanding": _serialize_job_doc(active_understanding),
+        "manga_slice": _serialize_job_doc(active_slice),
+    }
+    payload["latest_jobs"] = {
+        "book_understanding": _serialize_job_doc(latest_understanding),
+        "manga_slice": _serialize_job_doc(latest_slice),
+    }
+    return payload
+
+
 @router.post("/books/{book_id}/manga-projects", response_model=MangaProjectResponse)
 async def create_manga_project(book_id: str, request: CreateMangaProjectRequest):
     book = await Book.get(book_id)
@@ -264,7 +321,7 @@ async def create_manga_project(book_id: str, request: CreateMangaProjectRequest)
         title=request.title,
         project_options=request.project_options,
     )
-    return MangaProjectResponse(project=serialize_project(project))
+    return MangaProjectResponse(project=await _serialize_project_with_jobs(project))
 
 
 @router.get("/books/{book_id}/manga-projects", response_model=MangaProjectsResponse)
@@ -274,7 +331,7 @@ async def list_book_manga_projects(book_id: str):
         raise HTTPException(status_code=404, detail="Book not found")
 
     projects = await MangaProjectDoc.find(MangaProjectDoc.book_id == book_id).sort("-updated_at").to_list()
-    return MangaProjectsResponse(projects=[serialize_project(project) for project in projects])
+    return MangaProjectsResponse(projects=[await _serialize_project_with_jobs(project) for project in projects])
 
 
 @router.get("/manga-projects/{project_id}", response_model=MangaProjectResponse)
@@ -282,7 +339,7 @@ async def get_manga_project(project_id: str):
     project = await MangaProjectDoc.get(project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Manga project not found")
-    return MangaProjectResponse(project=serialize_project(project))
+    return MangaProjectResponse(project=await _serialize_project_with_jobs(project))
 
 
 @router.get("/manga-projects/{project_id}/slices", response_model=MangaProjectSlicesResponse)
@@ -530,7 +587,7 @@ async def start_book_understanding(project_id: str, request: GenerateBookUnderst
 
     if project_understanding_is_ready(project) and not request.force:
         return StartBookUnderstandingResponse(
-            project=serialize_project(project),
+            project=await _serialize_project_with_jobs(project),
             task_id=None,
             message="Book understanding already complete.",
             already_ready=True,
@@ -543,7 +600,7 @@ async def start_book_understanding(project_id: str, request: GenerateBookUnderst
     )
     if active_job:
         return StartBookUnderstandingResponse(
-            project=serialize_project(project),
+            project=await _serialize_project_with_jobs(project),
             task_id=active_job.celery_task_id,
             message="A book-understanding job is already running for this project.",
             already_ready=False,
@@ -574,7 +631,7 @@ async def start_book_understanding(project_id: str, request: GenerateBookUnderst
     await project.save()
 
     return StartBookUnderstandingResponse(
-        project=serialize_project(project),
+        project=await _serialize_project_with_jobs(project),
         task_id=task.id,
         message="Book understanding generation started.",
         already_ready=False,
@@ -614,7 +671,7 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
     )
     if active_job:
         return StartMangaSliceGenerationResponse(
-            project=serialize_project(project),
+            project=await _serialize_project_with_jobs(project),
             task_id=active_job.celery_task_id,
             message="A manga slice is already being generated for this project.",
         )
@@ -646,7 +703,7 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
     await project.save()
 
     return StartMangaSliceGenerationResponse(
-        project=serialize_project(project),
+        project=await _serialize_project_with_jobs(project),
         task_id=task.id,
         message="Manga v2 slice generation started.",
     )

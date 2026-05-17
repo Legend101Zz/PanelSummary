@@ -20,6 +20,12 @@ import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
 import { MangaV2ProjectPanel } from "@/components/MangaV2ProjectPanel";
 import type { Book } from "@/lib/types";
 
+function displayBookTitle(book: Book): string {
+  const title = book.title?.trim();
+  if (title) return title;
+  const filename = book.original_filename?.replace(/\.pdf$/i, "").trim();
+  return filename || "Untitled book";
+}
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -58,6 +64,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
   const coverUrl = getImageUrl(book.cover_image_id);
   const isParsed = book.status === "parsed";
+  const safeTitle = displayBookTitle(book);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
@@ -80,7 +87,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
         >
           <div className="flex-shrink-0">
             {coverUrl
-              ? <img src={coverUrl} alt={title} className="w-28 h-40 object-cover border-2" style={{ borderColor: "var(--border)" }} />
+              ? <img src={coverUrl} alt={safeTitle} className="w-28 h-40 object-cover border-2" style={{ borderColor: "var(--border)" }} />
               : (
                 <div className="w-28 h-40 border-2 flex items-center justify-center"
                   style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
@@ -96,7 +103,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               <StatusBadge status={book.status} />
             </div>
 
-            <TitleEditor bookId={id} initial={title} onSaved={t => setTitle(t)} />
+            <TitleEditor bookId={id} initial={title.trim() ? title : safeTitle} onSaved={t => setTitle(t)} />
 
             {book.author && (
               <p className="mt-1 mb-2"

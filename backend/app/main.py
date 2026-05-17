@@ -303,6 +303,36 @@ async def get_job_status(task_id: str) -> JobStatusResponse:
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    if job.status in {"pending", "progress"}:
+        from celery import states
+
+        from app.celery_worker import celery_app
+
+        celery_result = celery_app.AsyncResult(task_id)
+        if celery_result.state == states.FAILURE:
+            job.status = "failure"
+            job.progress = 0
+            job.error = str(celery_result.result or "Celery task failed")
+            job.message = f"Background job failed: {job.error}"
+            job.phase = job.phase or "failed"
+            job.updated_at = datetime.utcnow()
+            await job.save()
+
+            if job.job_type == "generate_book_understanding" and job.result_id:
+                project = await MangaProjectDoc.get(job.result_id)
+                if project and project.understanding_status != "ready":
+                    project.understanding_status = "failed"
+                    project.understanding_error = job.error or "Background job failed"
+                    project.updated_at = datetime.utcnow()
+                    await project.save()
+        elif celery_result.state == states.REVOKED:
+            job.status = "failure"
+            job.error = "Celery task was revoked"
+            job.message = "Background job was cancelled before completion."
+            job.phase = job.phase or "cancelled"
+            job.updated_at = datetime.utcnow()
+            await job.save()
+
     return JobStatusResponse(
         task_id=task_id,
         status=job.status,

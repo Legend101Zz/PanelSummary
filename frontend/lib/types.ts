@@ -93,6 +93,23 @@ export interface SourceSlice {
   is_partial_chapter_end: boolean;
 }
 
+export interface MangaProjectJobSnapshot {
+  task_id: string;
+  job_type: string;
+  status: "pending" | "progress" | "success" | "failure" | "cancelled" | string;
+  progress: number;
+  message: string;
+  result_id: string | null;
+  error: string | null;
+  phase: string | null;
+  panels_done: number;
+  panels_total: number;
+  cost_so_far: number;
+  estimated_total_cost: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface MangaProject {
   id: string;
   book_id: string;
@@ -115,6 +132,14 @@ export interface MangaProject {
   coverage: Record<string, unknown>;
   legacy_summary_id: string | null;
   active_version: number;
+  active_jobs?: {
+    book_understanding?: MangaProjectJobSnapshot | null;
+    manga_slice?: MangaProjectJobSnapshot | null;
+  };
+  latest_jobs?: {
+    book_understanding?: MangaProjectJobSnapshot | null;
+    manga_slice?: MangaProjectJobSnapshot | null;
+  };
   created_at: string;
   updated_at: string;
 }

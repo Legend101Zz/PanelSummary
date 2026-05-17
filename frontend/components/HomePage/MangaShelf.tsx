@@ -36,6 +36,10 @@ interface MangaShelfProps {
   books: BookListItem[];
 }
 
+function displayShelfTitle(book: BookListItem): string {
+  return book.title?.trim() || "Untitled book";
+}
+
 export function MangaShelf({ books }: MangaShelfProps) {
   if (books.length === 0) return null;
 
@@ -53,7 +57,9 @@ export function MangaShelf({ books }: MangaShelfProps) {
           <div className="relative">
             {/* Books row */}
             <div className="flex gap-5 flex-wrap justify-center pb-4">
-              {books.map((book, i) => (
+              {books.map((book, i) => {
+                const title = displayShelfTitle(book);
+                return (
                 <Link key={book.id} href={`/books/${book.id}`}>
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -73,7 +79,7 @@ export function MangaShelf({ books }: MangaShelfProps) {
                       }}
                     >
                       {book.cover_image_id
-                        ? <img src={getImageUrl(book.cover_image_id) ?? undefined} alt={book.title} className="w-full h-36 object-cover" />
+                        ? <img src={getImageUrl(book.cover_image_id) ?? undefined} alt={title} className="w-full h-36 object-cover" />
                         : <div className="w-full h-36 flex flex-col items-center justify-center gap-2" style={{ background: "var(--surface-2)" }}>
                             <BookOpen size={22} style={{ color: "var(--text-3)" }} />
                             <span style={{
@@ -84,7 +90,7 @@ export function MangaShelf({ books }: MangaShelfProps) {
                               padding: "0 6px",
                               lineHeight: 1.2,
                             }}>
-                              {book.title.slice(0, 20)}
+                              {title.slice(0, 20)}
                             </span>
                           </div>
                       }
@@ -113,7 +119,7 @@ export function MangaShelf({ books }: MangaShelfProps) {
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: "vertical",
                       }}>
-                        {book.title}
+                        {title}
                       </p>
                       {book.total_chapters > 0 && (
                         <p style={{
@@ -129,7 +135,8 @@ export function MangaShelf({ books }: MangaShelfProps) {
                     </div>
                   </motion.div>
                 </Link>
-              ))}
+                );
+              })}
 
               {/* Add new book card */}
               <Link href="/upload">

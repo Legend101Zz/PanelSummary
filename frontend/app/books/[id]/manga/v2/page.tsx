@@ -180,7 +180,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
         <Sparkles size={42} style={{ color: "#ffc220" }} />
         <h1 className="font-display text-2xl">No v2 manga project yet</h1>
         <p style={{ color: "#A8A6C0", maxWidth: 520 }}>
-          Go back to the book page and use the Manga V2 Lab to create a project and generate the first source slice.
+          Go back to the book page and use the Manga pipeline to create a workspace and generate the first source slice.
         </p>
         <Link href={`/books/${bookId}`} className="px-4 py-2 border" style={{ borderColor: "#ffc220", color: "#ffc220" }}>
           Back to book
@@ -219,7 +219,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
               <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6" style={{ color: "#2A2A2A" }}>
                 <Sparkles size={40} />
                 <h2 className="font-display mt-3 text-xl">No pages generated yet</h2>
-                <p className="mt-2 max-w-md">Generate a source slice from the book page. The new backend will persist manga pages here.</p>
+                <p className="mt-2 max-w-md">Generate a source slice from the book page. Rendered manga pages will appear here.</p>
               </div>
             )}
           </div>
@@ -268,7 +268,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
             </div>
             {assets.length === 0 ? (
               <p className="mt-3 text-sm" style={{ color: "#A8A6C0" }}>
-                No assets yet. Enable character asset generation in the Manga V2 Lab.
+                No assets yet. Enable character asset generation in Advanced slice options on the book page.
               </p>
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-3">
