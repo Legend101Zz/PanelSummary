@@ -23,6 +23,60 @@ async def get_image_models():
     return {"models": IMAGE_GENERATION_MODELS, "default": DEFAULT_IMAGE_MODEL}
 
 
+@router.get("/openai/models")
+async def get_openai_models():
+    """Return curated OpenAI text models with pricing for the UI selector.
+
+    This endpoint is intentionally curated. The app still uses Chat
+    Completions through ``LLMClient``, so we only expose text models that are
+    appropriate for the current manga JSON pipeline instead of every OpenAI
+    model family.
+    """
+    models = [
+        {
+            "id": "gpt-4.1-mini",
+            "name": "GPT-4.1 mini",
+            "context_length": 1_047_576,
+            "input_price_per_1m": 0.40,
+            "output_price_per_1m": 1.60,
+            "is_free": False,
+            "provider": "openai",
+            "quality_label": "Recommended",
+        },
+        {
+            "id": "gpt-4o-mini",
+            "name": "GPT-4o mini",
+            "context_length": 128_000,
+            "input_price_per_1m": 0.15,
+            "output_price_per_1m": 0.60,
+            "is_free": False,
+            "provider": "openai",
+            "quality_label": "Lowest cost",
+        },
+        {
+            "id": "gpt-4.1",
+            "name": "GPT-4.1",
+            "context_length": 1_047_576,
+            "input_price_per_1m": 2.00,
+            "output_price_per_1m": 8.00,
+            "is_free": False,
+            "provider": "openai",
+            "quality_label": "Higher quality",
+        },
+        {
+            "id": "gpt-4o",
+            "name": "GPT-4o",
+            "context_length": 128_000,
+            "input_price_per_1m": 2.50,
+            "output_price_per_1m": 10.00,
+            "is_free": False,
+            "provider": "openai",
+            "quality_label": "Multimodal",
+        },
+    ]
+    return {"models": models, "total": len(models)}
+
+
 @router.get("/openrouter/models")
 async def get_openrouter_models(api_key: str = ""):
     """Proxy and simplify the OpenRouter model list."""

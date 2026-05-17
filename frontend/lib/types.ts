@@ -133,10 +133,12 @@ export interface MangaProject {
   legacy_summary_id: string | null;
   active_version: number;
   active_jobs?: {
+    build?: MangaProjectJobSnapshot | null;
     book_understanding?: MangaProjectJobSnapshot | null;
     manga_slice?: MangaProjectJobSnapshot | null;
   };
   latest_jobs?: {
+    build?: MangaProjectJobSnapshot | null;
     book_understanding?: MangaProjectJobSnapshot | null;
     manga_slice?: MangaProjectJobSnapshot | null;
   };
@@ -458,6 +460,35 @@ export interface StartMangaSliceGenerationResponse {
   project: MangaProject;
   task_id: string;
   message: string;
+}
+
+export interface StartMangaProjectBuildResponse {
+  project: MangaProject;
+  task_id: string;
+  message: string;
+}
+
+export type MangaBuildMode = "next_chunk" | "full_book";
+
+export interface TextModelOption {
+  id: string;
+  name: string;
+  context_length: number;
+  input_price_per_1m: number;
+  output_price_per_1m: number;
+  is_free: boolean;
+  provider: string;
+  quality_label?: string;
+}
+
+export interface ImageModelOption {
+  id: string;
+  name: string;
+  modalities: string[];
+  price_label?: string;
+  price_value?: number;
+  quality_label?: string;
+  description?: string;
 }
 
 

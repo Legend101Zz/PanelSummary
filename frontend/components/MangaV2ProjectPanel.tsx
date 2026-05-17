@@ -6,25 +6,23 @@ import { motion } from "motion/react";
 import {
   AlertCircle,
   BookOpen,
-  Brush,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Circle,
   Eye,
   Image as ImageIcon,
+  Info,
   KeyRound,
-  Layers3,
   Loader2,
-  RefreshCw,
-  ScrollText,
+  Search,
   Sparkles,
   Users,
 } from "lucide-react";
 
 import {
   createMangaProject,
-  generateMangaProjectSlice,
+  fetchOpenAIModels,
+  getImageModels,
   getMangaProject,
   listBookMangaProjects,
   listMangaProjectAssets,
@@ -32,61 +30,42 @@ import {
   listMangaProjectSlices,
   pollUntilComplete,
   previewNextSourceSlice,
-  startBookUnderstanding,
+  startMangaProjectBuild,
 } from "@/lib/api";
 import { BookSpine } from "@/components/BookSpine";
+import { ModelSelector } from "@/components/ModelSelector";
 import { useAppStore } from "@/lib/store";
-import type { Book, LLMProvider, MangaProject, MangaProjectJobSnapshot, NextSourceSliceResponse } from "@/lib/types";
-
-const IMAGE_MODELS: Array<{
-  id: string;
-  label: string;
-  tier: "BUDGET" | "BALANCED" | "BEST";
-  blurb: string;
-}> = [
-  {
-    id: "google/gemini-2.5-flash-image",
-    label: "Gemini 2.5 Flash Image",
-    tier: "BUDGET",
-    blurb: "Lowest cost. Good for early character-sheet iterations.",
-  },
-  {
-    id: "google/gemini-3.1-flash-image-preview",
-    label: "Gemini 3.1 Flash Preview",
-    tier: "BALANCED",
-    blurb: "Better silhouette adherence while staying fast.",
-  },
-  {
-    id: "google/gemini-3-pro-image-preview",
-    label: "Gemini 3 Pro Image",
-    tier: "BEST",
-    blurb: "Highest quality. Use when finalizing the asset library.",
-  },
-];
+import type {
+  Book,
+  ImageModelOption,
+  LLMProvider,
+  MangaBuildMode,
+  MangaProject,
+  MangaProjectJobSnapshot,
+  NextSourceSliceResponse,
+  TextModelOption,
+} from "@/lib/types";
 
 const DEFAULT_MODEL_BY_PROVIDER: Record<LLMProvider, string> = {
-  openai: "gpt-4o-mini",
+  openai: "gpt-4.1-mini",
   openrouter: "google/gemini-2.5-flash",
-};
-
-const STAGE_COLORS: Record<PipelineStageState, string> = {
-  complete: "var(--teal)",
-  current: "var(--amber)",
-  running: "var(--blue)",
-  blocked: "var(--red)",
-  failed: "var(--red)",
-  empty: "var(--text-3)",
-  optional: "var(--text-2)",
 };
 
 type PipelineStageState = "complete" | "current" | "running" | "blocked" | "failed" | "empty" | "optional";
 
 interface PipelineStage {
-  id: "source" | "project" | "understanding" | "slice" | "reader" | "assets";
+  id: "source" | "workspace" | "understanding" | "pages" | "reader" | "assets";
   label: string;
   state: PipelineStageState;
   detail: string;
-  blocker?: string;
+}
+
+interface Counts {
+  renderedPages: number;
+  slices: number;
+  assets: number;
+  assetIssues: number;
+  missingAssets: number;
 }
 
 function displayBookTitle(book: Book): string {
@@ -101,12 +80,8 @@ function displayProjectTitle(project: MangaProject | null, book: Book): string {
   return project.title?.trim() || `${displayBookTitle(book)} manga workspace`;
 }
 
-function describeSlice(nextSlice: NextSourceSliceResponse | null): string {
-  if (!nextSlice) return "Next source range will appear after a workspace is loaded.";
-  if (nextSlice.fully_covered || !nextSlice.source_slice) return "All available PDF source has been covered.";
-  const range = nextSlice.source_slice.source_range;
-  if (range.page_start && range.page_end) return `Next source slice: pages ${range.page_start}-${range.page_end}`;
-  return `Next source slice: ${nextSlice.source_slice.slice_id}`;
+function isActiveJob(job: MangaProjectJobSnapshot | null | undefined): job is MangaProjectJobSnapshot {
+  return job?.status === "pending" || job?.status === "progress";
 }
 
 function hasRenderedPage(page: { rendered_page?: Record<string, unknown> | null }): boolean {
@@ -116,228 +91,213 @@ function hasRenderedPage(page: { rendered_page?: Record<string, unknown> | null 
   return Array.isArray(storyboard?.panels) && storyboard.panels.length > 0;
 }
 
-function stageLabel(state: PipelineStageState): string {
-  const map: Record<PipelineStageState, string> = {
-    complete: "Complete",
-    current: "Current",
-    running: "Running",
-    blocked: "Blocked",
-    failed: "Failed",
-    empty: "Empty",
-    optional: "Optional",
-  };
-  return map[state];
+function describeSlice(nextSlice: NextSourceSliceResponse | null): string {
+  if (!nextSlice) return "Next source range will appear after the workspace loads.";
+  if (nextSlice.fully_covered || !nextSlice.source_slice) return "All source pages are covered.";
+  const range = nextSlice.source_slice.source_range;
+  if (range.page_start && range.page_end) return `Next chunk: PDF pages ${range.page_start}-${range.page_end}`;
+  return `Next chunk: ${nextSlice.source_slice.slice_id}`;
 }
 
-function statusIcon(state: PipelineStageState) {
-  if (state === "complete") return <CheckCircle2 size={14} />;
-  if (state === "running") return <Loader2 size={14} className="animate-spin" />;
-  if (state === "blocked" || state === "failed") return <AlertCircle size={14} />;
-  if (state === "current") return <Circle size={14} fill="currentColor" />;
-  return <Circle size={14} />;
+function priceLabel(model: TextModelOption): string {
+  if (model.is_free) return "FREE";
+  const input = model.input_price_per_1m;
+  const output = model.output_price_per_1m;
+  return `$${input.toFixed(input < 1 ? 2 : 0)} in / $${output.toFixed(output < 1 ? 2 : 0)} out`;
 }
 
-function isActiveJob(job: MangaProjectJobSnapshot | null | undefined): job is MangaProjectJobSnapshot {
-  return job?.status === "pending" || job?.status === "progress";
+function stageColor(state: PipelineStageState): string {
+  if (state === "complete") return "var(--teal)";
+  if (state === "running") return "var(--blue)";
+  if (state === "current") return "var(--amber)";
+  if (state === "failed" || state === "blocked") return "var(--red)";
+  return "var(--text-3)";
 }
 
-function describeJob(job: MangaProjectJobSnapshot | null | undefined): string | null {
-  if (!job) return null;
-  const phase = job.phase ? `, phase ${job.phase.replace(/_/g, " ")}` : "";
-  const message = job.message ? `: ${job.message}` : "";
-  return `Task ${job.task_id.slice(0, 8)} is ${job.status} at ${job.progress}%${phase}${message}`;
+function friendlyPhase(status: { phase: string | null; message: string; progress: number } | null): string {
+  if (!status) return "Ready when you are.";
+  const phase = status.phase || "";
+  if (phase.includes("understanding")) return "Understanding the book";
+  if (phase.includes("character") || phase.includes("asset") || phase.includes("sprite")) return "Creating character references";
+  if (phase.includes("slice")) return "Generating manga pages";
+  if (phase.includes("persist") || phase.includes("complete")) return "Saving pages";
+  if (phase.includes("failed")) return "Build failed";
+  if (phase.includes("queued") || phase.includes("prepare")) return "Preparing manga workspace";
+  return status.message || `Working (${status.progress}%)`;
 }
 
-interface Counts {
-  renderedPages: number;
-  slices: number;
-  assets: number;
-  assetIssues: number;
-  missingAssets: number;
-}
-
-function deriveStages({
-  book,
-  selectedProject,
-  nextSlice,
-  counts,
-  hasApiKey,
-  understandingBusy,
-  sliceBusy,
-  activeUnderstandingJob,
-  activeSliceJob,
-  latestUnderstandingJob,
+function OpenAIModelPicker({
+  value,
+  onChange,
+  disabled,
 }: {
-  book: Book;
-  selectedProject: MangaProject | null;
-  nextSlice: NextSourceSliceResponse | null;
-  counts: Counts;
-  hasApiKey: boolean;
-  understandingBusy: boolean;
-  sliceBusy: boolean;
-  activeUnderstandingJob: MangaProjectJobSnapshot | null | undefined;
-  activeSliceJob: MangaProjectJobSnapshot | null | undefined;
-  latestUnderstandingJob: MangaProjectJobSnapshot | null | undefined;
-}): PipelineStage[] {
-  const understandingStatus = selectedProject?.understanding_status ?? "pending";
-  const understandingReady = understandingStatus === "ready";
-  const understandingFailed = understandingStatus === "failed";
-  const understandingRunning = understandingBusy || isActiveJob(activeUnderstandingJob);
-  const understandingStale = Boolean(
-    selectedProject
-    && understandingStatus === "running"
-    && !understandingRunning
-    && !understandingReady
+  value: string;
+  onChange: (model: string) => void;
+  disabled?: boolean;
+}) {
+  const [models, setModels] = useState<TextModelOption[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchOpenAIModels()
+      .then(data => {
+        if (!cancelled) setModels(data.models);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setModels([
+            {
+              id: "gpt-4.1-mini",
+              name: "GPT-4.1 mini",
+              context_length: 1_047_576,
+              input_price_per_1m: 0.4,
+              output_price_per_1m: 1.6,
+              is_free: false,
+              provider: "openai",
+              quality_label: "Recommended",
+            },
+            {
+              id: "gpt-4o-mini",
+              name: "GPT-4o mini",
+              context_length: 128_000,
+              input_price_per_1m: 0.15,
+              output_price_per_1m: 0.6,
+              is_free: false,
+              provider: "openai",
+              quality_label: "Lowest cost",
+            },
+          ]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selected = models.find(item => item.id === value);
+  const filtered = models.filter(item => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return item.id.toLowerCase().includes(q) || item.name.toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen(value => !value)}
+        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 border font-label disabled:opacity-50"
+        style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px", background: "var(--surface-2)" }}
+      >
+        <span className="truncate">{selected?.name || value || "Select OpenAI model"}</span>
+        <span className="flex items-center gap-2 flex-shrink-0">
+          {selected && <span style={{ color: "var(--amber)", fontSize: "8px" }}>{priceLabel(selected)}</span>}
+          <ChevronDown size={13} />
+        </span>
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 w-full border shadow-2xl" style={{ borderColor: "var(--border-2)", background: "var(--surface)" }}>
+          <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: "var(--border)" }}>
+            <Search size={12} style={{ color: "var(--text-3)" }} />
+            <input
+              autoFocus
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Search OpenAI models..."
+              className="flex-1 bg-transparent outline-none"
+              style={{ color: "var(--text-1)", fontSize: "11px" }}
+            />
+          </div>
+          <div className="max-h-72 overflow-y-auto">
+            {loading ? (
+              <div className="px-3 py-4 text-center font-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
+                Loading models...
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="px-3 py-4 text-center font-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
+                No models found.
+              </div>
+            ) : (
+              filtered.map(item => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(item.id);
+                    setOpen(false);
+                  }}
+                  className="w-full px-3 py-2.5 text-left border-b"
+                  style={{ borderColor: "rgba(255,255,255,0.05)", background: item.id === value ? "rgba(245,166,35,0.08)" : "transparent" }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-label truncate" style={{ color: item.id === value ? "var(--amber)" : "var(--text-1)", fontSize: "10px" }}>
+                      {item.name}
+                    </span>
+                    <span className="font-label flex-shrink-0" style={{ color: "var(--amber)", fontSize: "8px" }}>
+                      {priceLabel(item)}
+                    </span>
+                  </div>
+                  <p className="mt-1 font-label" style={{ color: "var(--text-3)", fontSize: "8px" }}>
+                    {(item.context_length / 1000).toFixed(0)}K context {item.quality_label ? `- ${item.quality_label}` : ""}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
-  const understandingFailure = latestUnderstandingJob?.status === "failure" ? latestUnderstandingJob : null;
-  const sliceRunning = sliceBusy || isActiveJob(activeSliceJob);
-  const sourceComplete = book.status === "parsed";
-
-  const understandingState: PipelineStageState = !selectedProject
-    ? "blocked"
-    : understandingFailed || understandingStale || understandingFailure
-      ? "failed"
-      : understandingRunning
-        ? "running"
-        : understandingReady
-          ? "complete"
-          : !hasApiKey
-            ? "blocked"
-            : "current";
-
-  const sliceState: PipelineStageState = !selectedProject
-    ? "blocked"
-    : sliceRunning
-      ? "running"
-      : !understandingReady
-        ? "blocked"
-        : nextSlice?.fully_covered
-          ? "complete"
-          : counts.slices > 0
-            ? "complete"
-            : hasApiKey
-              ? "current"
-              : "blocked";
-
-  return [
-    {
-      id: "source",
-      label: "Source PDF",
-      state: sourceComplete ? "complete" : book.status === "failed" ? "failed" : "running",
-      detail: sourceComplete
-        ? `${book.total_pages} pages parsed, ${book.total_chapters} sections detected.`
-        : book.status === "failed"
-          ? book.error_message || "PDF parsing failed."
-          : `Parsing is ${book.parse_progress || 0}% complete.`,
-    },
-    {
-      id: "project",
-      label: "Manga workspace",
-      state: selectedProject ? "complete" : "current",
-      detail: selectedProject
-        ? `${displayProjectTitle(selectedProject, book)} is loaded.`
-        : "Create a workspace to store understanding, slices, pages, and assets.",
-    },
-    {
-      id: "understanding",
-      label: "Book understanding",
-      state: understandingState,
-      detail: understandingReady
-        ? `${selectedProject?.fact_count ?? 0} facts, synopsis, characters, voice cards, and arc are ready.`
-        : understandingRunning
-          ? describeJob(activeUnderstandingJob) || "Reading the whole book to build the manga spine."
-          : understandingStale
-            ? "This project says book understanding is running, but the backend exposes no active task. Retry to restart it safely."
-            : understandingFailed || understandingFailure
-              ? selectedProject?.understanding_error || understandingFailure?.error || understandingFailure?.message || "Book understanding failed."
-            : "Build the synopsis, character bible, voice cards, and adaptation arc.",
-      blocker: !selectedProject
-        ? "Create or load a manga workspace first."
-        : !hasApiKey && !understandingReady && !understandingRunning && !understandingFailed
-          ? "Add an API key in Generation settings."
-          : undefined,
-    },
-    {
-      id: "slice",
-      label: "Manga slice",
-      state: sliceState,
-      detail: sliceRunning
-        ? describeJob(activeSliceJob) || "Generating facts, script, storyboard, QA, and rendered pages."
-        : counts.slices > 0
-          ? `${counts.slices} slice${counts.slices === 1 ? "" : "s"} generated. ${describeSlice(nextSlice)}`
-          : describeSlice(nextSlice),
-      blocker: !selectedProject
-        ? "Create or load a manga workspace first."
-        : !understandingReady
-          ? "Run book understanding before generating a slice."
-          : !hasApiKey && !nextSlice?.fully_covered
-            ? "Add an API key in Generation settings."
-            : undefined,
-    },
-    {
-      id: "reader",
-      label: "Manga reader",
-      state: counts.renderedPages > 0 ? "complete" : selectedProject ? "empty" : "blocked",
-      detail: counts.renderedPages > 0
-        ? `${counts.renderedPages} rendered page${counts.renderedPages === 1 ? "" : "s"} available.`
-        : "Reader unlocks after the first rendered page is generated.",
-      blocker: !selectedProject ? "Create or load a manga workspace first." : undefined,
-    },
-    {
-      id: "assets",
-      label: "Character assets",
-      state: !selectedProject || !understandingReady
-        ? "blocked"
-        : counts.assetIssues > 0 || counts.missingAssets > 0
-          ? "current"
-          : "optional",
-      detail: !understandingReady
-        ? "Character library becomes useful after book understanding."
-        : `${counts.assets} asset${counts.assets === 1 ? "" : "s"} saved, ${counts.assetIssues + counts.missingAssets} need review or generation.`,
-      blocker: !selectedProject
-        ? "Create or load a manga workspace first."
-        : !understandingReady
-          ? "Run book understanding first."
-          : undefined,
-    },
-  ];
 }
 
-function StageRow({ stage, index }: { stage: PipelineStage; index: number }) {
-  const color = STAGE_COLORS[stage.state];
+function ImageModelPicker({
+  models,
+  value,
+  onChange,
+  disabled,
+}: {
+  models: ImageModelOption[];
+  value: string;
+  onChange: (model: string) => void;
+  disabled?: boolean;
+}) {
   return (
-    <li
-      className="border p-3 flex gap-3"
-      style={{
-        borderColor: stage.state === "current" ? "var(--amber)" : "var(--border)",
-        background: stage.state === "current" ? "rgba(245,166,35,0.08)" : "rgba(31,30,40,0.45)",
-      }}
+    <select
+      value={value}
+      onChange={event => onChange(event.target.value)}
+      disabled={disabled}
+      className="w-full px-3 py-2.5 border bg-transparent font-label disabled:opacity-50"
+      style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+      aria-label="Image model"
     >
-      <div
-        className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center border font-label"
-        style={{ borderColor: color, color, fontSize: "0.65rem" }}
-        aria-hidden
-      >
-        {index + 1}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-display" style={{ color: "var(--text-1)", fontSize: "0.82rem" }}>
-            {stage.label}
-          </span>
-          <span className="inline-flex items-center gap-1 font-label" style={{ color, fontSize: "0.62rem" }}>
-            {statusIcon(stage.state)} {stageLabel(stage.state)}
-          </span>
-        </div>
-        <p className="mt-1" style={{ color: "var(--text-2)", fontSize: "0.78rem", lineHeight: 1.45 }}>
-          {stage.detail}
-        </p>
-        {stage.blocker && (
-          <p className="mt-1 font-label" style={{ color: "var(--red)", fontSize: "0.62rem", lineHeight: 1.4 }}>
-            {stage.blocker}
-          </p>
-        )}
-      </div>
+      {models.map(model => (
+        <option key={model.id} value={model.id}>
+          {model.quality_label ? `[${model.quality_label}] ` : ""}{model.name}{model.price_label ? ` - ${model.price_label}` : ""}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function PipelineRow({ stage }: { stage: PipelineStage }) {
+  const color = stageColor(stage.state);
+  return (
+    <li className="flex gap-3 border p-3" style={{ borderColor: "var(--border)", background: "rgba(31,30,40,0.4)" }}>
+      <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center border" style={{ borderColor: color, color }}>
+        {stage.state === "complete" ? <CheckCircle2 size={13} /> : stage.state === "running" ? <Loader2 size={13} className="animate-spin" /> : <span style={{ width: 7, height: 7, borderRadius: 999, background: color }} />}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-display" style={{ color: "var(--text-1)", fontSize: "0.82rem" }}>{stage.label}</span>
+        <span className="block" style={{ color: "var(--text-2)", fontSize: "0.74rem", lineHeight: 1.45 }}>{stage.detail}</span>
+      </span>
     </li>
   );
 }
@@ -351,22 +311,23 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [nextSlice, setNextSlice] = useState<NextSourceSliceResponse | null>(null);
   const [counts, setCounts] = useState<Counts>({ renderedPages: 0, slices: 0, assets: 0, assetIssues: 0, missingAssets: 0 });
-  const [pageWindow, setPageWindow] = useState(10);
-  const [generateImages, setGenerateImages] = useState(false);
-  const [imageModel, setImageModel] = useState(IMAGE_MODELS[0].id);
+  const [imageModels, setImageModels] = useState<ImageModelOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [metaLoading, setMetaLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [jobProgress, setJobProgress] = useState<number | null>(null);
-  const [understandingBusy, setUnderstandingBusy] = useState(false);
-  const [understandingProgress, setUnderstandingProgress] = useState<number | null>(null);
-  const [message, setMessage] = useState("Loading manga workspaces...");
+  const [message, setMessage] = useState("Loading manga workspace...");
   const [error, setError] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<{ phase: string | null; message: string; progress: number } | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [generationSettingsOpen, setGenerationSettingsOpen] = useState(!apiKey?.trim());
+  const [apiOpen, setApiOpen] = useState(!apiKey?.trim());
+
   const [apiKeyDraft, setApiKeyDraft] = useState(apiKey ?? "");
   const [providerDraft, setProviderDraft] = useState<LLMProvider>(provider);
   const [modelDraft, setModelDraft] = useState(model ?? DEFAULT_MODEL_BY_PROVIDER[provider]);
+  const [buildMode, setBuildMode] = useState<MangaBuildMode>("next_chunk");
+  const [pageWindow, setPageWindow] = useState(10);
+  const [generateImages, setGenerateImages] = useState(true);
+  const [imageModel, setImageModel] = useState("");
 
   const selectedProject = useMemo(
     () => projects.find(project => project.id === selectedProjectId) ?? null,
@@ -374,22 +335,13 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   );
 
   const hasApiKey = Boolean(apiKey?.trim());
-  const understandingStatus = selectedProject?.understanding_status ?? "pending";
-  const understandingReady = understandingStatus === "ready";
-  const understandingFailed = understandingStatus === "failed";
+  const activeBuildJob = selectedProject?.active_jobs?.build ?? null;
   const activeUnderstandingJob = selectedProject?.active_jobs?.book_understanding ?? null;
   const activeSliceJob = selectedProject?.active_jobs?.manga_slice ?? null;
-  const latestUnderstandingJob = selectedProject?.latest_jobs?.book_understanding ?? null;
-  const hasActiveUnderstandingJob = isActiveJob(activeUnderstandingJob);
-  const hasActiveSliceJob = isActiveJob(activeSliceJob);
-  const understandingStale = Boolean(
-    selectedProject
-    && understandingStatus === "running"
-    && !hasActiveUnderstandingJob
-    && !understandingBusy
-    && !understandingReady
-  );
-  const currentProgress = busy ? jobProgress : understandingProgress;
+  const latestBuildJob = selectedProject?.latest_jobs?.build ?? null;
+  const buildJob = activeBuildJob || (isActiveJob(activeUnderstandingJob) ? activeUnderstandingJob : null) || (isActiveJob(activeSliceJob) ? activeSliceJob : null);
+  const understandingReady = selectedProject?.understanding_status === "ready";
+  const longPdf = book.total_pages > 20;
 
   const replaceProject = useCallback((next: MangaProject) => {
     setProjects(prev => {
@@ -406,7 +358,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       const data = await listBookMangaProjects(book.id);
       setProjects(data.projects);
       setSelectedProjectId(prev => prev || data.projects[0]?.id || "");
-      setMessage(data.projects.length > 0 ? "Manga workspace loaded." : "No manga workspace yet. Create one to begin.");
+      setMessage(data.projects.length > 0 ? "Manga workspace loaded." : "No manga workspace yet.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load manga workspaces");
     } finally {
@@ -434,15 +386,31 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
         assetIssues,
         missingAssets: assetsRes.missing_expressions?.length ?? 0,
       });
-    } catch {
+    } catch (err) {
       setNextSlice(null);
-      setCounts(prev => ({ ...prev, renderedPages: 0, slices: 0, assets: 0, assetIssues: 0, missingAssets: 0 }));
+      setError(err instanceof Error ? err.message : "Failed to refresh manga workspace");
     } finally {
       setMetaLoading(false);
     }
   }, [pageWindow, replaceProject]);
 
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getImageModels()
+      .then(data => {
+        if (cancelled) return;
+        setImageModels(data.models);
+        setImageModel(prev => prev || data.default || data.models[0]?.id || "");
+      })
+      .catch(() => {
+        if (!cancelled) setError("Could not load image models.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -453,48 +421,49 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
     void refreshSelectedProjectData(selectedProjectId);
   }, [selectedProjectId, refreshSelectedProjectData]);
 
-  const stages = useMemo(() => deriveStages({
-    book,
-    selectedProject,
-    nextSlice,
-    counts,
-    hasApiKey,
-    understandingBusy,
-    sliceBusy: busy,
-    activeUnderstandingJob,
-    activeSliceJob,
-    latestUnderstandingJob,
-  }), [
-    book,
-    selectedProject,
-    nextSlice,
-    counts,
-    hasApiKey,
-    understandingBusy,
-    busy,
-    activeUnderstandingJob,
-    activeSliceJob,
-    latestUnderstandingJob,
-  ]);
+  useEffect(() => {
+    const job = buildJob;
+    if (!job || !selectedProject || busy) return;
+    setBusy(true);
+    setActiveStatus({ phase: job.phase, message: job.message, progress: job.progress });
+    let cancelled = false;
+    pollUntilComplete(
+      job.task_id,
+      status => {
+        if (cancelled) return;
+        setActiveStatus({ phase: status.phase, message: status.message, progress: status.progress });
+        setMessage(status.message || friendlyPhase(status));
+      },
+      1500,
+      60 * 60 * 1000,
+    )
+      .then(() => {
+        if (cancelled) return;
+        setMessage("Manga build complete. Reader is ready when pages are available.");
+        return refreshSelectedProjectData(selectedProject.id);
+      })
+      .catch(err => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Manga build failed");
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [buildJob?.task_id, selectedProject?.id, busy, refreshSelectedProjectData]);
 
   const saveGenerationSettings = () => {
     const key = apiKeyDraft.trim();
     if (!key) {
-      setError("API key required before generation can start. Add one in Generation settings.");
+      setError("Add an API key to create manga.");
       keyInputRef.current?.focus();
       return;
     }
     setApiKey(key, providerDraft, modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft]);
-    setGenerationSettingsOpen(false);
+    setApiOpen(false);
     setError(null);
-    setMessage("API key ready for this browser session.");
-  };
-
-  const handleClearApiKey = () => {
-    clearApiKey();
-    setApiKeyDraft("");
-    setGenerationSettingsOpen(true);
-    setMessage("API key cleared. Generation is blocked until a key is added.");
+    setMessage("API key ready for this session.");
   };
 
   const handleProviderChange = (nextProvider: LLMProvider) => {
@@ -504,520 +473,416 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
 
   const ensureProject = async (): Promise<MangaProject> => {
     if (selectedProject) return selectedProject;
-    setMessage("Creating manga workspace...");
     const title = `${displayBookTitle(book)} manga workspace`;
     const created = await createMangaProject(book.id, {
       style: selectedStyle,
       engine: "v4",
       title,
-      projectOptions: { manga_pipeline: "v2" },
+      projectOptions: {
+        manga_pipeline: "v2",
+        generate_images: generateImages,
+        image_model: imageModel || undefined,
+        page_window: pageWindow,
+      },
     });
     replaceProject(created.project);
     setSelectedProjectId(created.project.id);
-    setMessage("Manga workspace created. Next step: run book understanding.");
     return created.project;
   };
 
-  const handleCreateProject = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const project = await ensureProject();
-      await refreshSelectedProjectData(project.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create manga workspace");
-    } finally {
-      setBusy(false);
-      setJobProgress(null);
-    }
-  };
-
-  const runBookUnderstanding = useCallback(
-    async (project: MangaProject, options: { force?: boolean } = {}): Promise<MangaProject> => {
-      const key = apiKey?.trim();
-      if (!key) {
-        setError("API key required before generation can start. Add one in Generation settings.");
-        setGenerationSettingsOpen(true);
-        keyInputRef.current?.focus();
-        return project;
-      }
-
-      setUnderstandingBusy(true);
-      setError(null);
-      try {
-        setUnderstandingProgress(0);
-        setMessage("Running book understanding: synopsis, facts, characters, voice cards, and arc.");
-        const queued = await startBookUnderstanding(project.id, {
-          apiKey: key,
-          provider: provider as LLMProvider,
-          model: model ?? undefined,
-          extraOptions: { style: selectedStyle },
-          force: options.force ?? false,
-        });
-        setMessage(queued.message);
-        if (queued.task_id) {
-          await pollUntilComplete(
-            queued.task_id,
-            status => {
-              setUnderstandingProgress(status.progress);
-              setMessage(status.message || `Book understanding ${status.progress}% complete.`);
-            },
-            1500,
-            20 * 60 * 1000,
-          );
-        }
-        const refreshed = await getMangaProject(project.id);
-        replaceProject(refreshed.project);
-        await refreshSelectedProjectData(project.id);
-        setMessage("Book understanding is ready. Manga slice generation is unlocked.");
-        return refreshed.project;
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Book understanding failed");
-        return project;
-      } finally {
-        setUnderstandingBusy(false);
-        setUnderstandingProgress(null);
-      }
-    },
-    [apiKey, provider, model, selectedStyle, replaceProject, refreshSelectedProjectData],
-  );
-
-  const handleRunUnderstanding = async (force = false) => {
-    setBusy(true);
-    setError(null);
-    try {
-      const project = await ensureProject();
-      await runBookUnderstanding(project, { force });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to run book understanding");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleGenerateSlice = async () => {
-    const key = apiKey?.trim();
-    if (!selectedProject) {
-      setError("Create or load a manga workspace before generating a slice.");
-      return;
-    }
+  const handleGenerate = async () => {
+    const key = apiKeyDraft.trim() || apiKey?.trim();
     if (!key) {
-      setError("API key required before generation can start. Add one in Generation settings.");
-      setGenerationSettingsOpen(true);
+      setApiOpen(true);
+      setError("Add an API key to create manga.");
       keyInputRef.current?.focus();
       return;
     }
-    if (!understandingReady) {
-      setError("Run book understanding before generating a manga slice.");
-      return;
-    }
-    if (nextSlice?.fully_covered) {
-      setMessage("All available PDF source is already covered.");
-      return;
-    }
-
+    setApiKey(key, providerDraft, modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft]);
     setBusy(true);
     setError(null);
+    setActiveStatus({ phase: "build_prepare", message: "Preparing manga workspace...", progress: 1 });
     try {
-      setJobProgress(0);
-      setMessage("Generating manga slice: facts, script, storyboard, QA, and rendered pages.");
-      const queued = await generateMangaProjectSlice(selectedProject.id, {
+      const project = await ensureProject();
+      const queued = await startMangaProjectBuild(project.id, {
         apiKey: key,
-        provider: provider as LLMProvider,
-        model: model ?? undefined,
+        provider: providerDraft,
+        model: modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft],
+        mode: buildMode,
         pageWindow,
         generateImages,
         imageModel: generateImages ? imageModel : undefined,
         extraOptions: { style: selectedStyle },
       });
+      replaceProject(queued.project);
       setMessage(queued.message);
-      await pollUntilComplete(queued.task_id, status => {
-        setJobProgress(status.progress);
-        setMessage(status.message || `Generating manga slice ${status.progress}% complete.`);
-      }, 1500, 20 * 60 * 1000);
-      await refreshSelectedProjectData(selectedProject.id);
-      setMessage("Manga slice generated. The reader is ready when rendered pages are available.");
+      await pollUntilComplete(
+        queued.task_id,
+        status => {
+          setActiveStatus({ phase: status.phase, message: status.message, progress: status.progress });
+          setMessage(status.message || friendlyPhase(status));
+        },
+        1500,
+        60 * 60 * 1000,
+      );
+      await refreshSelectedProjectData(project.id);
+      setMessage("Manga build complete. Open the reader when pages are ready.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate manga slice");
-      setMessage("Generation stopped. Check job status or backend logs if it stays blocked.");
+      setError(err instanceof Error ? err.message : "Manga build failed");
+      setMessage("Build stopped. You can retry and it will continue from saved work.");
     } finally {
       setBusy(false);
-      setJobProgress(null);
     }
   };
 
-  const handlePrimaryAction = () => {
-    if (!selectedProject) {
-      void handleCreateProject();
-      return;
-    }
-    if (counts.renderedPages > 0) {
-      router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`);
-      return;
-    }
-    if (!hasApiKey) {
-      setGenerationSettingsOpen(true);
-      keyInputRef.current?.focus();
-      return;
-    }
-    if (understandingFailed || understandingStale) {
-      void handleRunUnderstanding(true);
-      return;
-    }
-    if (hasActiveUnderstandingJob) {
-      void handleRunUnderstanding(false);
-      return;
-    }
-    if (!understandingReady) {
-      void handleRunUnderstanding(false);
-      return;
-    }
-    void handleGenerateSlice();
-  };
+  const stages = useMemo<PipelineStage[]>(() => {
+    const job = activeStatus;
+    const buildRunning = busy || Boolean(buildJob);
+    return [
+      {
+        id: "source",
+        label: "Source PDF",
+        state: book.status === "parsed" ? "complete" : book.status === "failed" ? "failed" : "running",
+        detail: book.status === "parsed" ? `${book.total_pages} pages parsed.` : `Parsing is ${book.parse_progress || 0}% complete.`,
+      },
+      {
+        id: "workspace",
+        label: "Manga workspace",
+        state: selectedProject ? "complete" : "current",
+        detail: selectedProject ? displayProjectTitle(selectedProject, book) : "Created automatically when you generate.",
+      },
+      {
+        id: "understanding",
+        label: "Book understanding",
+        state: understandingReady ? "complete" : buildRunning && job?.phase?.includes("understanding") ? "running" : selectedProject ? "current" : "blocked",
+        detail: understandingReady ? `${selectedProject?.fact_count ?? 0} source facts and a story spine are ready.` : "Builds the manga story plan and character rules.",
+      },
+      {
+        id: "pages",
+        label: "Manga pages",
+        state: buildRunning && job?.phase?.includes("slice") ? "running" : counts.slices > 0 ? "complete" : understandingReady ? "current" : "blocked",
+        detail: counts.slices > 0 ? `${counts.slices} chunk${counts.slices === 1 ? "" : "s"} generated. ${describeSlice(nextSlice)}` : describeSlice(nextSlice),
+      },
+      {
+        id: "reader",
+        label: "Reader",
+        state: counts.renderedPages > 0 ? "complete" : selectedProject ? "empty" : "blocked",
+        detail: counts.renderedPages > 0 ? `${counts.renderedPages} page${counts.renderedPages === 1 ? "" : "s"} ready.` : "Unlocks after the first rendered page is saved.",
+      },
+      {
+        id: "assets",
+        label: "Character assets",
+        state: counts.assets > 0 ? counts.assetIssues + counts.missingAssets > 0 ? "current" : "complete" : understandingReady ? "optional" : "blocked",
+        detail: counts.assets > 0 ? `${counts.assets} sheet${counts.assets === 1 ? "" : "s"} saved, ${counts.assetIssues + counts.missingAssets} need review.` : "Reusable character references appear after book understanding.",
+      },
+    ];
+  }, [activeStatus, book, buildJob, busy, counts, nextSlice, selectedProject, understandingReady]);
 
-  const primaryLabel = (() => {
-    if (!selectedProject) return "Create manga workspace";
-    if (counts.renderedPages > 0) return `Open manga reader (${counts.renderedPages})`;
-    if (!hasApiKey) return "Add API key";
-    if (understandingBusy) return "Book understanding running";
-    if (hasActiveUnderstandingJob) return "Resume progress tracking";
-    if (understandingFailed || understandingStale) return "Retry book understanding";
-    if (!understandingReady) return "Run book understanding";
-    if (busy) return "Generating manga slice";
-    if (hasActiveSliceJob) return "Resume slice progress";
-    return "Generate next manga slice";
-  })();
-
-  const primaryAddsApiKey = Boolean(selectedProject && counts.renderedPages === 0 && !hasApiKey);
-  const primaryOpensReader = Boolean(selectedProject && counts.renderedPages > 0);
-  const primaryDisabled = loading
-    || metaLoading
-    || ((!primaryAddsApiKey && !primaryOpensReader) && (busy || understandingBusy));
+  const selectedImageModel = imageModels.find(item => item.id === imageModel);
+  const progress = activeStatus?.progress ?? latestBuildJob?.progress ?? 0;
+  const progressLabel = friendlyPhase(activeStatus ?? (latestBuildJob ? {
+    phase: latestBuildJob.phase,
+    message: latestBuildJob.message,
+    progress: latestBuildJob.progress,
+  } : null));
 
   return (
-    <section className="panel p-5 flex flex-col gap-5" aria-labelledby="manga-pipeline-title">
+    <section className="panel p-5 flex flex-col gap-5" aria-labelledby="create-manga-title">
       <div className="flex items-center gap-2">
         <Sparkles size={15} style={{ color: "var(--amber)" }} />
-        <span className="panel-label">MANGA PIPELINE</span>
+        <span className="panel-label">CREATE MANGA</span>
       </div>
 
-      <div className="pt-2">
-        <h2 id="manga-pipeline-title" className="font-display text-xl" style={{ color: "var(--text-1)" }}>
-          Manga pipeline
+      <div>
+        <h2 id="create-manga-title" className="font-display text-xl" style={{ color: "var(--text-1)" }}>
+          Create manga from this book
         </h2>
-        <p className="text-sm mt-1" style={{ color: "var(--text-2)", lineHeight: 1.5 }}>
-          Create a workspace, understand the book, generate a source slice, then read the rendered pages.
+        <p className="mt-1 text-sm" style={{ color: "var(--text-2)", lineHeight: 1.5 }}>
+          Add your key, choose models, then generate the next readable chunk or the full book.
         </p>
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-sm" style={{ color: "var(--text-3)" }}>
-          <Loader2 size={14} className="animate-spin" /> {message}
-        </div>
-      ) : (
-        <>
-          <div
-            className="border p-4 flex flex-col gap-3"
-            style={{ borderColor: "var(--border-2)", background: "rgba(31,30,40,0.55)" }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-label" style={{ color: "var(--amber)", fontSize: "0.68rem" }}>NEXT ACTION</p>
-                <p className="mt-1" style={{ color: "var(--text-2)", fontSize: "0.78rem", lineHeight: 1.45 }}>
-                  {selectedProject
-                    ? displayProjectTitle(selectedProject, book)
-                    : "No manga workspace exists for this book yet."}
-                </p>
-              </div>
-              {metaLoading && <Loader2 size={14} className="animate-spin flex-shrink-0" style={{ color: "var(--blue)" }} />}
-            </div>
-            <button
-              type="button"
-              onClick={handlePrimaryAction}
-              disabled={primaryDisabled}
-              className="btn-primary justify-center py-3 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {busy || understandingBusy ? <Loader2 size={16} className="animate-spin" /> : counts.renderedPages > 0 ? <Eye size={16} /> : <Brush size={16} />}
-              {primaryLabel}
-            </button>
-          </div>
-
-          <section className="border p-4 flex flex-col gap-3" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.45)" }}>
-            <button
-              type="button"
-              onClick={() => setGenerationSettingsOpen(open => !open)}
-              className="flex items-center justify-between gap-3 text-left"
-              aria-expanded={generationSettingsOpen}
-            >
-              <span className="flex items-center gap-2">
-                <KeyRound size={15} style={{ color: hasApiKey ? "var(--teal)" : "var(--amber)" }} />
-                <span>
-                  <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>
-                    Generation settings
-                  </span>
-                  <span style={{ color: hasApiKey ? "var(--teal)" : "var(--text-2)", fontSize: "0.75rem" }}>
-                    {hasApiKey ? "API key ready for this browser session." : "API key required to generate manga."}
-                  </span>
-                </span>
+      <section className="border p-4 flex flex-col gap-3" style={{ borderColor: hasApiKey ? "var(--teal)" : "var(--amber)", background: "rgba(15,14,23,0.45)" }}>
+        <button
+          type="button"
+          onClick={() => setApiOpen(open => !open)}
+          className="flex items-center justify-between gap-3 text-left"
+          aria-expanded={apiOpen}
+        >
+          <span className="flex items-center gap-2">
+            <KeyRound size={15} style={{ color: hasApiKey ? "var(--teal)" : "var(--amber)" }} />
+            <span>
+              <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>API key and text model</span>
+              <span style={{ color: hasApiKey ? "var(--teal)" : "var(--text-2)", fontSize: "0.74rem" }}>
+                {hasApiKey ? "Key is ready for this browser session." : "Required before generation starts."}
               </span>
-              <span style={{ color: "var(--text-3)" }}>{generationSettingsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
-            </button>
+            </span>
+          </span>
+          {apiOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
 
-            {generationSettingsOpen && (
-              <div className="grid gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-label">Provider</span>
-                  <select
-                    value={providerDraft}
-                    onChange={event => handleProviderChange(event.target.value as LLMProvider)}
-                    className="px-3 py-2 border bg-transparent font-label"
-                    style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
-                  >
-                    <option value="openai">OpenAI</option>
-                    <option value="openrouter">OpenRouter</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-label">Model</span>
-                  <input
-                    value={modelDraft}
-                    onChange={event => setModelDraft(event.target.value)}
-                    className="px-3 py-2 border bg-transparent font-label"
-                    style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-label">API key</span>
-                  <input
-                    ref={keyInputRef}
-                    type="password"
-                    value={apiKeyDraft}
-                    onChange={event => setApiKeyDraft(event.target.value)}
-                    placeholder={providerDraft === "openrouter" ? "sk-or-v1-..." : "sk-..."}
-                    className="px-3 py-2 border bg-transparent font-label"
-                    style={{ borderColor: hasApiKey ? "var(--teal)" : "var(--amber)", color: "var(--text-1)", fontSize: "11px" }}
-                  />
-                </label>
-                <p style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
-                  The key is kept in memory for this browser session and is not saved to local storage.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={saveGenerationSettings} className="btn-secondary justify-center py-2 gap-2">
-                    <KeyRound size={14} /> Save settings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearApiKey}
-                    className="flex items-center justify-center gap-2 py-2 border font-label"
-                    style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
-                  >
-                    Clear key
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section aria-label="Manga pipeline status">
-            <ol className="flex flex-col gap-2">
-              {stages.map((stage, index) => (
-                <StageRow key={stage.id} stage={stage} index={index} />
+        {apiOpen && (
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              {(["openai", "openrouter"] as LLMProvider[]).map(item => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => handleProviderChange(item)}
+                  className="border px-3 py-2 text-left"
+                  style={{
+                    borderColor: providerDraft === item ? "var(--amber)" : "var(--border)",
+                    background: providerDraft === item ? "rgba(245,166,35,0.08)" : "transparent",
+                  }}
+                >
+                  <span className="font-display block capitalize" style={{ color: "var(--text-1)", fontSize: "0.82rem" }}>{item}</span>
+                  <span className="block" style={{ color: "var(--text-3)", fontSize: "0.68rem" }}>
+                    {item === "openai" ? "Direct OpenAI models" : "Search OpenRouter models"}
+                  </span>
+                </button>
               ))}
-            </ol>
-          </section>
-
-          {message && <p className="font-label" style={{ color: "var(--text-3)", fontSize: "9px", lineHeight: 1.5 }}>{message}</p>}
-          {currentProgress !== null && (
-            <div className="flex flex-col gap-1" aria-live="polite">
-              <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--border)" }}>
-                <motion.div
-                  className="h-full rounded-full"
-                  initial={false}
-                  animate={{ width: `${Math.max(0, Math.min(100, currentProgress))}%` }}
-                  style={{ background: busy ? "var(--blue)" : "var(--amber)" }}
-                />
-              </div>
-              <p className="font-label" style={{ color: "var(--text-3)", fontSize: "8px" }}>
-                Background job progress: {currentProgress}%
-              </p>
             </div>
-          )}
-          {error && (
-            <div className="flex items-start gap-2 p-3 border" style={{ borderColor: "var(--red)", background: "rgba(232,25,26,0.08)", color: "#ffb3ad" }}>
-              <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-              <p className="font-label" style={{ fontSize: "9px", lineHeight: 1.5 }}>{error}</p>
-            </div>
-          )}
 
-          {projects.length > 1 && (
-            <div>
-              <label className="text-label mb-1.5 block" htmlFor="manga-v2-project">Workspace</label>
-              <select
-                id="manga-v2-project"
-                value={selectedProjectId}
-                onChange={event => setSelectedProjectId(event.target.value)}
-                className="w-full px-3 py-2 border bg-transparent font-label"
+            <label className="flex flex-col gap-1">
+              <span className="text-label">API key</span>
+              <input
+                ref={keyInputRef}
+                type="password"
+                value={apiKeyDraft}
+                onChange={event => setApiKeyDraft(event.target.value)}
+                placeholder={providerDraft === "openrouter" ? "sk-or-v1-..." : "sk-..."}
+                className="px-3 py-2.5 border bg-transparent font-label"
                 style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
-              >
-                {projects.map(project => (
-                  <option key={project.id} value={project.id}>
-                    {project.title?.trim() || `${displayBookTitle(book)} manga workspace`} - {project.status}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+              />
+            </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => selectedProject && router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`)}
-              disabled={!selectedProject || counts.renderedPages === 0}
-              className="flex items-center justify-center gap-2 py-2.5 border font-label disabled:opacity-45 disabled:cursor-not-allowed"
-              style={{ borderColor: counts.renderedPages > 0 ? "var(--amber)" : "var(--border)", color: counts.renderedPages > 0 ? "var(--amber)" : "var(--text-3)", fontSize: "10px" }}
-              title={counts.renderedPages > 0 ? "Open rendered manga pages" : "Reader unlocks after a rendered page is generated."}
-            >
-              <Eye size={13} /> {counts.renderedPages > 0 ? `Open reader (${counts.renderedPages})` : "Reader locked"}
-            </button>
-            <button
-              type="button"
-              onClick={() => selectedProject && router.push(`/books/${book.id}/manga/v2/characters?project=${selectedProject.id}`)}
-              disabled={!selectedProject}
-              className="flex items-center justify-center gap-2 py-2.5 border font-label disabled:opacity-45 disabled:cursor-not-allowed"
-              style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
-            >
-              <Users size={13} /> Character library
-            </button>
-          </div>
+            <label className="flex flex-col gap-1">
+              <span className="text-label">Text model</span>
+              {providerDraft === "openrouter" ? (
+                <ModelSelector apiKey={apiKeyDraft.trim()} value={modelDraft} onChange={setModelDraft} disabled={!apiKeyDraft.trim()} />
+              ) : (
+                <OpenAIModelPicker value={modelDraft} onChange={setModelDraft} />
+              )}
+            </label>
 
-          {selectedProject && (
-            <section className="border p-4 flex flex-col gap-3" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.45)" }}>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={saveGenerationSettings} className="btn-secondary justify-center py-2 gap-2">
+                <KeyRound size={14} /> Save
+              </button>
               <button
                 type="button"
-                onClick={() => setAdvancedOpen(open => !open)}
-                className="flex items-center justify-between gap-2 text-left"
-                aria-expanded={advancedOpen}
+                onClick={() => {
+                  clearApiKey();
+                  setApiKeyDraft("");
+                  setApiOpen(true);
+                }}
+                className="border py-2 font-label"
+                style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
               >
-                <span className="flex items-center gap-2 font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>
-                  <Layers3 size={15} style={{ color: "var(--text-2)" }} /> Advanced slice options
-                </span>
-                <span style={{ color: "var(--text-3)" }}>{advancedOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}</span>
+                Clear key
               </button>
-              {advancedOpen && (
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="flex flex-col gap-1">
-                      <span className="text-label">Page window</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={100}
-                        value={pageWindow}
-                        onChange={event => setPageWindow(Number(event.target.value))}
-                        className="px-3 py-2 border bg-transparent font-label"
-                        style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
-                      />
-                    </label>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-label">Source</span>
-                      <div className="px-3 py-2 border font-label min-h-[38px]" style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}>
-                        {describeSlice(nextSlice)}
-                      </div>
-                    </div>
-                  </div>
+            </div>
+            <p style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
+              Your key stays in memory for this session. It is not stored in localStorage or saved to the project.
+            </p>
+          </div>
+        )}
+      </section>
 
-                  <label className="flex items-center justify-between cursor-pointer gap-3">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon size={14} style={{ color: generateImages ? "var(--teal)" : "var(--text-3)" }} />
-                      <div>
-                        <p className="font-label" style={{ color: "var(--text-1)", fontSize: "10px" }}>Generate character assets with slice</p>
-                        <p className="font-label" style={{ color: "var(--text-3)", fontSize: "8px" }}>
-                          Optional image generation for reusable character sheets.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => !busy && setGenerateImages(value => !value)}
-                      className="relative w-9 h-5 rounded-full transition-colors flex-shrink-0"
-                      style={{ background: generateImages ? "var(--teal)" : "var(--border-2)" }}
-                      aria-pressed={generateImages}
-                    >
-                      <motion.span
-                        animate={{ x: generateImages ? 18 : 2 }}
-                        className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow"
-                      />
-                    </button>
-                  </label>
-
-                  {generateImages && (
-                    <div className="flex flex-col gap-1.5">
-                      <select
-                        value={imageModel}
-                        onChange={event => setImageModel(event.target.value)}
-                        className="w-full px-3 py-2 border bg-transparent font-label"
-                        style={{ borderColor: "var(--teal)", color: "var(--text-1)", fontSize: "11px" }}
-                        aria-label="Image model"
-                      >
-                        {IMAGE_MODELS.map(item => (
-                          <option key={item.id} value={item.id}>
-                            [{item.tier}] {item.label}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="font-label" style={{ color: "var(--text-2)", fontSize: "9px" }}>
-                        {IMAGE_MODELS.find(item => item.id === imageModel)?.blurb}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRunUnderstanding(true)}
-                      disabled={busy || understandingBusy || hasActiveUnderstandingJob || !selectedProject}
-                      className="flex items-center justify-center gap-2 py-2 border font-label disabled:opacity-45"
-                      style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
-                    >
-                      {understandingBusy ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-                      Rebuild understanding
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGenerateSlice}
-                      disabled={busy || understandingBusy || hasActiveSliceJob || !understandingReady || nextSlice?.fully_covered}
-                      className="flex items-center justify-center gap-2 py-2 border font-label disabled:opacity-45"
-                      style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
-                    >
-                      <Brush size={13} /> Generate another slice
-                    </button>
-                  </div>
-                </div>
-              )}
-            </section>
-          )}
-
-          {selectedProject && understandingReady && (
-            <BookSpine
-              project={selectedProject}
-              onRebuild={() => handleRunUnderstanding(true)}
-              rebuilding={understandingBusy}
+      <section className="border p-4 flex flex-col gap-3" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.45)" }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <ImageIcon size={15} style={{ color: generateImages ? "var(--teal)" : "var(--text-3)" }} />
+            <div>
+              <p className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>Character and panel images</p>
+              <p style={{ color: "var(--text-2)", fontSize: "0.74rem", lineHeight: 1.45 }}>
+                On by default. Creates reusable character references and optional panel art.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => !busy && setGenerateImages(value => !value)}
+            className="relative h-5 w-10 rounded-full flex-shrink-0"
+            style={{ background: generateImages ? "var(--teal)" : "var(--border-2)" }}
+            aria-pressed={generateImages}
+          >
+            <motion.span
+              animate={{ x: generateImages ? 20 : 2 }}
+              className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow"
             />
-          )}
+          </button>
+        </div>
+        {generateImages ? (
+          <>
+            <ImageModelPicker models={imageModels} value={imageModel} onChange={setImageModel} disabled={imageModels.length === 0} />
+            <p className="flex items-start gap-1.5" style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
+              <Info size={13} className="mt-0.5 flex-shrink-0" />
+              {selectedImageModel?.description || "The selected model controls character sheets and generated art quality."}
+            </p>
+          </>
+        ) : (
+          <p className="flex items-start gap-1.5" style={{ color: "var(--amber)", fontSize: "0.72rem", lineHeight: 1.45 }}>
+            <Info size={13} className="mt-0.5 flex-shrink-0" />
+            You will get prompt-only character sheets and fallback manga backgrounds. You can generate images later.
+          </p>
+        )}
+      </section>
 
-          {selectedProject && !understandingReady && (
-            <section className="border p-4 flex items-start gap-3" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.45)" }}>
-              <ScrollText size={16} className="mt-0.5 flex-shrink-0" style={{ color: "var(--text-2)" }} />
-              <div>
-                <h3 className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>Book spine preview</h3>
-                <p className="mt-1" style={{ color: "var(--text-2)", fontSize: "0.78rem", lineHeight: 1.45 }}>
-                  Synopsis, character bible, voice cards, and arc details will appear here after book understanding completes.
-                </p>
-              </div>
-            </section>
-          )}
-        </>
+      <section className="border p-4 flex flex-col gap-3" style={{ borderColor: longPdf ? "var(--amber)" : "var(--border)", background: "rgba(31,30,40,0.45)" }}>
+        <div className="flex items-start gap-2">
+          <BookOpen size={15} style={{ color: "var(--amber)" }} />
+          <div>
+            <p className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>How much should we generate?</p>
+            <p style={{ color: "var(--text-2)", fontSize: "0.74rem", lineHeight: 1.45 }}>
+              {longPdf
+                ? `${book.total_pages} pages is a longer PDF. Start with a chunk to reduce cost and failures.`
+                : "Choose one chunk first, or let the backend continue through the full book."}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setBuildMode("next_chunk")}
+            className="border p-3 text-left"
+            style={{ borderColor: buildMode === "next_chunk" ? "var(--amber)" : "var(--border)", background: buildMode === "next_chunk" ? "rgba(245,166,35,0.08)" : "transparent" }}
+          >
+            <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.85rem" }}>Next chunk</span>
+            <span style={{ color: "var(--text-2)", fontSize: "0.72rem" }}>Recommended. Generate the next source range, then continue later.</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setBuildMode("full_book")}
+            className="border p-3 text-left"
+            style={{ borderColor: buildMode === "full_book" ? "var(--amber)" : "var(--border)", background: buildMode === "full_book" ? "rgba(245,166,35,0.08)" : "transparent" }}
+          >
+            <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.85rem" }}>Full book</span>
+            <span style={{ color: "var(--text-2)", fontSize: "0.72rem" }}>Higher cost and longer runtime. Best after one chunk looks good.</span>
+          </button>
+        </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-label">Chunk size in source PDF pages</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={pageWindow}
+            onChange={event => setPageWindow(Number(event.target.value))}
+            className="px-3 py-2 border bg-transparent font-label"
+            style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+          />
+        </label>
+      </section>
+
+      <button
+        type="button"
+        onClick={handleGenerate}
+        disabled={loading || metaLoading || busy}
+        className="btn-primary justify-center py-3 gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {busy ? <Loader2 size={16} className="animate-spin" /> : counts.renderedPages > 0 ? <Sparkles size={16} /> : <Sparkles size={16} />}
+        {busy ? "Generating..." : counts.renderedPages > 0 ? "Generate more manga" : "Generate manga"}
+      </button>
+
+      {(busy || activeStatus || latestBuildJob) && (
+        <section className="border p-4 flex flex-col gap-2" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.45)" }}>
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>{progressLabel}</span>
+            <span className="font-label" style={{ color: "var(--text-3)", fontSize: "0.68rem" }}>{Math.max(0, Math.min(100, progress))}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full" style={{ background: "var(--border)" }}>
+            <motion.div
+              className="h-full rounded-full"
+              animate={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
+              style={{ background: "var(--blue)" }}
+            />
+          </div>
+          <p style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
+            You can leave this page. When you come back, we continue from the last saved step.
+          </p>
+        </section>
       )}
+
+      <section aria-label="Manga build status">
+        <ol className="flex flex-col gap-2">
+          {stages.map(stage => <PipelineRow key={stage.id} stage={stage} />)}
+        </ol>
+      </section>
+
+      {message && <p className="font-label" style={{ color: "var(--text-3)", fontSize: "9px", lineHeight: 1.5 }}>{message}</p>}
+      {error && (
+        <div className="flex items-start gap-2 p-3 border" style={{ borderColor: "var(--red)", background: "rgba(232,25,26,0.08)", color: "#ffb3ad" }}>
+          <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+          <p className="font-label" style={{ fontSize: "9px", lineHeight: 1.5 }}>{error}</p>
+        </div>
+      )}
+
+      {counts.renderedPages > 0 && selectedProject && (
+        <button
+          type="button"
+          onClick={() => router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`)}
+          className="flex items-center justify-center gap-2 py-2.5 border font-label"
+          style={{ borderColor: "var(--amber)", color: "var(--amber)", fontSize: "10px" }}
+        >
+          <Eye size={13} /> Open manga reader ({counts.renderedPages})
+        </button>
+      )}
+
+      <section className="border p-4 flex flex-col gap-3" style={{ borderColor: "var(--border)", background: "rgba(15,14,23,0.35)" }}>
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen(open => !open)}
+          className="flex items-center justify-between gap-2 text-left"
+          aria-expanded={advancedOpen}
+        >
+          <span className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>Advanced</span>
+          {advancedOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+        {advancedOpen && (
+          <div className="flex flex-col gap-3">
+            {projects.length > 1 && (
+              <label className="flex flex-col gap-1">
+                <span className="text-label">Workspace</span>
+                <select
+                  value={selectedProjectId}
+                  onChange={event => setSelectedProjectId(event.target.value)}
+                  className="px-3 py-2 border bg-transparent font-label"
+                  style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+                >
+                  {projects.map(project => (
+                    <option key={project.id} value={project.id}>
+                      {project.title?.trim() || `${displayBookTitle(book)} manga workspace`} - {project.status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <p style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>{describeSlice(nextSlice)}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => selectedProject && router.push(`/books/${book.id}/manga/v2/characters?project=${selectedProject.id}`)}
+                disabled={!selectedProject}
+                className="flex items-center justify-center gap-2 py-2.5 border font-label disabled:opacity-45"
+                style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
+              >
+                <Users size={13} /> Character library
+              </button>
+              <button
+                type="button"
+                onClick={() => selectedProject && router.push(`/books/${book.id}/manga/v2?project=${selectedProject.id}`)}
+                disabled={!selectedProject || counts.renderedPages === 0}
+                className="flex items-center justify-center gap-2 py-2.5 border font-label disabled:opacity-45"
+                style={{ borderColor: "var(--border)", color: "var(--text-2)", fontSize: "10px" }}
+              >
+                <Eye size={13} /> Reader
+              </button>
+            </div>
+            {selectedProject && <BookSpine project={selectedProject} />}
+          </div>
+        )}
+      </section>
     </section>
   );
 }

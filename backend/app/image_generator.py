@@ -24,17 +24,29 @@ logger = logging.getLogger(__name__)
 IMAGE_GENERATION_MODELS = [
     {
         "id": "google/gemini-2.5-flash-image",
-        "name": "Gemini 2.5 Flash Image (Nano Banana) — $2.50/1M",
+        "name": "Gemini 2.5 Flash Image",
+        "price_label": "$2.50 / 1M tokens",
+        "price_value": 2.5,
+        "quality_label": "Lowest cost",
+        "description": "Best for early drafts and fast character-sheet iteration.",
         "modalities": ["image", "text"],
     },
     {
         "id": "google/gemini-3.1-flash-image-preview",
-        "name": "Gemini 3.1 Flash Image Preview (Nano Banana 2) — $3/1M",
+        "name": "Gemini 3.1 Flash Image Preview",
+        "price_label": "$3.00 / 1M tokens",
+        "price_value": 3.0,
+        "quality_label": "Balanced",
+        "description": "Better visual adherence while staying reasonably fast.",
         "modalities": ["image", "text"],
     },
     {
         "id": "google/gemini-3-pro-image-preview",
-        "name": "Gemini 3 Pro Image Preview (Nano Banana Pro) — $12/1M",
+        "name": "Gemini 3 Pro Image Preview",
+        "price_label": "$12.00 / 1M tokens",
+        "price_value": 12.0,
+        "quality_label": "Highest quality",
+        "description": "Use when finalizing character references and panel art.",
         "modalities": ["image", "text"],
     },
 ]

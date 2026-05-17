@@ -78,6 +78,17 @@ class GenerateBookUnderstandingRequest(BaseModel):
     force: bool = False
 
 
+class BuildMangaProjectRequest(BaseModel):
+    api_key: str = Field(min_length=1)
+    provider: str = "openai"
+    model: str | None = None
+    mode: str = Field(default="next_chunk", pattern="^(next_chunk|full_book)$")
+    page_window: int = Field(default=10, ge=1, le=100)
+    generate_images: bool = True
+    image_model: str | None = None
+    options: dict[str, Any] = Field(default_factory=dict)
+
+
 class StartBookUnderstandingResponse(BaseModel):
     project: dict[str, Any]
     task_id: str | None
@@ -99,6 +110,12 @@ class NextSourceSliceResponse(BaseModel):
 
 
 class StartMangaSliceGenerationResponse(BaseModel):
+    project: dict[str, Any]
+    task_id: str
+    message: str
+
+
+class StartMangaProjectBuildResponse(BaseModel):
     project: dict[str, Any]
     task_id: str
     message: str
@@ -289,17 +306,21 @@ async def _active_job(project_id: str, job_type: str) -> JobStatus | None:
 
 async def _serialize_project_with_jobs(project: MangaProjectDoc) -> dict[str, Any]:
     project_id = str(project.id)
+    active_build = await _active_job(project_id, "build_manga_project")
     active_understanding = await _active_job(project_id, "generate_book_understanding")
     active_slice = await _active_job(project_id, "generate_manga_slice")
+    latest_build = await _latest_job(project_id, "build_manga_project")
     latest_understanding = await _latest_job(project_id, "generate_book_understanding")
     latest_slice = await _latest_job(project_id, "generate_manga_slice")
 
     payload = serialize_project(project)
     payload["active_jobs"] = {
+        "build": _serialize_job_doc(active_build),
         "book_understanding": _serialize_job_doc(active_understanding),
         "manga_slice": _serialize_job_doc(active_slice),
     }
     payload["latest_jobs"] = {
+        "build": _serialize_job_doc(latest_build),
         "book_understanding": _serialize_job_doc(latest_understanding),
         "manga_slice": _serialize_job_doc(latest_slice),
     }
@@ -635,6 +656,80 @@ async def start_book_understanding(project_id: str, request: GenerateBookUnderst
         task_id=task.id,
         message="Book understanding generation started.",
         already_ready=False,
+    )
+
+
+@router.post("/manga-projects/{project_id}/build", response_model=StartMangaProjectBuildResponse)
+async def build_manga_project(project_id: str, request: BuildMangaProjectRequest):
+    """Queue the user-facing manga build flow.
+
+    This is an additive control-plane endpoint. The worker behind it reuses
+    the existing book-understanding and slice-generation services instead of
+    owning pipeline stage logic itself.
+    """
+    project = await MangaProjectDoc.get(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Manga project not found")
+
+    book = await Book.get(project.book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found for manga project")
+    if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
+        raise HTTPException(status_code=400, detail=f"Book is not parsed yet: {book.status}")
+
+    active_job = await JobStatus.find_one(
+        JobStatus.result_id == project_id,
+        JobStatus.job_type == "build_manga_project",
+        In(JobStatus.status, ["pending", "progress"]),  # type: ignore[arg-type]
+    )
+    if active_job:
+        return StartMangaProjectBuildResponse(
+            project=await _serialize_project_with_jobs(project),
+            task_id=active_job.celery_task_id,
+            message="A manga build is already running for this project.",
+        )
+
+    # Persist user-facing generation preferences, never the API key.
+    project_options = dict(project.project_options)
+    project_options.update({
+        "preferred_provider": request.provider,
+        "preferred_model": request.model,
+        "page_window": request.page_window,
+        "generate_images": request.generate_images,
+        "image_model": request.image_model,
+    })
+    project.project_options = project_options
+    project.status = "generating"
+    await project.save()
+
+    from app.celery_manga_tasks import build_manga_project_task
+
+    task = build_manga_project_task.delay(
+        project_id=project_id,
+        api_key=request.api_key,
+        provider=request.provider,
+        model=request.model,
+        mode=request.mode,
+        page_window=request.page_window,
+        generate_images=request.generate_images,
+        image_model=request.image_model,
+        options=request.options,
+    )
+    job_status = JobStatus(
+        celery_task_id=task.id,
+        job_type="build_manga_project",
+        status="pending",
+        progress=0,
+        message="Queued manga build...",
+        result_id=project_id,
+        phase="queued",
+    )
+    await job_status.insert()
+
+    return StartMangaProjectBuildResponse(
+        project=await _serialize_project_with_jobs(project),
+        task_id=task.id,
+        message="Manga build started.",
     )
 
 

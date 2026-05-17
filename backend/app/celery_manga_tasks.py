@@ -1,8 +1,4 @@
-"""Celery tasks for the manga v2 project pipeline.
-
-Kept separate from the legacy summary worker because that file is already a
-chunky lasagna. New v2 job code lives here: small, explicit, and reusable.
-"""
+"""Celery tasks for the manga v2 project pipeline."""
 
 from __future__ import annotations
 
@@ -18,6 +14,196 @@ def _sum_trace_cost(llm_traces: list[dict[str, Any]]) -> float:
     """Return rounded total LLM cost from persisted trace metadata."""
     total = sum(float(trace.get("total_cost_usd") or 0.0) for trace in llm_traces)
     return round(total, 6)
+
+
+def _is_source_covered_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "fully covered" in text or "source is already fully covered" in text
+
+
+@celery_app.task(bind=True, name="app.celery_manga_tasks.build_manga_project_task")
+def build_manga_project_task(
+    self,
+    project_id: str,
+    api_key: str,
+    provider: str = "openai",
+    model: str | None = None,
+    mode: str = "next_chunk",
+    page_window: int = 10,
+    generate_images: bool = True,
+    image_model: str | None = None,
+    options: dict[str, Any] | None = None,
+):
+    """User-facing manga build task.
+
+    This task is deliberately an orchestrator around existing services:
+    book-understanding still owns the global pass, and generation_service still
+    owns slice selection, validation, persistence, and continuity updates.
+    """
+    logger.info("Starting manga build for project %s mode=%s", project_id, mode)
+
+    async def _run() -> None:
+        await get_db()
+
+        from app.llm_client import LLMClient
+        from app.manga_models import MangaProjectDoc
+        from app.models import Book, ProcessingStatus
+        from app.services.manga.book_understanding_service import (
+            generate_book_understanding,
+            project_understanding_is_ready,
+        )
+        from app.services.manga.generation_service import generate_project_slice
+
+        project = await MangaProjectDoc.get(project_id)
+        if not project:
+            raise ValueError(f"Manga project not found: {project_id}")
+
+        book = await Book.get(project.book_id)
+        if not book:
+            raise ValueError(f"Book not found for manga project: {project.book_id}")
+        if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
+            raise ValueError(f"Book is not parsed yet: {book.status}")
+
+        project_options = dict(project.project_options)
+        project_options.update({
+            "preferred_provider": provider,
+            "preferred_model": model,
+            "page_window": page_window,
+            "generate_images": generate_images,
+            "image_model": image_model,
+        })
+        project.project_options = project_options
+        project.status = "generating"
+        await project.save()
+
+        async def report(progress: int, message: str, phase: str) -> None:
+            await update_job_status(
+                self.request.id,
+                "progress",
+                progress,
+                message,
+                result_id=project_id,
+                phase=phase,
+            )
+
+        await report(1, "Preparing manga workspace...", "build_prepare")
+        llm_client = LLMClient(api_key=api_key, provider=provider, model=model)
+
+        run_options = dict(options or {})
+        run_options.update({
+            "style": project.style,
+            "generate_images": generate_images,
+            "image_model": image_model,
+        })
+        if generate_images:
+            run_options["image_api_key"] = api_key
+            run_options["api_key"] = api_key
+
+        if not project_understanding_is_ready(project):
+            async def understanding_progress(progress: int, message: str, phase: str) -> None:
+                mapped = 5 + int(max(0, min(progress, 100)) * 0.35)
+                await report(mapped, message, f"understanding:{phase}")
+
+            await generate_book_understanding(
+                project=project,
+                book=book,
+                llm_client=llm_client,
+                extra_options=run_options,
+                progress_callback=understanding_progress,
+            )
+            project = await MangaProjectDoc.get(project_id)
+            if not project:
+                raise ValueError(f"Manga project disappeared during build: {project_id}")
+        else:
+            await report(40, "Book understanding already complete.", "understanding:ready")
+
+        generated_slices = 0
+        generated_pages = 0
+        total_cost = 0.0
+        max_slices = 100
+
+        while True:
+            if generated_slices >= max_slices:
+                raise RuntimeError("full-book build stopped after 100 slices; refusing possible infinite loop")
+
+            label = "Generating manga pages..." if mode == "next_chunk" else f"Generating manga chunk {generated_slices + 1}..."
+            await report(45, label, "slice:start")
+
+            async def slice_progress(progress: int, message: str, phase: str) -> None:
+                if mode == "full_book":
+                    mapped = min(95, 45 + generated_slices * 4 + int(max(0, min(progress, 100)) * 0.04))
+                else:
+                    mapped = 45 + int(max(0, min(progress, 100)) * 0.50)
+                await report(mapped, message, f"slice:{phase}")
+
+            try:
+                slice_doc, page_docs = await generate_project_slice(
+                    project=project,
+                    book=book,
+                    llm_client=llm_client,
+                    page_window=page_window,
+                    image_api_key=api_key,
+                    extra_options=run_options,
+                    progress_callback=slice_progress,
+                )
+            except ValueError as exc:
+                if _is_source_covered_error(exc):
+                    await report(98, "All source pages are already covered.", "complete")
+                    break
+                raise
+
+            generated_slices += 1
+            generated_pages += len(page_docs)
+            total_cost += _sum_trace_cost(slice_doc.llm_traces)
+            project = await MangaProjectDoc.get(project_id)
+            if not project:
+                raise ValueError(f"Manga project disappeared during build: {project_id}")
+
+            if mode != "full_book":
+                break
+
+        project.status = "complete"
+        await project.save()
+        await update_job_status(
+            self.request.id,
+            "success",
+            100,
+            f"Manga build complete: {generated_slices} chunk(s), {generated_pages} page(s).",
+            result_id=project_id,
+            phase="complete",
+            panels_done=generated_pages,
+            panels_total=generated_pages,
+            cost_so_far=round(total_cost, 6),
+        )
+        logger.info("Manga build complete for project %s", project_id)
+
+    async def _run_guarded() -> None:
+        try:
+            await _run()
+        except Exception as exc:
+            logger.error("Manga build failed: %s", exc, exc_info=True)
+            try:
+                await get_db()
+                from app.manga_models import MangaProjectDoc
+
+                project = await MangaProjectDoc.get(project_id)
+                if project:
+                    project.status = "failed"
+                    await project.save()
+            except Exception as save_exc:
+                logger.error("Could not mark manga build failed: %s", save_exc, exc_info=True)
+
+            await update_job_status(
+                self.request.id,
+                "failure",
+                0,
+                f"Manga build failed: {exc}",
+                result_id=project_id,
+                error=str(exc),
+                phase="failed",
+            )
+
+    run_async(_run_guarded())
 
 
 @celery_app.task(bind=True, name="app.celery_manga_tasks.generate_manga_slice_task")

@@ -15,7 +15,9 @@ import type {
   SummaryStyle,
   LLMProvider,
   StartMangaSliceGenerationResponse,
+  StartMangaProjectBuildResponse,
   StartBookUnderstandingResponse,
+  ImageModelOption,
   MangaProjectAssetsResponse,
   MangaProjectPagesResponse,
   MangaProjectResponse,
@@ -23,6 +25,8 @@ import type {
   MangaProjectsResponse,
   NextSourceSliceResponse,
   AssetMutationResponse,
+  TextModelOption,
+  MangaBuildMode,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -86,8 +90,13 @@ export async function fetchOpenRouterModels(apiKey: string) {
   return response.data;
 }
 
+export async function fetchOpenAIModels(): Promise<{ models: TextModelOption[]; total: number }> {
+  const response = await api.get("/openai/models");
+  return response.data;
+}
+
 export async function getImageModels(): Promise<{
-  models: { id: string; name: string; modalities: string[] }[];
+  models: ImageModelOption[];
   default: string;
 }> {
   const response = await api.get("/image-models");
@@ -238,6 +247,36 @@ export async function generateMangaProjectSlice(
       model: options.model,
       page_window: options.pageWindow ?? 10,
       generate_images: options.generateImages ?? false,
+      image_model: options.imageModel ?? null,
+      options: options.extraOptions ?? {},
+    },
+    { timeout: 30000 },
+  );
+  return response.data;
+}
+
+export async function startMangaProjectBuild(
+  projectId: string,
+  options: {
+    apiKey: string;
+    provider: LLMProvider;
+    model?: string;
+    mode: MangaBuildMode;
+    pageWindow?: number;
+    generateImages?: boolean;
+    imageModel?: string;
+    extraOptions?: Record<string, unknown>;
+  },
+): Promise<StartMangaProjectBuildResponse> {
+  const response = await api.post<StartMangaProjectBuildResponse>(
+    `/manga-projects/${projectId}/build`,
+    {
+      api_key: options.apiKey,
+      provider: options.provider,
+      model: options.model,
+      mode: options.mode,
+      page_window: options.pageWindow ?? 10,
+      generate_images: options.generateImages ?? true,
       image_model: options.imageModel ?? null,
       options: options.extraOptions ?? {},
     },
