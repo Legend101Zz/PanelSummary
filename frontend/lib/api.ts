@@ -236,6 +236,10 @@ export async function generateMangaProjectSlice(
     pageWindow?: number;
     generateImages?: boolean;
     imageModel?: string;
+    imageMode?: "none" | "sprites_only" | "budgeted" | "full_panel_art";
+    spriteBudgetTotal?: number;
+    keyPanelBudgetPerSlice?: number;
+    keyPanelBudgetFullBook?: number;
     extraOptions?: Record<string, unknown>;
   },
 ): Promise<StartMangaSliceGenerationResponse> {
@@ -248,6 +252,10 @@ export async function generateMangaProjectSlice(
       page_window: options.pageWindow ?? 10,
       generate_images: options.generateImages ?? false,
       image_model: options.imageModel ?? null,
+      image_mode: options.imageMode ?? (options.generateImages ? "budgeted" : "none"),
+      sprite_budget_total: options.spriteBudgetTotal ?? 8,
+      key_panel_budget_per_slice: options.keyPanelBudgetPerSlice ?? 3,
+      key_panel_budget_full_book: options.keyPanelBudgetFullBook ?? 8,
       options: options.extraOptions ?? {},
     },
     { timeout: 30000 },
@@ -265,6 +273,10 @@ export async function startMangaProjectBuild(
     pageWindow?: number;
     generateImages?: boolean;
     imageModel?: string;
+    imageMode?: "none" | "sprites_only" | "budgeted" | "full_panel_art";
+    spriteBudgetTotal?: number;
+    keyPanelBudgetPerSlice?: number;
+    keyPanelBudgetFullBook?: number;
     extraOptions?: Record<string, unknown>;
   },
 ): Promise<StartMangaProjectBuildResponse> {
@@ -278,6 +290,10 @@ export async function startMangaProjectBuild(
       page_window: options.pageWindow ?? 10,
       generate_images: options.generateImages ?? true,
       image_model: options.imageModel ?? null,
+      image_mode: options.imageMode ?? (options.generateImages === false ? "none" : "budgeted"),
+      sprite_budget_total: options.spriteBudgetTotal ?? 8,
+      key_panel_budget_per_slice: options.keyPanelBudgetPerSlice ?? 3,
+      key_panel_budget_full_book: options.keyPanelBudgetFullBook ?? 8,
       options: options.extraOptions ?? {},
     },
     { timeout: 30000 },

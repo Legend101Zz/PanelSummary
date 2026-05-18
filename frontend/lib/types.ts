@@ -469,6 +469,7 @@ export interface StartMangaProjectBuildResponse {
 }
 
 export type MangaBuildMode = "next_chunk" | "full_book";
+export type MangaImageMode = "none" | "sprites_only" | "budgeted" | "full_panel_art";
 
 export interface TextModelOption {
   id: string;

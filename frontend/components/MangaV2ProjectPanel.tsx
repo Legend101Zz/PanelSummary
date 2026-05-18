@@ -40,6 +40,7 @@ import type {
   ImageModelOption,
   LLMProvider,
   MangaBuildMode,
+  MangaImageMode,
   MangaProject,
   MangaProjectJobSnapshot,
   NextSourceSliceResponse,
@@ -49,6 +50,25 @@ import type {
 const DEFAULT_MODEL_BY_PROVIDER: Record<LLMProvider, string> = {
   openai: "gpt-4.1-mini",
   openrouter: "google/gemini-2.5-flash",
+};
+
+const IMAGE_MODE_LABELS: Record<MangaImageMode, { title: string; detail: string }> = {
+  budgeted: {
+    title: "Sprites + key panels",
+    detail: "Reusable character sprites plus a few painted panels for start, middle, and reveal beats.",
+  },
+  sprites_only: {
+    title: "Sprites only",
+    detail: "Generate reusable character sprites; every panel is composed by the DSL renderer.",
+  },
+  none: {
+    title: "No images",
+    detail: "Use prompt-only assets and DSL fallback visuals. Lowest cost.",
+  },
+  full_panel_art: {
+    title: "Full panel art",
+    detail: "Advanced high-cost mode. Attempts to paint every panel.",
+  },
 };
 
 type PipelineStageState = "complete" | "current" | "running" | "blocked" | "failed" | "empty" | "optional";
@@ -326,15 +346,19 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   const [modelDraft, setModelDraft] = useState(model ?? DEFAULT_MODEL_BY_PROVIDER[provider]);
   const [buildMode, setBuildMode] = useState<MangaBuildMode>("next_chunk");
   const [pageWindow, setPageWindow] = useState(10);
-  const [generateImages, setGenerateImages] = useState(true);
+  const [imageMode, setImageMode] = useState<MangaImageMode>("budgeted");
+  const [spriteBudgetTotal, setSpriteBudgetTotal] = useState(8);
+  const [keyPanelBudgetPerSlice, setKeyPanelBudgetPerSlice] = useState(3);
   const [imageModel, setImageModel] = useState("");
+  const generateImages = imageMode !== "none";
 
   const selectedProject = useMemo(
     () => projects.find(project => project.id === selectedProjectId) ?? null,
     [projects, selectedProjectId],
   );
 
-  const hasApiKey = Boolean(apiKey?.trim());
+  const openRouterKey = apiKeyDraft.trim() || apiKey?.trim() || "";
+  const hasApiKey = Boolean(apiKey?.trim() || apiKeyDraft.trim());
   const activeBuildJob = selectedProject?.active_jobs?.build ?? null;
   const activeUnderstandingJob = selectedProject?.active_jobs?.book_understanding ?? null;
   const activeSliceJob = selectedProject?.active_jobs?.manga_slice ?? null;
@@ -481,8 +505,11 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       projectOptions: {
         manga_pipeline: "v2",
         generate_images: generateImages,
+        image_mode: imageMode,
         image_model: imageModel || undefined,
         page_window: pageWindow,
+        sprite_budget_total: spriteBudgetTotal,
+        key_panel_budget_per_slice: keyPanelBudgetPerSlice,
       },
     });
     replaceProject(created.project);
@@ -512,6 +539,10 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
         pageWindow,
         generateImages,
         imageModel: generateImages ? imageModel : undefined,
+        imageMode,
+        spriteBudgetTotal,
+        keyPanelBudgetPerSlice,
+        keyPanelBudgetFullBook: 8,
         extraOptions: { style: selectedStyle },
       });
       replaceProject(queued.project);
@@ -587,7 +618,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   } : null));
 
   return (
-    <section className="panel p-5 flex flex-col gap-5" aria-labelledby="create-manga-title">
+    <section className="panel p-5 flex flex-col gap-5" style={{ overflow: "visible" }} aria-labelledby="create-manga-title">
       <div className="flex items-center gap-2">
         <Sparkles size={15} style={{ color: "var(--amber)" }} />
         <span className="panel-label">CREATE MANGA</span>
@@ -659,7 +690,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
             <label className="flex flex-col gap-1">
               <span className="text-label">Text model</span>
               {providerDraft === "openrouter" ? (
-                <ModelSelector apiKey={apiKeyDraft.trim()} value={modelDraft} onChange={setModelDraft} disabled={!apiKeyDraft.trim()} />
+                <ModelSelector apiKey={openRouterKey} value={modelDraft} onChange={setModelDraft} />
               ) : (
                 <OpenAIModelPicker value={modelDraft} onChange={setModelDraft} />
               )}
@@ -694,31 +725,64 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           <div className="flex items-start gap-2">
             <ImageIcon size={15} style={{ color: generateImages ? "var(--teal)" : "var(--text-3)" }} />
             <div>
-              <p className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>Character and panel images</p>
+              <p className="font-display" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>Image mode</p>
               <p style={{ color: "var(--text-2)", fontSize: "0.74rem", lineHeight: 1.45 }}>
-                On by default. Creates reusable character references and optional panel art.
+                Default keeps cost low: reusable sprites plus a few painted key panels.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => !busy && setGenerateImages(value => !value)}
-            className="relative h-5 w-10 rounded-full flex-shrink-0"
-            style={{ background: generateImages ? "var(--teal)" : "var(--border-2)" }}
-            aria-pressed={generateImages}
-          >
-            <motion.span
-              animate={{ x: generateImages ? 20 : 2 }}
-              className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow"
-            />
-          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {(["budgeted", "sprites_only", "none"] as MangaImageMode[]).map(mode => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => !busy && setImageMode(mode)}
+              className="border p-3 text-left"
+              style={{
+                borderColor: imageMode === mode ? "var(--teal)" : "var(--border)",
+                background: imageMode === mode ? "rgba(45,212,191,0.08)" : "transparent",
+              }}
+            >
+              <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.8rem" }}>{IMAGE_MODE_LABELS[mode].title}</span>
+              <span style={{ color: "var(--text-2)", fontSize: "0.68rem", lineHeight: 1.35 }}>{IMAGE_MODE_LABELS[mode].detail}</span>
+            </button>
+          ))}
         </div>
         {generateImages ? (
           <>
             <ImageModelPicker models={imageModels} value={imageModel} onChange={setImageModel} disabled={imageModels.length === 0} />
+            {imageMode === "budgeted" && (
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex flex-col gap-1">
+                  <span className="text-label">Sprite budget</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={spriteBudgetTotal}
+                    onChange={event => setSpriteBudgetTotal(Number(event.target.value))}
+                    className="px-3 py-2 border bg-transparent font-label"
+                    style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-label">Key panels per chunk</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={keyPanelBudgetPerSlice}
+                    onChange={event => setKeyPanelBudgetPerSlice(Number(event.target.value))}
+                    className="px-3 py-2 border bg-transparent font-label"
+                    style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+                  />
+                </label>
+              </div>
+            )}
             <p className="flex items-start gap-1.5" style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
               <Info size={13} className="mt-0.5 flex-shrink-0" />
-              {selectedImageModel?.description || "The selected model controls character sheets and generated art quality."}
+              {selectedImageModel?.description || "The selected model controls sprite and key-panel image quality."}
             </p>
           </>
         ) : (
