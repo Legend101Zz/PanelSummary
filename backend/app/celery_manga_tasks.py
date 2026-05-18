@@ -21,6 +21,20 @@ def _is_source_covered_error(exc: Exception) -> bool:
     return "fully covered" in text or "source is already fully covered" in text
 
 
+def _count_rendered_panel_images(page_docs: list[Any]) -> int:
+    """Count persisted panel artifacts that received image paths."""
+    count = 0
+    for page_doc in page_docs:
+        rendered_page = getattr(page_doc, "rendered_page", {}) or {}
+        artifacts = rendered_page.get("panel_artifacts", {}) if isinstance(rendered_page, dict) else {}
+        if not isinstance(artifacts, dict):
+            continue
+        for artifact in artifacts.values():
+            if isinstance(artifact, dict) and artifact.get("image_path"):
+                count += 1
+    return count
+
+
 @celery_app.task(bind=True, name="app.celery_manga_tasks.build_manga_project_task")
 def build_manga_project_task(
     self,
@@ -32,6 +46,10 @@ def build_manga_project_task(
     page_window: int = 10,
     generate_images: bool = True,
     image_model: str | None = None,
+    image_mode: str | None = None,
+    sprite_budget_total: int = 8,
+    key_panel_budget_per_slice: int = 3,
+    key_panel_budget_full_book: int = 8,
     options: dict[str, Any] | None = None,
 ):
     """User-facing manga build task.
@@ -64,13 +82,20 @@ def build_manga_project_task(
         if book.status not in (ProcessingStatus.PARSED, ProcessingStatus.COMPLETE):
             raise ValueError(f"Book is not parsed yet: {book.status}")
 
+        resolved_image_mode = image_mode or ("budgeted" if generate_images else "none")
+        should_generate_sprites = resolved_image_mode in {"sprites_only", "budgeted", "full_panel_art"}
+
         project_options = dict(project.project_options)
         project_options.update({
             "preferred_provider": provider,
             "preferred_model": model,
             "page_window": page_window,
-            "generate_images": generate_images,
+            "generate_images": should_generate_sprites,
+            "image_mode": resolved_image_mode,
             "image_model": image_model,
+            "sprite_budget_total": sprite_budget_total,
+            "key_panel_budget_per_slice": key_panel_budget_per_slice,
+            "key_panel_budget_full_book": key_panel_budget_full_book,
         })
         project.project_options = project_options
         project.status = "generating"
@@ -92,10 +117,15 @@ def build_manga_project_task(
         run_options = dict(options or {})
         run_options.update({
             "style": project.style,
-            "generate_images": generate_images,
+            "generate_images": should_generate_sprites,
+            "image_mode": resolved_image_mode,
             "image_model": image_model,
+            "sprite_budget_total": sprite_budget_total,
+            "key_panel_budget_per_slice": key_panel_budget_per_slice,
+            "key_panel_budget_full_book": key_panel_budget_full_book,
+            "build_mode": mode,
         })
-        if generate_images:
+        if should_generate_sprites or resolved_image_mode in {"budgeted", "full_panel_art"}:
             run_options["image_api_key"] = api_key
             run_options["api_key"] = api_key
 
@@ -119,6 +149,7 @@ def build_manga_project_task(
 
         generated_slices = 0
         generated_pages = 0
+        generated_panel_images = 0
         total_cost = 0.0
         max_slices = 100
 
@@ -137,13 +168,20 @@ def build_manga_project_task(
                 await report(mapped, message, f"slice:{phase}")
 
             try:
+                slice_options = dict(run_options)
+                if resolved_image_mode == "budgeted":
+                    if mode == "full_book":
+                        remaining = max(key_panel_budget_full_book - generated_panel_images, 0)
+                        slice_options["key_panel_budget"] = min(key_panel_budget_per_slice, remaining)
+                    else:
+                        slice_options["key_panel_budget"] = key_panel_budget_per_slice
                 slice_doc, page_docs = await generate_project_slice(
                     project=project,
                     book=book,
                     llm_client=llm_client,
                     page_window=page_window,
                     image_api_key=api_key,
-                    extra_options=run_options,
+                    extra_options=slice_options,
                     progress_callback=slice_progress,
                 )
             except ValueError as exc:
@@ -154,6 +192,7 @@ def build_manga_project_task(
 
             generated_slices += 1
             generated_pages += len(page_docs)
+            generated_panel_images += _count_rendered_panel_images(page_docs)
             total_cost += _sum_trace_cost(slice_doc.llm_traces)
             project = await MangaProjectDoc.get(project_id)
             if not project:
@@ -216,6 +255,10 @@ def generate_manga_slice_task(
     page_window: int = 10,
     generate_images: bool = False,
     image_model: str | None = None,
+    image_mode: str | None = None,
+    sprite_budget_total: int = 8,
+    key_panel_budget_per_slice: int = 3,
+    key_panel_budget_full_book: int = 8,
     options: dict[str, Any] | None = None,
 ):
     """Generate the next manga v2 source slice in the background."""
@@ -254,8 +297,16 @@ def generate_manga_slice_task(
 
         await report(1, "Queued manga v2 generation worker…", "queued")
 
+        resolved_image_mode = image_mode or ("budgeted" if generate_images else "none")
+        should_generate_sprites = resolved_image_mode in {"sprites_only", "budgeted", "full_panel_art"}
         generation_options = dict(options or {})
-        generation_options["generate_images"] = generate_images
+        generation_options["generate_images"] = should_generate_sprites
+        generation_options["image_mode"] = resolved_image_mode
+        generation_options["sprite_budget_total"] = sprite_budget_total
+        generation_options["key_panel_budget_per_slice"] = key_panel_budget_per_slice
+        generation_options["key_panel_budget_full_book"] = key_panel_budget_full_book
+        if resolved_image_mode == "budgeted":
+            generation_options["key_panel_budget"] = key_panel_budget_per_slice
         if image_model:
             generation_options["image_model"] = image_model
 

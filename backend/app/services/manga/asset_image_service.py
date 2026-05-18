@@ -61,7 +61,8 @@ def build_asset_prompt(
     return (
         f"{asset.prompt}\n\n"
         f"Asset type: {asset.asset_type}. Expression/pose: {asset.expression or 'neutral'}.\n"
-        f"Manga production asset, reusable sprite/reference, clean white or transparent background.\n"
+        "Manga production asset, reusable character sprite/reference, "
+        "single subject, no scene background, transparent or clean white background.\n"
         f"Style key: {style}. Keep silhouette and costume details consistent across future images."
         f"{visual_lock}"
     ).strip()

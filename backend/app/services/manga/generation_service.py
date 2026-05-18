@@ -7,9 +7,12 @@ source text, runs the ordered stages, and persists the resulting artifacts.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from inspect import isawaitable
 from typing import Any, Protocol
+
+logger = logging.getLogger(__name__)
 
 from app.domain.manga import (
     AdaptationPlan,
@@ -290,7 +293,8 @@ async def _build_asset_docs(
         specs_missing_from_library,
     )
 
-    should_generate_images = bool(options.get("generate_images"))
+    image_mode = str(options.get("image_mode", "budgeted" if options.get("generate_images") else "none"))
+    should_generate_images = image_mode in {"sprites_only", "budgeted", "full_panel_art"} and bool(options.get("generate_images"))
     if should_generate_images and not image_api_key:
         raise ValueError("character asset image generation requires an image_api_key")
 
@@ -414,9 +418,14 @@ async def generate_project_slice(
     # rendering stage can pick it up. The stage stays pure (no globals); the
     # orchestrator decides whether to schedule it AND whether to share the
     # key, in one place.
-    should_render_panel_art = bool(options.get("generate_images")) and bool(image_api_key)
+    image_mode = str(options.get("image_mode", "budgeted" if options.get("generate_images") else "none"))
+    should_render_panel_art = image_mode in {"budgeted", "full_panel_art"} and bool(image_api_key)
     if should_render_panel_art:
         options["image_api_key"] = image_api_key
+        options["panel_render_mode"] = "all" if image_mode == "full_panel_art" else "key_panels"
+        options["key_panel_budget"] = int(
+            options.get("key_panel_budget", options.get("key_panel_budget_per_slice", 3)) or 0
+        )
     context = PipelineContext(
         book_id=str(book.id),
         project_id=str(project.id),
@@ -440,7 +449,22 @@ async def generate_project_slice(
 
     final_context = await run_pipeline_context(context, stages, progress_callback=report_stage)
     if final_context.quality_report and not final_context.quality_report.passed:
-        raise ValueError("manga quality gate failed; LLM repair stage is required before persistence")
+        error_issues = [
+            issue for issue in final_context.quality_report.issues
+            if issue.severity == "error"
+        ]
+        for issue in error_issues:
+            logger.error(
+                "quality gate error [%s] at %s: %s",
+                issue.code, issue.artifact_id or "<slice>", issue.message,
+            )
+        code_summary = ", ".join(
+            sorted({issue.code for issue in error_issues})
+        ) or "<no error codes captured>"
+        raise ValueError(
+            f"manga quality gate failed ({len(error_issues)} error(s): {code_summary}); "
+            "LLM repair stage is required before persistence"
+        )
 
     await _emit_progress(progress_callback, 82, "Preparing generated artifacts for persistence…", "persist")
     asset_docs = await _build_asset_docs(

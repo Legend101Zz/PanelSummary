@@ -90,6 +90,24 @@ def _bible_character_lookup(bible: CharacterWorldBible) -> dict[str, CharacterDe
     return {character.character_id: character for character in bible.characters}
 
 
+def _optional_int_option(options: dict[str, Any], key: str, default: int | None) -> int | None:
+    if key in options and options[key] is None:
+        return None
+    return int(options.get(key, default) or 0)
+
+
+def _plan_options_from_project(project: MangaProjectDoc) -> CharacterSheetPlanOptions:
+    project_options = project.project_options
+    return CharacterSheetPlanOptions(
+        image_model=str(project_options.get("image_model") or "") or None,
+        sprite_budget_total=_optional_int_option(project_options, "sprite_budget_total", 8),
+        include_turnaround=bool(project_options.get("include_turnaround_assets")),
+        max_expressions_per_character=_optional_int_option(
+            project_options, "max_expressions_per_character", 1
+        ),
+    )
+
+
 async def _materialize_spec(
     *,
     project_id: str,
@@ -151,7 +169,7 @@ async def ensure_book_character_sheets(
         bible=bible,
         project_id=str(project.id),
         art_direction=art_direction,
-        options=options,
+        options=options or _plan_options_from_project(project),
     )
     existing_ids = await existing_asset_id_set(str(project.id))
     todo = specs_missing_from_library(
@@ -215,6 +233,7 @@ async def asset_specs_for_project(
         bible=bible,
         project_id=str(project.id),
         art_direction=art_direction,
+        options=_plan_options_from_project(project),
     )
     return list(plan.assets)
 
@@ -256,6 +275,7 @@ async def regenerate_asset_doc(
         bible=bible,
         project_id=str(project.id),
         art_direction=art_direction,
+        options=_plan_options_from_project(project),
     )
     target_spec: MangaAssetSpec | None = None
     for spec in plan.assets:

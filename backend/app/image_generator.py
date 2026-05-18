@@ -13,6 +13,7 @@ Models (all available on OpenRouter, $0 image price tier):
   black-forest-labs/flux.2-pro           — highest quality, slower
 """
 
+import asyncio
 import base64
 import logging
 import os
@@ -70,6 +71,7 @@ async def generate_image_with_model(
     output_path: str,
     image_model: str,
     aspect_ratio: str = "1:1",
+    max_attempts: int = 3,
 ) -> bool:
     """Generate an image with exactly the requested model.
 
@@ -77,6 +79,10 @@ async def generate_image_with_model(
     silently switching models because visual consistency matters more than
     returning "some" image. If the selected model fails, the caller can surface a
     clear asset-generation error instead of hiding quality drift.
+
+    Retries the same model up to ``max_attempts`` times on empty-payload or
+    transient HTTP failures. We retry the SAME model — not a fallback — so
+    visual consistency is preserved.
     """
     modalities = ["image", "text"] if "gemini" in image_model else ["image"]
     payload = {
@@ -87,53 +93,92 @@ async def generate_image_with_model(
     if "gemini" in image_model:
         payload["image_config"] = {"aspect_ratio": aspect_ratio}
 
-    async with httpx.AsyncClient(timeout=90.0) as client:
-        resp = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "HTTP-Referer": "https://panelsummary.app",
-                "X-Title": "PanelSummary",
-                "Content-Type": "application/json",
-            },
-            json=payload,
+    last_text_preview = ""
+    for attempt in range(1, max_attempts + 1):
+        async with httpx.AsyncClient(timeout=90.0) as client:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "HTTP-Referer": "https://panelsummary.app",
+                    "X-Title": "PanelSummary",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+
+        if resp.status_code != 200:
+            logger.warning(
+                "OpenRouter image %s HTTP %s (attempt %s/%s): %s",
+                image_model, resp.status_code, attempt, max_attempts, resp.text[:200],
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(2 * attempt)
+                continue
+            return False
+
+        data = resp.json()
+        choices = data.get("choices", [])
+        if not choices:
+            logger.warning(
+                "Empty choices from image model %s (attempt %s/%s)",
+                image_model, attempt, max_attempts,
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(2 * attempt)
+                continue
+            return False
+
+        message = choices[0].get("message", {})
+        image_urls: list[str] = []
+        for image in message.get("images", []) or []:
+            url = image.get("image_url", {}).get("url", "")
+            if url:
+                image_urls.append(url)
+
+        content = message.get("content", "")
+        if isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
+                    url = (part.get("image_url") or {}).get("url", "")
+                    if url:
+                        image_urls.append(url)
+
+        for img_url in image_urls:
+            if img_url.startswith("data:image"):
+                _, b64 = img_url.split(",", 1)
+                img_bytes = base64.b64decode(b64)
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                with open(output_path, "wb") as f:
+                    f.write(img_bytes)
+                logger.info(
+                    "Strict image saved (%sKB) via %s on attempt %s: %s",
+                    len(img_bytes) // 1024, image_model, attempt, output_path,
+                )
+                return True
+
+        # No image in the payload. Capture any text the model returned so we can
+        # tell a safety refusal apart from a transient blip on the final failure.
+        if isinstance(content, str):
+            last_text_preview = content[:300]
+        elif isinstance(content, list):
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    last_text_preview = str(part.get("text", ""))[:300]
+                    break
+        finish_reason = choices[0].get("finish_reason", "")
+        logger.warning(
+            "No image payload from %s (attempt %s/%s) finish=%s text=%r",
+            image_model, attempt, max_attempts, finish_reason, last_text_preview,
         )
+        if attempt < max_attempts:
+            await asyncio.sleep(2 * attempt)
+            continue
 
-    if resp.status_code != 200:
-        logger.warning("OpenRouter image %s HTTP %s: %s", image_model, resp.status_code, resp.text[:200])
-        return False
-
-    data = resp.json()
-    choices = data.get("choices", [])
-    if not choices:
-        return False
-
-    message = choices[0].get("message", {})
-    image_urls: list[str] = []
-    for image in message.get("images", []) or []:
-        url = image.get("image_url", {}).get("url", "")
-        if url:
-            image_urls.append(url)
-
-    content = message.get("content", "")
-    if isinstance(content, list):
-        for part in content:
-            if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
-                url = (part.get("image_url") or {}).get("url", "")
-                if url:
-                    image_urls.append(url)
-
-    for img_url in image_urls:
-        if img_url.startswith("data:image"):
-            _, b64 = img_url.split(",", 1)
-            img_bytes = base64.b64decode(b64)
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "wb") as f:
-                f.write(img_bytes)
-            logger.info("Strict image saved (%sKB) via %s: %s", len(img_bytes) // 1024, image_model, output_path)
-            return True
-
-    logger.warning("No image payload returned from strict image model %s", image_model)
+    logger.warning(
+        "No image payload after %s attempts from %s (last text: %r)",
+        max_attempts, image_model, last_text_preview,
+    )
     return False
 
 
@@ -145,6 +190,7 @@ async def generate_image_with_references(
     output_path: str,
     image_model: str,
     aspect_ratio: str = "1:1",
+    max_attempts: int = 3,
 ) -> bool:
     """Generate an image using one or more reference PNGs as multimodal input.
 
@@ -154,10 +200,14 @@ async def generate_image_with_references(
     references to keep characters visually consistent across panels without
     us having to fine-tune anything.
 
+    Retries the same model + references up to ``max_attempts`` times on
+    empty-payload or transient HTTP failures. We retry with the SAME model so
+    cross-panel visual consistency stays intact.
+
     Failure modes (no silent fallback):
     - The selected model is not on the multimodal allow-list -> raise.
     - A reference image path doesn't exist -> raise.
-    - The model call returns no image -> return False (caller decides).
+    - The model call returns no image after all attempts -> return False.
     """
     if "gemini" not in image_model:
         # Only Gemini image models on OpenRouter accept image_url inputs today.
@@ -187,65 +237,94 @@ async def generate_image_with_references(
         "image_config": {"aspect_ratio": aspect_ratio},
     }
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        resp = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "HTTP-Referer": "https://panelsummary.app",
-                "X-Title": "PanelSummary",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-        )
-
-    if resp.status_code != 200:
-        logger.warning(
-            "OpenRouter multimodal image %s HTTP %s: %s",
-            image_model,
-            resp.status_code,
-            resp.text[:200],
-        )
-        return False
-
-    data = resp.json()
-    choices = data.get("choices", [])
-    if not choices:
-        return False
-
-    message = choices[0].get("message", {})
-    image_urls: list[str] = []
-    for image in message.get("images", []) or []:
-        url = image.get("image_url", {}).get("url", "")
-        if url:
-            image_urls.append(url)
-    response_content = message.get("content", "")
-    if isinstance(response_content, list):
-        for part in response_content:
-            if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
-                url = (part.get("image_url") or {}).get("url", "")
-                if url:
-                    image_urls.append(url)
-
-    for img_url in image_urls:
-        if img_url.startswith("data:image"):
-            _, b64 = img_url.split(",", 1)
-            img_bytes = base64.b64decode(b64)
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with open(output_path, "wb") as fp:
-                fp.write(img_bytes)
-            logger.info(
-                "Multimodal panel image saved (%sKB) via %s with %s reference(s): %s",
-                len(img_bytes) // 1024,
-                image_model,
-                len(reference_image_paths),
-                output_path,
+    last_text_preview = ""
+    for attempt in range(1, max_attempts + 1):
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            resp = await client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "HTTP-Referer": "https://panelsummary.app",
+                    "X-Title": "PanelSummary",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
             )
-            return True
+
+        if resp.status_code != 200:
+            logger.warning(
+                "OpenRouter multimodal image %s HTTP %s (attempt %s/%s): %s",
+                image_model, resp.status_code, attempt, max_attempts, resp.text[:200],
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(2 * attempt)
+                continue
+            return False
+
+        data = resp.json()
+        choices = data.get("choices", [])
+        if not choices:
+            logger.warning(
+                "Empty choices from multimodal image model %s (attempt %s/%s)",
+                image_model, attempt, max_attempts,
+            )
+            if attempt < max_attempts:
+                await asyncio.sleep(2 * attempt)
+                continue
+            return False
+
+        message = choices[0].get("message", {})
+        image_urls: list[str] = []
+        for image in message.get("images", []) or []:
+            url = image.get("image_url", {}).get("url", "")
+            if url:
+                image_urls.append(url)
+        response_content = message.get("content", "")
+        if isinstance(response_content, list):
+            for part in response_content:
+                if isinstance(part, dict) and part.get("type") in ("image_url", "image"):
+                    url = (part.get("image_url") or {}).get("url", "")
+                    if url:
+                        image_urls.append(url)
+
+        for img_url in image_urls:
+            if img_url.startswith("data:image"):
+                _, b64 = img_url.split(",", 1)
+                img_bytes = base64.b64decode(b64)
+                os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                with open(output_path, "wb") as fp:
+                    fp.write(img_bytes)
+                logger.info(
+                    "Multimodal panel image saved (%sKB) via %s with %s reference(s) on attempt %s: %s",
+                    len(img_bytes) // 1024,
+                    image_model,
+                    len(reference_image_paths),
+                    attempt,
+                    output_path,
+                )
+                return True
+
+        # No image in the payload. Capture any text returned so a final-attempt
+        # failure tells us safety-refusal vs transient empty.
+        if isinstance(response_content, str):
+            last_text_preview = response_content[:300]
+        elif isinstance(response_content, list):
+            for part in response_content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    last_text_preview = str(part.get("text", ""))[:300]
+                    break
+        finish_reason = choices[0].get("finish_reason", "")
+        logger.warning(
+            "No image payload from multimodal %s (attempt %s/%s) finish=%s text=%r",
+            image_model, attempt, max_attempts, finish_reason, last_text_preview,
+        )
+        if attempt < max_attempts:
+            await asyncio.sleep(2 * attempt)
+            continue
 
     logger.warning(
-        "No image payload returned from multimodal image model %s",
-        image_model,
+        "No image payload after %s attempts from multimodal model %s (last text: %r)",
+        max_attempts, image_model, last_text_preview,
     )
     return False
 

@@ -51,17 +51,17 @@ REFERENCE_ANGLES: tuple[tuple[str, str], ...] = (
     (
         "front",
         "Front-facing full-body model sheet, T-pose-friendly, neutral expression, "
-        "feet-to-head visible, plain white background.",
+        "feet-to-head visible, transparent or plain white background.",
     ),
     (
         "side",
         "Three-quarter side view full-body model sheet, profile readable, "
-        "silhouette legible against plain white background.",
+        "silhouette legible against transparent or plain white background.",
     ),
     (
         "back",
         "Back view full-body model sheet showing hair, costume back, and "
-        "silhouette from behind on plain white background.",
+        "silhouette from behind on transparent or plain white background.",
     ),
 )
 
@@ -82,6 +82,9 @@ class CharacterSheetPlanOptions:
 
     expressions: tuple[str, ...] | None = None  # legacy override; ignored when art_direction present
     image_model: str | None = None
+    sprite_budget_total: int | None = 8
+    include_turnaround: bool = False
+    max_expressions_per_character: int | None = 1
 
 
 def _stable_asset_id(character_id: str, asset_type: str, expression: str) -> str:
@@ -144,7 +147,8 @@ def _reference_prompt(
     """
     art_header = direction.reference_sheet_prose if direction else (
         "Manga character reference sheet, full body, T-pose-friendly, plain "
-        "white background, suitable as a model sheet for downstream panel art."
+        "white or transparent background, suitable as a reusable sprite/model "
+        "sheet for downstream DSL panel composition."
     )
     art_recipe = _art_direction_block(direction) if direction else ""
     return (
@@ -185,7 +189,7 @@ def _expression_prompt(
         f"{art_recipe} "
         f"World context: {world_summary}. "
         f"Style: {visual_style}. "
-        f"Plain white background, single subject, consistent with the reference "
+        f"Transparent or plain white background, single subject, consistent with the reference "
         f"sheet for this character. "
         f"{_bible_visual_lock_block(character)}"
     ).strip()
@@ -237,10 +241,11 @@ def _specs_for_character(
     chain image generations today, but the order future-proofs the contract.)
     """
     specs: list[MangaAssetSpec] = []
-    # Phase B1: emit one reference sheet per angle so the library carries a
-    # full turnaround. The asset_id encodes the angle so re-runs are
-    # idempotent and the selector can pick a specific angle when needed.
-    for angle_label, angle_framing in REFERENCE_ANGLES:
+    # Default path emits one canonical front sprite/reference per character.
+    # Full turnarounds stay available for advanced/high-budget runs, but are no
+    # longer the default because the frontend DSL mostly needs reusable cutouts.
+    reference_angles = REFERENCE_ANGLES if options.include_turnaround else REFERENCE_ANGLES[:1]
+    for angle_label, angle_framing in reference_angles:
         specs.append(
             MangaAssetSpec(
                 asset_id=_stable_asset_id(
@@ -266,11 +271,14 @@ def _specs_for_character(
                 model=options.image_model or "",
             )
         )
-    for label, expression_direction in _expressions_for_character(
+    expressions = _expressions_for_character(
         character_id=character.character_id,
         direction=direction,
         options=options,
-    ):
+    )
+    if options.max_expressions_per_character is not None:
+        expressions = expressions[:max(options.max_expressions_per_character, 0)]
+    for label, expression_direction in expressions:
         specs.append(
             MangaAssetSpec(
                 asset_id=_stable_asset_id(character.character_id, EXPRESSION_ASSET_TYPE, label),
@@ -335,6 +343,12 @@ def plan_book_character_sheets(
                 options=plan_options,
             )
         )
+
+    if plan_options.sprite_budget_total is not None:
+        budget = max(plan_options.sprite_budget_total, 0)
+        references = [spec for spec in all_specs if spec.asset_type == REFERENCE_ASSET_TYPE]
+        expressions = [spec for spec in all_specs if spec.asset_type != REFERENCE_ASSET_TYPE]
+        all_specs = (references + expressions)[:budget]
 
     notes = (
         "Plan composed from the locked CharacterWorldBible AND the LLM-authored "

@@ -7,7 +7,7 @@ start thinking in projects/slices instead of one-off summaries.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from beanie.operators import In
 from fastapi import APIRouter, HTTPException
@@ -67,6 +67,10 @@ class GenerateMangaSliceRequest(BaseModel):
     page_window: int = Field(default=10, ge=1, le=100)
     generate_images: bool = False
     image_model: str | None = None
+    image_mode: Literal["none", "sprites_only", "budgeted", "full_panel_art"] | None = None
+    sprite_budget_total: int = Field(default=8, ge=0, le=50)
+    key_panel_budget_per_slice: int = Field(default=3, ge=0, le=20)
+    key_panel_budget_full_book: int = Field(default=8, ge=0, le=100)
     options: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -86,6 +90,10 @@ class BuildMangaProjectRequest(BaseModel):
     page_window: int = Field(default=10, ge=1, le=100)
     generate_images: bool = True
     image_model: str | None = None
+    image_mode: Literal["none", "sprites_only", "budgeted", "full_panel_art"] | None = None
+    sprite_budget_total: int = Field(default=8, ge=0, le=50)
+    key_panel_budget_per_slice: int = Field(default=3, ge=0, le=20)
+    key_panel_budget_full_book: int = Field(default=8, ge=0, le=100)
     options: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -689,14 +697,21 @@ async def build_manga_project(project_id: str, request: BuildMangaProjectRequest
             message="A manga build is already running for this project.",
         )
 
+    image_mode = request.image_mode or ("budgeted" if request.generate_images else "none")
+    should_generate_sprites = image_mode in {"sprites_only", "budgeted", "full_panel_art"}
+
     # Persist user-facing generation preferences, never the API key.
     project_options = dict(project.project_options)
     project_options.update({
         "preferred_provider": request.provider,
         "preferred_model": request.model,
         "page_window": request.page_window,
-        "generate_images": request.generate_images,
+        "generate_images": should_generate_sprites,
+        "image_mode": image_mode,
         "image_model": request.image_model,
+        "sprite_budget_total": request.sprite_budget_total,
+        "key_panel_budget_per_slice": request.key_panel_budget_per_slice,
+        "key_panel_budget_full_book": request.key_panel_budget_full_book,
     })
     project.project_options = project_options
     project.status = "generating"
@@ -711,8 +726,12 @@ async def build_manga_project(project_id: str, request: BuildMangaProjectRequest
         model=request.model,
         mode=request.mode,
         page_window=request.page_window,
-        generate_images=request.generate_images,
+        generate_images=should_generate_sprites,
         image_model=request.image_model,
+        image_mode=image_mode,
+        sprite_budget_total=request.sprite_budget_total,
+        key_panel_budget_per_slice=request.key_panel_budget_per_slice,
+        key_panel_budget_full_book=request.key_panel_budget_full_book,
         options=request.options,
     )
     job_status = JobStatus(
@@ -773,14 +792,21 @@ async def generate_next_manga_slice(project_id: str, request: GenerateMangaSlice
 
     from app.celery_manga_tasks import generate_manga_slice_task
 
+    image_mode = request.image_mode or ("budgeted" if request.generate_images else "none")
+    should_generate_sprites = image_mode in {"sprites_only", "budgeted", "full_panel_art"}
+
     task = generate_manga_slice_task.delay(
         project_id=project_id,
         api_key=request.api_key,
         provider=request.provider,
         model=request.model,
         page_window=request.page_window,
-        generate_images=request.generate_images,
+        generate_images=should_generate_sprites,
         image_model=request.image_model,
+        image_mode=image_mode,
+        sprite_budget_total=request.sprite_budget_total,
+        key_panel_budget_per_slice=request.key_panel_budget_per_slice,
+        key_panel_budget_full_book=request.key_panel_budget_full_book,
         options=request.options,
     )
     job_status = JobStatus(

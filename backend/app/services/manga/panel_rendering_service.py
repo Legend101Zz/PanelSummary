@@ -87,10 +87,15 @@ class PageRenderingSummary:
 
     rendered: int = 0
     failed: int = 0
+    skipped: int = 0
     results: list[PanelRenderResult] = field(default_factory=list)
 
     @property
     def total(self) -> int:
+        return self.rendered + self.failed + self.skipped
+
+    @property
+    def attempted(self) -> int:
         return self.rendered + self.failed
 
     @property

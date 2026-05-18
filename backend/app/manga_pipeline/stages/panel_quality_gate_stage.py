@@ -108,6 +108,17 @@ def _evaluate_storyboard_panel(
     if artifact is None:
         return issues
 
+    has_path = bool(artifact.image_path)
+    had_error = bool(artifact.error)
+    attempted = (
+        has_path
+        or had_error
+        or bool(artifact.used_reference_assets)
+        or artifact.requested_character_count > 0
+    )
+    if not attempted:
+        return issues
+
     # 2. Renderer-result vs claimed-presence consistency. If the panel
     #    rendered cleanly but no reference assets were attached AND the
     #    storyboard said characters were on-stage, the painted character
@@ -128,8 +139,6 @@ def _evaluate_storyboard_panel(
     # 3. Render success/failure invariants. Cleanly rendered panels MUST
     #    carry an image_path; failed panels must NOT. Either inconsistency
     #    is a bug in the persistence path, not user-fixable.
-    has_path = bool(artifact.image_path)
-    had_error = bool(artifact.error)
     if had_error and has_path:
         issues.append(
             _issue(

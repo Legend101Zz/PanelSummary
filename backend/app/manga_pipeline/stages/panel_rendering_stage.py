@@ -57,6 +57,8 @@ async def run(context: PipelineContext) -> PipelineContext:
         image_api_key=str(image_api_key),
         image_model=str(image_model) if image_model else None,
         style=style,
+        panel_selection_mode=str(context.options.get("panel_render_mode", "all")),
+        key_panel_budget=int(context.options.get("key_panel_budget", 3) or 0),
     )
 
     if summary.failed and not summary.rendered:
@@ -81,6 +83,8 @@ async def run(context: PipelineContext) -> PipelineContext:
     context.options["panel_rendering_summary"] = {
         "rendered": summary.rendered,
         "failed": summary.failed,
+        "skipped": summary.skipped,
+        "attempted": summary.attempted,
         # Phase 3.3: surface the sprite-bank hit-rate so the QA panel and
         # frontend can render "7/9 character slots resolved" without
         # re-deriving it from the per-panel results list.

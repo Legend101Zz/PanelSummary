@@ -42,6 +42,7 @@ from app.domain.manga import (
     CharacterArtDirectionBundle,
     CharacterWorldBible,
     PanelRenderArtifact,
+    PanelPurpose,
     RenderedPage,
     ShotType,
     StoryboardPanel,
@@ -84,6 +85,106 @@ _SHOT_TYPE_ASPECT_RATIO: dict[ShotType, str] = {
     ShotType.INSERT: "1:1",
     ShotType.SYMBOLIC: "3:2",
 }
+
+
+def _panel_key_score(
+    *,
+    rendered_pages: list[RenderedPage],
+    page_index: int,
+    panel_index: int,
+    panel: StoryboardPanel,
+) -> int:
+    """Score how useful a paid key-panel render would be for this panel."""
+    score = 0
+    if panel.purpose == PanelPurpose.TO_BE_CONTINUED:
+        score += 90
+    elif panel.purpose == PanelPurpose.REVEAL:
+        score += 80
+    elif panel.purpose == PanelPurpose.EMOTIONAL_TURN:
+        score += 55
+    elif panel.purpose == PanelPurpose.SETUP:
+        score += 25
+    elif panel.purpose == PanelPurpose.TRANSITION:
+        score += 15
+    elif panel.purpose == PanelPurpose.RECAP:
+        score -= 20
+
+    if panel.shot_type in {ShotType.EXTREME_WIDE, ShotType.WIDE}:
+        score += 30
+    elif panel.shot_type == ShotType.SYMBOLIC:
+        score += 30
+    elif panel.shot_type == ShotType.EXTREME_CLOSE_UP:
+        score += 22
+    elif panel.shot_type == ShotType.CLOSE_UP:
+        score += 15
+    elif panel.shot_type == ShotType.INSERT:
+        score += 10
+
+    rendered_page = rendered_pages[page_index]
+    if rendered_page.composition and rendered_page.composition.page_turn_panel_id == panel.panel_id:
+        score += 35
+
+    if page_index == 0 and panel_index == 0:
+        score += 25
+    if page_index == len(rendered_pages) - 1 and panel_index == len(rendered_page.storyboard_page.panels) - 1:
+        score += 25
+    if not panel.dialogue:
+        score += 8
+    if len(panel.dialogue) > 1:
+        score -= 12
+    return score
+
+
+def select_key_panel_ids(
+    rendered_pages: list[RenderedPage],
+    *,
+    budget: int,
+) -> set[str]:
+    """Select a start/middle/end spread of high-impact panels to paint."""
+    if budget <= 0 or not rendered_pages:
+        return set()
+
+    candidates: list[tuple[float, int, str]] = []
+    total_panels = sum(len(page.storyboard_page.panels) for page in rendered_pages)
+    if total_panels == 0:
+        return set()
+
+    ordinal = 0
+    for page_index, rendered_page in enumerate(rendered_pages):
+        for panel_index, panel in enumerate(rendered_page.storyboard_page.panels):
+            position = ordinal / max(total_panels - 1, 1)
+            score = _panel_key_score(
+                rendered_pages=rendered_pages,
+                page_index=page_index,
+                panel_index=panel_index,
+                panel=panel,
+            )
+            candidates.append((position, score, panel.panel_id))
+            ordinal += 1
+
+    selected: list[str] = []
+    if budget == 1:
+        return {max(candidates, key=lambda item: item[1])[2]}
+
+    if budget == 2:
+        bands = [(0.0, 0.55), (0.45, 1.01)]
+    else:
+        bands = [(0.0, 0.34), (0.25, 0.75), (0.66, 1.01)]
+
+    for start, end in bands[:budget]:
+        band_candidates = [
+            item for item in candidates
+            if start <= item[0] < end and item[2] not in selected
+        ]
+        if band_candidates:
+            selected.append(max(band_candidates, key=lambda item: item[1])[2])
+
+    for _, _, panel_id in sorted(candidates, key=lambda item: item[1], reverse=True):
+        if len(selected) >= budget:
+            break
+        if panel_id not in selected:
+            selected.append(panel_id)
+    return set(selected[:budget])
 
 
 def aspect_ratio_for_storyboard_panel(panel: StoryboardPanel) -> str:
@@ -292,6 +393,8 @@ async def render_rendered_pages(
     style: str,
     image_root: Path | None = None,
     max_concurrency: int = 3,
+    panel_selection_mode: str = "all",
+    key_panel_budget: int = 3,
     panel_renderer: PanelRenderer = generate_image_with_references,
 ) -> PageRenderingSummary:
     """Render every panel on every ``RenderedPage`` in place.
@@ -311,6 +414,12 @@ async def render_rendered_pages(
     asset_lookup = build_asset_lookup(library_assets)
     semaphore = asyncio.Semaphore(max(max_concurrency, 1))
     selected_model = image_model or DEFAULT_IMAGE_MODEL
+    selected_panel_ids: set[str] | None = None
+    if panel_selection_mode == "key_panels":
+        selected_panel_ids = select_key_panel_ids(
+            rendered_pages,
+            budget=key_panel_budget,
+        )
 
     summary = PageRenderingSummary()
 
@@ -340,6 +449,9 @@ async def render_rendered_pages(
     for rendered_page in rendered_pages:
         page_index = rendered_page.storyboard_page.page_index
         for panel in rendered_page.storyboard_page.panels:
+            if selected_panel_ids is not None and panel.panel_id not in selected_panel_ids:
+                summary.skipped += 1
+                continue
             artifact = rendered_page.panel_artifacts[panel.panel_id]
             tasks.append(
                 asyncio.create_task(render_with_limit(page_index, panel, artifact))

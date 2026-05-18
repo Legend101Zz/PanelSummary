@@ -160,8 +160,6 @@ class CharacterAssetPlan(BaseModel):
     def asset_plan_needs_prompts(self) -> "CharacterAssetPlan":
         if not self.project_id.strip():
             raise ValueError("character asset plan needs a project_id")
-        if not self.assets:
-            raise ValueError("character asset plan needs at least one asset")
         missing_prompts = [asset.asset_id for asset in self.assets if not asset.prompt.strip()]
         if missing_prompts:
             raise ValueError("every character asset needs an image-model prompt")

@@ -30,12 +30,27 @@ async def run(context: PipelineContext) -> PipelineContext:
         )
     # Lazy import: keeps the pipeline package free of service-layer imports
     # at module load time so test discovery stays fast.
-    from app.services.manga.character_sheet_planner import plan_book_character_sheets
+    from app.services.manga.character_sheet_planner import (
+        CharacterSheetPlanOptions,
+        plan_book_character_sheets,
+    )
 
+    sprite_budget = context.options.get("sprite_budget_total", 8)
+    max_expressions = context.options.get("max_expressions_per_character", 1)
     plan = plan_book_character_sheets(
         bible=context.character_bible,
         project_id=context.project_id,
         art_direction=context.art_direction,
+        options=CharacterSheetPlanOptions(
+            image_model=(
+                str(context.options.get("image_model"))
+                if context.options.get("image_model")
+                else None
+            ),
+            sprite_budget_total=None if sprite_budget is None else int(sprite_budget or 0),
+            include_turnaround=bool(context.options.get("include_turnaround_assets")),
+            max_expressions_per_character=None if max_expressions is None else int(max_expressions or 0),
+        ),
     )
     context.asset_specs = list(plan.assets)
     return context

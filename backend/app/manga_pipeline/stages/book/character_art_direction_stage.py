@@ -103,7 +103,7 @@ async def run(context: BookUnderstandingContext) -> BookUnderstandingContext:
         stage_name=LLMStageName.CHARACTER_ART_DIRECTION,
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("art_direction_max_tokens", 6000)),
+        max_tokens=int(context.options.get("art_direction_max_tokens", 16000)),
         temperature=float(context.options.get("art_direction_temperature", 0.85)),
         max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
     )
