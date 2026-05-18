@@ -23,6 +23,15 @@ import type { JobStatusResponse } from "@/lib/types";
 
 type Phase = "idle" | "drag" | "uploading" | "parsing" | "done" | "cached" | "error";
 
+const PARSE_PREVIEW_CHAPTERS = [
+  "Introduction",
+  "The Core Framework",
+  "Case Studies",
+  "Applications",
+  "Advanced Concepts",
+  "Synthesis & Review",
+];
+
 // ─── SENSEI ROBOT (reused pattern) ──────────────────────────
 function SenseiHead({ expression }: { expression: "idle" | "excited" | "working" | "sad" }) {
   const eyeY = expression === "working" ? 27 : 30;
@@ -95,16 +104,11 @@ export default function UploadPage() {
 
   // Fake chapter names appearing during parse (visual feedback)
   useEffect(() => {
-    if (phase !== "parsing") { setFakeChapters([]); return; }
-    let i = 0;
-    const chapters = ["Introduction", "The Core Framework", "Case Studies", "Applications", "Advanced Concepts", "Synthesis & Review"];
-    const t = setInterval(() => {
-      if (i < chapters.length && progress > i * 15) {
-        setFakeChapters((c) => [...c, chapters[i++]]);
-      }
-      if (i >= chapters.length) clearInterval(t);
-    }, 800);
-    return () => clearInterval(t);
+    if (phase !== "parsing") {
+      setFakeChapters([]);
+      return;
+    }
+    setFakeChapters(PARSE_PREVIEW_CHAPTERS.filter((_, i) => progress > i * 15));
   }, [phase, progress]);
 
   const processFile = useCallback(async (file: File) => {
@@ -316,7 +320,7 @@ export default function UploadPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     {fakeChapters.map((ch, i) => (
-                      <ChapterCard key={ch} title={ch} index={i} delay={0} />
+                      <ChapterCard key={`${ch}-${i}`} title={ch} index={i} delay={0} />
                     ))}
                   </div>
                 </motion.div>
