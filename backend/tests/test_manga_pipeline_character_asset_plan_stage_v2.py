@@ -96,9 +96,9 @@ def test_stage_uses_deterministic_planner_and_does_not_touch_llm():
     result = asyncio.run(character_asset_plan_stage.run(context))
 
     assert result.llm_traces == []
-    # Two characters * (3 reference angles + 3 expressions) = 12 specs.
-    # The 3-angle turnaround landed in Phase B1.
-    assert len(result.asset_specs) == 12
+    # Cheap default: one reusable front sprite plus one expression sprite per
+    # character. Full turnarounds are now an explicit high-budget option.
+    assert len(result.asset_specs) == 4
 
 
 def test_specs_carry_visual_lock_in_prompt():

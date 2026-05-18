@@ -112,6 +112,7 @@ def test_llm_authored_expressions_drive_the_plan_when_bundle_is_supplied():
         bible=_bible(_kai()),
         project_id="p1",
         art_direction=_bundle(direction),
+        options=CharacterSheetPlanOptions(sprite_budget_total=None, max_expressions_per_character=None),
     )
 
     expression_specs = [s for s in plan.assets if s.asset_type == EXPRESSION_ASSET_TYPE]
@@ -256,7 +257,7 @@ def test_asset_ids_are_stable_across_legacy_and_llm_paths_for_same_labels():
 # --- coverage ---------------------------------------------------------------
 
 
-def test_each_character_gets_a_full_reference_turnaround():
+def test_default_plan_uses_one_front_reference_per_character():
     plan = plan_book_character_sheets(
         bible=_bible(_kai(), _mira()),
         project_id="p1",
@@ -264,15 +265,36 @@ def test_each_character_gets_a_full_reference_turnaround():
     )
 
     references = [s for s in plan.assets if s.asset_type == REFERENCE_ASSET_TYPE]
-    # Phase B1: every character carries a turnaround — front, side, back —
-    # so the artist can verify silhouette consistency without rerunning the
-    # image model.
     assert {r.character_id for r in references} == {"kai", "mira"}
-    assert len(references) == 6  # 2 characters × 3 angles
+    assert len(references) == 2
     angles_per_character = {
         char_id: sorted(
             r.expression for r in references if r.character_id == char_id
         )
+        for char_id in {"kai", "mira"}
+    }
+    assert angles_per_character == {
+        "kai": ["front"],
+        "mira": ["front"],
+    }
+
+
+def test_turnaround_can_be_enabled_for_advanced_runs():
+    plan = plan_book_character_sheets(
+        bible=_bible(_kai(), _mira()),
+        project_id="p1",
+        art_direction=_bundle(_direction("kai"), _direction("mira")),
+        options=CharacterSheetPlanOptions(
+            sprite_budget_total=None,
+            include_turnaround=True,
+            max_expressions_per_character=0,
+        ),
+    )
+
+    references = [s for s in plan.assets if s.asset_type == REFERENCE_ASSET_TYPE]
+    assert len(references) == 6
+    angles_per_character = {
+        char_id: sorted(r.expression for r in references if r.character_id == char_id)
         for char_id in {"kai", "mira"}
     }
     assert angles_per_character == {
@@ -281,7 +303,7 @@ def test_each_character_gets_a_full_reference_turnaround():
     }
 
 
-def test_each_character_gets_one_expression_per_llm_authored_label():
+def test_default_plan_limits_each_character_to_one_expression_sprite():
     plan = plan_book_character_sheets(
         bible=_bible(_kai(), _mira()),
         project_id="p1",
@@ -301,8 +323,56 @@ def test_each_character_gets_one_expression_per_llm_authored_label():
         for s in plan.assets
         if s.character_id == "mira" and s.asset_type == EXPRESSION_ASSET_TYPE
     )
+    assert kai_expressions == ["calm"]
+    assert mira_expressions == ["watchful"]
+
+
+def test_full_expression_set_can_be_enabled_when_budget_allows():
+    plan = plan_book_character_sheets(
+        bible=_bible(_kai(), _mira()),
+        project_id="p1",
+        art_direction=_bundle(
+            _direction("kai", expressions=("calm", "resolute", "fractured")),
+            _direction("mira", expressions=("watchful", "patient", "wry")),
+        ),
+        options=CharacterSheetPlanOptions(sprite_budget_total=None, max_expressions_per_character=None),
+    )
+
+    kai_expressions = sorted(
+        s.expression
+        for s in plan.assets
+        if s.character_id == "kai" and s.asset_type == EXPRESSION_ASSET_TYPE
+    )
+    mira_expressions = sorted(
+        s.expression
+        for s in plan.assets
+        if s.character_id == "mira" and s.asset_type == EXPRESSION_ASSET_TYPE
+    )
     assert kai_expressions == ["calm", "fractured", "resolute"]
     assert mira_expressions == ["patient", "watchful", "wry"]
+
+
+def test_sprite_budget_prioritizes_references_then_expressions():
+    plan = plan_book_character_sheets(
+        bible=_bible(_kai(), _mira()),
+        project_id="p1",
+        art_direction=_bundle(
+            _direction("kai", expressions=("calm", "resolute", "fractured")),
+            _direction("mira", expressions=("watchful", "patient", "wry")),
+        ),
+        options=CharacterSheetPlanOptions(sprite_budget_total=3, max_expressions_per_character=None),
+    )
+
+    assert [spec.asset_type for spec in plan.assets] == [
+        REFERENCE_ASSET_TYPE,
+        REFERENCE_ASSET_TYPE,
+        EXPRESSION_ASSET_TYPE,
+    ]
+    assert [(spec.character_id, spec.expression) for spec in plan.assets] == [
+        ("kai", "front"),
+        ("mira", "front"),
+        ("kai", "calm"),
+    ]
 
 
 # --- legacy path (no art direction) -----------------------------------------
@@ -311,6 +381,19 @@ def test_each_character_gets_one_expression_per_llm_authored_label():
 def test_legacy_path_falls_back_to_default_expression_set():
     """Projects whose book-understanding ran pre-Phase-3 still produce a plan."""
     plan = plan_book_character_sheets(bible=_bible(_kai()), project_id="p1")
+
+    expressions = sorted(
+        s.expression for s in plan.assets if s.asset_type == EXPRESSION_ASSET_TYPE
+    )
+    assert expressions == [LEGACY_DEFAULT_EXPRESSIONS[0]]
+
+
+def test_legacy_path_can_emit_the_full_default_expression_set():
+    plan = plan_book_character_sheets(
+        bible=_bible(_kai()),
+        project_id="p1",
+        options=CharacterSheetPlanOptions(sprite_budget_total=None, max_expressions_per_character=None),
+    )
 
     expressions = sorted(
         s.expression for s in plan.assets if s.asset_type == EXPRESSION_ASSET_TYPE

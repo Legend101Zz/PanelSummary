@@ -58,6 +58,7 @@ from app.services.manga.storyboard_panel_renderer import (
     aspect_ratio_for_storyboard_panel,
     build_storyboard_panel_prompt,
     render_rendered_pages,
+    select_key_panel_ids,
 )
 
 
@@ -324,7 +325,7 @@ def test_evaluate_rendered_pages_flags_render_success_invariant_violations():
     """A 'rendered' artifact missing image_path is a wiring bug, not a soft signal."""
     panel = _panel("p", character_ids=[])
     # Artificial inconsistency: no error AND no image_path.
-    artifact = PanelRenderArtifact()
+    artifact = PanelRenderArtifact(requested_character_count=1)
     issues = evaluate_rendered_pages(
         rendered_pages=[_rendered_with(panel=panel, artifact=artifact)],
         bible_ids=set(),
@@ -400,3 +401,75 @@ def test_panel_quality_gate_short_circuits_when_no_artifact_was_attempted():
     )
     asyncio.run(panel_quality_gate_stage.run(ctx))
     assert ctx.quality_report is None
+
+
+def test_select_key_panel_ids_spreads_budget_across_start_middle_and_end():
+    pages = [
+        empty_rendered_page(
+            storyboard_page=_page([
+                _panel("start", purpose=PanelPurpose.SETUP, shot=ShotType.WIDE),
+                _panel("quiet", purpose=PanelPurpose.RECAP),
+            ], page_index=0),
+            composition=None,
+        ),
+        empty_rendered_page(
+            storyboard_page=_page([
+                _panel("middle", purpose=PanelPurpose.EMOTIONAL_TURN, shot=ShotType.CLOSE_UP),
+                _panel("transition", purpose=PanelPurpose.TRANSITION),
+            ], page_index=1),
+            composition=None,
+        ),
+        empty_rendered_page(
+            storyboard_page=_page([
+                _panel("ending", purpose=PanelPurpose.REVEAL, shot=ShotType.EXTREME_CLOSE_UP),
+            ], page_index=2),
+            composition=None,
+        ),
+    ]
+
+    selected = select_key_panel_ids(pages, budget=3)
+
+    assert selected == {"start", "middle", "ending"}
+
+
+def test_render_rendered_pages_key_panel_mode_skips_unselected_panels(tmp_path):
+    page = _page([
+        _panel("start", purpose=PanelPurpose.SETUP, shot=ShotType.WIDE),
+        _panel("quiet", purpose=PanelPurpose.RECAP),
+        _panel("ending", purpose=PanelPurpose.REVEAL, shot=ShotType.EXTREME_CLOSE_UP),
+    ])
+    rendered = empty_rendered_page(storyboard_page=page, composition=None)
+    calls: list[str] = []
+
+    async def fake_renderer(**kwargs):
+        calls.append(Path(kwargs["output_path"]).stem)
+        Path(kwargs["output_path"]).parent.mkdir(parents=True, exist_ok=True)
+        Path(kwargs["output_path"]).write_bytes(b"PNG-fake")
+        return True
+
+    summary = asyncio.run(
+        render_rendered_pages(
+            rendered_pages=[rendered],
+            project_id="proj",
+            slice_id="slice-1",
+            bible=_bible("aiko"),
+            art_direction=None,
+            library_assets=[],
+            image_api_key="fake-key",
+            image_model=None,
+            style="shonen-ink",
+            image_root=tmp_path,
+            max_concurrency=1,
+            panel_selection_mode="key_panels",
+            key_panel_budget=1,
+            panel_renderer=fake_renderer,
+        )
+    )
+
+    assert summary.rendered == 1
+    assert summary.skipped == 2
+    assert summary.attempted == 1
+    assert calls == ["ending"]
+    assert rendered.panel_artifacts["ending"].image_path
+    assert not rendered.panel_artifacts["start"].image_path
+    assert not rendered.panel_artifacts["quiet"].image_path
