@@ -17,26 +17,27 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import type { StoryboardPanel, PanelRenderArtifact } from "@/lib/types";
+import type {
+  BubblePlacement,
+  PanelRenderArtifact,
+  SpriteLayer,
+  StoryboardPanel,
+} from "@/lib/types";
 import {
   derivePanelKind,
   derivePaletteKey,
   deriveEmphasis,
   deriveEffects,
-  emphasisOverrideFor,
-  primaryCharacter,
 } from "./derived_visuals";
 import {
   EMPHASIS_WEIGHTS,
   MANGA_PALETTES,
   type PanelKind,
 } from "./types";
-import {
-  findAssetForCharacter,
-  type MangaCharacterAsset,
-} from "./asset_lookup";
+import type { MangaCharacterAsset } from "./asset_lookup";
 import { PaintedPanelBackdrop } from "./chrome/PaintedPanelBackdrop";
 import { SfxLayer } from "./chrome/SfxLayer";
+import { SceneSprites } from "./chrome/SceneSprites";
 import { DialoguePanel } from "./panels/DialoguePanel";
 import { NarrationPanel } from "./panels/NarrationPanel";
 import { ConceptPanel } from "./panels/ConceptPanel";
@@ -51,6 +52,10 @@ interface MangaPanelRendererProps {
   staggerDelay?: number;
   /** Character reference assets keyed by id+expression. */
   characterAssets?: MangaCharacterAsset[];
+  /** Optional explicit panel-local scene sprite layers from the render contract. */
+  spriteLayers?: SpriteLayer[];
+  /** Optional explicit panel-local speech bubble placements from the render contract. */
+  bubblePlacements?: BubblePlacement[];
 }
 
 /**
@@ -64,6 +69,8 @@ export function MangaPanelRenderer({
   emphasisOverride,
   staggerDelay = 0,
   characterAssets = [],
+  spriteLayers,
+  bubblePlacements,
 }: MangaPanelRendererProps) {
   const palette = useMemo(
     () => MANGA_PALETTES[derivePaletteKey(panel)],
@@ -80,14 +87,6 @@ export function MangaPanelRenderer({
   // its avatar disc.
   const hasPaintedBackdrop = Boolean(artifact.image_path && !artifact.error);
 
-  // Pre-compute the per-line asset lookup once. The same character
-  // appears in dialogue + as the panel's "primary"; doing the lookup
-  // here keeps sub-renderers free of asset-hunt logic.
-  const panelAsset = useMemo(
-    () => findAssetForCharacter(primaryCharacter(panel), undefined, characterAssets),
-    [panel, characterAssets],
-  );
-
   const content = useMemo(() => {
     switch (kind) {
       case "dialogue":
@@ -95,8 +94,8 @@ export function MangaPanelRenderer({
           <DialoguePanel
             panel={panel}
             palette={palette}
-            assets={characterAssets}
             hasPaintedBackdrop={hasPaintedBackdrop}
+            bubblePlacements={bubblePlacements}
           />
         );
       case "transition":
@@ -106,21 +105,18 @@ export function MangaPanelRenderer({
       case "narration":
         return <NarrationPanel panel={panel} palette={palette} effects={effects} />;
     }
-  }, [kind, panel, palette, characterAssets, hasPaintedBackdrop, effects]);
-
-  // ``panelAsset`` is consumed only via the painted-backdrop branch
-  // (PaintedPanelBackdrop reads its own image_path); we keep the
-  // lookup so future panel kinds (splash etc.) can use it without
-  // re-deriving. Reference it to silence the unused-var lint.
-  void panelAsset;
+  }, [kind, panel, palette, hasPaintedBackdrop, effects, bubblePlacements]);
 
   return (
     <motion.div
-      className="relative overflow-hidden"
+      className="relative h-full w-full overflow-hidden"
       style={{
-        background: palette.bg,
-        border: `2px solid ${palette.border}`,
-        borderRadius: 4,
+        background: hasPaintedBackdrop
+          ? palette.bg
+          : "linear-gradient(135deg, #fffaf0 0%, #f8f3e7 58%, #ede1c6 100%)",
+        border: "3px solid #1f1f29",
+        borderRadius: 2,
+        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)",
         flex: weight,
         minHeight: emphasis === "high" ? 200 : emphasis === "low" ? 80 : 120,
       }}
@@ -151,15 +147,37 @@ export function MangaPanelRenderer({
 
       {effects.includes("screentone") && (
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none opacity-[0.08]"
           style={{
-            backgroundImage: `radial-gradient(circle, ${palette.text} 0.5px, transparent 0.5px)`,
-            backgroundSize: "4px 4px",
+            backgroundImage: "radial-gradient(circle, #1f1f29 0.55px, transparent 0.55px)",
+            backgroundSize: "5px 5px",
+            zIndex: 2,
           }}
         />
       )}
 
-      {content}
+      {!hasPaintedBackdrop && (
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.12]"
+          style={{
+            backgroundImage:
+              "linear-gradient(115deg, transparent 0 44%, #0053e2 44% 45%, transparent 45% 100%)",
+            backgroundSize: "28px 100%",
+            zIndex: 2,
+          }}
+        />
+      )}
+
+      <SceneSprites
+        panel={panel}
+        explicitLayers={spriteLayers}
+        assets={characterAssets}
+        hasPaintedBackdrop={hasPaintedBackdrop}
+      />
+
+      <div className="absolute inset-0" style={{ zIndex: 35 }}>
+        {content}
+      </div>
 
       <SfxLayer effects={effects} accent={palette.accent} baseDelay={staggerDelay + 0.2} />
     </motion.div>

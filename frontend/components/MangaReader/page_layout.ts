@@ -27,6 +27,7 @@ import type {
   RenderedPage,
   StoryboardPanel,
   PageComposition,
+  PanelPlacement,
 } from "@/lib/types";
 
 export type LegacyLayout =
@@ -43,12 +44,15 @@ export interface CellPlacement {
   style?: CSSProperties;
   /** True when this cell anchors the page-turn beat (highlighted in QA). */
   isPageTurn: boolean;
+  /** Explicit page-space placement when the expanded render contract provides one. */
+  placement?: PanelPlacement;
 }
 
 export interface PageLayout {
   containerStyle: CSSProperties;
   cells: CellPlacement[];
   usingComposition: boolean;
+  usingExplicitPlacements: boolean;
 }
 
 // ── Legacy panel-count layout ───────────────────────────────────────
@@ -129,6 +133,68 @@ function rowToTracks(row: number[]): string {
   return row.map((pct) => `${pct}%`).join(" ");
 }
 
+function rowHeightTracks(composition: PageComposition): string {
+  const heights = composition.row_heights_pct;
+  if (
+    heights?.length === composition.gutter_grid.length &&
+    heights.reduce((total, height) => total + height, 0) === 100
+  ) {
+    return heights.map((height) => `${height}fr`).join(" ");
+  }
+  return composition.gutter_grid.map(() => "1fr").join(" ");
+}
+
+function gutterPx(composition: PageComposition): number {
+  const gutter = composition.gutter_px;
+  if (typeof gutter !== "number" || Number.isNaN(gutter)) return 6;
+  return Math.max(0, Math.min(32, gutter));
+}
+
+function hasExplicitPlacements(
+  composition: PageComposition,
+  panels: StoryboardPanel[],
+): boolean {
+  const placements = composition.panel_placements;
+  if (!placements) return false;
+  if (composition.panel_order.length !== panels.length) return false;
+  return panels.every((panel) => Boolean(placements[panel.panel_id]?.bbox_pct));
+}
+
+function placementToStyle(placement: PanelPlacement): CSSProperties {
+  const box = placement.bbox_pct;
+  const bleed = new Set(placement.bleed_edges ?? []);
+  const style: CSSProperties = {
+    position: "absolute",
+    left: bleed.has("left") ? "0%" : `${box.x_pct}%`,
+    top: bleed.has("top") ? "0%" : `${box.y_pct}%`,
+    width: `${box.width_pct}%`,
+    height: `${box.height_pct}%`,
+    zIndex: placement.z_index ?? 0,
+    minWidth: 0,
+    minHeight: 0,
+  };
+
+  if (bleed.has("right")) {
+    delete style.width;
+    style.right = "0%";
+  }
+  if (bleed.has("bottom")) {
+    delete style.height;
+    style.bottom = "0%";
+  }
+  if (bleed.has("left") && !bleed.has("right")) {
+    const rightPct = Math.max(0, 100 - box.x_pct - box.width_pct);
+    style.right = `${rightPct}%`;
+    delete style.width;
+  }
+  if (bleed.has("top") && !bleed.has("bottom")) {
+    const bottomPct = Math.max(0, 100 - box.y_pct - box.height_pct);
+    style.bottom = `${bottomPct}%`;
+    delete style.height;
+  }
+  return style;
+}
+
 /**
  * Reorder storyboard panels to match ``composition.panel_order``.
  * Panels not mentioned land at the end so a partial composition does
@@ -182,17 +248,45 @@ function compositionIsRenderable(
  */
 function compositionLayout(rendered: RenderedPage): PageLayout | null {
   const composition = rendered.composition;
-  if (!composition || !composition.gutter_grid?.length) return null;
+  if (!composition) return null;
   const panels = rendered.storyboard_page.panels;
-  if (!compositionIsRenderable(composition, panels.length)) return null;
-
   const ordered = orderedPanels(panels, composition);
 
+  if (hasExplicitPlacements(composition, panels)) {
+    const placements = composition.panel_placements ?? {};
+    const cells: CellPlacement[] = ordered.map((panel) => {
+      const placement = placements[panel.panel_id] as PanelPlacement;
+      return {
+        panel,
+        placement,
+        style: placementToStyle(placement),
+        isPageTurn:
+          !!composition.page_turn_panel_id &&
+          panel.panel_id === composition.page_turn_panel_id,
+      };
+    });
+    return {
+      containerStyle: {
+        position: "relative",
+        display: "block",
+        direction: "ltr",
+        overflow: "hidden",
+      },
+      cells,
+      usingComposition: true,
+      usingExplicitPlacements: true,
+    };
+  }
+
+  if (!composition.gutter_grid?.length) return null;
+  if (!compositionIsRenderable(composition, panels.length)) return null;
+
+  const gutter = gutterPx(composition);
   const containerStyle: CSSProperties = {
     display: "grid",
     gridTemplateColumns: "100%",
-    gridTemplateRows: composition.gutter_grid.map(() => "1fr").join(" "),
-    gap: 6,
+    gridTemplateRows: rowHeightTracks(composition),
+    gap: gutter,
     direction: "rtl",
   };
 
@@ -212,7 +306,7 @@ function compositionLayout(rendered: RenderedPage): PageLayout | null {
     });
   });
 
-  return { containerStyle, cells, usingComposition: true };
+  return { containerStyle, cells, usingComposition: true, usingExplicitPlacements: false };
 }
 
 // ── Public API ───────────────────────────────────────────────────────
@@ -235,7 +329,7 @@ export function layoutForRenderedPage(rendered: RenderedPage): PageLayout {
     style: legacyPlacement(layout, idx),
     isPageTurn: !!pageTurnId && panel.panel_id === pageTurnId,
   }));
-  return { containerStyle, cells, usingComposition: false };
+  return { containerStyle, cells, usingComposition: false, usingExplicitPlacements: false };
 }
 
 /**
@@ -249,7 +343,7 @@ export function rowsForRenderedPage(
   const composition = rendered.composition;
   if (!composition?.gutter_grid?.length) return null;
   const layout = layoutForRenderedPage(rendered);
-  if (!layout.usingComposition) return null;
+  if (!layout.usingComposition || layout.usingExplicitPlacements) return null;
 
   const rows: { tracks: string; cells: CellPlacement[] }[] = [];
   let cellIndex = 0;

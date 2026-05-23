@@ -83,6 +83,34 @@ as small dialogue avatars, not scene sprites.
   - Next concrete step: split/extend frontend TypeScript render types and teach the
     reader to consume row heights, gutters, panel boxes, sprites, and bubbles.
 
+- 2026-05-23 20:05: Frontend renderer consumes expanded contract.
+  - Files changed: `frontend/lib/types.ts`, `frontend/lib/manga-render-types.ts`,
+    `frontend/components/MangaReader/page_layout.ts`,
+    `frontend/components/MangaReader/MangaPageRenderer.tsx`,
+    `frontend/components/MangaReader/MangaPanelRenderer.tsx`,
+    `frontend/components/MangaReader/chrome/SceneSprites.tsx`,
+    `frontend/components/MangaReader/chrome/SfxLayer.tsx`,
+    `frontend/components/MangaReader/panels/DialoguePanel.tsx`,
+    `frontend/components/MangaReader/types.ts`,
+    `frontend/components/MangaReader/derived_visuals.ts`, `CLAUDE.md`,
+    `agent.md`, and `docs/next-prompt.md`.
+  - Behavior added: TypeScript render types split out to keep `types.ts` below 600
+    lines; explicit `panel_placements` render as absolute page-space panel boxes;
+    `row_heights_pct` and `gutter_px` affect grid pages; `sprite_layers` render as
+    scene sprites; legacy pages synthesize scene sprites from `panel.character_ids`;
+    dialogue now renders positioned manga bubbles instead of avatar chat rows.
+  - Commands/tests run: `npx tsc --noEmit` (passed), `npm run build` (passed; existing
+    TLS warning from environment), plus earlier backend pytest command.
+  - Screenshots captured: none in this environment. Existing baseline screenshots are
+    under `docs/renderer-analysis/experiments/`; fresh after screenshot still needs a
+    live reader/browser capture or user-supplied screenshot per `docs/next-prompt.md`.
+  - Risks: synthesized sprite placement is heuristic for old stored pages; explicit
+    compositor-authored `sprite_layers`/`bubble_placements` should replace it once a
+    layout agent/stage is added. Need real visual verification against the saved
+    project.
+  - Next concrete step: update renderer docs/handoff, then validate in a live browser
+    when screenshot capture is available.
+
 - 2026-05-23: Research pass completed. Bottleneck documented as renderer
   contract/frontend presentation, with real DB DSL sample and browser screenshots saved
   under `docs/renderer-analysis/`. No implementation has started yet.

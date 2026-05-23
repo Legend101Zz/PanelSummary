@@ -138,9 +138,14 @@ export function deriveEffects(panel: StoryboardPanel): string[] {
  * can swap in a richer purpose → palette mapping in exactly one place,
  * and so the reader's palette decision is testable as data.
  */
-export function derivePaletteKey(_panel: StoryboardPanel): PaletteKey {
-  // Deliberate single-return: 4.5b is a behaviour-preserving cutover.
-  // See module docstring's "future phases" note.
+export function derivePaletteKey(panel: StoryboardPanel): PaletteKey {
+  if (panel.purpose === "to_be_continued" || panel.purpose === "reveal") {
+    return "tense";
+  }
+  if (panel.purpose === "emotional_turn") return "melancholy";
+  if (panel.purpose === "transition") return "mysterious";
+  if (panel.purpose === "explanation" || panel.purpose === "setup") return "light";
+  if (panel.purpose === "recap") return "triumphant";
   return "dramatic-dark";
 }
 

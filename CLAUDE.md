@@ -28,9 +28,12 @@ Read this first:
 Verdict: the content/image pipeline is not the blocker. The renderer contract
 and frontend presentation are the blocker.
 
-The stored DSL has useful storyboard intent and page composition. The frontend
-currently honors only a narrow layout contract and renders generated character
-assets as dialogue avatars, not positioned scene sprites.
+The stored DSL has useful storyboard intent and page composition. The original
+frontend honored only a narrow layout contract and rendered generated character
+assets as dialogue avatars. The 2026-05-23 renderer pass expanded the contract
+and frontend so explicit panel boxes, row heights, gutters, sprite layers, and
+bubble placements can be honored when present; old stored pages still need
+heuristic sprite/bubble fallback until a layout compositor authors the new fields.
 
 ## Render Path
 
@@ -59,23 +62,29 @@ Frontend:
 - `frontend/lib/types.ts`
   - TypeScript mirror of the backend `RenderedPage` contract.
 - `frontend/components/MangaReader/page_layout.ts`
-  - Maps `PageComposition` to rows/cells.
+  - Maps `PageComposition` to explicit panel boxes when present, otherwise
+    composition rows/cells, otherwise legacy fallback.
 - `frontend/components/MangaReader/MangaPageRenderer.tsx`
-  - Builds page rows and panel wrappers.
+  - Builds page rows/panel wrappers and passes sprite/bubble layer data down.
 - `frontend/components/MangaReader/MangaPanelRenderer.tsx`
-  - Chooses panel subrenderer and uses `panel_artifacts.image_path` as backdrop.
+  - Chooses panel subrenderer, preserves `panel_artifacts.image_path` as backdrop,
+    and renders scene sprite layers.
 - `frontend/components/MangaReader/panels/DialoguePanel.tsx`
-  - Renders character assets as small circular avatars in dialogue rows.
+  - Renders placed speech bubbles; generated sprites are no longer dialogue-avatar
+    chrome in the main reader path.
 
 ## Gotchas
 
 - `image_mode: "sprites_only"` creates reusable character assets. It does not
   populate `panel_artifacts.*.image_path`.
-- The current frontend ignores `sprite_layers`, `bubble_placement`,
-  `row_heights_pct`, `gutter_px`, `bleed`, and panel placement fields if they
-  are added to JSON by hand.
-- `page_layout.ts` hard-codes equal row heights with `1fr`.
-- `derived_visuals.ts` always returns the same `dramatic-dark` palette.
+- Experiment screenshots under `docs/renderer-analysis/experiments/` prove the
+  old frontend ignored `sprite_layers`, `bubble_placement`, `row_heights_pct`,
+  `gutter_px`, `bleed`, and panel placement fields. Current code consumes the
+  expanded `PageComposition` fields, but old stored DB rows still lack them.
+- `page_layout.ts` uses `row_heights_pct`/`gutter_px` when present and falls back
+  to equal rows for legacy `gutter_grid` pages.
+- `derived_visuals.ts` now varies palette keys by panel purpose; do not assume the
+  old single `dramatic-dark` behavior.
 - Some stored composition pages already have QA warnings for narrow page-turn
   cells. Do not confuse that upstream defect with the sprite placement bug.
 - For Book-Reel backend debugging, start with `/tmp/panelsummary-celery.log`.

@@ -79,13 +79,18 @@ export function MangaPageRenderer({
   const compositionRows = rowsForRenderedPage(page);
   const composition = page.composition;
   const pageIndex = page.storyboard_page.page_index;
+  const gutter = typeof composition?.gutter_px === "number"
+    ? Math.max(0, Math.min(32, composition.gutter_px))
+    : 6;
+  const spriteLayersFor = (panelId: string) => composition?.sprite_layers?.[panelId];
+  const bubblePlacementsFor = (panelId: string) => composition?.bubble_placements?.[panelId];
 
   // Composition path: row-by-row so each row owns its column tracks.
   if (compositionRows) {
     return (
       <div
         className={`w-full h-full ${className}`}
-        style={{ ...layout.containerStyle, padding: 6 }}
+        style={{ ...layout.containerStyle, padding: gutter }}
         role="group"
         aria-label={`Manga page ${pageIndex + 1}`}
       >
@@ -95,7 +100,8 @@ export function MangaPageRenderer({
             style={{
               display: "grid",
               gridTemplateColumns: row.tracks,
-              gap: 6,
+              gap: gutter,
+              minHeight: 0,
               direction: "rtl",
             }}
           >
@@ -106,6 +112,9 @@ export function MangaPageRenderer({
                 // Cells flip back to LTR so child UI reads normally;
                 // only the cell *order* needs to be RTL.
                 direction: "ltr",
+                height: "100%",
+                minWidth: 0,
+                minHeight: 0,
               };
               return (
                 <div
@@ -118,6 +127,8 @@ export function MangaPageRenderer({
                     emphasisOverride={emphasisOverrideFor(cell.panel.panel_id, composition)}
                     staggerDelay={i * 0.12}
                     characterAssets={characterAssets}
+                    spriteLayers={spriteLayersFor(cell.panel.panel_id)}
+                    bubblePlacements={bubblePlacementsFor(cell.panel.panel_id)}
                   />
                 </div>
               );
@@ -132,7 +143,10 @@ export function MangaPageRenderer({
   return (
     <div
       className={`w-full h-full ${className}`}
-      style={{ ...layout.containerStyle, padding: 6 }}
+      style={{
+        ...layout.containerStyle,
+        padding: layout.usingExplicitPlacements ? 0 : 6,
+      }}
       role="group"
       aria-label={`Manga page ${pageIndex + 1}`}
     >
@@ -152,6 +166,8 @@ export function MangaPageRenderer({
               emphasisOverride={emphasisOverrideFor(cell.panel.panel_id, composition)}
               staggerDelay={i * 0.12}
               characterAssets={characterAssets}
+              spriteLayers={spriteLayersFor(cell.panel.panel_id)}
+              bubblePlacements={bubblePlacementsFor(cell.panel.panel_id)}
             />
           </div>
         );

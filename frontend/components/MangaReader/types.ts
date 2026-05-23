@@ -39,12 +39,12 @@ export interface MangaPalette {
  * palette set itself.
  */
 export const MANGA_PALETTES: Record<PaletteKey, MangaPalette> = {
-  "dramatic-dark": { bg: "#0F0E17", text: "#F0EEE8", accent: "#E8191A", border: "#2E2C3F" },
-  tense:           { bg: "#1A1825", text: "#F0EEE8", accent: "#F5A623", border: "#3E3C4F" },
-  light:           { bg: "#F2E8D5", text: "#2A2A2A", accent: "#0053E2", border: "#D4C8B0" },
-  triumphant:      { bg: "#1A2810", text: "#F0EEE8", accent: "#2A8703", border: "#2E3C1F" },
-  mysterious:      { bg: "#17101F", text: "#C8C0E0", accent: "#9B59B6", border: "#2E1C4F" },
-  melancholy:      { bg: "#1A1D25", text: "#A0A8B8", accent: "#5E7090", border: "#2C3040" },
+  "dramatic-dark": { bg: "#fffaf0", text: "#1f1f29", accent: "#ea1100", border: "#1f1f29" },
+  tense:           { bg: "#fff7df", text: "#1f1f29", accent: "#995213", border: "#1f1f29" },
+  light:           { bg: "#ffffff", text: "#1f1f29", accent: "#0053e2", border: "#1f1f29" },
+  triumphant:      { bg: "#f4fbef", text: "#1f1f29", accent: "#2a8703", border: "#1f1f29" },
+  mysterious:      { bg: "#f7f4ff", text: "#1f1f29", accent: "#0053e2", border: "#1f1f29" },
+  melancholy:      { bg: "#f2f5f9", text: "#1f1f29", accent: "#4b5563", border: "#1f1f29" },
 };
 
 export const DEFAULT_PALETTE: MangaPalette = MANGA_PALETTES["dramatic-dark"];

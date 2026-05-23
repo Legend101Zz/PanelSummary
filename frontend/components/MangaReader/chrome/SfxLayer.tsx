@@ -142,9 +142,8 @@ export function SfxLayer({ effects, accent, baseDelay = 0 }: SfxLayerProps) {
   return (
     <div
       className="absolute inset-0 pointer-events-none"
-      // SFX sits above the dark scrim and dialogue so it reads as part
-      // of the art. zIndex matches the dialogue layer's expectations.
-      style={{ zIndex: 4 }}
+      // SFX sits above sprites and bubbles so it reads as inked manga lettering.
+      style={{ zIndex: 55 }}
       aria-hidden
     >
       {tokens.map((token, i) => {
