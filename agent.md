@@ -4,6 +4,7 @@ Start with `CLAUDE.md`, then read:
 
 - `docs/renderer-analysis/findings.md`
 - `docs/renderer-analysis/experiments/README.md`
+- `docs/next-prompt.md`
 - `NEXT_SESSION.md`
 
 Current diagnosis:
@@ -15,6 +16,8 @@ Current diagnosis:
   small dialogue avatars rather than scene sprites.
 - Hand-added sprite anchors, z-index, bubble placement, bleed, and row-height
   fields are ignored by the current frontend.
+- Use `docs/next-prompt.md` as the paste-ready prompt for the implementation agent.
+- Use `NEXT_SESSION.md` as the living progress log; update it throughout the work with files changed, verification, screenshots, risks, and next steps.
 
 Safe next implementation path:
 
@@ -24,4 +27,3 @@ Safe next implementation path:
 4. Add/repair a dedicated layout DSL agent after the renderer can honor its
    output.
 5. Validate against the saved sample project and screenshots.
-

@@ -2,6 +2,12 @@
 
 Root: `/Users/comreton/Desktop/Book-Reel`
 
+Use this file as the paste-ready prompt for the next implementation agent.
+Use root `NEXT_SESSION.md` as the living progress log and handoff while the work is
+happening. There is currently no root `NEXT_STEPS.md`; do not route the next agent
+through one unless it is deliberately created later and made consistent with these
+docs.
+
 Read first:
 
 - `docs/renderer-analysis/findings.md`
@@ -20,6 +26,37 @@ frontend presentation, not story/content/image generation.
 - Keep commits small and named after the behavior they change.
 - Save before/after screenshots for every visual fix.
 - Update `NEXT_SESSION.md` as the running handoff after each phase.
+
+## Documentation / Note Tracking Rules
+
+Keep a running note trail as part of the work:
+
+- Treat `NEXT_SESSION.md` as the implementation notebook.
+- Before starting a phase, add the intended next step.
+- After completing a phase, update what changed, files touched, commands/tests run,
+  screenshots captured, current blockers, open risks, and the next concrete action.
+- If the DSL schema, render path, or frontend behavior changes, update `/docs` in the
+  same session so future agents do not inherit stale architecture notes.
+- Keep `docs/renderer-analysis/findings.md` as the evidence baseline. Amend it only when
+  new evidence changes the renderer diagnosis; otherwise put progress notes in
+  `NEXT_SESSION.md`.
+
+## Optional Sub-Agent Plan
+
+If the environment supports sub-agents and the implementation is too large for one
+agent to work comfortably, use sub-agents with non-overlapping ownership:
+
+- Backend contract agent: update `backend/app/domain/manga/*`, DSL schema/prompt
+  contract, persistence compatibility, and backend tests.
+- Frontend renderer agent: update `frontend/lib/types.ts` and
+  `frontend/components/MangaReader/*`, including panel geometry, bubble placement,
+  sprite anchors, z-order, gutters, and manga page styling.
+- Verification/docs agent: run browser verification, capture screenshots, update
+  `NEXT_SESSION.md`, and keep docs aligned with the implementation.
+
+The main agent remains responsible for integration, resolving overlap, final browser
+verification, and the final handoff. Each sub-agent must report changed file paths,
+tests/commands run, screenshots/evidence, and unresolved risks.
 
 ## Hard Constraints
 

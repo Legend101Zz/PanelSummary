@@ -2,6 +2,11 @@
 
 Root: `/Users/comreton/Desktop/Book-Reel`
 
+Use `docs/next-prompt.md` as the paste-ready prompt for the next implementation
+agent. Use this file as the living progress log and handoff while that work is
+happening. There is currently no root `NEXT_STEPS.md`; do not use one unless a
+future session creates it deliberately and keeps it consistent with this file.
+
 Read first:
 
 - `docs/renderer-analysis/findings.md`
@@ -36,6 +41,25 @@ as small dialogue avatars, not scene sprites.
 - Every visual fix needs before/after screenshots saved under docs.
 - Preserve a fallback for existing `RenderedPage` docs that only have the old
   `gutter_grid` contract.
+
+## Living Progress Log Rules
+
+- Update this file before and after each meaningful phase.
+- Record files changed, commands/tests run, screenshots captured, current blockers,
+  open risks, and the next concrete action.
+- Keep docs current as implementation changes reality. If the DSL contract, render
+  path, or frontend behavior changes, update `/docs` and the root handoff files in the
+  same session.
+- Keep `docs/renderer-analysis/findings.md` as the evidence baseline; amend it only
+  when new evidence changes the diagnosis.
+- If sub-agents are used, each one should have disjoint file ownership and should
+  report changed paths, verification, screenshots/evidence, and unresolved risks here.
+
+## Progress Log
+
+- 2026-05-23: Research pass completed. Bottleneck documented as renderer
+  contract/frontend presentation, with real DB DSL sample and browser screenshots saved
+  under `docs/renderer-analysis/`. No implementation has started yet.
 
 ## Tasks
 
@@ -93,4 +117,3 @@ Most important experiment results:
 - `03-ignored-sprite-bubble-fields.png` is byte-identical to baseline.
 - `04-artifact-backdrop-from-sprite.png` changes pixels only because
   `panel_artifacts.image_path` is the one image channel the renderer honors.
-

@@ -88,3 +88,21 @@ Frontend:
 - Keep legacy fallback behavior for existing pages that only have `gutter_grid`.
 - Every visual renderer change needs before/after screenshots.
 
+## Documentation And Note Tracking
+
+- Use `docs/next-prompt.md` as the paste-ready prompt for the next implementation agent.
+- Use `NEXT_SESSION.md` as the living implementation log and handoff. Update it while work is happening, not only at the end.
+- After each meaningful phase, record in `NEXT_SESSION.md`: files changed, screenshots captured, commands/tests run, current blockers, open risks, and the next concrete step.
+- Keep `/docs` synchronized with implementation reality. If renderer behavior, DSL fields, or architecture changes, update the relevant docs in the same session.
+- Treat `docs/renderer-analysis/findings.md` as the evidence baseline. Amend it only when new evidence changes the diagnosis; use `NEXT_SESSION.md` for running progress notes.
+- Do not leave contradictory handoff files behind. If a future `NEXT_STEPS.md` is created, make clear whether it supersedes or points back to `NEXT_SESSION.md`.
+
+## Optional Sub-Agent Use
+
+- Sub-agents are useful only for bounded, parallel work with disjoint ownership. The main agent owns integration and final verification.
+- Suggested split if the environment supports sub-agents:
+  - Backend contract agent: owns `backend/app/domain/manga/*`, DSL schema/prompt contract, persistence compatibility, and backend tests.
+  - Frontend renderer agent: owns `frontend/lib/types.ts` and `frontend/components/MangaReader/*`, including layout, typography, bubbles, sprites, and z-order behavior.
+  - Verification/docs agent: owns browser screenshots, experiment evidence, `NEXT_SESSION.md`, and docs updates under `/docs`.
+- Each sub-agent must report changed file paths, commands/tests run, screenshots/evidence produced, and unresolved risks.
+- Avoid overlapping writes between agents unless the main agent coordinates the merge explicitly.
