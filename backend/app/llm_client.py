@@ -11,14 +11,18 @@ KEY DESIGN DECISIONS:
 5. Cost tracking so users can see what they spent
 """
 
+import asyncio
 import json
 import logging
+import os
 import re
 import time
 from typing import Optional
 
 import tiktoken
 from openai import AsyncOpenAI, APIError, RateLimitError
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +36,24 @@ OPENROUTER_MODELS = {
     "openai_cheap": "gpt-4o-mini",                          # OpenAI cheap
     "openai_quality": "gpt-4o",                              # OpenAI quality
 }
+
+DEFAULT_LLM_REQUEST_TIMEOUT_SECONDS = 1800.0
+DEFAULT_LLM_SLOW_WARNING_SECONDS = 300.0
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        logger.warning("%s must be a number; using default %.1fs", name, default)
+        return default
+    if value <= 0:
+        logger.warning("%s must be positive; using default %.1fs", name, default)
+        return default
+    return value
 
 
 class LLMClient:
@@ -53,6 +75,15 @@ class LLMClient:
         """
         self.provider = provider
         self.api_key = api_key
+        settings = get_settings()
+        self.request_timeout_seconds = _env_float(
+            "LLM_REQUEST_TIMEOUT_SECONDS",
+            float(settings.llm_request_timeout_seconds or DEFAULT_LLM_REQUEST_TIMEOUT_SECONDS),
+        )
+        self.slow_warning_seconds = _env_float(
+            "LLM_SLOW_WARNING_SECONDS",
+            float(settings.llm_slow_warning_seconds or DEFAULT_LLM_SLOW_WARNING_SECONDS),
+        )
 
         if provider == "openrouter":
             self.client = AsyncOpenAI(
@@ -160,15 +191,30 @@ class LLMClient:
                 kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         try:
-            logger.info(f"[LLM] → {self.model} | ~{input_tokens} input tokens")
+            logger.info(
+                f"[LLM] → {self.model} | ~{input_tokens} input tokens "
+                f"| timeout={self.request_timeout_seconds:.0f}s"
+            )
             start_time = time.time()
 
-            response = await self.client.chat.completions.create(**kwargs)
+            response = await asyncio.wait_for(
+                self.client.chat.completions.create(**kwargs),
+                timeout=self.request_timeout_seconds,
+            )
 
             elapsed = time.time() - start_time
             content = response.choices[0].message.content or ""
             output_tokens = response.usage.completion_tokens if response.usage else self.count_tokens(content)
             input_tokens_actual = response.usage.prompt_tokens if response.usage else input_tokens
+
+            if elapsed >= self.slow_warning_seconds:
+                logger.warning(
+                    "[LLM] slow response from %s: %.1fs for %s input / %s output tokens",
+                    self.model,
+                    elapsed,
+                    input_tokens_actual,
+                    output_tokens,
+                )
 
             # Log the full response so it's visible in celery/backend logs
             preview = content[:2000] + ("…" if len(content) > 2000 else "")
@@ -203,6 +249,20 @@ class LLMClient:
                     "Switch to a less-loaded model or add credits at openrouter.ai."
                 )
             raise
+        except asyncio.TimeoutError as e:
+            elapsed = time.time() - start_time
+            logger.error(
+                "[LLM] request timeout from %s after %.1fs "
+                "(limit %.1fs, ~%s input tokens)",
+                self.model,
+                elapsed,
+                self.request_timeout_seconds,
+                input_tokens,
+            )
+            raise TimeoutError(
+                f"LLM request to {self.provider}/{self.model} timed out "
+                f"after {self.request_timeout_seconds:.0f}s"
+            ) from e
 
     def _parse_json_response(self, content: str) -> Optional[dict | list]:
         """
@@ -236,12 +296,17 @@ class LLMClient:
         except json.JSONDecodeError:
             pass
 
-        # ── 4. Find the outermost JSON object or array ─────────────────────
-        # Walk character-by-character to find the first { or [ and its matching closer.
-        for start_char, end_char in [('{', '}'), ('[', ']')]:
-            start = content.find(start_char)
-            if start == -1:
-                continue
+        # ── 4. Find the first top-level JSON object or array ────────────────
+        # If a malformed object contains nested arrays, do not fall through and
+        # parse the nested array as the whole response. Contract validation then
+        # sees a list and reports a misleading root-model error.
+        object_start = content.find('{')
+        array_start = content.find('[')
+        starts = [start for start in (object_start, array_start) if start != -1]
+        if starts:
+            start = min(starts)
+            start_char = content[start]
+            end_char = '}' if start_char == '{' else ']'
             depth = 0
             in_string = False
             escape = False
@@ -266,7 +331,7 @@ class LLMClient:
                         try:
                             return json.loads(candidate)
                         except json.JSONDecodeError:
-                            break  # try the other bracket type
+                            break
 
         logger.warning(f"[LLM] JSON parse FAIL — raw content ({len(content)} chars):\n{content[:1000]!r}")
 
