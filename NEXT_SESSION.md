@@ -100,7 +100,7 @@ as small dialogue avatars, not scene sprites.
     scene sprites; legacy pages synthesize scene sprites from `panel.character_ids`;
     dialogue now renders positioned manga bubbles instead of avatar chat rows.
   - Commands/tests run: `npx tsc --noEmit` (passed), `npm run build` (passed; existing
-    TLS warning from environment), plus earlier backend pytest command.
+    TLS warning from environment), and `uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com pytest backend/tests/test_render_view_v2.py backend/tests/test_panel_pipeline_phase4_2_v2.py backend/tests/test_rtl_composition_validator_v2.py backend/tests/test_rtl_composition_validation_stage_v2.py -q` (58 passed, 1 existing Pydantic warning).
   - Screenshots captured: none in this environment. Existing baseline screenshots are
     under `docs/renderer-analysis/experiments/`; fresh after screenshot still needs a
     live reader/browser capture or user-supplied screenshot per `docs/next-prompt.md`.
