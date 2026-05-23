@@ -142,7 +142,8 @@ class RenderedPage(BaseModel):
                 f"({self.composition.page_index}) does not match "
                 f"storyboard_page.page_index ({self.storyboard_page.page_index})"
             )
-        panel_ids = {panel.panel_id for panel in self.storyboard_page.panels}
+        by_id = {panel.panel_id: panel for panel in self.storyboard_page.panels}
+        panel_ids = set(by_id)
         order_ids = set(self.composition.panel_order)
         if order_ids != panel_ids:
             raise ValueError(
@@ -151,6 +152,42 @@ class RenderedPage(BaseModel):
                 f"missing={sorted(panel_ids - order_ids)}, "
                 f"extra={sorted(order_ids - panel_ids)}"
             )
+        if self.composition.panel_placements:
+            placement_ids = set(self.composition.panel_placements)
+            if placement_ids != panel_ids:
+                raise ValueError(
+                    "RenderedPage.composition.panel_placements must cover "
+                    "every storyboard panel id; "
+                    f"missing={sorted(panel_ids - placement_ids)}, "
+                    f"extra={sorted(placement_ids - panel_ids)}"
+                )
+        for panel_id, sprites in self.composition.sprite_layers.items():
+            panel = by_id[panel_id]
+            character_ids = {c for c in panel.character_ids if c}
+            for sprite in sprites:
+                if sprite.character_id not in character_ids:
+                    raise ValueError(
+                        "RenderedPage.composition.sprite_layers references "
+                        f"character {sprite.character_id!r} outside panel "
+                        f"{panel_id!r}'s character_ids"
+                    )
+        for panel_id, bubbles in self.composition.bubble_placements.items():
+            panel = by_id[panel_id]
+            dialogue = list(panel.dialogue)
+            for bubble in bubbles:
+                if bubble.line_index >= len(dialogue):
+                    raise ValueError(
+                        "RenderedPage.composition.bubble_placements line_index "
+                        f"{bubble.line_index} is out of range for panel "
+                        f"{panel_id!r} with {len(dialogue)} dialogue lines"
+                    )
+                if bubble.speaker_id and bubble.speaker_id != dialogue[bubble.line_index].speaker_id:
+                    raise ValueError(
+                        "RenderedPage.composition.bubble_placements speaker_id "
+                        f"{bubble.speaker_id!r} does not match dialogue line "
+                        f"{bubble.line_index} speaker "
+                        f"{dialogue[bubble.line_index].speaker_id!r}"
+                    )
         return self
 
     def panels_in_reading_order(self) -> list:

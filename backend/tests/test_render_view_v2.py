@@ -16,13 +16,17 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.domain.manga import (
+    BubblePlacement,
+    LayoutBoxPct,
     PageComposition,
     PageGridRow,
+    PanelPlacement,
     PanelPurpose,
     PanelRenderArtifact,
     RenderedPage,
     ScriptLine,
     ShotType,
+    SpriteLayer,
     StoryboardPage,
     StoryboardPanel,
     empty_rendered_page,
@@ -220,6 +224,111 @@ def test_empty_rendered_page_passes_through_composition():
     composition = _composition(page_index=0, panel_order=["a"], page_turn="a")
     rendered = empty_rendered_page(storyboard_page=page, composition=composition)
     assert rendered.composition is composition
+
+
+# --- Explicit render layout contract -----------------------------------------
+
+
+def test_page_composition_accepts_explicit_layout_fields():
+    """The expanded wire contract carries row rhythm, boxes, sprites, and bubbles."""
+    page = _page([_panel("a")])
+    composition = PageComposition(
+        page_index=0,
+        gutter_grid=[PageGridRow(cell_widths_pct=[100])],
+        panel_order=["a"],
+        row_heights_pct=[100],
+        gutter_px=10,
+        panel_placements={
+            "a": PanelPlacement(
+                bbox_pct=LayoutBoxPct(x_pct=0, y_pct=0, width_pct=100, height_pct=100),
+                bleed_edges=["top", "bottom"],
+            )
+        },
+        sprite_layers={
+            "a": [
+                SpriteLayer(
+                    character_id="aiko",
+                    bbox_pct=LayoutBoxPct(x_pct=18, y_pct=30, width_pct=42, height_pct=62),
+                    z_index=20,
+                )
+            ]
+        },
+        bubble_placements={
+            "a": [
+                BubblePlacement(
+                    line_index=0,
+                    speaker_id="aiko",
+                    bbox_pct=LayoutBoxPct(x_pct=50, y_pct=8, width_pct=42, height_pct=24),
+                    z_index=40,
+                )
+            ]
+        },
+    )
+
+    rendered = RenderedPage(
+        storyboard_page=page,
+        composition=composition,
+        panel_artifacts={"a": PanelRenderArtifact()},
+    )
+    payload = rendered.model_dump(mode="json")
+    restored = RenderedPage.model_validate(payload)
+
+    assert restored.composition is not None
+    assert restored.composition.row_heights_pct == [100]
+    assert restored.composition.gutter_px == 10
+    assert restored.composition.panel_placements["a"].bleed_edges == ["top", "bottom"]
+    assert restored.composition.sprite_layers["a"][0].character_id == "aiko"
+    assert restored.composition.bubble_placements["a"][0].line_index == 0
+
+
+def test_page_composition_rejects_bad_row_height_sum():
+    """Row heights are percentages, so partial totals are rejected loudly."""
+    with pytest.raises(ValueError, match="row_heights_pct must sum"):
+        PageComposition(
+            page_index=0,
+            gutter_grid=[
+                PageGridRow(cell_widths_pct=[100]),
+                PageGridRow(cell_widths_pct=[100]),
+            ],
+            panel_order=["a", "b"],
+            row_heights_pct=[40, 40],
+        )
+
+
+def test_rendered_page_rejects_sprite_for_character_not_in_panel():
+    """Sprite placement must reference on-stage characters, not random assets."""
+    page = _page([_panel("a", character_ids=["aiko"])])
+    composition = _composition(page_index=0, panel_order=["a"])
+    composition.sprite_layers["a"] = [
+        SpriteLayer(
+            character_id="ghost",
+            bbox_pct=LayoutBoxPct(x_pct=10, y_pct=20, width_pct=30, height_pct=70),
+        )
+    ]
+    with pytest.raises(ValueError, match="outside panel"):
+        RenderedPage(
+            storyboard_page=page,
+            composition=composition,
+            panel_artifacts={"a": PanelRenderArtifact()},
+        )
+
+
+def test_rendered_page_rejects_bubble_line_index_out_of_range():
+    """Bubble placements target real dialogue rows by zero-based line_index."""
+    page = _page([_panel("a")])
+    composition = _composition(page_index=0, panel_order=["a"])
+    composition.bubble_placements["a"] = [
+        BubblePlacement(
+            line_index=3,
+            bbox_pct=LayoutBoxPct(x_pct=10, y_pct=10, width_pct=80, height_pct=30),
+        )
+    ]
+    with pytest.raises(ValueError, match="line_index"):
+        RenderedPage(
+            storyboard_page=page,
+            composition=composition,
+            panel_artifacts={"a": PanelRenderArtifact()},
+        )
 
 
 # --- Wire-format round-trip ---------------------------------------------------

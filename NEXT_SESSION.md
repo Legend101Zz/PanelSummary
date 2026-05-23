@@ -57,6 +57,32 @@ as small dialogue avatars, not scene sprites.
 
 ## Progress Log
 
+- 2026-05-23 19:25: Implementation session started by `code-puppy-4baa2a`.
+  - Intended next step: expand the render contract, then teach the frontend to honor
+    explicit row heights, gutters, panel boxes, sprite layers, bubble placement, and
+    z-order while preserving `gutter_grid` fallback.
+  - Baseline note: `docs/next-prompt.md` already had user edits before this session;
+    preserve them. Fresh browser baseline may require user-supplied screenshot, so use
+    saved experiment screenshots as baseline evidence unless a live app becomes
+    available.
+  - Commands run: `git status --short`, `git diff -- docs/next-prompt.md`.
+  - Current blockers: none for code inspection/contract work.
+
+- 2026-05-23 19:40: Backend render contract expanded.
+  - Files changed: `backend/app/domain/manga/page_composition.py`,
+    `backend/app/domain/manga/render_view.py`, `backend/app/domain/manga/__init__.py`,
+    `backend/app/manga_pipeline/stages/page_composition_stage.py`,
+    `backend/tests/test_render_view_v2.py`.
+  - Behavior added: typed `row_heights_pct`, `gutter_px`, `panel_placements`,
+    `sprite_layers`, `bubble_placements`, `bleed_edges`, and z-index fields;
+    `RenderedPage` now validates sprite character ids and bubble line indices.
+  - Commands/tests run: `uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple --allow-insecure-host pypi.ci.artifacts.walmart.com pytest backend/tests/test_render_view_v2.py backend/tests/test_panel_pipeline_phase4_2_v2.py -q` (45 passed, 1 existing Pydantic warning).
+  - Screenshots captured: none yet; backend contract-only phase.
+  - Risks: layout compositor prompt now exposes richer optional fields, but existing
+    stored pages still only have `gutter_grid`; frontend fallback/synthesis is next.
+  - Next concrete step: split/extend frontend TypeScript render types and teach the
+    reader to consume row heights, gutters, panel boxes, sprites, and bubbles.
+
 - 2026-05-23: Research pass completed. Bottleneck documented as renderer
   contract/frontend presentation, with real DB DSL sample and browser screenshots saved
   under `docs/renderer-analysis/`. No implementation has started yet.

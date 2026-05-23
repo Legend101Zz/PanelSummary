@@ -66,6 +66,11 @@ Composition rules:
   that MUST sum to exactly 100.
 - Cell count summed across all rows MUST equal the page's panel count.
   No leftover panels; no empty cells.
+- Author row_heights_pct for every non-empty gutter_grid; the values MUST
+  sum to 100 and should create manga rhythm (e.g. 22/38/40), not equal
+  rows unless the page genuinely needs calm repetition.
+- Set gutter_px intentionally between 4 and 18. Use tighter gutters for
+  action/reveal pages and wider gutters for quiet explanatory pages.
 - panel_order lists the storyboard panel ids in row-major reading order
   (top-row first; within a row, RIGHT-most cell first since manga reads
   right-to-left). It must be a permutation of the page's panel ids.
@@ -76,6 +81,18 @@ Composition rules:
   storyboard's authored emphasis. Allowed values: "low", "medium",
   "high". Be sparing: drift from the storyboard intent should be
   intentional.
+- When you can make a precise page, author panel_placements. Keys must be
+  panel ids and bbox_pct uses visual page coordinates: x_pct=0 is the
+  LEFT edge, y_pct=0 is the TOP edge. Every panel in panel_order must
+  have a placement if panel_placements is non-empty.
+- Author sprite_layers for panels with character_ids. Each sprite layer
+  references an existing character_id/expression and gives a panel-local
+  bbox_pct. Place sprites as scene characters, usually grounded near the
+  bottom third, never as tiny chat avatars.
+- Author bubble_placements for dialogue panels. Each bubble targets a
+  dialogue line_index and panel-local bbox_pct. Keep bubbles readable,
+  inside the panel, and away from faces. Use z_index above sprites.
+- z_index convention: panels 0-10, sprites around 20, bubbles around 40.
 - Composition variety across the slice matters. Do not give every page
   the same layout. Mix splash (1 panel), establishing strip + two beats
   (1+2), three-beat (1+2 or 2+1), and four-beat (2+2 or 1+2+1) pages.
@@ -110,6 +127,15 @@ def _build_user_message(context: PipelineContext) -> str:
                     "action": panel.action,
                     "narration": panel.narration,
                     "dialogue_count": len(panel.dialogue),
+                    "dialogue": [
+                        {
+                            "line_index": line_index,
+                            "speaker_id": line.speaker_id,
+                            "intent": line.intent,
+                            "text": line.text,
+                        }
+                        for line_index, line in enumerate(panel.dialogue)
+                    ],
                 }
                 for panel in page.panels
             ],
