@@ -212,15 +212,16 @@ stays I/O-free.
 
 ---
 
-## Current production hardening gate
+## Current renderer state
 
-Code is structurally complete, but two checks require a DB-capable environment:
+The current `RenderedPage` path is live and was tested against a real MongoDB
+project on 2026-05-23. The evidence and screenshots live in
+[`renderer-analysis/findings.md`](renderer-analysis/findings.md).
 
-1. Run the `RenderedPage` migration helper dry-run and decide apply vs
-   regenerate/delete old docs.
-2. Generate one real slice and manually smoke the reader.
-
-Those instructions live in [`NEXT_STEPS.md`](NEXT_STEPS.md).
+The diagnosis is narrow: story/content generation and generated character assets
+are good; the renderer contract and frontend presentation need the next pass.
+The reader currently honors only a small subset of the page composition DSL and
+uses character sprites as dialogue avatars rather than scene elements.
 
 ---
 
@@ -228,5 +229,6 @@ Those instructions live in [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
 - [`BACKEND_FLOW.md`](BACKEND_FLOW.md) — backend modules, APIs, pipeline stages.
 - [`FRONTEND_FLOW.md`](FRONTEND_FLOW.md) — routes, components, reader flow.
-- [`NEXT_STEPS.md`](NEXT_STEPS.md) — DB migration and manual smoke handoff.
+- [`renderer-analysis/findings.md`](renderer-analysis/findings.md) — renderer diagnosis and screenshots.
+- [`next-prompt.md`](next-prompt.md) — paste-ready implementation prompt.
 - [`REEL_RENDERER.md`](REEL_RENDERER.md) — future reel renderer placeholder.

@@ -7,7 +7,7 @@ understanding pass, generate manga slices, and read the result in a Next.js
 manga reader. The current app is focused on manga generation; legacy summary,
 living-panel, and reel UI surfaces are not part of the active product.
 
-Tiny slogan: **PDF in, manga out, fewer hallucinated nonsense goblins.**
+Tiny slogan: **PDF in, manga out, grounded panels first.**
 
 ---
 
@@ -34,11 +34,12 @@ reader consumes one page contract. DRY, YAGNI, SOLID — yes, even for comics.
 
 - Backend/API page contract: `RenderedPage`.
 - Frontend reader: `frontend/components/MangaReader/`.
-- Core refactor code: complete and green locally.
-- Remaining production handoff: DB migration decision + real visual smoke.
+- Renderer diagnosis: `docs/renderer-analysis/findings.md`.
+- Current implementation handoff: `NEXT_SESSION.md`.
 
-Operational next steps live in [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) so
-this README can stay focused on project setup and day-to-day development.
+The latest renderer analysis found that content and generated character assets
+are good, while the renderer contract and frontend presentation need the next
+implementation pass.
 
 ---
 
@@ -79,8 +80,10 @@ PanelSummary/
     ARCHITECTURE.md               system overview
     BACKEND_FLOW.md               backend in depth
     FRONTEND_FLOW.md              frontend in depth
-    NEXT_STEPS.md                 DB/manual-smoke handoff
+    renderer-analysis/            live renderer diagnosis and screenshots
+    next-prompt.md                paste-ready implementation prompt
     REEL_RENDERER.md              future reel renderer notes
+  NEXT_SESSION.md                 root implementation handoff
   reel-renderer/                  parked Remotion experiment
   storage/                        local PDFs/images
   start.sh                        local dev starter
@@ -319,7 +322,9 @@ Start here:
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system architecture.
 - [`docs/BACKEND_FLOW.md`](docs/BACKEND_FLOW.md) — backend flow in depth.
 - [`docs/FRONTEND_FLOW.md`](docs/FRONTEND_FLOW.md) — frontend flow in depth.
-- [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) — current DB/manual-smoke handoff.
+- [`docs/renderer-analysis/findings.md`](docs/renderer-analysis/findings.md) — current manga renderer diagnosis.
+- [`docs/next-prompt.md`](docs/next-prompt.md) — paste-ready implementation prompt.
+- [`NEXT_SESSION.md`](NEXT_SESSION.md) — root implementation handoff.
 - [`docs/REEL_RENDERER.md`](docs/REEL_RENDERER.md) — future reel renderer notes.
 
 The old phase/session archaeology docs were intentionally removed. Git history

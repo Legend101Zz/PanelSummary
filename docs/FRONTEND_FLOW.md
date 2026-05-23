@@ -239,6 +239,7 @@ npm run build
 ```
 
 `npm run build` is heavier than typecheck and catches route/build failures. It
-still cannot tell whether a manga page looks good. For that, do the manual smoke
-in [`NEXT_STEPS.md`](NEXT_STEPS.md). Tests have many talents; taste is not one
-of them.
+still cannot tell whether a manga page looks good. For renderer work, compare
+against the live screenshots and notes in
+[`renderer-analysis/findings.md`](renderer-analysis/findings.md) and
+[`renderer-analysis/experiments/`](renderer-analysis/experiments/).

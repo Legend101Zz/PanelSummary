@@ -264,7 +264,9 @@ uv run --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/ex
   python -m app.scripts.migrate_rendered_pages
 ```
 
-See [`NEXT_STEPS.md`](NEXT_STEPS.md) for the production handoff.
+See [`renderer-analysis/findings.md`](renderer-analysis/findings.md) and the
+root [`NEXT_SESSION.md`](../NEXT_SESSION.md) for the current renderer
+implementation handoff.
 
 ---
 
