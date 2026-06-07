@@ -118,7 +118,7 @@ export function MangaPanelRenderer({
         borderRadius: 2,
         boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)",
         flex: weight,
-        minHeight: emphasis === "high" ? 200 : emphasis === "low" ? 80 : 120,
+        minHeight: 0,
       }}
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}

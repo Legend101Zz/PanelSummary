@@ -25,16 +25,19 @@ interface ConceptPanelProps {
 export function ConceptPanel({ panel, palette }: ConceptPanelProps) {
   const character = primaryCharacter(panel);
   const headline = panel.action?.trim() || panel.narration?.trim() || "";
+  const caption = headline || panel.composition?.trim() || "";
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-6 py-4 overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden px-3 py-3">
       {character && (
         <motion.span
-          className="mb-2 text-xs tracking-widest uppercase"
+          className="absolute left-3 top-3 z-20 rounded-sm border bg-white/85 px-2 py-0.5 tracking-widest uppercase"
           style={{
+            borderColor: `${palette.border}66`,
             color: palette.accent,
             fontFamily: "var(--font-label, monospace)",
-            fontSize: "0.6rem",
+            fontSize: "clamp(0.42rem, 0.62vw, 0.56rem)",
+            fontWeight: 800,
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.85 }}
@@ -44,42 +47,26 @@ export function ConceptPanel({ panel, palette }: ConceptPanelProps) {
         </motion.span>
       )}
 
-      {headline && (
+      {caption && (
         <motion.p
-          className="text-center"
+          className="absolute inset-x-3 bottom-3 z-20 border bg-white px-3 py-2 text-center"
           style={{
-            color: palette.text,
-            fontFamily: "var(--font-display, serif)",
-            fontSize: "clamp(0.95rem, 2.2vw, 1.3rem)",
-            lineHeight: 1.4,
-            maxWidth: "85%",
+            borderColor: "#1f1f29",
+            boxShadow: "0 6px 0 rgba(31,31,41,0.22)",
+            color: "#1f1f29",
+            fontFamily: "var(--font-body, sans-serif)",
+            fontSize: "clamp(0.48rem, 0.9vw, 0.78rem)",
+            fontWeight: 700,
+            lineHeight: 1.16,
+            maxHeight: "58%",
+            overflow: "hidden",
+            overflowWrap: "anywhere",
           }}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {headline}
-        </motion.p>
-      )}
-
-      {/* Composition prose — the storyboarder's editorial intent. Tiny
-          and dimmed so it reads as a caption, not chrome. Skipped when
-          empty (legacy panels) so we don't render an empty bar. */}
-      {panel.composition && (
-        <motion.p
-          className="mt-3 text-center"
-          style={{
-            color: `${palette.text}55`,
-            fontFamily: "var(--font-body, sans-serif)",
-            fontSize: "0.65rem",
-            fontStyle: "italic",
-            maxWidth: "75%",
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          {panel.composition}
+          {caption}
         </motion.p>
       )}
     </div>

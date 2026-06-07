@@ -226,7 +226,8 @@ export function SpeechBubble({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "10% 12%",
+          overflow: "hidden",
+          padding: "9% 11%",
           boxSizing: "border-box",
         }}
       >

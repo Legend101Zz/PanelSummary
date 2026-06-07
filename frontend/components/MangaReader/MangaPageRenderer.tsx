@@ -100,7 +100,10 @@ export function MangaPageRenderer({
             style={{
               display: "grid",
               gridTemplateColumns: row.tracks,
+              gridTemplateRows: "minmax(0, 1fr)",
+              alignItems: "stretch",
               gap: gutter,
+              height: "100%",
               minHeight: 0,
               direction: "rtl",
             }}
@@ -112,6 +115,7 @@ export function MangaPageRenderer({
                 // Cells flip back to LTR so child UI reads normally;
                 // only the cell *order* needs to be RTL.
                 direction: "ltr",
+                gridRow: "auto",
                 height: "100%",
                 minWidth: 0,
                 minHeight: 0,

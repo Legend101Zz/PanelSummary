@@ -26,7 +26,7 @@ export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps)
   const text = panel.narration?.trim() || panel.action?.trim() || "";
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center px-6 py-4 overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
       {effects.includes("vignette") && (
         <div
           className="absolute inset-0 pointer-events-none"
@@ -58,14 +58,21 @@ export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps)
 
       {text && (
         <motion.blockquote
-          className="relative z-10 text-center"
+          className="relative z-10 border px-4 py-3 text-center"
           style={{
-            color: palette.text,
+            background: "rgba(255,255,255,0.94)",
+            borderColor: "#1f1f29",
+            boxShadow: "0 7px 0 rgba(31,31,41,0.22)",
+            color: "#1f1f29",
             fontFamily: "var(--font-body, serif)",
-            fontSize: "clamp(0.8rem, 1.8vw, 1.05rem)",
-            lineHeight: 1.7,
-            maxWidth: "85%",
+            fontSize: "clamp(0.68rem, 1.25vw, 0.98rem)",
             fontStyle: "italic",
+            fontWeight: 700,
+            lineHeight: 1.34,
+            maxHeight: "76%",
+            maxWidth: "88%",
+            overflow: "hidden",
+            overflowWrap: "anywhere",
           }}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

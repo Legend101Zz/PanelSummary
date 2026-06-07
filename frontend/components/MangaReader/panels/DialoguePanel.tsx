@@ -60,7 +60,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 50, y_pct: 6, width_pct: 44, height_pct: 27 },
+      bbox_pct: { x_pct: 34, y_pct: 5, width_pct: 63, height_pct: 38 },
       tail_side: "bottom",
       tail_offset_pct: 72,
       variant: variantForIntent(line.intent),
@@ -69,7 +69,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 6, y_pct: total > 2 ? 35 : 48, width_pct: 45, height_pct: 28 },
+      bbox_pct: { x_pct: 4, y_pct: total > 2 ? 38 : 50, width_pct: 60, height_pct: 38 },
       tail_side: "bottom",
       tail_offset_pct: 30,
       variant: variantForIntent(line.intent),
@@ -78,7 +78,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 46, y_pct: 63, width_pct: 48, height_pct: 29 },
+      bbox_pct: { x_pct: 34, y_pct: 58, width_pct: 63, height_pct: 38 },
       tail_side: "top",
       tail_offset_pct: 62,
       variant: variantForIntent(line.intent),
@@ -90,14 +90,27 @@ function placementForLine(
 
 function bubbleBoxStyle(placement: BubblePlacement): CSSProperties {
   const box = placement.bbox_pct;
+  const width = clamp(box.width_pct, 34, 92);
+  const height = clamp(box.height_pct, 28, 62);
   return {
     position: "absolute",
-    left: `${clamp(box.x_pct, 0, 100)}%`,
-    top: `${clamp(box.y_pct, 0, 100)}%`,
-    width: `${clamp(box.width_pct, 18, 100)}%`,
-    height: `${clamp(box.height_pct, 18, 100)}%`,
+    left: `${clamp(box.x_pct, 3, 97 - width)}%`,
+    top: `${clamp(box.y_pct, 3, 97 - height)}%`,
+    width: `${width}%`,
+    height: `${height}%`,
     zIndex: placement.z_index ?? 40,
   };
+}
+
+function shouldUseCaption(line: StoryboardScriptLine, index: number, total: number): boolean {
+  const length = line.text.trim().length;
+  return length > 72 || (total > 2 && index > 1 && length > 42);
+}
+
+function letteringFontSize(text: string): string {
+  if (text.length > 56) return "clamp(0.5rem, 0.72vw, 0.68rem)";
+  if (text.length > 36) return "clamp(0.55rem, 0.86vw, 0.74rem)";
+  return "clamp(0.62rem, 1vw, 0.84rem)";
 }
 
 function normalizedTailSide(value: string | undefined): "left" | "right" | "bottom" | "top" {
@@ -134,6 +147,7 @@ function BubbleLettering({
   const intentStyle = INTENT_STYLES[line.intent || "neutral"] || INTENT_STYLES.neutral;
   const variant = normalizedVariant(placement, line);
   const fill = hasPaintedBackdrop ? "rgba(255,250,240,0.94)" : "rgba(255,255,255,0.95)";
+  const showSpeakerTag = line.text.length <= 32;
 
   return (
     <motion.div
@@ -152,30 +166,41 @@ function BubbleLettering({
         ariaLabel={`${line.speaker_id} says ${line.text}`}
         style={{ width: "100%", height: "100%" }}
       >
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1">
-          <span
-            className="max-w-full truncate rounded-full border bg-white px-2 py-0.5 uppercase tracking-[0.14em]"
-            style={{
-              borderColor: `${intentStyle.borderColor}66`,
-              color: intentStyle.borderColor,
-              fontFamily: "var(--font-label, monospace)",
-              fontSize: "clamp(0.48rem, 0.9vw, 0.62rem)",
-              fontWeight: 800,
-            }}
-          >
-            {line.speaker_id}
-          </span>
+        <div
+          className="flex h-full w-full flex-col items-center justify-center gap-0.5 overflow-hidden"
+          style={{ minHeight: 0 }}
+        >
+          {showSpeakerTag && (
+            <span
+              className="max-w-full truncate rounded-full border bg-white px-1.5 py-0.5 uppercase tracking-[0.12em]"
+              style={{
+                borderColor: `${intentStyle.borderColor}66`,
+                color: intentStyle.borderColor,
+                fontFamily: "var(--font-label, monospace)",
+                fontSize: "clamp(0.42rem, 0.62vw, 0.56rem)",
+                fontWeight: 800,
+              }}
+            >
+              {line.speaker_id}
+            </span>
+          )}
           <p
             style={{
               color: "#1f1f29",
               fontFamily: "var(--font-body, sans-serif)",
-              fontSize: "clamp(0.62rem, 1.15vw, 0.86rem)",
+              fontSize: letteringFontSize(line.text),
               fontStyle: intentStyle.fontStyle,
               fontWeight: variant === "shout" ? 800 : 600,
-              lineHeight: 1.22,
+              hyphens: "auto",
+              display: "block",
+              flexShrink: 0,
+              lineHeight: 1.12,
               margin: 0,
+              maxWidth: "100%",
+              overflow: "hidden",
+              overflowWrap: "anywhere",
               textAlign: "center",
-              textWrap: "balance",
+              textWrap: "pretty",
             }}
           >
             {line.text}
@@ -191,6 +216,46 @@ function BubbleLettering({
   );
 }
 
+function CaptionBox({
+  lines,
+  panelNarration,
+}: {
+  lines: StoryboardScriptLine[];
+  panelNarration?: string;
+}) {
+  const captionText = [
+    ...lines.map((line) => `${line.speaker_id}: ${line.text}`),
+    panelNarration,
+  ].filter(Boolean).join(" ");
+
+  if (!captionText) return null;
+
+  return (
+    <motion.div
+      className="absolute inset-x-3 bottom-3 border bg-white px-3 py-2"
+      style={{
+        borderColor: "#1f1f29",
+        boxShadow: "0 6px 0 rgba(31,31,41,0.22)",
+        color: "#1f1f29",
+        fontFamily: "var(--font-body, sans-serif)",
+        fontSize: "clamp(0.58rem, 0.88vw, 0.76rem)",
+        fontStyle: panelNarration ? "italic" : "normal",
+        fontWeight: 650,
+        lineHeight: 1.25,
+        maxHeight: "38%",
+        overflow: "hidden",
+        overflowWrap: "anywhere",
+        zIndex: 46,
+      }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.max(lines.length, 1) * 0.16 + 0.15 }}
+    >
+      {captionText}
+    </motion.div>
+  );
+}
+
 export function DialoguePanel({
   panel,
   palette,
@@ -199,6 +264,8 @@ export function DialoguePanel({
 }: DialoguePanelProps) {
   const lines = panel.dialogue ?? [];
   const explicitByLine = new Map(bubblePlacements.map((placement) => [placement.line_index, placement]));
+  const bubbleLines = lines.filter((line, index) => !shouldUseCaption(line, index, lines.length));
+  const captionLines = lines.filter((line, index) => shouldUseCaption(line, index, lines.length));
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -218,35 +285,21 @@ export function DialoguePanel({
         </div>
       )}
 
-      {lines.map((line, index) => (
+      {bubbleLines.map((line, index) => {
+        const originalIndex = lines.indexOf(line);
+        return (
         <BubbleLettering
           key={`${line.speaker_id}-${index}`}
           line={line}
           index={index}
-          placement={placementForLine(line, index, lines.length, explicitByLine.get(index))}
+          placement={placementForLine(line, index, bubbleLines.length, explicitByLine.get(originalIndex))}
           palette={palette}
           hasPaintedBackdrop={hasPaintedBackdrop}
         />
-      ))}
+        );
+      })}
 
-      {panel.narration && (
-        <motion.p
-          className="absolute inset-x-4 bottom-3 border bg-white/90 px-3 py-2 text-center"
-          style={{
-            borderColor: "#1f1f29",
-            color: "#1f1f29",
-            fontFamily: "var(--font-body, sans-serif)",
-            fontSize: "clamp(0.62rem, 1vw, 0.78rem)",
-            fontStyle: "italic",
-            zIndex: 46,
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: lines.length * 0.18 + 0.2 }}
-        >
-          {panel.narration}
-        </motion.p>
-      )}
+      <CaptionBox lines={captionLines} panelNarration={panel.narration} />
     </div>
   );
 }

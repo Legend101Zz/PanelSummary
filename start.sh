@@ -40,7 +40,7 @@ require_command() {
 }
 
 port_is_busy() {
-  lsof -ti:"$1" >/dev/null 2>&1
+  lsof -ti:"$1" -sTCP:LISTEN >/dev/null 2>&1
 }
 
 wait_for_url() {
@@ -133,8 +133,6 @@ ensure_node_env() {
 }
 
 start_backend() {
-  port_is_busy 8000 && fail "Port 8000 is already in use. Run ./stop.sh or free the port."
-
   step "Starting FastAPI backend"
   cd "$BACKEND"
   .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
@@ -154,8 +152,6 @@ start_celery() {
 }
 
 start_frontend() {
-  port_is_busy 3000 && fail "Port 3000 is already in use. Run ./stop.sh or free the port."
-
   step "Starting Next.js frontend"
   cd "$FRONTEND"
   npm run dev >/tmp/panelsummary-frontend.log 2>&1 &
@@ -201,6 +197,8 @@ print_summary() {
 print_banner
 require_command curl
 require_command lsof
+port_is_busy 8000 && fail "Port 8000 is already in use. Run ./stop.sh or free the port."
+port_is_busy 3000 && fail "Port 3000 is already in use. Run ./stop.sh or free the port."
 ensure_redis
 ensure_python_env
 ensure_node_env

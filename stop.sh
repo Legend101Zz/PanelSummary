@@ -48,7 +48,7 @@ free_port() {
   local port="$1"
   local label="$2"
   local pids
-  pids="$(lsof -ti:"$port" 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+  pids="$(lsof -ti:"$port" -sTCP:LISTEN 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
 
   if [[ -z "$pids" ]]; then
     return

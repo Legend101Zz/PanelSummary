@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowLeft, BookOpen, ChevronLeft, ChevronRight, Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
 
 import {
   getImageUrl,
@@ -85,6 +85,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
   const [pageIndex, setPageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const readerRef = useRef<HTMLElement | null>(null);
 
   const loadProject = useCallback(async () => {
     setLoading(true);
@@ -144,14 +145,27 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
   const canPrev = pageIndex > 0;
   const canNext = pageIndex < pages.length - 1;
 
+  const focusReader = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      readerRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }, []);
+
+  const goToPage = useCallback((nextIndex: number) => {
+    setPageIndex(() => Math.min(Math.max(nextIndex, 0), Math.max(pages.length - 1, 0)));
+    focusReader();
+  }, [focusReader, pages.length]);
+
+  const currentPageAnchor = `manga-page-${pageIndex + 1}`;
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (event.key === "ArrowLeft" && canPrev) setPageIndex(index => index - 1);
-      if (event.key === "ArrowRight" && canNext) setPageIndex(index => index + 1);
+      if (event.key === "ArrowLeft" && canPrev) goToPage(pageIndex - 1);
+      if (event.key === "ArrowRight" && canNext) goToPage(pageIndex + 1);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [canPrev, canNext]);
+  }, [canPrev, canNext, goToPage, pageIndex]);
 
   if (loading) {
     return (
@@ -208,15 +222,35 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-        <section className="min-h-[70vh] flex flex-col gap-4">
-          <div className="flex-1 border shadow-2xl" style={{ borderColor: "#2E2C3F", background: "#F8F3E7" }}>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <section
+          ref={readerRef}
+          id={currentPageAnchor}
+          className="scroll-mt-24 flex min-h-[72vh] flex-col items-center gap-4"
+        >
+          <div
+            className="w-full border shadow-2xl"
+            style={{
+              borderColor: "#2E2C3F",
+              background:
+                "radial-gradient(circle at 50% 8%, rgba(255,194,32,0.08), transparent 32%), #111019",
+              padding: "clamp(0.75rem, 2vw, 1.5rem)",
+            }}
+          >
             {renderedPage ? (
-              <div className="mx-auto h-[78vh] max-h-[920px] aspect-[2/3]">
+              <div
+                className="mx-auto shadow-[0_26px_70px_rgba(0,0,0,0.42)]"
+                style={{
+                  aspectRatio: "2 / 3",
+                  background: "#F8F3E7",
+                  width: "min(calc(100vw - 4rem), calc((100vh - 11rem) * 2 / 3), 760px)",
+                  minWidth: "min(100%, 320px)",
+                }}
+              >
                 <MangaPageRenderer page={renderedPage} characterAssets={characterAssets} />
               </div>
             ) : (
-              <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6" style={{ color: "#2A2A2A" }}>
+              <div className="h-[70vh] flex flex-col items-center justify-center text-center px-6" style={{ color: "#F0EEE8" }}>
                 <Sparkles size={40} />
                 <h2 className="font-display mt-3 text-xl">No pages generated yet</h2>
                 <p className="mt-2 max-w-md">Generate a source slice from the book page. Rendered manga pages will appear here.</p>
@@ -227,7 +261,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => canPrev && setPageIndex(index => index - 1)}
+              onClick={() => canPrev && goToPage(pageIndex - 1)}
               disabled={!canPrev}
               className="px-4 py-2 border flex items-center gap-2 disabled:opacity-40"
               style={{ borderColor: "#2E2C3F", color: "#F0EEE8" }}
@@ -239,7 +273,7 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
             </Link>
             <button
               type="button"
-              onClick={() => canNext && setPageIndex(index => index + 1)}
+              onClick={() => canNext && goToPage(pageIndex + 1)}
               disabled={!canNext}
               className="px-4 py-2 border flex items-center gap-2 disabled:opacity-40"
               style={{ borderColor: "#2E2C3F", color: "#F0EEE8" }}
@@ -249,8 +283,40 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
           </div>
         </section>
 
-        <aside className="flex flex-col gap-4">
-          <BookSpine project={project} />
+        <section className="mt-8 border p-4" style={{ borderColor: "#2E2C3F", background: "#17161F" }}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-display flex items-center gap-2" style={{ color: "#ffc220" }}>
+              <BookOpen size={16} /> Manga pages
+            </h2>
+            <p className="text-sm" style={{ color: "#A8A6C0" }}>
+              Jump between rendered pages without losing the reader position.
+            </p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {pages.map((page, index) => (
+              <a
+                key={page.id}
+                href={`#manga-page-${index + 1}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  goToPage(index);
+                }}
+                className="border px-3 py-2 font-label"
+                style={{
+                  borderColor: index === pageIndex ? "#ffc220" : "#2E2C3F",
+                  background: index === pageIndex ? "#ffc220" : "transparent",
+                  color: index === pageIndex ? "#1f1f29" : "#F0EEE8",
+                  fontSize: "0.68rem",
+                }}
+                aria-current={index === pageIndex ? "page" : undefined}
+              >
+                Page {index + 1}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
           <section className="border p-4" style={{ borderColor: "#2E2C3F", background: "#17161F" }}>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-display flex items-center gap-2" style={{ color: "#ffc220" }}>
@@ -309,7 +375,11 @@ export default function MangaV2ReaderPage({ params }: { params: Promise<{ id: st
               {slices.length === 0 && <p style={{ color: "#A8A6C0", fontSize: "0.8rem" }}>No slices generated yet.</p>}
             </div>
           </section>
-        </aside>
+        </div>
+
+        <section className="mt-6">
+          <BookSpine project={project} />
+        </section>
       </div>
     </main>
   );
