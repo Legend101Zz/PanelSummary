@@ -1,272 +1,30 @@
-You are working on the manga reader page:
+# NEXT SESSION: Book-Reel Manga Reader
 
-http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503
+Last updated: 2026-06-07
 
-Use the $Browser tool/skill to open the page, inspect the current UI visually, and study how the generated manga images, panels, speech bubbles, narrator text, and page layout are currently rendered.
+## Current Status
 
-The current page is already moving in the right direction. The generated images make it feel much more like an actual manga/comic, and the overall structure is becoming strong. However, there are still several UX and formatting issues that need to be fixed.
+The 2026-06-07 manga reader polish pass is implemented.
 
-Main problems to solve:
-
-1. Speech bubble text formatting
-   - Text inside speech bubbles is not wrapping correctly.
-   - Some text overflows outside the bubble.
-   - Some text is too cramped or badly aligned.
-   - Speech bubbles sometimes try to contain too much information.
-   - Fix font size, line height, padding, max width, wrapping, and overflow behavior.
-
-2. Text overflowing outside panels
-   - Some text goes outside the sub-panel/card boundaries.
-   - Make sure every panel has safe padding and clipped/contained content.
-   - Nothing should visually escape from a panel unless it is an intentional manga-style effect.
-
-3. Text overlapping generated images
-   - In some places, text appears directly over the image and becomes unreadable.
-   - Ensure text has a proper readable background, bubble, narrator box, or reserved space.
-   - Avoid placing raw text on top of complex images.
-
-4. Overlapping bubbles and bad bubble placement
-   - Some panels show weird “door-like” bubbles or overlapping bubble shapes.
-   - Some panels have too many bubbles stacked together.
-   - Improve speech bubble positioning and spacing.
-   - Avoid placing multiple bubbles too close unless the panel design intentionally supports it.
-
-5. Do not force all information into character speech bubbles
-   - Speech bubbles should feel natural and conversational.
-   - Do not stuff long explanatory text into character dialogue.
-   - Use narrator boxes/caption boxes for background information, explanations, transitions, and learning content.
-   - Dialogue bubbles should be short, emotional, and character-driven.
-   - Narrator boxes should carry the heavier educational/explanatory content.
-
-6. Redesign the page UI to feel more like a manga reader
-   - The current layout is good, but improve the surrounding page experience.
-   - Make it feel like a polished manga/comic reader rather than a normal web page.
-   - Consider better page spacing, reading flow, navigation controls, page containers, panel rhythm, and manga-style visual hierarchy.
-   - The reader should feel immersive but still clean and readable.
-   - Theme should match the app
-
-7. Move the “Book Spine” section
-   - The “Book Spine” should not interrupt the manga reading flow.
-   - Move it to the very end of the page.
-   - Each manga page should have a link/anchor that allows users to jump/traverse to it from the spine.
-   - Treat the spine more like a table of contents or chapter navigation at the end.
-
-8. Preserve what is already working
-   - Keep the overall manga/comic feel.
-   - Keep the generated images prominent.
-   - Keep the strong panel-based structure.
-   - Do not over-simplify it into a boring article layout.
-   - The goal is to refine and polish, not rebuild everything from scratch.
-
-Expected approach:
-
-First, use the Browser tool to inspect the current page visually. Identify actual layout issues from the rendered page, not just from code assumptions.
-
-You may dispatch/fan out parts of this task to smaller sub-agents running in parallel. For example:
-
-- One sub-agent can inspect the current rendered UI and list visual issues.
-- One sub-agent can inspect the component/code structure.
-- One sub-agent can propose manga-reader UX improvements.
-- One sub-agent can focus on speech bubble and narrator box rules.
-- One sub-agent can focus on responsive/mobile behavior.
-- One sub-agent can test screenshots and compare before/after states.
-
-You are responsible for synthesizing their outputs into one coherent implementation plan and final set of changes. Do not blindly merge sub-agent suggestions. Resolve conflicts, remove redundant ideas, and make sure the final implementation is consistent, polished, and maintainable.
-
-Before implementing, create a detailed implementation plan including:
-
-- Current UI problems observed from the browser.
-- Component/files likely responsible.
-- Proposed layout and styling changes.
-- Speech bubble/narrator box design rules.
-- Manga reader page structure.
-- Navigation/spine redesign.
-- Risk areas and how to avoid regressions.
-
-After each meaningful UI/layout change, take a screenshot using the Browser tool and compare it against the live rendered page.
-
-Do not rely only on code inspection. The final judgment should come from the actual browser-rendered UI.
-
-For every major change, verify:
-
-- Speech bubble text wraps correctly.
-- No text overflows outside bubbles.
-- No text escapes panel boundaries.
-- No unreadable text appears directly over images.
-- Narrator boxes are readable and placed naturally.
-- Multiple bubbles do not overlap.
-- Manga panels still feel visually rich and image-first.
-- Mobile and desktop layouts both work.
-- Book Spine appears at the end and page links/anchors work correctly.
-
-Use screenshots as an iterative feedback loop:
-
-1. Implement a small/medium change.
-2. Reload the live page.
-3. Take a screenshot.
-4. Inspect the rendered result.
-5. Fix any visual regressions.
-6. Repeat until the page looks polished.
-
-Design direction:
-
-The final page should feel like a clean manga reader with:
-
-- Large readable manga panels.
-- Strong image-first storytelling.
-- Short, well-formatted speech bubbles.
-- Narrator/caption boxes for dense information.
-- No unreadable text over images.
-- No text spilling outside panels.
-- No overlapping bubbles.
-- Smooth page-to-page reading flow.
-- Book Spine moved to the end as navigation.
-- Better anchors/links to jump to each page.
-- A polished, immersive manga/comic reading experience.
-
-Be especially careful with responsive behavior. The page should work well on desktop and mobile. On smaller screens, bubbles and narrator boxes should stack cleanly and never overflow.
-
-Do not just patch one bubble issue. Think holistically about the manga reader experience and improve the system so future generated manga pages also render correctly.
-
----
-
-## 2026-06-07 Implementation Session: Reader Polish Pass
-
-### Current UI Problems Observed In Browser
-
-Live route inspected:
+Active route:
 
 `http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503`
 
-Screenshots captured before code changes:
+The current product path is still:
 
-- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-desktop.png`
-- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-1280.png`
-- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-1280.png`
-- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-top2-1280.png`
+```text
+upload PDF
+  -> parse book
+  -> create manga project
+  -> run book understanding
+  -> generate source slice
+  -> persist RenderedPage docs
+  -> read in frontend manga reader
+```
 
-Observed issues:
+Do not treat the old reader-polish prompt as pending. The previous issues around the right-side Book Spine, cramped speech bubbles, raw narration over sprites/images, stale scroll position after page navigation, and mobile horizontal overflow have been addressed in the frontend renderer.
 
-- The right-side Book Spine competes with the manga page and interrupts the reader flow. It should move below the reader as a page/chapter navigation surface.
-- The manga page is drawn too small within a large cream sheet on desktop, leaving large dead space and reducing readability.
-- On narrower viewports, the page can horizontally clip rather than resizing/stacking cleanly.
-- Speech bubbles are too small for generated dialogue. Text wraps into cramped columns, overlaps bubble boundaries, and sometimes appears cut off.
-- Some bubbles sit too close to panel edges or each other, producing awkward door-like/tall shapes.
-- Narration/summary text can render raw over scene sprites and become unreadable.
-- Page navigation preserves scroll position, so moving to the next page can leave the user halfway down a blank paper area instead of focused on the new page.
-- Character assets are now scene sprites, which is good, but sprite placement can collide with text when the panel also contains narration/dialogue.
-
-### Component/Files Likely Responsible
-
-- `frontend/app/books/[id]/manga/v2/page.tsx`
-  - Reader page chrome, two-column layout, navigation buttons, Book Spine placement, page-size wrapper, scroll behavior.
-- `frontend/components/MangaReader/MangaPageRenderer.tsx`
-  - Page container sizing, gutter application, panel wrapper behavior.
-- `frontend/components/MangaReader/MangaPanelRenderer.tsx`
-  - Panel clipping, z-order, readable overlays above images/sprites.
-- `frontend/components/MangaReader/panels/DialoguePanel.tsx`
-  - Speech bubble placement, text sizing/wrapping, narration-in-dialogue-panel treatment.
-- `frontend/components/MangaReader/panels/NarrationPanel.tsx`
-  - Caption readability and background treatment for non-dialogue heavy text.
-- `frontend/components/MangaReader/chrome/SpeechBubble.tsx`
-  - Bubble inner padding, overflow handling, SVG/DOM text containment.
-- `frontend/components/BookSpine.tsx`
-  - Heading/copy is reusable, but it needs to behave as end-of-reader navigation on this route.
-
-### Proposed Layout And Styling Changes
-
-1. Convert the manga route from a two-column reader + sidebar into a single reader-first flow:
-   - header
-   - focused manga page stage
-   - previous/next controls and page chips
-   - supporting metadata/assets
-   - Book Spine at the end
-
-2. Increase the usable page scale and constrain it responsively:
-   - Desktop: center a larger manga sheet with `min()`/viewport-based max height and width.
-   - Mobile: page width should fit the viewport with no horizontal clipping.
-   - Remove excessive blank sheet height where the rendered panels occupy only the top half.
-
-3. Add page anchors:
-   - Each rendered page view gets a stable anchor like `#manga-page-1`.
-   - End-of-page spine/navigation links can jump to pages and update `pageIndex`.
-   - On prev/next, scroll the reader stage back into view.
-
-4. Polish controls:
-   - Keep previous/next prominent and close to the page.
-   - Add compact page-number jump buttons/chips so users can traverse from the end spine/navigation.
-
-### Speech Bubble And Narrator Box Rules
-
-- Dialogue bubbles should prioritize short, emotional speech. Since stored dialogue can still be long, the renderer must gracefully contain it:
-  - clamp bubble box width/height to sane minimums,
-  - use smaller but readable font for longer lines,
-  - allow normal word wrapping with `overflow-wrap: anywhere`,
-  - hide/soft-fade overflow only as a last resort,
-  - remove speaker badge when it steals too much vertical space, or make it compact.
-
-- Multiple bubbles in a panel should not overlap:
-  - cap visible dialogue bubbles per panel when space is limited,
-  - route overflow/long explanatory content into a caption strip instead of another tiny bubble,
-  - use deterministic fallback positions with larger boxes.
-
-- Narration should always be in a readable caption box:
-  - solid or high-opacity paper background,
-  - border/shadow,
-  - reserved bottom/top placement,
-  - never raw text on top of complex sprites/images.
-
-- If a panel has both dialogue and narration:
-  - dialogue remains in bubbles,
-  - narration becomes a caption box with separate z-order and safe inset.
-
-### Manga Reader Page Structure
-
-- Keep the generated image/sprite-first manga feeling.
-- Avoid turning panels into article cards.
-- Panels should use `overflow: hidden` and internal safe padding so text does not escape.
-- Reader chrome should support immersion: dark app frame, warm page sheet, manga page centered, minimal side clutter.
-
-### Navigation/Spine Redesign
-
-- Move `BookSpine` below the manga reader and supporting sections.
-- Add a "Manga pages" table-of-contents strip near or inside the end spine area:
-  - buttons/links for page 1..N,
-  - current page highlighted,
-  - click sets `pageIndex` and scrolls to the reader anchor.
-- Preserve the existing Book Spine content as a source/arc reference, but make it secondary to reading.
-
-### Risk Areas And Regression Avoidance
-
-- Legacy pages may only have `gutter_grid`; do not require explicit new placement fields.
-- Avoid changing content generation, prompts, or backend contracts in this polish pass.
-- Preserve scene sprites and generated images; only improve their layout interaction with text.
-- Be careful with text shrinking: readable beats tiny. Prefer caption fallback for dense copy.
-- Verify both desktop and mobile screenshots after each meaningful change.
-- Run frontend type/build checks after edits.
-
-### Commands/Checks Run So Far
-
-- `git status --short`
-- `git diff -- NEXT_SESSION.md start.sh stop.sh`
-- `curl -I --max-time 3 'http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503'`
-- Browser DOM snapshot and screenshots through the in-app Browser.
-
-### Current Blockers
-
-- None. Live route is reachable and screenshot capture works.
-
-### Next Concrete Step
-
-Implement the reader-first layout and text-containment changes in small passes:
-
-1. Update page route layout, page sizing, page anchors, scroll reset, and move Book Spine to the end.
-2. Update bubble/caption rendering rules.
-3. Reload and capture desktop/mobile screenshots.
-4. Fix remaining visual regressions.
-5. Run TypeScript/build verification.
-
-### Phase Result: Reader Polish Implemented
+## What Changed In The Reader Polish Pass
 
 Files changed:
 
@@ -279,51 +37,221 @@ Files changed:
 - `frontend/components/MangaReader/panels/NarrationPanel.tsx`
 - `NEXT_SESSION.md`
 
-Behavior changed:
+Implemented behavior:
 
-- The manga reader route is now reader-first instead of a reader/sidebar split.
-- `BookSpine` moved to the end of the page, after manga page navigation, character assets, and generated slice metadata.
-- Added page jump links (`Page 1` through `Page N`) that update the current rendered page and scroll the reader back into view.
-- Previous/next navigation now scrolls back to the reader instead of preserving a stale lower scroll position.
-- The manga sheet width now accounts for viewport and stage padding so mobile does not horizontally overflow.
-- Composition row rendering now neutralizes stale per-row `gridRow` placement inside row subgrids, so panels fill their row instead of collapsing or overlapping.
-- Panel renderer no longer uses fixed `minHeight` values that fight the fixed manga page grid on mobile.
-- Speech bubbles now have safer fallback boxes, clipped inner lettering, optional speaker tags in cramped bubbles, and dynamic font sizing.
-- Long/generated explanatory dialogue is rendered as a caption box rather than forced into tiny speech bubbles.
-- Concept/setup/narration panels now use readable paper caption boxes instead of raw centered text over sprites/images.
+- The manga route is now reader-first instead of a reader plus right sidebar split.
+- `BookSpine` is moved to the end of the page, after manga page navigation, character assets, and generated slice metadata.
+- Page jump links (`Page 1` through `Page N`) update the current rendered page and scroll the reader back into view.
+- Previous/next navigation scrolls back to the reader instead of preserving a stale lower scroll position.
+- Manga sheet sizing is constrained by viewport and stage padding, so mobile no longer horizontally overflows.
+- Composition row rendering neutralizes stale per-row `gridRow` placement inside row subgrids so panels fill their rows.
+- `MangaPanelRenderer` no longer uses fixed `minHeight` values that fight the fixed manga page grid on mobile.
+- Speech bubbles have safer fallback boxes, clipped inner lettering, optional speaker tags in cramped bubbles, and dynamic font sizing.
+- Long/generated explanatory dialogue routes into caption boxes instead of being forced into tiny speech bubbles.
+- Concept/setup/narration panels use readable paper caption boxes instead of raw centered text over sprites/images.
 
-Screenshots captured:
+## Evidence
 
-- Baseline:
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-desktop.png`
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-1280.png`
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-1280.png`
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-top2-1280.png`
-- Intermediate:
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-pass1-1280.png`
-- Final:
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-final-1280.png`
-  - `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-final-mobile-390.png`
+Baseline screenshots captured before the polish pass:
 
-Verification:
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-desktop.png`
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-1280.png`
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-1280.png`
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-baseline-page2-top2-1280.png`
 
-- `npx tsc --noEmit` passed from `frontend`.
-- `npm run build` passed from `frontend`.
-- Browser DOM/layout metrics passed at 1280x900 and 390x844:
-  - `horizontalOverflow: false`
-  - `overflowItems: []`
-- In-app Browser was used for live route inspection, DOM snapshots, baseline screenshot capture, and layout metrics.
-- The in-app Browser screenshot command began timing out after the image-heavy page grew longer; final screenshot files were captured with `npx playwright screenshot --channel=chrome` as a screenshot-only fallback.
+Intermediate screenshot:
 
-Current blockers:
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-pass1-1280.png`
 
-- None for this polish pass.
+Final screenshots:
 
-Open risks:
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-final-1280.png`
+- `docs/renderer-analysis/experiments/2026-06-07-reader-polish-after-final-mobile-390.png`
 
-- The page still relies on heuristic fallback layout for stored pages without explicit `row_heights_pct`, `panel_placements`, or compositor-authored bubble placements.
-- Caption routing is presentation-only; future compositor/content passes should ideally author shorter dialogue and explicit caption boxes at the DSL level.
+Browser metrics checked at 1280x900 and 390x844:
 
-Next concrete step:
+- `horizontalOverflow: false`
+- `overflowItems: []`
 
-- Review final screenshots visually on more stored pages, especially pages with 6-7 panels and long narration, then decide whether to add a compositor-side rule for explicit row heights and bubble/caption placements.
+Tooling note: the in-app Browser was used for route inspection, DOM snapshots, baseline screenshot capture, and layout metrics. After the page became image-heavy, the in-app screenshot command began timing out. Final screenshot files were captured with:
+
+```bash
+npx playwright screenshot --channel=chrome
+```
+
+## Verification Already Run
+
+From `frontend`:
+
+```bash
+npx tsc --noEmit
+npm run build
+```
+
+Both passed.
+
+From repo root:
+
+```bash
+git diff --check
+```
+
+Passed.
+
+## Current Blockers
+
+None for the completed reader polish pass.
+
+## Open Risks
+
+- The reader still relies on heuristic fallback layout for stored pages that lack explicit `row_heights_pct`, `panel_placements`, or compositor-authored bubble placements.
+- Caption routing is presentation-only. A future compositor/content pass should ideally author shorter dialogue and explicit caption boxes at the DSL level.
+- The final polish was visually verified on the active sample route and page 1/page 2 evidence. More stored pages, especially pages with 6-7 panels and long narration, should be reviewed before calling the whole renderer fully polished.
+
+## Recommended Next Work
+
+1. Review final screenshots and live pages across all 11 stored pages.
+2. Focus especially on pages with many panels, long narration, and mixed sprite/text panels.
+3. If similar spacing issues appear, add compositor-side rules for explicit row heights, panel placements, and bubble/caption placements.
+4. Keep renderer fixes scoped to the `RenderedPage` contract boundary. Do not change story/content generation unless the renderer contract requires it.
+
+## 2026-06-07 Follow-Up Analysis: Remaining Reader Defects
+
+The reader is better than before, but the current live page still has visible quality problems.
+
+Fresh current screenshot:
+
+- `docs/renderer-analysis/experiments/2026-06-07-reader-followup-page1-current-1280.png`
+
+Specific user-observed issue:
+
+> The group chats, then falls into a contemplative silence. Sunlight streams through windows.
+
+That page 1 setup panel technically has a readable caption, but it still looks wrong because the text box is competing with synthesized character placeholders. The placeholders look like tall rounded doors rather than people, and the panel does not feel intentionally composed.
+
+Current diagnosis:
+
+- `frontend/components/MangaReader/chrome/SceneSprites.tsx` synthesizes sprite layers from `panel.character_ids` when no explicit `sprite_layers` exist.
+- When no matching asset is found, `SpriteFallback` renders a tall rounded white placeholder with a two-letter label.
+- This creates the door-like shapes visible in the current page.
+- `ConceptPanel`, `NarrationPanel`, and `DialoguePanel` place text independently of those fallback sprites, so text boxes can still collide visually with image/sprite regions.
+- Stored pages for this project are `sprites_only` and have no full-panel `panel_artifacts.*.image_path`, so the reader must make sprite-only pages look intentional without fake body placeholders.
+
+Remaining problems to solve:
+
+- Text can still feel cramped in bubbles/caption boxes even when DOM overflow checks pass.
+- Text boxes can still sit over or near image/sprite regions in visually messy ways.
+- Missing sprite fallbacks look like bad door SVG/person shapes.
+- Action prose such as the group-chat sentence is being rendered as visible caption text even when it is really a visual direction.
+- Fallback layout lacks a panel-level rule for reserved image zones vs. reserved text zones.
+
+Recommended next implementation pass:
+
+1. Stop rendering door-like `SpriteFallback` bodies.
+   - If an asset is missing, either omit the sprite or use a small unobtrusive label/marker.
+   - For many-character panels, prefer a group/environment visual treatment instead of five fake figures.
+2. Add a panel presentation classifier/helper.
+   - Inputs: purpose, shot type, dialogue length, narration/action length, character count, available assets, explicit placements.
+   - Outputs: whether synthetic sprites render, whether missing sprite fallback is allowed, text-zone strategy, and whether dialogue should be bubble or caption.
+3. Separate image zones from text zones.
+   - Captions should reserve top/bottom strips.
+   - Bubbles should be used only for short emotional dialogue.
+   - Dense explanatory/action text should use narrator/caption treatment or be hidden when it only describes the visual.
+4. Verify on page 1 plus at least pages with long narration/many panels.
+5. Use `$browser:control-in-app-browser` for live inspection and `$superpowers:brainstorming` before designing changes.
+6. Use sub-agents as needed with disjoint ownership:
+   - renderer diagnostics,
+   - frontend renderer,
+   - layout/data contract,
+   - verification/docs.
+
+Paste-ready next prompt is now in:
+
+- `docs/next-prompt.md`
+
+## Important Context To Preserve
+
+Read these before deeper renderer work:
+
+- `docs/renderer-analysis/findings.md`
+- `docs/renderer-analysis/sample-dsl.json`
+- `docs/renderer-analysis/experiments/README.md`
+
+Trust the core diagnosis from `docs/renderer-analysis/findings.md`: the content/image pipeline is not the blocker. The renderer contract and frontend presentation are the blocker.
+
+For frontend renderer work, keep backend Pydantic models and frontend TypeScript mirrors synchronized when contract fields change. Preserve legacy fallback behavior for existing pages that only have `gutter_grid`.
+
+## 2026-06-07 Follow-Up Implementation: Fallback Composition Pass
+
+Status: implemented and verified on the active sample route after restarting the dev server on port 3000.
+
+Files changed in this pass:
+
+- `frontend/components/MangaReader/panel_presentation.ts`
+- `frontend/components/MangaReader/panel_presentation.test.ts`
+- `frontend/components/MangaReader/MangaPanelRenderer.tsx`
+- `frontend/components/MangaReader/chrome/SceneSprites.tsx`
+- `frontend/components/MangaReader/panels/ConceptPanel.tsx`
+- `frontend/components/MangaReader/panels/DialoguePanel.tsx`
+- `frontend/components/MangaReader/panels/NarrationPanel.tsx`
+- `NEXT_SESSION.md`
+- `docs/next-prompt.md`
+
+Implemented behavior:
+
+- Added a panel presentation helper that classifies fallback panels as `dialogue-over-scene`, `caption-strip`, `text-card`, or `scene-only`.
+- `MangaPanelRenderer` now computes one presentation plan per panel and passes it to sprite, dialogue, concept, and narration renderers.
+- `SceneSprites` no longer renders the tall body-shaped missing-character fallback.
+- Synthesized sprites render only when a real scene-suitable asset exists.
+- `reference_sheet` assets are excluded from scene-sprite rendering so whole asset sheets are not pasted into panels.
+- Many-character panels and visual-direction-only panels prefer caption-strip/text-card treatment instead of synthesized placeholder bodies.
+- Dense dialogue is routed into caption/text-card lettering.
+- Speech bubbles are reserved for truly short dialogue, and inline speaker tags inside bubbles were removed to prevent narrow-panel overflow.
+- Concept and narration panels use the shared caption-zone plan and clamp visible text before rendering.
+
+Evidence captured:
+
+- Baseline for this pass:
+  - `docs/renderer-analysis/experiments/2026-06-07-reader-followup-before-pass2-1280.png`
+- Final screenshots:
+  - `docs/renderer-analysis/experiments/2026-06-07-reader-followup-after-pass2-1280.png`
+  - `docs/renderer-analysis/experiments/2026-06-07-reader-followup-after-pass2-mobile-390.png`
+
+Verification run:
+
+```bash
+cd frontend
+npx tsc --noEmit --pretty false
+npm run build
+```
+
+Both passed. Note: do not run `tsc` in parallel with `next build` in this repo; the build regenerates `.next/types` and can create transient `TS6053` missing-file errors.
+
+Browser/visual verification:
+
+- Active route verified on `http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503`.
+- Page 1 final metrics:
+  - loaded: true
+  - panelCount: 5
+  - horizontalOverflow: false
+  - placeholderLike: []
+  - overflowText: []
+- Page 11 final metrics after keyboard navigation:
+  - loaded: true
+  - panelCount: 7
+  - horizontalOverflow: false
+  - placeholderLike: []
+  - overflowText: []
+- Additional pages 4 and 8 were inspected during the pass; no placeholder labels or text overflow were observed there before the final speaker-tag cleanup.
+
+Operational note:
+
+- Running `npm run build` while the dev server is active can leave the Next dev server on port 3000 serving `missing required error components, refreshing...`.
+- If that happens, kill the port 3000 listener and restart `npm run dev` from `frontend`.
+- A temporary dev server on port 3001 was not useful because backend API calls failed with `Network Error`, likely due origin/CORS expectations.
+
+Remaining risks:
+
+- The renderer is still using heuristic fallback presentation for stored pages without explicit compositor-authored `panel_placements`, `sprite_layers`, and `bubble_placements`.
+- Page 1 is now cleaner but image-light because only reference-sheet assets were available for some characters and those are intentionally not rendered as scene sprites.
+- The next quality jump should come from compositor-authored explicit text/sprite zones and better scene-suitable sprite assets, not more ad hoc frontend fallback rules.

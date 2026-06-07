@@ -11,6 +11,10 @@
 
 import { motion } from "motion/react";
 import type { StoryboardPanel } from "@/lib/types";
+import {
+  clampVisibleText,
+  type PanelPresentationPlan,
+} from "../panel_presentation";
 import type { MangaPalette } from "../types";
 import { primaryCharacter } from "../derived_visuals";
 
@@ -19,11 +23,22 @@ interface NarrationPanelProps {
   palette: MangaPalette;
   /** Synthetic visual effects derived from purpose / shot. */
   effects: string[];
+  presentation: PanelPresentationPlan;
 }
 
-export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps) {
+export function NarrationPanel({
+  panel,
+  palette,
+  effects,
+  presentation,
+}: NarrationPanelProps) {
   const character = primaryCharacter(panel);
-  const text = panel.narration?.trim() || panel.action?.trim() || "";
+  const text = clampVisibleText(
+    panel.narration?.trim() || panel.action?.trim() || "",
+    presentation.maxVisibleCaptionChars || 180,
+  );
+  const isTextCard = presentation.variant === "text-card";
+  const showCharacterTag = Boolean(character && !presentation.isVisualDirectionOnly);
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
@@ -36,7 +51,7 @@ export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps)
         />
       )}
 
-      {character && (
+      {showCharacterTag && (
         <motion.div
           className="mb-3"
           initial={{ opacity: 0 }}
@@ -49,6 +64,7 @@ export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps)
               color: palette.accent,
               fontFamily: "var(--font-label, monospace)",
               fontSize: "0.55rem",
+              lineHeight: 1,
             }}
           >
             {character}
@@ -65,13 +81,13 @@ export function NarrationPanel({ panel, palette, effects }: NarrationPanelProps)
             boxShadow: "0 7px 0 rgba(31,31,41,0.22)",
             color: "#1f1f29",
             fontFamily: "var(--font-body, serif)",
-            fontSize: "clamp(0.68rem, 1.25vw, 0.98rem)",
+            fontSize: isTextCard
+              ? "clamp(0.62rem, 1.05vw, 0.84rem)"
+              : "clamp(0.54rem, 0.82vw, 0.72rem)",
             fontStyle: "italic",
             fontWeight: 700,
-            lineHeight: 1.34,
-            maxHeight: "76%",
+            lineHeight: isTextCard ? 1.28 : 1.18,
             maxWidth: "88%",
-            overflow: "hidden",
             overflowWrap: "anywhere",
           }}
           initial={{ opacity: 0, y: 10 }}

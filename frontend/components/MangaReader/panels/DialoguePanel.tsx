@@ -16,6 +16,10 @@ import type {
   StoryboardScriptLine,
 } from "@/lib/types";
 import { SpeechBubble, type SpeechBubbleVariant } from "../chrome/SpeechBubble";
+import {
+  clampVisibleText,
+  type PanelPresentationPlan,
+} from "../panel_presentation";
 import type { MangaPalette } from "../types";
 
 interface DialoguePanelProps {
@@ -23,6 +27,7 @@ interface DialoguePanelProps {
   palette: MangaPalette;
   hasPaintedBackdrop?: boolean;
   bubblePlacements?: BubblePlacement[];
+  presentation: PanelPresentationPlan;
 }
 
 function variantForIntent(intent: string | undefined): SpeechBubbleVariant {
@@ -102,14 +107,20 @@ function bubbleBoxStyle(placement: BubblePlacement): CSSProperties {
   };
 }
 
-function shouldUseCaption(line: StoryboardScriptLine, index: number, total: number): boolean {
+function shouldUseCaption(
+  line: StoryboardScriptLine,
+  index: number,
+  total: number,
+  presentation: PanelPresentationPlan,
+): boolean {
+  if (presentation.preferCaptionLettering) return true;
   const length = line.text.trim().length;
-  return length > 72 || (total > 2 && index > 1 && length > 42);
+  return length > presentation.maxBubbleChars || (total > 2 && index > 1 && length > 34);
 }
 
 function letteringFontSize(text: string): string {
-  if (text.length > 56) return "clamp(0.5rem, 0.72vw, 0.68rem)";
-  if (text.length > 36) return "clamp(0.55rem, 0.86vw, 0.74rem)";
+  if (text.length > 40) return "clamp(0.5rem, 0.72vw, 0.66rem)";
+  if (text.length > 28) return "clamp(0.55rem, 0.82vw, 0.72rem)";
   return "clamp(0.62rem, 1vw, 0.84rem)";
 }
 
@@ -147,7 +158,8 @@ function BubbleLettering({
   const intentStyle = INTENT_STYLES[line.intent || "neutral"] || INTENT_STYLES.neutral;
   const variant = normalizedVariant(placement, line);
   const fill = hasPaintedBackdrop ? "rgba(255,250,240,0.94)" : "rgba(255,255,255,0.95)";
-  const showSpeakerTag = line.text.length <= 32;
+  const showSpeakerTag = false;
+  const visibleText = clampVisibleText(line.text, 54);
 
   return (
     <motion.div
@@ -188,7 +200,7 @@ function BubbleLettering({
             style={{
               color: "#1f1f29",
               fontFamily: "var(--font-body, sans-serif)",
-              fontSize: letteringFontSize(line.text),
+              fontSize: letteringFontSize(visibleText),
               fontStyle: intentStyle.fontStyle,
               fontWeight: variant === "shout" ? 800 : 600,
               hyphens: "auto",
@@ -203,7 +215,7 @@ function BubbleLettering({
               textWrap: "pretty",
             }}
           >
-            {line.text}
+            {visibleText}
           </p>
         </div>
       </SpeechBubble>
@@ -219,32 +231,43 @@ function BubbleLettering({
 function CaptionBox({
   lines,
   panelNarration,
+  presentation,
 }: {
   lines: StoryboardScriptLine[];
   panelNarration?: string;
+  presentation: PanelPresentationPlan;
 }) {
-  const captionText = [
+  const rawCaptionText = [
     ...lines.map((line) => `${line.speaker_id}: ${line.text}`),
     panelNarration,
   ].filter(Boolean).join(" ");
+  const captionText = clampVisibleText(rawCaptionText, presentation.maxVisibleCaptionChars);
 
   if (!captionText) return null;
+  const isTextCard = presentation.variant === "text-card";
+  const zoneClass =
+    presentation.captionZone === "top"
+      ? "absolute inset-x-3 top-3"
+      : presentation.captionZone === "center" || isTextCard
+        ? "absolute left-3 right-3 top-1/2 -translate-y-1/2"
+        : "absolute inset-x-3 bottom-3";
 
   return (
     <motion.div
-      className="absolute inset-x-3 bottom-3 border bg-white px-3 py-2"
+      className={`${zoneClass} border bg-white px-3 py-2`}
       style={{
         borderColor: "#1f1f29",
         boxShadow: "0 6px 0 rgba(31,31,41,0.22)",
         color: "#1f1f29",
         fontFamily: "var(--font-body, sans-serif)",
-        fontSize: "clamp(0.58rem, 0.88vw, 0.76rem)",
+        fontSize: isTextCard
+          ? "clamp(0.58rem, 0.9vw, 0.76rem)"
+          : "clamp(0.52rem, 0.78vw, 0.68rem)",
         fontStyle: panelNarration ? "italic" : "normal",
         fontWeight: 650,
-        lineHeight: 1.25,
-        maxHeight: "38%",
-        overflow: "hidden",
+        lineHeight: isTextCard ? 1.26 : 1.18,
         overflowWrap: "anywhere",
+        textAlign: "center",
         zIndex: 46,
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -261,15 +284,20 @@ export function DialoguePanel({
   palette,
   hasPaintedBackdrop = false,
   bubblePlacements = [],
+  presentation,
 }: DialoguePanelProps) {
   const lines = panel.dialogue ?? [];
   const explicitByLine = new Map(bubblePlacements.map((placement) => [placement.line_index, placement]));
-  const bubbleLines = lines.filter((line, index) => !shouldUseCaption(line, index, lines.length));
-  const captionLines = lines.filter((line, index) => shouldUseCaption(line, index, lines.length));
+  const bubbleLines = lines.filter((line, index) =>
+    !shouldUseCaption(line, index, lines.length, presentation),
+  );
+  const captionLines = lines.filter((line, index) =>
+    shouldUseCaption(line, index, lines.length, presentation),
+  );
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {panel.scene_id && (
+      {panel.scene_id && presentation.variant !== "text-card" && (
         <div
           className="absolute left-2 top-2 rounded-sm border bg-white/80 px-1.5 py-0.5 uppercase tracking-[0.18em]"
           style={{
@@ -299,7 +327,11 @@ export function DialoguePanel({
         );
       })}
 
-      <CaptionBox lines={captionLines} panelNarration={panel.narration} />
+      <CaptionBox
+        lines={captionLines}
+        panelNarration={panel.narration}
+        presentation={presentation}
+      />
     </div>
   );
 }

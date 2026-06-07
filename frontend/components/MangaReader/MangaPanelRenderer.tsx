@@ -38,6 +38,7 @@ import type { MangaCharacterAsset } from "./asset_lookup";
 import { PaintedPanelBackdrop } from "./chrome/PaintedPanelBackdrop";
 import { SfxLayer } from "./chrome/SfxLayer";
 import { SceneSprites } from "./chrome/SceneSprites";
+import { planPanelPresentation } from "./panel_presentation";
 import { DialoguePanel } from "./panels/DialoguePanel";
 import { NarrationPanel } from "./panels/NarrationPanel";
 import { ConceptPanel } from "./panels/ConceptPanel";
@@ -86,6 +87,16 @@ export function MangaPanelRenderer({
   // art behind everything and tell the dialogue sub-renderer to skip
   // its avatar disc.
   const hasPaintedBackdrop = Boolean(artifact.image_path && !artifact.error);
+  const presentation = useMemo(
+    () =>
+      planPanelPresentation(panel, {
+        hasPaintedBackdrop,
+        characterAssets,
+        explicitSpriteLayers: spriteLayers,
+        explicitBubblePlacements: bubblePlacements,
+      }),
+    [panel, hasPaintedBackdrop, characterAssets, spriteLayers, bubblePlacements],
+  );
 
   const content = useMemo(() => {
     switch (kind) {
@@ -96,16 +107,24 @@ export function MangaPanelRenderer({
             palette={palette}
             hasPaintedBackdrop={hasPaintedBackdrop}
             bubblePlacements={bubblePlacements}
+            presentation={presentation}
           />
         );
       case "transition":
         return <TransitionPanel panel={panel} palette={palette} />;
       case "concept":
-        return <ConceptPanel panel={panel} palette={palette} />;
+        return <ConceptPanel panel={panel} palette={palette} presentation={presentation} />;
       case "narration":
-        return <NarrationPanel panel={panel} palette={palette} effects={effects} />;
+        return (
+          <NarrationPanel
+            panel={panel}
+            palette={palette}
+            effects={effects}
+            presentation={presentation}
+          />
+        );
     }
-  }, [kind, panel, palette, hasPaintedBackdrop, effects, bubblePlacements]);
+  }, [kind, panel, palette, hasPaintedBackdrop, effects, bubblePlacements, presentation]);
 
   return (
     <motion.div
@@ -173,6 +192,7 @@ export function MangaPanelRenderer({
         explicitLayers={spriteLayers}
         assets={characterAssets}
         hasPaintedBackdrop={hasPaintedBackdrop}
+        presentation={presentation}
       />
 
       <div className="absolute inset-0" style={{ zIndex: 35 }}>

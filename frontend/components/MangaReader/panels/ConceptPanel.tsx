@@ -14,22 +14,38 @@
 
 import { motion } from "motion/react";
 import type { StoryboardPanel } from "@/lib/types";
+import {
+  clampVisibleText,
+  type PanelPresentationPlan,
+} from "../panel_presentation";
 import type { MangaPalette } from "../types";
 import { primaryCharacter } from "../derived_visuals";
 
 interface ConceptPanelProps {
   panel: StoryboardPanel;
   palette: MangaPalette;
+  presentation: PanelPresentationPlan;
 }
 
-export function ConceptPanel({ panel, palette }: ConceptPanelProps) {
+export function ConceptPanel({ panel, palette, presentation }: ConceptPanelProps) {
   const character = primaryCharacter(panel);
   const headline = panel.action?.trim() || panel.narration?.trim() || "";
-  const caption = headline || panel.composition?.trim() || "";
+  const caption = clampVisibleText(
+    headline || panel.composition?.trim() || "",
+    presentation.maxVisibleCaptionChars || 130,
+  );
+  const isTextCard = presentation.variant === "text-card";
+  const showCharacterTag = Boolean(character && !presentation.isVisualDirectionOnly);
+  const captionClass =
+    presentation.captionZone === "top"
+      ? "absolute inset-x-3 top-3"
+      : isTextCard || presentation.captionZone === "center"
+        ? "absolute left-3 right-3 top-1/2 -translate-y-1/2"
+        : "absolute inset-x-3 bottom-3";
 
   return (
     <div className="relative w-full h-full overflow-hidden px-3 py-3">
-      {character && (
+      {showCharacterTag && (
         <motion.span
           className="absolute left-3 top-3 z-20 rounded-sm border bg-white/85 px-2 py-0.5 tracking-widest uppercase"
           style={{
@@ -38,6 +54,7 @@ export function ConceptPanel({ panel, palette }: ConceptPanelProps) {
             fontFamily: "var(--font-label, monospace)",
             fontSize: "clamp(0.42rem, 0.62vw, 0.56rem)",
             fontWeight: 800,
+            lineHeight: 1,
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.85 }}
@@ -49,17 +66,17 @@ export function ConceptPanel({ panel, palette }: ConceptPanelProps) {
 
       {caption && (
         <motion.p
-          className="absolute inset-x-3 bottom-3 z-20 border bg-white px-3 py-2 text-center"
+          className={`${captionClass} z-20 border bg-white px-3 py-2 text-center`}
           style={{
             borderColor: "#1f1f29",
             boxShadow: "0 6px 0 rgba(31,31,41,0.22)",
             color: "#1f1f29",
             fontFamily: "var(--font-body, sans-serif)",
-            fontSize: "clamp(0.48rem, 0.9vw, 0.78rem)",
+            fontSize: isTextCard
+              ? "clamp(0.58rem, 1vw, 0.82rem)"
+              : "clamp(0.48rem, 0.76vw, 0.66rem)",
             fontWeight: 700,
-            lineHeight: 1.16,
-            maxHeight: "58%",
-            overflow: "hidden",
+            lineHeight: isTextCard ? 1.24 : 1.14,
             overflowWrap: "anywhere",
           }}
           initial={{ opacity: 0, y: 8 }}

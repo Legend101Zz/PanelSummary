@@ -6,13 +6,27 @@ import {
   findAssetForCharacter,
   type MangaCharacterAsset,
 } from "../asset_lookup";
+import type { PanelPresentationPlan } from "../panel_presentation";
 
 interface SceneSpritesProps {
   panel: StoryboardPanel;
   explicitLayers?: SpriteLayer[];
   assets: MangaCharacterAsset[];
   hasPaintedBackdrop: boolean;
+  presentation: PanelPresentationPlan;
 }
+
+const EMPTY_PRESENTATION: PanelPresentationPlan = {
+  variant: "scene-only",
+  captionZone: "none",
+  shouldRenderSyntheticSprites: false,
+  shouldRenderExplicitSprites: false,
+  missingSpriteFallback: "omit",
+  preferCaptionLettering: false,
+  maxVisibleCaptionChars: 0,
+  maxBubbleChars: 0,
+  isVisualDirectionOnly: false,
+};
 
 function clampPct(value: number, fallback: number): number {
   if (typeof value !== "number" || Number.isNaN(value)) return fallback;
@@ -77,24 +91,28 @@ function layerStyle(layer: SpriteLayer): CSSProperties {
   };
 }
 
-function SpriteFallback({ characterId }: { characterId: string }) {
+function MissingSpriteMarker({ characterId }: { characterId: string }) {
   return (
     <div
-      className="flex h-full w-full items-end justify-center"
+      className="flex h-full w-full items-end justify-center pb-1"
       aria-hidden
     >
       <div
-        className="flex aspect-[2/3] h-[88%] items-center justify-center rounded-t-full border-2 bg-white/85 shadow-[0_8px_0_rgba(0,0,0,0.25)]"
-        style={{ borderColor: "#1f1f29", color: "#1f1f29" }}
+        className="max-w-full truncate rounded-sm border bg-white/85 px-1.5 py-0.5 uppercase"
+        style={{
+          borderColor: "rgba(31,31,41,0.4)",
+          color: "#1f1f29",
+          boxShadow: "0 3px 0 rgba(31,31,41,0.16)",
+        }}
       >
         <span
           style={{
             fontFamily: "var(--font-label, monospace)",
-            fontSize: "0.65rem",
+            fontSize: "0.5rem",
             fontWeight: 800,
           }}
         >
-          {characterId.slice(0, 2).toUpperCase()}
+          {characterId}
         </span>
       </div>
     </div>
@@ -106,10 +124,12 @@ export function SceneSprites({
   explicitLayers,
   assets,
   hasPaintedBackdrop,
+  presentation = EMPTY_PRESENTATION,
 }: SceneSpritesProps) {
-  const layers = explicitLayers?.length
-    ? explicitLayers
-    : hasPaintedBackdrop
+  const useExplicit = Boolean(explicitLayers?.length && presentation.shouldRenderExplicitSprites);
+  const layers = useExplicit
+    ? explicitLayers ?? []
+    : hasPaintedBackdrop || !presentation.shouldRenderSyntheticSprites
       ? []
       : synthesizeSpriteLayers(panel);
 
@@ -119,25 +139,43 @@ export function SceneSprites({
     <div className="pointer-events-none absolute inset-0" aria-hidden>
       {layers.map((layer, index) => {
         const asset = findAssetForCharacter(layer.character_id, layer.expression, assets);
+        if (!asset?.image_url && presentation.missingSpriteFallback === "omit") {
+          return null;
+        }
+        if (asset?.asset_type === "reference_sheet") {
+          return null;
+        }
+        const isReferenceSheet = asset?.asset_type === "reference_sheet";
         return (
           <div
             key={`${layer.character_id}-${layer.expression ?? "neutral"}-${index}`}
             style={layerStyle(layer)}
           >
             {asset?.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={asset.image_url}
-                alt=""
-                className="h-full w-full object-contain object-bottom"
-                loading="lazy"
-                draggable={false}
+              <div
+                className="h-full overflow-hidden"
                 style={{
-                  filter: "drop-shadow(0 10px 0 rgba(0,0,0,0.28))",
+                  width: isReferenceSheet ? "36%" : "100%",
+                  marginLeft: "auto",
+                  marginRight: "auto",
                 }}
-              />
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={asset.image_url}
+                  alt=""
+                  className="h-full w-full"
+                  loading="lazy"
+                  draggable={false}
+                  style={{
+                    objectFit: isReferenceSheet ? "cover" : "contain",
+                    objectPosition: isReferenceSheet ? "62% bottom" : "center bottom",
+                    filter: "drop-shadow(0 10px 0 rgba(0,0,0,0.28))",
+                  }}
+                />
+              </div>
             ) : (
-              <SpriteFallback characterId={layer.character_id} />
+              <MissingSpriteMarker characterId={layer.character_id} />
             )}
           </div>
         );
