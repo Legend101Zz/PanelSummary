@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     # --- OpenRouter (server-side key for model list proxy only) ---
     openrouter_api_key: str = ""
 
+    # --- MiniMax (server-side drafting lane) ---
+    minimax_api_key: str = ""
+
     # --- Large PDF budget ---
     max_pages_per_job: int = 100   # Warn user beyond this; ~65k tokens
 

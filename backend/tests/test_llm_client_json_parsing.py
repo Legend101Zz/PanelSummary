@@ -33,6 +33,17 @@ def test_parse_json_response_does_not_return_nested_array_when_root_object_is_ma
     assert parsed is None
 
 
+def test_minimax_provider_uses_env_key_and_openai_compatible_base_url(monkeypatch):
+    monkeypatch.setenv("MINIMAX_API_KEY", "env-minimax-key")
+
+    client = LLMClient(api_key="ignored-user-key", provider="minimax")
+
+    assert client.provider == "minimax"
+    assert client.api_key == "env-minimax-key"
+    assert str(client.client.base_url) == "https://api.minimax.io/v1/"
+    assert "highspeed" in client.model.lower()
+
+
 class _FakeEncoder:
     def encode(self, text: str) -> list[str]:
         return text.split()

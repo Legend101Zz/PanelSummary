@@ -146,6 +146,38 @@ def test_quality_repair_stage_repairs_failed_report_with_llm():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
+def test_quality_repair_stage_prompt_tells_model_how_to_fix_text_overflow():
+    client = FakeLLMClient(_repaired_storyboard())
+    context = _context(client)
+    context.quality_report = QualityReport(
+        passed=False,
+        issues=[
+            QualityIssue(
+                severity="error",
+                code="DSL_PANEL_OVER_DIALOGUE_CHARS",
+                message="panel p001 dialogue totals 130 chars; DSL allows at most 90",
+                artifact_id="p001",
+            ),
+            QualityIssue(
+                severity="error",
+                code="DSL_PAGE_OVER_TEXT_WORDS",
+                message="page 0 has 92 total words; DSL allows at most 60",
+                artifact_id="pg001",
+            ),
+        ],
+    )
+
+    asyncio.run(quality_repair_stage.run(context))
+
+    combined_prompt = (
+        client.calls[0]["system_prompt"] + "\n" + client.calls[0]["user_message"]
+    )
+    assert "split beats into more panels" in combined_prompt
+    assert "cut words" in combined_prompt
+    assert "convert narration into silent panels, action, or SFX" in combined_prompt
+    assert "renderer must never truncate" in combined_prompt
+
+
 def test_quality_repair_stage_noops_when_quality_passed():
     client = FakeLLMClient(_repaired_storyboard())
     context = _context(client)

@@ -101,7 +101,6 @@ export function planPanelPresentation(
   const actionChars = textLength(panel.action);
   const isVisualDirectionOnly = visualDirectionOnly(panel);
   const manyCharacters = characterIds.length >= 4;
-  const denseDialogue = dialogue.longestLine > 58 || dialogue.totalChars > 96 || dialogue.lineCount > 2;
   const denseCaption =
     textLength(panel.narration) > 130 ||
     actionChars > 130 ||
@@ -115,20 +114,6 @@ export function planPanelPresentation(
       !manyCharacters,
   );
 
-  if (hasDialogue && denseDialogue) {
-    return {
-      variant: "text-card",
-      captionZone: "center",
-      shouldRenderSyntheticSprites: false,
-      shouldRenderExplicitSprites,
-      missingSpriteFallback: "omit",
-      preferCaptionLettering: true,
-      maxVisibleCaptionChars: 210,
-      maxBubbleChars: 44,
-      isVisualDirectionOnly,
-    };
-  }
-
   if (hasDialogue) {
     return {
       variant: "dialogue-over-scene",
@@ -138,7 +123,7 @@ export function planPanelPresentation(
       missingSpriteFallback: "omit",
       preferCaptionLettering: false,
       maxVisibleCaptionChars: 150,
-      maxBubbleChars: 34,
+      maxBubbleChars: 90,
       isVisualDirectionOnly,
     };
   }

@@ -19,7 +19,6 @@ import {
   type PanelPresentationPlan,
 } from "../panel_presentation";
 import type { MangaPalette } from "../types";
-import { primaryCharacter } from "../derived_visuals";
 
 interface ConceptPanelProps {
   panel: StoryboardPanel;
@@ -28,14 +27,12 @@ interface ConceptPanelProps {
 }
 
 export function ConceptPanel({ panel, palette, presentation }: ConceptPanelProps) {
-  const character = primaryCharacter(panel);
   const headline = panel.action?.trim() || panel.narration?.trim() || "";
   const caption = clampVisibleText(
     headline || panel.composition?.trim() || "",
     presentation.maxVisibleCaptionChars || 130,
   );
   const isTextCard = presentation.variant === "text-card";
-  const showCharacterTag = Boolean(character && !presentation.isVisualDirectionOnly);
   const captionClass =
     presentation.captionZone === "top"
       ? "absolute inset-x-3 top-3"
@@ -45,25 +42,6 @@ export function ConceptPanel({ panel, palette, presentation }: ConceptPanelProps
 
   return (
     <div className="relative w-full h-full overflow-hidden px-3 py-3">
-      {showCharacterTag && (
-        <motion.span
-          className="absolute left-3 top-3 z-20 rounded-sm border bg-white/85 px-2 py-0.5 tracking-widest uppercase"
-          style={{
-            borderColor: `${palette.border}66`,
-            color: palette.accent,
-            fontFamily: "var(--font-label, monospace)",
-            fontSize: "clamp(0.42rem, 0.62vw, 0.56rem)",
-            fontWeight: 800,
-            lineHeight: 1,
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.85 }}
-          transition={{ duration: 0.8 }}
-        >
-          {character}
-        </motion.span>
-      )}
-
       {caption && (
         <motion.p
           className={`${captionClass} z-20 border bg-white px-3 py-2 text-center`}

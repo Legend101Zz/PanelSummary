@@ -150,6 +150,24 @@ def test_manga_script_stage_calls_llm_and_records_trace():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
+def test_manga_script_stage_prompt_includes_manga_text_discipline():
+    client = FakeLLMClient(_valid_script())
+    context = _context(client)
+
+    asyncio.run(manga_script_stage.run(context))
+
+    combined_prompt = (
+        client.calls[0]["system_prompt"] + "\n" + client.calls[0]["user_message"]
+    )
+    assert "at most 2 dialogue lines per panel" in combined_prompt
+    assert "90 characters per panel" in combined_prompt
+    assert "60 total words per page" in combined_prompt
+    assert "15 words each" in combined_prompt
+    assert "convert narration into silent panels, action, or SFX" in combined_prompt
+    assert "Use character display names" in combined_prompt
+    assert "never raw ids" in combined_prompt
+
+
 def test_manga_script_stage_requires_beat_sheet():
     context = _context(FakeLLMClient(_valid_script()))
     context.beat_sheet = None

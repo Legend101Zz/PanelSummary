@@ -24,7 +24,11 @@ Common repairs:
 - add a To Be Continued panel when source material continues
 - remove To Be Continued when the slice is standalone/complete
 - reduce page density by distributing panels across pages
-- keep dialogue short and readable
+- keep dialogue short and readable: at most 2 dialogue lines per panel,
+  90 characters per panel, and 60 total words per page
+- repair text overflow by splitting beats into more panels or cutting words
+- convert narration into silent panels, action, or SFX whenever it is doing
+  the art's job; renderer must never truncate source-grounded text
 
 Return a complete replacement storyboard artifact. Do not return patches.
 """
@@ -53,7 +57,10 @@ def _build_user_message(context: PipelineContext) -> str:
     }
     return (
         "Repair this storyboard so it passes the quality gate. Preserve the "
-        "script's intent and source grounding. Return a full replacement.\n\n"
+        "script's intent and source grounding. For DSL text overflow, split "
+        "beats into more panels or cut words; convert narration into silent "
+        "panels, action, or SFX when possible. The renderer must never truncate "
+        "dialogue or narration. Return a full replacement.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
         f"{build_json_contract_prompt(StoryboardArtifact)}"
     )

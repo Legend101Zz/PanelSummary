@@ -50,6 +50,7 @@ import type {
 const DEFAULT_MODEL_BY_PROVIDER: Record<LLMProvider, string> = {
   openai: "gpt-4.1-mini",
   openrouter: "google/gemini-2.5-flash",
+  minimax: "MiniMax-M2.5-highspeed",
 };
 
 const IMAGE_MODE_LABELS: Record<MangaImageMode, { title: string; detail: string }> = {
@@ -654,8 +655,8 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
 
         {apiOpen && (
           <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              {(["openai", "openrouter"] as LLMProvider[]).map(item => (
+            <div className="grid grid-cols-3 gap-2">
+              {(["openai", "openrouter", "minimax"] as LLMProvider[]).map(item => (
                 <button
                   key={item}
                   type="button"
@@ -668,7 +669,11 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
                 >
                   <span className="font-display block capitalize" style={{ color: "var(--text-1)", fontSize: "0.82rem" }}>{item}</span>
                   <span className="block" style={{ color: "var(--text-3)", fontSize: "0.68rem" }}>
-                    {item === "openai" ? "Direct OpenAI models" : "Search OpenRouter models"}
+                    {item === "openai"
+                      ? "Direct OpenAI models"
+                      : item === "openrouter"
+                        ? "Search OpenRouter models"
+                        : "Fast drafting lane"}
                   </span>
                 </button>
               ))}
@@ -681,7 +686,13 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
                 type="password"
                 value={apiKeyDraft}
                 onChange={event => setApiKeyDraft(event.target.value)}
-                placeholder={providerDraft === "openrouter" ? "sk-or-v1-..." : "sk-..."}
+                placeholder={
+                  providerDraft === "openrouter"
+                    ? "sk-or-v1-..."
+                    : providerDraft === "minimax"
+                      ? "Uses backend MINIMAX_API_KEY"
+                      : "sk-..."
+                }
                 className="px-3 py-2.5 border bg-transparent font-label"
                 style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
               />
@@ -691,6 +702,13 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
               <span className="text-label">Text model</span>
               {providerDraft === "openrouter" ? (
                 <ModelSelector apiKey={openRouterKey} value={modelDraft} onChange={setModelDraft} />
+              ) : providerDraft === "minimax" ? (
+                <input
+                  value={modelDraft}
+                  onChange={event => setModelDraft(event.target.value)}
+                  className="px-3 py-2.5 border bg-transparent font-label"
+                  style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+                />
               ) : (
                 <OpenAIModelPicker value={modelDraft} onChange={setModelDraft} />
               )}

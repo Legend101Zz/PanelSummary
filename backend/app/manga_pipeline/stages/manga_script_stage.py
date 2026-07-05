@@ -27,7 +27,11 @@ narration sparingly. Every scene must map to beat_ids.
 
 Rules:
 - Preserve source fact meaning through dialogue, action, and narration.
-- Keep each dialogue line short enough for a manga bubble.
+- Keep visible text under manga lettering budgets: at most 2 dialogue lines per panel,
+  90 characters per panel, and 60 total words per page.
+- Narration is rare: at most one caption per three panels, 15 words each.
+- When prose explains too much, convert narration into silent panels, action, or SFX.
+- Use character display names in prose-facing fields; never raw ids.
 - Make character voices distinct using the speech styles in the bible.
 - Avoid exposition dumps. Let action and visual metaphors carry ideas.
 - If the source has more material after this slice, set to_be_continued true.
@@ -80,7 +84,13 @@ def _build_user_message(context: PipelineContext) -> str:
 
     return (
         "Write the manga script for this source slice. Produce scenes with "
-        "scene descriptions, action, concise dialogue, and source fact IDs.\n\n"
+        "scene descriptions, action, concise dialogue, and source fact IDs. "
+        "Use character display names for reader-facing prose and never raw ids. "
+        "Hard lettering budgets: at most 2 dialogue lines per panel, "
+        "90 characters per panel, 60 total words per page, and narration "
+        "captions at most one per three panels, 15 words each. When a beat "
+        "needs more room, convert narration into silent panels, action, or SFX "
+        "instead of adding text.\n\n"
         f"{continuity_block}"
         f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
         f"{render_voice_cards_block(context.voice_cards)}\n\n"

@@ -1,7 +1,7 @@
 """
 llm_client.py — LLM API Client
 ================================
-Handles communication with OpenAI and OpenRouter APIs.
+Handles communication with OpenAI, OpenRouter, and MiniMax APIs.
 
 KEY DESIGN DECISIONS:
 1. User provides their own key — we never store it
@@ -58,7 +58,7 @@ def _env_float(name: str, default: float) -> float:
 
 class LLMClient:
     """
-    Unified client for OpenAI and OpenRouter.
+    Unified client for OpenAI, OpenRouter, and MiniMax.
     Both use the same API format, just different base URLs and models.
     """
 
@@ -70,10 +70,10 @@ class LLMClient:
     ):
         """
         api_key: User's API key (sk-... for OpenAI, sk-or-v1-... for OpenRouter)
-        provider: "openai" or "openrouter"
-        model: Model name. Defaults to gpt-4o-mini / claude-haiku
+        provider: "openai", "openrouter", or "minimax"
+        model: Model name. Defaults by provider.
         """
-        self.provider = provider
+        self.provider = provider.lower().strip()
         self.api_key = api_key
         settings = get_settings()
         self.request_timeout_seconds = _env_float(
@@ -85,7 +85,7 @@ class LLMClient:
             float(settings.llm_slow_warning_seconds or DEFAULT_LLM_SLOW_WARNING_SECONDS),
         )
 
-        if provider == "openrouter":
+        if self.provider == "openrouter":
             self.client = AsyncOpenAI(
                 api_key=api_key,
                 base_url="https://openrouter.ai/api/v1",
@@ -98,6 +98,15 @@ class LLMClient:
             # Prompt caching: supported by Anthropic, OpenAI, Gemini, DeepSeek
             # on OpenRouter. Sticky routing maximizes cache hits automatically.
             self._supports_cache_control = True
+        elif self.provider == "minimax":
+            minimax_key = os.getenv("MINIMAX_API_KEY", "").strip() or settings.minimax_api_key.strip()
+            self.api_key = minimax_key or api_key
+            self.client = AsyncOpenAI(
+                api_key=self.api_key,
+                base_url="https://api.minimax.io/v1",
+            )
+            self.model = model or "MiniMax-M2.5-highspeed"
+            self._supports_cache_control = False
         else:
             self.client = AsyncOpenAI(api_key=api_key)
             self.model = model or "gpt-4o-mini"
@@ -179,7 +188,7 @@ class LLMClient:
         }
 
         # JSON mode for OpenAI models that support it
-        if json_mode and self.provider == "openai":
+        if json_mode and self.provider in {"openai", "minimax"}:
             kwargs["response_format"] = {"type": "json_object"}
 
         # For OpenRouter only: disable thinking mode on Qwen3/DeepSeek/o1 etc.

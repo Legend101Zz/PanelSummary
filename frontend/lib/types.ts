@@ -24,7 +24,7 @@ export type SummaryStyle =
   | "comedy"
   | "academic";
 
-export type LLMProvider = "openai" | "openrouter";
+export type LLMProvider = "openai" | "openrouter" | "minimax";
 
 
 // ============================================================

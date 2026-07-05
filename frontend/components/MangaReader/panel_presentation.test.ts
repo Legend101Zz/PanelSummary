@@ -67,8 +67,9 @@ assertEqual(
 );
 assertEqual(missingGroupPlan.missingSpriteFallback, "omit", "missing sprite fallback");
 
-assertEqual(denseDialoguePlan.variant, "text-card", "dense dialogue variant");
-assertEqual(denseDialoguePlan.preferCaptionLettering, true, "dense dialogue caption");
+assertEqual(denseDialoguePlan.variant, "dialogue-over-scene", "dense dialogue variant");
+assertEqual(denseDialoguePlan.preferCaptionLettering, false, "dense dialogue caption");
+assertEqual(denseDialoguePlan.maxBubbleChars, 90, "dense dialogue bubble char budget");
 
 assertEqual(shortDialoguePlan.variant, "dialogue-over-scene", "short dialogue variant");
 assertEqual(
