@@ -12,12 +12,15 @@ import type { CSSProperties } from "react";
 import { motion } from "motion/react";
 import type {
   BubblePlacement,
+  SpriteLayer,
   StoryboardPanel,
   StoryboardScriptLine,
 } from "@/lib/types";
 import { SpeechBubble, type SpeechBubbleVariant } from "../chrome/SpeechBubble";
 import { splitDialogueForBubbles } from "../dialogue_lettering";
 import { clampVisibleText, type PanelPresentationPlan } from "../panel_presentation";
+import { MANGA_BODY_FONT } from "../lettering_fonts";
+import { bubbleBoxStyle, resolveBubbleTail } from "../dialogue_geometry";
 import type { MangaPalette } from "../types";
 
 interface DialoguePanelProps {
@@ -25,6 +28,7 @@ interface DialoguePanelProps {
   palette: MangaPalette;
   hasPaintedBackdrop?: boolean;
   bubblePlacements?: BubblePlacement[];
+  spriteLayers?: SpriteLayer[];
   presentation: PanelPresentationPlan;
 }
 
@@ -63,7 +67,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 34, y_pct: 5, width_pct: 63, height_pct: 38 },
+      bbox_pct: { x_pct: 34, y_pct: -3, width_pct: 63, height_pct: 38 },
       tail_side: "bottom",
       tail_offset_pct: 72,
       variant: variantForIntent(line.intent),
@@ -72,7 +76,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 4, y_pct: total > 2 ? 38 : 50, width_pct: 60, height_pct: 38 },
+      bbox_pct: { x_pct: -5, y_pct: total > 2 ? 38 : 50, width_pct: 60, height_pct: 38 },
       tail_side: "bottom",
       tail_offset_pct: 30,
       variant: variantForIntent(line.intent),
@@ -81,7 +85,7 @@ function placementForLine(
     {
       line_index: index,
       speaker_id: line.speaker_id,
-      bbox_pct: { x_pct: 34, y_pct: 58, width_pct: 63, height_pct: 38 },
+      bbox_pct: { x_pct: 38, y_pct: 61, width_pct: 63, height_pct: 38 },
       tail_side: "top",
       tail_offset_pct: 62,
       variant: variantForIntent(line.intent),
@@ -91,31 +95,10 @@ function placementForLine(
   return layouts[index % layouts.length];
 }
 
-function bubbleBoxStyle(placement: BubblePlacement): CSSProperties {
-  const box = placement.bbox_pct;
-  const width = clamp(box.width_pct, 34, 92);
-  const height = clamp(box.height_pct, 28, 62);
-  return {
-    position: "absolute",
-    left: `${clamp(box.x_pct, 3, 97 - width)}%`,
-    top: `${clamp(box.y_pct, 3, 97 - height)}%`,
-    width: `${width}%`,
-    height: `${height}%`,
-    zIndex: placement.z_index ?? 40,
-  };
-}
-
 function letteringFontSize(text: string): string {
   if (text.length > 40) return "clamp(0.46rem, 0.64vw, 0.6rem)";
   if (text.length > 28) return "clamp(0.5rem, 0.74vw, 0.66rem)";
   return "clamp(0.62rem, 1vw, 0.84rem)";
-}
-
-function normalizedTailSide(value: string | undefined): "left" | "right" | "bottom" | "top" {
-  if (value === "left" || value === "right" || value === "top" || value === "bottom") {
-    return value;
-  }
-  return "bottom";
 }
 
 function normalizedVariant(
@@ -135,17 +118,20 @@ function BubbleLettering({
   placement,
   palette,
   hasPaintedBackdrop,
+  spriteLayers,
 }: {
   line: StoryboardScriptLine;
   index: number;
   placement: BubblePlacement;
   palette: MangaPalette;
   hasPaintedBackdrop: boolean;
+  spriteLayers?: SpriteLayer[];
 }) {
   const intentStyle = INTENT_STYLES[line.intent || "neutral"] || INTENT_STYLES.neutral;
   const variant = normalizedVariant(placement, line);
   const fill = hasPaintedBackdrop ? "rgba(255,250,240,0.94)" : "rgba(255,255,255,0.95)";
   const visibleText = line.text.trim();
+  const tail = resolveBubbleTail({ placement, line, spriteLayers });
 
   return (
     <motion.div
@@ -155,12 +141,13 @@ function BubbleLettering({
       transition={{ duration: 0.35, delay: index * 0.18 }}
     >
       <SpeechBubble
-        tailSide={normalizedTailSide(placement.tail_side)}
-        tailOffset={clamp(placement.tail_offset_pct ?? 50, 15, 85) / 100}
+        tailSide={tail.tailSide}
+        tailOffset={tail.tailOffsetPct / 100}
         variant={variant}
         strokeColor={intentStyle.borderColor}
         fillColor={fill}
         strokeWidth={variant === "shout" ? 3 : 2.2}
+        irregularitySeed={line.text.length + index * 31}
         ariaLabel={line.text}
         style={{ width: "100%", height: "100%" }}
       >
@@ -171,7 +158,7 @@ function BubbleLettering({
           <p
             style={{
               color: "#1f1f29",
-              fontFamily: "var(--font-body, sans-serif)",
+              fontFamily: MANGA_BODY_FONT,
               fontSize: letteringFontSize(visibleText),
               fontStyle: intentStyle.fontStyle,
               fontWeight: variant === "shout" ? 800 : 600,
@@ -254,6 +241,7 @@ export function DialoguePanel({
   palette,
   hasPaintedBackdrop = false,
   bubblePlacements = [],
+  spriteLayers,
   presentation,
 }: DialoguePanelProps) {
   const lines = panel.dialogue ?? [];
@@ -272,7 +260,7 @@ export function DialoguePanel({
   );
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-visible">
       {bubbleLines.map((line, index) => {
         const explicit =
           line.chunkCount === 1 ? explicitByLine.get(line.sourceLineIndex) : undefined;
@@ -284,6 +272,7 @@ export function DialoguePanel({
           placement={placementForLine(line, index, bubbleLines.length, explicit)}
           palette={palette}
           hasPaintedBackdrop={hasPaintedBackdrop}
+          spriteLayers={spriteLayers}
         />
         );
       })}

@@ -50,6 +50,17 @@ book `6a0b5a11201a8d03f1d82501` / project `6a0b5a5b201a8d03f1d82503`.
 - `backend/.venv/bin/python -m pytest backend/tests -q -k 'not test_build_asset_prompt_adds_reusable_asset_constraints'`
 - `cp docs/renderer-analysis/experiments/2026-07-05-task1-after-page1-1280-final-warm.png docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
 - `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
+- `npm exec tsx -- components/MangaReader/manga_page_drama.test.ts`
+- `npm exec tsx -- components/MangaReader/dialogue_tail_geometry.test.ts`
+- `npm exec tsx -- components/MangaReader/speech_bubble_shape.test.ts`
+- `npm exec tsc -- --noEmit`
+- `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
+- `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
+- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+- `npm run build`
+- `cp docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png docs/renderer-analysis/experiments/2026-07-05-task3-before-page1-1280.png`
+- `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev`
+- `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
 
 ## Task log
 
@@ -137,7 +148,7 @@ Verification:
 
 ### Task 2: Vector scene layer
 
-Status: complete; pending commit.
+Status: complete; committed as `cc30266 feat: add manga vector scene layer`.
 
 Files changed:
 - `backend/app/domain/manga/vector_scene.py`
@@ -199,6 +210,62 @@ Current visual status:
 - This does not yet solve missing/grounded character sprites; that remains
   Task 4.
 
+### Task 3: Manga typography and page drama
+
+Status: complete; pending commit.
+
+Files changed:
+- `frontend/app/globals.css`
+- `frontend/components/MangaReader/lettering_fonts.ts`
+- `frontend/components/MangaReader/panel_chrome.ts`
+- `frontend/components/MangaReader/dialogue_geometry.ts`
+- `frontend/components/MangaReader/chrome/SpeechBubble.tsx`
+- `frontend/components/MangaReader/chrome/SfxLayer.tsx`
+- `frontend/components/MangaReader/chrome/VectorSceneLayer.tsx`
+- `frontend/components/MangaReader/panels/DialoguePanel.tsx`
+- `frontend/components/MangaReader/MangaPanelRenderer.tsx`
+- `frontend/components/MangaReader/MangaPageRenderer.tsx`
+- `frontend/components/MangaReader/manga_page_drama.test.ts`
+- `frontend/components/MangaReader/dialogue_tail_geometry.test.ts`
+- `frontend/components/MangaReader/speech_bubble_shape.test.ts`
+- `docs/renderer-analysis/experiments/2026-07-05-task3-before-page1-1280.png`
+- `docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png`
+- `NEXT_SESSION.md`
+
+Implemented:
+- Added Comic Neue for bubble/body lettering and Bangers for SFX lettering.
+- Added deterministic irregular speech-bubble paths, with stable wobble seeds
+  per bubble.
+- Dialogue bubbles now use `overflow: visible` and can bleed across panel
+  borders.
+- Bubble tails resolve toward the speaker's sprite layer when composition
+  sprite geometry is available; otherwise they fall back to authored placement
+  tails.
+- Panel chrome now varies by purpose: reveal/TBC use double heavy borders,
+  transition uses dashed, recap dotted, and emotional turns get heavier ink.
+- `page_turn_panel_id` now gets the strongest visual weight in the reader by
+  default: double border, outer ring, drop weight, contrast lift, and higher
+  z-index.
+
+Verification:
+- Red tests first failed on missing `panel_chrome`, `dialogue_geometry`, and
+  `lettering_fonts` helpers.
+- Final checks passed:
+  - `npm exec tsx -- components/MangaReader/manga_page_drama.test.ts`
+  - `npm exec tsx -- components/MangaReader/dialogue_tail_geometry.test.ts`
+  - `npm exec tsx -- components/MangaReader/speech_bubble_shape.test.ts`
+  - `npm exec tsc -- --noEmit`
+  - `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
+  - `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
+  - `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+  - `npm run build`
+
+Screenshots:
+- Before: `docs/renderer-analysis/experiments/2026-07-05-task3-before-page1-1280.png`
+  copied from Task 2 after-state for the same project.
+- After: `docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png`.
+
 ## Next concrete step
 
-Commit Task 2, then start Task 3: manga typography and page drama.
+Commit Task 3, then start Task 4: make sprites land, validate asset manifest
+refs, fix reference-sheet crops, and regenerate the sample sprite bank/slice.

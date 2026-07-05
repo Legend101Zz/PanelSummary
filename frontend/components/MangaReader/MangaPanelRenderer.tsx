@@ -40,6 +40,7 @@ import { VectorSceneLayer } from "./chrome/VectorSceneLayer";
 import { SfxLayer } from "./chrome/SfxLayer";
 import { SceneSprites } from "./chrome/SceneSprites";
 import { planPanelPresentation } from "./panel_presentation";
+import { panelChromeFor } from "./panel_chrome";
 import { DialoguePanel } from "./panels/DialoguePanel";
 import { NarrationPanel } from "./panels/NarrationPanel";
 import { ConceptPanel } from "./panels/ConceptPanel";
@@ -58,6 +59,8 @@ interface MangaPanelRendererProps {
   spriteLayers?: SpriteLayer[];
   /** Optional explicit panel-local speech bubble placements from the render contract. */
   bubblePlacements?: BubblePlacement[];
+  /** True when this panel is the page-turn anchor. */
+  isPageTurn?: boolean;
 }
 
 /**
@@ -73,6 +76,7 @@ export function MangaPanelRenderer({
   characterAssets = [],
   spriteLayers,
   bubblePlacements,
+  isPageTurn = false,
 }: MangaPanelRendererProps) {
   const palette = useMemo(
     () => MANGA_PALETTES[derivePaletteKey(panel)],
@@ -82,6 +86,10 @@ export function MangaPanelRenderer({
   const weight = EMPHASIS_WEIGHTS[emphasis];
   const kind: PanelKind = derivePanelKind(panel);
   const effects = useMemo(() => deriveEffects(panel), [panel]);
+  const chrome = useMemo(
+    () => panelChromeFor(panel, { emphasis, isPageTurn }),
+    [panel, emphasis, isPageTurn],
+  );
 
   // Painted backdrop short-circuit: when the renderer wrote an
   // ``image_path`` (and the panel did NOT error), we layer the painted
@@ -108,6 +116,7 @@ export function MangaPanelRenderer({
             palette={palette}
             hasPaintedBackdrop={hasPaintedBackdrop}
             bubblePlacements={bubblePlacements}
+            spriteLayers={spriteLayers}
             presentation={presentation}
           />
         );
@@ -129,14 +138,12 @@ export function MangaPanelRenderer({
 
   return (
     <motion.div
-      className="relative h-full w-full overflow-hidden"
+      className="relative h-full w-full overflow-visible"
       style={{
         background: hasPaintedBackdrop
           ? palette.bg
           : "linear-gradient(135deg, #fffaf0 0%, #f8f3e7 58%, #ede1c6 100%)",
-        border: "3px solid #1f1f29",
-        borderRadius: 2,
-        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.35)",
+        ...chrome,
         flex: weight,
         minHeight: 0,
       }}

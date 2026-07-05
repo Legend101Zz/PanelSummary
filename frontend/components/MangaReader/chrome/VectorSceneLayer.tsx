@@ -8,6 +8,7 @@ import type {
   VectorSceneLine,
   VectorSceneSfx,
 } from "@/lib/types";
+import { MANGA_SFX_FONT } from "../lettering_fonts";
 
 function clamp(value: number | undefined, fallback: number, min = 0, max = 100): number {
   if (typeof value !== "number" || Number.isNaN(value)) return fallback;
@@ -201,7 +202,7 @@ function renderSfx(item: VectorSceneSfx, index: number) {
       transform={`rotate(${clamp(item.rotation, 0, -45, 45)} ${clamp(item.x, 50)} ${clamp(item.y, 30)})`}
       textAnchor="middle"
       dominantBaseline="middle"
-      fontFamily="var(--font-display, 'Bangers', 'Impact', sans-serif)"
+      fontFamily={MANGA_SFX_FONT}
       fontSize={clamp(item.size, 16, 6, 36)}
       fontWeight="900"
       letterSpacing="0"

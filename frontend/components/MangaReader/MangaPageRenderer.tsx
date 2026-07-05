@@ -119,6 +119,9 @@ export function MangaPageRenderer({
                 height: "100%",
                 minWidth: 0,
                 minHeight: 0,
+                overflow: "visible",
+                position: "relative",
+                zIndex: cell.isPageTurn ? 4 : 1,
               };
               return (
                 <div
@@ -133,6 +136,7 @@ export function MangaPageRenderer({
                     characterAssets={characterAssets}
                     spriteLayers={spriteLayersFor(cell.panel.panel_id)}
                     bubblePlacements={bubblePlacementsFor(cell.panel.panel_id)}
+                    isPageTurn={cell.isPageTurn}
                   />
                 </div>
               );
@@ -158,6 +162,9 @@ export function MangaPageRenderer({
         const wrapperStyle: CSSProperties = {
           ...(cell.style ?? {}),
           ...(showPageTurnAnchor && cell.isPageTurn ? PAGE_TURN_HIGHLIGHT : {}),
+          overflow: "visible",
+          position: "relative",
+          zIndex: cell.isPageTurn ? 4 : 1,
         };
         return (
           <div
@@ -172,6 +179,7 @@ export function MangaPageRenderer({
               characterAssets={characterAssets}
               spriteLayers={spriteLayersFor(cell.panel.panel_id)}
               bubblePlacements={bubblePlacementsFor(cell.panel.panel_id)}
+              isPageTurn={cell.isPageTurn}
             />
           </div>
         );
