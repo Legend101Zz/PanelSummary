@@ -45,6 +45,8 @@ Discipline:
   on stage in at least one scene that advances their arc role beat.
 - Keep dialogue short and bubble-friendly.
 - Do not introduce new characters not in the bible.
+- Use exact character_id values only in schema fields such as speaker_id.
+- Use display names only in reader-facing prose; never show raw ids in text the reader sees.
 - Return a COMPLETE replacement MangaScript artifact. No patches.
 """
 

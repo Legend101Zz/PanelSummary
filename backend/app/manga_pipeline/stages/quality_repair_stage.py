@@ -29,6 +29,9 @@ Common repairs:
 - repair text overflow by splitting beats into more panels or cutting words
 - convert narration into silent panels, action, or SFX whenever it is doing
   the art's job; renderer must never truncate source-grounded text
+- repair ``panel_unknown_character`` by using exact bible character_id values
+  in speaker_id/character_ids, re-attributing lines, or moving off-bible
+  mentions into narration/action without marking them visually present
 
 Return a complete replacement storyboard artifact. Do not return patches.
 """

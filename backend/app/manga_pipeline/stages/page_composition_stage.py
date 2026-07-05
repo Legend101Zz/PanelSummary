@@ -86,9 +86,9 @@ Composition rules:
   LEFT edge, y_pct=0 is the TOP edge. Every panel in panel_order must
   have a placement if panel_placements is non-empty.
 - Author sprite_layers for panels with character_ids. Each sprite layer
-  references an existing character_id/expression and gives a panel-local
-  bbox_pct. Place sprites as scene characters, usually grounded near the
-  bottom third, never as tiny chat avatars.
+  MUST reference an existing character_id/expression pair from asset_manifest
+  and gives a panel-local bbox_pct. Place sprites as scene characters,
+  grounded to the panel bottom, never as tiny chat avatars.
 - Author bubble_placements for dialogue panels. Each bubble targets a
   dialogue line_index and panel-local bbox_pct. Keep bubbles readable,
   inside the panel, and away from faces. Use z_index above sprites.
@@ -145,14 +145,48 @@ def _build_user_message(context: PipelineContext) -> str:
     payload = {
         "slice_id": context.source_slice.slice_id,
         "arc_role": arc_role,
+        "asset_manifest": _asset_manifest_from_options(context),
         "pages": pages_payload,
     }
     return (
         "Compose every page of the slice. Vary panel sizes; reserve the "
-        "bottom-left cell of each page for the page-turn beat.\n\n"
+        "bottom-left cell of each page for the page-turn beat. Use sprite_layers "
+        "only for character_id/expression pairs present in asset_manifest.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
         f"{build_json_contract_prompt(SliceComposition)}"
     )
+
+
+def _asset_manifest_from_options(context: PipelineContext) -> list[dict[str, str]]:
+    raw_manifest = context.options.get("asset_manifest") or []
+    manifest: list[dict[str, str]] = []
+    if not isinstance(raw_manifest, list):
+        return manifest
+    for item in raw_manifest:
+        if not isinstance(item, dict):
+            continue
+        character_id = str(item.get("character_id") or "").strip()
+        expression = str(item.get("expression") or "neutral").strip() or "neutral"
+        asset_type = str(item.get("asset_type") or "").strip()
+        aspect = str(item.get("aspect") or item.get("aspect_ratio") or "1:1").strip() or "1:1"
+        if not character_id or not asset_type:
+            continue
+        manifest.append(
+            {
+                "character_id": character_id,
+                "expression": expression,
+                "asset_type": asset_type,
+                "aspect": aspect,
+            }
+        )
+    return manifest
+
+
+def _asset_manifest_keys(context: PipelineContext) -> set[tuple[str, str]]:
+    return {
+        (item["character_id"], item["expression"])
+        for item in _asset_manifest_from_options(context)
+    }
 
 
 def _empty_composition_for(context: PipelineContext) -> SliceComposition:
@@ -192,6 +226,7 @@ def _coerce_to_storyboard_panels(
         for page in context.storyboard_pages
     }
     fixed: list[PageComposition] = []
+    asset_manifest_keys = _asset_manifest_keys(context)
     for comp in composition.pages:
         expected_ids = page_id_lookup.get(comp.page_index)
         if expected_ids is None:
@@ -214,6 +249,7 @@ def _coerce_to_storyboard_panels(
             # Wrong page-turn id but otherwise valid: clear the field
             # rather than dropping the whole composition.
             comp = comp.model_copy(update={"page_turn_panel_id": ""})
+        comp = _drop_sprite_layers_outside_manifest(comp, asset_manifest_keys)
         fixed.append(comp)
 
     # Backfill any storyboard pages the LLM forgot.
@@ -230,6 +266,39 @@ def _coerce_to_storyboard_panels(
             )
     fixed.sort(key=lambda c: c.page_index)
     return SliceComposition(pages=fixed)
+
+
+def _drop_sprite_layers_outside_manifest(
+    composition: PageComposition,
+    asset_manifest_keys: set[tuple[str, str]],
+) -> PageComposition:
+    if not asset_manifest_keys or not composition.sprite_layers:
+        return composition
+
+    filtered: dict[str, list] = {}
+    dropped = 0
+    for panel_id, layers in composition.sprite_layers.items():
+        kept = []
+        for layer in layers:
+            key = (layer.character_id, layer.expression or "neutral")
+            if key in asset_manifest_keys:
+                kept.append(layer)
+            else:
+                dropped += 1
+        if kept:
+            filtered[panel_id] = kept
+
+    if not dropped:
+        return composition
+
+    note = composition.composition_notes.strip()
+    suffix = f"{dropped} sprite refs outside asset_manifest were dropped."
+    return composition.model_copy(
+        update={
+            "sprite_layers": filtered,
+            "composition_notes": f"{note} {suffix}".strip(),
+        }
+    )
 
 
 async def run(context: PipelineContext) -> PipelineContext:
@@ -252,7 +321,7 @@ async def run(context: PipelineContext) -> PipelineContext:
         stage_name=LLMStageName.PAGE_COMPOSITION,
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("page_composition_max_tokens", 4000)),
+        max_tokens=int(context.options.get("page_composition_max_tokens", 6000)),
         # Composition is a creative-but-bounded task. A bit warmer than
         # the editor (0.4) but cooler than the writer (0.7) keeps the
         # layouts varied without going off-piste.

@@ -50,6 +50,9 @@ Character presence (CRITICAL for the multimodal renderer):
 - Every character_id must exactly match a ``character_id`` from the
   character_world_bible. Do not invent new characters here — if you need
   one, that's a script defect; raise a To Be Continued or restructure.
+- speaker_id and character_ids are schema fields: use exact character_id values
+  from the bible. Use display names only in
+  reader-facing prose such as composition/action/narration.
 - The system will auto-add dialogue speakers to ``character_ids`` because
   speaking implies presence. You do not have to add them yourself, but
   if you do, do not omit any non-speaking characters that are also on stage.

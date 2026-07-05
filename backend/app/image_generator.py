@@ -71,6 +71,7 @@ async def generate_image_with_model(
     output_path: str,
     image_model: str,
     aspect_ratio: str = "1:1",
+    background: str | None = None,
     max_attempts: int = 3,
 ) -> bool:
     """Generate an image with exactly the requested model.
@@ -90,8 +91,13 @@ async def generate_image_with_model(
         "messages": [{"role": "user", "content": prompt[:1200]}],
         "modalities": modalities,
     }
+    image_config: dict[str, str] = {}
     if "gemini" in image_model:
-        payload["image_config"] = {"aspect_ratio": aspect_ratio}
+        image_config["aspect_ratio"] = aspect_ratio
+    if background:
+        image_config["background"] = background
+    if image_config:
+        payload["image_config"] = image_config
 
     last_text_preview = ""
     for attempt in range(1, max_attempts + 1):

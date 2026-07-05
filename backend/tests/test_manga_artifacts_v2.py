@@ -115,6 +115,27 @@ def test_manga_script_scene_requires_action_and_text():
     assert script.to_be_continued is True
 
 
+def test_manga_script_scene_defaults_unknown_emotional_tone():
+    scene = MangaScriptScene.model_validate(
+        {
+            "scene_id": "s001",
+            "beat_ids": ["b001"],
+            "location": "Archive entrance",
+            "scene_goal": "Introduce the thesis as a mystery.",
+            "action": "Kai notices the same key fails in a larger lock.",
+            "dialogue": [
+                {
+                    "speaker_id": "kai",
+                    "text": "Wait. Same key, different door?",
+                }
+            ],
+            "emotional_tone": "contemplative",
+        }
+    )
+
+    assert scene.emotional_tone == EmotionalTone.CURIOUS
+
+
 def test_storyboard_page_limits_panel_count_and_requires_composition():
     panel = StoryboardPanel(
         panel_id="p001",

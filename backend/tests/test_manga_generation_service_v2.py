@@ -108,6 +108,12 @@ def test_build_v2_generation_stages_has_expected_order():
         "dsl_validation_stage",
         "continuity_gate_stage",
         "quality_gate_stage",
+        "quality_repair_stage",
+        # One bounded second repair pass for stubborn source/DSL misses.
+        "dsl_validation_stage",
+        "continuity_gate_stage",
+        "quality_gate_stage",
+        "quality_assert_stage",
         # Phase C1: page composition runs once the storyboard is final, so
         # the LLM is composing the *settled* pages rather than a draft.
         "page_composition_stage",

@@ -68,7 +68,7 @@ function hasRenderableSprite(
 ): boolean {
   const expression = panel.dialogue?.find((line) => line.speaker_id === characterId)?.intent;
   const asset = findAssetForCharacter(characterId, expression, assets);
-  return Boolean(asset?.image_url && asset.asset_type !== "reference_sheet");
+  return Boolean(asset?.image_url);
 }
 
 function visualDirectionOnly(panel: StoryboardPanel): boolean {

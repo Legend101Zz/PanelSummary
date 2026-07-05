@@ -72,6 +72,7 @@ def _evaluate_storyboard_panel(
     artifact: PanelRenderArtifact | None,
     page_index: int,
     bible_ids: set[str],
+    attempted_panel_ids: set[str] | None = None,
 ) -> list[QualityIssue]:
     """Per-panel quality checks against a typed ``RenderedPage``.
 
@@ -106,6 +107,9 @@ def _evaluate_storyboard_panel(
                 )
 
     if artifact is None:
+        return issues
+
+    if attempted_panel_ids is not None and panel_id not in attempted_panel_ids:
         return issues
 
     has_path = bool(artifact.image_path)
@@ -164,6 +168,7 @@ def evaluate_rendered_pages(
     *,
     rendered_pages: list[RenderedPage],
     bible_ids: set[str],
+    attempted_panel_ids: set[str] | None = None,
 ) -> list[QualityIssue]:
     """Walk every panel on every rendered page and collect quality issues.
 
@@ -183,6 +188,7 @@ def evaluate_rendered_pages(
                     artifact=artifact,
                     page_index=page_index,
                     bible_ids=bible_ids,
+                    attempted_panel_ids=attempted_panel_ids,
                 )
             )
     return issues
@@ -233,16 +239,27 @@ async def run(context: PipelineContext) -> PipelineContext:
         return context
 
     bible_ids = _bible_character_ids(context)
+    summary = context.options.get("panel_rendering_summary") or {}
+    attempted_panel_ids: set[str] | None = None
+    if isinstance(summary, dict):
+        results = summary.get("results")
+        if isinstance(results, list):
+            attempted_panel_ids = {
+                str(result.get("panel_id") or "").strip()
+                for result in results
+                if isinstance(result, dict) and str(result.get("panel_id") or "").strip()
+            }
+
     new_issues = evaluate_rendered_pages(
         rendered_pages=context.rendered_pages,
         bible_ids=bible_ids,
+        attempted_panel_ids=attempted_panel_ids,
     )
     # Phase 3.3: surface the slice-wide sprite-bank hit-rate as a single
     # warning when it dips below the threshold. We piggyback on the
     # existing QualityReport instead of inventing a parallel metric pipe
     # because every other slice-level QA signal already lives there —
     # one source of truth for the editor UI to render.
-    summary = context.options.get("panel_rendering_summary") or {}
     if isinstance(summary, dict):
         hit_rate = summary.get("sprite_bank_hit_rate")
         if isinstance(hit_rate, (int, float)) and hit_rate < SPRITE_BANK_HIT_RATE_WARN_THRESHOLD:

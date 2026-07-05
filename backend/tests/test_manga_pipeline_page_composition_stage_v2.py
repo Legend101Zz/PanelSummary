@@ -181,6 +181,63 @@ def test_valid_composition_lands_on_context():
     assert len(client.calls) == 1
 
 
+def test_page_composition_prompt_includes_asset_manifest_and_uses_larger_token_budget():
+    client = _FakeLLMClient(_valid_composition())
+    context = _context(llm_client=client)
+    context.options["asset_manifest"] = [
+        {
+            "character_id": "kai",
+            "expression": "neutral",
+            "asset_type": "expression",
+            "aspect": "1:1",
+        }
+    ]
+
+    asyncio.run(page_composition_stage.run(context))
+
+    call = client.calls[0]
+    assert call["max_tokens"] == 6000
+    assert "asset_manifest" in call["user_message"]
+    assert "character_id" in call["user_message"]
+    assert "expression" in call["user_message"]
+    assert "asset_type" in call["user_message"]
+    assert "aspect" in call["user_message"]
+
+
+def test_sprite_layers_outside_asset_manifest_are_dropped():
+    payload = _valid_composition()
+    payload["pages"][0]["sprite_layers"] = {
+        "p002": [
+            {
+                "character_id": "kai",
+                "expression": "angry",
+                "bbox_pct": {
+                    "x_pct": 20,
+                    "y_pct": 20,
+                    "width_pct": 40,
+                    "height_pct": 70,
+                },
+            }
+        ]
+    }
+    client = _FakeLLMClient(payload)
+    context = _context(llm_client=client)
+    context.options["asset_manifest"] = [
+        {
+            "character_id": "kai",
+            "expression": "neutral",
+            "asset_type": "expression",
+            "aspect": "1:1",
+        }
+    ]
+
+    result = asyncio.run(page_composition_stage.run(context))
+
+    page0 = result.slice_composition.pages[0]
+    assert "p002" not in page0.sprite_layers
+    assert "sprite refs outside asset_manifest" in page0.composition_notes
+
+
 def test_panel_order_with_unknown_id_is_coerced_to_default():
     payload = _valid_composition()
     # Mangle page 0: panel_order references a panel that does not exist

@@ -6,6 +6,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.domain.manga import (
+    CharacterDesign,
+    CharacterWorldBible,
     MangaScript,
     MangaScriptScene,
     PanelPurpose,
@@ -130,3 +132,49 @@ def test_quality_gate_warns_on_unexpected_to_be_continued():
 
     assert report.passed is True
     assert any(issue.code == "unexpected_to_be_continued" for issue in report.issues)
+
+
+def test_quality_gate_rejects_storyboard_characters_outside_bible():
+    report = run_quality_gate(
+        required_fact_ids=[],
+        script=_script(),
+        storyboard_pages=[
+            StoryboardPage(
+                page_id="pg001",
+                page_index=0,
+                panels=[
+                    StoryboardPanel(
+                        panel_id="p001",
+                        scene_id="s001",
+                        purpose=PanelPurpose.REVEAL,
+                        shot_type=ShotType.CLOSE_UP,
+                        composition="Kai turns toward a shadow.",
+                        action="A shadow interrupts the reveal.",
+                        character_ids=["kai", "ghost"],
+                    )
+                ],
+            )
+        ],
+        should_have_to_be_continued=False,
+        character_bible=CharacterWorldBible(
+            world_summary="A compact test world.",
+            visual_style="clean ink",
+            characters=[
+                CharacterDesign(
+                    character_id="kai",
+                    name="Kai",
+                    role="protagonist",
+                    visual_lock="Kai has a sharp silhouette.",
+                    silhouette_notes="narrow shoulders",
+                    outfit_notes="dark coat",
+                    hair_or_face_notes="short hair",
+                )
+            ],
+        ),
+    )
+
+    assert report.passed is False
+    assert any(
+        issue.code == "panel_unknown_character" and issue.artifact_id == "p001"
+        for issue in report.issues
+    )

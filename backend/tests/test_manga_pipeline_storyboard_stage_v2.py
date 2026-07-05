@@ -178,6 +178,11 @@ def test_storyboard_stage_calls_llm_and_records_trace():
     assert result.llm_traces[0].stage_name.value == "storyboard"
     assert "manga_script" in client.calls[0]["user_message"]
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
+    combined_prompt = (
+        client.calls[0]["system_prompt"] + "\n" + client.calls[0]["user_message"]
+    )
+    assert "speaker_id and character_ids are schema fields" in combined_prompt
+    assert "exact character_id values" in combined_prompt
 
 
 def test_storyboard_stage_requires_script():
@@ -188,11 +193,12 @@ def test_storyboard_stage_requires_script():
         asyncio.run(storyboard_stage.run(context))
 
 
-def test_storyboard_stage_rejects_non_contiguous_pages():
+def test_storyboard_stage_normalizes_non_contiguous_page_indexes():
     invalid = _valid_storyboard()
     invalid["pages"][0]["page_index"] = 2
     context = _context(FakeLLMClient(invalid))
     context.options["llm_validation_attempts"] = 1
 
-    with pytest.raises(Exception, match="storyboard"):
-        asyncio.run(storyboard_stage.run(context))
+    result = asyncio.run(storyboard_stage.run(context))
+
+    assert [page.page_index for page in result.storyboard_pages] == [0]

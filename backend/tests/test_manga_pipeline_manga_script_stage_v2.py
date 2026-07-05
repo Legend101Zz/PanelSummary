@@ -165,7 +165,8 @@ def test_manga_script_stage_prompt_includes_manga_text_discipline():
     assert "15 words each" in combined_prompt
     assert "convert narration into silent panels, action, or SFX" in combined_prompt
     assert "Use character display names" in combined_prompt
-    assert "never raw ids" in combined_prompt
+    assert "Use exact character_id values only in schema fields such as speaker_id" in combined_prompt
+    assert "never show raw ids in reader-facing prose" in combined_prompt
 
 
 def test_manga_script_stage_requires_beat_sheet():

@@ -15,6 +15,8 @@ from app.domain.manga import (
     MangaScriptScene,
     PanelPurpose,
     ProtagonistContract,
+    QualityIssue,
+    QualityReport,
     ScriptLine,
     ShotType,
     SourceRange,
@@ -112,6 +114,33 @@ def test_quality_gate_stage_sets_report():
 
     assert result.quality_report is not None
     assert result.quality_report.passed is True
+
+
+def test_quality_gate_stage_preserves_existing_dsl_errors():
+    context = _context()
+    context.adaptation_plan = _plan()
+    context.manga_script = _script()
+    context.storyboard_pages = _storyboard(include_tbc=True)
+    context.quality_report = QualityReport(
+        passed=False,
+        issues=[
+            QualityIssue(
+                severity="error",
+                code="DSL_PAGE_OVER_TEXT_WORDS",
+                message="page has too many words",
+                artifact_id="pg001",
+            )
+        ],
+    )
+
+    result = asyncio.run(quality_gate_stage.run(context))
+
+    assert result.quality_report is not None
+    assert result.quality_report.passed is False
+    assert any(
+        issue.code == "DSL_PAGE_OVER_TEXT_WORDS"
+        for issue in result.quality_report.issues
+    )
 
 
 def test_quality_gate_stage_fails_without_script():

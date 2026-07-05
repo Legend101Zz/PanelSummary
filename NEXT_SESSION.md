@@ -212,7 +212,7 @@ Current visual status:
 
 ### Task 3: Manga typography and page drama
 
-Status: complete; pending commit.
+Status: complete; committed as `24aa9d6 feat: add manga page typography drama`.
 
 Files changed:
 - `frontend/app/globals.css`
@@ -265,7 +265,124 @@ Screenshots:
   copied from Task 2 after-state for the same project.
 - After: `docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png`.
 
+### Task 4: Sprites that land
+
+Status: complete; pending commit.
+
+Files changed:
+- `backend/app/domain/manga/artifacts.py`
+- `backend/app/domain/manga/script_review.py`
+- `backend/app/image_generator.py`
+- `backend/app/manga_pipeline/stages/manga_script_stage.py`
+- `backend/app/manga_pipeline/stages/page_composition_stage.py`
+- `backend/app/manga_pipeline/stages/panel_quality_gate_stage.py`
+- `backend/app/manga_pipeline/stages/quality_assert_stage.py`
+- `backend/app/manga_pipeline/stages/quality_gate_stage.py`
+- `backend/app/manga_pipeline/stages/quality_repair_stage.py`
+- `backend/app/manga_pipeline/stages/script_repair_stage.py`
+- `backend/app/manga_pipeline/stages/script_review_stage.py`
+- `backend/app/manga_pipeline/stages/storyboard_stage.py`
+- `backend/app/services/manga/asset_image_service.py`
+- `backend/app/services/manga/generation_service.py`
+- `backend/app/services/manga/quality_service.py`
+- `backend/app/services/manga/sprite_transparency.py`
+- `backend/tests/test_manga_artifacts_v2.py`
+- `backend/tests/test_manga_asset_image_service_v2.py`
+- `backend/tests/test_manga_generation_service_v2.py`
+- `backend/tests/test_manga_pipeline_manga_script_stage_v2.py`
+- `backend/tests/test_manga_pipeline_page_composition_stage_v2.py`
+- `backend/tests/test_manga_pipeline_stages_v2.py`
+- `backend/tests/test_manga_pipeline_storyboard_stage_v2.py`
+- `backend/tests/test_manga_quality_service_v2.py`
+- `backend/tests/test_panel_quality_gate_stage_v2.py`
+- `backend/tests/test_quality_assert_stage_v2.py`
+- `backend/tests/test_script_review_stage_v2.py`
+- `backend/tests/test_sprite_transparency_v2.py`
+- `frontend/components/MangaReader/chrome/SceneSprites.tsx`
+- `frontend/components/MangaReader/panel_presentation.ts`
+- `frontend/components/MangaReader/scene_sprites_landing.test.ts`
+- `docs/renderer-analysis/experiments/2026-07-05-task4-before-page1-1280.png`
+- `docs/renderer-analysis/experiments/2026-07-05-task4-after-page1-1280.png`
+- `NEXT_SESSION.md`
+
+Implemented:
+- `page_composition_stage` now receives an asset manifest from existing
+  project assets, raises its default output budget to 6000 tokens, prompts
+  `sprite_layers` against manifest character/expression pairs, and drops
+  sprite refs outside the manifest before `RenderedPage`.
+- Asset generation requests `background="transparent"` through the unified
+  image API and records transparent/matting metadata.
+- Added local sprite alpha cleanup in `sprite_transparency.py`: use `rembg`
+  when installed, otherwise apply a deterministic light-background matte.
+- Reference-sheet-only characters now render as derived full-body crops in
+  `SceneSprites` instead of returning null, and synthetic fallback sprites
+  are grounded and scaled by shot type.
+- `panel_presentation` now treats `reference_sheet` assets as renderable so
+  synthetic derived sprites appear when no explicit `sprite_layers` survive.
+- Added pre-render robustness discovered during live regeneration:
+  - Storyboard page indexes normalize to list order.
+  - Unknown `emotional_tone` values default to `curious`.
+  - Script-review nullable string metadata is coerced instead of rejecting an
+    otherwise useful report.
+  - `quality_gate_stage` now merges with existing DSL issues instead of
+    overwriting them.
+  - A second bounded storyboard repair/check cycle and `quality_assert_stage`
+    stop failed story/DSL reports before image spend.
+
+Live asset/slice work:
+- Regenerated the sample project's 8 sprite/reference assets through
+  OpenRouter image generation with `background="transparent"`.
+- API transparency was insufficient: all regenerated files were RGB with
+  `alpha_lt_250=0.0000`.
+- Applied local matting and updated asset metadata. Final alpha coverage:
+  - Haw reference/front: 0.7800
+  - Hem expression/neutral: 0.2152
+  - Hem reference/front: 0.8257
+  - Michael reference/front: 0.7751
+  - Scurry expression/neutral: 0.3217
+  - Scurry reference/front: 0.6623
+  - Sniff expression/neutral: 0.6058
+  - Sniff reference/front: 0.3437
+- Successful MiniMax/OpenRouter end-to-end regeneration persisted 13 pages,
+  51 vector-scene panels, and exactly 3 rendered panel images.
+- A stricter rerun after fixing DSL report merging correctly failed before
+  visual stages with remaining story/DSL errors instead of spending images;
+  the sample project was restored to the successful generated slice backup.
+
+Verification:
+- `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_page_composition_stage_v2.py backend/tests/test_manga_asset_image_service_v2.py backend/tests/test_sprite_transparency_v2.py -q`
+- `backend/.venv/bin/python -m pytest backend/tests/test_script_review_stage_v2.py backend/tests/test_quality_assert_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order backend/tests/test_manga_artifacts_v2.py::test_manga_script_scene_defaults_unknown_emotional_tone backend/tests/test_manga_quality_service_v2.py backend/tests/test_panel_quality_gate_stage_v2.py backend/tests/test_manga_pipeline_manga_script_stage_v2.py backend/tests/test_manga_pipeline_storyboard_stage_v2.py -q`
+- `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_stages_v2.py::test_quality_gate_stage_preserves_existing_dsl_errors ... -q`
+- `backend/.venv/bin/python -m pytest backend/tests -q` -> 428 passed, 1
+  pydantic deprecation warning.
+- `npm exec tsx -- components/MangaReader/scene_sprites_landing.test.ts`
+- `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
+- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+- `npm exec tsx -- components/MangaReader/manga_page_drama.test.ts`
+- `npm exec tsx -- components/MangaReader/dialogue_tail_geometry.test.ts`
+- `npm exec tsx -- components/MangaReader/speech_bubble_shape.test.ts`
+- `npm run build`
+- `npm exec tsc -- --noEmit`
+
+Screenshots:
+- Before: `docs/renderer-analysis/experiments/2026-07-05-task4-before-page1-1280.png`
+  copied from Task 3 after-state for the same project.
+- After: `docs/renderer-analysis/experiments/2026-07-05-task4-after-page1-1280.png`.
+
+Known gaps / blockers:
+- Restored successful slice page 11 has 63 visible words. The backend bug
+  that let DSL word-budget errors be overwritten is fixed, and a stricter
+  rerun failed before visual spend; Task 5 should regenerate again or add a
+  more controlled repair strategy before final all-page verification.
+- Composition LLM often failed validation and fell back to default layout, so
+  persisted explicit `sprite_layers` are still sparse/absent. Frontend
+  reference-sheet synthetic sprites now cover this path.
+- MiniMax was unstable during live runs: observed schema retries, truncated
+  JSON, empty responses, and one network read stall. Use lower temperatures,
+  5 validation attempts, and `LLM_REQUEST_TIMEOUT_SECONDS=300` for the next
+  regeneration attempt.
+
 ## Next concrete step
 
-Commit Task 3, then start Task 4: make sprites land, validate asset manifest
-refs, fix reference-sheet crops, and regenerate the sample sprite bank/slice.
+Commit Task 4, then start Task 5 with a fresh stricter regeneration and all-page
+screenshots/visual checks. Do not start Task 5 until the Task 4 commit is made.

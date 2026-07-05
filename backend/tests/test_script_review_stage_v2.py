@@ -23,6 +23,7 @@ from app.domain.manga import (
     MangaScript,
     MangaScriptScene,
     ProtagonistContract,
+    ScriptReviewReport,
     ScriptLine,
     SourceFact,
     SourceRange,
@@ -268,3 +269,34 @@ def test_script_review_recomputes_passed_from_issues():
     result = asyncio.run(script_review_stage.run(context))
 
     assert result.script_review.passed is False
+
+
+def test_script_review_report_coerces_nullable_string_metadata():
+    report = ScriptReviewReport.model_validate(
+        {
+            "slice_id": "slice_001",
+            "passed": False,
+            "voice_summary": None,
+            "tension_summary": 7,
+            "notes": None,
+            "issues": [
+                {
+                    "severity": "error",
+                    "code": "SCRIPT_VOICE_DRIFT",
+                    "message": 404,
+                    "scene_id": None,
+                    "line_index": None,
+                    "speaker_id": None,
+                    "suggestion": None,
+                }
+            ],
+        }
+    )
+
+    assert report.voice_summary == ""
+    assert report.tension_summary == "7"
+    assert report.notes == ""
+    assert report.issues[0].message == "404"
+    assert report.issues[0].scene_id == ""
+    assert report.issues[0].speaker_id == ""
+    assert report.issues[0].suggestion == ""

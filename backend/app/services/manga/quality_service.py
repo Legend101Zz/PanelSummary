@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.domain.manga import (
+    CharacterWorldBible,
     MangaScript,
     PanelPurpose,
     QualityIssue,
@@ -31,6 +32,7 @@ def run_quality_gate(
     script: MangaScript,
     storyboard_pages: list[StoryboardPage],
     should_have_to_be_continued: bool,
+    character_bible: CharacterWorldBible | None = None,
 ) -> QualityReport:
     """Validate manga slice artifacts before V4 rendering.
 
@@ -52,6 +54,31 @@ def run_quality_gate(
                 fact_id,
             )
         )
+
+    bible_ids: set[str] = set()
+    if character_bible is not None:
+        bible_ids = {
+            character.character_id.strip()
+            for character in character_bible.characters
+            if character.character_id.strip()
+        }
+    if bible_ids:
+        for page in storyboard_pages:
+            for panel in page.panels:
+                for character_id in panel.character_ids:
+                    normalized = character_id.strip()
+                    if normalized and normalized not in bible_ids:
+                        issues.append(
+                            _issue(
+                                "error",
+                                "panel_unknown_character",
+                                (
+                                    f"Panel references character '{normalized}' "
+                                    "which is not in the character bible."
+                                ),
+                                panel.panel_id,
+                            )
+                        )
 
     for scene in script.scenes:
         for line in scene.dialogue:

@@ -8,6 +8,7 @@ The renderer should never have to invent the story. That job belongs here.
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -229,6 +230,18 @@ class MangaScriptScene(BaseModel):
     narration: list[str] = Field(default_factory=list)
     emotional_tone: EmotionalTone = EmotionalTone.CURIOUS
 
+    @field_validator("emotional_tone", mode="before")
+    @classmethod
+    def normalize_emotional_tone(cls, value: Any) -> Any:
+        if isinstance(value, EmotionalTone):
+            return value
+        if value is None:
+            return EmotionalTone.CURIOUS
+        normalized = str(value).strip().lower()
+        if normalized in {tone.value for tone in EmotionalTone}:
+            return normalized
+        return EmotionalTone.CURIOUS
+
     @model_validator(mode="after")
     def scene_needs_content(self) -> "MangaScriptScene":
         if not self.scene_id.strip():
@@ -331,6 +344,26 @@ class StoryboardArtifact(BaseModel):
     slice_id: str
     pages: list[StoryboardPage] = Field(default_factory=list)
     thumbnail_notes: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_page_indexes(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        pages = data.get("pages")
+        if not isinstance(pages, list):
+            return data
+
+        normalized_pages: list[Any] = []
+        changed = False
+        for index, page in enumerate(pages):
+            if isinstance(page, dict) and page.get("page_index") != index:
+                page = {**page, "page_index": index}
+                changed = True
+            normalized_pages.append(page)
+        if not changed:
+            return data
+        return {**data, "pages": normalized_pages}
 
     @model_validator(mode="after")
     def storyboard_needs_pages_and_stable_indices(self) -> "StoryboardArtifact":

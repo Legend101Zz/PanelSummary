@@ -35,6 +35,7 @@ from app.domain.manga.types import SourceRange, SourceSlice, SourceSliceMode
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.stages import panel_quality_gate_stage
 from app.manga_pipeline.stages.panel_quality_gate_stage import (
+    evaluate_rendered_pages,
     _merge_into_report,
 )
 from app.services.manga.generation_service import build_v2_generation_stages
@@ -150,6 +151,36 @@ def test_panel_gate_merges_into_existing_quality_report():
     assert "prior" in codes
     assert "panel_unknown_character" in codes
     assert report.passed is False  # has an error now
+
+
+def test_panel_quality_gate_does_not_treat_budget_skipped_panels_as_missing_paths():
+    panel_rendered = _panel(panel_id="p1", character_ids=["alpha"])
+    panel_skipped = _panel(panel_id="p2", character_ids=["alpha"])
+    page = StoryboardPage(
+        page_id="pg001",
+        page_index=0,
+        panels=[panel_rendered, panel_skipped],
+    )
+    rendered_page = RenderedPage(
+        storyboard_page=page,
+        panel_artifacts={
+            "p1": PanelRenderArtifact(
+                image_path="manga_panels/proj/slice/page_00/p1.png",
+                image_aspect_ratio="1:1",
+                used_reference_assets=["alpha"],
+                requested_character_count=1,
+            ),
+            "p2": PanelRenderArtifact(requested_character_count=1),
+        },
+    )
+
+    issues = evaluate_rendered_pages(
+        rendered_pages=[rendered_page],
+        bible_ids={"alpha"},
+        attempted_panel_ids={"p1"},
+    )
+
+    assert not any(issue.code == "panel_rendered_without_path" for issue in issues)
 
 
 def test_merge_report_from_none_starts_passing_unless_error():

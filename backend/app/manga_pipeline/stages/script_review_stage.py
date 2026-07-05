@@ -173,7 +173,7 @@ async def run(context: PipelineContext) -> PipelineContext:
         stage_name=LLMStageName.SCRIPT_REVIEW,
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("script_review_max_tokens", 6000)),
+        max_tokens=int(context.options.get("script_review_max_tokens", 9000)),
         # Editor temperature stays cooler than the writer's. We want
         # consistent judgement, not creative leaps.
         temperature=float(context.options.get("script_review_temperature", 0.4)),

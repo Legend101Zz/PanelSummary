@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.domain.manga import SliceRole, should_add_to_be_continued
+from app.domain.manga import QualityReport, SliceRole, should_add_to_be_continued
 from app.manga_pipeline.context import PipelineContext
 from app.services.manga.quality_service import run_quality_gate
 
@@ -30,10 +30,22 @@ async def run(context: PipelineContext) -> PipelineContext:
         slice_role=slice_role,
         standalone=standalone,
     )
-    context.quality_report = run_quality_gate(
+    gate_report = run_quality_gate(
         required_fact_ids=required_fact_ids,
         script=context.manga_script,
         storyboard_pages=context.storyboard_pages,
         should_have_to_be_continued=should_tbc,
+        character_bible=context.character_bible,
     )
+    if context.quality_report is None:
+        context.quality_report = gate_report
+    else:
+        combined = list(context.quality_report.issues) + list(gate_report.issues)
+        context.quality_report = QualityReport(
+            passed=not any(issue.severity == "error" for issue in combined),
+            issues=combined,
+            grounded_fact_ids=list(gate_report.grounded_fact_ids),
+            missing_fact_ids=list(gate_report.missing_fact_ids),
+            notes=gate_report.notes or context.quality_report.notes,
+        )
     return context
