@@ -42,12 +42,20 @@ book `6a0b5a11201a8d03f1d82501` / project `6a0b5a5b201a8d03f1d82503`.
 - `./.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001`
 - `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev`
 - `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task1-after-page1-1280-final-warm.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
+- `backend/.venv/bin/python -m pytest backend/tests/test_vector_scene_contract_v2.py backend/tests/test_manga_pipeline_vector_scene_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order -q`
+- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+- `npm exec tsc -- --noEmit`
+- `backend/.venv/bin/python -m pytest backend/tests/test_manga_dsl_v2.py backend/tests/test_manga_pipeline_manga_script_stage_v2.py backend/tests/test_manga_pipeline_quality_repair_stage_v2.py backend/tests/test_llm_client_json_parsing.py backend/tests/test_vector_scene_contract_v2.py backend/tests/test_manga_pipeline_vector_scene_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order -q`
+- `npm run build`
+- `backend/.venv/bin/python -m pytest backend/tests -q -k 'not test_build_asset_prompt_adds_reusable_asset_constraints'`
+- `cp docs/renderer-analysis/experiments/2026-07-05-task1-after-page1-1280-final-warm.png docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
+- `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
 
 ## Task log
 
 ### Task 1: Kill the text-wall
 
-Status: complete; pending commit.
+Status: complete; committed as `e54c361 fix: kill manga text wall`.
 
 Files changed:
 - `frontend/components/MangaReader/panels/DialoguePanel.tsx`
@@ -127,7 +135,70 @@ Verification:
 - Task 1 does not solve empty beige panels or missing sprites; those are Task 2
   and Task 4.
 
+### Task 2: Vector scene layer
+
+Status: complete; pending commit.
+
+Files changed:
+- `backend/app/domain/manga/vector_scene.py`
+- `backend/app/domain/manga/artifacts.py`
+- `backend/app/domain/manga/__init__.py`
+- `backend/app/manga_pipeline/llm_contracts.py`
+- `backend/app/manga_pipeline/stages/vector_scene_stage.py`
+- `backend/app/services/manga/generation_service.py`
+- `backend/tests/test_vector_scene_contract_v2.py`
+- `backend/tests/test_manga_pipeline_vector_scene_stage_v2.py`
+- `backend/tests/test_manga_generation_service_v2.py`
+- `frontend/lib/manga-render-types.ts`
+- `frontend/lib/types.ts`
+- `frontend/components/MangaReader/chrome/VectorSceneLayer.tsx`
+- `frontend/components/MangaReader/MangaPanelRenderer.tsx`
+- `frontend/components/MangaReader/vector_scene_rendering.test.ts`
+- `docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
+- `docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png`
+- `NEXT_SESSION.md`
+
+Implemented:
+- Added optional `StoryboardPanel.vector_scene` with typed primitives for
+  background gradients, screentone/hatching, linework, silhouettes, speedline
+  bursts, radial focus, vignette, and drawn SFX lettering.
+- Added `LLMStageName.VISUAL_DIRECTION` and a `vector_scene_stage` after
+  RTL composition validation and before asset planning.
+- The visual-direction stage prompts from each panel's composition, action,
+  shot type, and purpose, and requires every panel to have tone plus linework.
+- Added deterministic fallback vector scenes when no LLM client is present or
+  when authored output omits required ink, so legacy pages do not render as
+  empty beige panels.
+- Added frontend mirror types and an inline SVG `VectorSceneLayer` rendered
+  behind sprites and bubbles.
+- Removed the old unpainted-panel diagonal fallback from
+  `MangaPanelRenderer` in favor of the typed vector scene layer.
+
+Verification:
+- Red tests first failed on missing `VectorScene`, missing
+  `vector_scene_stage`, missing `VectorSceneLayer`, and the old generation
+  stage order.
+- Final checks passed:
+  - `backend/.venv/bin/python -m pytest backend/tests/test_vector_scene_contract_v2.py backend/tests/test_manga_pipeline_vector_scene_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order -q` -> 6 passed, 1 pydantic deprecation warning.
+  - `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+  - `npm exec tsc -- --noEmit`
+  - Combined focused backend suite -> 36 passed, 1 pydantic deprecation warning.
+  - `npm run build`
+  - `backend/.venv/bin/python -m pytest backend/tests -q -k 'not test_build_asset_prompt_adds_reusable_asset_constraints'`
+    -> 416 passed, 1 deselected, 1 pydantic deprecation warning.
+
+Screenshots:
+- Before: `docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
+  copied from the Task 1 after-state for the same project.
+- After: `docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png`.
+
+Current visual status:
+- The live same-project page now has visible screentone and linework in every
+  panel even without regenerated `vector_scene` payloads, because the renderer
+  supplies the deterministic fallback for legacy pages.
+- This does not yet solve missing/grounded character sprites; that remains
+  Task 4.
+
 ## Next concrete step
 
-Commit Task 1, then start Task 2: additive `vector_scene` DSL field, MiniMax
-visual-direction stage, and inline SVG renderer behind sprites/bubbles.
+Commit Task 2, then start Task 3: manga typography and page drama.

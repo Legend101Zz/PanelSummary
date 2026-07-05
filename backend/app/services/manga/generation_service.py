@@ -50,6 +50,7 @@ from app.manga_pipeline.stages import (
     script_review_stage,
     source_fact_extraction_stage,
     storyboard_stage,
+    vector_scene_stage,
 )
 from app.models import Book, BookChapter, BookSection
 from app.services.manga.arc_slice_planning_service import (
@@ -231,6 +232,9 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         # on the same QualityReport so the existing repair tooling and
         # QA dashboard see them without a parallel report shape.
         rtl_composition_validation_stage.run,
+        # Phase V: typed zero-spend scene ink so unpainted panels still
+        # read as manga instead of empty text cards.
+        vector_scene_stage.run,
         character_asset_plan_stage.run,
         # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
         # the renderer + quality gate consume. Sits AFTER

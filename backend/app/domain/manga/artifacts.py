@@ -12,6 +12,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domain.manga.types import MangaAssetSpec, SourceFact
+from app.domain.manga.vector_scene import VectorScene
 
 
 class EmotionalTone(str, Enum):
@@ -276,6 +277,7 @@ class StoryboardPanel(BaseModel):
             " by definition on stage."
         ),
     )
+    vector_scene: VectorScene | None = None
 
     @model_validator(mode="after")
     def panel_needs_readable_content(self) -> "StoryboardPanel":

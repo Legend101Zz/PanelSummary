@@ -33,6 +33,98 @@ export interface StoryboardScriptLine {
   source_fact_ids?: string[];
 }
 
+export type VectorSceneTonePattern =
+  | "dots"
+  | "hatching"
+  | "crosshatch"
+  | "speed"
+  | "grain"
+  | "none";
+
+export type VectorSceneLineKind =
+  | "horizon"
+  | "interior"
+  | "floor"
+  | "wall"
+  | "desk"
+  | "window"
+  | "door"
+  | "object"
+  | "hatching"
+  | "perspective"
+  | "speedline"
+  | "focus"
+  | "diagonal";
+
+export interface VectorSceneBackground {
+  fill?: string;
+  gradient_to?: string;
+  gradient_angle?: number;
+}
+
+export interface VectorSceneTone {
+  pattern?: VectorSceneTonePattern;
+  opacity?: number;
+  scale?: number;
+  stroke?: string;
+}
+
+export interface VectorSceneLine {
+  kind?: VectorSceneLineKind;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  stroke?: string;
+  stroke_width?: number;
+  opacity?: number;
+}
+
+export interface VectorSceneSilhouette {
+  x?: number;
+  y?: number;
+  scale?: number;
+  pose?: string;
+  opacity?: number;
+}
+
+export interface VectorSceneSpeedlineBurst {
+  origin_x?: number;
+  origin_y?: number;
+  count?: number;
+  spread?: number;
+  opacity?: number;
+}
+
+export interface VectorSceneRadialFocus {
+  x?: number;
+  y?: number;
+  radius?: number;
+  opacity?: number;
+}
+
+export interface VectorSceneSfx {
+  text: string;
+  x?: number;
+  y?: number;
+  size?: number;
+  rotation?: number;
+  stroke?: string;
+  fill?: string;
+}
+
+export interface VectorScene {
+  background?: VectorSceneBackground | null;
+  tone?: VectorSceneTone | null;
+  linework?: VectorSceneLine[];
+  silhouettes?: VectorSceneSilhouette[];
+  speedlines?: VectorSceneSpeedlineBurst[];
+  radial_focus?: VectorSceneRadialFocus | null;
+  vignette?: boolean;
+  sfx?: VectorSceneSfx[];
+  mood?: string;
+}
+
 export interface StoryboardPanel {
   panel_id: string;
   scene_id: string;
@@ -44,6 +136,7 @@ export interface StoryboardPanel {
   narration?: string;
   source_fact_ids?: string[];
   character_ids?: string[];
+  vector_scene?: VectorScene | null;
 }
 
 export interface StoryboardPage {

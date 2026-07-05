@@ -36,6 +36,7 @@ import {
 } from "./types";
 import type { MangaCharacterAsset } from "./asset_lookup";
 import { PaintedPanelBackdrop } from "./chrome/PaintedPanelBackdrop";
+import { VectorSceneLayer } from "./chrome/VectorSceneLayer";
 import { SfxLayer } from "./chrome/SfxLayer";
 import { SceneSprites } from "./chrome/SceneSprites";
 import { planPanelPresentation } from "./panel_presentation";
@@ -164,28 +165,7 @@ export function MangaPanelRenderer({
         />
       )}
 
-      {effects.includes("screentone") && (
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.08]"
-          style={{
-            backgroundImage: "radial-gradient(circle, #1f1f29 0.55px, transparent 0.55px)",
-            backgroundSize: "5px 5px",
-            zIndex: 2,
-          }}
-        />
-      )}
-
-      {!hasPaintedBackdrop && (
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.12]"
-          style={{
-            backgroundImage:
-              "linear-gradient(115deg, transparent 0 44%, #0053e2 44% 45%, transparent 45% 100%)",
-            backgroundSize: "28px 100%",
-            zIndex: 2,
-          }}
-        />
-      )}
+      <VectorSceneLayer panel={panel} scene={panel.vector_scene} />
 
       <SceneSprites
         panel={panel}

@@ -309,6 +309,16 @@ export type {
   StoryboardPanelPurpose,
   StoryboardScriptLine,
   StoryboardShotType,
+  VectorScene,
+  VectorSceneBackground,
+  VectorSceneLine,
+  VectorSceneLineKind,
+  VectorSceneRadialFocus,
+  VectorSceneSfx,
+  VectorSceneSilhouette,
+  VectorSceneSpeedlineBurst,
+  VectorSceneTone,
+  VectorSceneTonePattern,
 } from "./manga-render-types";
 
 export interface MangaProjectPagesResponse {

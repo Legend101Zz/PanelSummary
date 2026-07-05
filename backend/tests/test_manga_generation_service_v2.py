@@ -113,6 +113,7 @@ def test_build_v2_generation_stages_has_expected_order():
         "page_composition_stage",
         # Phase C2: RTL flow validator catches page-turn / TBC misplacements.
         "rtl_composition_validation_stage",
+        "vector_scene_stage",
         "character_asset_plan_stage",
         # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
         # the renderer + quality gate consume. The legacy

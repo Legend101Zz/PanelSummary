@@ -54,6 +54,16 @@ from app.domain.manga.render_view import (
     RenderedPage,
     empty_rendered_page,
 )
+from app.domain.manga.vector_scene import (
+    VectorScene,
+    VectorSceneBackground,
+    VectorSceneLine,
+    VectorSceneRadialFocus,
+    VectorSceneSfx,
+    VectorSceneSilhouette,
+    VectorSceneSpeedlineBurst,
+    VectorSceneTone,
+)
 from app.domain.manga.sprite_quality import (
     AssetSpriteReview,
     MissingExpression,
@@ -156,6 +166,14 @@ __all__ = [
     "StoryboardPage",
     "StoryboardPanel",
     "StoryThread",
+    "VectorScene",
+    "VectorSceneBackground",
+    "VectorSceneLine",
+    "VectorSceneRadialFocus",
+    "VectorSceneSfx",
+    "VectorSceneSilhouette",
+    "VectorSceneSpeedlineBurst",
+    "VectorSceneTone",
     "build_continuation_prompt_context",
     "build_recap_seed",
     "should_add_to_be_continued",
