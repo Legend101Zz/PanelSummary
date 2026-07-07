@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from app.domain.manga import StoryboardArtifact
+from app.llm_client import LLMClient
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.llm_contracts import (
     LLMStageName,
@@ -12,6 +13,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
 
 SYSTEM_PROMPT = """You are a senior manga editor repairing a storyboard that failed QA.
 
@@ -85,11 +87,19 @@ async def run(context: PipelineContext) -> PipelineContext:
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
         max_tokens=int(context.options.get("quality_repair_max_tokens", 10000)),
-        temperature=float(context.options.get("quality_repair_temperature", 0.55)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+        temperature=float(context.options.get("quality_repair_temperature", 0.25)),
+        max_validation_attempts=int(
+            context.options.get("quality_repair_validation_attempts", 5)
+        ),
+    )
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="quality_repair_model",
+        timeout_option_key="quality_repair_timeout_seconds",
+        client_factory=LLMClient,
     )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=StoryboardArtifact,
     )

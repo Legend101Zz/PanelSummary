@@ -386,3 +386,47 @@ Known gaps / blockers:
 
 Commit Task 4, then start Task 5 with a fresh stricter regeneration and all-page
 screenshots/visual checks. Do not start Task 5 until the Task 4 commit is made.
+
+### Task 5A: Stable composition authoring lane
+
+Status: code complete; pending commit.
+
+Files changed:
+- `backend/app/manga_pipeline/strict_json_routing.py`
+- `backend/app/manga_pipeline/stages/page_composition_stage.py`
+- `backend/app/manga_pipeline/stages/quality_repair_stage.py`
+- `backend/app/manga_pipeline/stages/script_repair_stage.py`
+- `backend/tests/test_manga_pipeline_page_composition_stage_v2.py`
+- `backend/tests/test_manga_pipeline_quality_repair_stage_v2.py`
+- `backend/tests/test_script_repair_stage_v2.py`
+- `NEXT_SESSION.md`
+
+Implemented:
+- `page_composition_stage` now authors one `PageComposition` per page instead
+  of one slice-wide `SliceComposition`, so a malformed geometry response only
+  defaults that page.
+- `page_composition` strict JSON defaults now use temperature `0.25`, five
+  validation attempts, and a 300s request timeout on the composition client.
+- Added `strict_json_routing.py` so geometry and repair stages route away from
+  MiniMax/drafting clients to an OpenRouter quality model while preserving fake
+  clients in tests.
+- `script_repair_stage` and `quality_repair_stage` now use the same strict JSON
+  lane defaults: OpenRouter quality model, temperature `0.25`, five validation
+  attempts, and 300s timeout.
+
+Root-cause notes:
+- Verified from code that the old composition stage was still slice-wide and
+  defaulted the entire slice after structured validation failure, matching the
+  persisted zero-geometry defect when MiniMax returned truncated/empty JSON.
+- Kept fallback additive: failed page-level composition still produces default
+  layout for that page instead of breaking the generation job.
+
+Verification:
+- Red tests first failed on slice-wide composition, 0.5 temperature / 3 attempt
+  assumptions, and repair stages still calling MiniMax.
+- `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_page_composition_stage_v2.py backend/tests/test_manga_pipeline_quality_repair_stage_v2.py backend/tests/test_script_repair_stage_v2.py -q`
+  -> 19 passed, 1 pydantic deprecation warning.
+
+Next concrete step:
+- Start Task 5B: make bubble/sprite geometry quality rules executable, then
+  regenerate the benchmark slice.

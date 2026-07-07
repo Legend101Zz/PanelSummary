@@ -40,7 +40,9 @@ from app.domain.manga import (
     PageComposition,
     PageGridRow,
     SliceComposition,
+    StoryboardPage,
 )
+from app.llm_client import LLMClient
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.llm_contracts import (
     LLMOutputValidationError,
@@ -49,13 +51,13 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
 
 
-SYSTEM_PROMPT = """You are a manga page-layout artist composing pages for a slice.
+SYSTEM_PROMPT = """You are a manga page-layout artist composing one page at a time.
 
-You receive the slice's storyboard pages (each with its panels). For
-EVERY page you must author a PageComposition that captures how the page
-should be physically laid out.
+You receive one storyboard page and must author a PageComposition that captures
+how that page should be physically laid out.
 
 Composition rules:
 - Pages are read RIGHT-to-LEFT then top-to-bottom. The "page turn" beat
@@ -93,14 +95,15 @@ Composition rules:
   dialogue line_index and panel-local bbox_pct. Keep bubbles readable,
   inside the panel, and away from faces. Use z_index above sprites.
 - z_index convention: panels 0-10, sprites around 20, bubbles around 40.
-- Composition variety across the slice matters. Do not give every page
-  the same layout. Mix splash (1 panel), establishing strip + two beats
-  (1+2), three-beat (1+2 or 2+1), and four-beat (2+2 or 1+2+1) pages.
+- Composition variety across the slice matters. Use the supplied slice page
+  indices as context, but return only this page's composition. Mix splash
+  (1 panel), establishing strip + two beats (1+2), three-beat (1+2 or 2+1),
+  and four-beat (2+2 or 1+2+1) pages across a slice.
 - composition_notes: 1-2 sentences explaining why this page is laid out
   this way (e.g. "splash on Kai's reveal; bottom-left page-turn anchors
   the cliffhanger").
 
-Return ONE JSON object that conforms to the schema (a list of pages).
+Return ONE JSON object that conforms to the PageComposition schema.
 """
 
 
@@ -157,6 +160,59 @@ def _build_user_message(context: PipelineContext) -> str:
     )
 
 
+def _page_payload(page: StoryboardPage) -> dict:
+    return {
+        "page_index": page.page_index,
+        "page_turn_hook": page.page_turn_hook,
+        "panel_count": len(page.panels),
+        "panels": [
+            {
+                "panel_id": panel.panel_id,
+                "purpose": panel.purpose.value,
+                "shot_type": panel.shot_type.value,
+                "scene_id": panel.scene_id,
+                "character_ids": list(panel.character_ids),
+                "action": panel.action,
+                "narration": panel.narration,
+                "dialogue_count": len(panel.dialogue),
+                "dialogue": [
+                    {
+                        "line_index": line_index,
+                        "speaker_id": line.speaker_id,
+                        "intent": line.intent,
+                        "text": line.text,
+                    }
+                    for line_index, line in enumerate(panel.dialogue)
+                ],
+            }
+            for panel in page.panels
+        ],
+    }
+
+
+def _build_page_user_message(context: PipelineContext, page: StoryboardPage) -> str:
+    arc_role = (
+        context.arc_entry.role.value
+        if context.arc_entry is not None
+        else context.options.get("slice_role", "")
+    )
+    payload = {
+        "slice_id": context.source_slice.slice_id,
+        "arc_role": arc_role,
+        "asset_manifest": _asset_manifest_from_options(context),
+        "page": _page_payload(page),
+        "slice_page_indices": [item.page_index for item in context.storyboard_pages],
+    }
+    return (
+        "Compose one storyboard page. Return a single PageComposition for this "
+        "page only, not a SliceComposition wrapper. Keep every bbox inside its "
+        "panel/page coordinate space and use sprite_layers only for "
+        "character_id/expression pairs present in asset_manifest.\n\n"
+        f"INPUT_PAGE_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{build_json_contract_prompt(PageComposition)}"
+    )
+
+
 def _asset_manifest_from_options(context: PipelineContext) -> list[dict[str, str]]:
     raw_manifest = context.options.get("asset_manifest") or []
     manifest: list[dict[str, str]] = []
@@ -205,6 +261,24 @@ def _empty_composition_for(context: PipelineContext) -> SliceComposition:
             )
             for page in context.storyboard_pages
         ]
+    )
+
+
+def _empty_composition_for_page(page: StoryboardPage, reason: str) -> PageComposition:
+    return PageComposition(
+        page_index=page.page_index,
+        gutter_grid=[],
+        panel_order=[],
+        composition_notes=reason,
+    )
+
+
+def _composition_llm_client(context: PipelineContext):
+    return strict_json_client_for(
+        context,
+        model_option_key="page_composition_model",
+        timeout_option_key="page_composition_timeout_seconds",
+        client_factory=LLMClient,
     )
 
 
@@ -317,30 +391,39 @@ async def run(context: PipelineContext) -> PipelineContext:
         context.slice_composition = SliceComposition(pages=[])
         return context
 
-    request = StructuredLLMRequest(
-        stage_name=LLMStageName.PAGE_COMPOSITION,
-        system_prompt=SYSTEM_PROMPT,
-        user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("page_composition_max_tokens", 6000)),
-        # Composition is a creative-but-bounded task. A bit warmer than
-        # the editor (0.4) but cooler than the writer (0.7) keeps the
-        # layouts varied without going off-piste.
-        temperature=float(context.options.get("page_composition_temperature", 0.5)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
-    )
-    try:
-        result = await run_structured_llm_stage(
-            client=context.llm_client,
-            request=request,
-            output_type=SliceComposition,
+    llm_client = _composition_llm_client(context)
+    composed_pages: list[PageComposition] = []
+    for page in context.storyboard_pages:
+        request = StructuredLLMRequest(
+            stage_name=LLMStageName.PAGE_COMPOSITION,
+            system_prompt=SYSTEM_PROMPT,
+            user_message=_build_page_user_message(context, page),
+            max_tokens=int(context.options.get("page_composition_max_tokens", 6000)),
+            temperature=float(context.options.get("page_composition_temperature", 0.25)),
+            max_validation_attempts=int(
+                context.options.get("page_composition_validation_attempts", 5)
+            ),
         )
-    except LLMOutputValidationError:
-        # The structured-call helper already retried; if we are still
-        # here the LLM cannot satisfy the schema for this slice. Use the
-        # empty fallback so the renderer keeps working.
-        context.slice_composition = _empty_composition_for(context)
-        return context
+        try:
+            result = await run_structured_llm_stage(
+                client=llm_client,
+                request=request,
+                output_type=PageComposition,
+            )
+        except LLMOutputValidationError as exc:
+            context.record_llm_trace(exc.trace)
+            composed_pages.append(
+                _empty_composition_for_page(
+                    page,
+                    "page composition failed validation; using default",
+                )
+            )
+            continue
+        composed_pages.append(result.artifact)
+        context.record_llm_trace(result.trace)
 
-    context.slice_composition = _coerce_to_storyboard_panels(result.artifact, context)
-    context.record_llm_trace(result.trace)
+    context.slice_composition = _coerce_to_storyboard_panels(
+        SliceComposition(pages=composed_pages),
+        context,
+    )
     return context

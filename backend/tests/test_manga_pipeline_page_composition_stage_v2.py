@@ -160,8 +160,111 @@ def _valid_composition() -> dict[str, Any]:
     }
 
 
+def _valid_page_composition(page_index: int) -> dict[str, Any]:
+    return _valid_composition()["pages"][page_index]
+
+
+def test_page_composition_authors_each_page_with_its_own_structured_call():
+    client = _FakeLLMClient([
+        _valid_page_composition(0),
+        _valid_page_composition(1),
+    ])
+
+    context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
+
+    assert context.slice_composition is not None
+    assert len(context.slice_composition.pages) == 2
+    assert [page.is_default for page in context.slice_composition.pages] == [False, False]
+    assert len(client.calls) == 2
+    assert all("Compose one storyboard page" in call["user_message"] for call in client.calls)
+    assert all("PageComposition" in call["user_message"] for call in client.calls)
+
+
+def test_page_composition_uses_low_temperature_and_five_validation_attempts():
+    bad = {
+        "page_index": 0,
+        "gutter_grid": [{"cell_widths_pct": [50, 40]}],
+        "panel_order": ["p001", "p002"],
+    }
+    page = StoryboardPage(
+        page_id="pg001",
+        page_index=0,
+        page_turn_hook="Door grows larger.",
+        panels=[_panel("p001"), _panel("p002", has_dialogue=True)],
+    )
+    client = _FakeLLMClient(bad)
+
+    context = asyncio.run(
+        page_composition_stage.run(_context(pages=[page], llm_client=client))
+    )
+
+    assert context.slice_composition is not None
+    assert context.slice_composition.pages[0].is_default is True
+    assert len(client.calls) == 5
+    assert {call["temperature"] for call in client.calls} == {0.25}
+
+
+def test_page_composition_routes_geometry_to_openrouter_quality_lane(monkeypatch):
+    one_panel_composition = {
+        "page_index": 0,
+        "gutter_grid": [{"cell_widths_pct": [100]}],
+        "panel_order": ["p001"],
+        "page_turn_panel_id": "p001",
+        "composition_notes": "Single reveal panel anchors the page.",
+    }
+    drafting_client = _FakeLLMClient(one_panel_composition)
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = _FakeLLMClient(one_panel_composition)
+    quality_client.provider = "openrouter"
+    quality_client.model = "quality-json-model"
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> _FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        return quality_client
+
+    monkeypatch.setattr(page_composition_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(
+        pages=[
+            StoryboardPage(
+                page_id="pg001",
+                page_index=0,
+                page_turn_hook="Door grows larger.",
+                panels=[_panel("p001")],
+            )
+        ],
+        llm_client=drafting_client,
+    )
+    context.options["api_key"] = "openrouter-key"
+    context.options["page_composition_model"] = "quality-json-model"
+
+    result = asyncio.run(page_composition_stage.run(context))
+
+    assert result.slice_composition is not None
+    assert result.slice_composition.pages[0].is_default is False
+    assert drafting_client.calls == []
+    assert len(quality_client.calls) == 1
+    assert constructed == [
+        {
+            "api_key": "openrouter-key",
+            "provider": "openrouter",
+            "model": "quality-json-model",
+        }
+    ]
+
+
 def test_valid_composition_lands_on_context():
-    client = _FakeLLMClient(_valid_composition())
+    client = _FakeLLMClient([
+        _valid_page_composition(0),
+        _valid_page_composition(1),
+    ])
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
     assert context.slice_composition is not None
@@ -177,12 +280,15 @@ def test_valid_composition_lands_on_context():
     ]
     assert first.panel_order == ["p002", "p001", "p003"]
 
-    # Exactly one LLM call for the whole slice (cost discipline).
-    assert len(client.calls) == 1
+    # Geometry is strict and page-scoped so one bad page does not erase the slice.
+    assert len(client.calls) == 2
 
 
 def test_page_composition_prompt_includes_asset_manifest_and_uses_larger_token_budget():
-    client = _FakeLLMClient(_valid_composition())
+    client = _FakeLLMClient([
+        _valid_page_composition(0),
+        _valid_page_composition(1),
+    ])
     context = _context(llm_client=client)
     context.options["asset_manifest"] = [
         {
@@ -205,8 +311,8 @@ def test_page_composition_prompt_includes_asset_manifest_and_uses_larger_token_b
 
 
 def test_sprite_layers_outside_asset_manifest_are_dropped():
-    payload = _valid_composition()
-    payload["pages"][0]["sprite_layers"] = {
+    page0 = _valid_page_composition(0)
+    page0["sprite_layers"] = {
         "p002": [
             {
                 "character_id": "kai",
@@ -220,7 +326,7 @@ def test_sprite_layers_outside_asset_manifest_are_dropped():
             }
         ]
     }
-    client = _FakeLLMClient(payload)
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
     context = _context(llm_client=client)
     context.options["asset_manifest"] = [
         {
@@ -239,14 +345,14 @@ def test_sprite_layers_outside_asset_manifest_are_dropped():
 
 
 def test_panel_order_with_unknown_id_is_coerced_to_default():
-    payload = _valid_composition()
+    page0 = _valid_page_composition(0)
     # Mangle page 0: panel_order references a panel that does not exist
     # on this storyboard page. The stage should drop the LLM's
     # composition for that page (replace with default empty) but keep
     # page 1.
-    payload["pages"][0]["panel_order"] = ["p001", "p002", "ghost_panel"]
-    payload["pages"][0]["gutter_grid"] = [{"cell_widths_pct": [40, 30, 30]}]
-    client = _FakeLLMClient(payload)
+    page0["panel_order"] = ["p001", "p002", "ghost_panel"]
+    page0["gutter_grid"] = [{"cell_widths_pct": [40, 30, 30]}]
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
 
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
@@ -261,9 +367,9 @@ def test_panel_order_with_unknown_id_is_coerced_to_default():
 
 
 def test_wrong_page_turn_id_is_cleared_but_composition_kept():
-    payload = _valid_composition()
-    payload["pages"][0]["page_turn_panel_id"] = "ghost_panel"
-    client = _FakeLLMClient(payload)
+    page0 = _valid_page_composition(0)
+    page0["page_turn_panel_id"] = "ghost_panel"
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
 
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
@@ -276,17 +382,17 @@ def test_wrong_page_turn_id_is_cleared_but_composition_kept():
 
 
 def test_missing_page_in_llm_output_is_backfilled_with_default():
-    payload = _valid_composition()
-    del payload["pages"][1]  # LLM forgot page 1
-    client = _FakeLLMClient(payload)
+    page0 = _valid_page_composition(0)
+    page0["page_index"] = 99  # LLM returned a page that does not exist
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
 
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
     indices = sorted(c.page_index for c in context.slice_composition.pages)
     assert indices == [0, 1]
-    page1 = context.slice_composition.composition_for(1)
-    assert page1.is_default is True
-    assert "missing from LLM output" in page1.composition_notes
+    page0_result = context.slice_composition.composition_for(0)
+    assert page0_result.is_default is True
+    assert "missing from LLM output" in page0_result.composition_notes
 
 
 def test_invalid_payload_falls_back_to_empty_composition():

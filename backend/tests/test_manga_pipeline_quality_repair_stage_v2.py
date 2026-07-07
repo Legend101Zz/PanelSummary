@@ -146,6 +146,45 @@ def test_quality_repair_stage_repairs_failed_report_with_llm():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
+def test_quality_repair_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+    drafting_client = FakeLLMClient(_repaired_storyboard())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_repaired_storyboard())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(quality_repair_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["quality_repair_model"] = "quality-json-model"
+
+    result = asyncio.run(quality_repair_stage.run(context))
+
+    assert len(result.storyboard_pages[0].panels) == 2
+    assert drafting_client.calls == []
+    assert len(quality_client.calls) == 1
+    assert quality_client.calls[0]["temperature"] == 0.25
+    assert quality_client.request_timeout_seconds == 300
+    assert constructed == [
+        {
+            "api_key": "openrouter-key",
+            "provider": "openrouter",
+            "model": "quality-json-model",
+        }
+    ]
+
+
 def test_quality_repair_stage_prompt_tells_model_how_to_fix_text_overflow():
     client = FakeLLMClient(_repaired_storyboard())
     context = _context(client)
