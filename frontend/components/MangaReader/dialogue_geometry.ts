@@ -47,6 +47,64 @@ function speakerTarget(
   };
 }
 
+function rectsOverlap(
+  a: { x_pct: number; y_pct: number; width_pct: number; height_pct: number },
+  b: { x_pct: number; y_pct: number; width_pct: number; height_pct: number },
+): boolean {
+  return (
+    a.x_pct < b.x_pct + b.width_pct &&
+    a.x_pct + a.width_pct > b.x_pct &&
+    a.y_pct < b.y_pct + b.height_pct &&
+    a.y_pct + a.height_pct > b.y_pct
+  );
+}
+
+function spriteFaceZone(layer: SpriteLayer) {
+  const box = layer.bbox_pct;
+  return {
+    x_pct: box.x_pct,
+    y_pct: box.y_pct,
+    width_pct: box.width_pct,
+    height_pct: box.height_pct / 3,
+  };
+}
+
+export function bubbleOverlapsSpriteFace(
+  placement: BubblePlacement,
+  spriteLayers: SpriteLayer[] | undefined,
+): boolean {
+  return Boolean(spriteLayers?.some((layer) =>
+    rectsOverlap(placement.bbox_pct, spriteFaceZone(layer)),
+  ));
+}
+
+export function avoidSpriteFaceZones(
+  placement: BubblePlacement,
+  spriteLayers: SpriteLayer[] | undefined,
+): BubblePlacement {
+  if (!bubbleOverlapsSpriteFace(placement, spriteLayers)) return placement;
+  const box = placement.bbox_pct;
+  const width = clamp(box.width_pct, 44, 28, 96);
+  const height = clamp(box.height_pct, 32, 22, 68);
+  const candidates = [
+    { ...box, y_pct: 4 },
+    { ...box, y_pct: 100 - height - 4 },
+    { ...box, x_pct: 4 },
+    { ...box, x_pct: 100 - width - 4 },
+    { ...box, x_pct: 50 - width / 2, y_pct: 6 },
+  ].map((candidate) => ({
+    x_pct: clamp(candidate.x_pct, box.x_pct, 0, 100 - width),
+    y_pct: clamp(candidate.y_pct, box.y_pct, 0, 100 - height),
+    width_pct: width,
+    height_pct: height,
+  }));
+
+  const safe = candidates.find((candidate) =>
+    !bubbleOverlapsSpriteFace({ ...placement, bbox_pct: candidate }, spriteLayers),
+  );
+  return safe ? { ...placement, bbox_pct: safe } : placement;
+}
+
 export function resolveBubbleTail({
   placement,
   line,

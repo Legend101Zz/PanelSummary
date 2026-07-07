@@ -52,10 +52,10 @@ const referenceAsset: MangaCharacterAsset = {
 };
 
 assertEqual(assetCropFrameStyle(referenceAsset).width, "100%", "reference sheet crop width");
-assertEqual(assetImageObjectStyle(referenceAsset).objectFit, "cover", "reference sheet object fit");
+assertEqual(assetImageObjectStyle(referenceAsset).objectFit, "contain", "reference sheet object fit");
 assertEqual(
   assetImageObjectStyle(referenceAsset).objectPosition,
-  "28% 72%",
+  "center bottom",
   "reference sheet object position",
 );
 

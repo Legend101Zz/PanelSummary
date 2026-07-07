@@ -1,5 +1,10 @@
 import type { BubblePlacement, SpriteLayer, StoryboardScriptLine } from "@/lib/types";
-import { bubbleBoxStyle, resolveBubbleTail } from "./dialogue_geometry";
+import {
+  avoidSpriteFaceZones,
+  bubbleBoxStyle,
+  bubbleOverlapsSpriteFace,
+  resolveBubbleTail,
+} from "./dialogue_geometry";
 
 function assertEqual<T>(actual: T, expected: T, label: string): void {
   if (actual !== expected) {
@@ -41,3 +46,21 @@ const style = bubbleBoxStyle(bleedPlacement);
 
 assertEqual(style.left, "-6%", "bubble box can bleed past left border");
 assertEqual(style.top, "-4%", "bubble box can bleed past top border");
+
+const unsafePlacement: BubblePlacement = {
+  line_index: 0,
+  speaker_id: "michael",
+  bbox_pct: { x_pct: 11, y_pct: 47, width_pct: 30, height_pct: 20 },
+  tail_side: "bottom",
+  tail_offset_pct: 50,
+};
+
+if (!bubbleOverlapsSpriteFace(unsafePlacement, layers)) {
+  throw new Error("fixture should overlap the sprite face zone before repair");
+}
+
+const safePlacement = avoidSpriteFaceZones(unsafePlacement, layers);
+
+if (bubbleOverlapsSpriteFace(safePlacement, layers)) {
+  throw new Error(`fallback bubble still overlaps face zone: ${JSON.stringify(safePlacement)}`);
+}

@@ -53,7 +53,42 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, model_validator
 
 from app.domain.manga.artifacts import StoryboardPage
-from app.domain.manga.page_composition import PageComposition
+from app.domain.manga.page_composition import BubblePlacement, PageComposition, SpriteLayer
+
+
+def _boxes_overlap(a, b) -> bool:
+    return (
+        a.x_pct < b.x_pct + b.width_pct
+        and a.x_pct + a.width_pct > b.x_pct
+        and a.y_pct < b.y_pct + b.height_pct
+        and a.y_pct + a.height_pct > b.y_pct
+    )
+
+
+def _sprite_face_zone(sprite: SpriteLayer):
+    box = sprite.bbox_pct
+    return box.model_copy(update={"height_pct": box.height_pct / 3})
+
+
+def _expected_tail_side(bubble: BubblePlacement, sprite: SpriteLayer) -> str:
+    bubble_box = bubble.bbox_pct
+    sprite_box = sprite.bbox_pct
+    target_x = sprite_box.x_pct + sprite_box.width_pct / 2
+    target_y = sprite_box.y_pct + sprite_box.height_pct / 6
+    left = bubble_box.x_pct
+    right = bubble_box.x_pct + bubble_box.width_pct
+    top = bubble_box.y_pct
+    bottom = bubble_box.y_pct + bubble_box.height_pct
+
+    if target_y > bottom:
+        return "bottom"
+    if target_y < top:
+        return "top"
+    if target_x < left:
+        return "left"
+    if target_x > right:
+        return "right"
+    return bubble.tail_side
 
 
 class PanelRenderArtifact(BaseModel):
@@ -174,6 +209,14 @@ class RenderedPage(BaseModel):
         for panel_id, bubbles in self.composition.bubble_placements.items():
             panel = by_id[panel_id]
             dialogue = list(panel.dialogue)
+            line_indices = [bubble.line_index for bubble in bubbles]
+            if line_indices != sorted(line_indices):
+                raise ValueError(
+                    "RenderedPage.composition.bubble_placements must follow "
+                    f"dialogue reading order for panel {panel_id!r}; got "
+                    f"{line_indices}"
+                )
+            sprites = self.composition.sprite_layers.get(panel_id, [])
             for bubble in bubbles:
                 if bubble.line_index >= len(dialogue):
                     raise ValueError(
@@ -188,6 +231,28 @@ class RenderedPage(BaseModel):
                         f"{bubble.line_index} speaker "
                         f"{dialogue[bubble.line_index].speaker_id!r}"
                     )
+                for sprite in sprites:
+                    if _boxes_overlap(bubble.bbox_pct, _sprite_face_zone(sprite)):
+                        raise ValueError(
+                            "RenderedPage.composition.bubble_placements "
+                            f"bubble for panel {panel_id!r} overlaps sprite face "
+                            f"zone for character {sprite.character_id!r}"
+                        )
+                speaker_id = bubble.speaker_id or dialogue[bubble.line_index].speaker_id
+                speaker_sprite = next(
+                    (sprite for sprite in sprites if sprite.character_id == speaker_id),
+                    None,
+                )
+                if speaker_sprite is not None:
+                    expected_tail_side = _expected_tail_side(bubble, speaker_sprite)
+                    if bubble.tail_side != expected_tail_side:
+                        raise ValueError(
+                            "RenderedPage.composition.bubble_placements tail_side "
+                            f"for panel {panel_id!r} line {bubble.line_index} "
+                            f"must point toward speaker {speaker_id!r}; "
+                            f"expected {expected_tail_side!r}, got "
+                            f"{bubble.tail_side!r}"
+                        )
         return self
 
     def panels_in_reading_order(self) -> list:

@@ -144,10 +144,9 @@ export function assetCropFrameStyle(asset: MangaCharacterAsset | null): CSSPrope
 }
 
 export function assetImageObjectStyle(asset: MangaCharacterAsset | null): CSSProperties {
-  const isReferenceSheet = asset?.asset_type === "reference_sheet";
   return {
-    objectFit: isReferenceSheet ? "cover" : "contain",
-    objectPosition: isReferenceSheet ? "28% 72%" : "center bottom",
+    objectFit: "contain",
+    objectPosition: "center bottom",
     filter: "drop-shadow(0 10px 0 rgba(0,0,0,0.28))",
   };
 }

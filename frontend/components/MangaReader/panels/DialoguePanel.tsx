@@ -20,7 +20,7 @@ import { SpeechBubble, type SpeechBubbleVariant } from "../chrome/SpeechBubble";
 import { splitDialogueForBubbles } from "../dialogue_lettering";
 import { clampVisibleText, type PanelPresentationPlan } from "../panel_presentation";
 import { MANGA_BODY_FONT } from "../lettering_fonts";
-import { bubbleBoxStyle, resolveBubbleTail } from "../dialogue_geometry";
+import { avoidSpriteFaceZones, bubbleBoxStyle, resolveBubbleTail } from "../dialogue_geometry";
 import type { MangaPalette } from "../types";
 
 interface DialoguePanelProps {
@@ -131,11 +131,12 @@ function BubbleLettering({
   const variant = normalizedVariant(placement, line);
   const fill = hasPaintedBackdrop ? "rgba(255,250,240,0.94)" : "rgba(255,255,255,0.95)";
   const visibleText = line.text.trim();
-  const tail = resolveBubbleTail({ placement, line, spriteLayers });
+  const safePlacement = avoidSpriteFaceZones(placement, spriteLayers);
+  const tail = resolveBubbleTail({ placement: safePlacement, line, spriteLayers });
 
   return (
     <motion.div
-      style={bubbleBoxStyle(placement)}
+      style={bubbleBoxStyle(safePlacement)}
       initial={{ opacity: 0, y: 8, rotate: index % 2 === 0 ? -1.5 : 1.5 }}
       animate={{ opacity: 1, y: 0, rotate: index % 2 === 0 ? -1.5 : 1.5 }}
       transition={{ duration: 0.35, delay: index * 0.18 }}
@@ -162,7 +163,7 @@ function BubbleLettering({
               fontSize: letteringFontSize(visibleText),
               fontStyle: intentStyle.fontStyle,
               fontWeight: variant === "shout" ? 800 : 600,
-              hyphens: "auto",
+              hyphens: "none",
               display: "block",
               flexShrink: 1,
               lineHeight: 1.12,
@@ -249,7 +250,7 @@ export function DialoguePanel({
   const bubbleLines = lines.flatMap((line, lineIndex) =>
     splitDialogueForBubbles(line.text, {
       maxCharsPerBubble: 44,
-      maxBubbles: 3,
+      maxBubbles: 2,
     }).map((text, chunkIndex, chunks) => ({
       ...line,
       text,

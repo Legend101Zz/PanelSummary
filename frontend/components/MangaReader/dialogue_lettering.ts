@@ -7,39 +7,42 @@ function normalizeText(text: string): string {
   return text.trim().replace(/\s+/g, " ");
 }
 
-function splitWordsIntoChunks(words: string[], maxChars: number): string[] {
-  const chunks: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word;
-    if (next.length <= maxChars || !current) {
-      current = next;
-      continue;
+function boundaryIndexes(text: string): number[] {
+  const indexes: number[] = [];
+  for (let i = 0; i < text.length; i += 1) {
+    if (/[.!?,;:]/.test(text[i])) {
+      indexes.push(i + 1);
     }
-    chunks.push(current);
-    current = word;
   }
-  if (current) chunks.push(current);
-  return chunks;
+  return indexes.filter((index) => index > 0 && index < text.length);
 }
 
-function rebalanceChunks(chunks: string[], maxBubbles: number, maxChars: number): string[] {
-  if (chunks.length <= maxBubbles) return chunks;
-  const words = chunks.join(" ").split(" ");
-  const target = Math.ceil(words.length / maxBubbles);
-  const balanced: string[] = [];
-  for (let i = 0; i < maxBubbles; i += 1) {
-    const remainingSlots = maxBubbles - i;
-    const remainingWords = words.length;
-    const take = i === maxBubbles - 1
-      ? remainingWords
-      : Math.max(1, Math.min(target, remainingWords - remainingSlots + 1));
-    balanced.push(words.splice(0, take).join(" "));
+function nearestSpaceIndex(text: string, target: number): number {
+  const spaces: number[] = [];
+  for (let i = 0; i < text.length; i += 1) {
+    if (text[i] === " ") spaces.push(i);
   }
-  return balanced.map((chunk) => {
-    if (chunk.length <= maxChars) return chunk;
-    return chunk.replace(/\s+/g, " ").trim();
-  });
+  if (!spaces.length) return -1;
+  return spaces.reduce((best, index) =>
+    Math.abs(index - target) < Math.abs(best - target) ? index : best,
+  );
+}
+
+function splitAtBestBoundary(text: string, maxChars: number): string[] {
+  if (text.length <= maxChars) return [text];
+  const target = text.length / 2;
+  const punctuation = boundaryIndexes(text);
+  const boundary = punctuation.length
+    ? punctuation.reduce((best, index) =>
+      Math.abs(index - target) < Math.abs(best - target) ? index : best,
+    )
+    : nearestSpaceIndex(text, target);
+
+  if (boundary <= 0 || boundary >= text.length) return [text];
+  return [
+    text.slice(0, boundary).trim(),
+    text.slice(boundary).trim(),
+  ].filter(Boolean);
 }
 
 export function splitDialogueForBubbles(
@@ -49,7 +52,7 @@ export function splitDialogueForBubbles(
   const normalized = normalizeText(text);
   if (!normalized) return [];
   const maxChars = options.maxCharsPerBubble ?? 44;
-  const maxBubbles = options.maxBubbles ?? 3;
-  const chunks = splitWordsIntoChunks(normalized.split(" "), maxChars);
-  return rebalanceChunks(chunks, maxBubbles, maxChars);
+  const maxBubbles = Math.min(options.maxBubbles ?? 2, 2);
+  if (maxBubbles <= 1) return [normalized];
+  return splitAtBestBoundary(normalized, maxChars).slice(0, maxBubbles);
 }

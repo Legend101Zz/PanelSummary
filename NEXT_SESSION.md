@@ -430,3 +430,49 @@ Verification:
 Next concrete step:
 - Start Task 5B: make bubble/sprite geometry quality rules executable, then
   regenerate the benchmark slice.
+
+### Task 5B: Bubble and sprite quality rules
+
+Status: code complete; pending commit.
+
+Files changed:
+- `backend/app/domain/manga/render_view.py`
+- `backend/tests/test_render_view_v2.py`
+- `frontend/components/MangaReader/dialogue_lettering.ts`
+- `frontend/components/MangaReader/dialogue_lettering.test.ts`
+- `frontend/components/MangaReader/dialogue_geometry.ts`
+- `frontend/components/MangaReader/dialogue_tail_geometry.test.ts`
+- `frontend/components/MangaReader/panels/DialoguePanel.tsx`
+- `frontend/components/MangaReader/chrome/SceneSprites.tsx`
+- `frontend/components/MangaReader/scene_sprites_landing.test.ts`
+- `NEXT_SESSION.md`
+
+Implemented:
+- Dialogue splitting is capped at two bubbles per source dialogue line and
+  prefers sentence/clause punctuation boundaries before falling back to spaces.
+- Bubble text disables CSS hyphenation (`hyphens: none`) to avoid mid-word
+  hyphen artifacts.
+- Frontend bubble placement now runs through a face-zone avoidance helper before
+  resolving the rendered box and tail.
+- `RenderedPage` validation now rejects authored bubble placements that overlap
+  a sprite's top-third face zone, point the tail away from an on-panel speaker,
+  or list bubbles out of dialogue reading order.
+- Reference-sheet fallback rendering now uses whole-image `contain` /
+  `center bottom` instead of cropped `cover`, preventing fragment/limb crops.
+
+Verification:
+- Red tests first failed on comma-boundary splitting, missing face-zone helper,
+  reference-sheet `cover` cropping, and backend accepting bad placement geometry.
+- `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
+- `npm exec tsx -- components/MangaReader/dialogue_tail_geometry.test.ts`
+- `npm exec tsx -- components/MangaReader/scene_sprites_landing.test.ts`
+- `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
+- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
+- `npm exec tsx -- components/MangaReader/speech_bubble_shape.test.ts`
+- `npm exec tsc -- --noEmit`
+- `backend/.venv/bin/python -m pytest backend/tests/test_render_view_v2.py backend/tests/test_manga_pipeline_page_composition_stage_v2.py -q`
+  -> 31 passed, 1 pydantic deprecation warning.
+
+Next concrete step:
+- Task 5C/5D: run the strict regeneration against the benchmark project, then
+  screenshot all 13 pages and record page-level rubric results.
