@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 OPENROUTER_MODELS = {
     "cheap": "meta-llama/llama-3.1-8b-instruct:free",     # FREE but slower
     "balanced": "anthropic/claude-3-haiku",                  # Fast + cheap
-    "quality": "anthropic/claude-3.5-sonnet",               # Best quality
+    "quality": "anthropic/claude-sonnet-5",                 # Best quality
     "openai_cheap": "gpt-4o-mini",                          # OpenAI cheap
     "openai_quality": "gpt-4o",                              # OpenAI quality
 }
@@ -187,16 +187,21 @@ class LLMClient:
             "temperature": temperature,
         }
 
-        # JSON mode for OpenAI models that support it
-        if json_mode and self.provider in {"openai", "minimax"}:
+        # OpenAI-compatible providers all accept the normalized JSON-object
+        # response format. Structured stages still validate the full schema.
+        if json_mode and self.provider in {"openai", "openrouter", "minimax"}:
             kwargs["response_format"] = {"type": "json_object"}
 
-        # For OpenRouter only: disable thinking mode on Qwen3/DeepSeek/o1 etc.
-        # This avoids <think>...</think> blocks in the output and saves tokens.
+        # Structured OpenRouter calls must spend their output budget on JSON,
+        # not a visible reasoning preamble. Use the gateway's normalized
+        # control for all JSON calls; retain the legacy model-specific switch
+        # for non-JSON calls.
         if self.provider == "openrouter":
             model_lower = (self.model or "").lower()
             is_thinking = any(x in model_lower for x in ["qwen3", "qwq", "deepseek-r1", "o1", "o3"])
-            if is_thinking:
+            if json_mode:
+                kwargs["extra_body"] = {"reasoning": {"effort": "none"}}
+            elif is_thinking:
                 kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         try:

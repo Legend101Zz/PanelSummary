@@ -17,6 +17,17 @@ from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.manga_dsl import validate_storyboard_against_dsl
 
 
+def _positive_int_option(context: PipelineContext, key: str) -> int | None:
+    raw = context.options.get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
 def _merge_issues_into_report(
     existing: QualityReport | None,
     new_issues: list,
@@ -59,6 +70,8 @@ async def run(context: PipelineContext) -> PipelineContext:
     issues = validate_storyboard_against_dsl(
         pages=context.storyboard_pages,
         arc_entry=context.arc_entry,
+        max_pages_override=_positive_int_option(context, "max_storyboard_pages"),
+        preferred_pages_override=_positive_int_option(context, "target_storyboard_pages"),
     )
     context.quality_report = _merge_issues_into_report(context.quality_report, issues)
     return context

@@ -62,6 +62,39 @@ class _FakeOpenAIClient:
     chat = _FakeChat()
 
 
+class _CapturingCompletions:
+    def __init__(self):
+        self.kwargs = None
+
+    async def create(self, **kwargs):
+        self.kwargs = kwargs
+        message = type("Message", (), {"content": '{"ok": true}'})()
+        choice = type("Choice", (), {"message": message})()
+        return type("Response", (), {"choices": [choice], "usage": None})()
+
+
+def test_openrouter_json_mode_requests_json_object():
+    client = object.__new__(LLMClient)
+    client.provider = "openrouter"
+    client.model = "quality/model"
+    completions = _CapturingCompletions()
+    client.client = type(
+        "Client",
+        (),
+        {"chat": type("Chat", (), {"completions": completions})()},
+    )()
+    client.encoder = _FakeEncoder()
+    client._supports_cache_control = False
+    client.request_timeout_seconds = 1.0
+    client.slow_warning_seconds = 999.0
+
+    result = asyncio.run(client.chat("system", "user", json_mode=True))
+
+    assert result["parsed"] == {"ok": True}
+    assert completions.kwargs["response_format"] == {"type": "json_object"}
+    assert completions.kwargs["extra_body"]["reasoning"] == {"effort": "none"}
+
+
 def test_chat_times_out_slow_provider_calls():
     client = object.__new__(LLMClient)
     client.provider = "openrouter"

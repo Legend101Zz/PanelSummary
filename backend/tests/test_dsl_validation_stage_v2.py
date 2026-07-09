@@ -159,6 +159,27 @@ def test_dsl_validation_stage_flags_violations_and_marks_failed():
     assert "DSL_MISSING_ANCHOR_FACTS" in codes
 
 
+def test_dsl_validation_stage_honors_benchmark_page_budget_override():
+    pages = _passing_pages()
+    pages = [
+        StoryboardPage(
+            page_id=f"page_{i}",
+            page_index=i,
+            panels=pages[i % len(pages)].panels,
+        )
+        for i in range(13)
+    ]
+    context = _context(pages, must_cover=["f001"])
+    context.options["max_storyboard_pages"] = 13
+    context.options["target_storyboard_pages"] = 13
+
+    result = asyncio.run(dsl_validation_stage.run(context))
+
+    assert result.quality_report is not None
+    error_codes = [i.code for i in result.quality_report.issues if i.severity == "error"]
+    assert "DSL_SLICE_OVER_PAGE_BUDGET" not in error_codes
+
+
 def test_dsl_validation_stage_preserves_existing_quality_report_fields():
     context = _context(_passing_pages(), must_cover=["f001"])
     context.quality_report = QualityReport(

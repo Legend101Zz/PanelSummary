@@ -185,6 +185,45 @@ def test_storyboard_stage_calls_llm_and_records_trace():
     assert "exact character_id values" in combined_prompt
 
 
+def test_storyboard_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+    drafting_client = FakeLLMClient(_valid_storyboard())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_valid_storyboard())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(storyboard_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["storyboard_model"] = "quality-json-model"
+
+    result = asyncio.run(storyboard_stage.run(context))
+
+    assert len(result.storyboard_pages) == 1
+    assert drafting_client.calls == []
+    assert len(quality_client.calls) == 1
+    assert quality_client.calls[0]["temperature"] == 0.25
+    assert quality_client.request_timeout_seconds == 300
+    assert constructed == [
+        {
+            "api_key": "openrouter-key",
+            "provider": "openrouter",
+            "model": "quality-json-model",
+        }
+    ]
+
+
 def test_storyboard_stage_requires_script():
     context = _context(FakeLLMClient(_valid_storyboard()))
     context.manga_script = None

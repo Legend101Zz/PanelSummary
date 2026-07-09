@@ -13,6 +13,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
 from app.manga_pipeline.strict_json_routing import strict_json_client_for
 
 SYSTEM_PROMPT = """You are a senior manga editor repairing a storyboard that failed QA.
@@ -37,6 +38,17 @@ Common repairs:
 
 Return a complete replacement storyboard artifact. Do not return patches.
 """
+
+
+def _positive_int_option(context: PipelineContext, key: str) -> int | None:
+    raw = context.options.get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def _build_user_message(context: PipelineContext) -> str:
@@ -67,6 +79,11 @@ def _build_user_message(context: PipelineContext) -> str:
         "panels, action, or SFX when possible. The renderer must never truncate "
         "dialogue or narration. Return a full replacement.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{render_dsl_prompt_fragment(
+            context.arc_entry,
+            max_pages_override=_positive_int_option(context, 'max_storyboard_pages'),
+            preferred_pages_override=_positive_int_option(context, 'target_storyboard_pages'),
+        )}\n"
         f"{build_json_contract_prompt(StoryboardArtifact)}"
     )
 
@@ -86,7 +103,7 @@ async def run(context: PipelineContext) -> PipelineContext:
         stage_name=LLMStageName.QUALITY_REPAIR,
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("quality_repair_max_tokens", 10000)),
+        max_tokens=int(context.options.get("quality_repair_max_tokens", 24000)),
         temperature=float(context.options.get("quality_repair_temperature", 0.25)),
         max_validation_attempts=int(
             context.options.get("quality_repair_validation_attempts", 5)
@@ -104,5 +121,6 @@ async def run(context: PipelineContext) -> PipelineContext:
         output_type=StoryboardArtifact,
     )
     context.storyboard_pages = result.artifact.pages
+    context.quality_report = None
     context.record_llm_trace(result.trace)
     return context

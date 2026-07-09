@@ -166,11 +166,32 @@ def panel_budget_for(arc_role: ArcRole | None) -> PanelBudget:
     return PANEL_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_panel_budget())
 
 
-def page_budget_for(arc_role: ArcRole | None) -> PageBudget:
+def page_budget_for(
+    arc_role: ArcRole | None,
+    *,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
+) -> PageBudget:
     """Return the page budget for an arc role (with safe fallback)."""
     if arc_role is None:
-        return _default_page_budget()
-    return PAGE_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_page_budget())
+        budget = _default_page_budget()
+    else:
+        budget = PAGE_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_page_budget())
+    if max_pages_override is None and preferred_pages_override is None:
+        return budget
+
+    max_pages = budget.max_pages
+    if max_pages_override is not None:
+        max_pages = max(budget.min_pages, int(max_pages_override))
+    preferred = budget.preferred
+    if preferred_pages_override is not None:
+        preferred = int(preferred_pages_override)
+    preferred = max(budget.min_pages, min(preferred, max_pages))
+    return PageBudget(
+        min_pages=budget.min_pages,
+        preferred=preferred,
+        max_pages=max_pages,
+    )
 
 
 def dialogue_budget_for(arc_role: ArcRole | None) -> DialogueBudget:
@@ -183,7 +204,12 @@ def dialogue_budget_for(arc_role: ArcRole | None) -> DialogueBudget:
 # --- Prompt fragment builder --------------------------------------------------
 
 
-def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
+def render_dsl_prompt_fragment(
+    arc_entry: ArcSliceEntry | None,
+    *,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
+) -> str:
     """Render the DSL constraints as a prompt fragment.
 
     The downstream stage prompts append this fragment so the LLM sees the
@@ -193,7 +219,11 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
     """
     arc_role = arc_entry.role if arc_entry else None
     panels = panel_budget_for(arc_role)
-    pages = page_budget_for(arc_role)
+    pages = page_budget_for(
+        arc_role,
+        max_pages_override=max_pages_override,
+        preferred_pages_override=preferred_pages_override,
+    )
     dialogue = dialogue_budget_for(arc_role)
     role_label = arc_role.value.upper() if arc_role else "GENERIC"
     headline = arc_entry.headline_beat if arc_entry else "(no arc-level headline beat provided)"
@@ -465,6 +495,8 @@ def validate_storyboard_against_dsl(
     *,
     pages: list[StoryboardPage],
     arc_entry: ArcSliceEntry | None,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
 ) -> list[QualityIssue]:
     """Run every DSL validator over a storyboard and return all issues.
 
@@ -477,7 +509,11 @@ def validate_storyboard_against_dsl(
     arc_role = arc_entry.role if arc_entry else None
     panel_budget = panel_budget_for(arc_role)
     dialogue_budget = dialogue_budget_for(arc_role)
-    page_budget = page_budget_for(arc_role)
+    page_budget = page_budget_for(
+        arc_role,
+        max_pages_override=max_pages_override,
+        preferred_pages_override=preferred_pages_override,
+    )
 
     issues.extend(_validate_page_count(pages, page_budget))
     for page in pages:
