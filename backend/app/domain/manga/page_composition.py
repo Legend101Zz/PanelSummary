@@ -230,6 +230,55 @@ class PageComposition(BaseModel):
     bubble_placements: dict[str, list[BubblePlacement]] = Field(default_factory=dict)
     composition_notes: str = ""
 
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_soft_llm_failures(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        bubble_placements = normalized.get("bubble_placements")
+        if isinstance(bubble_placements, dict):
+            fixed_bubbles = {}
+            changed = False
+            for panel_id, bubbles in bubble_placements.items():
+                fixed_list = []
+                if not isinstance(bubbles, list):
+                    fixed_bubbles[panel_id] = bubbles
+                    continue
+                for bubble in bubbles:
+                    if isinstance(bubble, dict) and bubble.get("variant") == "narration":
+                        bubble = {**bubble, "variant": "speech"}
+                        changed = True
+                    fixed_list.append(bubble)
+                fixed_bubbles[panel_id] = fixed_list
+            if changed:
+                normalized["bubble_placements"] = fixed_bubbles
+
+        gutter_grid = normalized.get("gutter_grid")
+        panel_order = normalized.get("panel_order")
+        if isinstance(gutter_grid, list) and isinstance(panel_order, list) and gutter_grid:
+            cell_total = 0
+            for row in gutter_grid:
+                if isinstance(row, dict) and isinstance(row.get("cell_widths_pct"), list):
+                    cell_total += len(row["cell_widths_pct"])
+                else:
+                    return normalized
+            if cell_total != len(panel_order):
+                note = str(normalized.get("composition_notes") or "").strip()
+                suffix = (
+                    "composition replaced with default: gutter_grid cell count "
+                    "did not match panel_order"
+                )
+                return {
+                    "page_index": normalized.get("page_index", 0),
+                    "gutter_grid": [],
+                    "panel_order": [],
+                    "composition_notes": f"{note} {suffix}".strip(),
+                }
+
+        return normalized
+
     @model_validator(mode="after")
     def _structural(self) -> "PageComposition":
         if len(self.gutter_grid) > MAX_ROWS_PER_PAGE:

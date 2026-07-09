@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.domain.manga import (
     ContinuityLedger,
+    PageComposition,
     PanelPurpose,
     ScriptLine,
     ShotType,
@@ -342,6 +343,96 @@ def test_sprite_layers_outside_asset_manifest_are_dropped():
     page0 = result.slice_composition.pages[0]
     assert "p002" not in page0.sprite_layers
     assert "sprite refs outside asset_manifest" in page0.composition_notes
+
+
+def test_bubble_placement_over_sprite_face_zone_is_sanitized():
+    page0 = _valid_page_composition(0)
+    page0["sprite_layers"] = {
+        "p002": [
+            {
+                "character_id": "kai",
+                "expression": "neutral",
+                "bbox_pct": {
+                    "x_pct": 20,
+                    "y_pct": 10,
+                    "width_pct": 40,
+                    "height_pct": 60,
+                },
+            }
+        ]
+    }
+    page0["bubble_placements"] = {
+        "p002": [
+            {
+                "line_index": 0,
+                "speaker_id": "kai",
+                "bbox_pct": {
+                    "x_pct": 25,
+                    "y_pct": 12,
+                    "width_pct": 35,
+                    "height_pct": 20,
+                },
+                "tail_side": "bottom",
+            }
+        ]
+    }
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
+    context = _context(llm_client=client)
+    context.options["asset_manifest"] = [
+        {
+            "character_id": "kai",
+            "expression": "neutral",
+            "asset_type": "expression",
+            "aspect": "1:1",
+        }
+    ]
+
+    result = asyncio.run(page_composition_stage.run(context))
+
+    bubble = result.slice_composition.pages[0].bubble_placements["p002"][0]
+    assert bubble.bbox_pct.y_pct >= 34
+    assert bubble.tail_side == "top"
+    assert "moved away from sprite face zones" in result.slice_composition.pages[0].composition_notes
+
+
+def test_page_composition_normalizes_narration_bubble_variant():
+    composition = PageComposition.model_validate(
+        {
+            "page_index": 0,
+            "gutter_grid": [{"cell_widths_pct": [100]}],
+            "panel_order": ["p001"],
+            "bubble_placements": {
+                "p001": [
+                    {
+                        "line_index": 0,
+                        "variant": "narration",
+                        "bbox_pct": {
+                            "x_pct": 10,
+                            "y_pct": 10,
+                            "width_pct": 30,
+                            "height_pct": 20,
+                        },
+                    }
+                ]
+            },
+        }
+    )
+
+    assert composition.bubble_placements["p001"][0].variant == "speech"
+
+
+def test_page_composition_mismatched_grid_defaults_without_retry_shape():
+    composition = PageComposition.model_validate(
+        {
+            "page_index": 0,
+            "gutter_grid": [{"cell_widths_pct": [50, 50]}],
+            "panel_order": ["p001"],
+            "composition_notes": "bad grid",
+        }
+    )
+
+    assert composition.is_default is True
+    assert "gutter_grid cell count" in composition.composition_notes
 
 
 def test_panel_order_with_unknown_id_is_coerced_to_default():

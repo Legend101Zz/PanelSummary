@@ -20,6 +20,7 @@ from app.domain.manga import (
     ProtagonistContract,
     ScriptLine,
     ShotType,
+    StoryboardArtifact,
     StoryboardPage,
     StoryboardPanel,
 )
@@ -151,6 +152,42 @@ def test_storyboard_page_limits_panel_count_and_requires_composition():
 
     assert page.reading_flow == "top-right to bottom-left"
     assert page.panels[0].shot_type == ShotType.CLOSE_UP
+
+
+def test_storyboard_artifact_normalizes_common_purpose_aliases():
+    artifact = StoryboardArtifact.model_validate(
+        {
+            "slice_id": "slice_001",
+            "pages": [
+                {
+                    "page_id": "pg001",
+                    "page_index": 1,
+                    "panels": [
+                        {
+                            "panel_id": "p001",
+                            "scene_id": "s001",
+                            "purpose": "reaction",
+                            "shot_type": "medium",
+                            "composition": "Kai reacts to the growing lock.",
+                            "action": "Kai stiffens.",
+                        },
+                        {
+                            "panel_id": "p002",
+                            "scene_id": "s001",
+                            "purpose": "symbolic",
+                            "shot_type": "symbolic",
+                            "composition": "The lock becomes a horizon.",
+                            "action": "The lock fills the page.",
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+
+    assert artifact.pages[0].page_index == 0
+    assert artifact.pages[0].panels[0].purpose == PanelPurpose.EMOTIONAL_TURN
+    assert artifact.pages[0].panels[1].purpose == PanelPurpose.REVEAL
 
 
 def test_storyboard_page_rejects_crowded_pages():

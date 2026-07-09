@@ -37,10 +37,13 @@ from __future__ import annotations
 import json
 
 from app.domain.manga import (
+    BubblePlacement,
+    LayoutBoxPct,
     PageComposition,
     PageGridRow,
     SliceComposition,
     StoryboardPage,
+    StoryboardPanel,
 )
 from app.llm_client import LLMClient
 from app.manga_pipeline.context import PipelineContext
@@ -324,6 +327,10 @@ def _coerce_to_storyboard_panels(
             # rather than dropping the whole composition.
             comp = comp.model_copy(update={"page_turn_panel_id": ""})
         comp = _drop_sprite_layers_outside_manifest(comp, asset_manifest_keys)
+        storyboard_page = next(
+            page for page in context.storyboard_pages if page.page_index == comp.page_index
+        )
+        comp = _sanitize_bubble_geometry(comp, storyboard_page)
         fixed.append(comp)
 
     # Backfill any storyboard pages the LLM forgot.
@@ -370,6 +377,158 @@ def _drop_sprite_layers_outside_manifest(
     return composition.model_copy(
         update={
             "sprite_layers": filtered,
+            "composition_notes": f"{note} {suffix}".strip(),
+        }
+    )
+
+
+def _boxes_overlap(a: LayoutBoxPct, b: LayoutBoxPct) -> bool:
+    return (
+        a.x_pct < b.x_pct + b.width_pct
+        and a.x_pct + a.width_pct > b.x_pct
+        and a.y_pct < b.y_pct + b.height_pct
+        and a.y_pct + a.height_pct > b.y_pct
+    )
+
+
+def _sprite_face_zone(sprite) -> LayoutBoxPct:
+    box = sprite.bbox_pct
+    return box.model_copy(update={"height_pct": box.height_pct / 3})
+
+
+def _expected_tail_side(bubble: BubblePlacement, sprite) -> str:
+    bubble_box = bubble.bbox_pct
+    sprite_box = sprite.bbox_pct
+    target_x = sprite_box.x_pct + sprite_box.width_pct / 2
+    target_y = sprite_box.y_pct + sprite_box.height_pct / 6
+    left = bubble_box.x_pct
+    right = bubble_box.x_pct + bubble_box.width_pct
+    top = bubble_box.y_pct
+    bottom = bubble_box.y_pct + bubble_box.height_pct
+
+    if target_y > bottom:
+        return "bottom"
+    if target_y < top:
+        return "top"
+    if target_x < left:
+        return "left"
+    if target_x > right:
+        return "right"
+    return "bottom"
+
+
+def _bubble_overlaps_any_face(bubble: BubblePlacement, sprites: list) -> bool:
+    return any(
+        _boxes_overlap(bubble.bbox_pct, _sprite_face_zone(sprite))
+        for sprite in sprites
+    )
+
+
+def _bubble_with_y(bubble: BubblePlacement, y_pct: float) -> BubblePlacement:
+    clamped_y = max(0, min(100 - bubble.bbox_pct.height_pct, y_pct))
+    return bubble.model_copy(
+        update={
+            "bbox_pct": bubble.bbox_pct.model_copy(update={"y_pct": clamped_y})
+        }
+    )
+
+
+def _avoid_sprite_faces(
+    bubble: BubblePlacement,
+    sprites: list,
+) -> BubblePlacement | None:
+    if not _bubble_overlaps_any_face(bubble, sprites):
+        return bubble
+
+    face_zones = [_sprite_face_zone(sprite) for sprite in sprites]
+    lowest_face_bottom = max(
+        face.y_pct + face.height_pct
+        for face in face_zones
+        if _boxes_overlap(bubble.bbox_pct, face)
+    )
+    highest_face_top = min(
+        face.y_pct
+        for face in face_zones
+        if _boxes_overlap(bubble.bbox_pct, face)
+    )
+    candidates = [
+        _bubble_with_y(bubble, lowest_face_bottom + 4),
+        _bubble_with_y(bubble, highest_face_top - bubble.bbox_pct.height_pct - 4),
+    ]
+    for candidate in candidates:
+        if not _bubble_overlaps_any_face(candidate, sprites):
+            return candidate
+    return None
+
+
+def _panel_by_id(page: StoryboardPage) -> dict[str, StoryboardPanel]:
+    return {panel.panel_id: panel for panel in page.panels}
+
+
+def _sanitize_bubble_geometry(
+    composition: PageComposition,
+    page: StoryboardPage,
+) -> PageComposition:
+    if not composition.bubble_placements:
+        return composition
+
+    panels = _panel_by_id(page)
+    sanitized: dict[str, list[BubblePlacement]] = {}
+    dropped = 0
+    moved = 0
+    for panel_id, bubbles in composition.bubble_placements.items():
+        panel = panels.get(panel_id)
+        if panel is None:
+            dropped += len(bubbles)
+            continue
+        sprites = composition.sprite_layers.get(panel_id, [])
+        kept: list[BubblePlacement] = []
+        for bubble in bubbles:
+            if bubble.line_index >= len(panel.dialogue):
+                dropped += 1
+                continue
+            speaker_id = bubble.speaker_id or panel.dialogue[bubble.line_index].speaker_id
+            speaker_sprite = next(
+                (sprite for sprite in sprites if sprite.character_id == speaker_id),
+                None,
+            )
+            fixed = bubble
+            if speaker_sprite is not None:
+                fixed = fixed.model_copy(
+                    update={
+                        "speaker_id": speaker_id,
+                        "tail_side": _expected_tail_side(fixed, speaker_sprite),
+                    }
+                )
+            avoided = _avoid_sprite_faces(fixed, sprites)
+            if avoided is None:
+                dropped += 1
+                continue
+            if speaker_sprite is not None:
+                avoided = avoided.model_copy(
+                    update={
+                        "tail_side": _expected_tail_side(avoided, speaker_sprite),
+                    }
+                )
+            if avoided.bbox_pct != bubble.bbox_pct or avoided.tail_side != bubble.tail_side:
+                moved += 1
+            kept.append(avoided)
+        if kept:
+            sanitized[panel_id] = kept
+
+    if not dropped and not moved:
+        return composition
+
+    note = composition.composition_notes.strip()
+    changes = []
+    if moved:
+        changes.append(f"{moved} bubble placement(s) moved away from sprite face zones")
+    if dropped:
+        changes.append(f"{dropped} invalid bubble placement(s) dropped")
+    suffix = "; ".join(changes) + "."
+    return composition.model_copy(
+        update={
+            "bubble_placements": sanitized,
             "composition_notes": f"{note} {suffix}".strip(),
         }
     )

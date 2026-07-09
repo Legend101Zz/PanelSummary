@@ -347,12 +347,33 @@ class StoryboardArtifact(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def normalize_page_indexes(cls, data: Any) -> Any:
+    def normalize_page_indexes_and_purposes(cls, data: Any) -> Any:
         if not isinstance(data, dict):
             return data
         pages = data.get("pages")
         if not isinstance(pages, list):
             return data
+
+        purpose_aliases = {
+            "establishing": PanelPurpose.SETUP.value,
+            "establishment": PanelPurpose.SETUP.value,
+            "intro": PanelPurpose.SETUP.value,
+            "introduction": PanelPurpose.SETUP.value,
+            "reaction": PanelPurpose.EMOTIONAL_TURN.value,
+            "reflective": PanelPurpose.EMOTIONAL_TURN.value,
+            "reflection": PanelPurpose.EMOTIONAL_TURN.value,
+            "realization": PanelPurpose.REVEAL.value,
+            "discovery": PanelPurpose.REVEAL.value,
+            "symbolic": PanelPurpose.REVEAL.value,
+            "thesis": PanelPurpose.REVEAL.value,
+            "action": PanelPurpose.TRANSITION.value,
+            "movement": PanelPurpose.TRANSITION.value,
+            "bridge": PanelPurpose.TRANSITION.value,
+            "summary": PanelPurpose.RECAP.value,
+            "cliffhanger": PanelPurpose.TO_BE_CONTINUED.value,
+            "continued": PanelPurpose.TO_BE_CONTINUED.value,
+            "tbc": PanelPurpose.TO_BE_CONTINUED.value,
+        }
 
         normalized_pages: list[Any] = []
         changed = False
@@ -360,6 +381,20 @@ class StoryboardArtifact(BaseModel):
             if isinstance(page, dict) and page.get("page_index") != index:
                 page = {**page, "page_index": index}
                 changed = True
+            if isinstance(page, dict) and isinstance(page.get("panels"), list):
+                normalized_panels: list[Any] = []
+                for panel in page["panels"]:
+                    if not isinstance(panel, dict):
+                        normalized_panels.append(panel)
+                        continue
+                    raw_purpose = str(panel.get("purpose") or "").strip()
+                    normalized_key = raw_purpose.lower().replace("-", "_").replace(" ", "_")
+                    purpose = purpose_aliases.get(normalized_key)
+                    if purpose is not None and purpose != raw_purpose:
+                        panel = {**panel, "purpose": purpose}
+                        changed = True
+                    normalized_panels.append(panel)
+                page = {**page, "panels": normalized_panels}
             normalized_pages.append(page)
         if not changed:
             return data
