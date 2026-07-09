@@ -23,45 +23,6 @@ book `6a0b5a11201a8d03f1d82501` / project `6a0b5a5b201a8d03f1d82503`.
   - Untracked: `docs/analysis/`, June renderer screenshots, `findings.md`,
     `progress.md`, `task_plan.md`
 
-## Commands run
-
-- `sed -n '1,260p' AGENTS.md`
-- `sed -n '1,320p' docs/analysis/SHORTCOMINGS_AND_VISUAL_UPGRADE.md`
-- `sed -n '1,280p' docs/ARCHITECTURE.md`
-- `sed -n '1,1220p' docs/MANGA_BUILD_FLOW_AND_IMAGE_COST_PLAN.md`
-- `git status --short --branch`
-- `git log --oneline -5`
-- `git switch -c visual-upgrade-phase-v`
-- `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
-- `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
-- `uv pip install --python backend/.venv/bin/python pytest`
-- `backend/.venv/bin/python -m pytest backend/tests/test_manga_dsl_v2.py backend/tests/test_manga_pipeline_manga_script_stage_v2.py backend/tests/test_manga_pipeline_quality_repair_stage_v2.py backend/tests/test_llm_client_json_parsing.py -q`
-- `npm exec tsc -- --noEmit`
-- `npm run build`
-- `backend/.venv/bin/python -m pytest backend/tests -q`
-- `./.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001`
-- `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev`
-- `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task1-after-page1-1280-final-warm.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
-- `backend/.venv/bin/python -m pytest backend/tests/test_vector_scene_contract_v2.py backend/tests/test_manga_pipeline_vector_scene_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order -q`
-- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
-- `npm exec tsc -- --noEmit`
-- `backend/.venv/bin/python -m pytest backend/tests/test_manga_dsl_v2.py backend/tests/test_manga_pipeline_manga_script_stage_v2.py backend/tests/test_manga_pipeline_quality_repair_stage_v2.py backend/tests/test_llm_client_json_parsing.py backend/tests/test_vector_scene_contract_v2.py backend/tests/test_manga_pipeline_vector_scene_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order -q`
-- `npm run build`
-- `backend/.venv/bin/python -m pytest backend/tests -q -k 'not test_build_asset_prompt_adds_reusable_asset_constraints'`
-- `cp docs/renderer-analysis/experiments/2026-07-05-task1-after-page1-1280-final-warm.png docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
-- `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
-- `npm exec tsx -- components/MangaReader/manga_page_drama.test.ts`
-- `npm exec tsx -- components/MangaReader/dialogue_tail_geometry.test.ts`
-- `npm exec tsx -- components/MangaReader/speech_bubble_shape.test.ts`
-- `npm exec tsc -- --noEmit`
-- `npm exec tsx -- components/MangaReader/panel_presentation.test.ts`
-- `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
-- `npm exec tsx -- components/MangaReader/vector_scene_rendering.test.ts`
-- `npm run build`
-- `cp docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png docs/renderer-analysis/experiments/2026-07-05-task3-before-page1-1280.png`
-- `NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev`
-- `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-sandbox --window-size=1280,1600 --virtual-time-budget=25000 --screenshot=docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png "http://localhost:3000/books/6a0b5a11201a8d03f1d82501/manga/v2?project=6a0b5a5b201a8d03f1d82503"`
-
 ## Task log
 
 ### Task 1: Kill the text-wall
@@ -69,6 +30,7 @@ book `6a0b5a11201a8d03f1d82501` / project `6a0b5a5b201a8d03f1d82503`.
 Status: complete; committed as `e54c361 fix: kill manga text wall`.
 
 Files changed:
+
 - `frontend/components/MangaReader/panels/DialoguePanel.tsx`
 - `frontend/components/MangaReader/dialogue_lettering.ts`
 - `frontend/components/MangaReader/chrome/SpeechBubble.tsx`
@@ -91,6 +53,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - Dialogue panels no longer demote long dialogue into speaker-prefixed caption
   cards.
 - Dialogue line text is split into 2-3 bubble chunks without ellipsis
@@ -110,6 +73,7 @@ Implemented:
   `MiniMax-M2.5-highspeed`.
 
 Verification:
+
 - Frontend red tests first failed on dense dialogue `text-card` and missing
   `dialogue_lettering` helper.
 - Backend red tests first failed on old budgets, prompt copy, and MiniMax env
@@ -151,6 +115,7 @@ Verification:
 Status: complete; committed as `cc30266 feat: add manga vector scene layer`.
 
 Files changed:
+
 - `backend/app/domain/manga/vector_scene.py`
 - `backend/app/domain/manga/artifacts.py`
 - `backend/app/domain/manga/__init__.py`
@@ -170,6 +135,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - Added optional `StoryboardPanel.vector_scene` with typed primitives for
   background gradients, screentone/hatching, linework, silhouettes, speedline
   bursts, radial focus, vignette, and drawn SFX lettering.
@@ -186,6 +152,7 @@ Implemented:
   `MangaPanelRenderer` in favor of the typed vector scene layer.
 
 Verification:
+
 - Red tests first failed on missing `VectorScene`, missing
   `vector_scene_stage`, missing `VectorSceneLayer`, and the old generation
   stage order.
@@ -199,11 +166,13 @@ Verification:
     -> 416 passed, 1 deselected, 1 pydantic deprecation warning.
 
 Screenshots:
+
 - Before: `docs/renderer-analysis/experiments/2026-07-05-task2-before-page1-1280.png`
   copied from the Task 1 after-state for the same project.
 - After: `docs/renderer-analysis/experiments/2026-07-05-task2-after-page1-1280.png`.
 
 Current visual status:
+
 - The live same-project page now has visible screentone and linework in every
   panel even without regenerated `vector_scene` payloads, because the renderer
   supplies the deterministic fallback for legacy pages.
@@ -215,6 +184,7 @@ Current visual status:
 Status: complete; committed as `24aa9d6 feat: add manga page typography drama`.
 
 Files changed:
+
 - `frontend/app/globals.css`
 - `frontend/components/MangaReader/lettering_fonts.ts`
 - `frontend/components/MangaReader/panel_chrome.ts`
@@ -233,6 +203,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - Added Comic Neue for bubble/body lettering and Bangers for SFX lettering.
 - Added deterministic irregular speech-bubble paths, with stable wobble seeds
   per bubble.
@@ -248,6 +219,7 @@ Implemented:
   z-index.
 
 Verification:
+
 - Red tests first failed on missing `panel_chrome`, `dialogue_geometry`, and
   `lettering_fonts` helpers.
 - Final checks passed:
@@ -261,6 +233,7 @@ Verification:
   - `npm run build`
 
 Screenshots:
+
 - Before: `docs/renderer-analysis/experiments/2026-07-05-task3-before-page1-1280.png`
   copied from Task 2 after-state for the same project.
 - After: `docs/renderer-analysis/experiments/2026-07-05-task3-after-page1-1280.png`.
@@ -270,6 +243,7 @@ Screenshots:
 Status: complete; pending commit.
 
 Files changed:
+
 - `backend/app/domain/manga/artifacts.py`
 - `backend/app/domain/manga/script_review.py`
 - `backend/app/image_generator.py`
@@ -306,6 +280,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - `page_composition_stage` now receives an asset manifest from existing
   project assets, raises its default output budget to 6000 tokens, prompts
   `sprite_layers` against manifest character/expression pairs, and drops
@@ -330,6 +305,7 @@ Implemented:
     stop failed story/DSL reports before image spend.
 
 Live asset/slice work:
+
 - Regenerated the sample project's 8 sprite/reference assets through
   OpenRouter image generation with `background="transparent"`.
 - API transparency was insufficient: all regenerated files were RGB with
@@ -350,6 +326,7 @@ Live asset/slice work:
   the sample project was restored to the successful generated slice backup.
 
 Verification:
+
 - `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_page_composition_stage_v2.py backend/tests/test_manga_asset_image_service_v2.py backend/tests/test_sprite_transparency_v2.py -q`
 - `backend/.venv/bin/python -m pytest backend/tests/test_script_review_stage_v2.py backend/tests/test_quality_assert_stage_v2.py backend/tests/test_manga_generation_service_v2.py::test_build_v2_generation_stages_has_expected_order backend/tests/test_manga_artifacts_v2.py::test_manga_script_scene_defaults_unknown_emotional_tone backend/tests/test_manga_quality_service_v2.py backend/tests/test_panel_quality_gate_stage_v2.py backend/tests/test_manga_pipeline_manga_script_stage_v2.py backend/tests/test_manga_pipeline_storyboard_stage_v2.py -q`
 - `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_stages_v2.py::test_quality_gate_stage_preserves_existing_dsl_errors ... -q`
@@ -365,11 +342,13 @@ Verification:
 - `npm exec tsc -- --noEmit`
 
 Screenshots:
+
 - Before: `docs/renderer-analysis/experiments/2026-07-05-task4-before-page1-1280.png`
   copied from Task 3 after-state for the same project.
 - After: `docs/renderer-analysis/experiments/2026-07-05-task4-after-page1-1280.png`.
 
 Known gaps / blockers:
+
 - Restored successful slice page 11 has 63 visible words. The backend bug
   that let DSL word-budget errors be overwritten is fixed, and a stricter
   rerun failed before visual spend; Task 5 should regenerate again or add a
@@ -389,9 +368,10 @@ screenshots/visual checks. Do not start Task 5 until the Task 4 commit is made.
 
 ### Task 5A: Stable composition authoring lane
 
-Status: code complete; pending commit.
+Status: complete; committed as `bee8def fix: route strict manga json to quality lane`.
 
 Files changed:
+
 - `backend/app/manga_pipeline/strict_json_routing.py`
 - `backend/app/manga_pipeline/stages/page_composition_stage.py`
 - `backend/app/manga_pipeline/stages/quality_repair_stage.py`
@@ -402,6 +382,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - `page_composition_stage` now authors one `PageComposition` per page instead
   of one slice-wide `SliceComposition`, so a malformed geometry response only
   defaults that page.
@@ -415,6 +396,7 @@ Implemented:
   attempts, and 300s timeout.
 
 Root-cause notes:
+
 - Verified from code that the old composition stage was still slice-wide and
   defaulted the entire slice after structured validation failure, matching the
   persisted zero-geometry defect when MiniMax returned truncated/empty JSON.
@@ -422,20 +404,23 @@ Root-cause notes:
   layout for that page instead of breaking the generation job.
 
 Verification:
+
 - Red tests first failed on slice-wide composition, 0.5 temperature / 3 attempt
   assumptions, and repair stages still calling MiniMax.
 - `backend/.venv/bin/python -m pytest backend/tests/test_manga_pipeline_page_composition_stage_v2.py backend/tests/test_manga_pipeline_quality_repair_stage_v2.py backend/tests/test_script_repair_stage_v2.py -q`
   -> 19 passed, 1 pydantic deprecation warning.
 
 Next concrete step:
+
 - Start Task 5B: make bubble/sprite geometry quality rules executable, then
   regenerate the benchmark slice.
 
 ### Task 5B: Bubble and sprite quality rules
 
-Status: code complete; pending commit.
+Status: complete; committed as `96fce1f fix: enforce manga bubble placement rules`.
 
 Files changed:
+
 - `backend/app/domain/manga/render_view.py`
 - `backend/tests/test_render_view_v2.py`
 - `frontend/components/MangaReader/dialogue_lettering.ts`
@@ -448,6 +433,7 @@ Files changed:
 - `NEXT_SESSION.md`
 
 Implemented:
+
 - Dialogue splitting is capped at two bubbles per source dialogue line and
   prefers sentence/clause punctuation boundaries before falling back to spaces.
 - Bubble text disables CSS hyphenation (`hyphens: none`) to avoid mid-word
@@ -461,6 +447,7 @@ Implemented:
   `center bottom` instead of cropped `cover`, preventing fragment/limb crops.
 
 Verification:
+
 - Red tests first failed on comma-boundary splitting, missing face-zone helper,
   reference-sheet `cover` cropping, and backend accepting bad placement geometry.
 - `npm exec tsx -- components/MangaReader/dialogue_lettering.test.ts`
@@ -474,5 +461,143 @@ Verification:
   -> 31 passed, 1 pydantic deprecation warning.
 
 Next concrete step:
+
 - Task 5C/5D: run the strict regeneration against the benchmark project, then
   screenshot all 13 pages and record page-level rubric results.
+
+### Task 5C/5D: Regeneration and all-page verification
+
+Status: blocked by OpenRouter capacity/credits; not complete and not committed.
+
+The earlier local-Mongo blocker is superseded. Running from `backend/` loads
+the Atlas URI in `backend/.env`; the benchmark book/project and all eight
+existing assets are reachable.
+
+Uncommitted implementation:
+
+- Strict beat-sheet, manga-script, storyboard, and repair stages now use the
+  OpenRouter structured lane with 0.25 temperature, five validation attempts,
+  and per-stage 300s timeouts.
+- Page-budget overrides flow through prompts and the executable DSL validator,
+  allowing the benchmark to target 13 pages.
+- `quality_repair_stage` clears its stale pre-repair report after replacing the
+  storyboard.
+- New `storyboard_grounding_repair_stage` deterministically:
+  - removes unknown visual character IDs and dialogue speakers;
+  - anchors required fact IDs without adding visible text;
+  - moves excess narration into non-visible action;
+  - enforces minimum panel counts with silent continuation beats;
+  - cuts dialogue at word boundaries and distributes over-budget dialogue into
+    continuation panels.
+- Deterministic grounding repair now runs after both LLM repair passes, so the
+  second full-storyboard call can no-op when the first repair is sufficient.
+- OpenRouter `json_mode=True` now sends `response_format=json_object` and
+  disables visible reasoning with `reasoning.effort=none`.
+- The default OpenRouter quality model was updated from the unavailable
+  `anthropic/claude-3.5-sonnet` ID to `anthropic/claude-sonnet-5`.
+
+Regeneration evidence:
+
+- Paid GPT-4.1/Qwen runs progressed through both repair loops. Fixing stale
+  reports reduced final errors from 35 to 19; deterministic grounding reduced
+  them to one narration-density error.
+- A zero-cost
+  `nvidia/nemotron-3-super-120b-a12b:free` run completed both LLM repairs and
+  reached final assertion. It had only three mechanical errors:
+  `DSL_PAGE_UNDER_PANEL_BUDGET` and `DSL_PANEL_OVER_DIALOGUE_CHARS`.
+- The deterministic panel/dialogue repair was added after that evidence and
+  its focused suite passes.
+- A later Nemotron run timed out during a 35.8k-token storyboard retry.
+- Paid OpenRouter capacity is exhausted: a Qwen request returned 402 and said
+  only about 1.6k output tokens were affordable.
+- The free Qwen 80B route repeatedly returned upstream 429s; Nemotron is
+  intermittently available but timed out at the required storyboard size.
+
+Latest verification:
+
+- `backend/.venv/bin/python -m pytest backend/tests/test_llm_client_json_parsing.py -q`
+  -> 5 passed.
+- Focused pipeline/grounding/DSL checks -> 34 passed.
+- Focused deterministic panel/dialogue/DSL checks -> 28 passed.
+- Earlier affected routing suite -> 61 passed.
+
+Benchmark database state:
+
+- Before destructive retries, the original project was backed up to
+  `/tmp/bookreel-task5-before-reset.json`.
+- After the final provider failure, that backup was restored: 13 pages, one
+  slice, status `complete`, eight assets preserved.
+- These are the old failing pages, not a Task 5 acceptance result.
+
+Still required:
+
+- Add OpenRouter credit/capacity or wait for a reliable free structured model,
+  then regenerate with `generate_images=False`, `image_mode=none`, target/max
+  pages 13, temperature 0.25, five attempts, and 300s strict-stage timeouts.
+- Inspect all persisted `RenderedPage` objects and require at least 10/13 pages
+  with non-empty validated `sprite_layers` and `bubble_placements`.
+- Start backend on `:8001`; do not touch the unrelated process on `:8000`.
+- Start frontend with `NEXT_PUBLIC_API_URL=http://localhost:8001`.
+- Capture all 13 required Task 5 screenshots and record page-level rubric
+  pass/fail. No Task 5 screenshots were produced from the restored baseline.
+- Run full backend/frontend verification, update this log, then commit Task
+  5C+5D only if the rubric genuinely passes.
+
+2026-07-09 continuation:
+
+- Verified paid OpenRouter access with a tiny structured request:
+  - `anthropic/claude-sonnet-5` returned valid JSON (`47` input tokens,
+    `20` output tokens, estimated `$0.000019`).
+  - After Sonnet credit became constrained, also verified
+    `deepseek/deepseek-v4-pro` returned valid JSON (`25` input tokens,
+    `16` output tokens, estimated `$0.000013`).
+- Ran multiple zero-image regeneration attempts with
+  `generate_images=False`, `image_mode=none`, `max_storyboard_pages=13`,
+  `target_storyboard_pages=13`, 300s stage timeouts, and existing 8 assets.
+  No panel image generation was scheduled; the one successful persistence
+  attempt reported `panel_images: 0` and `assets_after: 8`.
+- Added additional deterministic robustness discovered during live runs:
+  - `StoryboardArtifact` now normalizes common panel-purpose aliases before
+    validation, alongside existing page-index normalization.
+  - `storyboard_grounding_repair_stage` now adds missing TBC panels, clamps
+    pages to configured page budgets, re-anchors facts after a clamp, and
+    reruns narration-density cleanup after TBC insertion.
+  - `page_composition_stage` sanitizes bubble geometry so bubbles avoid sprite
+    face zones, tail sides point back to speaker sprites, unrecoverable bubbles
+    are dropped, and invalid sprite refs stay filtered by asset manifest.
+  - `PageComposition` now normalizes `variant: "narration"` to `speech` and
+    degrades impossible grid/panel-order mismatches to default composition
+    without burning repeated LLM repair calls.
+- Focused tests passed:
+  - `backend/.venv/bin/python -m pytest tests/test_storyboard_grounding_repair_stage_v2.py tests/test_manga_quality_service_v2.py::test_quality_gate_requires_to_be_continued_for_partial_generation tests/test_manga_quality_service_v2.py::test_quality_gate_accepts_to_be_continued_when_needed -q`
+  - `backend/.venv/bin/python -m pytest tests/test_manga_pipeline_page_composition_stage_v2.py tests/test_render_view_v2.py tests/test_storyboard_grounding_repair_stage_v2.py -q`
+  - `backend/.venv/bin/python -m pytest tests/test_manga_artifacts_v2.py tests/test_manga_pipeline_storyboard_stage_v2.py tests/test_storyboard_grounding_repair_stage_v2.py tests/test_dsl_validation_stage_v2.py tests/test_manga_pipeline_page_composition_stage_v2.py tests/test_render_view_v2.py -q`
+- Live regeneration outcomes:
+  - Sonnet run passed final story quality but failed RenderedPage assembly on a
+    bubble overlapping Michael's sprite face zone. The composition sanitizer
+    was added after this.
+  - A later Sonnet run persisted cleanly with zero image spend, but only
+    generated 5 pages because the runner used the wrong option key
+    (`preferred_storyboard_pages` instead of `target_storyboard_pages`), so it
+    was rejected for Task 5 acceptance.
+  - Correct-target Sonnet runs got to final quality/page composition but then
+    exhausted available Sonnet credit; OpenRouter reported only ~3702 output
+    tokens affordable for a 6000-token page-composition request.
+  - DeepSeek paid run got through storyboard but failed before quality repair
+    because OpenRouter reported only ~4258 output tokens affordable for the
+    default 24000-token quality-repair request.
+- Because acceptance did not pass, no screenshots were captured and no commit
+  was made.
+- After failed destructive retries, restored the benchmark DB from
+  `/tmp/bookreel-task5-before-reset.json`: project status `complete`, 1 slice,
+  13 pages, 8 assets, and original coverage restored. These restored pages are
+  the old baseline, not a Task 5 acceptance result.
+
+Next concrete step:
+
+- Add enough OpenRouter credit for at least one full 13-page run with
+  `quality_repair_max_tokens=24000`, or change the pipeline so deterministic
+  repair runs before LLM quality repair and only calls the 24k repair stage
+  when deterministic repair cannot clear the errors. Then rerun zero-image
+  regeneration and only proceed to screenshots if 13 pages persist and DB
+  rubric checks pass.
