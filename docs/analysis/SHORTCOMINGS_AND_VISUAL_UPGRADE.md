@@ -137,11 +137,10 @@ Story-structure note: the kishōtenketsu structure the pipeline already models
   geometry for 5–8 pages including sprite/bubble boxes. Truncation → validation
   failure → silent empty fallback (legacy layout). The most important visual
   stage has the smallest budget.
-- **C3 — MINIMAX_API_KEY unused.** `backend/.env` has the key; `llm_client.py`
-  only knows `openai`/`openrouter`. MiniMax is OpenAI-SDK-compatible
-  (`https://api.minimax.io/v1`, MiniMax-M2.x/M3, highspeed variants) — a cheap
-  high-throughput text lane that could fund *more iterations* (review loops)
-  instead of fewer calls.
+- **C3 — Resolved 2026-07-10: MiniMax text lane is mandatory.** All text,
+  structured-output, repair, and vision LLM calls are hard-routed through the
+  server-owned `MINIMAX_API_KEY`; OpenRouter is image-generation only. This
+  removes OpenRouter text spend, but MiniMax reliability still needs monitoring.
 - **C4 — Image API underuses OpenRouter capabilities.** `image_generator.py`
   predates OpenRouter's unified image API: no `background: transparent`
   (normalized across providers; PNG/WebP), no `openai/gpt-image-1`
@@ -229,12 +228,12 @@ additive to the DSL with legacy fallback.
 
 ### Phase O — Orchestration & providers
 
-1. **MiniMax text lane.** Add `provider="minimax"` to `llm_client.py`
-   (OpenAI-compatible, base_url `https://api.minimax.io/v1`, key from
-   `MINIMAX_API_KEY`); route high-volume drafting stages (script, storyboard,
-   composition drafts) to M2.5-highspeed-class models; keep a quality model for
-   review/repair gates. Raise `page_composition` max_tokens; consider per-page
-   composition calls.
+1. **MiniMax text lane (implemented 2026-07-10).** All text, structured-output,
+   review, repair, and vision stages use the MiniMax-M3 lane; M3's documented
+   disabled-thinking mode preserves the output budget for contract payloads;
+   there is no OpenRouter/OpenAI text quality fallback. Raise
+   `page_composition` max_tokens only after validating MiniMax reliability;
+   consider per-page composition calls.
 2. **Visual QA loop.** After rendering, screenshot pages headlessly (Chrome
    headless worked in this analysis; Playwright is the robust choice) and run
    `VisionLLMClient` critique against a rubric (text fits, bubbles point at

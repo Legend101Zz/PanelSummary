@@ -55,6 +55,17 @@ IMAGE_GENERATION_MODELS = [
 DEFAULT_IMAGE_MODEL = IMAGE_GENERATION_MODELS[0]["id"]  # cheapest by default
 IMAGE_MODELS = [m["id"] for m in IMAGE_GENERATION_MODELS]
 
+
+def _low_cost_image_model(requested_model: str | None) -> str:
+    """Enforce the sole OpenRouter image model allowed by cost policy."""
+    if requested_model and requested_model != DEFAULT_IMAGE_MODEL:
+        logger.warning(
+            "Image model %r was requested; enforcing low-cost default %s",
+            requested_model,
+            DEFAULT_IMAGE_MODEL,
+        )
+    return DEFAULT_IMAGE_MODEL
+
 STYLE_SUFFIXES = {
     "manga":       "manga illustration, black and white ink style, bold outlines, dynamic composition, expressive characters",
     "noir":        "noir comic art, heavy ink shadows, black and white, dramatic chiaroscuro lighting",
@@ -85,6 +96,7 @@ async def generate_image_with_model(
     transient HTTP failures. We retry the SAME model — not a fallback — so
     visual consistency is preserved.
     """
+    image_model = _low_cost_image_model(image_model)
     modalities = ["image", "text"] if "gemini" in image_model else ["image"]
     payload = {
         "model": image_model,
@@ -215,6 +227,7 @@ async def generate_image_with_references(
     - A reference image path doesn't exist -> raise.
     - The model call returns no image after all attempts -> return False.
     """
+    image_model = _low_cost_image_model(image_model)
     if "gemini" not in image_model:
         # Only Gemini image models on OpenRouter accept image_url inputs today.
         # Adding a non-multimodal model here would silently drop the references
@@ -345,7 +358,8 @@ async def generate_panel_image(
 ) -> bool:
     """
     Generate a manga panel image via OpenRouter's image generation API.
-    Uses `image_model` as primary, falls back to cheaper models on failure.
+    Uses exactly one explicitly selected, low-cost model; failures never
+    escalate to a more expensive fallback.
     """
     style_hint = STYLE_SUFFIXES.get(style, STYLE_SUFFIXES["manga"])
     prompt = f"{visual_description}. Style: {style_hint}."[:500]
@@ -353,9 +367,9 @@ async def generate_panel_image(
     # Aspect ratio: portrait for title/action, square for dialogue/scene
     aspect = "2:3" if panel_type in ("title", "action") else "1:1"
 
-    # Build ordered model list: user-chosen first, then rest as fallback
-    primary = image_model or DEFAULT_IMAGE_MODEL
-    ordered = [primary] + [m for m in IMAGE_MODELS if m != primary]
+    # Cost guard: exactly one selected model per image request.
+    primary = _low_cost_image_model(image_model)
+    ordered = [primary]
 
     for model in ordered:
         # Gemini image models use modalities=["image","text"]
@@ -579,7 +593,7 @@ async def generate_images_for_summary(
             failed += 1
             logger.warning(
                 f"Image generation failed for chapter {ci}, page {page_idx} "
-                f"(attempt used all {len(IMAGE_MODELS)} model fallbacks)"
+                "(single low-cost image model was attempted)"
             )
 
     logger.info(

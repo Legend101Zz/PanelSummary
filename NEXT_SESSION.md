@@ -595,9 +595,198 @@ Still required:
 
 Next concrete step:
 
-- Add enough OpenRouter credit for at least one full 13-page run with
-  `quality_repair_max_tokens=24000`, or change the pipeline so deterministic
-  repair runs before LLM quality repair and only calls the 24k repair stage
-  when deterministic repair cannot clear the errors. Then rerun zero-image
-  regeneration and only proceed to screenshots if 13 pages persist and DB
-  rubric checks pass.
+- Add enough OpenRouter credit for at least one full 13-page run, then rerun
+  zero-image regeneration and only proceed to screenshots if 13 pages persist
+  and the DB rubric checks pass.
+
+2026-07-09 continuation (deterministic-first repair and provider capacity):
+
+- Reordered the post-storyboard repair cycle in
+  `backend/app/services/manga/generation_service.py`:
+  `quality gates -> storyboard_grounding_repair -> quality gates ->
+  quality_repair -> storyboard_grounding_repair -> final gates`.
+  `quality_repair_stage` already no-ops for a passing report, so the expensive
+  24k full-storyboard rewrite is now skipped whenever deterministic repair
+  clears the mechanical defects.
+- Provider evidence:
+  - paid OpenRouter `deepseek/deepseek-v4-pro` small structured request passed
+    (`25` input / `6` output tokens; valid `{"ok": true}` JSON);
+  - MiniMax highspeed small structured request returned an empty response and
+    no parsed JSON, so it is not safe for this acceptance run;
+  - a full DeepSeek zero-image attempt stopped at `beat_sheet` before any
+    generation/persistence because OpenRouter rejected its 7000-token request
+    with 402: only about 2453 output tokens were affordable.
+- The failed run restored `/tmp/bookreel-task5-before-reset.json` automatically.
+  Confirmed current DB state: project `complete`, 1 slice, 13 baseline pages,
+  8 preserved assets, and coverage page count 13. These remain the old failing
+  baseline, not acceptance output. No screenshots or rubric were produced.
+- Focused checks passed:
+  - `backend/.venv/bin/python -m pytest tests/test_manga_generation_service_v2.py tests/test_manga_pipeline_quality_repair_stage_v2.py tests/test_storyboard_grounding_repair_stage_v2.py tests/test_dsl_validation_stage_v2.py -q`
+    -> 26 passed, 1 Pydantic deprecation warning.
+  - `backend/.venv/bin/python -m pytest tests -q`
+    -> 457 passed, 1 Pydantic deprecation warning.
+- No Task 5C/5D commit was made because acceptance still has not passed.
+
+Superseded next step (2026-07-10):
+
+- Do not add OpenRouter text credit or route any text stage through OpenRouter.
+  The next Task 5 attempt must use MiniMax text only, with
+  `generate_images=False`, `image_mode=none`, 13-page target, and port 8000
+  untouched. The deterministic-first change still eliminates the 24k repair
+  call when its mechanical cleanup produces a passing report.
+
+2026-07-10 continuation (mandatory MiniMax text policy):
+
+- New hard rule: every text, structured-output, review, repair, and vision LLM
+  call uses the server-owned `MINIMAX_API_KEY` and MiniMax model. OpenRouter is
+  image-generation only. This supersedes the earlier OpenRouter strict-quality
+  lane and the prior OpenRouter-credit blocker for text generation.
+- Implemented enforcement in:
+  - `backend/app/llm_client.py` — non-MiniMax providers/models are hard-routed
+    to `MiniMax-M2.5-highspeed` with `MINIMAX_API_KEY`;
+  - `backend/app/manga_pipeline/strict_json_routing.py` — strict storyboard,
+    repair, and composition JSON use MiniMax too;
+  - `backend/app/services/manga/vision_client_factory.py` and
+    `book_understanding_service.py` — visual review no longer consumes the
+    OpenRouter image key as a text/vision key;
+  - `backend/app/image_generator.py` — only the low-cost
+    `google/gemini-2.5-flash-image` image model is allowed and no request can
+    fall back to a more expensive model;
+  - `frontend/components/MangaV2ProjectPanel.tsx` — MiniMax is the fixed text
+    lane; an OpenRouter key is optional and required only when image mode is
+    enabled.
+- Updated `AGENTS.md`, `CLAUDE.md`, `docs/next-prompt.md`, and the provider
+  analysis notes to reflect the policy. Existing old 13-page baseline remains
+  restored; no regeneration, screenshots, or Task 5 commit occurred here.
+- Focused policy/routing suite: 53 passed; frontend `tsc --noEmit` passed.
+- Broader verification: backend `pytest tests -q` -> 460 passed; frontend
+  `npm run build` passed.
+
+2026-07-10 Task 5C/5D continuation (MiniMax smoke gate):
+
+- Audited the uncommitted tree before attempting regeneration. The hard
+  MiniMax-only text policy remains present in `backend/app/llm_client.py` and
+  `backend/app/manga_pipeline/strict_json_routing.py`; the deterministic-first
+  repair ordering remains present in
+  `backend/app/services/manga/generation_service.py`.
+- Focused policy/repair checks passed from `backend/`:
+  `.venv/bin/python -m pytest tests/test_provider_cost_policy_v2.py
+  tests/test_llm_client_json_parsing.py tests/test_manga_generation_service_v2.py
+  tests/test_manga_pipeline_quality_repair_stage_v2.py
+  tests/test_storyboard_grounding_repair_stage_v2.py
+  tests/test_dsl_validation_stage_v2.py -q` -> `34 passed`, with one existing
+  Pydantic deprecation warning.
+- Per the Task 5 gate, made exactly one tiny MiniMax structured-JSON request:
+  `MiniMax-M2.5-highspeed`, `response_format={"type":"json_object"}`,
+  `max_tokens=32`, temperature `0.0`, and a 60-second request cap. Exact
+  non-secret result: `input_tokens=33`, `output_tokens=32`,
+  `content_repr="'<think>\\nWe have a system instruction: \"Return exactly one JSON object with boolean field \\\'ok\\\' set to true.\" The user just says \"Smoke test\\n</think>\\n'"`,
+  and `parsed=null`. The client also logged `JSON parse FAIL — raw content
+  (0 chars): ''` after stripping the thinking block.
+- This is malformed/empty structured output, so MiniMax is not usable for the
+  acceptance run at this point. Stopped without any OpenRouter text fallback,
+  destructive regeneration, screenshot capture, acceptance claim, or commit.
+  The restored 13-page/8-asset baseline remains only the old baseline.
+
+Next concrete step:
+
+- Wait for a MiniMax structured-JSON response that contains valid contract
+  payload rather than a token-capped thinking block, then begin a new Task 5
+  attempt from the automatic backup/restore guard. Do not use OpenRouter for
+  text and do not accept or screenshot the restored baseline.
+
+2026-07-10 Task 5C/5D continuation (MiniMax-M3 transport repair):
+
+- Consulted the current official MiniMax OpenAI-compatible API documentation.
+  It documents M3 as the 1M-context multimodal model and, unlike M2.x,
+  supports `extra_body={"thinking":{"type":"disabled"}}`; it also documents
+  `reasoning_split=true` for separating reasoning from final content.
+- Changed the default text model from `MiniMax-M2.5-highspeed` to `MiniMax-M3`
+  in the backend config/client and frontend fixed MiniMax selector. Text calls
+  now use `max_completion_tokens` and M3 sends documented disabled-thinking +
+  split-reasoning controls. They no longer assume unsupported
+  `response_format=json_object`; existing prompt, parser, and Pydantic
+  validation remain the strict-JSON enforcement layer.
+- Locked the visual-review factory to M3 because the documented OpenAI-compatible
+  image/video content parts are M3-only. Strict stages preserve an existing
+  MiniMax client unless an explicit MiniMax override is supplied, so stale
+  OpenRouter model options cannot reroute calls.
+- Verification:
+  - focused policy/pipeline suite -> `55 passed`, one existing Pydantic warning;
+  - full backend `pytest tests -q` -> `460 passed`, one existing Pydantic warning;
+  - frontend `npm exec tsc -- --noEmit && npm run build` -> passed.
+- New live MiniMax-M3 smoke request used the server-owned key with a
+  60-second cap, `max_completion_tokens=128`, temperature `0.2`, and the
+  documented M3 thinking controls. It returned valid `{"ok": true}` JSON
+  (`179` input / `6` output tokens). This clears the prior M2.5 smoke gate;
+  no image request was made.
+
+Next concrete step:
+
+- Run the guarded zero-image 13-page benchmark regeneration with M3, preserve
+  all eight assets, and proceed to the persisted-page rubric only if it
+  succeeds.
+
+2026-07-10 Task 5C/5D continuation (first M3 generation attempt):
+
+- A guarded M3 zero-image attempt began successfully and completed source
+  facts, adaptation plan, character-world bible, beat sheet, and manga script.
+  It then held an active MiniMax connection in the schema-bound
+  `script_review_stage` for more than three minutes without returning a report
+  or reaching storyboard/persistence. No image request was made.
+- The temporary runner exited before persistence. The project was immediately
+  restored from `/tmp/bookreel-task5-before-reset.json`; verified state is
+  `complete`, 1 baseline slice, 13 baseline pages, and all 8 original assets.
+  This remains the old baseline and is not an acceptance result.
+- Fixed the timeout gap: `script_review_stage` now uses the same MiniMax-only
+  strict client routing as the other schema-bound stages, so it receives the
+  configured `script_review_timeout_seconds` (default 300 seconds) instead of
+  the generic 30-minute client timeout. Focused script-review/provider/service
+  tests -> `22 passed`, one existing Pydantic warning.
+
+Next concrete step:
+
+- Make one bounded, guarded M3 retry with a 120-second script-review timeout.
+  Restore and stop if it does not reach the 13-page persisted-state rubric.
+
+2026-07-10 Task 5C/5D continuation (M3 DB acceptance achieved):
+
+- Replaced the legacy `MiniMax-M2.5-highspeed` default with `MiniMax-M3` for
+  text and visual review. M3 calls use the documented `reasoning_split=true`
+  plus disabled-thinking control, and no longer assume `response_format` gives
+  M-series models a JSON guarantee. The fixed MiniMax-only policy and
+  server-owned key remain intact.
+- Corrected strict review routing so `script_review_stage` receives its
+  bounded stage timeout. Changed an explicit `target_storyboard_pages` into an
+  executable lower bound as well as the upper budget, so Task 5's 13-page
+  target is truly 13-to-13.
+- Added deterministic page-composition fallback geometry for invalid/missing
+  LLM compositions. It uses only existing asset-manifest expressions and
+  existing dialogue lines to supply valid grids, sprite layers, and bubbles;
+  it creates neither images nor visible prose. Added page-scoped sprite
+  filtering to remove a composition sprite whose character is not visually
+  present in the matching storyboard panel.
+- Final guarded M3 run used `generate_images=False`, `image_mode=none`,
+  `max_storyboard_pages=13`, `target_storyboard_pages=13`. It persisted one
+  new slice with exactly 13 validated `RenderedPage` docs and preserved all 8
+  existing assets. No image generation was scheduled.
+- Page-level DB rubric (page index: sprite layers / bubble placements):
+  `0: 3/3`, `1: 4/4`, `2: 4/3`, `3: 5/3`, `4: 4/1`, `5: 4/1`, `6: 4/3`,
+  `7: 6/2`, `8: 3/3`, `9: 3/3`, `10: 4/2`, `11: 4/2`, `12: 5/1`.
+  All 13 pages pass the required non-empty validated sprite/bubble placement
+  rubric (requirement was at least 10/13).
+- Verification after the final code changes:
+  - focused composition/render/DSL suite -> `49 passed`, one existing
+    Pydantic warning;
+  - full backend `pytest tests -q` -> `462 passed`, one existing Pydantic
+    warning;
+  - frontend `npm exec tsc -- --noEmit && npm run build` -> passed.
+
+Blocker before commit:
+
+- Task 5 still requires 13 visual reader screenshots. Backend is running on
+  `127.0.0.1:8001` and frontend on `127.0.0.1:3001` with the API pointed to
+  port 8001; port 8000 was untouched. The mandatory in-app browser surface is
+  unavailable in this environment (browser list is empty), so screenshots
+  were not captured. Do not commit until an in-app browser session is exposed,
+  all 13 screenshots are saved, and the visual pass is checked.

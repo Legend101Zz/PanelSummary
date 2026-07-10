@@ -86,7 +86,7 @@ async def build_generated_asset_doc(
     model switching. The caller controls persistence ordering so page/slice docs
     are not saved before required image assets succeed.
     """
-    model = asset.model or image_model or DEFAULT_IMAGE_MODEL
+    model = DEFAULT_IMAGE_MODEL
     relative_path = build_asset_relative_path(project_id, asset)
     output_path = str(Path(get_settings().image_dir) / relative_path)
     prompt = build_asset_prompt(asset, style, character_design=character_design)

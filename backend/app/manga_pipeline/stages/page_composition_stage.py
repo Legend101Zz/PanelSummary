@@ -25,11 +25,11 @@ Failure mode
 ------------
 If the LLM produces an invalid composition (e.g. cell count does not
 match panel count), the structured-call helper retries up to
-``llm_validation_attempts``. If it still fails, we fall back to an
-*empty* ``SliceComposition`` and the renderer transparently reverts to
-the legacy ``_layout_for_panel_count`` path. We do NOT block the
-pipeline: a less interesting page is strictly better than a broken
-page.
+``llm_validation_attempts``. If it still fails, we fall back to a
+deterministic valid grid plus existing-asset sprite and dialogue-bubble
+geometry. We do NOT block the pipeline: a less interesting page is
+strictly better than a broken page, but newly generated pages must still
+carry the RenderedPage placement contract.
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ from app.domain.manga import (
     PageComposition,
     PageGridRow,
     SliceComposition,
+    SpriteLayer,
     StoryboardPage,
     StoryboardPanel,
 )
@@ -276,6 +277,132 @@ def _empty_composition_for_page(page: StoryboardPage, reason: str) -> PageCompos
     )
 
 
+def _equal_percentages(count: int) -> list[int]:
+    """Split 100 into ``count`` deterministic positive integer shares."""
+    base, remainder = divmod(100, max(count, 1))
+    return [base + (1 if index < remainder else 0) for index in range(count)]
+
+
+def _fallback_composition_for_page(
+    page: StoryboardPage,
+    *,
+    expression_by_character: dict[str, str],
+    reason: str,
+) -> PageComposition:
+    """Build valid zero-cost geometry when an authored composition is absent.
+
+    The old fallback deliberately returned empty maps and relied on reader
+    heuristics. That is safe for legacy pages but fails the RenderedPage
+    placement contract for newly generated pages. This fallback is entirely
+    deterministic: it uses only existing asset-manifest entries and existing
+    dialogue lines, never schedules image work or authors visible text.
+    """
+    panels = list(page.panels)
+    panel_ids = [panel.panel_id for panel in panels]
+    if len(panels) <= 3:
+        row_counts = [len(panels)]
+    elif len(panels) == 4:
+        row_counts = [2, 2]
+    else:
+        row_counts = [3, len(panels) - 3]
+
+    rows = [
+        PageGridRow(cell_widths_pct=_equal_percentages(count))
+        for count in row_counts
+        if count
+    ]
+    sprite_layers: dict[str, list[SpriteLayer]] = {}
+    bubble_placements: dict[str, list[BubblePlacement]] = {}
+
+    for panel in panels:
+        visual_ids = list(dict.fromkeys(
+            [*panel.character_ids, *(line.speaker_id for line in panel.dialogue)]
+        ))
+        usable_ids = [
+            character_id for character_id in visual_ids
+            if character_id in expression_by_character
+        ][:2]
+        if usable_ids:
+            layers: list[SpriteLayer] = []
+            for index, character_id in enumerate(usable_ids):
+                x_pct = 54 if len(usable_ids) == 1 else 8 + (index * 48)
+                layers.append(
+                    SpriteLayer(
+                        character_id=character_id,
+                        expression=expression_by_character[character_id],
+                        bbox_pct=LayoutBoxPct(
+                            x_pct=x_pct,
+                            y_pct=30,
+                            width_pct=38,
+                            height_pct=65,
+                        ),
+                        z_index=20,
+                    )
+                )
+            sprite_layers[panel.panel_id] = layers
+
+        if panel.dialogue:
+            placements: list[BubblePlacement] = []
+            for line_index, line in enumerate(panel.dialogue[:2]):
+                placements.append(
+                    BubblePlacement(
+                        line_index=line_index,
+                        speaker_id=line.speaker_id,
+                        # Keep bubbles above the sprite face zone. The later
+                        # sanitizer resolves the tail against the speaker.
+                        bbox_pct=LayoutBoxPct(
+                            x_pct=3 if line_index == 0 else 53,
+                            y_pct=3,
+                            width_pct=44,
+                            height_pct=22,
+                        ),
+                        tail_side="bottom",
+                        z_index=40,
+                    )
+                )
+            bubble_placements[panel.panel_id] = placements
+
+    return PageComposition(
+        page_index=page.page_index,
+        gutter_grid=rows,
+        row_heights_pct=_equal_percentages(len(rows)),
+        gutter_px=6,
+        panel_order=panel_ids,
+        page_turn_panel_id=panel_ids[-1] if panel_ids else "",
+        sprite_layers=sprite_layers,
+        bubble_placements=bubble_placements,
+        composition_notes=reason,
+    )
+
+
+def _fill_missing_layer_geometry(
+    composition: PageComposition,
+    *,
+    page: StoryboardPage,
+    expression_by_character: dict[str, str],
+) -> PageComposition:
+    """Keep valid authored layout, filling only its missing scene layers."""
+    fallback = _fallback_composition_for_page(
+        page,
+        expression_by_character=expression_by_character,
+        reason="deterministic layer fallback for missing authored geometry",
+    )
+    if composition.is_default:
+        return fallback
+
+    sprites = dict(composition.sprite_layers)
+    bubbles = dict(composition.bubble_placements)
+    for panel_id, layers in fallback.sprite_layers.items():
+        if not sprites.get(panel_id):
+            sprites[panel_id] = layers
+    for panel_id, placements in fallback.bubble_placements.items():
+        if not bubbles.get(panel_id):
+            bubbles[panel_id] = placements
+    return composition.model_copy(
+        update={"sprite_layers": sprites, "bubble_placements": bubbles}
+    )
+
+
 def _composition_llm_client(context: PipelineContext):
     return strict_json_client_for(
         context,
@@ -304,6 +431,9 @@ def _coerce_to_storyboard_panels(
     }
     fixed: list[PageComposition] = []
     asset_manifest_keys = _asset_manifest_keys(context)
+    expression_by_character: dict[str, str] = {}
+    for character_id, expression in sorted(asset_manifest_keys):
+        expression_by_character.setdefault(character_id, expression)
     for comp in composition.pages:
         expected_ids = page_id_lookup.get(comp.page_index)
         if expected_ids is None:
@@ -311,14 +441,10 @@ def _coerce_to_storyboard_panels(
             continue
         if set(comp.panel_order) != expected_ids:
             fixed.append(
-                PageComposition(
-                    page_index=comp.page_index,
-                    gutter_grid=[],
-                    panel_order=[],
-                    composition_notes=(
-                        "composition replaced with default: panel_order did "
-                        "not match storyboard panel ids"
-                    ),
+                _fallback_composition_for_page(
+                    next(page for page in context.storyboard_pages if page.page_index == comp.page_index),
+                    expression_by_character=expression_by_character,
+                    reason="composition replaced with deterministic fallback: panel_order did not match storyboard panel ids",
                 )
             )
             continue
@@ -330,6 +456,12 @@ def _coerce_to_storyboard_panels(
         storyboard_page = next(
             page for page in context.storyboard_pages if page.page_index == comp.page_index
         )
+        comp = _drop_sprite_layers_outside_storyboard(comp, storyboard_page)
+        comp = _fill_missing_layer_geometry(
+            comp,
+            page=storyboard_page,
+            expression_by_character=expression_by_character,
+        )
         comp = _sanitize_bubble_geometry(comp, storyboard_page)
         fixed.append(comp)
 
@@ -338,11 +470,10 @@ def _coerce_to_storyboard_panels(
     for page in context.storyboard_pages:
         if page.page_index not in seen_indices:
             fixed.append(
-                PageComposition(
-                    page_index=page.page_index,
-                    gutter_grid=[],
-                    panel_order=[],
-                    composition_notes="page missing from LLM output; using default",
+                _fallback_composition_for_page(
+                    page,
+                    expression_by_character=expression_by_character,
+                    reason="page missing from LLM output; using deterministic fallback",
                 )
             )
     fixed.sort(key=lambda c: c.page_index)
@@ -374,6 +505,37 @@ def _drop_sprite_layers_outside_manifest(
 
     note = composition.composition_notes.strip()
     suffix = f"{dropped} sprite refs outside asset_manifest were dropped."
+    return composition.model_copy(
+        update={
+            "sprite_layers": filtered,
+            "composition_notes": f"{note} {suffix}".strip(),
+        }
+    )
+
+
+def _drop_sprite_layers_outside_storyboard(
+    composition: PageComposition,
+    page: StoryboardPage,
+) -> PageComposition:
+    """Drop authored sprites not visually present in their storyboard panel."""
+    if not composition.sprite_layers:
+        return composition
+
+    panels = _panel_by_id(page)
+    filtered: dict[str, list[SpriteLayer]] = {}
+    dropped = 0
+    for panel_id, layers in composition.sprite_layers.items():
+        panel = panels.get(panel_id)
+        allowed = set(panel.character_ids) if panel else set()
+        kept = [layer for layer in layers if layer.character_id in allowed]
+        dropped += len(layers) - len(kept)
+        if kept:
+            filtered[panel_id] = kept
+    if not dropped:
+        return composition
+
+    note = composition.composition_notes.strip()
+    suffix = f"{dropped} sprite layer(s) outside storyboard character_ids were dropped."
     return composition.model_copy(
         update={
             "sprite_layers": filtered,

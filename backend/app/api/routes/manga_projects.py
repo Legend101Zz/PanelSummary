@@ -61,8 +61,10 @@ class NextSourceSliceRequest(BaseModel):
 
 
 class GenerateMangaSliceRequest(BaseModel):
-    api_key: str = Field(min_length=1)
-    provider: str = "openai"
+    # Text generation uses the server-owned MINIMAX_API_KEY. An OpenRouter key
+    # is optional here and is used only when image generation is selected.
+    api_key: str = ""
+    provider: str = "minimax"
     model: str | None = None
     page_window: int = Field(default=10, ge=1, le=100)
     generate_images: bool = False
@@ -75,16 +77,16 @@ class GenerateMangaSliceRequest(BaseModel):
 
 
 class GenerateBookUnderstandingRequest(BaseModel):
-    api_key: str = Field(min_length=1)
-    provider: str = "openai"
+    api_key: str = ""
+    provider: str = "minimax"
     model: str | None = None
     options: dict[str, Any] = Field(default_factory=dict)
     force: bool = False
 
 
 class BuildMangaProjectRequest(BaseModel):
-    api_key: str = Field(min_length=1)
-    provider: str = "openai"
+    api_key: str = ""
+    provider: str = "minimax"
     model: str | None = None
     mode: str = Field(default="next_chunk", pattern="^(next_chunk|full_book)$")
     page_window: int = Field(default=10, ge=1, le=100)

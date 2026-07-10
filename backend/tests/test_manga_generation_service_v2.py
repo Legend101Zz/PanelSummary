@@ -103,14 +103,15 @@ def test_build_v2_generation_stages_has_expected_order():
         # Phase A: continuity gate joins the same QualityReport.
         "continuity_gate_stage",
         "quality_gate_stage",
-        "quality_repair_stage",
+        # Deterministic repair gets the first chance to fix mechanical
+        # grounding and DSL failures before the paid full-storyboard editor.
         "storyboard_grounding_repair_stage",
         # Re-validate after repair so a sloppy fix cannot ship.
         "dsl_validation_stage",
         "continuity_gate_stage",
         "quality_gate_stage",
+        # This LLM stage is a no-op if the deterministic repair cleared QA.
         "quality_repair_stage",
-        # One bounded second repair pass for stubborn source/DSL misses.
         "storyboard_grounding_repair_stage",
         "dsl_validation_stage",
         "continuity_gate_stage",

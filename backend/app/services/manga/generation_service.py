@@ -239,11 +239,16 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         # consumes. Same one-tool, one-issue-stream principle as DSL.
         continuity_gate_stage.run,
         quality_gate_stage.run,
-        quality_repair_stage.run,
+        # First take the zero-cost deterministic pass. It clears mechanical
+        # grounding, text-budget, page-count, and TBC defects before asking a
+        # paid editor to rewrite an entire 13-page storyboard.
         storyboard_grounding_repair_stage.run,
         dsl_validation_stage.run,
         continuity_gate_stage.run,
         quality_gate_stage.run,
+        # This remains in the fixed stage list, but is intentionally
+        # conditional: quality_repair_stage no-ops when the deterministic
+        # pass has produced a passing report.
         quality_repair_stage.run,
         storyboard_grounding_repair_stage.run,
         dsl_validation_stage.run,

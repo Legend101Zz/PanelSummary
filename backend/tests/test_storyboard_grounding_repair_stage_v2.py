@@ -340,6 +340,35 @@ def test_storyboard_grounding_repair_clamps_pages_to_configured_max():
     assert [page.page_index for page in result.storyboard_pages] == [0, 1, 2]
 
 
+def test_storyboard_grounding_repair_expands_to_explicit_target_page_count():
+    context = _context()
+    context.options.update({"max_storyboard_pages": 5, "target_storyboard_pages": 5})
+    context.storyboard_pages = [
+        StoryboardPage(
+            page_id=f"pg{i:03d}",
+            page_index=i,
+            panels=[
+                StoryboardPanel(
+                    panel_id=f"p{i:03d}",
+                    scene_id="s001",
+                    purpose=PanelPurpose.REVEAL,
+                    shot_type=ShotType.WIDE,
+                    composition="Kai studies the growing lock.",
+                    action="The lock changes scale.",
+                    source_fact_ids=["f001", "f002"],
+                    character_ids=["kai"],
+                )
+            ],
+        )
+        for i in range(3)
+    ]
+
+    result = asyncio.run(storyboard_grounding_repair_stage.run(context))
+
+    assert len(result.storyboard_pages) == 5
+    assert [page.page_index for page in result.storyboard_pages] == [0, 1, 2, 3, 4]
+
+
 def test_storyboard_grounding_repair_rechecks_narration_after_tbc():
     context = _context()
     context.options.update({"source_has_more": True, "slice_role": "opening"})

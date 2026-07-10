@@ -36,6 +36,8 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
+from app.llm_client import LLMClient
 from app.services.manga.grounding_validator import validate_grounding
 from app.services.manga.voice_validator import validate_voice
 from app.manga_pipeline.prompt_fragments import (
@@ -179,8 +181,17 @@ async def run(context: PipelineContext) -> PipelineContext:
         temperature=float(context.options.get("script_review_temperature", 0.4)),
         max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
     )
+    # The editor returns a schema-bound report, just like the writer and
+    # repair stages. Route it through the MiniMax-only strict client so an
+    # unresponsive provider cannot consume the generic 30-minute timeout.
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="script_review_model",
+        timeout_option_key="script_review_timeout_seconds",
+        client_factory=LLMClient,
+    )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=ScriptReviewReport,
     )

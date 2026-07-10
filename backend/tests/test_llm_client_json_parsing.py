@@ -41,7 +41,7 @@ def test_minimax_provider_uses_env_key_and_openai_compatible_base_url(monkeypatc
     assert client.provider == "minimax"
     assert client.api_key == "env-minimax-key"
     assert str(client.client.base_url) == "https://api.minimax.io/v1/"
-    assert "highspeed" in client.model.lower()
+    assert client.model == "MiniMax-M3"
 
 
 class _FakeEncoder:
@@ -73,10 +73,10 @@ class _CapturingCompletions:
         return type("Response", (), {"choices": [choice], "usage": None})()
 
 
-def test_openrouter_json_mode_requests_json_object():
+def test_minimax_m3_disables_thinking_and_splits_reasoning_for_json():
     client = object.__new__(LLMClient)
-    client.provider = "openrouter"
-    client.model = "quality/model"
+    client.provider = "minimax"
+    client.model = "MiniMax-M3"
     completions = _CapturingCompletions()
     client.client = type(
         "Client",
@@ -91,8 +91,27 @@ def test_openrouter_json_mode_requests_json_object():
     result = asyncio.run(client.chat("system", "user", json_mode=True))
 
     assert result["parsed"] == {"ok": True}
-    assert completions.kwargs["response_format"] == {"type": "json_object"}
-    assert completions.kwargs["extra_body"]["reasoning"] == {"effort": "none"}
+    assert completions.kwargs["max_completion_tokens"] == 4000
+    assert completions.kwargs["extra_body"] == {
+        "reasoning_split": True,
+        "thinking": {"type": "disabled"},
+    }
+    assert "response_format" not in completions.kwargs
+
+
+def test_non_minimax_text_provider_is_hard_routed_to_minimax(monkeypatch):
+    monkeypatch.setenv("MINIMAX_API_KEY", "env-minimax-key")
+
+    client = LLMClient(
+        api_key="openrouter-key",
+        provider="openrouter",
+        model="anthropic/claude-sonnet-5",
+    )
+
+    assert client.provider == "minimax"
+    assert client.api_key == "env-minimax-key"
+    assert client.model == "MiniMax-M3"
+    assert str(client.client.base_url) == "https://api.minimax.io/v1/"
 
 
 def test_chat_times_out_slow_provider_calls():

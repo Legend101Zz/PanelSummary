@@ -184,11 +184,19 @@ def page_budget_for(
     if max_pages_override is not None:
         max_pages = max(budget.min_pages, int(max_pages_override))
     preferred = budget.preferred
+    min_pages = budget.min_pages
     if preferred_pages_override is not None:
         preferred = int(preferred_pages_override)
     preferred = max(budget.min_pages, min(preferred, max_pages))
+    # A caller-provided target is used by benchmark/full-slice orchestration
+    # as an exact persisted-page requirement, not merely prompt prose. Make
+    # it the executable lower bound too; the configured max remains the upper
+    # bound. Without this, deterministic repair only grows to the role's
+    # default 2-3 pages even when Task 5 asks for 13.
+    if preferred_pages_override is not None:
+        min_pages = preferred
     return PageBudget(
-        min_pages=budget.min_pages,
+        min_pages=min_pages,
         preferred=preferred,
         max_pages=max_pages,
     )

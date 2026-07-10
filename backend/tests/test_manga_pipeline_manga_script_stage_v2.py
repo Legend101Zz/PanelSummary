@@ -169,7 +169,7 @@ def test_manga_script_stage_prompt_includes_manga_text_discipline():
     assert "never show raw ids in reader-facing prose" in combined_prompt
 
 
-def test_manga_script_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+def test_manga_script_uses_minimax_for_strict_json(monkeypatch):
     drafting_client = FakeLLMClient(_valid_script())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -195,17 +195,10 @@ def test_manga_script_routes_strict_json_to_openrouter_quality_lane(monkeypatch)
     result = asyncio.run(manga_script_stage.run(context))
 
     assert result.manga_script is not None
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert quality_client.calls[0]["temperature"] == 0.25
-    assert quality_client.request_timeout_seconds == 300
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
 
 
 def test_manga_script_stage_requires_beat_sheet():

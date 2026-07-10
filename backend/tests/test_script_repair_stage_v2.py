@@ -203,7 +203,7 @@ def test_repair_rewrites_script_and_clears_review():
     assert result.llm_traces[0].stage_name.value == "script_repair"
 
 
-def test_script_repair_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+def test_script_repair_uses_minimax_for_strict_json(monkeypatch):
     drafting_client = FakeLLMClient(_rewritten_script())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -243,14 +243,7 @@ def test_script_repair_routes_strict_json_to_openrouter_quality_lane(monkeypatch
     result = asyncio.run(script_repair_stage.run(context))
 
     assert result.manga_script.scenes[0].dialogue[0].text.startswith("Why does the same key")
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert quality_client.calls[0]["temperature"] == 0.25
-    assert quality_client.request_timeout_seconds == 300
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []

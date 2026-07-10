@@ -1,6 +1,32 @@
-# Next-Session Prompt — "Make it read like a manga" (Phase V + S groundwork)
+# Next-Session Prompt — "Finish Task 5C/5D visual proof"
 
 Paste everything below this line into the next implementation session.
+
+## Current handoff (2026-07-10)
+
+The implementation and DB acceptance work is complete on branch
+`visual-upgrade-phase-v`, but the final visual screenshot gate is still open.
+Do not regenerate the database unless the persisted state is lost: project
+`6a0b5a5b201a8d03f1d82503` currently has 1 slice, exactly 13 validated pages,
+8 preserved assets, and all 13 pages pass the sprite/bubble placement rubric.
+
+The remaining task is to start the app on backend `:8001` (never touch the
+unrelated process on `:8000`), point the frontend at `http://127.0.0.1:8001`,
+and capture all 13 reader screenshots for book
+`6a0b5a11201a8d03f1d82501` / project `6a0b5a5b201a8d03f1d82503`. Save them under
+`docs/renderer-analysis/experiments/` with date-stamped Task 5 names and record
+the page-level visual rubric in `NEXT_SESSION.md`. Only then is Task 5 fully
+closed.
+
+The last attempt could not capture screenshots because the in-app browser
+surface exposed no browser sessions. Retry the required browser workflow when
+that surface is available; do not substitute an unapproved browser tool.
+
+Verification already passing: backend `pytest tests -q` (462 passed), frontend
+`npm exec tsc -- --noEmit && npm run build`, MiniMax-M3 structured smoke, and
+the DB rubric (13/13 pages). The hard policy remains MiniMax-M3/server-owned
+`MINIMAX_API_KEY` for every text/structured/review/repair/vision call;
+OpenRouter is image-generation-only. Do not use OpenRouter text fallback.
 
 ---
 
@@ -24,15 +50,13 @@ zero or near-zero image budget beyond the existing sprite/key-panel caps.
   legacy fallback; existing persisted pages must still render. Update backend
   Pydantic models and `frontend/lib/types.ts` mirrors together.
 - Do not touch the book-understanding stages' outputs (facts/bible/arc are good).
-- Text providers: add `provider="minimax"` to `backend/app/llm_client.py` —
-  OpenAI-compatible, `base_url="https://api.minimax.io/v1"`, key from
-  `MINIMAX_API_KEY` (already present in `backend/.env`). Use a fast MiniMax
-  model (M2.5-highspeed class) for drafting stages; keep the existing
-  provider selection working (`openai`/`openrouter` unchanged).
-- Image provider stays OpenRouter (`backend/app/image_generator.py`). When you
-  get to sprites, adopt the unified image API's `background: "transparent"`
-  and prefer `openai/gpt-image-1` or Gemini image models with reference
-  images; add local `rembg` matting only if API transparency is insufficient.
+- **Hard provider policy:** every text, structured-output, review, repair, and
+  vision LLM call uses the server-owned `MINIMAX_API_KEY` and a MiniMax model.
+  Do not add an OpenRouter/OpenAI quality fallback or ask the browser for a text
+  API key. This applies to every pipeline stage, not only drafting.
+- OpenRouter is image-generation only. Keep
+  `google/gemini-2.5-flash-image` as the sole default low-cost image model and
+  never escalate automatically to a more expensive model.
 - Keep image budgets as-is (`budgeted`: 8 sprites, ≤3 key panels/slice).
 - Every visual change needs before/after screenshots of the same project
   (book `6a0b5a11201a8d03f1d82501`, project `6a0b5a5b201a8d03f1d82503`).

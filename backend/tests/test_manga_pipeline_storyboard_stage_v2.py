@@ -185,7 +185,7 @@ def test_storyboard_stage_calls_llm_and_records_trace():
     assert "exact character_id values" in combined_prompt
 
 
-def test_storyboard_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+def test_storyboard_uses_minimax_for_strict_json(monkeypatch):
     drafting_client = FakeLLMClient(_valid_storyboard())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -211,17 +211,10 @@ def test_storyboard_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
     result = asyncio.run(storyboard_stage.run(context))
 
     assert len(result.storyboard_pages) == 1
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert quality_client.calls[0]["temperature"] == 0.25
-    assert quality_client.request_timeout_seconds == 300
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
 
 
 def test_storyboard_stage_requires_script():

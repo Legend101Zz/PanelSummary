@@ -155,7 +155,7 @@ def test_quality_repair_stage_clears_stale_failed_report_after_replacement():
     assert result.quality_report is None
 
 
-def test_quality_repair_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+def test_quality_repair_uses_minimax_for_strict_json(monkeypatch):
     drafting_client = FakeLLMClient(_repaired_storyboard())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -181,20 +181,13 @@ def test_quality_repair_routes_strict_json_to_openrouter_quality_lane(monkeypatc
     result = asyncio.run(quality_repair_stage.run(context))
 
     assert len(result.storyboard_pages[0].panels) == 2
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert quality_client.calls[0]["temperature"] == 0.25
-    assert quality_client.request_timeout_seconds == 300
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
 
 
-def test_quality_repair_default_quality_lane_uses_current_openrouter_model(monkeypatch):
+def test_quality_repair_default_strict_lane_uses_current_minimax_model(monkeypatch):
     drafting_client = FakeLLMClient(_repaired_storyboard())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -217,13 +210,8 @@ def test_quality_repair_default_quality_lane_uses_current_openrouter_model(monke
 
     asyncio.run(quality_repair_stage.run(context))
 
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "anthropic/claude-sonnet-5",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert constructed == []
 
 
 def test_quality_repair_stage_prompt_tells_model_how_to_fix_text_overflow():
@@ -275,7 +263,7 @@ def test_quality_repair_stage_prompt_honors_page_budget_override():
 
     asyncio.run(quality_repair_stage.run(context))
 
-    assert "pages per slice: between 3 and 13 (target 13)" in client.calls[0]["user_message"]
+    assert "pages per slice: between 13 and 13 (target 13)" in client.calls[0]["user_message"]
 
 
 def test_quality_repair_stage_noops_when_quality_passed():

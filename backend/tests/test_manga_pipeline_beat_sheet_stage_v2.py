@@ -127,7 +127,7 @@ def test_beat_sheet_stage_calls_llm_and_records_trace():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
-def test_beat_sheet_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
+def test_beat_sheet_uses_minimax_for_strict_json(monkeypatch):
     drafting_client = FakeLLMClient(_valid_beat_sheet())
     drafting_client.provider = "minimax"
     drafting_client.model = "MiniMax-M2.5-highspeed"
@@ -153,17 +153,10 @@ def test_beat_sheet_routes_strict_json_to_openrouter_quality_lane(monkeypatch):
     result = asyncio.run(beat_sheet_stage.run(context))
 
     assert result.beat_sheet is not None
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert quality_client.calls[0]["temperature"] == 0.25
-    assert quality_client.request_timeout_seconds == 300
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
 
 
 def test_beat_sheet_stage_requires_adaptation_plan():

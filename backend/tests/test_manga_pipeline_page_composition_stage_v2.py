@@ -200,12 +200,15 @@ def test_page_composition_uses_low_temperature_and_five_validation_attempts():
     )
 
     assert context.slice_composition is not None
-    assert context.slice_composition.pages[0].is_default is True
+    fallback = context.slice_composition.pages[0]
+    assert fallback.is_default is False
+    assert fallback.panel_order == ["p001", "p002"]
+    assert "deterministic fallback" in fallback.composition_notes
     assert len(client.calls) == 5
     assert {call["temperature"] for call in client.calls} == {0.25}
 
 
-def test_page_composition_routes_geometry_to_openrouter_quality_lane(monkeypatch):
+def test_page_composition_uses_minimax_for_strict_json(monkeypatch):
     one_panel_composition = {
         "page_index": 0,
         "gutter_grid": [{"cell_widths_pct": [100]}],
@@ -250,15 +253,9 @@ def test_page_composition_routes_geometry_to_openrouter_quality_lane(monkeypatch
 
     assert result.slice_composition is not None
     assert result.slice_composition.pages[0].is_default is False
-    assert drafting_client.calls == []
-    assert len(quality_client.calls) == 1
-    assert constructed == [
-        {
-            "api_key": "openrouter-key",
-            "provider": "openrouter",
-            "model": "quality-json-model",
-        }
-    ]
+    assert len(drafting_client.calls) == 1
+    assert quality_client.calls == []
+    assert constructed == []
 
 
 def test_valid_composition_lands_on_context():
@@ -341,8 +338,48 @@ def test_sprite_layers_outside_asset_manifest_are_dropped():
     result = asyncio.run(page_composition_stage.run(context))
 
     page0 = result.slice_composition.pages[0]
-    assert "p002" not in page0.sprite_layers
+    assert page0.sprite_layers["p002"][0].expression == "neutral"
     assert "sprite refs outside asset_manifest" in page0.composition_notes
+
+
+def test_sprite_layers_outside_storyboard_character_ids_are_dropped():
+    page0 = _valid_page_composition(0)
+    page0["sprite_layers"] = {
+        "p002": [
+            {
+                "character_id": "ghost",
+                "expression": "neutral",
+                "bbox_pct": {
+                    "x_pct": 20,
+                    "y_pct": 20,
+                    "width_pct": 40,
+                    "height_pct": 70,
+                },
+            }
+        ]
+    }
+    client = _FakeLLMClient([page0, _valid_page_composition(1)])
+    context = _context(llm_client=client)
+    context.options["asset_manifest"] = [
+        {
+            "character_id": "kai",
+            "expression": "neutral",
+            "asset_type": "expression",
+            "aspect": "1:1",
+        },
+        {
+            "character_id": "ghost",
+            "expression": "neutral",
+            "asset_type": "expression",
+            "aspect": "1:1",
+        },
+    ]
+
+    result = asyncio.run(page_composition_stage.run(context))
+
+    page0 = result.slice_composition.pages[0]
+    assert all(layer.character_id == "kai" for layer in page0.sprite_layers["p002"])
+    assert "outside storyboard character_ids" in page0.composition_notes
 
 
 def test_bubble_placement_over_sprite_face_zone_is_sanitized():
@@ -439,7 +476,7 @@ def test_panel_order_with_unknown_id_is_coerced_to_default():
     page0 = _valid_page_composition(0)
     # Mangle page 0: panel_order references a panel that does not exist
     # on this storyboard page. The stage should drop the LLM's
-    # composition for that page (replace with default empty) but keep
+    # composition for that page (replace with deterministic geometry) but keep
     # page 1.
     page0["panel_order"] = ["p001", "p002", "ghost_panel"]
     page0["gutter_grid"] = [{"cell_widths_pct": [40, 30, 30]}]
@@ -448,7 +485,8 @@ def test_panel_order_with_unknown_id_is_coerced_to_default():
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
     page0 = context.slice_composition.pages[0]
-    assert page0.is_default is True
+    assert page0.is_default is False
+    assert page0.panel_order == ["p001", "p002", "p003"]
     assert "did not match storyboard" in page0.composition_notes
 
     # Page 1 is untouched.
@@ -482,11 +520,11 @@ def test_missing_page_in_llm_output_is_backfilled_with_default():
     indices = sorted(c.page_index for c in context.slice_composition.pages)
     assert indices == [0, 1]
     page0_result = context.slice_composition.composition_for(0)
-    assert page0_result.is_default is True
+    assert page0_result.is_default is False
     assert "missing from LLM output" in page0_result.composition_notes
 
 
-def test_invalid_payload_falls_back_to_empty_composition():
+def test_invalid_payload_falls_back_to_deterministic_composition():
     # Cell widths summing to 90% (not 100) trip the validator on every
     # retry; the structured-call helper raises and we catch it.
     bad = {
@@ -502,9 +540,10 @@ def test_invalid_payload_falls_back_to_empty_composition():
     context = asyncio.run(page_composition_stage.run(_context(llm_client=client)))
 
     assert context.slice_composition is not None
-    # We get one default-composition row per storyboard page.
+    # We get one deterministic-composition row per storyboard page.
     assert len(context.slice_composition.pages) == 2
-    assert all(comp.is_default for comp in context.slice_composition.pages)
+    assert all(not comp.is_default for comp in context.slice_composition.pages)
+    assert context.slice_composition.pages[0].panel_order == ["p001", "p002", "p003"]
 
 
 def test_no_storyboard_pages_short_circuits_without_llm_call():

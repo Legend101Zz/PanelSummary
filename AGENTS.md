@@ -103,14 +103,17 @@ Frontend:
 
 ## Providers
 
-- Text LLM: `backend/app/llm_client.py` supports `openai` and `openrouter`.
-  `MINIMAX_API_KEY` exists in `backend/.env` but is NOT wired yet — MiniMax is
-  OpenAI-SDK-compatible (`base_url https://api.minimax.io/v1`, MiniMax-M2.x/M3
-  models incl. highspeed) and is the intended cheap drafting lane.
-- Images: OpenRouter only (`backend/app/image_generator.py`). It predates the
-  unified image API — no `background: "transparent"` support and reference
-  images are gated to Gemini models. `openai/gpt-image-1` (native transparency,
-  up to 16 reference images) is the intended sprite upgrade path.
+**Hard cost rule — no exceptions:** Every text, structured-output, review,
+repair, and vision LLM call must use the server-owned `MINIMAX_API_KEY` through
+`backend/app/llm_client.py` (`MiniMax-M3` by default). Do not use
+OpenRouter or OpenAI for an LLM fallback, quality lane, or live test.
+
+- Images: OpenRouter is allowed only for actual image generation in
+  `backend/app/image_generator.py`. Keep `google/gemini-2.5-flash-image` as the
+  default low-cost model, preserve the existing image budgets, and never fall
+  back automatically to a more expensive image model.
+- `OPENROUTER_API_KEY` is therefore an image-only credential; do not pass it to
+  text generation stages or treat OpenRouter credit as text-generation budget.
 - Image budgets (`none | sprites_only | budgeted | full_panel_art`, default
   budgeted: 8 sprites + <=3 key panels/slice) are product policy. Do not add
   per-panel paid rendering to default paths.
