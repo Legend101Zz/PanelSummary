@@ -201,3 +201,49 @@ def test_repair_rewrites_script_and_clears_review():
     # script's defects, not the ones we just fixed.
     assert result.script_review is None
     assert result.llm_traces[0].stage_name.value == "script_repair"
+
+
+def test_script_repair_uses_minimax_for_strict_json(monkeypatch):
+    drafting_client = FakeLLMClient(_rewritten_script())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_rewritten_script())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(script_repair_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(llm_client=drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["script_repair_model"] = "quality-json-model"
+    context.script_review = ScriptReviewReport(
+        slice_id="slice_001",
+        passed=False,
+        issues=[
+            ScriptIssue(
+                severity="error",
+                code="SCRIPT_VOICE_DRIFT",
+                message="Off-bible.",
+                scene_id="s001",
+                line_index=0,
+                speaker_id="kai",
+            )
+        ],
+    )
+
+    result = asyncio.run(script_repair_stage.run(context))
+
+    assert result.manga_script.scenes[0].dialogue[0].text.startswith("Why does the same key")
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []

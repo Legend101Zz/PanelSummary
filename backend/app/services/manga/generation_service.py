@@ -43,13 +43,16 @@ from app.manga_pipeline.stages import (
     panel_quality_gate_stage,
     panel_rendering_stage,
     quality_gate_stage,
+    quality_assert_stage,
     quality_repair_stage,
     rendered_page_assembly_stage,
     rtl_composition_validation_stage,
     script_repair_stage,
     script_review_stage,
     source_fact_extraction_stage,
+    storyboard_grounding_repair_stage,
     storyboard_stage,
+    vector_scene_stage,
 )
 from app.models import Book, BookChapter, BookSection
 from app.services.manga.arc_slice_planning_service import (
@@ -188,6 +191,24 @@ def build_generation_options(
     return options
 
 
+def _asset_manifest_for_composition(assets: list[MangaAssetDoc]) -> list[dict[str, str]]:
+    manifest: list[dict[str, str]] = []
+    for asset in assets:
+        if not asset.character_id or not asset.asset_type or not asset.image_path:
+            continue
+        metadata = asset.metadata if isinstance(asset.metadata, dict) else {}
+        aspect = str(metadata.get("aspect") or metadata.get("aspect_ratio") or "1:1")
+        manifest.append(
+            {
+                "character_id": asset.character_id,
+                "expression": asset.expression or "neutral",
+                "asset_type": asset.asset_type,
+                "aspect": aspect,
+            }
+        )
+    return manifest
+
+
 def build_v2_generation_stages(*, with_panel_rendering: bool = False):
     """Return the ordered production v2 manga generation stages.
 
@@ -218,19 +239,34 @@ def build_v2_generation_stages(*, with_panel_rendering: bool = False):
         # consumes. Same one-tool, one-issue-stream principle as DSL.
         continuity_gate_stage.run,
         quality_gate_stage.run,
-        quality_repair_stage.run,
+        # First take the zero-cost deterministic pass. It clears mechanical
+        # grounding, text-budget, page-count, and TBC defects before asking a
+        # paid editor to rewrite an entire 13-page storyboard.
+        storyboard_grounding_repair_stage.run,
         dsl_validation_stage.run,
         continuity_gate_stage.run,
         quality_gate_stage.run,
-        # Phase C1: page composition runs AFTER the second quality gate
-        # has settled (so we are composing the *final* storyboard, not a
-        # draft) and BEFORE rendered_page_assembly (which reads the
+        # This remains in the fixed stage list, but is intentionally
+        # conditional: quality_repair_stage no-ops when the deterministic
+        # pass has produced a passing report.
+        quality_repair_stage.run,
+        storyboard_grounding_repair_stage.run,
+        dsl_validation_stage.run,
+        continuity_gate_stage.run,
+        quality_gate_stage.run,
+        quality_assert_stage.run,
+        # Phase C1: page composition runs AFTER bounded repair/check cycles
+        # have settled (so we are composing the *final* storyboard, not a
+        # failed draft) and BEFORE rendered_page_assembly (which reads the
         # composition to fill RenderedPage.composition).
         page_composition_stage.run,
         # Phase C2: RTL flow validator over the composition. Issues land
         # on the same QualityReport so the existing repair tooling and
         # QA dashboard see them without a parallel report shape.
         rtl_composition_validation_stage.run,
+        # Phase V: typed zero-spend scene ink so unpainted panels still
+        # read as manga instead of empty text cards.
+        vector_scene_stage.run,
         character_asset_plan_stage.run,
         # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
         # the renderer + quality gate consume. Sits AFTER
@@ -414,6 +450,10 @@ async def generate_project_slice(
         source_has_more=source_has_more,
         extra_options={**(extra_options or {}), "source_text": source_text},
     )
+    from app.services.manga.character_library_service import list_project_assets
+
+    library_assets = await list_project_assets(str(project.id))
+    options["asset_manifest"] = _asset_manifest_for_composition(library_assets)
     # Phase 4: surface the image API key into the context so the panel
     # rendering stage can pick it up. The stage stays pure (no globals); the
     # orchestrator decides whether to schedule it AND whether to share the

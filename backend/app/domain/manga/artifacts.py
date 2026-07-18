@@ -8,10 +8,12 @@ The renderer should never have to invent the story. That job belongs here.
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.domain.manga.types import MangaAssetSpec, SourceFact
+from app.domain.manga.vector_scene import VectorScene
 
 
 class EmotionalTone(str, Enum):
@@ -228,6 +230,18 @@ class MangaScriptScene(BaseModel):
     narration: list[str] = Field(default_factory=list)
     emotional_tone: EmotionalTone = EmotionalTone.CURIOUS
 
+    @field_validator("emotional_tone", mode="before")
+    @classmethod
+    def normalize_emotional_tone(cls, value: Any) -> Any:
+        if isinstance(value, EmotionalTone):
+            return value
+        if value is None:
+            return EmotionalTone.CURIOUS
+        normalized = str(value).strip().lower()
+        if normalized in {tone.value for tone in EmotionalTone}:
+            return normalized
+        return EmotionalTone.CURIOUS
+
     @model_validator(mode="after")
     def scene_needs_content(self) -> "MangaScriptScene":
         if not self.scene_id.strip():
@@ -276,6 +290,7 @@ class StoryboardPanel(BaseModel):
             " by definition on stage."
         ),
     )
+    vector_scene: VectorScene | None = None
 
     @model_validator(mode="after")
     def panel_needs_readable_content(self) -> "StoryboardPanel":
@@ -329,6 +344,61 @@ class StoryboardArtifact(BaseModel):
     slice_id: str
     pages: list[StoryboardPage] = Field(default_factory=list)
     thumbnail_notes: str = ""
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_page_indexes_and_purposes(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        pages = data.get("pages")
+        if not isinstance(pages, list):
+            return data
+
+        purpose_aliases = {
+            "establishing": PanelPurpose.SETUP.value,
+            "establishment": PanelPurpose.SETUP.value,
+            "intro": PanelPurpose.SETUP.value,
+            "introduction": PanelPurpose.SETUP.value,
+            "reaction": PanelPurpose.EMOTIONAL_TURN.value,
+            "reflective": PanelPurpose.EMOTIONAL_TURN.value,
+            "reflection": PanelPurpose.EMOTIONAL_TURN.value,
+            "realization": PanelPurpose.REVEAL.value,
+            "discovery": PanelPurpose.REVEAL.value,
+            "symbolic": PanelPurpose.REVEAL.value,
+            "thesis": PanelPurpose.REVEAL.value,
+            "action": PanelPurpose.TRANSITION.value,
+            "movement": PanelPurpose.TRANSITION.value,
+            "bridge": PanelPurpose.TRANSITION.value,
+            "summary": PanelPurpose.RECAP.value,
+            "cliffhanger": PanelPurpose.TO_BE_CONTINUED.value,
+            "continued": PanelPurpose.TO_BE_CONTINUED.value,
+            "tbc": PanelPurpose.TO_BE_CONTINUED.value,
+        }
+
+        normalized_pages: list[Any] = []
+        changed = False
+        for index, page in enumerate(pages):
+            if isinstance(page, dict) and page.get("page_index") != index:
+                page = {**page, "page_index": index}
+                changed = True
+            if isinstance(page, dict) and isinstance(page.get("panels"), list):
+                normalized_panels: list[Any] = []
+                for panel in page["panels"]:
+                    if not isinstance(panel, dict):
+                        normalized_panels.append(panel)
+                        continue
+                    raw_purpose = str(panel.get("purpose") or "").strip()
+                    normalized_key = raw_purpose.lower().replace("-", "_").replace(" ", "_")
+                    purpose = purpose_aliases.get(normalized_key)
+                    if purpose is not None and purpose != raw_purpose:
+                        panel = {**panel, "purpose": purpose}
+                        changed = True
+                    normalized_panels.append(panel)
+                page = {**page, "panels": normalized_panels}
+            normalized_pages.append(page)
+        if not changed:
+            return data
+        return {**data, "pages": normalized_pages}
 
     @model_validator(mode="after")
     def storyboard_needs_pages_and_stable_indices(self) -> "StoryboardArtifact":

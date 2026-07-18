@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.domain.manga import CharacterDesign, MangaAssetSpec
 from app.image_generator import DEFAULT_IMAGE_MODEL, generate_image_with_model
 from app.manga_models import MangaAssetDoc
+from app.services.manga.sprite_transparency import ensure_sprite_transparency
 
 ImageGenerator = Callable[..., Awaitable[bool]]
 
@@ -61,8 +62,9 @@ def build_asset_prompt(
     return (
         f"{asset.prompt}\n\n"
         f"Asset type: {asset.asset_type}. Expression/pose: {asset.expression or 'neutral'}.\n"
-        "Manga production asset, reusable character sprite/reference, "
-        "single subject, no scene background, transparent or clean white background.\n"
+        "Manga production asset, reusable sprite/reference asset, "
+        "single subject, no scene background, transparent background with alpha channel, "
+        "no white rectangle, no paper backdrop.\n"
         f"Style key: {style}. Keep silhouette and costume details consistent across future images."
         f"{visual_lock}"
     ).strip()
@@ -84,7 +86,7 @@ async def build_generated_asset_doc(
     model switching. The caller controls persistence ordering so page/slice docs
     are not saved before required image assets succeed.
     """
-    model = asset.model or image_model or DEFAULT_IMAGE_MODEL
+    model = DEFAULT_IMAGE_MODEL
     relative_path = build_asset_relative_path(project_id, asset)
     output_path = str(Path(get_settings().image_dir) / relative_path)
     prompt = build_asset_prompt(asset, style, character_design=character_design)
@@ -95,10 +97,12 @@ async def build_generated_asset_doc(
         output_path=output_path,
         image_model=model,
         aspect_ratio="1:1",
+        background="transparent",
     )
     if not ok:
         raise ValueError(f"image model failed to generate asset {asset.asset_id} with {model}")
 
+    transparency = ensure_sprite_transparency(output_path)
     doc = MangaAssetDoc(
         project_id=project_id,
         character_id=asset.character_id,
@@ -107,7 +111,13 @@ async def build_generated_asset_doc(
         image_path=relative_path,
         prompt=prompt,
         model=model,
-        metadata={"asset_id": asset.asset_id, "generation": "strict_image_model"},
+        metadata={
+            "asset_id": asset.asset_id,
+            "generation": "strict_image_model",
+            "aspect": "1:1",
+            "background": "transparent",
+            "matting": transparency.model_dump(),
+        },
     )
     return doc
 

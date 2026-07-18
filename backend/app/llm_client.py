@@ -1,11 +1,11 @@
 """
 llm_client.py — LLM API Client
 ================================
-Handles communication with OpenAI and OpenRouter APIs.
+Handles text-generation communication through MiniMax.
 
 KEY DESIGN DECISIONS:
 1. User provides their own key — we never store it
-2. OpenRouter compatible (same API format as OpenAI but with 100+ models)
+2. Project policy: all text/structured LLM calls use MiniMax
 3. Automatic JSON parsing with retry on malformed output
 4. Token counting to prevent context overflow
 5. Cost tracking so users can see what they spent
@@ -17,7 +17,7 @@ import logging
 import os
 import re
 import time
-from typing import Optional
+from typing import Any, Optional
 
 import tiktoken
 from openai import AsyncOpenAI, APIError, RateLimitError
@@ -26,16 +26,11 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# ============================================================
-# OPENROUTER MODELS (cheaper alternatives to OpenAI)
-# ============================================================
-OPENROUTER_MODELS = {
-    "cheap": "meta-llama/llama-3.1-8b-instruct:free",     # FREE but slower
-    "balanced": "anthropic/claude-3-haiku",                  # Fast + cheap
-    "quality": "anthropic/claude-3.5-sonnet",               # Best quality
-    "openai_cheap": "gpt-4o-mini",                          # OpenAI cheap
-    "openai_quality": "gpt-4o",                              # OpenAI quality
-}
+TEXT_LLM_PROVIDER = "minimax"
+# M3 is the current MiniMax model that supports both multimodal inputs and
+# explicit thinking control.  Disabling thinking leaves the output budget for
+# the contract payload rather than spending it on an invisible reasoning trace.
+DEFAULT_TEXT_LLM_MODEL = "MiniMax-M3"
 
 DEFAULT_LLM_REQUEST_TIMEOUT_SECONDS = 1800.0
 DEFAULT_LLM_SLOW_WARNING_SECONDS = 300.0
@@ -58,8 +53,7 @@ def _env_float(name: str, default: float) -> float:
 
 class LLMClient:
     """
-    Unified client for OpenAI and OpenRouter.
-    Both use the same API format, just different base URLs and models.
+    Unified text client, hard-routed to MiniMax.
     """
 
     def __init__(
@@ -69,11 +63,25 @@ class LLMClient:
         model: Optional[str] = None,
     ):
         """
-        api_key: User's API key (sk-... for OpenAI, sk-or-v1-... for OpenRouter)
-        provider: "openai" or "openrouter"
-        model: Model name. Defaults to gpt-4o-mini / claude-haiku
+        api_key: Retained for call-site compatibility; text calls use the
+            server-owned ``MINIMAX_API_KEY``.
+        provider: Retained for compatibility; non-MiniMax values are ignored.
+        model: MiniMax model name; non-MiniMax values use the default.
         """
-        self.provider = provider
+        requested_provider = provider.lower().strip()
+        requested_model = (model or "").strip()
+        if requested_provider != TEXT_LLM_PROVIDER:
+            logger.warning(
+                "Text LLM provider %r was requested; enforcing MiniMax per project policy",
+                requested_provider,
+            )
+        if requested_model and not requested_model.lower().startswith("minimax"):
+            logger.warning(
+                "Text model %r was requested; enforcing %s per project policy",
+                requested_model,
+                DEFAULT_TEXT_LLM_MODEL,
+            )
+        self.provider = TEXT_LLM_PROVIDER
         self.api_key = api_key
         settings = get_settings()
         self.request_timeout_seconds = _env_float(
@@ -85,24 +93,20 @@ class LLMClient:
             float(settings.llm_slow_warning_seconds or DEFAULT_LLM_SLOW_WARNING_SECONDS),
         )
 
-        if provider == "openrouter":
-            self.client = AsyncOpenAI(
-                api_key=api_key,
-                base_url="https://openrouter.ai/api/v1",
-                default_headers={
-                    "HTTP-Referer": "https://panelsummary.app",
-                    "X-Title": "PanelSummary",
-                },
-            )
-            self.model = model or "anthropic/claude-3-haiku"
-            # Prompt caching: supported by Anthropic, OpenAI, Gemini, DeepSeek
-            # on OpenRouter. Sticky routing maximizes cache hits automatically.
-            self._supports_cache_control = True
-        else:
-            self.client = AsyncOpenAI(api_key=api_key)
-            self.model = model or "gpt-4o-mini"
-            # OpenAI handles caching automatically (>1024 tokens)
-            self._supports_cache_control = False
+        minimax_key = os.getenv("MINIMAX_API_KEY", "").strip() or settings.minimax_api_key.strip()
+        if not minimax_key:
+            raise ValueError("MINIMAX_API_KEY is required for all text LLM calls")
+        self.api_key = minimax_key
+        self.client = AsyncOpenAI(
+            api_key=self.api_key,
+            base_url="https://api.minimax.io/v1",
+        )
+        self.model = (
+            requested_model
+            if requested_model.lower().startswith("minimax")
+            else DEFAULT_TEXT_LLM_MODEL
+        )
+        self._supports_cache_control = False
 
         # Token counter (for cost estimation)
         try:
@@ -110,7 +114,7 @@ class LLMClient:
         except Exception:
             self.encoder = tiktoken.get_encoding("cl100k_base")
 
-        logger.info(f"LLM client initialized: {provider}/{self.model}")
+        logger.info(f"LLM client initialized: {self.provider}/{self.model}")
 
     def count_tokens(self, text: str) -> int:
         """Count tokens in a string. Used to estimate cost before calling API."""
@@ -125,6 +129,19 @@ class LLMClient:
         input_cost = (input_tokens / 1_000_000) * 0.15
         output_cost = (output_tokens / 1_000_000) * 0.60
         return round(input_cost + output_cost, 6)
+
+    def _minimax_extra_body(self) -> dict[str, Any]:
+        """Return the documented MiniMax reasoning controls for this model.
+
+        ``reasoning_split`` prevents native ``<think>`` tags from contaminating
+        ``message.content``. M3 additionally lets us disable thinking entirely,
+        which is important for schema-constrained pipeline stages. M2.x models
+        do not support disabling thought, but still benefit from split output.
+        """
+        body: dict[str, Any] = {"reasoning_split": True}
+        if self.model.lower() == "minimax-m3":
+            body["thinking"] = {"type": "disabled"}
+        return body
 
     async def chat(
         self,
@@ -171,24 +188,15 @@ class LLMClient:
         input_tokens = self.count_tokens(system_prompt + user_message)
 
         # Build API call kwargs
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "max_tokens": max_tokens,
+            # MiniMax documents ``max_completion_tokens`` as the current
+            # generation-length field; ``max_tokens`` is legacy.
+            "max_completion_tokens": max_tokens,
             "temperature": temperature,
+            "extra_body": self._minimax_extra_body(),
         }
-
-        # JSON mode for OpenAI models that support it
-        if json_mode and self.provider == "openai":
-            kwargs["response_format"] = {"type": "json_object"}
-
-        # For OpenRouter only: disable thinking mode on Qwen3/DeepSeek/o1 etc.
-        # This avoids <think>...</think> blocks in the output and saves tokens.
-        if self.provider == "openrouter":
-            model_lower = (self.model or "").lower()
-            is_thinking = any(x in model_lower for x in ["qwen3", "qwq", "deepseek-r1", "o1", "o3"])
-            if is_thinking:
-                kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
         try:
             logger.info(
@@ -246,7 +254,7 @@ class LLMClient:
             if status == 429:
                 logger.warning(
                     f"Rate limit hit on model '{self.model}'. "
-                    "Switch to a less-loaded model or add credits at openrouter.ai."
+                    "Check MiniMax capacity or retry later."
                 )
             raise
         except asyncio.TimeoutError as e:

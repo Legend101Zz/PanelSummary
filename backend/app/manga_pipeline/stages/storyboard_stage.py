@@ -14,6 +14,8 @@ from app.manga_pipeline.llm_contracts import (
 )
 from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
 from app.manga_pipeline.prompt_fragments import render_protagonist_contract_block
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
+from app.llm_client import LLMClient
 
 SYSTEM_PROMPT = """You are a manga storyboard artist and page-flow director.
 
@@ -50,6 +52,9 @@ Character presence (CRITICAL for the multimodal renderer):
 - Every character_id must exactly match a ``character_id`` from the
   character_world_bible. Do not invent new characters here — if you need
   one, that's a script defect; raise a To Be Continued or restructure.
+- speaker_id and character_ids are schema fields: use exact character_id values
+  from the bible. Use display names only in
+  reader-facing prose such as composition/action/narration.
 - The system will auto-add dialogue speakers to ``character_ids`` because
   speaking implies presence. You do not have to add them yourself, but
   if you do, do not omit any non-speaking characters that are also on stage.
@@ -57,6 +62,17 @@ Character presence (CRITICAL for the multimodal renderer):
 The renderer will consume this storyboard. Do not leave story decisions for the
 renderer to invent.
 """
+
+
+def _positive_int_option(context: PipelineContext, key: str) -> int | None:
+    raw = context.options.get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def _build_user_message(context: PipelineContext) -> str:
@@ -86,7 +102,11 @@ def _build_user_message(context: PipelineContext) -> str:
         "thumbnail guidance and panel-by-panel composition/action/dialogue.\n\n"
         f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
-        f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
+        f"{render_dsl_prompt_fragment(
+            context.arc_entry,
+            max_pages_override=_positive_int_option(context, 'max_storyboard_pages'),
+            preferred_pages_override=_positive_int_option(context, 'target_storyboard_pages'),
+        )}\n"
         f"{build_json_contract_prompt(StoryboardArtifact)}"
     )
 
@@ -103,11 +123,17 @@ async def run(context: PipelineContext) -> PipelineContext:
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
         max_tokens=int(context.options.get("storyboard_max_tokens", 10000)),
-        temperature=float(context.options.get("storyboard_temperature", 0.75)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+        temperature=float(context.options.get("storyboard_temperature", 0.25)),
+        max_validation_attempts=int(context.options.get("storyboard_validation_attempts", 5)),
+    )
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="storyboard_model",
+        timeout_option_key="storyboard_timeout_seconds",
+        client_factory=LLMClient,
     )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=StoryboardArtifact,
     )

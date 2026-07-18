@@ -24,7 +24,7 @@ export type SummaryStyle =
   | "comedy"
   | "academic";
 
-export type LLMProvider = "openai" | "openrouter";
+export type LLMProvider = "openai" | "openrouter" | "minimax";
 
 
 // ============================================================
@@ -309,6 +309,16 @@ export type {
   StoryboardPanelPurpose,
   StoryboardScriptLine,
   StoryboardShotType,
+  VectorScene,
+  VectorSceneBackground,
+  VectorSceneLine,
+  VectorSceneLineKind,
+  VectorSceneRadialFocus,
+  VectorSceneSfx,
+  VectorSceneSilhouette,
+  VectorSceneSpeedlineBurst,
+  VectorSceneTone,
+  VectorSceneTonePattern,
 } from "./manga-render-types";
 
 export interface MangaProjectPagesResponse {

@@ -15,7 +15,7 @@
    vivid color breaks like cover page moments.
    ═══════════════════════════════════════════════════════════════ */
 
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Dela+Gothic+One&family=DotGothic16&family=Boogaloo&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Dela+Gothic+One&family=DotGothic16&family=Comic+Neue:wght@400;700&family=Bangers&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -54,7 +54,8 @@
   --font-display: "Dela Gothic One", sans-serif;
   --font-body:    "Outfit", sans-serif;
   --font-label:   "DotGothic16", monospace;
-  --font-bubble:  "Boogaloo", cursive;
+  --font-bubble:  "Comic Neue", "Comic Sans MS", cursive;
+  --font-sfx:     "Bangers", "Dela Gothic One", Impact, sans-serif;
 
   /* Motion */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);

@@ -127,6 +127,38 @@ def test_beat_sheet_stage_calls_llm_and_records_trace():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
+def test_beat_sheet_uses_minimax_for_strict_json(monkeypatch):
+    drafting_client = FakeLLMClient(_valid_beat_sheet())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_valid_beat_sheet())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(beat_sheet_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["beat_sheet_model"] = "quality-json-model"
+
+    result = asyncio.run(beat_sheet_stage.run(context))
+
+    assert result.beat_sheet is not None
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
+
+
 def test_beat_sheet_stage_requires_adaptation_plan():
     context = _context(FakeLLMClient(_valid_beat_sheet()))
     context.adaptation_plan = None

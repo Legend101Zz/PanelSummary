@@ -21,6 +21,7 @@ from collections.abc import Awaitable, Callable
 from inspect import isawaitable
 from typing import Any
 
+from app.config import get_settings
 from app.manga_models import MangaProjectDoc
 from app.manga_pipeline import (
     BookUnderstandingContext,
@@ -315,13 +316,11 @@ async def generate_book_understanding(
             build_default_vision_client,
         )
 
-        # Text-LLM api_key doubles as the vision api_key today — the
-        # provider key (OpenRouter / OpenAI) covers both endpoints.
-        text_api_key = options.get("api_key") if isinstance(options, dict) else None
-        vision_key = text_api_key or image_api_key
-        if vision_key:
+        # LLM review uses the server-owned MiniMax key. The OpenRouter key is
+        # image-only and must not be repurposed for a text/vision LLM call.
+        if get_settings().minimax_api_key:
             vision_client = build_default_vision_client(
-                api_key=str(vision_key),
+                api_key="",
                 project_options=options,
             )
 

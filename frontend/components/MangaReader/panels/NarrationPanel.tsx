@@ -16,7 +16,6 @@ import {
   type PanelPresentationPlan,
 } from "../panel_presentation";
 import type { MangaPalette } from "../types";
-import { primaryCharacter } from "../derived_visuals";
 
 interface NarrationPanelProps {
   panel: StoryboardPanel;
@@ -32,13 +31,11 @@ export function NarrationPanel({
   effects,
   presentation,
 }: NarrationPanelProps) {
-  const character = primaryCharacter(panel);
   const text = clampVisibleText(
     panel.narration?.trim() || panel.action?.trim() || "",
     presentation.maxVisibleCaptionChars || 180,
   );
   const isTextCard = presentation.variant === "text-card";
-  const showCharacterTag = Boolean(character && !presentation.isVisualDirectionOnly);
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
@@ -49,27 +46,6 @@ export function NarrationPanel({
             background: `radial-gradient(ellipse at center, transparent 40%, ${palette.bg}CC 100%)`,
           }}
         />
-      )}
-
-      {showCharacterTag && (
-        <motion.div
-          className="mb-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
-          transition={{ duration: 1 }}
-        >
-          <span
-            className="text-xs tracking-widest uppercase"
-            style={{
-              color: palette.accent,
-              fontFamily: "var(--font-label, monospace)",
-              fontSize: "0.55rem",
-              lineHeight: 1,
-            }}
-          >
-            {character}
-          </span>
-        </motion.div>
       )}
 
       {text && (

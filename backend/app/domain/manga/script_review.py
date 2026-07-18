@@ -20,7 +20,15 @@ Design rules:
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def _coerce_text(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value)
 
 
 class ScriptIssue(BaseModel):
@@ -38,6 +46,19 @@ class ScriptIssue(BaseModel):
     line_index: int | None = None
     speaker_id: str = ""
     suggestion: str = ""
+
+    @field_validator(
+        "severity",
+        "code",
+        "message",
+        "scene_id",
+        "speaker_id",
+        "suggestion",
+        mode="before",
+    )
+    @classmethod
+    def coerce_text_fields(cls, value: Any) -> str:
+        return _coerce_text(value)
 
     @field_validator("severity")
     @classmethod
@@ -68,6 +89,11 @@ class ScriptReviewReport(BaseModel):
     voice_summary: str = ""
     tension_summary: str = ""
     notes: str = ""
+
+    @field_validator("slice_id", "voice_summary", "tension_summary", "notes", mode="before")
+    @classmethod
+    def coerce_text_fields(cls, value: Any) -> str:
+        return _coerce_text(value)
 
     @field_validator("slice_id")
     @classmethod

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from app.domain.manga import StoryboardArtifact
+from app.llm_client import LLMClient
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.llm_contracts import (
     LLMStageName,
@@ -12,6 +13,8 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.manga_dsl import render_dsl_prompt_fragment
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
 
 SYSTEM_PROMPT = """You are a senior manga editor repairing a storyboard that failed QA.
 
@@ -24,10 +27,28 @@ Common repairs:
 - add a To Be Continued panel when source material continues
 - remove To Be Continued when the slice is standalone/complete
 - reduce page density by distributing panels across pages
-- keep dialogue short and readable
+- keep dialogue short and readable: at most 2 dialogue lines per panel,
+  90 characters per panel, and 60 total words per page
+- repair text overflow by splitting beats into more panels or cutting words
+- convert narration into silent panels, action, or SFX whenever it is doing
+  the art's job; renderer must never truncate source-grounded text
+- repair ``panel_unknown_character`` by using exact bible character_id values
+  in speaker_id/character_ids, re-attributing lines, or moving off-bible
+  mentions into narration/action without marking them visually present
 
 Return a complete replacement storyboard artifact. Do not return patches.
 """
+
+
+def _positive_int_option(context: PipelineContext, key: str) -> int | None:
+    raw = context.options.get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def _build_user_message(context: PipelineContext) -> str:
@@ -53,8 +74,16 @@ def _build_user_message(context: PipelineContext) -> str:
     }
     return (
         "Repair this storyboard so it passes the quality gate. Preserve the "
-        "script's intent and source grounding. Return a full replacement.\n\n"
+        "script's intent and source grounding. For DSL text overflow, split "
+        "beats into more panels or cut words; convert narration into silent "
+        "panels, action, or SFX when possible. The renderer must never truncate "
+        "dialogue or narration. Return a full replacement.\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
+        f"{render_dsl_prompt_fragment(
+            context.arc_entry,
+            max_pages_override=_positive_int_option(context, 'max_storyboard_pages'),
+            preferred_pages_override=_positive_int_option(context, 'target_storyboard_pages'),
+        )}\n"
         f"{build_json_contract_prompt(StoryboardArtifact)}"
     )
 
@@ -74,15 +103,24 @@ async def run(context: PipelineContext) -> PipelineContext:
         stage_name=LLMStageName.QUALITY_REPAIR,
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
-        max_tokens=int(context.options.get("quality_repair_max_tokens", 10000)),
-        temperature=float(context.options.get("quality_repair_temperature", 0.55)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+        max_tokens=int(context.options.get("quality_repair_max_tokens", 24000)),
+        temperature=float(context.options.get("quality_repair_temperature", 0.25)),
+        max_validation_attempts=int(
+            context.options.get("quality_repair_validation_attempts", 5)
+        ),
+    )
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="quality_repair_model",
+        timeout_option_key="quality_repair_timeout_seconds",
+        client_factory=LLMClient,
     )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=StoryboardArtifact,
     )
     context.storyboard_pages = result.artifact.pages
+    context.quality_report = None
     context.record_llm_trace(result.trace)
     return context

@@ -112,11 +112,10 @@ class VisionLLMClient:
         kwargs: dict[str, Any] = {
             "model": self._llm.model,
             "messages": messages,
-            "max_tokens": max_tokens,
+            "max_completion_tokens": max_tokens,
             "temperature": temperature,
+            "extra_body": self._llm._minimax_extra_body(),
         }
-        if json_mode and self._llm.provider == "openai":
-            kwargs["response_format"] = {"type": "json_object"}
 
         text_input_tokens = self._llm.count_tokens(system_prompt + user_message)
         # Defensive over-count for the dashboard \u2014 see module docstring.

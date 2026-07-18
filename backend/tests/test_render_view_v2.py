@@ -46,6 +46,7 @@ def _panel(
     shot: ShotType = ShotType.MEDIUM,
     purpose: PanelPurpose = PanelPurpose.SETUP,
     character_ids: list[str] | None = None,
+    dialogue: list[dict] | None = None,
 ) -> StoryboardPanel:
     return StoryboardPanel(
         panel_id=panel_id,
@@ -55,7 +56,11 @@ def _panel(
         composition="Two-shot, Aiko foregrounded against the lab window.",
         action="Aiko points at the readout.",
         narration="The lab hums.",
-        dialogue=[ScriptLine(speaker_id="aiko", text="It worked.")],
+        dialogue=(
+            [ScriptLine.model_validate(line) for line in dialogue]
+            if dialogue is not None
+            else [ScriptLine(speaker_id="aiko", text="It worked.")]
+        ),
         character_ids=list(character_ids) if character_ids is not None else ["aiko"],
     )
 
@@ -258,7 +263,7 @@ def test_page_composition_accepts_explicit_layout_fields():
                 BubblePlacement(
                     line_index=0,
                     speaker_id="aiko",
-                    bbox_pct=LayoutBoxPct(x_pct=50, y_pct=8, width_pct=42, height_pct=24),
+                    bbox_pct=LayoutBoxPct(x_pct=50, y_pct=4, width_pct=42, height_pct=20),
                     z_index=40,
                 )
             ]
@@ -324,6 +329,91 @@ def test_rendered_page_rejects_bubble_line_index_out_of_range():
         )
     ]
     with pytest.raises(ValueError, match="line_index"):
+        RenderedPage(
+            storyboard_page=page,
+            composition=composition,
+            panel_artifacts={"a": PanelRenderArtifact()},
+        )
+
+
+def test_rendered_page_rejects_bubble_over_sprite_face_zone():
+    page = _page([_panel("a", character_ids=["aiko"], dialogue=[{"speaker_id": "aiko", "text": "Move."}])])
+    composition = _composition(page_index=0, panel_order=["a"])
+    composition.sprite_layers["a"] = [
+        SpriteLayer(
+            character_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=20, y_pct=30, width_pct=40, height_pct=60),
+        )
+    ]
+    composition.bubble_placements["a"] = [
+        BubblePlacement(
+            line_index=0,
+            speaker_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=26, y_pct=34, width_pct=34, height_pct=18),
+            tail_side="bottom",
+        )
+    ]
+
+    with pytest.raises(ValueError, match="overlaps sprite face"):
+        RenderedPage(
+            storyboard_page=page,
+            composition=composition,
+            panel_artifacts={"a": PanelRenderArtifact()},
+        )
+
+
+def test_rendered_page_rejects_bubble_tail_pointing_away_from_speaker():
+    page = _page([_panel("a", character_ids=["aiko"], dialogue=[{"speaker_id": "aiko", "text": "Move."}])])
+    composition = _composition(page_index=0, panel_order=["a"])
+    composition.sprite_layers["a"] = [
+        SpriteLayer(
+            character_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=10, y_pct=48, width_pct=24, height_pct=48),
+        )
+    ]
+    composition.bubble_placements["a"] = [
+        BubblePlacement(
+            line_index=0,
+            speaker_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=52, y_pct=8, width_pct=34, height_pct=20),
+            tail_side="top",
+        )
+    ]
+
+    with pytest.raises(ValueError, match="tail_side"):
+        RenderedPage(
+            storyboard_page=page,
+            composition=composition,
+            panel_artifacts={"a": PanelRenderArtifact()},
+        )
+
+
+def test_rendered_page_rejects_bubble_placements_out_of_reading_order():
+    page = _page([
+        _panel(
+            "a",
+            character_ids=["aiko"],
+            dialogue=[
+                {"speaker_id": "aiko", "text": "First."},
+                {"speaker_id": "aiko", "text": "Second."},
+            ],
+        )
+    ])
+    composition = _composition(page_index=0, panel_order=["a"])
+    composition.bubble_placements["a"] = [
+        BubblePlacement(
+            line_index=1,
+            speaker_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=50, y_pct=8, width_pct=34, height_pct=20),
+        ),
+        BubblePlacement(
+            line_index=0,
+            speaker_id="aiko",
+            bbox_pct=LayoutBoxPct(x_pct=8, y_pct=38, width_pct=34, height_pct=20),
+        ),
+    ]
+
+    with pytest.raises(ValueError, match="reading order"):
         RenderedPage(
             storyboard_page=page,
             composition=composition,

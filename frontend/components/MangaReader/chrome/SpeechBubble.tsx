@@ -37,6 +37,8 @@ export interface SpeechBubbleProps {
   fillColor: string;
   /** Stroke width in SVG user units (the SVG is 100×100). */
   strokeWidth?: number;
+  /** Seed for the hand-drawn outline wobble. Same seed => stable shape. */
+  irregularitySeed?: number;
   /** Optional inline CSS so the parent can absolutely-position the bubble. */
   style?: CSSProperties;
   /** Lettering content. Rendered in real DOM (not foreignObject) so
@@ -53,31 +55,41 @@ export interface SpeechBubbleProps {
  * stroke width up to 4 doesn't clip. The tail is a triangle attached
  * to the chosen side at ``tailOffset`` along that side.
  */
-function buildBubblePath(
+function seedWobble(seed: number, index: number, amount: number): number {
+  if (!seed) return 0;
+  const raw = Math.sin((seed + 1) * (index + 11) * 12.9898) * 43758.5453;
+  return (raw - Math.floor(raw) - 0.5) * amount * 2;
+}
+
+export function buildBubblePath(
   variant: SpeechBubbleVariant,
   tailSide: SpeechBubbleProps["tailSide"],
   tailOffset: number,
+  irregularitySeed = 0,
 ): string {
   const inset = 6;
-  const left = inset;
-  const right = 100 - inset;
-  const top = inset;
-  const bottom = 100 - inset;
-  const r = variant === "shout" ? 4 : variant === "thought" ? 16 : 10;
+  const left = inset + seedWobble(irregularitySeed, 1, 1.6);
+  const right = 100 - inset + seedWobble(irregularitySeed, 2, 1.4);
+  const top = inset + seedWobble(irregularitySeed, 3, 1.4);
+  const bottom = 100 - inset + seedWobble(irregularitySeed, 4, 1.8);
+  const r = variant === "shout" ? 5 : variant === "thought" ? 17 : 11;
+  const rtl = Math.max(variant === "shout" ? 3 : 8, r + seedWobble(irregularitySeed, 5, 2.5));
+  const rtr = Math.max(variant === "shout" ? 3 : 8, r + seedWobble(irregularitySeed, 6, 2.2));
+  const rbr = Math.max(variant === "shout" ? 3 : 8, r + seedWobble(irregularitySeed, 7, 2.5));
+  const rbl = Math.max(variant === "shout" ? 3 : 8, r + seedWobble(irregularitySeed, 8, 2.2));
 
-  // Rounded rectangle body, drawn clockwise from the top-left corner.
-  // Sweep-flag 1 on the corner arcs so fill-rule:nonzero treats the
-  // inside as filled.
+  // Organic rounded rectangle body, drawn clockwise. Cubic/quad curves
+  // let each bubble feel inked by hand while remaining deterministic.
   const body = [
-    `M ${left + r} ${top}`,
-    `L ${right - r} ${top}`,
-    `A ${r} ${r} 0 0 1 ${right} ${top + r}`,
-    `L ${right} ${bottom - r}`,
-    `A ${r} ${r} 0 0 1 ${right - r} ${bottom}`,
-    `L ${left + r} ${bottom}`,
-    `A ${r} ${r} 0 0 1 ${left} ${bottom - r}`,
-    `L ${left} ${top + r}`,
-    `A ${r} ${r} 0 0 1 ${left + r} ${top}`,
+    `M ${left + rtl} ${top}`,
+    `C ${left + 32} ${top + seedWobble(irregularitySeed, 9, 1.4)} ${right - 34} ${top + seedWobble(irregularitySeed, 10, 1.2)} ${right - rtr} ${top}`,
+    `Q ${right + seedWobble(irregularitySeed, 11, 1.5)} ${top + seedWobble(irregularitySeed, 12, 1.5)} ${right} ${top + rtr}`,
+    `L ${right + seedWobble(irregularitySeed, 13, 0.9)} ${bottom - rbr}`,
+    `Q ${right + seedWobble(irregularitySeed, 14, 1.4)} ${bottom + seedWobble(irregularitySeed, 15, 1.4)} ${right - rbr} ${bottom}`,
+    `C ${right - 30} ${bottom + seedWobble(irregularitySeed, 16, 1.3)} ${left + 31} ${bottom + seedWobble(irregularitySeed, 17, 1.4)} ${left + rbl} ${bottom}`,
+    `Q ${left + seedWobble(irregularitySeed, 18, 1.4)} ${bottom + seedWobble(irregularitySeed, 19, 1.4)} ${left} ${bottom - rbl}`,
+    `L ${left + seedWobble(irregularitySeed, 20, 0.9)} ${top + rtl}`,
+    `Q ${left + seedWobble(irregularitySeed, 21, 1.5)} ${top + seedWobble(irregularitySeed, 22, 1.5)} ${left + rtl} ${top}`,
     "Z",
   ].join(" ");
 
@@ -91,16 +103,16 @@ function buildBubblePath(
   if (tailSide === "left" || tailSide === "right") {
     const y = top + (bottom - top) * o;
     if (tailSide === "left") {
-      tail = `M ${left} ${y - tailHalfBase} L ${left - tailLen} ${y} L ${left} ${y + tailHalfBase} Z`;
+      tail = `M ${left + 1} ${y - tailHalfBase} L ${left - tailLen} ${y + seedWobble(irregularitySeed, 23, 1.2)} L ${left + 1} ${y + tailHalfBase} Z`;
     } else {
-      tail = `M ${right} ${y - tailHalfBase} L ${right + tailLen} ${y} L ${right} ${y + tailHalfBase} Z`;
+      tail = `M ${right - 1} ${y - tailHalfBase} L ${right + tailLen} ${y + seedWobble(irregularitySeed, 24, 1.2)} L ${right - 1} ${y + tailHalfBase} Z`;
     }
   } else {
     const x = left + (right - left) * o;
     if (tailSide === "top") {
-      tail = `M ${x - tailHalfBase} ${top} L ${x} ${top - tailLen} L ${x + tailHalfBase} ${top} Z`;
+      tail = `M ${x - tailHalfBase} ${top + 1} L ${x + seedWobble(irregularitySeed, 25, 1.2)} ${top - tailLen} L ${x + tailHalfBase} ${top + 1} Z`;
     } else {
-      tail = `M ${x - tailHalfBase} ${bottom} L ${x} ${bottom + tailLen} L ${x + tailHalfBase} ${bottom} Z`;
+      tail = `M ${x - tailHalfBase} ${bottom - 1} L ${x + seedWobble(irregularitySeed, 26, 1.2)} ${bottom + tailLen} L ${x + tailHalfBase} ${bottom - 1} Z`;
     }
   }
 
@@ -168,11 +180,12 @@ export function SpeechBubble({
   strokeColor,
   fillColor,
   strokeWidth = 2,
+  irregularitySeed = 0,
   style,
   children,
   ariaLabel,
 }: SpeechBubbleProps) {
-  const path = buildBubblePath(variant, tailSide, tailOffset);
+  const path = buildBubblePath(variant, tailSide, tailOffset, irregularitySeed);
 
   return (
     <div
@@ -227,7 +240,7 @@ export function SpeechBubble({
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          padding: "9% 11%",
+          padding: "clamp(8px, 1.2vw, 18px) 21%",
           boxSizing: "border-box",
         }}
       >

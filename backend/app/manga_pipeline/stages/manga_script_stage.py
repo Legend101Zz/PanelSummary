@@ -17,6 +17,8 @@ from app.manga_pipeline.prompt_fragments import (
     render_protagonist_contract_block,
     render_voice_cards_block,
 )
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
+from app.llm_client import LLMClient
 
 SYSTEM_PROMPT = """You are a professional manga scriptwriter adapting dense source material.
 
@@ -27,11 +29,27 @@ narration sparingly. Every scene must map to beat_ids.
 
 Rules:
 - Preserve source fact meaning through dialogue, action, and narration.
-- Keep each dialogue line short enough for a manga bubble.
+- Keep visible text under manga lettering budgets: at most 2 dialogue lines per panel,
+  90 characters per panel, and 60 total words per page.
+- Narration is rare: at most one caption per three panels, 15 words each.
+- When prose explains too much, convert narration into silent panels, action, or SFX.
+- Use exact character_id values only in schema fields such as speaker_id.
+- Use character display names in prose-facing fields; never show raw ids in reader-facing prose.
 - Make character voices distinct using the speech styles in the bible.
 - Avoid exposition dumps. Let action and visual metaphors carry ideas.
 - If the source has more material after this slice, set to_be_continued true.
 """
+
+
+def _positive_int_option(context: PipelineContext, key: str) -> int | None:
+    raw = context.options.get(key)
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def _build_user_message(context: PipelineContext) -> str:
@@ -80,12 +98,24 @@ def _build_user_message(context: PipelineContext) -> str:
 
     return (
         "Write the manga script for this source slice. Produce scenes with "
-        "scene descriptions, action, concise dialogue, and source fact IDs.\n\n"
+        "scene descriptions, action, concise dialogue, and source fact IDs. "
+        "Use exact character_id values only in schema fields such as speaker_id. "
+        "Use character display names for reader-facing prose; never show raw ids "
+        "in reader-facing prose. "
+        "Hard lettering budgets: at most 2 dialogue lines per panel, "
+        "90 characters per panel, 60 total words per page, and narration "
+        "captions at most one per three panels, 15 words each. When a beat "
+        "needs more room, convert narration into silent panels, action, or SFX "
+        "instead of adding text.\n\n"
         f"{continuity_block}"
         f"{render_protagonist_contract_block(plan=context.adaptation_plan, synopsis=context.book_synopsis)}\n\n"
         f"{render_voice_cards_block(context.voice_cards)}\n\n"
         f"INPUT_JSON:\n{json.dumps(payload, ensure_ascii=False)}\n\n"
-        f"{render_dsl_prompt_fragment(context.arc_entry)}\n"
+        f"{render_dsl_prompt_fragment(
+            context.arc_entry,
+            max_pages_override=_positive_int_option(context, 'max_storyboard_pages'),
+            preferred_pages_override=_positive_int_option(context, 'target_storyboard_pages'),
+        )}\n"
         f"{build_json_contract_prompt(MangaScript)}"
     )
 
@@ -102,11 +132,17 @@ async def run(context: PipelineContext) -> PipelineContext:
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
         max_tokens=int(context.options.get("manga_script_max_tokens", 9000)),
-        temperature=float(context.options.get("manga_script_temperature", 0.8)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+        temperature=float(context.options.get("manga_script_temperature", 0.25)),
+        max_validation_attempts=int(context.options.get("manga_script_validation_attempts", 5)),
+    )
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="manga_script_model",
+        timeout_option_key="manga_script_timeout_seconds",
+        client_factory=LLMClient,
     )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=MangaScript,
     )

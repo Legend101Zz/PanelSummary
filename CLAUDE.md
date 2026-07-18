@@ -17,23 +17,29 @@ upload PDF
 
 Legacy summary, living-panel, and reel surfaces are not active product surfaces.
 
-## Renderer Diagnosis
+## Current Diagnosis (2026-07-05)
 
 Read this first:
 
-- `docs/renderer-analysis/findings.md`
+- `docs/analysis/SHORTCOMINGS_AND_VISUAL_UPGRADE.md` — current baseline:
+  shortcoming catalog (A: text density/formatting, B: visual/sprites,
+  C: orchestration/providers), manga-craft benchmarks, phased upgrade plan.
+- `docs/renderer-analysis/findings.md` — 2026-05-23 renderer evidence (history).
 - `docs/renderer-analysis/sample-dsl.json`
-- `docs/renderer-analysis/experiments/README.md`
 
-Verdict: the content/image pipeline is not the blocker. The renderer contract
-and frontend presentation are the blocker.
+Verdict (supersedes the 2026-05-23 "renderer is the blocker" framing): the
+skeleton (contracts, budgets, image modes) is sound, but the rendered page
+still reads as text cards, not manga. Three compounding failures: (1) 2-3x too
+much text and the renderer demotes dialogue to `speaker: text` caption strips,
+(2) the sprite bank rarely reaches the page (reference sheets excluded, white
+backgrounds, compositor never sees the asset manifest), (3) no synthetic/vector
+art layer for unpainted panels. Manga craft targets: <=25 words/panel (ideal
+<=12), ~60 words/page, narration sparse, SFX as drawn lettering.
 
-The stored DSL has useful storyboard intent and page composition. The original
-frontend honored only a narrow layout contract and rendered generated character
-assets as dialogue avatars. The 2026-05-23 renderer pass expanded the contract
-and frontend so explicit panel boxes, row heights, gutters, sprite layers, and
-bubble placements can be honored when present; old stored pages still need
-heuristic sprite/bubble fallback until a layout compositor authors the new fields.
+The 2026-05-23 renderer pass expanded the contract and frontend so explicit
+panel boxes, row heights, gutters, sprite layers, and bubble placements are
+honored when present; old stored pages still need heuristic sprite/bubble
+fallback until pages are regenerated with the new fields.
 
 ## Render Path
 
@@ -87,7 +93,30 @@ Frontend:
   old single `dramatic-dark` behavior.
 - Some stored composition pages already have QA warnings for narrow page-turn
   cells. Do not confuse that upstream defect with the sprite placement bug.
+- `SceneSprites.tsx` returns `null` for `asset_type === "reference_sheet"`, so
+  characters whose only asset is a reference sheet never appear on the page.
+- `page_composition_stage` authors `sprite_layers`/`bubble_placements` but its
+  prompt payload contains no asset manifest — it references expressions blind,
+  and the renderer silently omits missing ones. Its `max_tokens` (4000) is also
+  tight for 5-8 pages of geometry; truncation falls back to legacy layout.
 - For Book-Reel backend debugging, start with `/tmp/panelsummary-celery.log`.
+
+## Providers
+
+**Hard cost rule — no exceptions:** Every text, structured-output, review,
+repair, and vision LLM call must use the server-owned `MINIMAX_API_KEY` through
+`backend/app/llm_client.py` (`MiniMax-M3` by default). Do not use
+OpenRouter or OpenAI for an LLM fallback, quality lane, or live test.
+
+- Images: OpenRouter is allowed only for actual image generation in
+  `backend/app/image_generator.py`. Keep `google/gemini-2.5-flash-image` as the
+  default low-cost model, preserve the existing image budgets, and never fall
+  back automatically to a more expensive image model.
+- `OPENROUTER_API_KEY` is therefore an image-only credential; do not pass it to
+  text generation stages or treat OpenRouter credit as text-generation budget.
+- Image budgets (`none | sprites_only | budgeted | full_panel_art`, default
+  budgeted: 8 sprites + <=3 key panels/slice) are product policy. Do not add
+  per-panel paid rendering to default paths.
 
 ## Implementation Conventions
 
@@ -99,8 +128,11 @@ Frontend:
 
 ## Documentation And Note Tracking
 
-- Use `docs/next-prompt.md` as the paste-ready prompt for the next implementation agent.
-- Use `NEXT_SESSION.md` as the living implementation log and handoff. Update it while work is happening, not only at the end.
+- Use `docs/next-prompt.md` as the paste-ready prompt for the next implementation agent
+  (recreated 2026-07-05 for the visual-upgrade phase).
+- Use `NEXT_SESSION.md` as the living implementation log and handoff. It was deleted
+  during a past cleanup — the next implementation session should recreate it. Update it
+  while work is happening, not only at the end.
 - After each meaningful phase, record in `NEXT_SESSION.md`: files changed, screenshots captured, commands/tests run, current blockers, open risks, and the next concrete step.
 - Keep `/docs` synchronized with implementation reality. If renderer behavior, DSL fields, or architecture changes, update the relevant docs in the same session.
 - Treat `docs/renderer-analysis/findings.md` as the evidence baseline. Amend it only when new evidence changes the diagnosis; use `NEXT_SESSION.md` for running progress notes.

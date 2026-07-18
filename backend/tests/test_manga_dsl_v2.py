@@ -123,15 +123,17 @@ def test_every_arc_role_has_a_dialogue_budget():
     for role in ArcRole:
         assert role in DIALOGUE_BUDGETS_BY_ARC_ROLE
         budget = dialogue_budget_for(role)
-        assert budget.max_lines_per_panel >= 1
-        assert budget.max_chars_per_panel >= 30
-        assert budget.max_lines_per_page >= budget.max_lines_per_panel
+        assert budget.max_lines_per_panel == 2
+        assert budget.max_chars_per_panel == 90
+        assert budget.max_words_per_page == 60
+        assert budget.max_narration_words_per_caption == 15
+        assert budget.max_narration_captions_per_three_panels == 1
 
 
 def test_unknown_arc_role_falls_back_to_safe_defaults():
     assert panel_budget_for(None).max_panels == 6
     assert page_budget_for(None).max_pages == 6
-    assert dialogue_budget_for(None).max_lines_per_panel == 3
+    assert dialogue_budget_for(None).max_lines_per_panel == 2
 
 
 # --- prompt fragment ---------------------------------------------------------
@@ -146,6 +148,10 @@ def test_render_dsl_prompt_fragment_includes_role_and_must_cover():
     # Hard caps must be visible to the LLM, not just to the validator.
     ten_panels = panel_budget_for(ArcRole.TEN)
     assert str(ten_panels.max_panels) in fragment
+    assert "at most 2 lines" in fragment
+    assert "90 characters" in fragment
+    assert "60 total words per page" in fragment
+    assert "narration captions" in fragment
     assert "top-right to bottom-left" in fragment
 
 
@@ -186,11 +192,11 @@ def test_dsl_flags_too_few_panels_per_page():
 
 def test_dsl_flags_dialogue_overflow_per_panel():
     pages = _baseline_pages_for_ki()
-    # Replace the first panel with one that has 4 dialogue lines (Ki cap = 3).
+    # Replace the first panel with one that has 3 dialogue lines (cap = 2).
     pages[0].panels[0] = _panel(
         "p0a",
         shot=ShotType.WIDE,
-        dialogue_lines=4,
+        dialogue_lines=3,
         dialogue_chars=30,
         fact_ids=["f001"],
     )
@@ -205,12 +211,45 @@ def test_dsl_flags_dialogue_char_overflow_per_panel():
         "p0a",
         shot=ShotType.WIDE,
         dialogue_lines=1,
-        dialogue_chars=170,  # over the 160 cap
+        dialogue_chars=91,  # over the 90 cap
         fact_ids=["f001"],
     )
     issues = validate_storyboard_against_dsl(pages=pages, arc_entry=_arc_entry(ArcRole.KI))
     codes = [issue.code for issue in issues]
     assert "DSL_PANEL_OVER_DIALOGUE_CHARS" in codes
+
+
+def test_dsl_flags_total_page_words_overflow_as_error():
+    pages = _baseline_pages_for_ki()
+    overlong_text = " ".join(f"word{i}" for i in range(16))
+    pages[0] = _page(
+        0,
+        [
+            _panel("p0a", shot=ShotType.WIDE, dialogue_lines=1, fact_ids=["f001"]),
+            _panel("p0b", shot=ShotType.MEDIUM, dialogue_lines=1),
+            _panel("p0c", shot=ShotType.CLOSE_UP, dialogue_lines=1),
+            _panel("p0d", shot=ShotType.INSERT, dialogue_lines=1),
+        ],
+    )
+    for panel in pages[0].panels:
+        panel.dialogue[0].text = overlong_text
+
+    issues = validate_storyboard_against_dsl(pages=pages, arc_entry=_arc_entry(ArcRole.KI))
+
+    error_codes = [issue.code for issue in issues if issue.severity == "error"]
+    assert "DSL_PAGE_OVER_TEXT_WORDS" in error_codes
+
+
+def test_dsl_flags_narration_overflow_as_errors():
+    pages = _baseline_pages_for_ki()
+    pages[0].panels[0].narration = " ".join(f"word{i}" for i in range(16))
+    pages[0].panels[1].narration = "Quiet caption."
+
+    issues = validate_storyboard_against_dsl(pages=pages, arc_entry=_arc_entry(ArcRole.KI))
+
+    error_codes = [issue.code for issue in issues if issue.severity == "error"]
+    assert "DSL_PANEL_OVER_NARRATION_WORDS" in error_codes
+    assert "DSL_PAGE_OVER_NARRATION_CAPTIONS" in error_codes
 
 
 def test_dsl_flags_missing_anchor_facts():

@@ -26,6 +26,7 @@
 
 import { motion } from "motion/react";
 import type { CSSProperties } from "react";
+import { MANGA_SFX_FONT } from "../lettering_fonts";
 
 const IMPACT_TOKENS = new Set([
   "boom",
@@ -123,7 +124,7 @@ interface SfxLayerProps {
 
 const SHARED_TEXT_STYLE: CSSProperties = {
   position: "absolute",
-  fontFamily: "var(--font-display, 'Bangers', 'Impact', sans-serif)",
+  fontFamily: MANGA_SFX_FONT,
   letterSpacing: "0.02em",
   textTransform: "uppercase",
   pointerEvents: "none",

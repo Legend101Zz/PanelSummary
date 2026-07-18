@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import type { SpriteLayer, StoryboardPanel } from "@/lib/types";
+import type { LayoutBoxPct, SpriteLayer, StoryboardPanel } from "@/lib/types";
 import {
   findAssetForCharacter,
   type MangaCharacterAsset,
@@ -33,6 +33,11 @@ function clampPct(value: number, fallback: number): number {
   return Math.max(0, Math.min(100, value));
 }
 
+function clampRange(value: number, min: number, max: number): number {
+  if (typeof value !== "number" || Number.isNaN(value)) return min;
+  return Math.max(min, Math.min(max, value));
+}
+
 function uniqueCharacterIds(panel: StoryboardPanel): string[] {
   const seen = new Set<string>();
   const ids: string[] = [];
@@ -50,13 +55,50 @@ function expressionFor(panel: StoryboardPanel, characterId: string): string {
   return line?.intent || "neutral";
 }
 
+function targetSpriteHeightForShot(panel: StoryboardPanel): number {
+  switch (panel.shot_type) {
+    case "extreme_wide":
+      return 44;
+    case "wide":
+      return 58;
+    case "medium":
+      return 72;
+    case "close_up":
+      return 88;
+    case "extreme_close_up":
+      return 96;
+    case "insert":
+      return 54;
+    case "symbolic":
+      return 62;
+  }
+}
+
+export function groundedSpriteBoxForPanel(
+  panel: StoryboardPanel,
+  box: LayoutBoxPct,
+): LayoutBoxPct {
+  const targetHeight = targetSpriteHeightForShot(panel);
+  const originalHeight = clampRange(box.height_pct, 24, 96);
+  const height = clampRange(Math.max(originalHeight, targetHeight), 28, 96);
+  const scale = height / originalHeight;
+  const width = clampRange(box.width_pct * scale, 18, 88);
+  const centerX = box.x_pct + box.width_pct / 2;
+  return {
+    x_pct: clampRange(centerX - width / 2, 0, 100 - width),
+    y_pct: 100 - height,
+    width_pct: width,
+    height_pct: height,
+  };
+}
+
 function synthesizeSpriteLayers(panel: StoryboardPanel): SpriteLayer[] {
   const ids = uniqueCharacterIds(panel).slice(0, 5);
   if (!ids.length) return [];
 
   const count = ids.length;
   const width = count === 1 ? 54 : count === 2 ? 42 : count === 3 ? 32 : 26;
-  const height = panel.shot_type.includes("close_up") ? 74 : 68;
+  const height = targetSpriteHeightForShot(panel);
   const usable = 88 - width;
   const step = count <= 1 ? 0 : usable / (count - 1);
 
@@ -65,7 +107,7 @@ function synthesizeSpriteLayers(panel: StoryboardPanel): SpriteLayer[] {
     expression: expressionFor(panel, characterId),
     bbox_pct: {
       x_pct: count === 1 ? 23 : 6 + step * index,
-      y_pct: panel.shot_type === "extreme_wide" ? 34 : 26 + (index % 2) * 5,
+      y_pct: 100 - height,
       width_pct: width,
       height_pct: height,
     },
@@ -75,8 +117,8 @@ function synthesizeSpriteLayers(panel: StoryboardPanel): SpriteLayer[] {
   }));
 }
 
-function layerStyle(layer: SpriteLayer): CSSProperties {
-  const box = layer.bbox_pct;
+function layerStyle(panel: StoryboardPanel, layer: SpriteLayer): CSSProperties {
+  const box = groundedSpriteBoxForPanel(panel, layer.bbox_pct);
   return {
     position: "absolute",
     left: `${clampPct(box.x_pct, 0)}%`,
@@ -88,6 +130,24 @@ function layerStyle(layer: SpriteLayer): CSSProperties {
     transform: layer.flip_x ? "scaleX(-1)" : undefined,
     transformOrigin: "center bottom",
     pointerEvents: "none",
+  };
+}
+
+export function assetCropFrameStyle(asset: MangaCharacterAsset | null): CSSProperties {
+  const isReferenceSheet = asset?.asset_type === "reference_sheet";
+  return {
+    width: "100%",
+    height: "100%",
+    marginLeft: "auto",
+    marginRight: "auto",
+  };
+}
+
+export function assetImageObjectStyle(asset: MangaCharacterAsset | null): CSSProperties {
+  return {
+    objectFit: "contain",
+    objectPosition: "center bottom",
+    filter: "drop-shadow(0 10px 0 rgba(0,0,0,0.28))",
   };
 }
 
@@ -142,23 +202,15 @@ export function SceneSprites({
         if (!asset?.image_url && presentation.missingSpriteFallback === "omit") {
           return null;
         }
-        if (asset?.asset_type === "reference_sheet") {
-          return null;
-        }
-        const isReferenceSheet = asset?.asset_type === "reference_sheet";
         return (
           <div
             key={`${layer.character_id}-${layer.expression ?? "neutral"}-${index}`}
-            style={layerStyle(layer)}
+            style={layerStyle(panel, layer)}
           >
             {asset?.image_url ? (
               <div
                 className="h-full overflow-hidden"
-                style={{
-                  width: isReferenceSheet ? "36%" : "100%",
-                  marginLeft: "auto",
-                  marginRight: "auto",
-                }}
+                style={assetCropFrameStyle(asset)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -167,11 +219,7 @@ export function SceneSprites({
                   className="h-full w-full"
                   loading="lazy"
                   draggable={false}
-                  style={{
-                    objectFit: isReferenceSheet ? "cover" : "contain",
-                    objectPosition: isReferenceSheet ? "62% bottom" : "center bottom",
-                    filter: "drop-shadow(0 10px 0 rgba(0,0,0,0.28))",
-                  }}
+                  style={assetImageObjectStyle(asset)}
                 />
               </div>
             ) : (

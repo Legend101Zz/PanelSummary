@@ -54,13 +54,16 @@ class Settings(BaseSettings):
         return f"{base}/images"
 
     # --- LLM Defaults ---
-    default_model: str = "qwen/qwen3.5-397b-a17b"  # Default OpenRouter model (user-specified)
+    default_model: str = "MiniMax-M3"
     max_tokens_per_chapter: int = 4000   # Cap to control costs
     llm_request_timeout_seconds: float = 1800.0  # Hard wall-clock cap per text LLM call
     llm_slow_warning_seconds: float = 300.0      # Log slow provider calls for diagnosis
 
     # --- OpenRouter (server-side key for model list proxy only) ---
     openrouter_api_key: str = ""
+
+    # --- MiniMax (server-side drafting lane) ---
+    minimax_api_key: str = ""
 
     # --- Large PDF budget ---
     max_pages_per_job: int = 100   # Warn user beyond this; ~65k tokens

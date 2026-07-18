@@ -178,6 +178,43 @@ def test_storyboard_stage_calls_llm_and_records_trace():
     assert result.llm_traces[0].stage_name.value == "storyboard"
     assert "manga_script" in client.calls[0]["user_message"]
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
+    combined_prompt = (
+        client.calls[0]["system_prompt"] + "\n" + client.calls[0]["user_message"]
+    )
+    assert "speaker_id and character_ids are schema fields" in combined_prompt
+    assert "exact character_id values" in combined_prompt
+
+
+def test_storyboard_uses_minimax_for_strict_json(monkeypatch):
+    drafting_client = FakeLLMClient(_valid_storyboard())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_valid_storyboard())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(storyboard_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["storyboard_model"] = "quality-json-model"
+
+    result = asyncio.run(storyboard_stage.run(context))
+
+    assert len(result.storyboard_pages) == 1
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
 
 
 def test_storyboard_stage_requires_script():
@@ -188,11 +225,12 @@ def test_storyboard_stage_requires_script():
         asyncio.run(storyboard_stage.run(context))
 
 
-def test_storyboard_stage_rejects_non_contiguous_pages():
+def test_storyboard_stage_normalizes_non_contiguous_page_indexes():
     invalid = _valid_storyboard()
     invalid["pages"][0]["page_index"] = 2
     context = _context(FakeLLMClient(invalid))
     context.options["llm_validation_attempts"] = 1
 
-    with pytest.raises(Exception, match="storyboard"):
-        asyncio.run(storyboard_stage.run(context))
+    result = asyncio.run(storyboard_stage.run(context))
+
+    assert [page.page_index for page in result.storyboard_pages] == [0]

@@ -50,6 +50,7 @@ import type {
 const DEFAULT_MODEL_BY_PROVIDER: Record<LLMProvider, string> = {
   openai: "gpt-4.1-mini",
   openrouter: "google/gemini-2.5-flash",
+  minimax: "MiniMax-M3",
 };
 
 const IMAGE_MODE_LABELS: Record<MangaImageMode, { title: string; detail: string }> = {
@@ -339,11 +340,15 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   const [error, setError] = useState<string | null>(null);
   const [activeStatus, setActiveStatus] = useState<{ phase: string | null; message: string; progress: number } | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [apiOpen, setApiOpen] = useState(!apiKey?.trim());
+  const [apiOpen, setApiOpen] = useState(false);
 
   const [apiKeyDraft, setApiKeyDraft] = useState(apiKey ?? "");
-  const [providerDraft, setProviderDraft] = useState<LLMProvider>(provider);
-  const [modelDraft, setModelDraft] = useState(model ?? DEFAULT_MODEL_BY_PROVIDER[provider]);
+  const [providerDraft, setProviderDraft] = useState<LLMProvider>("minimax");
+  const [modelDraft, setModelDraft] = useState(
+    model?.toLowerCase().startsWith("minimax")
+      ? model
+      : DEFAULT_MODEL_BY_PROVIDER.minimax,
+  );
   const [buildMode, setBuildMode] = useState<MangaBuildMode>("next_chunk");
   const [pageWindow, setPageWindow] = useState(10);
   const [imageMode, setImageMode] = useState<MangaImageMode>("budgeted");
@@ -479,15 +484,10 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
 
   const saveGenerationSettings = () => {
     const key = apiKeyDraft.trim();
-    if (!key) {
-      setError("Add an API key to create manga.");
-      keyInputRef.current?.focus();
-      return;
-    }
-    setApiKey(key, providerDraft, modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft]);
+    setApiKey(key, "minimax", modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER.minimax);
     setApiOpen(false);
     setError(null);
-    setMessage("API key ready for this session.");
+    setMessage("MiniMax text lane is ready. An OpenRouter key is only needed for image mode.");
   };
 
   const handleProviderChange = (nextProvider: LLMProvider) => {
@@ -518,14 +518,14 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
   };
 
   const handleGenerate = async () => {
-    const key = apiKeyDraft.trim() || apiKey?.trim();
-    if (!key) {
+    const key = apiKeyDraft.trim() || apiKey?.trim() || "";
+    if (generateImages && !key) {
       setApiOpen(true);
-      setError("Add an API key to create manga.");
+      setError("Add an OpenRouter key only when generating images.");
       keyInputRef.current?.focus();
       return;
     }
-    setApiKey(key, providerDraft, modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft]);
+    setApiKey(key, "minimax", modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER.minimax);
     setBusy(true);
     setError(null);
     setActiveStatus({ phase: "build_prepare", message: "Preparing manga workspace...", progress: 1 });
@@ -533,8 +533,8 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
       const project = await ensureProject();
       const queued = await startMangaProjectBuild(project.id, {
         apiKey: key,
-        provider: providerDraft,
-        model: modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER[providerDraft],
+        provider: "minimax",
+        model: modelDraft.trim() || DEFAULT_MODEL_BY_PROVIDER.minimax,
         mode: buildMode,
         pageWindow,
         generateImages,
@@ -629,7 +629,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           Create manga from this book
         </h2>
         <p className="mt-1 text-sm" style={{ color: "var(--text-2)", lineHeight: 1.5 }}>
-          Add your key, choose models, then generate the next readable chunk or the full book.
+          Text generation uses the server-owned MiniMax lane. Add OpenRouter only when you deliberately enable image generation.
         </p>
       </div>
 
@@ -643,9 +643,9 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
           <span className="flex items-center gap-2">
             <KeyRound size={15} style={{ color: hasApiKey ? "var(--teal)" : "var(--amber)" }} />
             <span>
-              <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>API key and text model</span>
+              <span className="font-display block" style={{ color: "var(--text-1)", fontSize: "0.9rem" }}>MiniMax text lane</span>
               <span style={{ color: hasApiKey ? "var(--teal)" : "var(--text-2)", fontSize: "0.74rem" }}>
-                {hasApiKey ? "Key is ready for this browser session." : "Required before generation starts."}
+                {hasApiKey ? "OpenRouter image key is ready for this browser session." : "Server MiniMax key is used for all text generation."}
               </span>
             </span>
           </span>
@@ -654,8 +654,8 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
 
         {apiOpen && (
           <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-2">
-              {(["openai", "openrouter"] as LLMProvider[]).map(item => (
+            <div className="grid grid-cols-1 gap-2">
+              {(["minimax"] as LLMProvider[]).map(item => (
                 <button
                   key={item}
                   type="button"
@@ -667,21 +667,19 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
                   }}
                 >
                   <span className="font-display block capitalize" style={{ color: "var(--text-1)", fontSize: "0.82rem" }}>{item}</span>
-                  <span className="block" style={{ color: "var(--text-3)", fontSize: "0.68rem" }}>
-                    {item === "openai" ? "Direct OpenAI models" : "Search OpenRouter models"}
-                  </span>
+                  <span className="block" style={{ color: "var(--text-3)", fontSize: "0.68rem" }}>Required server-owned text lane</span>
                 </button>
               ))}
             </div>
 
             <label className="flex flex-col gap-1">
-              <span className="text-label">API key</span>
+              <span className="text-label">OpenRouter image key (optional unless image mode is on)</span>
               <input
                 ref={keyInputRef}
                 type="password"
                 value={apiKeyDraft}
                 onChange={event => setApiKeyDraft(event.target.value)}
-                placeholder={providerDraft === "openrouter" ? "sk-or-v1-..." : "sk-..."}
+                placeholder="sk-or-v1-... (image generation only)"
                 className="px-3 py-2.5 border bg-transparent font-label"
                 style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
               />
@@ -689,7 +687,14 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
 
             <label className="flex flex-col gap-1">
               <span className="text-label">Text model</span>
-              {providerDraft === "openrouter" ? (
+              {providerDraft === "minimax" ? (
+                <input
+                  value={modelDraft}
+                  onChange={event => setModelDraft(event.target.value)}
+                  className="px-3 py-2.5 border bg-transparent font-label"
+                  style={{ borderColor: "var(--border)", color: "var(--text-1)", fontSize: "11px" }}
+                />
+              ) : providerDraft === "openrouter" ? (
                 <ModelSelector apiKey={openRouterKey} value={modelDraft} onChange={setModelDraft} />
               ) : (
                 <OpenAIModelPicker value={modelDraft} onChange={setModelDraft} />
@@ -714,7 +719,7 @@ export function MangaV2ProjectPanel({ book }: { book: Book }) {
               </button>
             </div>
             <p style={{ color: "var(--text-3)", fontSize: "0.72rem", lineHeight: 1.45 }}>
-              Your key stays in memory for this session. It is not stored in localStorage or saved to the project.
+              The MiniMax key stays on the server. An optional OpenRouter key stays in this browser session and is sent only for image generation.
             </p>
           </div>
         )}

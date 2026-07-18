@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 
 from app.domain.manga import MangaScript
+from app.llm_client import LLMClient
 from app.manga_pipeline.context import PipelineContext
 from app.manga_pipeline.llm_contracts import (
     LLMStageName,
@@ -23,6 +24,7 @@ from app.manga_pipeline.llm_contracts import (
     build_json_contract_prompt,
     run_structured_llm_stage,
 )
+from app.manga_pipeline.strict_json_routing import strict_json_client_for
 
 
 SYSTEM_PROMPT = """You are a senior manga writer rewriting a script your editor has flagged.
@@ -45,6 +47,8 @@ Discipline:
   on stage in at least one scene that advances their arc role beat.
 - Keep dialogue short and bubble-friendly.
 - Do not introduce new characters not in the bible.
+- Use exact character_id values only in schema fields such as speaker_id.
+- Use display names only in reader-facing prose; never show raw ids in text the reader sees.
 - Return a COMPLETE replacement MangaScript artifact. No patches.
 """
 
@@ -119,11 +123,19 @@ async def run(context: PipelineContext) -> PipelineContext:
         system_prompt=SYSTEM_PROMPT,
         user_message=_build_user_message(context),
         max_tokens=int(context.options.get("script_repair_max_tokens", 9000)),
-        temperature=float(context.options.get("script_repair_temperature", 0.7)),
-        max_validation_attempts=int(context.options.get("llm_validation_attempts", 3)),
+        temperature=float(context.options.get("script_repair_temperature", 0.25)),
+        max_validation_attempts=int(
+            context.options.get("script_repair_validation_attempts", 5)
+        ),
+    )
+    llm_client = strict_json_client_for(
+        context,
+        model_option_key="script_repair_model",
+        timeout_option_key="script_repair_timeout_seconds",
+        client_factory=LLMClient,
     )
     result = await run_structured_llm_stage(
-        client=context.llm_client,
+        client=llm_client,
         request=request,
         output_type=MangaScript,
     )

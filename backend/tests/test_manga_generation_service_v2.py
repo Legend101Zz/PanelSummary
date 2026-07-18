@@ -103,16 +103,26 @@ def test_build_v2_generation_stages_has_expected_order():
         # Phase A: continuity gate joins the same QualityReport.
         "continuity_gate_stage",
         "quality_gate_stage",
-        "quality_repair_stage",
+        # Deterministic repair gets the first chance to fix mechanical
+        # grounding and DSL failures before the paid full-storyboard editor.
+        "storyboard_grounding_repair_stage",
         # Re-validate after repair so a sloppy fix cannot ship.
         "dsl_validation_stage",
         "continuity_gate_stage",
         "quality_gate_stage",
+        # This LLM stage is a no-op if the deterministic repair cleared QA.
+        "quality_repair_stage",
+        "storyboard_grounding_repair_stage",
+        "dsl_validation_stage",
+        "continuity_gate_stage",
+        "quality_gate_stage",
+        "quality_assert_stage",
         # Phase C1: page composition runs once the storyboard is final, so
         # the LLM is composing the *settled* pages rather than a draft.
         "page_composition_stage",
         # Phase C2: RTL flow validator catches page-turn / TBC misplacements.
         "rtl_composition_validation_stage",
+        "vector_scene_stage",
         "character_asset_plan_stage",
         # Phase 4.2 (post-4.5c): assemble the typed RenderedPage surface
         # the renderer + quality gate consume. The legacy

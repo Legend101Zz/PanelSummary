@@ -24,6 +24,7 @@ Design rules for this module:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from app.domain.manga import (
     ArcRole,
@@ -76,16 +77,19 @@ class PageBudget:
 
 @dataclass(frozen=True)
 class DialogueBudget:
-    """Per-panel dialogue character cap and per-page dialogue line cap.
+    """Visible text caps for a generated manga page.
 
-    The 180-character cap on a single line is already enforced by ``ScriptLine``
-    itself; this module enforces the AGGREGATE limits so a panel cannot stuff
-    five short lines that together drown the art.
+    The 180-character cap on a single script line is still enforced by
+    ``ScriptLine`` itself. These storyboard caps are tighter because renderer
+    panels must never solve overflow by clipping source-grounded text.
     """
 
     max_lines_per_panel: int
     max_chars_per_panel: int
     max_lines_per_page: int
+    max_words_per_page: int
+    max_narration_words_per_caption: int
+    max_narration_captions_per_three_panels: int
 
 
 # Single source of truth for arc-role budgets. Adding a new arc role means
@@ -110,7 +114,14 @@ PAGE_BUDGETS_BY_ARC_ROLE: dict[ArcRole, PageBudget] = {
 # so a future "TEN slices allow shorter dialogue for stronger reveals" tweak
 # is a one-line change without touching the validator.
 DIALOGUE_BUDGETS_BY_ARC_ROLE: dict[ArcRole, DialogueBudget] = {
-    role: DialogueBudget(max_lines_per_panel=3, max_chars_per_panel=160, max_lines_per_page=10)
+    role: DialogueBudget(
+        max_lines_per_panel=2,
+        max_chars_per_panel=90,
+        max_lines_per_page=8,
+        max_words_per_page=60,
+        max_narration_words_per_caption=15,
+        max_narration_captions_per_three_panels=1,
+    )
     for role in ArcRole
 }
 
@@ -138,7 +149,14 @@ def _default_page_budget() -> PageBudget:
 
 
 def _default_dialogue_budget() -> DialogueBudget:
-    return DialogueBudget(max_lines_per_panel=3, max_chars_per_panel=160, max_lines_per_page=10)
+    return DialogueBudget(
+        max_lines_per_panel=2,
+        max_chars_per_panel=90,
+        max_lines_per_page=8,
+        max_words_per_page=60,
+        max_narration_words_per_caption=15,
+        max_narration_captions_per_three_panels=1,
+    )
 
 
 def panel_budget_for(arc_role: ArcRole | None) -> PanelBudget:
@@ -148,11 +166,40 @@ def panel_budget_for(arc_role: ArcRole | None) -> PanelBudget:
     return PANEL_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_panel_budget())
 
 
-def page_budget_for(arc_role: ArcRole | None) -> PageBudget:
+def page_budget_for(
+    arc_role: ArcRole | None,
+    *,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
+) -> PageBudget:
     """Return the page budget for an arc role (with safe fallback)."""
     if arc_role is None:
-        return _default_page_budget()
-    return PAGE_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_page_budget())
+        budget = _default_page_budget()
+    else:
+        budget = PAGE_BUDGETS_BY_ARC_ROLE.get(arc_role, _default_page_budget())
+    if max_pages_override is None and preferred_pages_override is None:
+        return budget
+
+    max_pages = budget.max_pages
+    if max_pages_override is not None:
+        max_pages = max(budget.min_pages, int(max_pages_override))
+    preferred = budget.preferred
+    min_pages = budget.min_pages
+    if preferred_pages_override is not None:
+        preferred = int(preferred_pages_override)
+    preferred = max(budget.min_pages, min(preferred, max_pages))
+    # A caller-provided target is used by benchmark/full-slice orchestration
+    # as an exact persisted-page requirement, not merely prompt prose. Make
+    # it the executable lower bound too; the configured max remains the upper
+    # bound. Without this, deterministic repair only grows to the role's
+    # default 2-3 pages even when Task 5 asks for 13.
+    if preferred_pages_override is not None:
+        min_pages = preferred
+    return PageBudget(
+        min_pages=min_pages,
+        preferred=preferred,
+        max_pages=max_pages,
+    )
 
 
 def dialogue_budget_for(arc_role: ArcRole | None) -> DialogueBudget:
@@ -165,7 +212,12 @@ def dialogue_budget_for(arc_role: ArcRole | None) -> DialogueBudget:
 # --- Prompt fragment builder --------------------------------------------------
 
 
-def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
+def render_dsl_prompt_fragment(
+    arc_entry: ArcSliceEntry | None,
+    *,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
+) -> str:
     """Render the DSL constraints as a prompt fragment.
 
     The downstream stage prompts append this fragment so the LLM sees the
@@ -175,7 +227,11 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
     """
     arc_role = arc_entry.role if arc_entry else None
     panels = panel_budget_for(arc_role)
-    pages = page_budget_for(arc_role)
+    pages = page_budget_for(
+        arc_role,
+        max_pages_override=max_pages_override,
+        preferred_pages_override=preferred_pages_override,
+    )
     dialogue = dialogue_budget_for(arc_role)
     role_label = arc_role.value.upper() if arc_role else "GENERIC"
     headline = arc_entry.headline_beat if arc_entry else "(no arc-level headline beat provided)"
@@ -199,8 +255,14 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
         f"- panels per page: between {panels.min_panels} and {panels.max_panels} "
         f"(target {panels.preferred})\n"
         f"- dialogue per panel: at most {dialogue.max_lines_per_panel} lines "
-        f"and {dialogue.max_chars_per_panel} characters total\n"
+        f"and {dialogue.max_chars_per_panel} characters total "
+        f"(at most {dialogue.max_lines_per_panel} dialogue lines per panel; "
+        f"{dialogue.max_chars_per_panel} characters per panel)\n"
         f"- dialogue per page: at most {dialogue.max_lines_per_page} lines\n"
+        f"- visible text per page: {dialogue.max_words_per_page} total words per page "
+        "across dialogue plus narration\n"
+        "- narration captions: at most 1 caption per 3 panels; "
+        f"{dialogue.max_narration_words_per_caption} words each\n"
         f"- shot variety across the slice: at least "
         f"{MIN_DISTINCT_SHOT_TYPES_PER_SLICE} distinct shot types\n"
         f"{render_shot_variety_prompt_fragment()}\n"
@@ -220,6 +282,12 @@ def render_dsl_prompt_fragment(arc_entry: ArcSliceEntry | None) -> str:
 
 def _panel_dialogue_chars(panel: StoryboardPanel) -> int:
     return sum(len(line.text) for line in panel.dialogue)
+
+
+def _word_count(text: str | None) -> int:
+    if not text:
+        return 0
+    return len(re.findall(r"[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)?", text))
 
 
 def _validate_panel_count(
@@ -261,10 +329,30 @@ def _validate_dialogue_budget(
 ) -> list[QualityIssue]:
     issues: list[QualityIssue] = []
     page_lines = 0
+    page_words = 0
+    narration_caption_count = 0
+    max_narration_captions = max(1, len(page.panels) // 3)
     for panel in page.panels:
         line_count = len(panel.dialogue)
         char_count = _panel_dialogue_chars(panel)
         page_lines += line_count
+        page_words += sum(_word_count(line.text) for line in panel.dialogue)
+        narration_words = _word_count(panel.narration)
+        if narration_words:
+            narration_caption_count += 1
+            page_words += narration_words
+            if narration_words > budget.max_narration_words_per_caption:
+                issues.append(
+                    QualityIssue(
+                        severity="error",
+                        code="DSL_PANEL_OVER_NARRATION_WORDS",
+                        message=(
+                            f"panel {panel.panel_id} narration has {narration_words} words; "
+                            f"DSL allows at most {budget.max_narration_words_per_caption}"
+                        ),
+                        artifact_id=panel.panel_id,
+                    )
+                )
         if line_count > budget.max_lines_per_panel:
             issues.append(
                 QualityIssue(
@@ -292,11 +380,36 @@ def _validate_dialogue_budget(
     if page_lines > budget.max_lines_per_page:
         issues.append(
             QualityIssue(
-                severity="warning",
+                severity="error",
                 code="DSL_PAGE_OVER_DIALOGUE_LINES",
                 message=(
                     f"page {page.page_index} has {page_lines} dialogue lines; "
-                    f"DSL prefers at most {budget.max_lines_per_page}"
+                    f"DSL allows at most {budget.max_lines_per_page}"
+                ),
+                artifact_id=page.page_id,
+            )
+        )
+    if page_words > budget.max_words_per_page:
+        issues.append(
+            QualityIssue(
+                severity="error",
+                code="DSL_PAGE_OVER_TEXT_WORDS",
+                message=(
+                    f"page {page.page_index} has {page_words} visible words; "
+                    f"DSL allows at most {budget.max_words_per_page}"
+                ),
+                artifact_id=page.page_id,
+            )
+        )
+    if narration_caption_count > max_narration_captions:
+        issues.append(
+            QualityIssue(
+                severity="error",
+                code="DSL_PAGE_OVER_NARRATION_CAPTIONS",
+                message=(
+                    f"page {page.page_index} has {narration_caption_count} narration captions; "
+                    f"DSL allows at most {max_narration_captions} for "
+                    f"{len(page.panels)} panels"
                 ),
                 artifact_id=page.page_id,
             )
@@ -390,6 +503,8 @@ def validate_storyboard_against_dsl(
     *,
     pages: list[StoryboardPage],
     arc_entry: ArcSliceEntry | None,
+    max_pages_override: int | None = None,
+    preferred_pages_override: int | None = None,
 ) -> list[QualityIssue]:
     """Run every DSL validator over a storyboard and return all issues.
 
@@ -402,7 +517,11 @@ def validate_storyboard_against_dsl(
     arc_role = arc_entry.role if arc_entry else None
     panel_budget = panel_budget_for(arc_role)
     dialogue_budget = dialogue_budget_for(arc_role)
-    page_budget = page_budget_for(arc_role)
+    page_budget = page_budget_for(
+        arc_role,
+        max_pages_override=max_pages_override,
+        preferred_pages_override=preferred_pages_override,
+    )
 
     issues.extend(_validate_page_count(pages, page_budget))
     for page in pages:

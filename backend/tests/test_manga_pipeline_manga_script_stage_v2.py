@@ -150,6 +150,57 @@ def test_manga_script_stage_calls_llm_and_records_trace():
     assert "JSON_SCHEMA" in client.calls[0]["user_message"]
 
 
+def test_manga_script_stage_prompt_includes_manga_text_discipline():
+    client = FakeLLMClient(_valid_script())
+    context = _context(client)
+
+    asyncio.run(manga_script_stage.run(context))
+
+    combined_prompt = (
+        client.calls[0]["system_prompt"] + "\n" + client.calls[0]["user_message"]
+    )
+    assert "at most 2 dialogue lines per panel" in combined_prompt
+    assert "90 characters per panel" in combined_prompt
+    assert "60 total words per page" in combined_prompt
+    assert "15 words each" in combined_prompt
+    assert "convert narration into silent panels, action, or SFX" in combined_prompt
+    assert "Use character display names" in combined_prompt
+    assert "Use exact character_id values only in schema fields such as speaker_id" in combined_prompt
+    assert "never show raw ids in reader-facing prose" in combined_prompt
+
+
+def test_manga_script_uses_minimax_for_strict_json(monkeypatch):
+    drafting_client = FakeLLMClient(_valid_script())
+    drafting_client.provider = "minimax"
+    drafting_client.model = "MiniMax-M2.5-highspeed"
+    drafting_client.api_key = "minimax-key"
+    quality_client = FakeLLMClient(_valid_script())
+    constructed: list[dict[str, str | None]] = []
+
+    def fake_llm_client(
+        *,
+        api_key: str,
+        provider: str = "openai",
+        model: str | None = None,
+    ) -> FakeLLMClient:
+        constructed.append({"api_key": api_key, "provider": provider, "model": model})
+        quality_client.request_timeout_seconds = 0
+        return quality_client
+
+    monkeypatch.setattr(manga_script_stage, "LLMClient", fake_llm_client, raising=False)
+    context = _context(drafting_client)
+    context.options["api_key"] = "openrouter-key"
+    context.options["manga_script_model"] = "quality-json-model"
+
+    result = asyncio.run(manga_script_stage.run(context))
+
+    assert result.manga_script is not None
+    assert len(drafting_client.calls) == 1
+    assert drafting_client.calls[0]["temperature"] == 0.25
+    assert quality_client.calls == []
+    assert constructed == []
+
+
 def test_manga_script_stage_requires_beat_sheet():
     context = _context(FakeLLMClient(_valid_script()))
     context.beat_sheet = None

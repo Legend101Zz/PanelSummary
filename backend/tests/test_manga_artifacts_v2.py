@@ -20,6 +20,7 @@ from app.domain.manga import (
     ProtagonistContract,
     ScriptLine,
     ShotType,
+    StoryboardArtifact,
     StoryboardPage,
     StoryboardPanel,
 )
@@ -115,6 +116,27 @@ def test_manga_script_scene_requires_action_and_text():
     assert script.to_be_continued is True
 
 
+def test_manga_script_scene_defaults_unknown_emotional_tone():
+    scene = MangaScriptScene.model_validate(
+        {
+            "scene_id": "s001",
+            "beat_ids": ["b001"],
+            "location": "Archive entrance",
+            "scene_goal": "Introduce the thesis as a mystery.",
+            "action": "Kai notices the same key fails in a larger lock.",
+            "dialogue": [
+                {
+                    "speaker_id": "kai",
+                    "text": "Wait. Same key, different door?",
+                }
+            ],
+            "emotional_tone": "contemplative",
+        }
+    )
+
+    assert scene.emotional_tone == EmotionalTone.CURIOUS
+
+
 def test_storyboard_page_limits_panel_count_and_requires_composition():
     panel = StoryboardPanel(
         panel_id="p001",
@@ -130,6 +152,42 @@ def test_storyboard_page_limits_panel_count_and_requires_composition():
 
     assert page.reading_flow == "top-right to bottom-left"
     assert page.panels[0].shot_type == ShotType.CLOSE_UP
+
+
+def test_storyboard_artifact_normalizes_common_purpose_aliases():
+    artifact = StoryboardArtifact.model_validate(
+        {
+            "slice_id": "slice_001",
+            "pages": [
+                {
+                    "page_id": "pg001",
+                    "page_index": 1,
+                    "panels": [
+                        {
+                            "panel_id": "p001",
+                            "scene_id": "s001",
+                            "purpose": "reaction",
+                            "shot_type": "medium",
+                            "composition": "Kai reacts to the growing lock.",
+                            "action": "Kai stiffens.",
+                        },
+                        {
+                            "panel_id": "p002",
+                            "scene_id": "s001",
+                            "purpose": "symbolic",
+                            "shot_type": "symbolic",
+                            "composition": "The lock becomes a horizon.",
+                            "action": "The lock fills the page.",
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+
+    assert artifact.pages[0].page_index == 0
+    assert artifact.pages[0].panels[0].purpose == PanelPurpose.EMOTIONAL_TURN
+    assert artifact.pages[0].panels[1].purpose == PanelPurpose.REVEAL
 
 
 def test_storyboard_page_rejects_crowded_pages():
