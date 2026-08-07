@@ -829,3 +829,78 @@ recommended implementation order.
 - Verified: ScrollStack's vertical-slice work is merged on its GitHub main
   (ScrollStack PR #10); no unique work is trapped in the orphaned local
   worktree `/Volumes/Mrigesh SSD/ScrollStack-manga`.
+
+## 2026-08-07 Session: ADR-010 + durable-context port (issues #2, #4 first half)
+
+Executed on `v2-architecture` in three commits (`dd2ab7e` ADRs, `a54158e`
+contracts, `7c989c6` persistence+services+tests), plus this handoff commit.
+
+Step 0 (lane-C spike, issue #12): SKIPPED — key still exhausted. Live probe of
+`GET /api/v1/key` at session start and again before execution both returned
+`limit: 9, limit_remaining: 0, usage: 43.545`. The spike remains fully built
+and un-run (`docs/research/art-economics/out/` still has no receipts.json).
+The 2026-08-07 blocker comment on #12 already records this; raise the key
+limit (~$0.15 headroom needed), then run the one command in
+`docs/research/art-economics/findings.md`.
+
+What was ported (all verbatim from ScrollStack local `main` @ `43300b5`,
+which is 2 commits ahead of its origin — not pushed, not our call):
+
+- `backend/app/contracts/` — 10 modules, 30 registered contract models.
+- `backend/app/persistence/` — 9 beanie Docs + protocols + InMemory/Beanie
+  repositories + mongo bootstrap.
+- `backend/app/services/{hashing,errors,source_units,scopes,context_compiler,
+  memory,generation_runs}.py`.
+- `backend/scripts/export_contracts.py`; `packages/fixtures/` (32 canonical +
+  6 invalid); `packages/contracts/schema/` (30 JSON Schemas).
+- `docs/adr/001–009` adopted as-is + new ADR-010 (decision, full inventory,
+  name-mapping table, boundary-edit log, deferrals). NOTE: `docs/` is
+  gitignored (`.gitignore:39`) — ADRs were committed with `git add -f`.
+- Tests: `backend/tests/{test_durable_context,test_contracts}.py` (54 tests).
+
+Boundary edits — the complete list (everything else is byte-identical to the
+donor, verified by `diff -r` before commit):
+
+1. sys.path shim prepended to the two ported test files (repo convention;
+   donor used pyproject `pythonpath`).
+2. 19/30 schema JSONs regenerated under this repo's pydantic 2.10.3 (donor
+   generated them under 2.11.7; output differs across pydantic minors).
+   `PYTHONPATH=. uv run python scripts/export_contracts.py --check` is clean.
+3. `pytest==9.1.1` added to `backend/requirements.txt` (was ad-hoc-only in
+   `.venv`, gate unreproducible without it).
+
+Deliberately NOT done (recorded in ADR-010):
+
+- `generation_workflow.py` NOT ported: 1792 lines importing 7 modules outside
+  the port set (ScrollStack's manga pipeline — rejected by ADR-010); its only
+  test coverage is the whole-app `test_vertical_slice.py`. Deferred to the
+  orchestration/agent-worker phase.
+- TS contracts package (generate.mjs / Ajv / vitest): deferred to the pnpm
+  workspace phase.
+- Nothing wired into v1: ported Docs are in none of the three `init_beanie`
+  lists (`main.py`, `celery_worker.py`, `scripts/_db.py`); grep for
+  `app.contracts|app.persistence` across v1 modules is empty.
+  `persistence/mongo.py` must not be called until the wiring phase (it
+  assumes beanie 2.x semantics; this repo runs beanie 1.27 + motor — see
+  ADR-010 for the wiring-phase decision).
+
+Verification evidence:
+
+- Pre-port compatibility: donor suites run against THIS repo's venv
+  (beanie 1.27.0 / pydantic 2.10.3 / pymongo 4.10.1) → 53/54, sole failure
+  was the schema drift fixed by boundary edit 2.
+- Baseline before any change: `cd backend && uv run pytest tests/ -q` →
+  462 passed. After port: 516 passed (462 + 54 new), zero regressions,
+  same 1 pre-existing pydantic deprecation warning.
+- `uv run` resolves `backend/.venv` (uv 0.11.15, non-project mode), so the
+  `cd backend && uv run pytest tests/ -q` gate works as written.
+- `git diff --check` clean on every commit.
+
+Next concrete steps:
+
+1. Raise the OpenRouter key limit, run the lane-C spike, decide #12.
+2. Issue #4 second half: normalize existing parsed books into source units,
+   wire the v1 manga pipeline to consume compiled ContextPacks (no output
+   change — blueprint Phase 1 exit), scope-selection API/UI. This is where
+   the beanie 1.27-vs-2.0 wiring decision in ADR-010 gets made.
+3. TS contracts side + pnpm workspace when the agent-worker phase starts.
