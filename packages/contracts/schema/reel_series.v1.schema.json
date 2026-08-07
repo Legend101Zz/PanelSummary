@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "ReelSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "reel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Reel Id",
+          "type": "string"
+        },
+        "reel_spec_artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Reel Spec Artifact Id",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reel_id",
+        "reel_spec_artifact_id",
+        "sequence",
+        "duration_frames"
+      ],
+      "title": "ReelSummary",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/reel_series.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "book_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Book Id",
+      "type": "string"
+    },
+    "manga_manifest_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Manga Manifest Artifact Id",
+      "type": "string"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "reels": {
+      "items": {
+        "$ref": "#/$defs/ReelSummary"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Reels",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "reel-series.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Series Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "book_id",
+    "project_id",
+    "series_id",
+    "manga_manifest_artifact_id",
+    "reels"
+  ],
+  "title": "ReelSeries",
+  "type": "object"
+}

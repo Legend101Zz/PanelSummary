@@ -1,0 +1,527 @@
+{
+  "$defs": {
+    "AdaptationBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "book_essence": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Book Essence",
+          "type": "string"
+        },
+        "character_intent": {
+          "items": {
+            "$ref": "#/$defs/CharacterIntent"
+          },
+          "maxItems": 64,
+          "title": "Character Intent",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "dramatization": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Dramatization",
+          "type": "string"
+        },
+        "may_compress": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "May Compress",
+          "type": "array"
+        },
+        "must_preserve": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Must Preserve",
+          "type": "array"
+        },
+        "narrative_purpose": {
+          "enum": [
+            "hook",
+            "setup",
+            "conflict",
+            "explanation",
+            "reveal",
+            "payoff",
+            "cliffhanger"
+          ],
+          "title": "Narrative Purpose",
+          "type": "string"
+        },
+        "required_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Required Fact Ids",
+          "type": "array"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "visual_intent": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Visual Intent",
+          "type": "array"
+        }
+      },
+      "required": [
+        "beat_id",
+        "sequence",
+        "source_refs",
+        "narrative_purpose",
+        "book_essence",
+        "dramatization",
+        "visual_intent",
+        "must_preserve",
+        "confidence"
+      ],
+      "title": "AdaptationBeat",
+      "type": "object"
+    },
+    "CharacterIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "emotional_state": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Emotional State",
+          "type": "string"
+        },
+        "intent": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "character_id",
+        "intent",
+        "emotional_state"
+      ],
+      "title": "CharacterIntent",
+      "type": "object"
+    },
+    "CharacterStateUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state_patch": {
+          "maxProperties": 64,
+          "minProperties": 1,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "$ref": "#/$defs/JsonValue"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "State Patch",
+          "type": "object"
+        }
+      },
+      "required": [
+        "character_id",
+        "state_patch"
+      ],
+      "title": "CharacterStateUpdate",
+      "type": "object"
+    },
+    "GroundedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "fact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact_id",
+        "claim",
+        "source_refs",
+        "confidence"
+      ],
+      "title": "GroundedFact",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "StoryThreadUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "resolved",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "thread_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Thread Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "thread_id",
+        "summary",
+        "status"
+      ],
+      "title": "StoryThreadUpdate",
+      "type": "object"
+    },
+    "TerminologyUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_form": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Canonical Form",
+          "type": "string"
+        },
+        "meaning": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Meaning",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "term": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Term",
+          "type": "string"
+        }
+      },
+      "required": [
+        "term",
+        "canonical_form",
+        "meaning",
+        "source_refs"
+      ],
+      "title": "TerminologyUpdate",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/manga_plan.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "beats": {
+      "items": {
+        "$ref": "#/$defs/AdaptationBeat"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Beats",
+      "type": "array"
+    },
+    "character_state_updates": {
+      "items": {
+        "$ref": "#/$defs/CharacterStateUpdate"
+      },
+      "maxItems": 256,
+      "title": "Character State Updates",
+      "type": "array"
+    },
+    "context_pack_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Context Pack Id",
+      "type": "string"
+    },
+    "ending_state": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Ending State",
+      "type": "string"
+    },
+    "memory_version": {
+      "minimum": 0,
+      "title": "Memory Version",
+      "type": "integer"
+    },
+    "new_facts": {
+      "items": {
+        "$ref": "#/$defs/GroundedFact"
+      },
+      "maxItems": 1000,
+      "title": "New Facts",
+      "type": "array"
+    },
+    "plan_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "manga-plan.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "target_page_count": {
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Target Page Count",
+      "type": "integer"
+    },
+    "terminology_updates": {
+      "items": {
+        "$ref": "#/$defs/TerminologyUpdate"
+      },
+      "maxItems": 256,
+      "title": "Terminology Updates",
+      "type": "array"
+    },
+    "title": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "unresolved_thread_updates": {
+      "items": {
+        "$ref": "#/$defs/StoryThreadUpdate"
+      },
+      "maxItems": 256,
+      "title": "Unresolved Thread Updates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "plan_id",
+    "project_id",
+    "scope_id",
+    "context_pack_id",
+    "memory_version",
+    "title",
+    "summary",
+    "target_page_count",
+    "beats",
+    "ending_state"
+  ],
+  "title": "MangaPlan",
+  "type": "object"
+}

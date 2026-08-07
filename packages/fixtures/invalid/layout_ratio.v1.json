@@ -1,0 +1,7 @@
+{
+  "schema_version": "invalid-fixture.v1",
+  "base_fixture": "canonical/manga_page_plan.v1.json",
+  "operation": "remove",
+  "path": "/layout_root/ratios/1",
+  "expected_code": "RATIO_CHILD_MISMATCH"
+}

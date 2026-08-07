@@ -1,0 +1,82 @@
+{
+  "schema_version": "rendered-page.v2",
+  "page_plan": {
+    "schema_version": "manga-page-plan.v1",
+    "page_plan_id": "page_plan_splash",
+    "project_id": "project_phase1",
+    "script_set_artifact_id": "script_set_phase1",
+    "canvas": {
+      "width_px": 1600,
+      "height_px": 2400,
+      "trim": { "x": 0.03, "y": 0.02, "width": 0.94, "height": 0.96 },
+      "safe": { "x": 0.06, "y": 0.05, "width": 0.88, "height": 0.9 },
+      "bleed_pct": 0.02
+    },
+    "reading_direction": "rtl",
+    "page_script": {
+      "page_id": "page_splash",
+      "page_index": 0,
+      "page_kind": "splash",
+      "entry_state": "The trade-off has been named.",
+      "exit_state": "The consequence fills the page.",
+      "page_turn_panel_id": "panel_splash",
+      "panels": [
+        {
+          "panel_id": "panel_splash",
+          "purpose": "payoff",
+          "story_beat": "Global access surrounds one missed local opportunity.",
+          "importance": "page_turn",
+          "tempo": "impact",
+          "camera": { "shot": "extreme_wide", "angle": "high", "movement": "push_in" },
+          "source_refs": [
+            {
+              "book_id": "book_phase1",
+              "source_unit_id": "source_page_15",
+              "page_start": 15,
+              "page_end": 15,
+              "text_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        }
+      ],
+      "text_elements": []
+    },
+    "layout_root": { "kind": "panel", "node_id": "node_splash", "panel_id": "panel_splash" },
+    "reading_edges": [],
+    "source_fact_ids": ["fact_locality"]
+  },
+  "compiled_layout": {
+    "schema_version": "compiled-layout.v1",
+    "page_plan_id": "page_plan_splash",
+    "layout_engine_version": "manga-layout.v1",
+    "compiler_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "panels": [
+      {
+        "panel_id": "panel_splash",
+        "node_id": "node_splash",
+        "polygon": [
+          { "x": 0.03, "y": 0.02 },
+          { "x": 0.97, "y": 0.02 },
+          { "x": 0.97, "y": 0.98 },
+          { "x": 0.03, "y": 0.98 }
+        ],
+        "bbox": { "x": 0.03, "y": 0.02, "width": 0.94, "height": 0.96 },
+        "clip_path": "M 0.03 0.02 L 0.97 0.02 L 0.97 0.98 L 0.03 0.98 Z",
+        "z_index": 0,
+        "read_rank": 0
+      }
+    ],
+    "adjacency": []
+  },
+  "panels": [
+    {
+      "panel_id": "panel_splash",
+      "clip_path": "M 0.03 0.02 L 0.97 0.02 L 0.97 0.98 L 0.03 0.98 Z",
+      "visual_asset_ids": ["asset_existing_key_panel"],
+      "text_ids": []
+    }
+  ],
+  "canonical_svg_asset_id": "asset_page_splash_svg",
+  "raster_asset_ids": [],
+  "accessible_text": []
+}

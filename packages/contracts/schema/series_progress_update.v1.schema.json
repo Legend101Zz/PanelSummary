@@ -1,0 +1,49 @@
+{
+  "$id": "https://scrollstack.dev/contracts/series_progress_update.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "last_manga_page": {
+      "minimum": 0,
+      "title": "Last Manga Page",
+      "type": "integer"
+    },
+    "last_reel_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Reel Id"
+    },
+    "schema_version": {
+      "const": "series-progress-update.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "viewed_reel_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 10000,
+      "title": "Viewed Reel Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "last_manga_page"
+  ],
+  "title": "SeriesProgressUpdate",
+  "type": "object"
+}

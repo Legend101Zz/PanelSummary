@@ -1,0 +1,214 @@
+{
+  "$defs": {
+    "CompiledPanelGeometry": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "clip_path": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Clip Path",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "polygon": {
+          "items": {
+            "$ref": "#/$defs/NormalizedPoint"
+          },
+          "maxItems": 32,
+          "minItems": 3,
+          "title": "Polygon",
+          "type": "array"
+        },
+        "read_rank": {
+          "maximum": 999,
+          "minimum": 0,
+          "title": "Read Rank",
+          "type": "integer"
+        },
+        "z_index": {
+          "default": 0,
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "panel_id",
+        "node_id",
+        "polygon",
+        "bbox",
+        "clip_path",
+        "read_rank"
+      ],
+      "title": "CompiledPanelGeometry",
+      "type": "object"
+    },
+    "NormalizedBox": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "NormalizedBox",
+      "type": "object"
+    },
+    "NormalizedPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "NormalizedPoint",
+      "type": "object"
+    },
+    "PanelAdjacency": {
+      "additionalProperties": false,
+      "properties": {
+        "panel_a": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel A",
+          "type": "string"
+        },
+        "panel_b": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel B",
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "horizontal",
+            "vertical",
+            "overlap",
+            "near"
+          ],
+          "title": "Relation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "panel_a",
+        "panel_b",
+        "relation"
+      ],
+      "title": "PanelAdjacency",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/compiled_layout.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adjacency": {
+      "items": {
+        "$ref": "#/$defs/PanelAdjacency"
+      },
+      "maxItems": 190,
+      "title": "Adjacency",
+      "type": "array"
+    },
+    "compiler_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Compiler Hash",
+      "type": "string"
+    },
+    "layout_engine_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Layout Engine Version",
+      "type": "string"
+    },
+    "page_plan_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Page Plan Id",
+      "type": "string"
+    },
+    "panels": {
+      "items": {
+        "$ref": "#/$defs/CompiledPanelGeometry"
+      },
+      "maxItems": 20,
+      "minItems": 1,
+      "title": "Panels",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "compiled-layout.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "page_plan_id",
+    "layout_engine_version",
+    "compiler_hash",
+    "panels"
+  ],
+  "title": "CompiledPageLayout",
+  "type": "object"
+}

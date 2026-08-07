@@ -1,0 +1,85 @@
+{
+  "$id": "https://scrollstack.dev/contracts/source_ref.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "book_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Book Id",
+      "type": "string"
+    },
+    "end_offset": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "End Offset"
+    },
+    "page_end": {
+      "minimum": 1,
+      "title": "Page End",
+      "type": "integer"
+    },
+    "page_start": {
+      "minimum": 1,
+      "title": "Page Start",
+      "type": "integer"
+    },
+    "quote": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Quote"
+    },
+    "source_unit_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Source Unit Id",
+      "type": "string"
+    },
+    "start_offset": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Start Offset"
+    },
+    "text_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Text Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "book_id",
+    "source_unit_id",
+    "page_start",
+    "page_end",
+    "text_hash"
+  ],
+  "title": "SourceRef",
+  "type": "object"
+}

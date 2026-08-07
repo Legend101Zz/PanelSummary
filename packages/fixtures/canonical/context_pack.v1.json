@@ -1,0 +1,104 @@
+{
+  "schema_version": "context-pack.v1",
+  "context_pack_id": "context_pack_001",
+  "project_id": "project_demo",
+  "scope_id": "scope_ch01",
+  "memory_version": 3,
+  "purpose": "manga_direction",
+  "source_units": [
+    {
+      "source_ref": {
+        "book_id": "book_demo",
+        "source_unit_id": "unit_ch01_p001_010",
+        "page_start": 1,
+        "page_end": 10,
+        "start_offset": 120,
+        "end_offset": 268,
+        "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+        "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "heading_path": ["Chapter One", "The Map"],
+      "excerpt": "The crew discovers that the map is also a record of earlier failed journeys.",
+      "token_count": 16
+    }
+  ],
+  "book_canon": {
+    "synopsis": "A navigator and her crew follow a map that records the failures of everyone who came before them.",
+    "themes": ["memory", "evidence", "courage"],
+    "facts": [
+      {
+        "fact_id": "fact_map_records_failures",
+        "claim": "The map records earlier failed journeys.",
+        "source_refs": [
+          {
+            "book_id": "book_demo",
+            "source_unit_id": "unit_ch01_p001_010",
+            "page_start": 1,
+            "page_end": 10,
+            "start_offset": 120,
+            "end_offset": 268,
+            "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+            "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "confidence": 0.99
+      }
+    ],
+    "terminology": [
+      { "term": "failure routes", "canonical_form": "failed routes", "meaning": "Routes attempted by prior crews that did not reach the destination." }
+    ],
+    "art_direction": "High-contrast black ink, warm paper, screentone shadows, and sparing vermilion accents.",
+    "narrative_voice": "Tense, economical, and observant."
+  },
+  "continuity": {
+    "previous_slice_ending": "Kael found a second layer of ink beneath the ordinary chart.",
+    "character_state": [
+      {
+        "character_id": "character_kael",
+        "display_name": "Kael",
+        "current_state": "Kael suspects the map is a warning rather than a guide.",
+        "visual_asset_ids": ["asset_last_observatory_key_panel_v1"]
+      }
+    ],
+    "world_state": { "map_condition": "The hidden ink is visible under warm lantern light." },
+    "unresolved_threads": [
+      { "thread_id": "thread_cartographer", "summary": "The identity of the final cartographer is unknown.", "status": "open" }
+    ]
+  },
+  "assets": [
+    {
+      "asset_id": "asset_last_observatory_key_panel_v1",
+      "project_id": "project_demo",
+      "asset_type": "key_panel",
+      "content_hash": "e2c72c57e72d048781a2fb626b503183017ef35ed0ee118bc9b9ffbc9813d4ef",
+      "storage_ref": "public/art/last-observatory-key-panel.png",
+      "mime_type": "image/png",
+      "width": 941,
+      "height": 1672
+    }
+  ],
+  "parent_artifacts": [
+    {
+      "artifact_id": "artifact_memory_003",
+      "kind": "memory_delta",
+      "schema_version": "memory-delta.v1",
+      "content_hash": "9999999999999999999999999999999999999999999999999999999999999999"
+    }
+  ],
+  "constraints": {
+    "image_mode": "budgeted",
+    "max_pages": 8,
+    "max_panels_per_page": 7,
+    "max_sprites": 8,
+    "max_key_panels": 2,
+    "reading_direction": "rtl",
+    "narration_enabled": false
+  },
+  "compilation": {
+    "included_source_ids": ["unit_ch01_p001_010"],
+    "omitted_optional_sections": ["historical production notes"],
+    "estimated_tokens": 4200,
+    "compiler_version": "context-compiler.v1"
+  },
+  "content_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+}

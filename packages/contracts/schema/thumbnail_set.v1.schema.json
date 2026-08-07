@@ -1,0 +1,1269 @@
+{
+  "$defs": {
+    "FreeformPanelLayoutNode": {
+      "additionalProperties": false,
+      "properties": {
+        "exception_reason": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Exception Reason",
+          "type": "string"
+        },
+        "kind": {
+          "const": "freeform_panel",
+          "title": "Kind",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "polygon": {
+          "items": {
+            "$ref": "#/$defs/NormalizedPoint"
+          },
+          "maxItems": 16,
+          "minItems": 3,
+          "title": "Polygon",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "node_id",
+        "panel_id",
+        "polygon",
+        "exception_reason"
+      ],
+      "title": "FreeformPanelLayoutNode",
+      "type": "object"
+    },
+    "MangaPagePlan": {
+      "additionalProperties": false,
+      "properties": {
+        "canvas": {
+          "$ref": "#/$defs/PageCanvas"
+        },
+        "layout_root": {
+          "discriminator": {
+            "mapping": {
+              "freeform_panel": "#/$defs/FreeformPanelLayoutNode",
+              "overlay": "#/$defs/OverlayLayoutNode",
+              "panel": "#/$defs/PanelLayoutNode",
+              "split": "#/$defs/SplitLayoutNode"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PanelLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/SplitLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/OverlayLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/FreeformPanelLayoutNode"
+            }
+          ],
+          "title": "Layout Root"
+        },
+        "page_plan_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Page Plan Id",
+          "type": "string"
+        },
+        "page_script": {
+          "$ref": "#/$defs/PageScript"
+        },
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "reading_direction": {
+          "enum": [
+            "rtl",
+            "ltr"
+          ],
+          "title": "Reading Direction",
+          "type": "string"
+        },
+        "reading_edges": {
+          "items": {
+            "$ref": "#/$defs/ReadingEdge"
+          },
+          "maxItems": 32,
+          "title": "Reading Edges",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "manga-page-plan.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "script_set_artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Script Set Artifact Id",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "title": "Source Fact Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "page_plan_id",
+        "project_id",
+        "script_set_artifact_id",
+        "canvas",
+        "reading_direction",
+        "page_script",
+        "layout_root"
+      ],
+      "title": "MangaPagePlan",
+      "type": "object"
+    },
+    "NormalizedBox": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "NormalizedBox",
+      "type": "object"
+    },
+    "NormalizedPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "NormalizedPoint",
+      "type": "object"
+    },
+    "OverlayInset": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "enum": [
+            "top_left",
+            "top_right",
+            "bottom_left",
+            "bottom_right",
+            "center"
+          ],
+          "title": "Anchor",
+          "type": "string"
+        },
+        "border_style": {
+          "default": "standard",
+          "enum": [
+            "standard",
+            "borderless",
+            "broken"
+          ],
+          "title": "Border Style",
+          "type": "string"
+        },
+        "box": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "node": {
+          "discriminator": {
+            "mapping": {
+              "freeform_panel": "#/$defs/FreeformPanelLayoutNode",
+              "overlay": "#/$defs/OverlayLayoutNode",
+              "panel": "#/$defs/PanelLayoutNode",
+              "split": "#/$defs/SplitLayoutNode"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PanelLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/SplitLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/OverlayLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/FreeformPanelLayoutNode"
+            }
+          ],
+          "title": "Node"
+        },
+        "z_index": {
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "node",
+        "anchor",
+        "box",
+        "z_index"
+      ],
+      "title": "OverlayInset",
+      "type": "object"
+    },
+    "OverlayLayoutNode": {
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "discriminator": {
+            "mapping": {
+              "freeform_panel": "#/$defs/FreeformPanelLayoutNode",
+              "overlay": "#/$defs/OverlayLayoutNode",
+              "panel": "#/$defs/PanelLayoutNode",
+              "split": "#/$defs/SplitLayoutNode"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PanelLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/SplitLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/OverlayLayoutNode"
+            },
+            {
+              "$ref": "#/$defs/FreeformPanelLayoutNode"
+            }
+          ],
+          "title": "Base"
+        },
+        "insets": {
+          "items": {
+            "$ref": "#/$defs/OverlayInset"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Insets",
+          "type": "array"
+        },
+        "kind": {
+          "const": "overlay",
+          "title": "Kind",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Node Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "node_id",
+        "base",
+        "insets"
+      ],
+      "title": "OverlayLayoutNode",
+      "type": "object"
+    },
+    "PageCanvas": {
+      "additionalProperties": false,
+      "properties": {
+        "bleed_pct": {
+          "default": 0,
+          "maximum": 0.1,
+          "minimum": 0.0,
+          "title": "Bleed Pct",
+          "type": "number"
+        },
+        "height_px": {
+          "maximum": 16384,
+          "minimum": 320,
+          "title": "Height Px",
+          "type": "integer"
+        },
+        "safe": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "trim": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "width_px": {
+          "maximum": 16384,
+          "minimum": 320,
+          "title": "Width Px",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "width_px",
+        "height_px",
+        "trim",
+        "safe"
+      ],
+      "title": "PageCanvas",
+      "type": "object"
+    },
+    "PageScript": {
+      "additionalProperties": false,
+      "properties": {
+        "entry_state": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Entry State",
+          "type": "string"
+        },
+        "exit_state": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Exit State",
+          "type": "string"
+        },
+        "page_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Page Id",
+          "type": "string"
+        },
+        "page_index": {
+          "maximum": 999,
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "page_kind": {
+          "default": "standard",
+          "enum": [
+            "standard",
+            "splash",
+            "spread_left",
+            "spread_right"
+          ],
+          "title": "Page Kind",
+          "type": "string"
+        },
+        "page_turn_panel_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Turn Panel Id"
+        },
+        "panels": {
+          "items": {
+            "$ref": "#/$defs/PageScriptPanel"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "title": "Panels",
+          "type": "array"
+        },
+        "text_elements": {
+          "items": {
+            "$ref": "#/$defs/TextElement"
+          },
+          "maxItems": 64,
+          "title": "Text Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_id",
+        "page_index",
+        "entry_state",
+        "exit_state",
+        "panels"
+      ],
+      "title": "PageScript",
+      "type": "object"
+    },
+    "PageScriptPanel": {
+      "additionalProperties": false,
+      "properties": {
+        "avoid_text_regions": {
+          "items": {
+            "$ref": "#/$defs/NormalizedBox"
+          },
+          "maxItems": 16,
+          "title": "Avoid Text Regions",
+          "type": "array"
+        },
+        "blocking": {
+          "items": {
+            "$ref": "#/$defs/SubjectBlocking"
+          },
+          "maxItems": 32,
+          "title": "Blocking",
+          "type": "array"
+        },
+        "camera": {
+          "$ref": "#/$defs/PanelCamera"
+        },
+        "environment_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment Ref"
+        },
+        "focal_regions": {
+          "items": {
+            "$ref": "#/$defs/NormalizedBox"
+          },
+          "maxItems": 16,
+          "title": "Focal Regions",
+          "type": "array"
+        },
+        "importance": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "page_turn"
+          ],
+          "title": "Importance",
+          "type": "string"
+        },
+        "motion": {
+          "$ref": "#/$defs/PanelMotion"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "prop_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Prop Refs",
+          "type": "array"
+        },
+        "purpose": {
+          "enum": [
+            "setup",
+            "action",
+            "reaction",
+            "reveal",
+            "transition",
+            "insert",
+            "payoff"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Source Fact Ids",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "story_beat": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Story Beat",
+          "type": "string"
+        },
+        "tempo": {
+          "enum": [
+            "hold",
+            "normal",
+            "quick",
+            "impact"
+          ],
+          "title": "Tempo",
+          "type": "string"
+        }
+      },
+      "required": [
+        "panel_id",
+        "purpose",
+        "story_beat",
+        "importance",
+        "tempo",
+        "camera",
+        "source_refs"
+      ],
+      "title": "PageScriptPanel",
+      "type": "object"
+    },
+    "PanelCamera": {
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "default": "eye",
+          "enum": [
+            "eye",
+            "high",
+            "low",
+            "dutch",
+            "over_shoulder"
+          ],
+          "title": "Angle",
+          "type": "string"
+        },
+        "movement": {
+          "default": "static",
+          "enum": [
+            "static",
+            "pan",
+            "push_in",
+            "pull_out",
+            "tracking"
+          ],
+          "title": "Movement",
+          "type": "string"
+        },
+        "shot": {
+          "enum": [
+            "extreme_wide",
+            "wide",
+            "medium",
+            "close_up",
+            "extreme_close_up",
+            "insert",
+            "pov"
+          ],
+          "title": "Shot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "shot"
+      ],
+      "title": "PanelCamera",
+      "type": "object"
+    },
+    "PanelLayoutNode": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "panel",
+          "title": "Kind",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "node_id",
+        "panel_id"
+      ],
+      "title": "PanelLayoutNode",
+      "type": "object"
+    },
+    "PanelMotion": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "effects": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Effects",
+          "type": "array"
+        },
+        "speed": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed"
+        }
+      },
+      "title": "PanelMotion",
+      "type": "object"
+    },
+    "ReadingEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "from_panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "From Panel Id",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "to_panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "To Panel Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_panel_id",
+        "to_panel_id",
+        "reason"
+      ],
+      "title": "ReadingEdge",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "SplitGutter": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "const": "page_pct",
+          "default": "page_pct",
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "maximum": 0.1,
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "SplitGutter",
+      "type": "object"
+    },
+    "SplitLayoutNode": {
+      "additionalProperties": false,
+      "properties": {
+        "angle_deg": {
+          "default": 0,
+          "maximum": 18.0,
+          "minimum": -18.0,
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y"
+          ],
+          "title": "Axis",
+          "type": "string"
+        },
+        "children": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "freeform_panel": "#/$defs/FreeformPanelLayoutNode",
+                "overlay": "#/$defs/OverlayLayoutNode",
+                "panel": "#/$defs/PanelLayoutNode",
+                "split": "#/$defs/SplitLayoutNode"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PanelLayoutNode"
+              },
+              {
+                "$ref": "#/$defs/SplitLayoutNode"
+              },
+              {
+                "$ref": "#/$defs/OverlayLayoutNode"
+              },
+              {
+                "$ref": "#/$defs/FreeformPanelLayoutNode"
+              }
+            ]
+          },
+          "maxItems": 12,
+          "minItems": 2,
+          "title": "Children",
+          "type": "array"
+        },
+        "gutter": {
+          "$ref": "#/$defs/SplitGutter"
+        },
+        "kind": {
+          "const": "split",
+          "title": "Kind",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Node Id",
+          "type": "string"
+        },
+        "ratios": {
+          "items": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 100.0,
+            "type": "number"
+          },
+          "maxItems": 12,
+          "minItems": 2,
+          "title": "Ratios",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "node_id",
+        "axis",
+        "ratios",
+        "gutter",
+        "children"
+      ],
+      "title": "SplitLayoutNode",
+      "type": "object"
+    },
+    "SubjectBlocking": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/NormalizedPoint"
+        },
+        "depth": {
+          "default": "midground",
+          "enum": [
+            "foreground",
+            "midground",
+            "background"
+          ],
+          "title": "Depth",
+          "type": "string"
+        },
+        "expression": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "facing": {
+          "default": "front",
+          "enum": [
+            "left",
+            "right",
+            "front",
+            "away"
+          ],
+          "title": "Facing",
+          "type": "string"
+        },
+        "pose": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Pose",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1,
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "subject_ref": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Subject Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject_ref",
+        "pose",
+        "expression",
+        "anchor"
+      ],
+      "title": "SubjectBlocking",
+      "type": "object"
+    },
+    "TextElement": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "emotion": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Emotion"
+        },
+        "kind": {
+          "enum": [
+            "dialogue",
+            "thought",
+            "narration",
+            "monologue",
+            "sfx"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "overflow": {
+          "default": "reject",
+          "enum": [
+            "fit",
+            "reflow",
+            "split",
+            "reject"
+          ],
+          "title": "Overflow",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "preferred_region": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "shape": {
+          "enum": [
+            "oval",
+            "round_rect",
+            "thought_cloud",
+            "jagged",
+            "caption",
+            "free_sfx"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "speaker_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Ref"
+        },
+        "tail_target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextTailTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Text Id",
+          "type": "string"
+        },
+        "typography": {
+          "$ref": "#/$defs/TextTypography"
+        },
+        "writing_direction": {
+          "default": "horizontal",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "title": "Writing Direction",
+          "type": "string"
+        },
+        "z_index": {
+          "default": 40,
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text_id",
+        "panel_id",
+        "kind",
+        "content",
+        "shape",
+        "preferred_region",
+        "typography"
+      ],
+      "title": "TextElement",
+      "type": "object"
+    },
+    "TextTailTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "point": {
+          "$ref": "#/$defs/NormalizedPoint"
+        },
+        "subject_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Ref"
+        }
+      },
+      "required": [
+        "point"
+      ],
+      "title": "TextTailTarget",
+      "type": "object"
+    },
+    "TextTypography": {
+      "additionalProperties": false,
+      "properties": {
+        "emphasis": {
+          "default": "normal",
+          "enum": [
+            "normal",
+            "bold",
+            "whisper",
+            "shout"
+          ],
+          "title": "Emphasis",
+          "type": "string"
+        },
+        "font_token": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Font Token",
+          "type": "string"
+        },
+        "max_px": {
+          "default": 48,
+          "maximum": 256,
+          "minimum": 8,
+          "title": "Max Px",
+          "type": "integer"
+        },
+        "min_px": {
+          "default": 18,
+          "maximum": 128,
+          "minimum": 8,
+          "title": "Min Px",
+          "type": "integer"
+        },
+        "weight": {
+          "default": 500,
+          "maximum": 900,
+          "minimum": 100,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "font_token"
+      ],
+      "title": "TextTypography",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/thumbnail_set.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "page_plans": {
+      "items": {
+        "$ref": "#/$defs/MangaPagePlan"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Page Plans",
+      "type": "array"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "thumbnail-set.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "script_set_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Script Set Artifact Id",
+      "type": "string"
+    },
+    "thumbnail_set_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Thumbnail Set Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "thumbnail_set_id",
+    "project_id",
+    "script_set_artifact_id",
+    "page_plans"
+  ],
+  "title": "ThumbnailSet",
+  "type": "object"
+}

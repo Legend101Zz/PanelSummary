@@ -1,0 +1,23 @@
+{
+  "schema_version": "generation-run.v1",
+  "run_id": "run_demo_001",
+  "project_id": "project_demo",
+  "scope_id": "scope_ch01",
+  "requested_outputs": ["manga", "reels"],
+  "pipeline_version": "scrollstack-pipeline.v1",
+  "status": "running",
+  "active_stage": "manga_direction",
+  "budget": {
+    "max_text_cost_usd": 5,
+    "max_image_cost_usd": 8,
+    "max_render_minutes": 10,
+    "max_agent_steps": 30,
+    "max_repair_attempts": 2,
+    "max_sprites": 8,
+    "max_key_panels": 2,
+    "max_reels": 5
+  },
+  "created_by": "user_mrigesh",
+  "created_at": "2026-07-19T10:00:00Z",
+  "updated_at": "2026-07-19T10:04:00Z"
+}

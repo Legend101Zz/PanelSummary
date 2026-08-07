@@ -1,0 +1,15 @@
+{
+  "schema_version": "source-unit.v1",
+  "book_id": "book_demo",
+  "source_unit_id": "unit_ch01_p001_010",
+  "kind": "chapter",
+  "chapter_index": 0,
+  "heading_path": ["Chapter One", "The Map"],
+  "page_start": 1,
+  "page_end": 10,
+  "text": "The crew discovers that the map is also a record of earlier failed journeys.",
+  "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "token_count": 16,
+  "image_refs": ["source_image_001"],
+  "parse_version": "docling-pymupdf.v1"
+}

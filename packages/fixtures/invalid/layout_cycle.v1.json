@@ -1,0 +1,8 @@
+{
+  "schema_version": "invalid-fixture.v1",
+  "base_fixture": "canonical/manga_page_plan.v1.json",
+  "operation": "replace",
+  "path": "/layout_root/children/1/node_id",
+  "value": "node_panel_1",
+  "expected_code": "LAYOUT_NODE_ID_REUSED"
+}

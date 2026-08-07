@@ -1,0 +1,7 @@
+{
+  "schema_version": "invalid-fixture.v1",
+  "base_fixture": "canonical/compiled_layout.v1.json",
+  "operation": "append_overlapping_panel",
+  "path": "/panels",
+  "expected_code": "ACCIDENTAL_OVERLAP"
+}

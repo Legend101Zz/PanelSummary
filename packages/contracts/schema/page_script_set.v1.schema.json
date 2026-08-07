@@ -1,0 +1,788 @@
+{
+  "$defs": {
+    "NormalizedBox": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Height",
+          "type": "number"
+        },
+        "width": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0,
+          "title": "Width",
+          "type": "number"
+        },
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "NormalizedBox",
+      "type": "object"
+    },
+    "NormalizedPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "NormalizedPoint",
+      "type": "object"
+    },
+    "PageScript": {
+      "additionalProperties": false,
+      "properties": {
+        "entry_state": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Entry State",
+          "type": "string"
+        },
+        "exit_state": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Exit State",
+          "type": "string"
+        },
+        "page_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Page Id",
+          "type": "string"
+        },
+        "page_index": {
+          "maximum": 999,
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "page_kind": {
+          "default": "standard",
+          "enum": [
+            "standard",
+            "splash",
+            "spread_left",
+            "spread_right"
+          ],
+          "title": "Page Kind",
+          "type": "string"
+        },
+        "page_turn_panel_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Turn Panel Id"
+        },
+        "panels": {
+          "items": {
+            "$ref": "#/$defs/PageScriptPanel"
+          },
+          "maxItems": 12,
+          "minItems": 1,
+          "title": "Panels",
+          "type": "array"
+        },
+        "text_elements": {
+          "items": {
+            "$ref": "#/$defs/TextElement"
+          },
+          "maxItems": 64,
+          "title": "Text Elements",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_id",
+        "page_index",
+        "entry_state",
+        "exit_state",
+        "panels"
+      ],
+      "title": "PageScript",
+      "type": "object"
+    },
+    "PageScriptPanel": {
+      "additionalProperties": false,
+      "properties": {
+        "avoid_text_regions": {
+          "items": {
+            "$ref": "#/$defs/NormalizedBox"
+          },
+          "maxItems": 16,
+          "title": "Avoid Text Regions",
+          "type": "array"
+        },
+        "blocking": {
+          "items": {
+            "$ref": "#/$defs/SubjectBlocking"
+          },
+          "maxItems": 32,
+          "title": "Blocking",
+          "type": "array"
+        },
+        "camera": {
+          "$ref": "#/$defs/PanelCamera"
+        },
+        "environment_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Environment Ref"
+        },
+        "focal_regions": {
+          "items": {
+            "$ref": "#/$defs/NormalizedBox"
+          },
+          "maxItems": 16,
+          "title": "Focal Regions",
+          "type": "array"
+        },
+        "importance": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "page_turn"
+          ],
+          "title": "Importance",
+          "type": "string"
+        },
+        "motion": {
+          "$ref": "#/$defs/PanelMotion"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "prop_refs": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Prop Refs",
+          "type": "array"
+        },
+        "purpose": {
+          "enum": [
+            "setup",
+            "action",
+            "reaction",
+            "reveal",
+            "transition",
+            "insert",
+            "payoff"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Source Fact Ids",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "story_beat": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Story Beat",
+          "type": "string"
+        },
+        "tempo": {
+          "enum": [
+            "hold",
+            "normal",
+            "quick",
+            "impact"
+          ],
+          "title": "Tempo",
+          "type": "string"
+        }
+      },
+      "required": [
+        "panel_id",
+        "purpose",
+        "story_beat",
+        "importance",
+        "tempo",
+        "camera",
+        "source_refs"
+      ],
+      "title": "PageScriptPanel",
+      "type": "object"
+    },
+    "PanelCamera": {
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "default": "eye",
+          "enum": [
+            "eye",
+            "high",
+            "low",
+            "dutch",
+            "over_shoulder"
+          ],
+          "title": "Angle",
+          "type": "string"
+        },
+        "movement": {
+          "default": "static",
+          "enum": [
+            "static",
+            "pan",
+            "push_in",
+            "pull_out",
+            "tracking"
+          ],
+          "title": "Movement",
+          "type": "string"
+        },
+        "shot": {
+          "enum": [
+            "extreme_wide",
+            "wide",
+            "medium",
+            "close_up",
+            "extreme_close_up",
+            "insert",
+            "pov"
+          ],
+          "title": "Shot",
+          "type": "string"
+        }
+      },
+      "required": [
+        "shot"
+      ],
+      "title": "PanelCamera",
+      "type": "object"
+    },
+    "PanelMotion": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "effects": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Effects",
+          "type": "array"
+        },
+        "speed": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speed"
+        }
+      },
+      "title": "PanelMotion",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "SubjectBlocking": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "$ref": "#/$defs/NormalizedPoint"
+        },
+        "depth": {
+          "default": "midground",
+          "enum": [
+            "foreground",
+            "midground",
+            "background"
+          ],
+          "title": "Depth",
+          "type": "string"
+        },
+        "expression": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "facing": {
+          "default": "front",
+          "enum": [
+            "left",
+            "right",
+            "front",
+            "away"
+          ],
+          "title": "Facing",
+          "type": "string"
+        },
+        "pose": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Pose",
+          "type": "string"
+        },
+        "scale": {
+          "default": 1,
+          "exclusiveMinimum": 0.0,
+          "maximum": 2.0,
+          "title": "Scale",
+          "type": "number"
+        },
+        "subject_ref": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Subject Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "subject_ref",
+        "pose",
+        "expression",
+        "anchor"
+      ],
+      "title": "SubjectBlocking",
+      "type": "object"
+    },
+    "TextElement": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "emotion": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Emotion"
+        },
+        "kind": {
+          "enum": [
+            "dialogue",
+            "thought",
+            "narration",
+            "monologue",
+            "sfx"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "overflow": {
+          "default": "reject",
+          "enum": [
+            "fit",
+            "reflow",
+            "split",
+            "reject"
+          ],
+          "title": "Overflow",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "preferred_region": {
+          "$ref": "#/$defs/NormalizedBox"
+        },
+        "shape": {
+          "enum": [
+            "oval",
+            "round_rect",
+            "thought_cloud",
+            "jagged",
+            "caption",
+            "free_sfx"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "speaker_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Ref"
+        },
+        "tail_target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TextTailTarget"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "text_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Text Id",
+          "type": "string"
+        },
+        "typography": {
+          "$ref": "#/$defs/TextTypography"
+        },
+        "writing_direction": {
+          "default": "horizontal",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ],
+          "title": "Writing Direction",
+          "type": "string"
+        },
+        "z_index": {
+          "default": 40,
+          "maximum": 1000,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text_id",
+        "panel_id",
+        "kind",
+        "content",
+        "shape",
+        "preferred_region",
+        "typography"
+      ],
+      "title": "TextElement",
+      "type": "object"
+    },
+    "TextTailTarget": {
+      "additionalProperties": false,
+      "properties": {
+        "point": {
+          "$ref": "#/$defs/NormalizedPoint"
+        },
+        "subject_ref": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Subject Ref"
+        }
+      },
+      "required": [
+        "point"
+      ],
+      "title": "TextTailTarget",
+      "type": "object"
+    },
+    "TextTypography": {
+      "additionalProperties": false,
+      "properties": {
+        "emphasis": {
+          "default": "normal",
+          "enum": [
+            "normal",
+            "bold",
+            "whisper",
+            "shout"
+          ],
+          "title": "Emphasis",
+          "type": "string"
+        },
+        "font_token": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Font Token",
+          "type": "string"
+        },
+        "max_px": {
+          "default": 48,
+          "maximum": 256,
+          "minimum": 8,
+          "title": "Max Px",
+          "type": "integer"
+        },
+        "min_px": {
+          "default": 18,
+          "maximum": 128,
+          "minimum": 8,
+          "title": "Min Px",
+          "type": "integer"
+        },
+        "weight": {
+          "default": 500,
+          "maximum": 900,
+          "minimum": 100,
+          "title": "Weight",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "font_token"
+      ],
+      "title": "TextTypography",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/page_script_set.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "context_pack_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Context Pack Id",
+      "type": "string"
+    },
+    "pages": {
+      "items": {
+        "$ref": "#/$defs/PageScript"
+      },
+      "maxItems": 100,
+      "minItems": 1,
+      "title": "Pages",
+      "type": "array"
+    },
+    "plan_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Plan Artifact Id",
+      "type": "string"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "page-script-set.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "script_set_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Script Set Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "script_set_id",
+    "project_id",
+    "plan_artifact_id",
+    "context_pack_id",
+    "pages"
+  ],
+  "title": "PageScriptSet",
+  "type": "object"
+}

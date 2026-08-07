@@ -1,0 +1,15 @@
+{
+  "schema_version": "image-attempt.v1",
+  "attempt_id": "attempt_panel_splash_1",
+  "panel_id": "panel_splash",
+  "purpose": "panel",
+  "provider": "openrouter",
+  "model": "approved-image-model",
+  "prompt_snapshot": "A source-grounded full-page payoff with a reserved narration region.",
+  "reference_asset_ids": [],
+  "parameters": { "width": 832, "height": 1248 },
+  "request_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "status": "requested",
+  "validation_report_ids": [],
+  "created_at": "2026-07-21T12:00:00Z"
+}

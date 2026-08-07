@@ -1,0 +1,874 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "context_pack",
+        "adaptation_beat_set",
+        "manga_plan",
+        "page_script_set",
+        "thumbnail_set",
+        "page_layout",
+        "compiled_layout",
+        "thumbnail_preview",
+        "validation_report",
+        "revision_request",
+        "image_attempt",
+        "image_asset",
+        "asset_request_set",
+        "manga_script",
+        "storyboard",
+        "page_composition",
+        "rendered_page",
+        "rendered_page_set",
+        "manga_edition",
+        "manga_manifest",
+        "reel_spec",
+        "render_receipt",
+        "memory_delta"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "schema_version": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "kind",
+        "schema_version",
+        "content_hash"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    },
+    "AssetRef": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "asset_type": {
+          "enum": [
+            "character_sprite",
+            "expression",
+            "key_panel",
+            "background",
+            "audio",
+            "caption_track"
+          ],
+          "title": "Asset Type",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "mime_type": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "model_receipt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelReceipt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "storage_ref": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^(?:storage://|public/)[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$",
+          "title": "Storage Ref",
+          "type": "string"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        }
+      },
+      "required": [
+        "asset_id",
+        "project_id",
+        "asset_type",
+        "content_hash",
+        "storage_ref",
+        "mime_type"
+      ],
+      "title": "AssetRef",
+      "type": "object"
+    },
+    "BookCanonView": {
+      "additionalProperties": false,
+      "properties": {
+        "art_direction": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Art Direction",
+          "type": "string"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/GroundedFact"
+          },
+          "maxItems": 2000,
+          "title": "Facts",
+          "type": "array"
+        },
+        "narrative_voice": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Narrative Voice",
+          "type": "string"
+        },
+        "synopsis": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Synopsis",
+          "type": "string"
+        },
+        "terminology": {
+          "items": {
+            "$ref": "#/$defs/TerminologyEntry"
+          },
+          "maxItems": 512,
+          "title": "Terminology",
+          "type": "array"
+        },
+        "themes": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Themes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "synopsis",
+        "art_direction",
+        "narrative_voice"
+      ],
+      "title": "BookCanonView",
+      "type": "object"
+    },
+    "CharacterState": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "current_state": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Current State",
+          "type": "string"
+        },
+        "display_name": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Display Name",
+          "type": "string"
+        },
+        "visual_asset_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Visual Asset Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "character_id",
+        "display_name",
+        "current_state"
+      ],
+      "title": "CharacterState",
+      "type": "object"
+    },
+    "ContextCompilationReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "compiler_version": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Compiler Version",
+          "type": "string"
+        },
+        "estimated_tokens": {
+          "minimum": 0,
+          "title": "Estimated Tokens",
+          "type": "integer"
+        },
+        "included_source_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Included Source Ids",
+          "type": "array"
+        },
+        "omitted_optional_sections": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Omitted Optional Sections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "included_source_ids",
+        "estimated_tokens",
+        "compiler_version"
+      ],
+      "title": "ContextCompilationReceipt",
+      "type": "object"
+    },
+    "ContinuityView": {
+      "additionalProperties": false,
+      "properties": {
+        "character_state": {
+          "items": {
+            "$ref": "#/$defs/CharacterState"
+          },
+          "maxItems": 256,
+          "title": "Character State",
+          "type": "array"
+        },
+        "previous_slice_ending": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Slice Ending"
+        },
+        "unresolved_threads": {
+          "items": {
+            "$ref": "#/$defs/StoryThread"
+          },
+          "maxItems": 256,
+          "title": "Unresolved Threads",
+          "type": "array"
+        },
+        "world_state": {
+          "maxProperties": 256,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "World State",
+          "type": "object"
+        }
+      },
+      "title": "ContinuityView",
+      "type": "object"
+    },
+    "GenerationConstraints": {
+      "additionalProperties": false,
+      "properties": {
+        "image_mode": {
+          "default": "budgeted",
+          "enum": [
+            "sprites_only",
+            "budgeted",
+            "full"
+          ],
+          "title": "Image Mode",
+          "type": "string"
+        },
+        "max_key_panels": {
+          "minimum": 0,
+          "title": "Max Key Panels",
+          "type": "integer"
+        },
+        "max_pages": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Pages",
+          "type": "integer"
+        },
+        "max_panels_per_page": {
+          "default": 7,
+          "maximum": 7,
+          "minimum": 1,
+          "title": "Max Panels Per Page",
+          "type": "integer"
+        },
+        "max_sprites": {
+          "minimum": 0,
+          "title": "Max Sprites",
+          "type": "integer"
+        },
+        "narration_enabled": {
+          "default": false,
+          "title": "Narration Enabled",
+          "type": "boolean"
+        },
+        "reading_direction": {
+          "default": "rtl",
+          "enum": [
+            "rtl",
+            "ltr"
+          ],
+          "title": "Reading Direction",
+          "type": "string"
+        }
+      },
+      "required": [
+        "max_pages",
+        "max_sprites",
+        "max_key_panels"
+      ],
+      "title": "GenerationConstraints",
+      "type": "object"
+    },
+    "GroundedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "fact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact_id",
+        "claim",
+        "source_refs",
+        "confidence"
+      ],
+      "title": "GroundedFact",
+      "type": "object"
+    },
+    "ModelReceipt": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "cost_usd": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cost Usd"
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Input Artifact Ids",
+          "type": "array"
+        },
+        "input_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens"
+        },
+        "latency_ms": {
+          "minimum": 0,
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "model": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "output_tokens": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens"
+        },
+        "prompt_version": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "provider": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Provider",
+          "type": "string"
+        },
+        "purpose": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "skill_hashes": {
+          "items": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Skill Hashes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "purpose",
+        "prompt_version",
+        "latency_ms",
+        "attempt",
+        "created_at"
+      ],
+      "title": "ModelReceipt",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "SourceUnitExcerpt": {
+      "additionalProperties": false,
+      "properties": {
+        "excerpt": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Excerpt",
+          "type": "string"
+        },
+        "heading_path": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Heading Path",
+          "type": "array"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/SourceRef"
+        },
+        "token_count": {
+          "minimum": 1,
+          "title": "Token Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_ref",
+        "excerpt",
+        "token_count"
+      ],
+      "title": "SourceUnitExcerpt",
+      "type": "object"
+    },
+    "StoryThread": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "open",
+            "resolved",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "thread_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Thread Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "thread_id",
+        "summary",
+        "status"
+      ],
+      "title": "StoryThread",
+      "type": "object"
+    },
+    "TerminologyEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_form": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Canonical Form",
+          "type": "string"
+        },
+        "meaning": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Meaning",
+          "type": "string"
+        },
+        "term": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Term",
+          "type": "string"
+        }
+      },
+      "required": [
+        "term",
+        "canonical_form",
+        "meaning"
+      ],
+      "title": "TerminologyEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/context_pack.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "items": {
+        "$ref": "#/$defs/AssetRef"
+      },
+      "maxItems": 1000,
+      "title": "Assets",
+      "type": "array"
+    },
+    "book_canon": {
+      "$ref": "#/$defs/BookCanonView"
+    },
+    "compilation": {
+      "$ref": "#/$defs/ContextCompilationReceipt"
+    },
+    "constraints": {
+      "$ref": "#/$defs/GenerationConstraints"
+    },
+    "content_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "context_pack_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Context Pack Id",
+      "type": "string"
+    },
+    "continuity": {
+      "$ref": "#/$defs/ContinuityView"
+    },
+    "memory_version": {
+      "minimum": 0,
+      "title": "Memory Version",
+      "type": "integer"
+    },
+    "parent_artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "maxItems": 1000,
+      "title": "Parent Artifacts",
+      "type": "array"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "purpose": {
+      "enum": [
+        "manga_direction",
+        "manga_page_writing",
+        "manga_thumbnail",
+        "manga_composition",
+        "reel_direction"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "context-pack.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "source_units": {
+      "items": {
+        "$ref": "#/$defs/SourceUnitExcerpt"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Source Units",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "context_pack_id",
+    "project_id",
+    "scope_id",
+    "memory_version",
+    "purpose",
+    "source_units",
+    "book_canon",
+    "continuity",
+    "constraints",
+    "compilation",
+    "content_hash"
+  ],
+  "title": "ContextPack",
+  "type": "object"
+}

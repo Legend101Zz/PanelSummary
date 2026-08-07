@@ -1,0 +1,17 @@
+{
+  "asset_request_id": "asset_request_kael_neutral",
+  "project_id": "project_demo",
+  "character_id": "character_kael",
+  "asset_type": "character_sprite",
+  "pose": "three-quarter standing",
+  "expression": "wary",
+  "camera": "medium full shot",
+  "aspect_ratio": "2:3",
+  "prompt_fields": {
+    "character_design": "Kael wears a weathered navigator coat and carries a folded map.",
+    "rendering": "Black ink manga linework with restrained vermilion accents."
+  },
+  "consistency_reference_asset_ids": [],
+  "model_policy_id": "policy_image_budgeted_v1",
+  "idempotency_key": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+}

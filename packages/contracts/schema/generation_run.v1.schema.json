@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "GenerationBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_agent_steps": {
+          "minimum": 1,
+          "title": "Max Agent Steps",
+          "type": "integer"
+        },
+        "max_image_cost_usd": {
+          "minimum": 0.0,
+          "title": "Max Image Cost Usd",
+          "type": "number"
+        },
+        "max_key_panels": {
+          "minimum": 0,
+          "title": "Max Key Panels",
+          "type": "integer"
+        },
+        "max_reels": {
+          "minimum": 0,
+          "title": "Max Reels",
+          "type": "integer"
+        },
+        "max_render_minutes": {
+          "minimum": 0.0,
+          "title": "Max Render Minutes",
+          "type": "number"
+        },
+        "max_repair_attempts": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Repair Attempts",
+          "type": "integer"
+        },
+        "max_sprites": {
+          "minimum": 0,
+          "title": "Max Sprites",
+          "type": "integer"
+        },
+        "max_text_cost_usd": {
+          "minimum": 0.0,
+          "title": "Max Text Cost Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_text_cost_usd",
+        "max_image_cost_usd",
+        "max_render_minutes",
+        "max_agent_steps",
+        "max_repair_attempts",
+        "max_sprites",
+        "max_key_panels",
+        "max_reels"
+      ],
+      "title": "GenerationBudget",
+      "type": "object"
+    },
+    "GenerationRunStatus": {
+      "enum": [
+        "queued",
+        "running",
+        "succeeded",
+        "retryable_failed",
+        "terminal_failed",
+        "cancelled",
+        "superseded"
+      ],
+      "title": "GenerationRunStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/generation_run.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_stage": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Active Stage"
+    },
+    "budget": {
+      "$ref": "#/$defs/GenerationBudget"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Created By",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "requested_outputs": {
+      "items": {
+        "enum": [
+          "manga",
+          "reels",
+          "reel_render"
+        ],
+        "type": "string"
+      },
+      "maxItems": 3,
+      "minItems": 1,
+      "title": "Requested Outputs",
+      "type": "array"
+    },
+    "run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "generation-run.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/GenerationRunStatus"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "run_id",
+    "project_id",
+    "scope_id",
+    "requested_outputs",
+    "pipeline_version",
+    "status",
+    "budget",
+    "created_by",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "GenerationRun",
+  "type": "object"
+}

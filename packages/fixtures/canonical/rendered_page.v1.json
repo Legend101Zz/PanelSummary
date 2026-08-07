@@ -1,0 +1,88 @@
+{
+  "schema_version": "rendered-page.v1",
+  "storyboard_page": {
+    "page_id": "page_001",
+    "page_index": 0,
+    "panels": [
+      {
+        "panel_id": "panel_001",
+        "scene_id": "scene_001",
+        "beat_ids": ["beat_000"],
+        "purpose": "reveal",
+        "shot_type": "close_up",
+        "composition": "Kael's hand holds the map beside the lantern as hidden routes emerge.",
+        "action": "Kael tilts the map into the lantern light.",
+        "dialogue": [{ "speaker_id": "character_kael", "text": "These aren't roads. They're warnings.", "delivery": "hushed" }],
+        "narration": ["Old failures return in fresh ink."],
+        "source_refs": [
+          {
+            "book_id": "book_demo",
+            "source_unit_id": "unit_ch01_p001_010",
+            "page_start": 1,
+            "page_end": 10,
+            "start_offset": 120,
+            "end_offset": 268,
+            "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+            "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "source_fact_ids": ["fact_map_records_failures"],
+        "character_ids": ["character_kael"],
+        "visual_asset_ids": ["asset_last_observatory_key_panel_v1"],
+        "emotional_tone": "revelatory"
+      }
+    ],
+    "page_turn_hook": "The last failed route ends at their current position.",
+    "reading_flow": "top-right to bottom-left"
+  },
+  "composition": {
+    "page_index": 0,
+    "panel_order": ["panel_001"],
+    "panel_placements": {
+      "panel_001": {
+        "bbox_pct": { "x_pct": 4, "y_pct": 4, "width_pct": 92, "height_pct": 92 },
+        "z_index": 0,
+        "bleed_edges": []
+      }
+    },
+    "sprite_layers": {
+      "panel_001": [
+        {
+          "character_id": "character_kael",
+          "asset_id": "asset_last_observatory_key_panel_v1",
+          "expression": "wary",
+          "bbox_pct": { "x_pct": 45, "y_pct": 28, "width_pct": 45, "height_pct": 68 },
+          "z_index": 20,
+          "opacity": 1,
+          "flip_x": false
+        }
+      ]
+    },
+    "bubble_placements": {
+      "panel_001": [
+        {
+          "line_index": 0,
+          "speaker_id": "character_kael",
+          "bbox_pct": { "x_pct": 5, "y_pct": 8, "width_pct": 38, "height_pct": 20 },
+          "tail_side": "right",
+          "tail_offset_pct": 62,
+          "variant": "speech",
+          "z_index": 40
+        }
+      ]
+    },
+    "page_turn_panel_id": "panel_001",
+    "gutter_px": 6,
+    "composition_notes": "A near-splash reveal carries the first page."
+  },
+  "panel_artifacts": {
+    "panel_001": {
+      "asset_id": "asset_last_observatory_key_panel_v1",
+      "aspect_ratio": "9:16",
+      "used_reference_asset_ids": [],
+      "requested_character_count": 1,
+      "render_status": "rendered",
+      "error_code": null
+    }
+  }
+}

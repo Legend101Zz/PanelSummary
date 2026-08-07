@@ -1,0 +1,75 @@
+{
+  "schema_version": "manga-page-plan.v1",
+  "page_plan_id": "page_plan_action",
+  "project_id": "project_phase1",
+  "script_set_artifact_id": "script_set_phase1",
+  "canvas": {
+    "width_px": 1600, "height_px": 2400,
+    "trim": { "x": 0.03, "y": 0.02, "width": 0.94, "height": 0.96 },
+    "safe": { "x": 0.06, "y": 0.05, "width": 0.88, "height": 0.9 },
+    "bleed_pct": 0.02
+  },
+  "reading_direction": "rtl",
+  "page_script": {
+    "page_id": "page_action", "page_index": 0, "page_kind": "standard",
+    "entry_state": "Messages accumulate across time zones.",
+    "exit_state": "One local message remains unanswered.",
+    "page_turn_panel_id": "action_3",
+    "panels": [
+      {
+        "panel_id": "action_1", "purpose": "action", "story_beat": "Clocks compress around a tired worker.",
+        "importance": "medium", "tempo": "quick",
+        "camera": { "shot": "wide", "angle": "dutch", "movement": "tracking" },
+        "blocking": [], "prop_refs": ["prop_clocks"], "focal_regions": [], "avoid_text_regions": [],
+        "motion": { "direction": "clockwise", "speed": "fast", "effects": ["speed_lines"] },
+        "source_refs": [{ "book_id": "book_phase1", "source_unit_id": "source_page_14", "page_start": 14, "page_end": 14, "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }],
+        "source_fact_ids": ["fact_global_access"]
+      },
+      {
+        "panel_id": "action_2", "purpose": "reaction", "story_beat": "The worker slumps beside a glowing laptop.",
+        "importance": "high", "tempo": "hold",
+        "camera": { "shot": "close_up", "angle": "eye", "movement": "static" },
+        "blocking": [{ "subject_ref": "char_narrator", "pose": "slumped", "expression": "exhausted", "anchor": { "x": 0.65, "y": 0.7 }, "scale": 0.8, "facing": "left", "depth": "midground" }],
+        "prop_refs": ["prop_laptop"], "focal_regions": [], "avoid_text_regions": [],
+        "motion": { "effects": [] },
+        "source_refs": [{ "book_id": "book_phase1", "source_unit_id": "source_page_15", "page_start": 15, "page_end": 15, "text_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }],
+        "source_fact_ids": ["fact_locality"]
+      },
+      {
+        "panel_id": "action_3", "purpose": "payoff", "story_beat": "A local message waits beneath the global feed.",
+        "importance": "page_turn", "tempo": "impact",
+        "camera": { "shot": "extreme_close_up", "angle": "high", "movement": "push_in" },
+        "blocking": [], "prop_refs": ["prop_phone"], "focal_regions": [], "avoid_text_regions": [],
+        "motion": { "direction": "down", "speed": "still", "effects": ["screen_glow"] },
+        "source_refs": [{ "book_id": "book_phase1", "source_unit_id": "source_page_15", "page_start": 15, "page_end": 15, "text_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }],
+        "source_fact_ids": ["fact_locality"]
+      }
+    ],
+    "text_elements": []
+  },
+  "layout_root": {
+    "kind": "overlay", "node_id": "root_action",
+    "base": {
+      "kind": "split", "node_id": "action_split", "axis": "y", "ratios": [0.35, 0.65],
+      "gutter": { "value": 0.012, "unit": "page_pct" }, "angle_deg": -9,
+      "children": [
+        { "kind": "panel", "node_id": "node_action_1", "panel_id": "action_1" },
+        { "kind": "panel", "node_id": "node_action_2", "panel_id": "action_2" }
+      ]
+    },
+    "insets": [
+      {
+        "node": { "kind": "panel", "node_id": "node_action_3", "panel_id": "action_3" },
+        "anchor": "bottom_left",
+        "box": { "x": 0.07, "y": 0.66, "width": 0.32, "height": 0.25 },
+        "z_index": 20,
+        "border_style": "broken"
+      }
+    ]
+  },
+  "reading_edges": [
+    { "from_panel_id": "action_1", "to_panel_id": "action_2", "reason": "compression to exhaustion" },
+    { "from_panel_id": "action_2", "to_panel_id": "action_3", "reason": "reaction to local reveal" }
+  ],
+  "source_fact_ids": ["fact_global_access", "fact_locality"]
+}
