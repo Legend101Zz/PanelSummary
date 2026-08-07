@@ -29,6 +29,9 @@ openai==1.57.0             # OpenAI + OpenRouter compatible client
 httpx==0.28.0              # Async HTTP client for LLM proxy calls
 tiktoken==0.8.0            # Counts tokens so we don't exceed context limits
 
+# --- Testing ---
+pytest==9.1.1              # Test runner (gate: cd backend && uv run pytest tests/ -q)
+
 # --- Utils ---
 python-dotenv==1.0.1       # Loads .env files
 pydantic==2.10.3           # Data validation (FastAPI uses this heavily)
