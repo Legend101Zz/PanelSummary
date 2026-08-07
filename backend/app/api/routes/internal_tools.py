@@ -19,6 +19,7 @@ The bearer-token check is byte-equivalent to the donor's
 from __future__ import annotations
 
 import hmac
+import logging
 from typing import Protocol
 
 from fastapi import APIRouter, Header, HTTPException, status
@@ -29,6 +30,8 @@ from app.services.errors import (
     ControlPlaneError,
     NotFoundError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DomainToolExecutor(Protocol):
@@ -66,6 +69,17 @@ def internal_tools_router(
                 error_status = status.HTTP_403_FORBIDDEN
             elif isinstance(error, NotFoundError):
                 error_status = status.HTTP_404_NOT_FOUND
+            # Operator-side visibility: the sealed agent sees only the bounded
+            # error text, so a rejected tool call would otherwise be invisible
+            # to whoever is debugging the run.
+            logger.warning(
+                "agent tool %s rejected (%s) run=%s stage=%s: %s",
+                tool_name,
+                error.code,
+                request.scope.run_id,
+                request.scope.stage_run_id,
+                error,
+            )
             raise HTTPException(
                 status_code=error_status,
                 detail={"code": error.code, "message": str(error)},
