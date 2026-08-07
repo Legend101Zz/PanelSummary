@@ -790,3 +790,36 @@ Blocker before commit:
   unavailable in this environment (browser list is empty), so screenshots
   were not captured. Do not commit until an in-app browser session is exposed,
   all 13 screenshots are saved, and the visual pass is checked.
+
+## 2026-07-19 Documentation: Technical Architecture Blueprint
+
+Created:
+
+- `docs/TECHNICAL_ARCHITECTURE_BLUEPRINT.md`
+
+The blueprint records the proposed manga-first target architecture without
+claiming it is already implemented. It covers the current and target stack,
+Mongo-owned durable context, Pi session boundaries, shared contracts, the manga
+and reel lanes, Remotion skills and component registry, prompt-injection
+containment, APIs, deployment, testing, two-person ownership, and the single
+recommended implementation order.
+
+## 2026-08-07 Planning: v2 tracker, branch, and research direction
+
+- GitHub tracker filed: epic #11 with children #2-#10, extended with #12
+  (hybrid page-art economics / rendering mechanism) and #13 (whole-book
+  single-run orchestration). Manga lane first; reel lane (#9) deferred.
+- Long-lived integration branch `v2-architecture` created from up-to-date
+  main. All v2 work lands here via feature branches; main is merged only
+  after owner confirmation.
+- Local checkout reconciled with origin/main (was 12 commits behind).
+  NOTE: the visual-upgrade PR's .gitignore now ignores all of `docs/`;
+  `TECHNICAL_ARCHITECTURE_BLUEPRINT.md` and `research-report.md` were
+  force-added here because the issue tracker cites them as canonical.
+  Other local docs (architecture/product-blueprint/hackathon HTMLs, reader
+  evidence PNGs) stay untracked; safety copy of everything at
+  `/Volumes/Mrigesh SSD/Book-Reel-local-backup-2026-08-07/`. Owner should
+  decide whether to keep `docs` in .gitignore.
+- Research spikes in progress on this branch under `docs/research/`:
+  layout template library (comfyui_panels-style cut grammar on the ADR-009
+  LayoutNode tree) and conditioned full-page inking economics (issue #12).
