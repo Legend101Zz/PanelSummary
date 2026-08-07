@@ -904,3 +904,107 @@ Next concrete steps:
    change — blueprint Phase 1 exit), scope-selection API/UI. This is where
    the beanie 1.27-vs-2.0 wiring decision in ADR-010 gets made.
 3. TS contracts side + pnpm workspace when the agent-worker phase starts.
+
+## 2026-08-07 Session 2: durable context wired into v1 (issue #4 second half)
+
+Executed on `v2-architecture` in four commits (`c10d8a9` normalization,
+`8086bdc` persistence wiring + scope API + ADR-011, `5838db3` flag-gated
+ContextPack consumption, plus this handoff/proof commit).
+
+Step 0 (lane-C spike, issue #12): SKIPPED again — live probe of
+`GET /api/v1/key` returned `limit: 9, limit_remaining: 0, usage: 43.545`
+(unchanged since last session; the blocker comment on #12 stands). Raise the
+key limit (~$0.15 headroom), then run the one command in
+`docs/research/art-economics/findings.md`.
+
+What landed (blueprint Phase 1 / ADR-011 — read it first, it has the full
+rationale):
+
+1. **Wiring decision executed**: stayed on beanie 1.27 + motor. The seven
+   collision-free donor Docs are registered at all three init_beanie sites
+   through `persistence/v1_bridge.py::init_wired_documents` — the donor
+   `initialize_mongo` adapted to motor, INCLUDING its `tz_aware=True` via a
+   second client (discovered live: ported contracts demand aware datetimes;
+   v1's naive client would have broken `ScopeService`'s duplicate-read path;
+   v1's client stays naive so v1 API response shapes are untouched).
+   DEVIATION from the session brief: donor `BookDoc`/`MangaProjectDoc` are
+   registered NOWHERE — their unique indexes on the live `books` /
+   `manga_projects` collections (different schemas, fields absent) would
+   corrupt the guards. `V1BridgedRepositories` reroutes book/project methods
+   to the live v1 docs; v1 `MangaProjectDoc` gained additive
+   `active_memory_version` (blueprint §7.2's pointer), materialized via $set
+   by `ensure_genesis_snapshot` because raw $eq never matches missing fields.
+   Beanie-1.27 semantics were smoke-tested live on Atlas BEFORE wiring
+   (4/4: construct round-trip byte-exact, sorted finds, UpdateResult
+   modified_count 1/0, DuplicateKeyError on unique indexes).
+2. **Structure-aware source units** (`services/book_normalization.py` +
+   `app/scripts/normalize_source_units.py`): section-level units, byte-exact
+   splitting under the 20k excerpt cap, conservative front-matter detection
+   (empty content + apparatus headings), reconstruction that reproduces
+   `build_source_text_for_slice` byte-for-byte and fails loud on drift.
+   KEY FINDING: WMC's parse has DEGENERATE page provenance — all 17 chapters
+   report pages 1-1 of a 39-page PDF (v1 Docling dropped page ranges; the
+   arc outline's "pages 1-14" is model-authored). Pages are stored as
+   parsed, never fabricated; chapter_index is the reliable spine.
+   WMC normalized: 16 units (3 empty front-matter sections -> 0 units; the
+   24.5k story chapter split in 2), byte-equality PASS over 70,580 chars,
+   re-run creates 0 units (idempotent).
+3. **Scope-selection API** (`api/routes/scopes.py`): POST
+   /books/{id}/scopes (page_ranges OR chapter_indexes — chapter selection
+   exists because page overlap cannot discriminate on a degenerate-parse
+   book; front matter skipped unless include_front_matter), GET list, GET
+   scopes/coverage (ToC + front-matter flags + active-snapshot coverage).
+   Chapter selection reuses ported ScopeService verbatim through a filtered
+   repository view (donor hash/idempotency semantics intact). Curl evidence:
+   `docs/evidence/session2-continuity-proof/curl_scopes_api.txt`. NO UI yet.
+4. **Flag-gated consumption** (`services/compiled_context_bridge.py` +
+   `generation_service.py`): `Settings.use_compiled_context`, default OFF.
+   On: genesis -> idempotent scope freeze for the slice range -> ContextPack
+   at active memory version -> accepted context_pack ArtifactDoc under an
+   idempotent GenerationRunDoc -> slice text rebuilt from hash-verified units,
+   byte-compared against the legacy builder, HARD RAISE on mismatch. After a
+   successful slice: deterministic MemoryDelta merge (coverage + the exact
+   recap/hook strings v1 wrote to its ledger, citing the pack artifact).
+   IMPORTANT caveat for the next session: flag-on was proven at bridge level
+   (live byte-equality on the real slice range 1-14 + full InMemory two-slice
+   continuity tests) — NOT via a full live slice run, because the WMC arc
+   outline is fully covered (no next slice exists) and faking ~20 grounded
+   LLM stages isn't viable. First real flag-on slice run should happen on the
+   next fresh project (Session 3+ / first Manga Director run).
+5. **Continuity proof on WMC** (`backend/scripts/continuity_proof_wmc.py`,
+   two separate processes; evidence JSONs committed under
+   `docs/evidence/session2-continuity-proof/`):
+   - phase-a 4/4 PASS (pid 5688): live bridge byte-equality (70,580 chars);
+     scope A (story chapters 4-8, 6 units) + pack A + accepted artifact;
+     deterministic delta (3 grounded facts w/ real source refs + ending +
+     coverage) merged, pointer advanced 0 -> 1 ON THE LIVE v1 doc;
+     pack B compiled at v1, hash recorded.
+   - phase-b 10/10 PASS (pid 9020, fresh process): scope B idempotent across
+     processes; pack B recompiled HASH-IDENTICAL from Mongo alone; pack B
+     contains scope A's facts + previous_slice_ending; coverage marks scope
+     A's units; required facts survive squeeze to 10,799 tokens (floor
+     10,789; `previous_slice_continuity` dropped, all source excerpts kept);
+     sub-floor budget fails loud; stale delta (base v0 vs active v1) rejected
+     with pointer + snapshot hashes unchanged; run idempotency at active
+     memory version (a run against NEW memory is correctly a new key).
+
+Tests: 563 passed (516 baseline preserved + 47 new across
+test_book_normalization_v2 / test_compiled_context_bridge_v2 /
+test_scopes_api_v2). `git diff --check` clean per commit.
+
+Safety/live-write ledger: backup of book+project+slices+pages+assets at
+`/tmp/bookreel-s2-before-wiring.json` (546 KB) BEFORE any live write. Live
+writes performed: additive `active_memory_version: 1` on the WMC project doc,
+16 source_units, 4 scope_manifests, 2 memory snapshots (v0/v1), 3 runs,
+2 context_pack artifacts + indexes on the 7 new collections. NO destructive
+operation ran; v1 collections otherwise untouched. No provider calls of any
+kind this session (everything deterministic), so no receipts were needed.
+
+Known rough edges / next steps:
+1. Raise the OpenRouter key limit, run lane-C, decide #12 (still first).
+2. Issue #4 remainder: ToC-picker/coverage UI (API is done); first REAL
+   flag-on slice run on a fresh project; front-matter heuristics for
+   back-matter ad pages (WMC ch11-16 currently unflagged); GC of
+   superseded parse generations.
+3. Session 3 per roadmap: pnpm workspace + agent-worker/agent-runtime port
+   (#8), MiniMax Manga Director goal (#3) — see docs/next-prompt.md.

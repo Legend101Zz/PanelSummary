@@ -1,0 +1,96 @@
+{
+ "phase": "a",
+ "pid": 5688,
+ "at": "2026-08-07T10:46:08.687861+00:00",
+ "book_id": "6a0b5a11201a8d03f1d82501",
+ "project_id": "6a0b5a5b201a8d03f1d82503",
+ "v1_mirror": {
+  "pages": [
+   1,
+   14
+  ],
+  "scope_id": "scope_ec7fd261bea8643cd31f77eb",
+  "run_id": "run_c52e554f8d550643703a7091",
+  "artifact_id": "artifact_cfb60fedcaa3836f1b5dada0",
+  "pack_id": "context_98c93a6bcd5abf12bbae044f",
+  "pack_hash": "cfb60fedcaa3836f1b5dada05b114023886a4f403bc7a03ef4b21263e19bee8d",
+  "source_text_chars": 70580
+ },
+ "scope_a": {
+  "scope_id": "scope_418d0d03ac56e40a40ea0ded",
+  "scope_hash": "418d0d03ac56e40a40ea0dedce4c1758af581a6856ebbec943028762fb283219",
+  "chapters": [
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "unit_ids": [
+   "section_0004_000_00_222d767c39c3",
+   "section_0005_000_00_b184f4508866",
+   "section_0006_000_00_74437bd5ed8f",
+   "section_0007_000_00_f7c3296f3ced",
+   "section_0008_000_00_b4b4dc270b13",
+   "section_0008_000_01_14a3176ac46a"
+  ],
+  "run_id": "run_69fce0b5a28b1cadf86810c7",
+  "run_created": true,
+  "artifact_id": "artifact_3dbc3e8c893b7721dc7315e0",
+  "pack_a_hash": "3dbc3e8c893b7721dc7315e0c85ec04d97532689d1e7705688f0ed870840ba90"
+ },
+ "delta": {
+  "fact_ids": [
+   "proof-section_0004_000_00_222d767c39c3",
+   "proof-section_0005_000_00_b184f4508866",
+   "proof-section_0006_000_00_74437bd5ed8f"
+  ],
+  "previous_slice_ending": "en than he liked to admit, even to himself. He wasn't always sure what he was afraid of, but, in his weakened condition, he knew now he was simply fearful of going on alone. Haw didn't know it, but he was running behind because he was still",
+  "coverage_unit_ids": [
+   "section_0004_000_00_222d767c39c3",
+   "section_0005_000_00_b184f4508866",
+   "section_0006_000_00_74437bd5ed8f",
+   "section_0007_000_00_f7c3296f3ced",
+   "section_0008_000_00_b4b4dc270b13",
+   "section_0008_000_01_14a3176ac46a"
+  ],
+  "snapshot_v1_hash": "7205b2d8f2240b5bcd059d258fa360741aab35eb8ee49660eee0d310c0ac0591"
+ },
+ "scope_b": {
+  "scope_id": "scope_e440233874519846e51c4e2c",
+  "scope_hash": "e440233874519846e51c4e2c7a703f9c791d38f34db8fcd44e1df4363b147c7a",
+  "chapters": [
+   9,
+   10
+  ],
+  "unit_ids": [
+   "section_0009_000_00_ab5005823d0b",
+   "section_0010_000_00_8b6cac48cbd7",
+   "section_0010_000_01_747a90de2166"
+  ],
+  "pack_b_hash": "8dbb6da49fae3f0097c36863a6244b37e443aa830b83e74f5d5e8c7a600748a3",
+  "pack_b_id": "context_0983806e6ea7926d74f27197"
+ },
+ "checks": [
+  {
+   "check": "flag-on bridge text byte-equals v1 builder (live, real slice range)",
+   "ok": true,
+   "detail": "70580 chars, pack context_98c93a6bcd5abf12bbae044f, run run_c52e554f8d550643703a7091, artifact artifact_cfb60fedcaa3836f1b5dada0"
+  },
+  {
+   "check": "scope A frozen + pack A compiled + artifact accepted",
+   "ok": true,
+   "detail": "scope scope_418d0d03ac56e40a40ea0ded, memory_v0, artifact_3dbc3e8c893b7721dc7315e0"
+  },
+  {
+   "check": "memory delta merged; active pointer advanced 0 -> 1 on live v1 doc",
+   "ok": true,
+   "detail": "snapshot v1 hash 7205b2d8f2240b5b\u2026"
+  },
+  {
+   "check": "pack B compiled at memory v1 (phase-a reference)",
+   "ok": true,
+   "detail": "content_hash 8dbb6da49fae3f00\u2026"
+  }
+ ]
+}
