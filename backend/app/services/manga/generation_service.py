@@ -428,8 +428,18 @@ async def generate_project_slice(
     image_api_key: str | None = None,
     extra_options: dict[str, Any] | None = None,
     progress_callback: GenerationProgressCallback | None = None,
+    compiled_context_bridge=None,
 ) -> tuple[MangaSliceDoc, list[MangaPageDoc]]:
-    """Generate, validate, render, and persist the next manga source slice."""
+    """Generate, validate, render, and persist the next manga source slice.
+
+    ``compiled_context_bridge`` (ADR-011, blueprint Phase 1): when
+    ``Settings.use_compiled_context`` is on (or a bridge is injected by a
+    test), slice source text is consumed from a compiled ``ContextPack``
+    built out of durable source units + the active memory snapshot. The
+    bridge-derived text is byte-compared against the legacy builder and any
+    mismatch raises, so the flag can never silently change generated output.
+    Default OFF: this function is byte-for-byte the v1 behavior.
+    """
     await _emit_progress(progress_callback, 3, "Selecting next source pages…", "source")
     ledger = load_project_ledger(project)
     source_slice, arc_plan = _pick_next_slice(
@@ -443,6 +453,29 @@ async def generate_project_slice(
     source_text = build_source_text_for_slice(book.chapters, source_slice)
     if not source_text:
         raise ValueError("selected source slice has no extractable text")
+
+    from app.config import get_settings
+
+    compiled_slice_context = None
+    if compiled_context_bridge is None and get_settings().use_compiled_context:
+        from app.services.compiled_context_bridge import build_default_bridge
+
+        compiled_context_bridge = build_default_bridge()
+    if compiled_context_bridge is not None:
+        compiled_slice_context = await compiled_context_bridge.compile_slice_context(
+            book=book,
+            project_id=str(project.id),
+            source_slice=source_slice,
+        )
+        if compiled_slice_context.source_text != source_text:
+            raise RuntimeError(
+                "compiled context source text diverged from the v1 builder "
+                f"(scope {compiled_slice_context.scope_id}); refusing to run "
+                "with altered pipeline input — re-normalize the book"
+            )
+        # Byte-identical by the check above; from here on the pipeline
+        # genuinely consumes the durable-context copy of the source text.
+        source_text = compiled_slice_context.source_text
 
     source_has_more = source_slice.source_range.page_end is not None and source_slice.source_range.page_end < book.total_pages
     options = build_generation_options(
@@ -564,19 +597,21 @@ async def generate_project_slice(
     # TypeError. We now (a) keyword-pass everything and (b) compute the
     # recap seed from the *resolved scene goal + closing hook* via the
     # pure helper, instead of pasting the last scene's stage direction.
+    recap_for_next_slice = build_recap_seed(
+        manga_script=final_context.manga_script,
+        storyboard_pages=final_context.storyboard_pages,
+    )
+    last_page_hook = (
+        final_context.storyboard_pages[-1].page_turn_hook
+        if final_context.storyboard_pages
+        else ""
+    )
     updated_ledger = update_ledger_after_slice(
         ledger=ledger,
         source_slice=source_slice,
         new_fact_ids=final_context.new_fact_ids,
-        recap_for_next_slice=build_recap_seed(
-            manga_script=final_context.manga_script,
-            storyboard_pages=final_context.storyboard_pages,
-        ),
-        last_page_hook=(
-            final_context.storyboard_pages[-1].page_turn_hook
-            if final_context.storyboard_pages
-            else ""
-        ),
+        recap_for_next_slice=recap_for_next_slice,
+        last_page_hook=last_page_hook,
     )
     project.fact_registry = [fact.model_dump(mode="json") for fact in final_context.fact_registry]
     # Book-level artifacts are read-only after the understanding phase. We
@@ -594,6 +629,26 @@ async def generate_project_slice(
     }
     project.status = "complete"
     await project.save()
+
+    if compiled_context_bridge is not None and compiled_slice_context is not None:
+        # Mirror the accepted slice outcome into durable memory (ADR-011):
+        # coverage for the scope's units plus the exact continuity values v1
+        # wrote to its own ledger, citing the accepted context-pack artifact.
+        # Deterministic — no LLM. Loud on failure: flag-on is opt-in and a
+        # silently broken memory lane would defeat the point of Phase 1.
+        beat_ids = (
+            [beat.beat_id for beat in final_context.beat_sheet.beats]
+            if final_context.beat_sheet
+            else []
+        )
+        await compiled_context_bridge.record_slice_outcome(
+            compiled=compiled_slice_context,
+            project_id=str(project.id),
+            beat_ids=beat_ids,
+            previous_slice_ending=recap_for_next_slice,
+            last_page_hook=last_page_hook,
+        )
+
     await _emit_progress(progress_callback, 98, "Manga slice persisted successfully…", "complete")
 
     return slice_doc, page_docs
