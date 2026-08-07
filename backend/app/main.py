@@ -25,6 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
+from app.api.routes.internal_tools import internal_tools_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.manga_projects import router as manga_projects_router
 from app.api.routes.media import router as media_router
@@ -32,7 +33,8 @@ from app.api.routes.scopes import router as scopes_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
-from app.persistence.v1_bridge import init_wired_documents
+from app.persistence.v1_bridge import V1BridgedRepositories, init_wired_documents
+from app.services.domain_tools import MangaDirectorToolService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -62,6 +64,19 @@ app.include_router(jobs_router)
 app.include_router(manga_projects_router)
 app.include_router(media_router)
 app.include_router(scopes_router)
+
+# Internal agent domain-tool boundary (ADR-012). The sealed Node agent
+# worker is the only intended caller; the shared bearer token gates it and
+# every tool call is re-authorized against run/stage/context ownership.
+_bridged_repositories = V1BridgedRepositories()
+app.include_router(
+    internal_tools_router(
+        MangaDirectorToolService(_bridged_repositories, _bridged_repositories),
+        service_token=os.getenv(
+            "DOMAIN_TOOL_BROKER_TOKEN", "local-domain-tool-token-change-me"
+        ),
+    )
+)
 
 # MongoDB connection — created once at startup, reused for the process lifetime.
 motor_client: AsyncIOMotorClient | None = None
