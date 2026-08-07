@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="800" height="1200" fill="white"/>
+<title>t_splash_inset</title>
+<polygon points="35.0,38.8 765.0,38.8 765.0,1161.2 35.0,1161.2" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="400.0" cy="600.0" r="16" fill="#ddd" stroke="black"/>
+<text x="400.0" y="605.0" font-family="Helvetica" font-size="16" text-anchor="middle">1</text>
+<polygon points="496.6,103.6 720.1,103.6 720.1,318.4 496.6,318.4" fill="#f3f3f3" stroke="black" stroke-width="3.5"/>
+<circle cx="608.3" cy="211.0" r="16" fill="#ddd" stroke="black"/>
+<text x="608.3" y="216.0" font-family="Helvetica" font-size="16" text-anchor="middle">0</text>
+<polygon points="79.7,858.7 318.6,858.7 318.6,1096.4 79.7,1096.4" fill="#f3f3f3" stroke="black" stroke-width="3.5" stroke-dasharray="10,7"/>
+<circle cx="199.1" cy="977.5" r="16" fill="#ddd" stroke="black"/>
+<text x="199.1" y="982.5" font-family="Helvetica" font-size="16" text-anchor="middle">2</text>
+</svg>

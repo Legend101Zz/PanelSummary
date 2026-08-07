@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="800" height="1200" fill="white"/>
+<title>t_page_turn_reveal</title>
+<polygon points="35.0,42.1 244.2,42.1 244.2,466.1 35.0,458.8" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="139.6" cy="252.3" r="16" fill="#ddd" stroke="black"/>
+<text x="139.6" y="257.3" font-family="Helvetica" font-size="16" text-anchor="middle">2</text>
+<polygon points="258.2,41.4 482.3,41.4 482.3,475.0 258.2,467.2" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="370.2" cy="256.3" r="16" fill="#ddd" stroke="black"/>
+<text x="370.2" y="261.3" font-family="Helvetica" font-size="16" text-anchor="middle">1</text>
+<polygon points="496.3,39.5 765.0,39.5 765.0,486.8 496.3,477.4" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="630.6" cy="260.8" r="16" fill="#ddd" stroke="black"/>
+<text x="630.6" y="265.8" font-family="Helvetica" font-size="16" text-anchor="middle">0</text>
+<polygon points="764.6,505.2 764.6,1165.1 35.4,1165.1 35.4,479.7" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="400.0" cy="828.8" r="16" fill="#ddd" stroke="black"/>
+<text x="400.0" y="833.8" font-family="Helvetica" font-size="16" text-anchor="middle">3</text>
+</svg>
