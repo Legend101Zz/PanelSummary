@@ -1016,3 +1016,110 @@ Known rough edges / next steps:
    superseded parse generations.
 3. Session 3 per roadmap: pnpm workspace + agent-worker/agent-runtime port
    (#8), MiniMax Manga Director goal (#3) — see docs/next-prompt.md.
+
+## 2026-08-07 Session 3: agent plane live — pnpm workspace, Pi runtime, broker, first MiniMax Director goal (issues #8, #3 first half)
+
+Executed on `v2-architecture` in seven commits (`139c738` workspace +
+contracts TS, `9855e98` agent-runtime/agent-worker, `2e2d298` broker
+backend, `47ce4d2` director driver, `d3225ba` injection suites, `0f0d81a`
+live run + evidence, ADR-012 docs commit), plus this handoff. Read
+docs/adr/012 first — it enumerates every boundary edit and deviation.
+
+Step 0 (lane-C spike, issue #12): SKIPPED again — live probe of
+`GET /api/v1/key` at session start returned `limit: 9, limit_remaining: 0,
+usage: 43.545` (unchanged since Session 2; the blocker comment on #12
+stands). Raise the key limit (~$0.15 headroom), then run the one command in
+`docs/research/art-economics/findings.md`.
+
+What landed (blueprint Phase 0 exit closed + all of Phase 2):
+
+1. **pnpm workspace + contracts TS side** (ADR-010's deferred piece):
+   generate.mjs / Ajv validators / vitest fixtures ported verbatim from
+   ScrollStack @ 43300b5; `src/generated/*` regenerated under THIS repo's
+   pydantic-2.10.3 schemas; `pnpm test` in packages/contracts -> 42 passed —
+   Python and TypeScript now validate the same 32+6 fixtures. Environment:
+   node v22.23.0 (>=22.19 requirement met), pnpm 10.15.1, APFS volume.
+2. **packages/agent-runtime + apps/agent-worker** verbatim @ 43300b5.
+   Pi SDK exact-pinned 0.80.10 (re-evaluated, kept — donor-proven).
+   minimax/MiniMax-M3 resolves from the BUNDLED catalog with network
+   discovery disabled. Package names keep the @scrollstack scope for
+   diff-provable fidelity (rename deferred; ADR-012 edit 2).
+3. **Domain-tool broker**: donor `domain_tools.py` + `agent_worker.py`
+   verbatim; `internal_tools.py` router adapted (no container / no global
+   error handler here — ADR-012 edit 5) and mounted in main.py over
+   V1BridgedRepositories. Every tool call re-authorized against
+   run/stage/context-pack ownership; unknown tools fail closed 404;
+   cross-project 403. NOT ported: `page_domain_tools.py` (needs Session 4's
+   manga_layout/manga_page_planning/manga_validation).
+4. **Manga Director driver** (`app/services/manga_director.py`, NEW code
+   mirroring the donor's workflow stage): scope -> ContextPack at ACTIVE
+   memory version -> accepted context_pack artifact under idempotent
+   run/stage rows -> typed AgentGoal (ADR-004 allowlist, bounded budget:
+   max_text_cost_usd 0.50, max_pages 8) -> worker -> candidate must ALREADY
+   exist as a broker-validated artifact -> MiniMax receipt required
+   (issue #3 policy: manga_direction -> minimax/MiniMax-M3) -> accepted
+   artifact + ModelReceipt. Idempotent re-run returns the existing plan
+   with no model call.
+5. **Prompt-injection containment** (blueprint §14): schema-valid malicious
+   fixtures under `packages/fixtures/injection/` (outside manifest.json by
+   design); 16 Python + 7 TS tests assert the capability boundary: built-in
+   tool names fail closed, allowlists cannot be expanded by pack content,
+   fabricated/hash-tampered evidence is rejected, injected text returns as
+   bounded untrusted data.
+6. **LIVE Phase 2 exit** (evidence: `docs/evidence/session3-live-director/`):
+   one bounded MANGA_DIRECTION goal on the WMC project, scope B
+   (3 units, memory v1). Pi session `019fdc46-81a1-786a-94b4-15a59143fc0e`
+   returned a MangaPlan accepted by every canonical validator. Receipt:
+   minimax / MiniMax-M3, 18,844 in / 43,940 out tokens, $0.06791976,
+   291,379 ms. Complete control-plane call log for the run:
+   submit_manga_plan x3 (422, 422, 200) — nothing else; the two rejections
+   are the deterministic validators catching schema-invalid drafts (12 and
+   39 pydantic errors), repaired by the model. v1 collections byte-untouched
+   (1 slice / 13 pages / 8 assets, memory pointer still v1). Idempotent
+   re-invocation: reused=True, 12.5 s, zero model calls.
+
+MiniMax spend this session (authorized): TWO live worker runs. Run 1
+(~310 s) FAILED at the driver's receipt gate because both of its
+submissions were 422-rejected — its tokens were consumed but no artifact
+was accepted, so NO receipt exists for it; estimated ~$0.06 by analogy.
+Run 2 succeeded with the $0.0679 receipt above. Honest total: ~$0.13-0.14.
+Per-goal actuals to budget with going forward: ~$0.07 / ~5 min per
+direction goal (NOT the $0.02-0.04 OpenAI-lane figure — see the thinking
+deviation in ADR-012: Pi routes M3 through api.minimax.io/anthropic with
+reasoning ON and no extra-body hook, so disabled-thinking/reasoning_split
+controls are unreachable through the pinned SDK).
+
+Verification: backend 609 passed (563 baseline + 46 new); pnpm suites
+42 + 19 + 12; `node scripts/generate.mjs --check` and
+`PYTHONPATH=. uv run python scripts/export_contracts.py --check` both
+clean; `git diff --check` clean per commit.
+
+Safety/live-write ledger: full-DB backup (17 collections, 56 docs, 764 KB)
+at `/tmp/bookreel-s3-before-live-director.json` BEFORE any live write.
+Live writes were purely additive v2-lane rows: 1 context_pack artifact,
+1 candidate + 1 accepted manga_plan artifact, 1 generation run, 1 stage
+run. No destructive operation ran; both dev servers (uvicorn :8001, worker
+:8788) were shut down at session end.
+
+Running the stack live (values NOT committed anywhere — compose your own):
+backend needs `DOMAIN_TOOL_BROKER_TOKEN`; the worker needs that same token
+plus a DISTINCT `AGENT_WORKER_TOKEN` (both >=32 chars or config.ts throws),
+`DOMAIN_TOOL_BROKER_URL=http://127.0.0.1:<backend port>`,
+`AGENT_PROVIDER=minimax`, `AGENT_MODEL=MiniMax-M3`,
+`AGENT_MODEL_API_KEY_ENV=MINIMAX_API_KEY` (enforced for minimax), and
+`MINIMAX_API_KEY` from backend/.env. Then `GET /readyz` on the worker must
+be 200 before any goal (proves catalog + credential), and
+`backend/scripts/live_manga_director.py <scope_id>` drives one goal.
+
+Known rough edges / next steps:
+1. OpenRouter key limit still exhausted -> lane-C spike -> #12 (unchanged).
+2. First REAL flag-on v1 slice run STILL outstanding (Session 2 carryover):
+   WMC's arc is fully covered so it needs a fresh project, and at measured
+   M3 costs a ~20-stage run is >$1 — deliberately not burned this session.
+3. `page_domain_tools.py` port + MANGA_PAGE_WRITING / MANGA_THUMBNAIL goals
+   belong to Session 4 (layout compiler brings their dependencies).
+4. Tool-call traces not yet durably persisted (receipt + session id are);
+   worker egress not yet restricted; ARTIFACT_REPAIR has no goal policy.
+5. Session 4 per roadmap: layout compiler + page-script/thumbnail stages +
+   template library + craft validators; SVG preview loop on one WMC
+   chapter — see docs/next-prompt.md.
