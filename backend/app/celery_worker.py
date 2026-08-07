@@ -119,6 +119,7 @@ async def get_db():
     from beanie import init_beanie
     from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
     from app.models import Book, JobStatus
+    from app.persistence.v1_bridge import init_wired_documents
 
     settings = get_settings()
     client = AsyncIOMotorClient(settings.mongodb_url)
@@ -127,6 +128,9 @@ async def get_db():
         Book, JobStatus,
         MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
     ])
+    # Durable-context collections (ADR-011): separate tz-aware client; donor
+    # Book/Project Docs stay out — the live v1 documents own those collections.
+    await init_wired_documents(settings.mongodb_url, settings.db_name)
     return db
 
 

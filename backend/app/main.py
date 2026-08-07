@@ -28,9 +28,11 @@ from pydantic import BaseModel
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.manga_projects import router as manga_projects_router
 from app.api.routes.media import router as media_router
+from app.api.routes.scopes import router as scopes_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
+from app.persistence.v1_bridge import init_wired_documents
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,15 +61,20 @@ app.add_middleware(
 app.include_router(jobs_router)
 app.include_router(manga_projects_router)
 app.include_router(media_router)
+app.include_router(scopes_router)
 
 # MongoDB connection — created once at startup, reused for the process lifetime.
 motor_client: AsyncIOMotorClient | None = None
+# Separate tz-aware client for the durable-context collections (ADR-011):
+# the ported contracts require aware datetimes while v1's client must stay
+# naive so v1 API responses keep their exact shape.
+motor_client_v2: AsyncIOMotorClient | None = None
 
 
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize MongoDB + Beanie ODM and ensure storage dirs exist."""
-    global motor_client
+    global motor_client, motor_client_v2
     motor_client = AsyncIOMotorClient(settings.mongodb_url)
     db = motor_client[settings.db_name]
 
@@ -78,6 +85,11 @@ async def startup_event() -> None:
             MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
         ],
     )
+    # Durable-context collections (ADR-011). Donor BookDoc / MangaProjectDoc
+    # are deliberately NOT registered: the live v1 documents above own the
+    # colliding `books` / `manga_projects` collections; the v2 lane reaches
+    # them through the bridge.
+    motor_client_v2 = await init_wired_documents(settings.mongodb_url, settings.db_name)
 
     os.makedirs(settings.upload_dir, exist_ok=True)
     os.makedirs(settings.pdf_dir, exist_ok=True)
@@ -91,6 +103,8 @@ async def startup_event() -> None:
 async def shutdown_event() -> None:
     if motor_client:
         motor_client.close()
+    if motor_client_v2:
+        motor_client_v2.close()
 
 
 # ============================================================

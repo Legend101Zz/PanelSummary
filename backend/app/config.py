@@ -74,6 +74,17 @@ class Settings(BaseSettings):
     # without touching consumers, and so existing tests keep passing.
     manga_pipeline_version: str = "legacy"
 
+    # --- Durable context (issue #4 / blueprint Phase 1) ---
+    # When True, generate_project_slice sources its slice text from a
+    # compiled ContextPack (built from SourceUnitDocs + the active memory
+    # snapshot) instead of reading Book.chapters directly. The derived text
+    # is byte-compared against the legacy builder and any mismatch raises,
+    # so flag-on can never silently change generated output (ADR-011).
+    use_compiled_context: bool = False
+    # Token budget handed to the ContextCompiler on the v1 bridge path.
+    # Generous by design: Phase 1 must never drop mandatory source evidence.
+    compiled_context_max_input_tokens: int = 120_000
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
