@@ -1000,6 +1000,14 @@ writes performed: additive `active_memory_version: 1` on the WMC project doc,
 operation ran; v1 collections otherwise untouched. No provider calls of any
 kind this session (everything deterministic), so no receipts were needed.
 
+NOTE for re-runs: phase-a is one-shot by design — its merge advanced the
+pointer 0 -> 1, so a re-run correctly dies with StaleMemoryDeltaError at the
+merge step (phase-b is safely re-runnable). Also: the celery get_db init path
+was not exercised live this session (the identical double-init pattern was
+proven via _db.connect() in three script runs plus the uvicorn boot), and
+init_wired_documents' client is not closed in the celery/scripts paths —
+matching the pre-existing per-call client pattern there.
+
 Known rough edges / next steps:
 1. Raise the OpenRouter key limit, run lane-C, decide #12 (still first).
 2. Issue #4 remainder: ToC-picker/coverage UI (API is done); first REAL
