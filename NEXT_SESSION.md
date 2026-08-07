@@ -820,6 +820,12 @@ recommended implementation order.
   evidence PNGs) stay untracked; safety copy of everything at
   `/Volumes/Mrigesh SSD/Book-Reel-local-backup-2026-08-07/`. Owner should
   decide whether to keep `docs` in .gitignore.
-- Research spikes in progress on this branch under `docs/research/`:
-  layout template library (comfyui_panels-style cut grammar on the ADR-009
-  LayoutNode tree) and conditioned full-page inking economics (issue #12).
+- Research spikes on this branch under `docs/research/` (commit 0a3dd60):
+  layout template library DONE (spec + compiler + 5 golden previews; RTL read
+  ranks verified) and real-manga contract deltas DONE. The lane-C conditioned
+  full-page inking experiment (issue #12) is script-ready but BLOCKED: the
+  OpenRouter key's $9 total spend limit is exhausted (live 403). Raise the key
+  limit, then run `docs/research/art-economics/spike_lane_c_inking.py` (~$0.12).
+- Verified: ScrollStack's vertical-slice work is merged on its GitHub main
+  (ScrollStack PR #10); no unique work is trapped in the orphaned local
+  worktree `/Volumes/Mrigesh SSD/ScrollStack-manga`.
