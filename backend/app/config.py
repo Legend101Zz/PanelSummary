@@ -110,6 +110,18 @@ class Settings(BaseSettings):
     # v1 behavior is byte-identical and the module is never even imported.
     agentic_manga_pipeline_v1: bool = False
 
+    # --- Agent seam raw-arguments dump (Session 7 step 0) ---
+    # When set to a directory path, EVERY submit-tool invocation at the
+    # sealed agent seam (submit_page_script_set / submit_thumbnail_set)
+    # dumps its PRE-normalization arguments verbatim to one JSON file
+    # (tool + stage_run_id + UTC stamp) BEFORE any unwrap or validation
+    # runs. Purpose: the Session 6 M3 tool-frame mangling left a FOURTH,
+    # unexplained shape (attempt 10: every top-level field dropped) that
+    # the bounded 422 digests cannot reconstruct — the next paid attempt
+    # must show exactly what arrived at the seam. Empty string = off (the
+    # default; zero dump I/O on any path). Env: AGENT_SEAM_RAW_DUMP_DIR.
+    agent_seam_raw_dump_dir: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

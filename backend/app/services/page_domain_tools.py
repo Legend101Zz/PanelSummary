@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from copy import deepcopy
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -94,6 +96,67 @@ def _unwrap_item_wrappers(value: object) -> object:
     return value
 
 
+def _dump_raw_submission(
+    tool_name: str,
+    scope: DomainToolScope,
+    arguments: dict[str, JsonValue],
+    dump_dir: Path | None,
+) -> None:
+    """Persist the PRE-normalization submit arguments verbatim (Session 7).
+
+    The Session 6 ledger closed with a FOURTH M3 tool-frame mangling shape
+    (attempt 10: every top-level contract field dropped) that nothing
+    durable can reconstruct — ``failure_history`` carries bounded traces
+    only and Pi sessions are in-memory. This dump is the diagnosis
+    instrument: it fires on EVERY submit-seam invocation (success needs no
+    dump but proves a fix worked; placement in an except branch risks
+    missing a path), writes the arguments exactly as they arrived (before
+    ``_unwrap_item_wrappers``), and MUST NEVER break the submission itself.
+
+    ``dump_dir`` is the explicit test seam; live callers leave it ``None``
+    and the settings flag ``agent_seam_raw_dump_dir`` decides (config, not
+    code — empty string means off and this function does zero I/O).
+    """
+    if dump_dir is None:
+        from app.config import get_settings
+
+        configured = get_settings().agent_seam_raw_dump_dir
+        if not configured:
+            return
+        dump_dir = Path(configured)
+    try:
+        dump_dir.mkdir(parents=True, exist_ok=True)
+        received_at = datetime.now(UTC)
+        stamp = received_at.strftime("%Y%m%dT%H%M%S_%fZ")
+        out = dump_dir / f"{tool_name}_{scope.stage_run_id}_{stamp}.json"
+        out.write_text(
+            json.dumps(
+                {
+                    "tool": tool_name,
+                    "scope": scope.model_dump(mode="json"),
+                    "received_at": received_at.isoformat(),
+                    "arguments": arguments,
+                },
+                indent=2,
+                default=str,
+            ),
+            encoding="utf-8",
+        )
+        shapes = {
+            key: (
+                f"dict(keys={sorted(str(k) for k in value)[:24]})"
+                if isinstance(value, dict)
+                else type(value).__name__
+            )
+            for key, value in arguments.items()
+        }
+        logger.warning(
+            "raw submission dump -> %s (argument shapes=%s)", out, shapes
+        )
+    except Exception:  # noqa: BLE001 — diagnosis must never break the seam
+        logger.exception("raw submission dump FAILED for %s", tool_name)
+
+
 def _pydantic_error_digest(error: ValidationError, *, budget: int = 900) -> str:
     """Class-summarized validation digest for the sealed model.
 
@@ -138,9 +201,11 @@ class MangaPlanningToolService:
         artifacts: ArtifactRepository,
         *,
         media_root: Path = Path("storage"),
+        raw_dump_dir: Path | None = None,
     ) -> None:
         self._runs = runs
         self._artifacts = artifacts
+        self._raw_dump_dir = raw_dump_dir
         self._planning = MangaPagePlanningService(runs, artifacts, media_root=media_root)
 
     async def execute(self, tool_name: str, request: DomainToolRequest) -> DomainToolResponse:
@@ -307,6 +372,9 @@ class MangaPlanningToolService:
         scope: DomainToolScope,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
+        _dump_raw_submission(
+            "submit_page_script_set", scope, arguments, self._raw_dump_dir
+        )
         raw = _unwrap_item_wrappers(arguments.get("script_set"))
         if not isinstance(raw, dict):
             raise ArtifactValidationError("script_set must be an object")
@@ -482,6 +550,9 @@ class MangaPlanningToolService:
         context: ContextPack,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
+        _dump_raw_submission(
+            "submit_thumbnail_set", scope, arguments, self._raw_dump_dir
+        )
         raw = _unwrap_item_wrappers(arguments.get("thumbnail_set"))
         if not isinstance(raw, dict):
             raise ArtifactValidationError("thumbnail_set must be an object")
@@ -666,12 +737,14 @@ class MangaDomainToolService:
         artifacts: ArtifactRepository,
         *,
         media_root: Path = Path("storage"),
+        raw_dump_dir: Path | None = None,
     ) -> None:
         self._director = MangaDirectorToolService(runs, artifacts)
         self._planning = MangaPlanningToolService(
             runs,
             artifacts,
             media_root=media_root,
+            raw_dump_dir=raw_dump_dir,
         )
 
     async def execute(self, tool_name: str, request: DomainToolRequest) -> DomainToolResponse:

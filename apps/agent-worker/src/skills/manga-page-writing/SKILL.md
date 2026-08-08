@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.4.4
+version: 1.5.0
 ---
 
 # Manga page writing
@@ -120,6 +120,30 @@ inside the page. Dialogue requires `speaker_ref`. Narration and SFX cannot have
 a tail. Copy each `source_ref` exactly from the accepted MangaPlan; do not alter
 its book, source-unit, page, or hash fields. Use only accepted fact IDs.
 
+## Transport-artifact rejections: switch to the text lane
+
+The provider's tool-call frame can MANGLE a structurally correct
+submission in transit: arrays arrive wrapped in `{"item": ...}`, empty
+lists become `""`, or whole top-level fields vanish. The signature is a
+rejection reporting `missing` / `list_type` / `dict_type` errors for
+fields you KNOW you emitted correctly. That is a transport artifact, not
+a content problem — repairing content cannot fix it and resubmitting the
+same frame will fail the same way.
+
+After TWO rejected `submit_page_script_set` calls whose errors name
+fields you already wrote correctly, STOP calling tools entirely. Do NOT
+call `report_page_script_blocker` — a transport artifact is not an
+evidence blocker. Instead emit the complete, corrected PageScriptSet as
+your FINAL assistant message: ONE bare JSON object, starting with `{` and
+ending with `}`, the entire message — no prose, no markdown fences, no
+tool call. The runtime sends that object through the same authenticated
+submit tool and the same validation gates; acceptance then completes
+outside your turn.
+
+Reserve `report_page_script_blocker` for genuine evidence gaps (the
+accepted plan or context cannot support a page beat) — never for
+validation or transport failures.
+
 ## Bounded goal shape
 
 The typed AgentGoal is the shape authority. Read
@@ -184,4 +208,6 @@ first panel, or a third panel to any page.
 - Do not use arbitrary paths, URLs, shell, filesystem, or network tools.
 - Do not invent source facts, characters, assets, or continuity.
 - Report a blocker when the accepted evidence cannot support a page beat.
-- Broker acceptance is the only valid completion signal.
+- Broker acceptance is the only valid completion signal — except on the
+  transport-fallback text lane above, where the runtime performs the
+  final authenticated submission from your emitted JSON object.
