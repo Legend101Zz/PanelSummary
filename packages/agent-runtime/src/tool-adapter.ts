@@ -122,6 +122,41 @@ const TOOL_DESCRIPTIONS: Readonly<Record<DomainToolName, string>> = {
   report_missing_capability: "Report a registry capability gap; never generate executable code.",
 };
 
+/**
+ * Session 5 boundary edit (ADR-012 addendum): per-tool projection of the
+ * broker `data` payload onto the MODEL-visible `<tool_data>` text. Session 4's
+ * live thumbnail goal burned ~158k input tokens because validate_layout_draft
+ * echoed the full compiled layout and preview SVG back through the
+ * conversation on every call. The model only needs the verdict, the issues,
+ * and the normalized plan it should repair; the full payload still rides in
+ * the tool-result `details` and the broker HTTP response for the control
+ * plane. Keys listed here are picked when present — responses without them
+ * (e.g. the compilation-failure shape {passed, issues}) pass through with
+ * whatever subset exists.
+ */
+const MODEL_VISIBLE_DATA_KEYS: Partial<Record<DomainToolName, readonly string[]>> = {
+  validate_layout_draft: [
+    "passed",
+    "compiler_hash",
+    "preview_hash",
+    "issues",
+    "normalized_page_plan",
+  ],
+};
+
+export function projectModelVisibleData(name: DomainToolName, data: JsonValue): JsonValue {
+  const keys = MODEL_VISIBLE_DATA_KEYS[name];
+  if (!keys || typeof data !== "object" || data === null || Array.isArray(data)) {
+    return data;
+  }
+  const record = data as Record<string, JsonValue>;
+  const projected: Record<string, JsonValue> = {};
+  for (const key of keys) {
+    if (key in record) projected[key] = record[key];
+  }
+  return projected;
+}
+
 const SUBMISSION_TO_ARGUMENT: Partial<Record<DomainToolName, string>> = {
   submit_book_canon: "canon",
   submit_manga_plan: "plan",
@@ -199,10 +234,16 @@ export function createBrokeredTools(options: ToolAdapterOptions): ToolDefinition
           // get_manga_canon result that carried no plan). Broker responses
           // are already size-bounded server-side; they remain untrusted data
           // under the base system prompt.
-          const text =
+          // Session 5: the model-visible portion is additionally projected
+          // per tool (MODEL_VISIBLE_DATA_KEYS); `details` keeps the full data.
+          const modelData =
             response.data === undefined
+              ? undefined
+              : projectModelVisibleData(name, response.data);
+          const text =
+            modelData === undefined
               ? response.content
-              : `${response.content}\n<tool_data>${JSON.stringify(response.data).replaceAll("<", "\\u003c")}</tool_data>`;
+              : `${response.content}\n<tool_data>${JSON.stringify(modelData).replaceAll("<", "\\u003c")}</tool_data>`;
           return {
             content: [{ type: "text", text }],
             details: response.data,

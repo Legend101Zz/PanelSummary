@@ -138,4 +138,97 @@ describe("brokered read-tool results", () => {
     // Raw angle brackets from payloads stay escaped inside the wrapper.
     expect(part.text).not.toContain("<b>");
   });
+
+  it("projects validate_layout_draft data to the model and keeps the full payload in details", async () => {
+    // Session 5 regression (ADR-012 addendum): the live thumbnail goal burned
+    // ~158k input tokens on the compiled_layout + preview_svg echo. The model
+    // sees only the verdict, issues, and normalized plan; the control plane
+    // keeps everything through `details`.
+    const fullData = {
+      passed: false,
+      compiler_hash: "hash_1",
+      preview_hash: "hash_2",
+      issues: [{ code: "RTL_READING_FLOW_INCOHERENT", severity: "error" }],
+      normalized_page_plan: { page_plan_id: "plan_1" },
+      compiled_layout: { panels: [{ panel_id: "panel_1", clip_path: "M0 0" }] },
+      preview_svg: "<svg>giant-preview-payload</svg>",
+    };
+    const [tool] = createBrokeredTools({
+      names: ["validate_layout_draft"],
+      broker: {
+        async execute() {
+          return {
+            content: "Layout draft compiled without any provider or image call.",
+            data: fullData,
+          };
+        },
+      },
+      scope: {
+        correlation_id: "correlation_1",
+        goal_id: "goal_layout",
+        run_id: "run_1",
+        stage_run_id: "stage_1",
+        context_pack_id: "context_1",
+        project_id: "project_1",
+      },
+      maxToolCalls: 4,
+      maxRepairAttempts: 1,
+      onCandidate: () => undefined,
+      onToolCall: () => undefined,
+    });
+
+    const result = await tool.execute(
+      "layout_1",
+      { page_plan: {}, script_set_artifact_id: "script_1", page_index: 0 },
+      undefined,
+      undefined,
+      {} as never,
+    );
+    const [part] = result.content as [{ type: string; text: string }];
+    expect(part.text).toContain('"passed":false');
+    expect(part.text).toContain('"RTL_READING_FLOW_INCOHERENT"');
+    expect(part.text).toContain('"normalized_page_plan"');
+    expect(part.text).toContain('"compiler_hash":"hash_1"');
+    expect(part.text).not.toContain("compiled_layout");
+    expect(part.text).not.toContain("preview_svg");
+    expect(part.text).not.toContain("giant-preview-payload");
+    expect(result.details).toEqual(fullData);
+  });
+
+  it("passes the compilation-failure shape through the projection unchanged", async () => {
+    const [tool] = createBrokeredTools({
+      names: ["validate_layout_draft"],
+      broker: {
+        async execute() {
+          return {
+            content: "Layout draft failed deterministic compilation.",
+            data: { passed: false, issues: [{ code: "LAYOUT_COMPILE_FAILED" }] },
+          };
+        },
+      },
+      scope: {
+        correlation_id: "correlation_1",
+        goal_id: "goal_layout",
+        run_id: "run_1",
+        stage_run_id: "stage_1",
+        context_pack_id: "context_1",
+        project_id: "project_1",
+      },
+      maxToolCalls: 4,
+      maxRepairAttempts: 1,
+      onCandidate: () => undefined,
+      onToolCall: () => undefined,
+    });
+
+    const result = await tool.execute(
+      "layout_2",
+      { page_plan: {}, script_set_artifact_id: "script_1", page_index: 0 },
+      undefined,
+      undefined,
+      {} as never,
+    );
+    const [part] = result.content as [{ type: string; text: string }];
+    expect(part.text).toContain('"passed":false');
+    expect(part.text).toContain('"LAYOUT_COMPILE_FAILED"');
+  });
 });

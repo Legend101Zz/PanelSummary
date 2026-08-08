@@ -210,3 +210,17 @@ responses now reach the model in full (normalized plan + compiled layout +
 preview SVG), which drove the thumbnail goal to ~158k input tokens
 ($0.13). Trimming the model-visible portion to issues + normalized plan is
 a named Session 5 task.
+
+## Session 5 addendum (2026-08-09): model-visible projection, craft gate, failed-run traces, ModelPolicy modes
+
+Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
+
+1. `tool-adapter.ts` (extends the Session 4 edit): the model-visible
+   `<tool_data>` text is now a per-tool PROJECTION of the broker `data`
+   payload (`MODEL_VISIBLE_DATA_KEYS`). For `validate_layout_draft` the
+   model sees only `passed`, `compiler_hash`, `preview_hash`, `issues`,
+   and `normalized_page_plan`; `compiled_layout` and `preview_svg` stay in
+   the tool-result `details` and the broker HTTP response for the control
+   plane. Fix for the measured 158k-token thumbnail input (Session 4
+   handoff). Tools without a projection entry are unchanged.
+   Regression-tested in `test/tool-adapter.test.ts`.
