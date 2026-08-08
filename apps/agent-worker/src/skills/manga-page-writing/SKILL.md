@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.4.3
+version: 1.4.4
 ---
 
 # Manga page writing
@@ -114,9 +114,6 @@ Field-type traps (submissions are rejected on any of these):
   errors share one class, fix EVERY field of that class across all
   pages, not just the listed ones. A resubmission must ACTUALLY CHANGE
   the named fields — never resubmit an unchanged payload.
-- Your final action MUST be a successful `submit_page_script_set` tool
-  call. Never print the script as message text instead of calling the
-  tool.
 
 All normalized coordinates and sizes are in `0..1`, and boxes must remain
 inside the page. Dialogue requires `speaker_ref`. Narration and SFX cannot have

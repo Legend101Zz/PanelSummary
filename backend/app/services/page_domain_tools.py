@@ -35,6 +35,65 @@ from .manga_validation import validate_page_plan
 logger = logging.getLogger(__name__)
 
 
+#: Contract fields that are ALWAYS lists — used to normalize the M3
+#: tool-frame's empty-element representation ("" / {} / null) back to [].
+#: Name-keyed on purpose: the normalizer stays schema-light and lossless.
+_LIST_FIELD_NAMES = frozenset(
+    {
+        "pages",
+        "panels",
+        "text_elements",
+        "blocking",
+        "prop_refs",
+        "focal_regions",
+        "avoid_text_regions",
+        "effects",
+        "source_refs",
+        "source_fact_ids",
+        "page_plans",
+        "reading_edges",
+        "children",
+    }
+)
+
+
+def _unwrap_item_wrappers(value: object) -> object:
+    """Undo the pinned Pi runtime's M3 tool-frame list mangling.
+
+    Live-measured (Session 6 page-writing attempt 7, run record in
+    docs/evidence/session6-fresh-planning/): the anthropic-lane tool-call
+    frame serializes every JSON array as ``{"item": [...]}``, so a
+    structurally perfect submission arrives with ``pages`` (and every
+    nested list) wrapped and fails ``list_type`` validation. This is a
+    TRANSPORT artifact, not authored content — unwrapping is mechanical
+    and lossless (no contract field is named ``item``). The same quirk is
+    why the donor's M3 direction submissions only ever landed through the
+    assistant-text fallback (ADR-012 live-run observation).
+    """
+    if isinstance(value, dict):
+        if set(value.keys()) == {"item"}:
+            # XML-style repeated-element semantics (live attempt 8): a
+            # single-element array arrives as {"item": {object}} — bare,
+            # not wrapped in a list — so an item-wrapper ALWAYS denotes an
+            # array and its payload is normalized to a list.
+            inner = _unwrap_item_wrappers(value["item"])
+            return inner if isinstance(inner, list) else [inner]
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            unwrapped = _unwrap_item_wrappers(item)
+            if key in _LIST_FIELD_NAMES and not isinstance(unwrapped, list):
+                # Empty XML elements arrive as "" / {} / null (live
+                # attempt 9: every EMPTY list field failed list_type).
+                unwrapped = (
+                    [] if unwrapped in ("", None, {}) else [unwrapped]
+                )
+            normalized[key] = unwrapped
+        return normalized
+    if isinstance(value, list):
+        return [_unwrap_item_wrappers(item) for item in value]
+    return value
+
+
 def _pydantic_error_digest(error: ValidationError, *, budget: int = 900) -> str:
     """Class-summarized validation digest for the sealed model.
 
@@ -248,7 +307,7 @@ class MangaPlanningToolService:
         scope: DomainToolScope,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
-        raw = arguments.get("script_set")
+        raw = _unwrap_item_wrappers(arguments.get("script_set"))
         if not isinstance(raw, dict):
             raise ArtifactValidationError("script_set must be an object")
         try:
@@ -423,7 +482,7 @@ class MangaPlanningToolService:
         context: ContextPack,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
-        raw = arguments.get("thumbnail_set")
+        raw = _unwrap_item_wrappers(arguments.get("thumbnail_set"))
         if not isinstance(raw, dict):
             raise ArtifactValidationError("thumbnail_set must be an object")
         normalized = deepcopy(raw)

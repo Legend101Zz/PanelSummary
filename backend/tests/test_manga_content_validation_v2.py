@@ -388,3 +388,44 @@ def test_agent_submission_accepts_once_every_page_is_lettered(tmp_path: Path) ->
     response = resolve(service.execute("submit_page_script_set", request))
     assert isinstance(response.data, dict)
     assert response.data["validation_status"] == "accepted"
+
+
+# ---------------------------------------------------------------------------
+# M3 tool-frame transport artifact (Session 6 live finding)
+# ---------------------------------------------------------------------------
+
+
+def test_item_wrapped_frame_submission_is_unwrapped_and_accepted(tmp_path: Path) -> None:
+    """The pinned Pi runtime's anthropic-lane tool frames wrap every JSON
+    array as {"item": [...]} (live attempt-7 run record). The seam must
+    unwrap the transport artifact so a structurally correct M3 submission
+    validates."""
+    service, request, script_set = _tool_scenario(tmp_path)
+    donor = script_set.pages[0].text_elements[0]
+    script_set.pages[1].text_elements = [
+        donor.model_copy(
+            update={
+                "text_id": "text_page1_narration",
+                "panel_id": script_set.pages[1].panels[0].panel_id,
+                "content": "The maze rewards the one who moves first.",
+            }
+        )
+    ]
+
+    def wrap(value):
+        # Mirror the live frame mangling exactly (attempts 7-8): arrays
+        # wrap as {"item": [...]}, and SINGLE-element arrays collapse to
+        # {"item": {bare object}} (XML repeated-element semantics).
+        if isinstance(value, dict):
+            return {key: wrap(item) for key, item in value.items()}
+        if isinstance(value, list):
+            if not value:
+                return ""  # empty XML element (live attempt 9)
+            wrapped = [wrap(item) for item in value]
+            return {"item": wrapped[0] if len(wrapped) == 1 else wrapped}
+        return value
+
+    request.arguments["script_set"] = wrap(script_set.model_dump(mode="json"))
+    response = resolve(service.execute("submit_page_script_set", request))
+    assert isinstance(response.data, dict)
+    assert response.data["validation_status"] == "accepted"

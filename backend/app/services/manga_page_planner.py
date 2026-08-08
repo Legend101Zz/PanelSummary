@@ -138,9 +138,7 @@ def page_writing_instructions(beat_count: int) -> str:
         "exists — but never an empty text-element list. Use the exact "
         "accepted MangaPlan artifact ID and this fresh ContextPack ID. "
         "Fetch the accepted MangaPlan at most once. Do not create layouts, "
-        "request assets, or call an image model. Your final action MUST be "
-        "a successful submit_page_script_set tool call — never print the "
-        "script as message text."
+        "request assets, or call an image model."
     )
 
 
@@ -1032,11 +1030,18 @@ class MangaPagePlannerService:
 
     @staticmethod
     def _planning_budget(run: GenerationRunDoc) -> AgentBudget:
+        # Session 6 boundary edit (live-measured): the donor's 8,000-token
+        # per-turn output cap TRUNCATES a quality-lane (M3, reasoning-on)
+        # page-writing emission mid-JSON — both live M3 attempts died at
+        # exactly 8,178 output tokens with zero parseable submissions
+        # (stage failure_history attempts 5-6). A full two-page script with
+        # authored text elements is a single ~10-12k-token JSON before
+        # reasoning overhead; the Director goal already runs at 16k.
         return AgentBudget(
             max_steps=min(8, int(run.budget["max_agent_steps"])),
             max_tool_calls=min(10, max(4, int(run.budget["max_agent_steps"]))),
             max_input_tokens=DEFAULT_MAX_INPUT_TOKENS,
-            max_output_tokens=8_000,
+            max_output_tokens=24_000,
             max_repair_attempts=int(run.budget["max_repair_attempts"]),
             max_cost_usd=float(run.budget["max_text_cost_usd"]),
         )
