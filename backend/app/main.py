@@ -34,7 +34,7 @@ from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
 from app.persistence.v1_bridge import V1BridgedRepositories, init_wired_documents
-from app.services.domain_tools import MangaDirectorToolService
+from app.services.page_domain_tools import MangaDomainToolService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,10 +68,12 @@ app.include_router(scopes_router)
 # Internal agent domain-tool boundary (ADR-012). The sealed Node agent
 # worker is the only intended caller; the shared bearer token gates it and
 # every tool call is re-authorized against run/stage/context ownership.
+# Session 4: MangaDomainToolService (donor dispatcher) adds the page-writing
+# and thumbnail planning tools on top of the Director tools.
 _bridged_repositories = V1BridgedRepositories()
 app.include_router(
     internal_tools_router(
-        MangaDirectorToolService(_bridged_repositories, _bridged_repositories),
+        MangaDomainToolService(_bridged_repositories, _bridged_repositories),
         service_token=os.getenv(
             "DOMAIN_TOOL_BROKER_TOKEN", "local-domain-tool-token-change-me"
         ),
