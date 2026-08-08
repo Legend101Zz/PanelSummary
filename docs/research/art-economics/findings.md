@@ -72,3 +72,27 @@ Per-page deterministic policy: **A** for quiet dialogue pages (tempo=hold, no ac
 - Character references: existing accepted WMC assets
   (`storage/images/manga_assets/6a0b5a5b201a8d03f1d82503/{haw,hem}__reference_sheet__front.png`)
 - Panel briefs: 7-panel "empty cheese station" scene (WMC ch.2 class content)
+
+---
+
+## ✅ Lane-C experiment RESULTS (run 2026-08-08, receipts in `out/receipts.json`)
+
+**Verdict: VIABLE — adopt lane C as the default for standard pages, with the guardrails
+below.** Total spend $0.0784 (3 calls).
+
+| Check | Result |
+|---|---|
+| Boundary adherence (vs `t_ref_rows_2_3_2` skeleton) | **6/7 panels**: angled top cut ✓, 2-panel top row ✓, 3-panel middle row ✓; defect: bottom row **merged 2→1** wide panel |
+| Conditioned-vs-control delta | Decisive. Control (no skeleton) drew a flat generic grid, ignored the 7-panel brief (~9 panels), zero diagonal cuts → **the skeleton conditioning IS the structural control mechanism** |
+| Character identity | Haw + Hem clearly recognizable from the reference sheets, consistent across all panels, correctly style-translated to monochrome ink + screentones + speedlines |
+| Text discipline | **Zero real text in both images.** OCR gate as-written false-positives on screentone/speedline texture (`"Nel"`, `"SZ,"`, …) → gate needs a dictionary/confidence noise filter before production |
+| Cost | $0.0390/page-image confirmed. 1 of 3 calls returned **text-only (no image)** for $0.0005 — refusal-class failure; budget ~1.5 attempts/page worst case ⇒ ~$0.06/page ≈ **$2.3–2.5 per 40-page book**, at or near target |
+| Content fidelity | The merged bottom panel lost the "empty station" reveal (the control actually drew that content better) → per-panel content QA (M3 vision vs briefs) + selective page retry is required, not optional |
+
+**Production guardrails for Session 5 (#12 → #5/#7 wiring):**
+1. Harden conditioning: thicker skeleton borders, larger in-panel number badges, explicit
+   "exactly N panels — never merge or add panels" instruction; retry on panel-count mismatch.
+2. Layout-IoU validator (from #10) as the accept/retry gate per page.
+3. OCR gate with tone-noise threshold (dictionary words + min confidence + min word count).
+4. Per-panel content check against briefs (M3 vision), selective single-page regeneration.
+5. Capture the text body of no-image responses in receipts (refusal diagnostics).

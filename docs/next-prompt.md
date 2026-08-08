@@ -16,17 +16,11 @@ broker + live-run deviations), docs/adr/009 (manga page DSL v2), docs/adr/004
 the Phase 3 build order in section 22, and GitHub issues #5 and #6 on
 Legend101Zz/PanelSummary.
 
-Step 0 — NOW UNBLOCKED, do it first (owner raised the key on 2026-08-08;
-verified limit $10 / remaining $10): confirm headroom via
-GET https://openrouter.ai/api/v1/key (OPENROUTER_API_KEY from backend/.env;
-never print the key), then run
-  cd docs/research/art-economics && ../../../backend/.venv/bin/python spike_lane_c_inking.py
-(~$0.12, 3 image calls — the ONLY authorized image spend this session). Review
-the generated pages against findings.md's protocol (panel-boundary adherence
-vs the t_ref_rows_2_3_2 skeleton, OCR gate, Hem/Haw identity, conditioned-vs-
-control delta, per-receipt cost), decide the lane-C verdict, and post it with
-receipts as a comment on issue #12. This verdict steers Session 5; git add -f
-the out/ evidence.
+Step 0 — ALREADY DONE (2026-08-08, in the planning session): the lane-C
+experiment ran; verdict VIABLE-with-guardrails. Receipts + committed evidence in
+docs/research/art-economics/ (findings.md results section + out/), verdict
+comment on issue #12. Do NOT re-run it; NO image-model spend is authorized in
+this session.
 
 Main goal (issues #5 + #6 = blueprint Phase 3 first half: the layout lane):
 1. Port ScrollStack's page-layout compiler + craft validators from local main
