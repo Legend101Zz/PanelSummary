@@ -72,15 +72,16 @@ budgeted — persist a receipt for EVERY provider call (page-writing goals run
 on MiniMax-M2.7-highspeed per the issue-#3 policy table, NOT M3; confirm the
 model resolves from the pinned Pi catalog before spending). Budget with the
 Session 3 actuals (~$0.07 / ~5 min per M3 direction goal; high-speed stages
-should be cheaper — measure). Image spend: lane-C's 3 spike calls ONLY (the
-OpenRouter key is image-only; its fresh $10 is not general budget). Preserve all v1
+should be cheaper — measure). Image spend: NONE authorized this session — lane-C already ran on
+2026-08-08 (the OpenRouter key is image-only; its ~$9.9 remaining is not
+general budget). Preserve all v1
 behavior (use_compiled_context stays default OFF; the 609-test backend
 baseline stays green; add tests for everything new). docs/ is gitignored —
 use git add -f for curated docs. Back up any benchmark data before
 destructive operations (pattern: /tmp/bookreel-s3-before-live-director.json).
 
-Outstanding carry-forwards (do not lose): (a) OpenRouter key raise -> lane-C
--> #12; (b) first REAL flag-on v1 slice run on a FRESH project (Session 2/3
+Outstanding carry-forwards (do not lose): (a) DONE 2026-08-08 — lane-C ran,
+verdict on #12; (b) first REAL flag-on v1 slice run on a FRESH project (Session 2/3
 carryover — WMC's arc is fully covered); (c) durable tool-call trace
 persistence; (d) worker egress restriction. Pick up (b) here if a fresh
 project is cheap to stand up, otherwise carry it again with the reason.
