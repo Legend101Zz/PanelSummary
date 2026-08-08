@@ -1,0 +1,52 @@
+{
+  "purpose": "vision_smoke",
+  "model": "MiniMax-M3",
+  "image": "v1_conditioned_a2.png",
+  "parsed": {
+    "panel_count": 7,
+    "panels": [
+      {
+        "index": 1,
+        "shape": "tilted trapezoid (upper-left)",
+        "scene": "Stone corridor with arched doorway at the end; two boys running toward the viewer through a sunlit passage."
+      },
+      {
+        "index": 2,
+        "shape": "tilted parallelogram (upper-right)",
+        "scene": "Continuation of the stone corridor perspective; one boy standing, looking back toward the archway."
+      },
+      {
+        "index": 3,
+        "shape": "small square (middle-left)",
+        "scene": "Close-up of sneakers hitting the ground, kicking up dust/smoke."
+      },
+      {
+        "index": 4,
+        "shape": "square close-up (middle-center)",
+        "scene": "Young boy's face, wide-eyed, smiling and excited, with sweat drops."
+      },
+      {
+        "index": 5,
+        "shape": "square close-up (middle-right)",
+        "scene": "Older man's face, weary/sad expression with sweat drops."
+      },
+      {
+        "index": 6,
+        "shape": "wide horizontal panel (bottom)",
+        "scene": "Both characters standing side by side in the arched corridor, facing forward."
+      },
+      {
+        "index": 7,
+        "shape": "(counted in the 7-panel layout)",
+        "scene": "Covered within the layout above."
+      }
+    ],
+    "overall_ok": true
+  },
+  "usage": {
+    "prompt_tokens": 1583,
+    "completion_tokens": 278
+  },
+  "cost_usd": 0.000404,
+  "latency_s": 9.8
+}

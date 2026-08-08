@@ -74,6 +74,15 @@ logger = logging.getLogger(__name__)
 STAGE_NAME = "manga_page_art"
 MAX_ATTEMPTS_PER_PAGE = 2
 
+#: Gate policy provenance — part of the stage input hash so a policy change
+#: never silently reuses a stage run gated under the old policy.
+#: v2 (Session 5 live-run calibration): the OCR gate is the TEXT authority
+#: (issue #12 flowchart); vision QA's contains_text flag is ADVISORY — the
+#: first live batch showed it fires on drawn scribble/pseudo-glyph texture
+#: that the dictionary OCR gate correctly ignores. Vision still rejects on
+#: panel-count mismatch and overall_ok=false (intent/identity authority).
+GATE_POLICY_VERSION = "page-art-gates.v2"
+
 HARD_RULES = (
     "HARD RULES:\n"
     "- Monochrome black-and-white manga ink style with screentones.\n"
@@ -184,6 +193,7 @@ class MangaPageArtStageService:
                 {
                     "thumbnail_hash": thumbnail_artifact.content_hash,
                     "page_art_version": PAGE_ART_VERSION,
+                    "gate_policy_version": GATE_POLICY_VERSION,
                     "image_model": PAGE_ART_MODEL,
                 }
             ),
@@ -298,7 +308,7 @@ class MangaPageArtStageService:
                     continue
                 candidate: Image.Image = call["image"]
                 gates, _vision_cost, gate_receipts = await self._gate_page(
-                    run, stage, plan, compiled, candidate
+                    run, stage, plan, compiled, candidate, attempt=attempt
                 )
                 result.receipt_artifact_ids.extend(gate_receipts)
                 # `gates` already carries this attempt's vision_cost_usd;
@@ -309,6 +319,15 @@ class MangaPageArtStageService:
                     "vision_cost_usd": previous_vision
                     + float(gates.get("vision_cost_usd", 0.0)),
                 }
+                if self._evidence_dir is not None:
+                    # Session 5 live-run lesson: rejected attempts must stay
+                    # inspectable — the first batch's rejected art was lost.
+                    self._evidence_dir.mkdir(parents=True, exist_ok=True)
+                    verdict = "accepted" if gates["accepted"] else "rejected"
+                    candidate.save(
+                        self._evidence_dir
+                        / f"candidate_p{plan.page_script.page_index}_a{attempt}_{verdict}.png"
+                    )
                 if gates["accepted"]:
                     art_image = candidate
                     page_art_artifact = await self._persist_page_art(
@@ -503,6 +522,8 @@ class MangaPageArtStageService:
         plan: MangaPagePlan,
         compiled: CompiledPageLayout,
         candidate: Image.Image,
+        *,
+        attempt: int = 0,
     ) -> tuple[dict[str, Any], float, list[str]]:
         receipts: list[str] = []
         scratch = self._media_root / "page-art" / "scratch"
@@ -537,6 +558,7 @@ class MangaPageArtStageService:
                 model=self._vision_policy.model,
                 payload_summary={
                     "page_index": plan.page_script.page_index,
+                    "attempt": attempt,
                     "expected_panel_count": len(compiled.panels),
                 },
                 usage=(vision_verdict or {}).get("usage"),
@@ -576,8 +598,10 @@ class MangaPageArtStageService:
                     f"vision QA counted {vision_panel_count} panels, "
                     f"expected {len(compiled.panels)}"
                 )
-            if vision_text:
-                reject_reasons.append("vision QA saw embedded text")
+            # GATE_POLICY_VERSION v2: the dictionary OCR gate is the text
+            # authority; vision's contains_text stays ADVISORY (recorded
+            # below), because it fires on drawn scribble/pseudo-glyph
+            # texture (first live batch, both pages, OCR clean each time).
             if vision_ok is False:
                 reject_reasons.append("vision QA overall_ok=false")
         elif self._vision_qa is not None and parsed is None:
@@ -585,6 +609,8 @@ class MangaPageArtStageService:
 
         gates = {
             "accepted": not reject_reasons,
+            "gate_policy_version": GATE_POLICY_VERSION,
+            "vision_text_advisory": vision_text,
             "reject_reason": "; ".join(reject_reasons),
             "ocr": {
                 "clean": ocr.clean,

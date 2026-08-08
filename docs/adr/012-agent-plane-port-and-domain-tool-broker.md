@@ -295,3 +295,16 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    when composed with a page-art service; its image budget defaults to the
    run's `max_image_cost_usd` (0.0 on planning runs — flag-on spends zero
    image dollars unless explicitly granted).
+6. Live-run gate calibration (GATE_POLICY_VERSION `page-art-gates.v2`,
+   part of the stage input hash so policy changes never reuse a stage
+   gated under the old policy): the first live WMC batch (2 pages x 2
+   attempts, all 4 receipted, $0.156) was rejected SOLELY by the vision
+   QA's `contains_text` flag while the dictionary OCR gate was clean each
+   time — the flag fires on drawn scribble/pseudo-glyph texture (maze-map
+   symbols, SFX-like marks). Per the issue #12 flowchart the OCR gate is
+   the text authority; `contains_text` is now ADVISORY (recorded as
+   `vision_text_advisory`), vision still rejects on panel-count mismatch
+   and `overall_ok=false`. Rejected attempts now persist to the evidence
+   dir (the first batch's rejected art was lost — fixed). Under v2 both
+   pages ACCEPTED on attempt 1 ($0.078); evidence incl. accepted art in
+   `docs/evidence/session5-page-art/`.

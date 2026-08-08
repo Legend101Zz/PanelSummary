@@ -408,6 +408,54 @@ def test_zero_budget_spends_nothing_and_composes_dsl_only(tmp_path):
     run(scenario())
 
 
+def _text_flagging_vision(expected: int):
+    async def vision_qa(*, image_path, briefs, expected_panel_count, system_prompt):
+        return {
+            "parsed": {
+                "panel_count": expected,
+                "panels": [
+                    {
+                        "index": 1,
+                        "matches_brief": True,
+                        "identity_ok": True,
+                        "contains_text": True,  # scribble/pseudo-glyph class
+                        "notes": "hand-drawn scribbles in a notebook",
+                    }
+                ],
+                "overall_ok": True,
+            },
+            "usage": {"prompt_tokens": 900, "completion_tokens": 100},
+            "cost_usd": 0.002,
+        }
+
+    return vision_qa
+
+
+@pytest.mark.skipif(not HAS_TESSERACT, reason="tesseract binary unavailable")
+def test_vision_text_flag_is_advisory_ocr_is_the_text_authority(tmp_path):
+    """GATE_POLICY_VERSION v2 (live-run calibration): vision's contains_text
+    fired on drawn scribble texture on BOTH live pages while the dictionary
+    OCR gate was clean — it must not reject on its own, only be recorded."""
+
+    async def scenario():
+        repositories, run_id = await _planning_lineage(tmp_path)
+        service = MangaPageArtStageService(
+            repositories,
+            media_root=tmp_path,
+            image_caller=_echo_skeleton_caller(),
+            vision_qa=_text_flagging_vision(2),
+        )
+        outcome = await service.run_page_art_stage(
+            project_id=PROJECT_ID, run_id=run_id, image_budget_usd=0.20
+        )
+        for page in outcome.pages:
+            assert page.status == "art_accepted"
+            assert page.gate_summary["vision_text_advisory"] is True
+            assert page.gate_summary["gate_policy_version"] == "page-art-gates.v2"
+
+    run(scenario())
+
+
 @pytest.mark.skipif(not HAS_TESSERACT, reason="tesseract binary unavailable")
 def test_vision_panel_count_mismatch_rejects_the_page(tmp_path):
     async def scenario():
