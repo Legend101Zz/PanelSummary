@@ -21,6 +21,11 @@ from .domain_tools import (
 )
 from .errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from .hashing import binary_content_hash
+from .manga_content_validation import (
+    AGENT_CONTENT_RULE_POLICY,
+    blocking_content_errors,
+    validate_script_content_enforced,
+)
 from .manga_craft_validation import validate_page_craft_enforced
 from .manga_layout import LayoutCompilationError, compile_page_layout, render_thumbnail_svg
 from .manga_page_planning import MangaPagePlanningService
@@ -226,6 +231,24 @@ class MangaPlanningToolService:
             script_set = PageScriptSet.model_validate(raw)
         except ValidationError as error:
             raise ArtifactValidationError(f"PageScriptSet validation failed: {error}") from error
+        # Session 6 step 0.1 (boundary edit, ADR-012 S6 addendum): the agent
+        # submission seam applies the stricter content policy — a sealed
+        # model must letter EVERY page (narration needs no speaker, so an
+        # empty character context never justifies a wordless page). The
+        # service tier below re-checks with the base policy on every path.
+        agent_content_errors = blocking_content_errors(
+            validate_script_content_enforced(
+                script_set, policy=AGENT_CONTENT_RULE_POLICY
+            )
+        )
+        if agent_content_errors:
+            detail = "; ".join(
+                f"{issue.code} at {issue.path}: {issue.message}"
+                for issue in agent_content_errors
+            )
+            raise ArtifactValidationError(
+                f"PageScriptSet failed the content-quality gate — {detail}"
+            )
         artifact = await self._planning.submit_page_script_set(
             run_id=scope.run_id,
             stage_run_id=scope.stage_run_id,

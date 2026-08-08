@@ -78,7 +78,11 @@ ACCEPTED_DIRECTION_MODELS = {"MiniMax-M3", "MiniMax-M2.7-highspeed"}
 
 PAGE_WRITING_STAGE = "manga_page_writing"
 THUMBNAIL_STAGE = "manga_thumbnail"
-PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v2"
+#: v3 (Session 6 step 0.1): real story-beat sentences + authored text
+#: elements demanded by skill 1.4.0 + the driver instructions; bumping the
+#: version re-keys the stage identity so a fresh planning run never reuses
+#: a set accepted under the content-vacuous v2 prompt.
+PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v3"
 THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v4"
 
 #: Two pages per planning goal (donor vertical-slice shape). The PANEL count
@@ -123,11 +127,18 @@ def page_writing_instructions(beat_count: int) -> str:
         "Create exactly two source-grounded manga pages with page indices 0 "
         f"and 1. Create exactly {beat_count} panels total across the two "
         "pages, at most 7 panels on a page. Map each accepted MangaPlan beat "
-        "exactly once, in source order. Use empty blocking, prop, "
-        "focal, avoid-text, source-fact, and text-element lists when no accepted "
-        "character, asset, fact, or speaker exists. Use the exact accepted MangaPlan "
-        "artifact ID and this fresh ContextPack ID. Fetch the accepted MangaPlan at "
-        "most once. Do not create layouts, request assets, or call an image model."
+        "exactly once, in source order. Every panel's story_beat must be a "
+        "concrete visual sentence (who does what, where) grounded in the "
+        "accepted beat — never a one-word label. Every page must carry "
+        "authored text elements (one to three per page): real dialogue with "
+        "speaker_ref from accepted continuity where characters exist, plus "
+        "narration captions carrying the book's ideas; narration needs no "
+        "speaker. Use empty blocking, prop, focal, avoid-text, and "
+        "source-fact lists when no accepted character, asset, or fact "
+        "exists — but never an empty text-element list. Use the exact "
+        "accepted MangaPlan artifact ID and this fresh ContextPack ID. "
+        "Fetch the accepted MangaPlan at most once. Do not create layouts, "
+        "request assets, or call an image model."
     )
 
 

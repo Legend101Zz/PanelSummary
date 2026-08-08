@@ -21,6 +21,11 @@ from app.persistence.protocols import ArtifactRepository, RunRepository
 
 from .errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from .hashing import binary_content_hash, content_hash
+from .manga_content_validation import (
+    CONTENT_VALIDATOR_VERSION,
+    blocking_content_errors,
+    validate_script_content_enforced,
+)
 from .manga_craft_validation import validate_page_craft_enforced
 from .manga_layout import (
     LayoutCompilationError,
@@ -92,6 +97,21 @@ class MangaPagePlanningService:
         if sum(len(page.panels) for page in script_set.pages) > len(plan.beats):
             raise ArtifactValidationError("PageScriptSet exceeds accepted grounded beat count")
         self._validate_script_sources(script_set, plan)
+        # Session 6 step 0.1 (boundary edit, ADR-012 S6 addendum): the
+        # content-quality gate rides EVERY submission path. Blocked rules
+        # (thin story beats; a set with zero text elements) reject with the
+        # exact per-issue messages so a sealed model can repair from the
+        # bounded 422 text; warning-tier issues ride the validation report.
+        content_issues = validate_script_content_enforced(script_set)
+        content_errors = blocking_content_errors(content_issues)
+        if content_errors:
+            detail = "; ".join(
+                f"{issue.code} at {issue.path}: {issue.message}"
+                for issue in content_errors
+            )
+            raise ArtifactValidationError(
+                f"PageScriptSet failed the content-quality gate — {detail}"
+            )
 
         payload = script_set.model_dump(mode="json")
         digest = content_hash(payload)
@@ -114,8 +134,9 @@ class MangaPagePlanningService:
             validation_status="accepted",
             validation_report={
                 "passed": True,
-                "issues": [],
-                "validator_version": "page-script-validator.v1",
+                "issues": [issue.model_dump(mode="json") for issue in content_issues],
+                "validator_version": "page-script-validator.v2",
+                "content_validator_version": CONTENT_VALIDATOR_VERSION,
                 **(
                     {"implementation_version": implementation_version}
                     if implementation_version is not None

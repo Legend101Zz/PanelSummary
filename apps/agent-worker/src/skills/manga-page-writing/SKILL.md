@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Manga page writing
@@ -14,9 +14,34 @@ and source lineage are explicit.
 
 1. Read only the bounded book context and accepted manga canon needed for the pages.
 2. Write deliberate page boundaries and a varied panel rhythm.
-3. Keep dialogue, narration, and SFX short enough for planned regions.
-4. Attach source references and fact IDs to every factual panel beat.
-5. Submit the complete set through `submit_page_script_set`.
+3. Write a REAL story beat for every panel and REAL text elements for every
+   page (see "Content quality is gated" below).
+4. Keep dialogue, narration, and SFX short enough for planned regions.
+5. Attach source references and fact IDs to every factual panel beat.
+6. Submit the complete set through `submit_page_script_set`.
+
+## Content quality is gated
+
+A deterministic content-quality gate rejects the submission when these
+rules are violated. Submissions that fail return the exact rule and path;
+repair and resubmit.
+
+- **Story beats are sentences, not labels.** Each `story_beat` must be a
+  concrete, source-grounded visual sentence — WHO does WHAT, WHERE — of at
+  least four words. `"hook"`, `"conflict"`, `"reveal"` are structural
+  labels and are REJECTED. Good: `"Haw hesitates at the dark maze
+  junction, clutching his last cheese crumb."` The beat is the image
+  model's brief: everything the panel must show has to be in it.
+- **Every page carries authored text elements.** At least one per page,
+  drawn from the source: dialogue (`speaker_ref` REQUIRED, use characters
+  from the accepted continuity/canon where they exist), thought,
+  narration captions, or SFX. Narration needs NO speaker, so an empty
+  character context is never a reason to submit a wordless page.
+- **Text is the adaptation, not decoration.** Dialogue and captions must
+  advance the book's actual ideas (use accepted facts and `must_preserve`
+  claims); do not caption what the image already shows.
+- Give most panels a text element; a silent panel is a deliberate craft
+  choice for at most a minority of a page's beats.
 
 ## Exact submission shape
 
@@ -80,16 +105,22 @@ The typed AgentGoal is the shape authority. Read
 - set each page's `page_turn_panel_id` to its final panel and give the final
   panel overall the payoff;
 - when the accepted context has no characters, facts, or assets, use empty
-  `blocking`, `prop_refs`, `focal_regions`, `avoid_text_regions`,
-  `source_fact_ids`, and `text_elements` arrays;
+  `blocking`, `prop_refs`, `focal_regions`, `avoid_text_regions`, and
+  `source_fact_ids` arrays — but NEVER an empty `text_elements` array:
+  author narration captions from the source in that case;
+- write one to three text elements per page, grounded in the source; give
+  dialogue a `speaker_ref` from accepted continuity and place each
+  element's `preferred_region` inside its panel, away from focal regions;
 - use `{ "effects": [] }` for motion when no motion is required;
 - copy the one complete source reference for each beat exactly from the
   accepted MangaPlan;
 - fetch the accepted MangaPlan at most once. The ContextPack is already present
   in the prompt, so do not repeatedly fetch book context.
 
-Do not add panels or lettering merely to make the script look complete. The
-thumbnail stage, not this stage, owns layout geometry.
+Do not add panels merely to make the script look complete. The thumbnail
+stage, not this stage, owns layout geometry. Text elements are NOT padding:
+they are the page's authored voice and are required (see "Content quality
+is gated").
 
 ## Full-book hackathon edition
 
