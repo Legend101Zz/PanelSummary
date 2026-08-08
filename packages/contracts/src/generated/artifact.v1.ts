@@ -46,6 +46,8 @@ export type InputArtifactIds = string[];
 export type InputTokens = number | null;
 export type LatencyMs = number;
 export type Model = string;
+export type ModelMode = string | null;
+export type ModelModeSource = string | null;
 export type OutputTokens = number | null;
 export type PromptVersion = string;
 export type Provider = string;
@@ -116,6 +118,8 @@ export interface ModelReceipt {
   input_tokens?: InputTokens;
   latency_ms: LatencyMs;
   model: Model;
+  model_mode?: ModelMode;
+  model_mode_source?: ModelModeSource;
   output_tokens?: OutputTokens;
   prompt_version: PromptVersion;
   provider: Provider;

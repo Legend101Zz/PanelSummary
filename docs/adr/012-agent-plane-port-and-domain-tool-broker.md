@@ -257,3 +257,18 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    failures persist with `trace=None`. Tests:
    `test_failed_run_receipts_v2.py` (5), client failure-evidence tests (2),
    worker `failure_trace` test (1).
+4. ModelPolicy speed/quality modes (Goal B, issue #3, owner policy
+   2026-08-08): NEW `app/services/model_policy.py` — mode `speed` =
+   MiniMax-M2.7-highspeed, mode `quality` = MiniMax-M3, DEFAULT quality.
+   Per-purpose defaults are CONFIG, not code (`Settings.agent_model_mode_*`,
+   env-overridable): direction=quality, page-writing/thumbnail=speed (the
+   Session 4 bake-off confirmation); vision (`manga_vision_qa`) is LOCKED
+   to M3 in code — M3 is the only vision model, a speed override is refused
+   loudly. Both drivers resolve their required model through the policy;
+   the constructor `required_model` stays the explicit A/B hatch. Receipts
+   PROVE the mode: `ModelReceipt` gains optional `model_mode` +
+   `model_mode_source` (additive contract change; schemas + generated TS
+   regenerated), and the mode is always derivable from the model id.
+   Constraint documented: the worker still binds ONE model per process
+   (AGENT_PROVIDER/AGENT_MODEL), so a mixed-mode pipeline needs per-mode
+   worker instances — the receipt gates fail loud on any mismatch.

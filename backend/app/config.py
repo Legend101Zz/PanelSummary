@@ -85,6 +85,21 @@ class Settings(BaseSettings):
     # Generous by design: Phase 1 must never drop mandatory source evidence.
     compiled_context_max_input_tokens: int = 120_000
 
+    # --- ModelPolicy speed/quality modes (issue #3, owner policy 2026-08-08,
+    # Session 5 Goal B) ---
+    # mode "speed"   = MiniMax-M2.7-highspeed
+    # mode "quality" = MiniMax-M3 (the DEFAULT mode)
+    # Per-purpose defaults are CONFIG, not code (env-overridable:
+    # AGENT_MODEL_MODE_DIRECTION, AGENT_MODEL_MODE_PAGE_WRITING,
+    # AGENT_MODEL_MODE_THUMBNAIL). The Session 4 bake-off confirmed the fast
+    # lane for the planning purposes; direction stays on quality. Vision is
+    # NOT configurable — M3 is the only vision model (locked in
+    # model_policy.py). Never change these silently: receipts record the
+    # resolved mode and its provenance.
+    agent_model_mode_direction: str = "quality"
+    agent_model_mode_page_writing: str = "speed"
+    agent_model_mode_thumbnail: str = "speed"
+
     # --- Agentic manga pipeline (issues #5/#6 / blueprint §12.3) ---
     # When True, a SUCCESSFUL v1 slice additionally runs the agentic
     # planning lane (Manga Director -> page scripts -> thumbnails) as a

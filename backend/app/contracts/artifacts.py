@@ -61,6 +61,12 @@ class ArtifactRef(ContractModel):
 class ModelReceipt(ContractModel):
     provider: ShortText
     model: ShortText
+    #: Session 5 Goal B (issue #3): the resolved ModelPolicy mode this call
+    #: ran under ("speed" = MiniMax-M2.7-highspeed, "quality" = MiniMax-M3)
+    #: and whether it came from the config default or an explicit, receipted
+    #: A/B override. Optional so pre-Session-5 receipts stay valid.
+    model_mode: ShortText | None = None
+    model_mode_source: ShortText | None = None
     purpose: ShortText
     prompt_version: ShortText
     skill_hashes: list[ContentHash] = Field(default_factory=list, max_length=64)

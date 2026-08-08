@@ -58,6 +58,7 @@ from app.services.agent_worker import AgentWorkerError, AgentWorkerGateway
 from app.services.context_compiler import ContextCompiler
 from app.services.errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from app.services.hashing import content_hash
+from app.services.model_policy import receipt_mode_fields, resolve_model_policy
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,10 @@ PlanningPurpose = Literal["manga_page_writing", "manga_thumbnail"]
 
 REQUIRED_PROVIDER = "minimax"
 #: Issue #3 provider policy for both planning purposes (inner-loop stages).
+#: Since Session 5 (Goal B) the required model per purpose comes from the
+#: ModelPolicy layer (config-not-code: both planning purposes default to
+#: mode "speed"); this constant names the speed-lane model for callers and
+#: tests. A constructor ``required_model`` stays the explicit A/B hatch.
 POLICY_MODEL = "MiniMax-M2.7-highspeed"
 #: Models an accepted upstream Manga Director plan may carry (donor
 #: ``ACCEPTED_MANGA_DIRECTION_MODELS`` @ 43300b5) — the direction driver
@@ -171,17 +176,26 @@ class MangaPagePlannerService:
         agent_worker: AgentWorkerGateway,
         *,
         required_provider: str = REQUIRED_PROVIDER,
-        required_model: str = POLICY_MODEL,
+        required_model: str | None = None,
         max_input_tokens: int = DEFAULT_MAX_INPUT_TOKENS,
         created_by: str = "manga-page-planner-driver",
     ) -> None:
         self._repositories = repositories
         self._agent_worker = agent_worker
         self._required_provider = required_provider
-        self._required_model = required_model
+        # Session 5 Goal B: per-purpose defaults come from the ModelPolicy
+        # layer (config-not-code); a constructor override applies to BOTH
+        # planning purposes and is the explicit, receipted A/B hatch.
+        self._explicit_model_override = required_model is not None
+        self._required_model_override = required_model
         self._max_input_tokens = max_input_tokens
         self._created_by = created_by
         self._compiler = ContextCompiler()
+
+    def _required_model_for(self, purpose: str) -> str:
+        if self._required_model_override is not None:
+            return self._required_model_override
+        return resolve_model_policy(purpose).model
 
     # ------------------------------------------------------------------
     # goals
@@ -580,6 +594,7 @@ class MangaPagePlannerService:
     async def _accepted_stage_output(
         self, stage: StageRunDoc, *, kind: str
     ) -> ArtifactDoc:
+        required_model = self._required_model_for(stage.stage_name)
         artifact = await self._repositories.get_artifact(stage.output_artifact_ids[0])
         receipt = artifact.model_receipt if artifact is not None else None
         if (
@@ -589,11 +604,11 @@ class MangaPagePlannerService:
             or artifact.validation_status != "accepted"
             or receipt is None
             or receipt.get("provider") != self._required_provider
-            or receipt.get("model") != self._required_model
+            or receipt.get("model") != required_model
         ):
             raise ArtifactValidationError(
                 f"Succeeded {stage.stage_name} stage lacks an accepted "
-                f"{self._required_provider}/{self._required_model} output"
+                f"{self._required_provider}/{required_model} output"
             )
         return artifact
 
@@ -947,20 +962,21 @@ class MangaPagePlannerService:
         input_artifact_ids: list[str],
         attempt: int,
     ) -> ModelReceipt:
+        required_model = self._required_model_for(purpose)
         provider = trace.get("provider")
         model = trace.get("model")
         skill_hash = trace.get("skill_hash")
         tokens = trace.get("tokens")
         if (
             provider != self._required_provider
-            or model != self._required_model
+            or model != required_model
             or not isinstance(skill_hash, str)
             or not skill_hash
             or not isinstance(tokens, dict)
         ):
             raise ArtifactValidationError(
                 f"{purpose} must record provider={self._required_provider}, "
-                f"model={self._required_model}, and skill provenance"
+                f"model={required_model}, and skill provenance"
             )
         input_tokens = _optional_int(tokens.get("input"))
         output_tokens = _optional_int(tokens.get("output"))
@@ -973,6 +989,7 @@ class MangaPagePlannerService:
         return ModelReceipt(
             provider=provider,
             model=model,
+            **receipt_mode_fields(model, explicit_override=self._explicit_model_override),
             purpose=purpose,
             prompt_version=prompt_version,
             skill_hashes=[skill_hash],

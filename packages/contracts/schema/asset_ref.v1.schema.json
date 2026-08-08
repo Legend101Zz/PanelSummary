@@ -61,6 +61,34 @@
           "title": "Model",
           "type": "string"
         },
+        "model_mode": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Mode"
+        },
+        "model_mode_source": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Mode Source"
+        },
         "output_tokens": {
           "anyOf": [
             {

@@ -57,6 +57,7 @@ from app.services.agent_worker import AgentWorkerError, AgentWorkerGateway
 from app.services.context_compiler import ContextCompiler
 from app.services.errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from app.services.hashing import content_hash
+from app.services.model_policy import receipt_mode_fields, resolve_model_policy
 
 logger = logging.getLogger(__name__)
 
@@ -64,10 +65,13 @@ PIPELINE_VERSION = "manga-agentic.v1"
 STAGE_NAME = "manga_direction"
 PROMPT_VERSION = "manga-direction.v2"
 
-#: Issue #3 provider policy for the manga_direction purpose. Overridable per
-#: instance only for the documented A/B escape hatch — never silently.
+#: Issue #3 provider policy for the manga_direction purpose. Since Session 5
+#: (Goal B) the model comes from the ModelPolicy layer (config-not-code:
+#: direction defaults to mode "quality" = MiniMax-M3). Overridable per
+#: instance only for the documented A/B escape hatch — never silently; the
+#: receipt records mode + provenance either way.
 REQUIRED_PROVIDER = "minimax"
-REQUIRED_MODEL = "MiniMax-M3"
+REQUIRED_MODEL = "MiniMax-M3"  # the quality-mode model (kept for callers/tests)
 
 MANGA_DIRECTOR_TOOLS = [
     "get_source_excerpt",
@@ -122,14 +126,22 @@ class MangaDirectorService:
         agent_worker: AgentWorkerGateway,
         *,
         required_provider: str = REQUIRED_PROVIDER,
-        required_model: str = REQUIRED_MODEL,
+        required_model: str | None = None,
         max_input_tokens: int = DEFAULT_MAX_INPUT_TOKENS,
         created_by: str = "manga-director-driver",
     ) -> None:
         self._repositories = repositories
         self._agent_worker = agent_worker
         self._required_provider = required_provider
-        self._required_model = required_model
+        # Session 5 Goal B: the default comes from the ModelPolicy layer
+        # (config-not-code); passing required_model is the explicit,
+        # receipted A/B hatch.
+        self._explicit_model_override = required_model is not None
+        self._required_model = (
+            required_model
+            if required_model is not None
+            else resolve_model_policy(STAGE_NAME).model
+        )
         self._max_input_tokens = max_input_tokens
         self._created_by = created_by
         self._compiler = ContextCompiler()
@@ -591,6 +603,7 @@ class MangaDirectorService:
         return ModelReceipt(
             provider=provider,
             model=model,
+            **receipt_mode_fields(model, explicit_override=self._explicit_model_override),
             purpose="manga_direction",
             prompt_version=PROMPT_VERSION,
             skill_hashes=[skill_hash],
