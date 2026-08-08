@@ -1402,7 +1402,7 @@ ledger `receipts.jsonl` + `vision_smoke.json`):
 | lane | calls | cost | notes |
 |---|---|---|---|
 | image (OpenRouter, gemini-2.5-flash-image) | 6 | **$0.2341125** | batch 1: 4 x ~$0.039 = $0.156 (all rejected under gates v1 — calibration evidence, receipted); batch 2: 2 x ~$0.039 = $0.078 (both accepted). EXACTLY equals the key's live usage delta (0.0784488 -> 0.3125613). |
-| MiniMax M3 vision QA | 8 + 1 smoke | **$0.002628** | smoke $0.000404 (9.8s) measured BEFORE the batch; per-call ~$0.0002–0.0008 |
+| MiniMax M3 vision QA | 6 + 1 smoke | **$0.002628** | ledger $0.002224 (4 batch-1 + 2 batch-2 calls) + smoke $0.000404 (9.8s, measured BEFORE the batch, receipted in vision_smoke.json); per-call ~$0.0002–0.0008 |
 | MiniMax agent goals | 0 | $0.00 | Session 4 accepted planning artifacts reused; no new agent goals |
 
 Total session provider spend: **$0.2367405** (image cap $1.00: used 23%;
