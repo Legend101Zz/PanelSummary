@@ -102,6 +102,24 @@ export interface AgentRunResult {
   trace: AgentRunTrace;
 }
 
+/**
+ * Session 5 (step 0.3): a failed agent run previously persisted NOTHING —
+ * every failed-run cost was an estimate (bit Session 4 twice). Runtime
+ * failures that happen after a Pi session exists now throw this error so
+ * the measured trace (tokens, cost, latency, tool calls, session id)
+ * survives to the worker registry, the HTTP failure payload, and the
+ * control plane's stage rows.
+ */
+export class AgentRuntimeRunError extends Error {
+  readonly trace: AgentRunTrace;
+
+  constructor(message: string, trace: AgentRunTrace, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AgentRuntimeRunError";
+    this.trace = trace;
+  }
+}
+
 export interface AgentRunOptions {
   correlation_id: string;
   instructions?: string;

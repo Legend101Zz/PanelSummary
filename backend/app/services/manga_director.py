@@ -53,7 +53,7 @@ from app.persistence.documents import (
 )
 from app.persistence.protocols import Repositories
 from app.persistence.v1_bridge import ensure_genesis_snapshot
-from app.services.agent_worker import AgentWorkerGateway
+from app.services.agent_worker import AgentWorkerError, AgentWorkerGateway
 from app.services.context_compiler import ContextCompiler
 from app.services.errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from app.services.hashing import content_hash
@@ -196,11 +196,15 @@ class MangaDirectorService:
         context_artifact = await self._persist_context_pack(run, stage, pack)
         goal = self._build_goal(run, stage, context_artifact, pack)
 
-        result = await self._agent_worker.run(
-            goal,
-            pack,
-            instructions=instructions or self._default_instructions(pack),
-        )
+        try:
+            result = await self._agent_worker.run(
+                goal,
+                pack,
+                instructions=instructions or self._default_instructions(pack),
+            )
+        except AgentWorkerError as error:
+            await self._fail_stage(run, stage, error)
+            raise
 
         plan = self._validate_candidate(result.candidate, pack, project_id)
         payload = plan.model_dump(mode="json")
@@ -252,6 +256,7 @@ class MangaDirectorService:
         stage.agent_session_id = (
             str(result.trace.get("session_id") or "") or None
         )
+        stage.trace = result.trace
         stage.ended_at = utc_now()
         await self._repositories.save_stage(stage)
         run.status = "succeeded"
@@ -317,6 +322,13 @@ class MangaDirectorService:
                     updated_at=utc_now(),
                 )
             )
+        elif run.status == "failed":
+            # Session 5 (step 0.3): a durably-failed direction run is
+            # re-armed; the stage retry below increments the attempt.
+            run.status = "running"
+            run.active_stage = STAGE_NAME
+            run.updated_at = utc_now()
+            run = await self._repositories.save_run(run)
         elif run.status not in {"running", "succeeded"}:
             raise MangaDirectorError(
                 f"Direction run {run_id} is in state {run.status}; refusing to reuse"
@@ -325,6 +337,16 @@ class MangaDirectorService:
         stage_key = content_hash({"run_id": run_id, "stage": STAGE_NAME, "attempt": 1})
         stage_run_id = f"stage_dir_{stage_key[:24]}"
         stage = await self._repositories.get_stage(stage_run_id)
+        if stage is not None and stage.status == "failed":
+            stage.attempt += 1
+            stage.status = "running"
+            stage.error_code = None
+            stage.error_detail = None
+            stage.trace = None
+            stage.output_artifact_ids = []
+            stage.started_at = utc_now()
+            stage.ended_at = None
+            stage = await self._repositories.save_stage(stage)
         if stage is None:
             stage = await self._repositories.save_stage(
                 construct_document(
@@ -346,6 +368,49 @@ class MangaDirectorService:
                 )
             )
         return run, stage
+
+    async def _fail_stage(
+        self, run: GenerationRunDoc, stage: StageRunDoc, error: AgentWorkerError
+    ) -> None:
+        """Durably persist a FAILED direction run (Session 5 step 0.3)."""
+        now = utc_now()
+        stage.status = "failed"
+        stage.error_code = error.error_code or error.code
+        stage.error_detail = {
+            "message": str(error),
+            "worker_state": error.state,
+            "worker_error_message": error.error_message,
+            "http_status": error.http_status,
+        }
+        stage.trace = error.trace
+        if error.trace:
+            stage.agent_session_id = str(error.trace.get("session_id") or "") or None
+        stage.failure_history = [
+            *stage.failure_history[-9:],
+            {
+                "attempt": stage.attempt,
+                "error_code": stage.error_code,
+                "trace": error.trace,
+                "at": now.isoformat(),
+            },
+        ]
+        stage.ended_at = now
+        await self._repositories.save_stage(stage)
+        run.status = "failed"
+        run.active_stage = None
+        run.updated_at = now
+        await self._repositories.save_run(run)
+        logger.warning(
+            "direction stage %s FAILED durably (run=%s attempt=%s error=%s "
+            "tokens=%s cost=%s latency_ms=%s)",
+            stage.stage_run_id,
+            run.run_id,
+            stage.attempt,
+            stage.error_code,
+            (error.trace or {}).get("tokens"),
+            (error.trace or {}).get("cost_usd"),
+            (error.trace or {}).get("latency_ms"),
+        )
 
     async def _existing_accepted_plan(
         self, run: GenerationRunDoc, stage: StageRunDoc

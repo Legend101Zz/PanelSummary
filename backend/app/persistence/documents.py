@@ -283,6 +283,13 @@ class StageRunDoc(Document):
     agent_session_id: str | None = None
     error_code: str | None = None
     error_detail: dict[str, Any] | None = None
+    #: Session 5 (step 0.3, issue #8 traces checkbox): the worker-side run
+    #: trace of the LATEST attempt — tokens, cost, latency, tool_calls list,
+    #: session id — persisted for successes AND failures.
+    trace: dict[str, Any] | None = None
+    #: Bounded history of failed attempts ({attempt, error_code, trace, at})
+    #: so a retry cannot overwrite the failure receipt evidence.
+    failure_history: list[dict[str, Any]] = Field(default_factory=list)
     started_at: datetime | None = None
     ended_at: datetime | None = None
 

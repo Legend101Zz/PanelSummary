@@ -239,3 +239,21 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    (`test_craft_gate_acceptance_v2.py`); the Session 4 accepted artifacts in
    Mongo remain untouched evidence. Ported donor suites unchanged and green
    (their fixture pages are vertical stacks, outside the RTL row lint).
+3. Durable failed-run receipts (step 0.3 — closes the "failed runs persist
+   NOTHING" gap that made Session 4's failed-run costs estimates, and the
+   issue #8 traces checkbox): `pi-runtime.ts` snapshots the measured session
+   stats on EVERY exit path and failures throw `AgentRuntimeRunError`
+   carrying the trace; the worker registry/HTTP 422 body exposes it as
+   `failure_trace`; the Python `AgentWorkerError` now parses failure bodies
+   and carries state/error/trace; both drivers (`manga_director.py`,
+   `manga_page_planner.py`) persist failures durably — stage row marked
+   `failed` with `error_code`/`error_detail`, the measured `trace` (tokens,
+   cost, latency, tool_calls, session id), and an appended
+   `failure_history` receipt that survives retries. Successful runs now
+   store their full trace (incl. `tool_calls`) on the stage row too. NEW
+   StageRunDoc fields `trace` + `failure_history` (additive). Retry
+   semantics defined: a failed stage re-arms with `attempt += 1` (receipts
+   stay attributable); failed runs are re-extendable. Network-class
+   failures persist with `trace=None`. Tests:
+   `test_failed_run_receipts_v2.py` (5), client failure-evidence tests (2),
+   worker `failure_trace` test (1).

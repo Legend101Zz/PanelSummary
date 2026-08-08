@@ -1,4 +1,5 @@
-import type { AgentRunResult, ScrollStackAgentRuntime } from "@scrollstack/agent-runtime";
+import { AgentRuntimeRunError } from "@scrollstack/agent-runtime";
+import type { AgentRunResult, AgentRunTrace, ScrollStackAgentRuntime } from "@scrollstack/agent-runtime";
 import type { AgentGoal, ContextPack } from "@scrollstack/contracts";
 
 export type WorkerRunState = "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
@@ -15,6 +16,13 @@ export interface WorkerRunView {
   finished_at?: string;
   result?: AgentRunResult;
   error?: { code: string; message: string };
+  /**
+   * Session 5 (step 0.3): the measured runtime trace of a FAILED or
+   * CANCELLED run (tokens, cost, latency, tool calls, session id) so the
+   * control plane can persist a real receipt instead of an estimate. Only
+   * present when the failure happened after a Pi session existed.
+   */
+  failure_trace?: AgentRunTrace;
 }
 
 interface LiveRun extends WorkerRunView {
@@ -103,6 +111,9 @@ export class RunRegistry {
       })
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : "Unknown agent runtime failure";
+        if (error instanceof AgentRuntimeRunError) {
+          run.failure_trace = error.trace;
+        }
         if (run.cancelReason === "user") {
           run.state = "CANCELLED";
           run.error = { code: "RUN_CANCELLED", message: "Agent run cancelled" };

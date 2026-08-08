@@ -54,7 +54,7 @@ from app.persistence.documents import (
     utc_now,
 )
 from app.persistence.protocols import Repositories
-from app.services.agent_worker import AgentWorkerGateway
+from app.services.agent_worker import AgentWorkerError, AgentWorkerGateway
 from app.services.context_compiler import ContextCompiler
 from app.services.errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from app.services.hashing import content_hash
@@ -265,9 +265,15 @@ class MangaPagePlannerService:
             allowed_tools=list(PAGE_WRITING_TOOLS),
             budget=self._planning_budget(run),
         )
-        result = await self._agent_worker.run(
-            goal, context, instructions=instructions or page_writing_instructions(beat_count)
-        )
+        try:
+            result = await self._agent_worker.run(
+                goal,
+                context,
+                instructions=instructions or page_writing_instructions(beat_count),
+            )
+        except AgentWorkerError as error:
+            await self._fail_stage(run, stage, error)
+            raise
 
         try:
             script_set = PageScriptSet.model_validate(result.candidate)
@@ -323,6 +329,7 @@ class MangaPagePlannerService:
         )
         stored = await self._repositories.save_artifact(accepted)
         stage.agent_session_id = str(result.trace.get("session_id") or "") or None
+        stage.trace = result.trace
         await self._succeed_stage(run, stage, [stored.artifact_id])
         await self._rest_run(run)
         logger.info(
@@ -419,11 +426,15 @@ class MangaPagePlannerService:
             allowed_tools=list(THUMBNAIL_TOOLS),
             budget=self._planning_budget(run),
         )
-        result = await self._agent_worker.run(
-            goal,
-            context,
-            instructions=instructions or thumbnail_instructions(panels_per_page),
-        )
+        try:
+            result = await self._agent_worker.run(
+                goal,
+                context,
+                instructions=instructions or thumbnail_instructions(panels_per_page),
+            )
+        except AgentWorkerError as error:
+            await self._fail_stage(run, stage, error)
+            raise
 
         try:
             thumbnail_set = ThumbnailSet.model_validate(result.candidate)
@@ -480,6 +491,7 @@ class MangaPagePlannerService:
         )
         stored = await self._repositories.save_artifact(accepted)
         stage.agent_session_id = str(result.trace.get("session_id") or "") or None
+        stage.trace = result.trace
         await self._succeed_stage(run, stage, [stored.artifact_id, *lineage])
         await self._rest_run(run)
         logger.info(
@@ -508,7 +520,10 @@ class MangaPagePlannerService:
             raise NotFoundError(f"Generation run {run_id} does not exist")
         if run.project_id != project_id:
             raise AuthorizationError("Run does not belong to the requested project")
-        if run.status not in {"running", "succeeded"}:
+        # "failed" is re-extendable (Session 5 step 0.3): a failed planning
+        # stage durably marks the run, and the retry path resets stage + run
+        # state in _start_stage with an incremented attempt.
+        if run.status not in {"running", "succeeded", "failed"}:
             raise MangaPagePlannerError(
                 f"Run {run_id} is in state {run.status}; refusing to extend it"
             )
@@ -720,6 +735,20 @@ class MangaPagePlannerService:
         stage_run_id = f"stage_{stage_name}_{identity[:20]}"
         existing = await self._repositories.get_stage(stage_run_id)
         if existing is not None:
+            if existing.status == "failed":
+                # Session 5 (step 0.3) retry semantics: a failed stage is
+                # re-armed with an incremented attempt so the next receipt is
+                # attributable; the failure receipt survives in
+                # failure_history (appended by _fail_stage).
+                existing.attempt += 1
+                existing.status = "running"
+                existing.error_code = None
+                existing.error_detail = None
+                existing.trace = None
+                existing.output_artifact_ids = []
+                existing.started_at = utc_now()
+                existing.ended_at = None
+                existing = await self._repositories.save_stage(existing)
             if existing.status in {"running", "validating", "repairing"}:
                 run.status = "running"
                 run.active_stage = stage_name
@@ -768,6 +797,56 @@ class MangaPagePlannerService:
         run.active_stage = None
         run.updated_at = utc_now()
         await self._repositories.save_run(run)
+
+    async def _fail_stage(
+        self, run: GenerationRunDoc, stage: StageRunDoc, error: AgentWorkerError
+    ) -> None:
+        """Durably persist a FAILED agent run (Session 5 step 0.3).
+
+        The worker-side trace — real tokens, cost, latency, tool calls, and
+        session id — rides the AgentWorkerError when the worker produced one;
+        network-class failures persist with ``trace=None``. The failure is
+        also appended to ``failure_history`` so a later retry cannot
+        overwrite the receipt evidence.
+        """
+        now = utc_now()
+        stage.status = "failed"
+        stage.error_code = error.error_code or error.code
+        stage.error_detail = {
+            "message": str(error),
+            "worker_state": error.state,
+            "worker_error_message": error.error_message,
+            "http_status": error.http_status,
+        }
+        stage.trace = error.trace
+        if error.trace:
+            stage.agent_session_id = str(error.trace.get("session_id") or "") or None
+        stage.failure_history = [
+            *stage.failure_history[-9:],
+            {
+                "attempt": stage.attempt,
+                "error_code": stage.error_code,
+                "trace": error.trace,
+                "at": now.isoformat(),
+            },
+        ]
+        stage.ended_at = now
+        await self._repositories.save_stage(stage)
+        run.status = "failed"
+        run.active_stage = None
+        run.updated_at = now
+        await self._repositories.save_run(run)
+        logger.warning(
+            "planning stage %s FAILED durably (run=%s attempt=%s error=%s "
+            "tokens=%s cost=%s latency_ms=%s)",
+            stage.stage_run_id,
+            run.run_id,
+            stage.attempt,
+            stage.error_code,
+            (error.trace or {}).get("tokens"),
+            (error.trace or {}).get("cost_usd"),
+            (error.trace or {}).get("latency_ms"),
+        )
 
     async def _broker_candidate(
         self,

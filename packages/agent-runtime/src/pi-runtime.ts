@@ -12,6 +12,7 @@ import type { AgentGoal, ContextPack } from "@scrollstack/contracts";
 import { extractAssistantJsonCandidate } from "./candidate-fallback.js";
 import { assertGoalPolicy } from "./policies.js";
 import { createBrokeredTools, submissionArgumentName } from "./tool-adapter.js";
+import { AgentRuntimeRunError } from "./types.js";
 import type {
   AgentRunOptions,
   AgentRunResult,
@@ -227,8 +228,20 @@ export class PiAgentRuntime implements ScrollStackAgentRuntime {
     const abort = () => void session.abort();
     options.signal?.addEventListener("abort", abort, { once: true });
 
+    const startedAt = performance.now();
+    const snapshotTrace = () => {
+      const stats = session.getSessionStats();
+      trace.tokens = {
+        input: stats.tokens.input,
+        output: stats.tokens.output,
+        cache_read: stats.tokens.cacheRead,
+        cache_write: stats.tokens.cacheWrite,
+        total: stats.tokens.total,
+      };
+      trace.cost_usd = stats.cost;
+      trace.latency_ms = Math.max(0, Math.round(performance.now() - startedAt));
+    };
     try {
-      const startedAt = performance.now();
       await session.prompt(buildUserPrompt(goal, context, options.instructions), {
         expandPromptTemplates: false,
         source: "rpc",
@@ -272,17 +285,16 @@ export class PiAgentRuntime implements ScrollStackAgentRuntime {
       if (stats.cost > goal.budget.max_cost_usd) {
         throw new Error(`Agent text-cost budget exceeded (${goal.budget.max_cost_usd} USD)`);
       }
-      trace.tokens = {
-        input: stats.tokens.input,
-        output: stats.tokens.output,
-        cache_read: stats.tokens.cacheRead,
-        cache_write: stats.tokens.cacheWrite,
-        total: stats.tokens.total,
-      };
-      trace.cost_usd = stats.cost;
-      trace.latency_ms = Math.max(0, Math.round(performance.now() - startedAt));
+      snapshotTrace();
       live.candidate = candidate;
       return { session_ref: { session_id: session.sessionId }, candidate, trace };
+    } catch (error) {
+      // Session 5 (step 0.3): a failure after the session exists still has a
+      // measured trace — snapshot it and let it ride on the thrown error so
+      // failed runs persist real tokens/cost/latency instead of estimates.
+      snapshotTrace();
+      const message = error instanceof Error ? error.message : "Unknown agent runtime failure";
+      throw new AgentRuntimeRunError(message, trace, { cause: error });
     } finally {
       unsubscribe();
       options.signal?.removeEventListener("abort", abort);

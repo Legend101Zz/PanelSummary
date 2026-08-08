@@ -101,6 +101,48 @@ def test_client_rejects_missing_result(monkeypatch):
         run_client_with(monkeypatch, httpx.Response(200, json={"state": "SUCCEEDED"}))
 
 
+def test_client_carries_failure_trace_from_422_body(monkeypatch):
+    """Session 5 (step 0.3): a FAILED worker run's measured trace must ride
+    the raised error so the driver can persist a real receipt."""
+    failure_trace = {
+        "session_id": "session-failed",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "tool_calls": [{"name": "get_manga_canon", "state": "succeeded"}],
+        "tokens": {"input": 34135, "output": 120, "total": 34255},
+        "cost_usd": 0.0301,
+        "latency_ms": 42017,
+    }
+    payload = {
+        "state": "FAILED",
+        "error": {"code": "AGENT_RUNTIME_ERROR", "message": "no submission"},
+        "failure_trace": failure_trace,
+    }
+    with pytest.raises(AgentWorkerError) as excinfo:
+        run_client_with(monkeypatch, httpx.Response(422, json=payload))
+    error = excinfo.value
+    assert error.http_status == 422
+    assert error.state == "FAILED"
+    assert error.error_code == "AGENT_RUNTIME_ERROR"
+    assert error.error_message == "no submission"
+    assert error.trace == failure_trace
+
+
+def test_client_network_failure_carries_no_trace(monkeypatch):
+    class ExplodingClient(StubAsyncClient):
+        async def post(self, url, **kwargs):
+            raise httpx.ConnectError("connection refused")
+
+    stub = ExplodingClient(httpx.Response(200, json={}))
+    monkeypatch.setattr(httpx, "AsyncClient", stub)
+    client = HttpAgentWorkerClient(base_url="http://worker.internal", token="t" * 40)
+    goal, context = build_goal_and_context()
+    with pytest.raises(AgentWorkerError) as excinfo:
+        asyncio.run(client.run(goal, context))
+    assert excinfo.value.error_code == "network_error"
+    assert excinfo.value.trace is None
+
+
 # ---------------------------------------------------------------------------
 # internal tools router
 # ---------------------------------------------------------------------------

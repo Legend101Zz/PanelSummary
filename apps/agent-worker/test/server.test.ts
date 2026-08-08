@@ -1,3 +1,4 @@
+import { AgentRuntimeRunError } from "@scrollstack/agent-runtime";
 import type {
   AgentRunOptions,
   AgentRunResult,
@@ -271,5 +272,40 @@ describe("agent worker", () => {
     expect(repeatedSuccess.statusCode).toBe(200);
     expect(nextGoal.statusCode).toBe(200);
     expect(attempts).toBe(3);
+  });
+
+  it("returns the measured failure trace on a failed run (S5 step 0.3)", async () => {
+    const failureTrace = {
+      session_id: "session-failed",
+      goal_type: "MANGA_DIRECTION" as const,
+      provider: "minimax",
+      model: "MiniMax-M2.7-highspeed",
+      skill_name: "manga-direction",
+      skill_version: "1.0.0",
+      skill_hash: "hash",
+      tool_calls: [{ name: "get_book_context" as const, state: "succeeded" as const }],
+      tokens: { input: 12_345, output: 678, cache_read: 0, cache_write: 0, total: 13_023 },
+      cost_usd: 0.0123,
+      latency_ms: 4_567,
+      compaction_count: 0,
+    };
+    const runtime = new FakeRuntime(async () => {
+      throw new AgentRuntimeRunError(
+        "Agent finished without submit_manga_plan",
+        failureTrace,
+      );
+    });
+    const response = await app(runtime).inject({
+      method: "POST",
+      url: "/internal/v1/agent-runs",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { goal, context },
+    });
+    expect(response.statusCode).toBe(422);
+    const body = response.json();
+    expect(body.state).toBe("FAILED");
+    expect(body.error.code).toBe("AGENT_RUNTIME_ERROR");
+    expect(body.error.message).toBe("Agent finished without submit_manga_plan");
+    expect(body.failure_trace).toEqual(failureTrace);
   });
 });

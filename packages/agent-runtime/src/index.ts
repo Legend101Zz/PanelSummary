@@ -1,4 +1,5 @@
 export { AgentPolicyError, assertGoalPolicy, GOAL_POLICIES } from "./policies.js";
+export { AgentRuntimeRunError } from "./types.js";
 export {
   PiAgentRuntime,
   productionSessionPolicy,
