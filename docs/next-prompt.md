@@ -16,14 +16,17 @@ broker + live-run deviations), docs/adr/009 (manga page DSL v2), docs/adr/004
 the Phase 3 build order in section 22, and GitHub issues #5 and #6 on
 Legend101Zz/PanelSummary.
 
-Step 0 carryover — if docs/research/art-economics/out/receipts.json still does
-not exist: probe the OpenRouter key (GET https://openrouter.ai/api/v1/key with
-OPENROUTER_API_KEY from backend/.env; never print the key); only if
-limit_remaining >= 0.15 run
+Step 0 — NOW UNBLOCKED, do it first (owner raised the key on 2026-08-08;
+verified limit $10 / remaining $10): confirm headroom via
+GET https://openrouter.ai/api/v1/key (OPENROUTER_API_KEY from backend/.env;
+never print the key), then run
   cd docs/research/art-economics && ../../../backend/.venv/bin/python spike_lane_c_inking.py
-review against findings.md's protocol, and post the lane-C verdict with
-receipts as a comment on issue #12. If still exhausted, skip silently and note
-it in the handoff.
+(~$0.12, 3 image calls — the ONLY authorized image spend this session). Review
+the generated pages against findings.md's protocol (panel-boundary adherence
+vs the t_ref_rows_2_3_2 skeleton, OCR gate, Hem/Haw identity, conditioned-vs-
+control delta, per-receipt cost), decide the lane-C verdict, and post it with
+receipts as a comment on issue #12. This verdict steers Session 5; git add -f
+the out/ evidence.
 
 Main goal (issues #5 + #6 = blueprint Phase 3 first half: the layout lane):
 1. Port ScrollStack's page-layout compiler + craft validators from local main
@@ -44,6 +47,22 @@ Main goal (issues #5 + #6 = blueprint Phase 3 first half: the layout lane):
 5. Tests for everything new; extend the injection suite to the new tool
    allowlists (a page-writing goal cannot reach Director-only tools).
 
+Goal B (owner-requested model bake-off — MiniMax-M2.7-highspeed vs M3, see
+https://platform.minimax.io/docs/guides/models-intro: "same performance as
+M2.7, significantly faster inference"): through the SAME pinned-Pi driver,
+first a tiny structured-JSON smoke on MiniMax-M2.7-highspeed (history: M2.5-
+highspeed failed exactly this on 2026-07-10 — never burn a full goal before
+the smoke passes; if the smoke fails, record it and run everything on M3).
+Then run the SAME Manga Director goal on both models, and one page-writing
+goal on each, with receipts for every call (tokens, cost, latency, validator
+attempts). Judge with the deterministic validators plus honest side-by-side
+notes on plan quality. Decision rule — NEVER silently switch defaults: if
+quality is equivalent, change nothing and record that the fast lane is
+confirmed per issue #3's policy table; if M3 is clearly better, change
+nothing and flag it PROMINENTLY in the report and handoff as an open owner
+decision. Post the comparison table (model, tokens, cost, latency, validator
+attempts, quality notes) as a comment on issue #3.
+
 Green gates before claiming done: cd backend && uv run pytest tests/ -q
 (609-test baseline preserved + new tests), TS side (pnpm -r test: 42+19+12
 preserved + new), node scripts/generate.mjs --check clean both languages,
@@ -59,8 +78,8 @@ budgeted — persist a receipt for EVERY provider call (page-writing goals run
 on MiniMax-M2.7-highspeed per the issue-#3 policy table, NOT M3; confirm the
 model resolves from the pinned Pi catalog before spending). Budget with the
 Session 3 actuals (~$0.07 / ~5 min per M3 direction goal; high-speed stages
-should be cheaper — measure). NO image-model calls without explicit
-authorization (OpenRouter key is image-only and exhausted). Preserve all v1
+should be cheaper — measure). Image spend: lane-C's 3 spike calls ONLY (the
+OpenRouter key is image-only; its fresh $10 is not general budget). Preserve all v1
 behavior (use_compiled_context stays default OFF; the 609-test backend
 baseline stays green; add tests for everything new). docs/ is gitignored —
 use git add -f for curated docs. Back up any benchmark data before
