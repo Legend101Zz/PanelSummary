@@ -36,7 +36,10 @@ from app.services.manga_page_art import (
     render_panel_masks,
     rendering_mode_for_page,
 )
-from app.services.manga_page_art_stage import MangaPageArtStageService
+from app.services.manga_page_art_stage import (
+    GATE_POLICY_VERSION,
+    MangaPageArtStageService,
+)
 from app.services.manga_layout import compile_page_layout
 from app.services.manga_page_planner import MangaPagePlannerService
 from test_manga_page_planner_v2 import (
@@ -451,7 +454,7 @@ def test_vision_text_flag_is_advisory_ocr_is_the_text_authority(tmp_path):
         for page in outcome.pages:
             assert page.status == "art_accepted"
             assert page.gate_summary["vision_text_advisory"] is True
-            assert page.gate_summary["gate_policy_version"] == "page-art-gates.v2"
+            assert page.gate_summary["gate_policy_version"] == GATE_POLICY_VERSION
 
     run(scenario())
 

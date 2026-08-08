@@ -86,7 +86,11 @@ MAX_ATTEMPTS_PER_PAGE = 2
 #: first live batch showed it fires on drawn scribble/pseudo-glyph texture
 #: that the dictionary OCR gate correctly ignores. Vision still rejects on
 #: panel-count mismatch and overall_ok=false (intent/identity authority).
-GATE_POLICY_VERSION = "page-art-gates.v2"
+#: v3 (Session 6, issue #7): EMPTY-BALLOON detection is a reject reason —
+#: lettering is code-owned, so a drawn balloon-like empty white shape
+#: fights the deterministic compositor. Every gated attempt now persists a
+#: durable ``qa_report`` artifact (accepted AND rejected).
+GATE_POLICY_VERSION = "page-art-gates.v3"
 
 HARD_RULES = (
     "HARD RULES:\n"
@@ -115,6 +119,8 @@ VISION_QA_SYSTEM = (
     "[{\"index\": <1-based reading order>, \"matches_brief\": <bool>, "
     "\"identity_ok\": <bool, characters match the briefs' named characters>, "
     "\"contains_text\": <bool, any letters/words/lettering visible>, "
+    "\"empty_balloon\": <bool, a drawn speech/thought-balloon-like empty "
+    "white shape with an outline — NOT plain background sky/walls/tones>, "
     "\"notes\": <short string>}], \"overall_ok\": <bool>}"
 )
 
@@ -131,6 +137,7 @@ class PageArtPageResult:
     page_art_artifact_id: str | None = None
     composed_artifact_id: str | None = None
     receipt_artifact_ids: list[str] = field(default_factory=list)
+    qa_report_artifact_ids: list[str] = field(default_factory=list)
     gate_summary: dict[str, Any] = field(default_factory=dict)
 
 
@@ -440,6 +447,12 @@ class MangaPageArtStageService:
                     run, stage, plan, compiled, candidate, attempt=attempt
                 )
                 result.receipt_artifact_ids.extend(gate_receipts)
+                # Issue #7 (Session 6): every gated attempt persists a
+                # durable QA report — rejected attempts included.
+                qa_report = await self._persist_qa_report(
+                    run, stage, plan, gates=gates, attempt=attempt
+                )
+                result.qa_report_artifact_ids.append(qa_report.artifact_id)
                 # `gates` already carries this attempt's vision_cost_usd;
                 # accumulate across attempts without double-counting.
                 previous_vision = float(result.gate_summary.get("vision_cost_usd", 0.0))
@@ -711,6 +724,11 @@ class MangaPageArtStageService:
             if isinstance(parsed, dict)
             else None
         )
+        vision_balloon = (
+            any(p.get("empty_balloon") for p in parsed.get("panels", []))
+            if isinstance(parsed, dict)
+            else None
+        )
 
         reject_reasons = []
         if not ocr.clean:
@@ -733,6 +751,14 @@ class MangaPageArtStageService:
             # texture (first live batch, both pages, OCR clean each time).
             if vision_ok is False:
                 reject_reasons.append("vision QA overall_ok=false")
+            # GATE_POLICY_VERSION v3 (issue #7): drawn empty balloon shapes
+            # are a REJECT — lettering is code-owned and a generated balloon
+            # fights the deterministic compositor.
+            if vision_balloon:
+                reject_reasons.append(
+                    "vision QA found drawn empty balloon shapes "
+                    "(lettering is code-owned)"
+                )
         elif self._vision_qa is not None and parsed is None:
             reject_reasons.append("vision QA produced no parseable verdict")
 
@@ -740,6 +766,7 @@ class MangaPageArtStageService:
             "accepted": not reject_reasons,
             "gate_policy_version": GATE_POLICY_VERSION,
             "vision_text_advisory": vision_text,
+            "vision_empty_balloon": vision_balloon,
             "reject_reason": "; ".join(reject_reasons),
             "ocr": {
                 "clean": ocr.clean,
@@ -826,6 +853,56 @@ class MangaPageArtStageService:
             with ledger.open("a", encoding="utf-8") as fh:
                 fh.write(json.dumps(content) + "\n")
         return stored
+
+    async def _persist_qa_report(
+        self,
+        run: GenerationRunDoc,
+        stage: StageRunDoc,
+        plan: MangaPagePlan,
+        *,
+        gates: dict[str, Any],
+        attempt: int,
+    ) -> ArtifactDoc:
+        """Durable per-attempt QA report (issue #7): the full gate verdict —
+        OCR, border adherence, vision QA, policy version — survives as its
+        own artifact for accepted AND rejected attempts, instead of riding
+        only accepted ``page_art`` rows."""
+        content = {
+            "schema_version": "qa-report.v1",
+            "page_plan_id": plan.page_plan_id,
+            "page_index": plan.page_script.page_index,
+            "attempt": attempt,
+            "gate_policy_version": GATE_POLICY_VERSION,
+            "accepted": gates.get("accepted"),
+            "gates": gates,
+            "at": utc_now().isoformat(),
+        }
+        digest = content_hash(content)
+        artifact = construct_document(
+            ArtifactDoc,
+            artifact_id=f"qa_report_{digest[:24]}",
+            project_id=run.project_id,
+            run_id=run.run_id,
+            stage_run_id=stage.stage_run_id,
+            kind="qa_report",
+            schema_version="qa-report.v1",
+            content=content,
+            storage_ref=None,
+            content_hash=digest,
+            parent_artifact_ids=[],
+            author="system",
+            supersedes_artifact_id=None,
+            source_refs=[],
+            model_receipt=None,
+            validation_status="accepted",
+            validation_report={
+                "passed": True,
+                "issues": [],
+                "validator_version": "qa-report.v1",
+            },
+            created_at=utc_now(),
+        )
+        return await self._repositories.save_artifact(artifact)
 
     async def _persist_page_art(
         self,
