@@ -272,3 +272,26 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    Constraint documented: the worker still binds ONE model per process
    (AGENT_PROVIDER/AGENT_MODEL), so a mixed-mode pipeline needs per-mode
    worker instances — the receipt gates fail loud on any mismatch.
+5. Lane-C page-art stage (Session 5 main goal; issue #12 verdict wired into
+   #5/#7): NEW control-plane modules `manga_page_art.py` (pure mechanics),
+   `manga_page_art_stage.py` (durable driver), `manga_vision_qa.py` (M3
+   adapter). Decisions on record: (a) the per-page rendering mode is CODE —
+   B for splash/spread pages, A when every panel holds and none is action,
+   C otherwise (interpretation of the findings' mix; #12 non-goal honored);
+   (b) the deterministic boundary gate is a BORDER-ADHERENCE score sampled
+   from compiled polygons — deliberately NOT Layout-IoU, which is issue
+   #10 / Session 6; (c) `page_art`, `composed_page`, and `provider_receipt`
+   artifacts are ArtifactDoc rows with schema-version STRINGS
+   (`page-art.v1`, `composed-page.v1`, `provider-receipt.v1`), not
+   registry contract models yet — promotion to `packages/contracts` happens
+   with the reader-v2 consumer (Session 6); (d) a `provider_receipt` row is
+   persisted for EVERY provider call — image and vision, success and
+   failure, including the text body of no-image refusals; (e) a page whose
+   art fails gates or budget ships DSL-only (issue #7: never block a page
+   on an image); (f) the OCR gate filters screentone noise by
+   dictionary+confidence+word-count; (g) the polygon->mask export deferred
+   by the Session 4 template library now exists (`render_panel_masks`,
+   the page_art slicing map). The bridge runs the stage after thumbnails
+   when composed with a page-art service; its image budget defaults to the
+   run's `max_image_cost_usd` (0.0 on planning runs — flag-on spends zero
+   image dollars unless explicitly granted).

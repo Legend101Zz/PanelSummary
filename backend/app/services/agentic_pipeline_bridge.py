@@ -40,27 +40,43 @@ class AgenticPlanningOutcome:
 
 
 def _default_services():
-    """Compose the live driver pair from the environment (never at import)."""
+    """Compose the live driver set from the environment (never at import)."""
+    from app.config import get_settings as _settings
     from app.persistence.v1_bridge import V1BridgedRepositories
     from app.services.agent_worker import HttpAgentWorkerClient
     from app.services.manga_director import MangaDirectorService
+    from app.services.manga_page_art_stage import MangaPageArtStageService
     from app.services.manga_page_planner import MangaPagePlannerService
+    from app.services.manga_vision_qa import build_vision_qa
 
     repositories = V1BridgedRepositories()
     worker = HttpAgentWorkerClient(
         base_url=os.environ.get("AGENT_WORKER_URL", "http://127.0.0.1:8788"),
         token=os.environ["AGENT_WORKER_TOKEN"],
     )
+    page_art = MangaPageArtStageService(
+        repositories,
+        openrouter_api_key=_settings().openrouter_api_key,
+        vision_qa=build_vision_qa(),
+    )
     return (
         MangaDirectorService(repositories, worker),
         MangaPagePlannerService(repositories, worker),
+        page_art,
     )
 
 
 async def run_agentic_planning_stages(
-    *, project_id: str, scope_id: str, director, planner
+    *, project_id: str, scope_id: str, director, planner, page_art=None
 ) -> AgenticPlanningOutcome:
-    """Direction -> page scripts -> thumbnails on one shared run (loud)."""
+    """Direction -> page scripts -> thumbnails [-> page art] on one run (loud).
+
+    Session 5: when a page-art service is provided, the lane-C rendering
+    stage runs after the accepted thumbnails. Its image budget defaults to
+    the run's own ``max_image_cost_usd`` (0.0 for planning runs), so the
+    shadow lane spends ZERO image dollars unless a budget was explicitly
+    granted; pages then compose DSL-only (issue #7 policy).
+    """
     direction = await director.run_direction_goal(
         project_id=project_id, scope_id=scope_id
     )
@@ -70,15 +86,25 @@ async def run_agentic_planning_stages(
     thumbnail = await planner.run_thumbnail_goal(
         project_id=project_id, run_id=direction.run_id
     )
+    artifact_ids = [
+        direction.artifact.artifact_id,
+        script.artifact.artifact_id,
+        thumbnail.artifact.artifact_id,
+    ]
+    if page_art is not None:
+        art_outcome = await page_art.run_page_art_stage(
+            project_id=project_id, run_id=direction.run_id
+        )
+        artifact_ids.extend(
+            item.composed_artifact_id
+            for item in art_outcome.pages
+            if item.composed_artifact_id
+        )
     return AgenticPlanningOutcome(
         status="succeeded",
         detail=None,
         run_id=direction.run_id,
-        artifact_ids=(
-            direction.artifact.artifact_id,
-            script.artifact.artifact_id,
-            thumbnail.artifact.artifact_id,
-        ),
+        artifact_ids=tuple(artifact_ids),
     )
 
 
@@ -88,6 +114,7 @@ async def maybe_run_agentic_planning(
     compiled_slice_context,
     director=None,
     planner=None,
+    page_art=None,
 ) -> AgenticPlanningOutcome:
     """The fallback-guarded entry point ``generate_project_slice`` calls."""
     if not get_settings().agentic_manga_pipeline_v1:
@@ -104,12 +131,15 @@ async def maybe_run_agentic_planning(
         )
     try:
         if director is None or planner is None:
-            director, planner = _default_services()
+            director, planner, default_page_art = _default_services()
+            if page_art is None:
+                page_art = default_page_art
         outcome = await run_agentic_planning_stages(
             project_id=project_id,
             scope_id=compiled_slice_context.scope_id,
             director=director,
             planner=planner,
+            page_art=page_art,
         )
         logger.info(
             "agentic planning lane succeeded for project %s (run=%s artifacts=%s)",
