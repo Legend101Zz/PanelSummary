@@ -1123,3 +1123,187 @@ Known rough edges / next steps:
 5. Session 4 per roadmap: layout compiler + page-script/thumbnail stages +
    template library + craft validators; SVG preview loop on one WMC
    chapter — see docs/next-prompt.md.
+
+## 2026-08-08 Session 4: layout lane live — port, drivers, templates, craft validators, bake-off (issues #5, #6, #3, #8)
+
+Executed on `v2-architecture` (commits `b5a04d4` port, `cc7938e` drivers +
+injection walls, `5b21276` templates + craft validators, `c3abfe5` agentic
+flag lane, `b754470` live-run fixes, `eb95c68` evidence + ADR addendum, plus
+bake-off evidence and this handoff). Read the ADR-012 **Session 4 addendum**
+first — it enumerates every boundary edit, the adapter bug, and the skill
+generalization.
+
+Step 0 (lane-C, issue #12): **already executed by the planning session**
+minutes before this session started (out/ files 14:00–14:01 IST, verdict
+comment on #12, prompt updated to forbid re-running). Verified independently
+here: the key's live usage ($0.0784488) equals the three receipts exactly,
+and my own review of the generated pages against findings.md's protocol
+concurs with the posted verdict (6/7 boundary adherence, conditioning is
+the mechanism, zero real text — OCR gate false-positives on screentone,
+identity holds, content drift is the open risk). NOT re-run; zero image
+spend this session.
+
+What landed:
+
+1. **Layout-lane port** (verbatim @ 43300b5, ADR-010/012 rule):
+   `manga_layout.py` (authoritative compiler + SVG previews),
+   `manga_page_planning.py` (durable page-script/thumbnail artifacts),
+   `manga_validation.py`, `page_domain_tools.py`
+   (MangaPlanningToolService + MangaDomainToolService dispatcher), plus
+   both donor test suites (sys.path shim only). `main.py` now mounts the
+   merged dispatcher; the donor's `list_relevant_assets` planning-first
+   dispatch quirk is kept verbatim and PINNED by test (never fired live —
+   0×403/404 across every live goal this session).
+2. **Typed planning goal drivers** (`manga_page_planner.py`, NEW code
+   mirroring donor `generation_workflow` internals): MANGA_PAGE_WRITING and
+   MANGA_THUMBNAIL extend the Manga Director's run with fresh
+   purpose-scoped ContextPacks per stage, donor allowlists/budgets,
+   broker-validated candidates, and EXACT per-instance model receipts
+   (issue-#3 policy: both planning purposes -> MiniMax-M2.7-highspeed;
+   `required_model` override = documented A/B hatch). Panel target derives
+   from the accepted plan's beat count (live-run deviation from the donor's
+   fixed 4 — see addendum).
+3. **Injection walls extended** (`test_prompt_injection_pages_v2.py`, 17
+   tests): director tools unreachable from page-writing scopes and vice
+   versa; builtin names fail closed through the merged dispatch (403 wall
+   before the 404 wall under planning stages); purpose-mismatched packs
+   refused; the dispatch quirk pinned.
+4. **Layout-template library** (`manga_layout_templates.py`): all 18
+   catalog templates from the research spike as pure ADR-009 node data;
+   `instantiate_template(panel_ids in reading order)` -> layout_root +
+   reading-edge chain; purpose/tempo/panel filters; every AdaptationBeat
+   purpose has >=2 templates; all 18 compile through the PORTED compiler
+   with RTL-coherent flow (25 tests). Deferred: `layout-template.v1`
+   contract schema, `list_layout_templates` broker tool, seeded jitter,
+   mask export for lane-C conditioning.
+5. **Craft validators** (`manga_craft_validation.py`, advisory warnings,
+   red fixture each — 8 tests): PANEL_COUNT_HIGH, CLIMAX_PAGE_UNJUSTIFIED,
+   MONOTONE_SHOT_PAGE, FLAT_PAGE_ENDING, TEXT_BUDGET_EXCEEDED (90-char
+   bubble line), RTL_READING_FLOW_INCOHERENT (geometric Z-path lint).
+   Proven immediately on live output — see 8 below.
+6. **AGENTIC_MANGA_PIPELINE_V1** (default OFF, `agentic_pipeline_bridge.py`
+   + `generation_service.py` hook, 7 tests): flag ON runs
+   direction->page-writing->thumbnail as a fallback-guarded SHADOW lane on
+   the slice's frozen ADR-011 scope after a successful v1 slice; every lane
+   failure is logged and swallowed; flag OFF never imports the module — v1
+   byte-identical (684-test suite green).
+7. **Live-run fixes** (commit `b754470`, full story in the ADR addendum):
+   the pinned Pi SDK never sends tool-result `details` to the model, so
+   every READ tool degraded to a one-line summary — a donor bug invisible
+   until the first goal that needed to read. Fixed in `tool-adapter.ts`
+   (bounded data now rides in model-visible text) + regression test. The
+   planning skills' bounded sections hard-coded the legacy 3-panel shape
+   while driver instructions are untrusted user notes — now goal-shape-
+   generic (`manga-page-writing` 1.3.0, `manga-thumbnail` 1.4.0).
+8. **SVG preview loop on WMC** (zero image calls,
+   `scripts/preview_bakeoff_thumbnails.py`, evidence in
+   `docs/evidence/session4-svg-previews/`): both accepted thumbnail pages
+   reconstructed from Mongo+storage alone (ADR-009 resume path), rendered
+   to PNG, eyeballed. Reading-order finding: the accepted set carries
+   RTL_READING_FLOW_INCOHERENT defects (top rows read left-to-right on
+   both pages) that the error-level validators cannot see — issue #5's
+   craft-gap thesis demonstrated on live output. Deliberately NOT
+   regenerated: accepted artifacts are immutable evidence; enforcement
+   wiring is Session 5.
+
+Verification: backend `uv run pytest tests/ -q` -> **684 passed** (609
+baseline + 75 new; zero new warnings). TS: contracts 42, agent-runtime 20
+(19 + 1 new), agent-worker 12. `node scripts/generate.mjs --check` and
+`PYTHONPATH=. uv run python scripts/export_contracts.py --check` clean.
+`git diff --check` clean per commit.
+
+Model bake-off (issue #3, owner-requested): MiniMax-M2.7-highspeed vs M3
+on the SAME MANGA_DIRECTION goal shape (prompt `manga-direction.v2`,
+identical skill hash, same WMC chapter set — the hs arm froze its OWN
+scope over byte-identical source units via
+`backend/scripts/bakeoff_session4.py`). The structured-JSON smoke on
+M2.7-highspeed PASSED first ($0.000174, 2.0 s) before any goal spend —
+the M2.5-highspeed lesson applied. Evidence:
+`docs/evidence/session4-bakeoff/`.
+
+| goal (model) | tokens in/out | cost | latency | validator attempts | quality notes |
+|---|---|---|---|---|---|
+| direction — M2.7-highspeed | 16,102 / 4,725 | $0.026453 | 77.4 s | accepted, receipt attempt 1 (submission-level log not durably captured — S5 step 0.3) | passes every canonical validator; coherent hook->cliffhanger arc; beats grounded (source_refs + fact ids); prose literal/summary-like |
+| direction — M3 (Session 3 receipt reused as baseline*) | 18,844 / 43,940 | $0.067920 | 291.4 s | 3 submissions (422, 422, 200 — Session 3 broker log) | passes every canonical validator; equivalent structure (8 beats / 8 pages, ~8% larger JSON); dramatization reads more cinematically manga-directed |
+| page-writing — M2.7-highspeed (no M3 comparator ran) | 34,135 / 3,599 | $0.030163 | 42.0 s | accepted, receipt attempt 1 (same caveat) | accepted `page_script_set`; fast-lane actual, not a comparison row |
+| thumbnail — M2.7-highspeed (no M3 comparator ran) | 157,944 / 12,939 | $0.131697 | 165.4 s | accepted, receipt attempt 1 (same caveat) | accepted `thumbnail_set`; input dominated by the validate_layout_draft echo (S5 step 0.1); accepted set carries RTL craft warnings (validator gap, S5 step 0.2) |
+
+\* Not a same-day controlled arm: different run + context pack (18,844 vs
+16,102 input tokens), and M3's 43,940 output tokens include reasoning
+(the pinned Pi SDK routes M3 with reasoning ON — ADR-012). The harness's
+`m3` arm exists (`bakeoff_session4.py m3`) and was deliberately NOT run
+(~$0.07 saved): the Session 3 receipt already answers the question at
+direction-goal granularity.
+
+**VERDICT (owner decision rule applied): quality EQUIVALENT at the
+deterministic-validator level** — both plans fully accepted, structurally
+equivalent; the only M3 edge is subjective prose quality on the one
+purpose already assigned to M3. So: **change nothing — the issue-#3
+policy table stands and the fast lane is CONFIRMED live** (page-writing +
+thumbnail on M2.7-highspeed, direction on M3). hs direction is 2.6x
+cheaper and 3.8x faster, but that is no basis for switching direction off
+M3 (never silently switch defaults). The speed/quality ModelPolicy modes
+(speed=M2.7-highspeed, quality=M3, default quality/M3, per-purpose
+defaults config-not-code) are standing owner policy 2026-08-08; their
+plumbing is Session 5 Goal B. Table + verdict posted as a comment on
+issue #3.
+
+Capture footnote: `arm_hs.json`'s direction goal says `reused: true` —
+that is the idempotent re-invocation during the JSON capture; the receipt
+itself is the arm's own fresh Session 4 M2.7-highspeed call
+(`run_dir_a99464c…`, distinct from Session 3's `run_dir_d03359d…`,
+created 2026-08-08T09:22:45Z).
+
+MiniMax spend this session — receipted, $0.188486 across 4 receipts:
+smoke $0.000174, direction $0.026453, page-writing $0.030163, thumbnail
+$0.131697 (all in `docs/evidence/session4-bakeoff/`). Estimated, NO
+receipts — failed worker runs persist nothing (the gap is Session 5 step
+0.3): the details-bug page-writing failure and the skill-shape refusal,
+both input-heavy/low-output, ~$0.03 each by analogy with the successful
+page-writing profile (~$0.05-0.08 combined). Kept separate from the
+receipted total on purpose. Image spend: ZERO this session — lane-C's
+$0.0784 was the pre-session planning spike, receipts committed in
+`docs/research/art-economics/out/receipts.json` and verified equal to the
+key's live usage.
+
+Safety/live-write ledger: full-DB backup (715 KB) at
+`/tmp/bookreel-s4-before-bakeoff.json` BEFORE any live write (14:49 IST;
+first receipt 14:52 IST). Live writes were purely additive v2-lane rows
+on the hs arm's own scope/run (`scope_fcf2959…` / `run_dir_a99464c…`):
+context packs, candidate + accepted artifacts (manga_plan,
+page_script_set, thumbnail_set, page_layouts, compiled_layouts,
+thumbnail_previews, validation report). No destructive operation ran; v1
+collections untouched.
+
+Deviations from the session brief:
+
+1. The bake-off's M3 arm was not re-run; Session 3's receipt serves as
+   the M3 baseline (see the table footnote). Deliberate: evidence-
+   preserving and ~$0.07 cheaper.
+2. Failed-run costs are estimates — no durable traces exist for failed
+   agent runs (named Session 5 step 0.3).
+3. Panel target derives from the accepted plan's beat count, not the
+   donor's fixed 4 (ADR-012 addendum item 2).
+4. This closeout (bake-off table, verdict, this handoff, issue updates)
+   was completed by a follow-up agent working from on-disk state after
+   the session's working agent crashed on a network failure. All
+   substantive work above was already committed and pushed through
+   `eb95c68`.
+
+Known rough edges / carry-forwards (Session 5 — docs/next-prompt.md):
+
+1. validate_layout_draft model-visible payload trim (the 158k-token
+   thumbnail input — step 0.1).
+2. Craft warnings not surfaced in the live loop: the ACCEPTED WMC
+   thumbnails carry RTL_READING_FLOW_INCOHERENT defects (step 0.2).
+3. Failed-run receipts/traces + tool_calls on stage rows (step 0.3,
+   issue #8 traces checkbox).
+4. First REAL flag-on v1 slice run on a fresh project (Sessions 2-4
+   carryover).
+5. Worker egress restriction; ARTIFACT_REPAIR goal policy (Session 3
+   carryover).
+6. layout-template.v1 contract schema, `list_layout_templates` broker
+   tool, seeded jitter, skeleton/mask export from compiled geometry
+   (feeds the lane-C conditioning work).
+7. Issue #6 knowledge-base rewrite — reference files are still stubs;
+   Session 4 only generalized the bounded shape sections.

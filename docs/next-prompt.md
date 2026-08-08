@@ -1,105 +1,124 @@
-# Next-session prompt (Session 4 of the v2 roadmap)
+# Next-session prompt (Session 5 of the v2 roadmap)
 
-Session 3 (agent plane live — issues #8 + first half of #3) completed
-2026-08-07 — commits `139c738`…HEAD on `v2-architecture`; see the Session 3
-handoff at the end of NEXT_SESSION.md and docs/adr/012. Paste the block below
-into a fresh Claude Code session (recommended model: Fable 5, start in plan
-mode). Roadmap and rules live in
+Session 4 (layout lane live — issues #5 + #6 first half, #8 broker close,
+#3 bake-off) completed 2026-08-08 — commits `b5a04d4`…HEAD on
+`v2-architecture`; see the Session 4 handoff at the end of NEXT_SESSION.md
+and the ADR-012 Session 4 addendum. Paste the block below into a fresh
+Claude Code session (recommended model: Fable 5, start in plan mode).
+Roadmap and rules live in
 https://github.com/Legend101Zz/PanelSummary/issues/11 and NEXT_SESSION.md.
 
 ```text
-Work in /Volumes/Mrigesh SSD/Book-Reel on branch v2-architecture (never commit
-to main; verify the branch before any commit). Read first: NEXT_SESSION.md
-(2026-08-07 Session 3 handoff at the end), docs/adr/012 (agent plane port +
-broker + live-run deviations), docs/adr/009 (manga page DSL v2), docs/adr/004
-(tool allowlists), docs/TECHNICAL_ARCHITECTURE_BLUEPRINT.md sections 11-12 and
-the Phase 3 build order in section 22, and GitHub issues #5 and #6 on
-Legend101Zz/PanelSummary.
+Work in /Volumes/Mrigesh SSD/Book-Reel on branch v2-architecture (never
+commit to main; verify the branch before any commit). Read first:
+NEXT_SESSION.md (2026-08-08 Session 4 handoff at the end), docs/adr/012
+INCLUDING the Session 4 addendum (Pi details-field adapter fix, goal-shape-
+generic skills, per-arm scopes, the validate_layout_draft payload problem),
+docs/adr/009, the lane-C verdict comment on issue #12 plus
+docs/research/art-economics/findings.md (results + production guardrails),
+and GitHub issues #12, #7, #5 on Legend101Zz/PanelSummary.
 
-Step 0 — ALREADY DONE (2026-08-08, in the planning session): the lane-C
-experiment ran; verdict VIABLE-with-guardrails. Receipts + committed evidence in
-docs/research/art-economics/ (findings.md results section + out/), verdict
-comment on issue #12. Do NOT re-run it; NO image-model spend is authorized in
-this session.
+Step 0 — carry-fixes that gate everything else (do these first):
+1. Trim validate_layout_draft's MODEL-visible payload to issues +
+   normalized_page_plan (drop compiled_layout + preview_svg from the
+   <tool_data> text, keep them in the response for the control plane) —
+   Session 4's thumbnail goal burned 158k input tokens ($0.13) on echoed
+   geometry. Boundary edit on the ported page_domain_tools or adapter-side
+   filter; enumerate it in the ADR-012 addendum.
+2. Surface manga_craft_validation warnings through validate_layout_draft
+   and the thumbnail acceptance report. Session 4's ACCEPTED WMC thumbnails
+   carry RTL_READING_FLOW_INCOHERENT defects (top rows read left-to-right;
+   evidence in docs/evidence/session4-svg-previews/) that error-level
+   validators cannot see. Decide warn-vs-block per rule; add a regression
+   fixture from the live defect.
+3. Durable receipts/traces for FAILED runs: failed agent runs currently
+   persist NOTHING (bit Session 4 twice — every failed-run cost is an
+   estimate). Persist the worker-side trace (tokens, cost, latency, tool
+   calls, session id) on failure as well, and store the tool_calls list on
+   stage rows (issue #8 traces checkbox).
 
-Main goal (issues #5 + #6 = blueprint Phase 3 first half: the layout lane):
-1. Port ScrollStack's page-layout compiler + craft validators from local main
-   @ 43300b5 (same port rule as ADR-010/012: code + tests + docs verbatim;
-   boundary edits enumerated in a new ADR or ADR-012 addendum). This is
-   page_domain_tools.py's dependency set deferred in Session 3:
-   manga_layout.py, manga_page_planning.py, manga_validation.py, and the
-   layout-template library.
-2. Port page_domain_tools.py (MangaPlanningToolService) now that its imports
-   exist, and add the MANGA_PAGE_WRITING + MANGA_THUMBNAIL goal drivers on the
-   same runtime the Director already runs on (the policies and skills are
-   already ported and green). Reuse the Session 3 MangaDirectorService shape.
-3. Wire the page-script and thumbnail stages behind AGENTIC_MANGA_PIPELINE_V1
-   as fallback-guarded stages (blueprint §12.3): default OFF, v1 output
-   byte-identical when off.
-4. SVG preview loop: compile one WMC chapter's page plans to thumbnail SVGs
-   (render_thumbnail_svg) and eyeball reading order — no image-model calls.
-5. Tests for everything new; extend the injection suite to the new tool
-   allowlists (a page-writing goal cannot reach Director-only tools).
+Main goal (roadmap row 5 — rendering mechanism per the lane-C verdict;
+issues #12, #7, #5):
+1. Page-art stage behind AGENTIC_MANGA_PIPELINE_V1: lane-C conditioned
+   full-page inking as the default for standard pages (mix per findings.md:
+   lane A quiet pages, lane C standard, lane B key-panel money shots).
+   Conditioning input = compiled-layout skeleton rendered from the accepted
+   thumbnail set (skeleton/mask export from compiled geometry is new work —
+   see the template library's deferred list) + character reference sheets.
+2. Production OCR gate with a screentone-noise filter (dictionary words +
+   min confidence + min word count — the spike gate false-positives on
+   tones/speedlines) + panel-count and Layout-IoU accept/retry per the
+   #12 guardrails. Capture the text body of no-image responses in receipts.
+3. M3 vision QA per panel against briefs (issue #3: vision is M3-only) with
+   selective single-page regeneration (lineage per ADR-009).
+4. v2 composition + deterministic lettering carrying v1's bubble/vector
+   work (issue #5 boxes): ALL text rendered by code over text-free art.
+5. Image spend needs an explicit stated budget BEFORE spending: state the
+   planned call count x $0.039/page (+retry margin) and keep a receipt per
+   call. Lane-C page-art on the WMC bake-off pages is the natural first
+   target (2 pages ≈ $0.08-0.16 incl. one retry).
 
-Goal B (owner-requested model bake-off — MiniMax-M2.7-highspeed vs M3, see
-https://platform.minimax.io/docs/guides/models-intro: "same performance as
-M2.7, significantly faster inference"): through the SAME pinned-Pi driver,
-first a tiny structured-JSON smoke on MiniMax-M2.7-highspeed (history: M2.5-
-highspeed failed exactly this on 2026-07-10 — never burn a full goal before
-the smoke passes; if the smoke fails, record it and run everything on M3).
-Then run the SAME Manga Director goal on both models, and one page-writing
-goal on each, with receipts for every call (tokens, cost, latency, validator
-attempts). Judge with the deterministic validators plus honest side-by-side
-notes on plan quality. Decision rule — NEVER silently switch defaults: if
-quality is equivalent, change nothing and record that the fast lane is
-confirmed per issue #3's policy table; if M3 is clearly better, change
-nothing and flag it PROMINENTLY in the report and handoff as an open owner
-decision. Post the comparison table (model, tokens, cost, latency, validator
-attempts, quality notes) as a comment on issue #3.
+Goal B (issue #3, owner-decided 2026-08-08): implement speed/quality modes
+in the ModelPolicy layer — mode "speed" = MiniMax-M2.7-highspeed, mode
+"quality" = MiniMax-M3, with M3 as the DEFAULT mode; per-purpose defaults
+stay config-not-code (direction=quality; page-writing/thumbnail=speed per
+the Session 4 fast-lane confirmation; vision=M3 always). Receipts must
+prove the mode. Never switch a default silently. The Session 4 bake-off
+table + verdict is a comment on issue #3 — read it before wiring.
 
 Green gates before claiming done: cd backend && uv run pytest tests/ -q
-(609-test baseline preserved + new tests), TS side (pnpm -r test: 42+19+12
-preserved + new), node scripts/generate.mjs --check clean both languages,
-injection tests green, git diff --check. Then: update NEXT_SESSION.md with an
-evidence-backed handoff, tick ONLY genuinely completed checkboxes on issues
-#5/#6 (gh issue view N --json body, edit exact lines, gh issue edit N
---body-file — never retype the body), rewrite docs/next-prompt.md for
-Session 5 per the roadmap table, commit in logical units on v2-architecture
-with conventional messages, and push origin v2-architecture.
+(684-test baseline preserved + new), pnpm suites (contracts 42 +
+agent-runtime 20 + agent-worker 12, preserved + new), node
+scripts/generate.mjs --check and PYTHONPATH=. uv run python
+scripts/export_contracts.py --check clean, injection suites green, git
+diff --check. Then: update NEXT_SESSION.md with an evidence-backed handoff,
+tick ONLY genuinely completed checkboxes on #12/#7/#5 (gh issue view N
+--json body, edit exact lines, gh issue edit N --body-file — never retype),
+rewrite docs/next-prompt.md for Session 6 per the roadmap table, commit in
+logical units on v2-architecture, push origin v2-architecture.
 
-Hard rules: main untouched. Text LLM calls are MiniMax-only per issue #3 and
-budgeted — persist a receipt for EVERY provider call (page-writing goals run
-on MiniMax-M2.7-highspeed per the issue-#3 policy table, NOT M3; confirm the
-model resolves from the pinned Pi catalog before spending). Budget with the
-Session 3 actuals (~$0.07 / ~5 min per M3 direction goal; high-speed stages
-should be cheaper — measure). Image spend: NONE authorized this session — lane-C already ran on
-2026-08-08 (the OpenRouter key is image-only; its ~$9.9 remaining is not
-general budget). Preserve all v1
-behavior (use_compiled_context stays default OFF; the 609-test backend
-baseline stays green; add tests for everything new). docs/ is gitignored —
-use git add -f for curated docs. Back up any benchmark data before
-destructive operations (pattern: /tmp/bookreel-s3-before-live-director.json).
+Hard rules (owner policy 2026-08-08 — standing, apply to every session):
+1. Model modes: speed=MiniMax-M2.7-highspeed, quality=MiniMax-M3, default
+   quality (M3). No silent default switches, ever; A/B overrides are
+   explicit and receipted.
+2. ALL code changes on v2-architecture or feature branches off it. Nothing
+   merges to main until fully tested AND owner-confirmed. main untouched.
+3. The laptop's internal SSD is low on space: keep worktrees, artifacts,
+   evidence, and heavy files on /Volumes/Mrigesh SSD/.
+4. If the external SSD unmounts mid-work: STOP and report. No workarounds.
+Plus the constants: text LLM calls are MiniMax-only and budgeted — persist
+a receipt for EVERY provider call INCLUDING failures (Step 0.3); budget
+with Session 4 actuals (speed lane: direction $0.026/77s, page-writing
+$0.030/42s, thumbnail $0.132/165s pre-trim; quality lane direction:
+$0.068/291s class, expect 422-repair attempts). Preserve all v1 behavior
+(use_compiled_context AND agentic_manga_pipeline_v1 default OFF; 684-test
+baseline stays green). docs/ is gitignored — git add -f for curated docs.
+Full-DB backup before live writes: uv run python scripts/backup_db.py
+/tmp/bookreel-s5-before-<what>.json.
 
-Outstanding carry-forwards (do not lose): (a) DONE 2026-08-08 — lane-C ran,
-verdict on #12; (b) first REAL flag-on v1 slice run on a FRESH project (Session 2/3
-carryover — WMC's arc is fully covered); (c) durable tool-call trace
-persistence; (d) worker egress restriction. Pick up (b) here if a fresh
-project is cheap to stand up, otherwise carry it again with the reason.
+Outstanding carry-forwards (do not lose): (a) first REAL flag-on v1 slice
+run on a FRESH project (Sessions 2-4 carryover) — the rendering work needs
+a live slice anyway, so fold it in here if a fresh small book is cheap to
+stand up, otherwise carry with the reason; (b) worker egress restriction;
+(c) ARTIFACT_REPAIR goal policy; (d) layout-template.v1 contract schema +
+list_layout_templates broker tool + seeded jitter (feeds Main goal 1);
+(e) issue #6 knowledge-base rewrite (reference files are still stubs;
+Session 4 only generalized the bounded shape sections).
 ```
 
 ## Session roadmap (manga lane complete ≈ 8 sessions)
 
 | # | Focus | Issues |
 |---|---|---|
-| 1 | ✅ 2026-08-07 — ADR-010 + port contracts & durable-context services (lane-C verdict still blocked on key limit) | #2, #4, #12 |
-| 2 | ✅ 2026-08-07 — durable context wired into v1: beanie-1.27 bridge (ADR-011), structure-aware source units + front-matter detection, scope API, flag-gated ContextPack consumption, two-scope fresh-process continuity proof on WMC (UI + first real flag-on slice run still open) | #4 |
-| 3 | ✅ 2026-08-07 — agent plane live (ADR-012): pnpm workspace + contracts TS side (Phase 0 exit), agent-runtime/agent-worker port, domain-tool broker, first live Manga Director goal on MiniMax-M3 (validated MangaPlan + receipt), injection suites. page_domain_tools + flag-on slice run still open | #8, #3 |
-| 4 | Layout compiler + page-script/thumbnail stages + template library + craft validators; page_domain_tools port + MANGA_PAGE_WRITING/THUMBNAIL goals; SVG preview loop on one WMC chapter | #5, #6 |
-| 5 | Rendering mechanism build-out per lane-C verdict: page-art stage, OCR gate, vision QA, slicing, v2 composition + lettering (carry v1 bubble/vector work) | #12, #7, #5 |
+| 1 | ✅ 2026-08-07 — ADR-010 + port contracts & durable-context services | #2, #4, #12 |
+| 2 | ✅ 2026-08-07 — durable context wired into v1 (ADR-011), scope API, flag-gated ContextPack consumption, continuity proof | #4 |
+| 3 | ✅ 2026-08-07 — agent plane live (ADR-012): pnpm workspace, Pi runtime, broker, first live Director goal on M3, injection suites | #8, #3 |
+| 4 | ✅ 2026-08-08 — lane-C verdict verified (#12 done); layout compiler + page planning + page_domain_tools port; MANGA_PAGE_WRITING/THUMBNAIL drivers live; 18-template library + craft validators; AGENTIC_MANGA_PIPELINE_V1 shadow lane; Pi details adapter fix; skills 1.3.0/1.4.0; M2.7-highspeed vs M3 bake-off + SVG preview loop on WMC | #5, #6, #3, #8 |
+| 5 | Rendering mechanism per lane-C verdict: page-art stage, OCR gate, vision QA, v2 composition + lettering; speed/quality modes plumbing; validate_layout_draft trim + craft-warning wiring + failed-run receipts | #12, #7, #5, #3 |
 | 6 | Reader v2 integration + eval harness (structural metrics, Magi critic, M3 judges); score v1 vs v2 | #5, #10 |
 | 7 | Whole-book: scope planner, chain executor, cost preflight, library; full WMC single-run golden test | #13 |
 | 8 | Hardening + full golden flow + skills iteration from eval scores + merge-review prep | #6, #10, epic |
 
-Reels (#9) afterwards: ~2-3 further sessions. Estimates assume one focused session
-per row with review gates between; slips concentrate in rows 5-6 (the visual
-quality loop) — treat 8 as 8±2.
+Reels (#9) afterwards: ~2-3 further sessions. Estimates assume one focused
+session per row with review gates between; slips concentrate in rows 5-6
+(the visual quality loop) — treat 8 as 8±2.
