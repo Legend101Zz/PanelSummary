@@ -40,10 +40,15 @@ cannot teach the book — fidelity scored 1/5 on every accepted page):
 2. When page-writing lands: thumbnail goal on the speed lane (~$0.13-
    0.26, watch the live RTL craft gate), then lane-C regeneration through
    run_page_art_stage with EXPLICIT thumbnail_artifact_id (state the
-   batch first: 2 pages x $0.039 + retry margin; gates v3 now reject
-   drawn empty balloons) — the composed output is the FIRST fully-
-   authored v2 page set: real beats, real dialogue, tails pointing at
-   speakers. Re-run scripts/eval_wmc_s6.py so the fidelity score finally
+   batch first: 2 pages x $0.039 + retry margin). CALIBRATE GATES v3
+   BEFORE the paid batch: the empty-balloon reject has never fired on
+   real art — smoke ONE v3 vision call on the S5 accepted page_art
+   (~$0.0004); if empty_balloon false-positives on the known-good pages
+   (round white shapes — floating stones, cheese chunks — are the risk),
+   demote it to advisory as gates v4 first, exactly the S5 contains_text
+   lesson ($0.156 of rejected-good-art burn). Then the batch — the
+   composed output is the FIRST fully-authored v2 page set: real beats,
+   real dialogue, tails pointing at speakers. Re-run scripts/eval_wmc_s6.py so the fidelity score finally
    has a text channel to measure; the whole loop is ~$0.35 text +
    ~$0.16 image.
 
