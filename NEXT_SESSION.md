@@ -1307,3 +1307,154 @@ Known rough edges / carry-forwards (Session 5 — docs/next-prompt.md):
    (feeds the lane-C conditioning work).
 7. Issue #6 knowledge-base rewrite — reference files are still stubs;
    Session 4 only generalized the bounded shape sections.
+
+## 2026-08-09 Session 5: rendering mechanism live — page-art stage, gates, ModelPolicy modes, carry-fix trio (issues #12, #7, #5, #3, #8)
+
+Executed on `v2-architecture` (commits `f534373` step 0.1, `0630224` step
+0.2, `4ab7df6` step 0.3, `ee100ee` Goal B, `e218cbd` page-art machinery,
+`78867ff` live-run evidence, plus this closeout). Read the ADR-012
+**Session 5 addendum** (entries 1–6) — every boundary edit and the live
+gate calibration are enumerated there.
+
+**HEADLINE FINDING (top input to Session 6):** the Session 4 ACCEPTED WMC
+page scripts carry ONE-WORD story beats ("hook", "conflict", "reveal")
+and ZERO text elements. Live consequence measured this session: the
+lane-C image model drew from nearly-empty briefs (content drift straight
+into invented imagery), vision QA brief-matching was noisy, and live
+lettering was vacuous (nothing to letter). The rendering mechanism is
+proven; the PAGE-WRITING CONTENT QUALITY is now the binding constraint.
+Fix the page-writing skill/instructions (real beats, authored text
+elements) and gate on it before reader-v2 scoring.
+
+What landed:
+
+1. **Step 0.1 — validate_layout_draft trim** (`f534373`): per-tool
+   MODEL_VISIBLE_DATA_KEYS projection in `tool-adapter.ts`; the model sees
+   `passed/compiler_hash/preview_hash/issues/normalized_page_plan` only;
+   `compiled_layout` + `preview_svg` stay in details + broker response.
+   Kills the measured 158k-token thumbnail echo ($0.13/goal class).
+2. **Step 0.2 — craft warn-vs-block gate** (`0630224`):
+   `CRAFT_RULE_POLICY` — RTL_READING_FLOW_INCOHERENT BLOCKS (escalated to
+   error at validate_layout_draft AND thumbnail acceptance); the other
+   five rules warn. Craft validator v2. Regression fixture frozen from
+   the live defective accepted WMC page
+   (`backend/tests/fixtures/wmc_session4_rtl_defect_page_plan.json`):
+   the Session 4 accepted set is now REJECTED on resubmission (accepted
+   artifacts in Mongo untouched — immutable evidence). NOTE: fresh
+   planning runs must produce RTL-coherent sets from here on.
+3. **Step 0.3 — durable failed-run receipts** (`4ab7df6`): pi-runtime
+   snapshots stats on every exit path; `AgentRuntimeRunError` carries the
+   trace; worker 422 body exposes `failure_trace`; Python client parses
+   it; both drivers persist failed stages (status, error, measured trace,
+   `failure_history` receipt that survives retries) and mark the run;
+   retries re-arm with attempt+=1. Success traces (incl. tool_calls) now
+   stored on stage rows — issue #8 traces checkbox done.
+4. **Goal B — ModelPolicy modes** (`ee100ee`): `model_policy.py` — mode
+   speed=MiniMax-M2.7-highspeed, quality=MiniMax-M3, DEFAULT quality;
+   per-purpose defaults config-not-code (`Settings.agent_model_mode_*`,
+   env-overridable): direction=quality, page-writing/thumbnail=speed;
+   vision LOCKED to M3 in code (speed override refused). Drivers resolve
+   through the policy; constructor `required_model` = receipted A/B hatch.
+   `ModelReceipt` += `model_mode` + `model_mode_source` (additive;
+   schemas + TS regenerated) — receipts prove mode AND provenance.
+   Worker still binds ONE model per process; mixed-mode pipelines need
+   per-mode workers (receipt gates fail loud on mismatch).
+5. **Page-art machinery** (`e218cbd`): `manga_page_art.py` (pure) +
+   `manga_page_art_stage.py` (durable driver) + `manga_vision_qa.py` (M3
+   adapter). Deterministic rendering-mode policy in CODE (B=splash/
+   spread, A=all-hold-no-action, C=default); conditioning skeleton (thick
+   borders + read badges) + polygon->mask export (the Session 4 deferred
+   item) from compiled geometry; production OCR gate (dictionary + min
+   confidence + min word count); border-adherence accept/retry signal
+   (deliberately NOT Layout-IoU — #10/Session 6); M3 vision QA (panel
+   count + briefs + identity) with selective per-page retry + hardened
+   prompt; v2 composition with code-owned lettering (bubbles, captions,
+   SFX; tails deferred); DSL-only degradation (never block a page on an
+   image); `page_art`/`composed_page`/`provider_receipt` ArtifactDoc rows
+   (schema strings; contract promotion with the Session 6 reader
+   consumer); bridge wiring with zero-budget default (flag-on spends no
+   image dollars unless granted).
+6. **Live lane-C run on the Session 4 accepted WMC pages** (`78867ff`,
+   evidence `docs/evidence/session5-page-art/`): batch 1 (gates v1,
+   4 calls, $0.156) — border adherence 1.0 and OCR CLEAN on every
+   attempt (skeleton conditioning + noise filter both WORK), but all
+   attempts rejected solely by vision `contains_text` firing on drawn
+   scribble/pseudo-glyph texture. Calibration (GATE_POLICY_VERSION
+   v2, part of the stage input hash): OCR gate is the text authority
+   (issue #12 flowchart); vision text flag is advisory; rejected art now
+   persists to evidence. Batch 2 (gates v2, 2 calls, $0.078): BOTH pages
+   ACCEPTED attempt 1 — 4/4 panels, borders 1.0, OCR clean, full artifact
+   lineage (page_art + slicing map + composed pages). The art is
+   genuinely strong (maze corridors, cheese, mice, bunny-slipper Hem);
+   identity vs reference sheets is loose (recorded).
+
+Verification: backend `uv run pytest tests/ -q` -> **722 passed** (684
+baseline + 38 new; no new warning classes — utcnow/config classes
+pre-existing, more instances from new tests). TS: contracts 42,
+agent-runtime 22 (20+2), agent-worker 13 (12+1). `node scripts/generate.mjs
+--check` + `PYTHONPATH=. uv run python scripts/export_contracts.py --check`
+clean. Injection suites green (17+16+7 inside those totals).
+`git diff --check` clean per commit.
+
+Spend ledger (ALL receipted — 12 `provider_receipt` artifacts + evidence
+ledger `receipts.jsonl` + `vision_smoke.json`):
+
+| lane | calls | cost | notes |
+|---|---|---|---|
+| image (OpenRouter, gemini-2.5-flash-image) | 6 | **$0.2341125** | batch 1: 4 x ~$0.039 = $0.156 (all rejected under gates v1 — calibration evidence, receipted); batch 2: 2 x ~$0.039 = $0.078 (both accepted). EXACTLY equals the key's live usage delta (0.0784488 -> 0.3125613). |
+| MiniMax M3 vision QA | 8 + 1 smoke | **$0.002628** | smoke $0.000404 (9.8s) measured BEFORE the batch; per-call ~$0.0002–0.0008 |
+| MiniMax agent goals | 0 | $0.00 | Session 4 accepted planning artifacts reused; no new agent goals |
+
+Total session provider spend: **$0.2367405** (image cap $1.00: used 23%;
+text cap ~$1.00: used 0.3%). Full-DB backup BEFORE live writes:
+`/tmp/bookreel-s5-before-pageart.json` (17 collections / 93 docs / 1.08 MB).
+Live writes were additive v2-lane rows on the hs-arm run
+(`run_dir_a99464c…`): 2 page-art stage rows (gates v1 + v2 — the v1 stage
+row with its DSL-only outcome is immutable evidence), 12 receipts, 2
+page_art, 4 composed_page artifacts. No destructive operation; v1
+collections untouched; run left status=succeeded.
+
+Deviations from the session brief (enumerated):
+
+1. Border-adherence, NOT Layout-IoU: real IoU needs detected panels and
+   belongs to #10 (Session 6). Named as such in code/artifacts.
+2. Mid-session gate recalibration (v1 -> v2): vision contains_text
+   demoted to advisory after the live false-positive evidence; policy
+   version rides the stage input hash (no silent reuse). Batch 1's
+   rejected art was NOT persisted (gap fixed for batch 2+); batch 1's
+   run_summary.json was overwritten by batch 2 — its full story lives in
+   the v1 stage row trace + the 8 batch-1 receipts in receipts.jsonl.
+3. Main-goal 4 partially delivered: lettering is fresh minimal code
+   (bubbles/captions/SFX, wrap, z-order) — bubble TAILS and the v1
+   vector-scene/bubble-rules carry are DEFERRED to Session 6. Lane A/B
+   pages currently compose DSL-only (no sprite/key-panel paths yet).
+4. Rendering-mode policy inputs are page_kind + tempo/purpose (not yet
+   dialogue density / budget remaining as #12's box sketches).
+5. `supersedes` on page_art is plumbed but never populated — regeneration
+   over an existing ACCEPTED page_art won't chain lineage yet (the retry
+   loop only regenerates within one stage run). Session 6.
+6. Vision QA is one page-level call with per-panel verdicts (smoke-priced
+   at $0.0004; per-panel sliced calls unnecessary at this cost/quality).
+7. Carry-forward (a) — first REAL flag-on v1 slice on a FRESH project —
+   NOT satisfied by this session (the live run reused the Session 4
+   scope); carried again with reason: image+calibration budget was
+   concentrated on the rendering mechanism per the session brief.
+
+Known rough edges / carry-forwards (Session 6 — docs/next-prompt.md):
+
+1. Page-writing content quality (the headline finding): one-word beats +
+   zero text elements in accepted scripts; skill/instruction fix + a
+   content-quality gate before reader-v2 scoring.
+2. Real Layout-IoU + Magi/eval metrics (#10) replacing/augmenting
+   border-adherence; empty-balloon detection in vision QA (#7).
+3. Lettering tails + v1 vector-scene/bubble-rules carry into composition;
+   lane A (sprites+vector) and lane B (key panel) composition paths.
+4. Contract promotion: page_art / composed_page / provider_receipt into
+   packages/contracts with the reader-v2 consumer; supersedes lineage.
+5. The Session 4 accepted WMC thumbnail set is now KNOWN-RTL-defective
+   under the live craft gate — fresh planning runs required for reader-v2
+   material.
+6. Standing: (a) fresh flag-on v1 slice; (b) worker egress; (c)
+   ARTIFACT_REPAIR policy; (d) layout-template.v1 contract +
+   list_layout_templates broker tool + seeded jitter (mask export DONE
+   this session); (e) issue #6 knowledge-base rewrite.
