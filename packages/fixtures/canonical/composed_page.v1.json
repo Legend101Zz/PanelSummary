@@ -1,0 +1,11 @@
+{
+  "schema_version": "composed-page.v1",
+  "page_plan_id": "page_plan_demo_0",
+  "page_index": 0,
+  "has_art": true,
+  "lettering": "deterministic (code-owned, all text elements)",
+  "text_element_count": 2,
+  "page_art_artifact_id": "page_art_demo000000000000",
+  "composition_version": "manga-composition.v2",
+  "image_content_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

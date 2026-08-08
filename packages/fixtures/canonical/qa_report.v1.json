@@ -1,0 +1,14 @@
+{
+  "schema_version": "qa-report.v1",
+  "page_plan_id": "page_plan_demo_0",
+  "page_index": 0,
+  "attempt": 1,
+  "gate_policy_version": "page-art-gates.v3",
+  "accepted": true,
+  "gates": {
+    "accepted": true,
+    "reject_reason": "",
+    "vision_empty_balloon": false
+  },
+  "at": "2026-08-09T12:00:05+00:00"
+}

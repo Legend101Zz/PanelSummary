@@ -1,0 +1,20 @@
+[
+  {
+    "artifact_id": "composed_page_37a2cb46640af759dd9d994c",
+    "page_index": 0,
+    "has_art": true,
+    "composition_version": "manga-composition.v2",
+    "supersedes": "composed_page_a56c27741a4e2e66fceb9761",
+    "stage_run_id": "stage_manga_page_compose_3bd640d6e2523a171c04",
+    "storage_ref": "storage://composed-pages/d94e1fe597d62ec87e3068ba8fb2b36b04d8032d38c709cd361674947ba091f6.png"
+  },
+  {
+    "artifact_id": "composed_page_95ca40fc74afdfbca4cf966a",
+    "page_index": 1,
+    "has_art": true,
+    "composition_version": "manga-composition.v2",
+    "supersedes": "composed_page_8e2c70d52188d87dab69b035",
+    "stage_run_id": "stage_manga_page_compose_3bd640d6e2523a171c04",
+    "storage_ref": "storage://composed-pages/971202508735ffac176d260593ecc194efc2d6e21786a7ae40227d36bf6be9ee.png"
+  }
+]

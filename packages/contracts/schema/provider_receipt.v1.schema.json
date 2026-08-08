@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "JsonValue": {}
+  },
+  "$id": "https://scrollstack.dev/contracts/provider_receipt.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One provider call — image or vision, success or failure\n(provider-receipt.v1). Persisted for EVERY call including no-image\nrefusals; ``response_text`` carries the refusal body.",
+  "properties": {
+    "at": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "At",
+      "type": "string"
+    },
+    "cost_usd": {
+      "minimum": 0.0,
+      "title": "Cost Usd",
+      "type": "number"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "maxLength": 8000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "latency_ms": {
+      "minimum": 0,
+      "title": "Latency Ms",
+      "type": "integer"
+    },
+    "model": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "n_images": {
+      "minimum": 0,
+      "title": "N Images",
+      "type": "integer"
+    },
+    "provider": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "purpose": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Purpose",
+      "type": "string"
+    },
+    "request": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Request",
+      "type": "object"
+    },
+    "response_text": {
+      "anyOf": [
+        {
+          "maxLength": 8000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Response Text"
+    },
+    "schema_version": {
+      "const": "provider-receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "usage": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Usage"
+    }
+  },
+  "required": [
+    "schema_version",
+    "purpose",
+    "provider",
+    "model",
+    "request",
+    "cost_usd",
+    "latency_ms",
+    "n_images",
+    "at"
+  ],
+  "title": "ProviderReceipt",
+  "type": "object"
+}

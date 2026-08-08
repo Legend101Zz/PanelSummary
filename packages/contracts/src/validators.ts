@@ -9,11 +9,15 @@ import addFormats from "ajv-formats";
 import type {
   AgentGoal,
   ArtifactRef,
+  ComposedPage,
   ContextPack,
   MangaManifest,
   MangaPagePlan,
   MangaPlan,
+  PageArt,
   PageScriptSet,
+  ProviderReceipt,
+  QaReport,
   ReelPlayerPayload,
   ReelSeries,
   ReelSpec,
@@ -228,6 +232,18 @@ export const isRenderedPage = (value: unknown): value is RenderedPage =>
 
 export const isRenderedPageV2 = (value: unknown): value is RenderedPageV2 =>
   validateContract("rendered_page.v2", value).valid;
+
+export const isComposedPage = (value: unknown): value is ComposedPage =>
+  validateContract("composed_page.v1", value).valid;
+
+export const isPageArt = (value: unknown): value is PageArt =>
+  validateContract("page_art.v1", value).valid;
+
+export const isProviderReceipt = (value: unknown): value is ProviderReceipt =>
+  validateContract("provider_receipt.v1", value).valid;
+
+export const isQaReport = (value: unknown): value is QaReport =>
+  validateContract("qa_report.v1", value).valid;
 
 export const isSeriesProgress = (value: unknown): value is SeriesProgress =>
   validateContract("series_progress.v1", value).valid;

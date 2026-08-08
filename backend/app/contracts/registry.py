@@ -20,6 +20,7 @@ from .manga import (
     RevisionRequest,
     ThumbnailSet,
 )
+from .page_art import ComposedPage, PageArt, ProviderReceipt, QaReport
 from .reel import ReelSpec
 from .reel_delivery import ReelPlayerPayload, ReelSeries, SeriesProgress, SeriesProgressUpdate
 from .runs import GenerationRun, StageRun
@@ -48,6 +49,10 @@ CONTRACT_MODELS: dict[str, type[BaseModel]] = {
     "page_script_set.v1": PageScriptSet,
     "thumbnail_set.v1": ThumbnailSet,
     "compiled_layout.v1": CompiledPageLayout,
+    "composed_page.v1": ComposedPage,
+    "page_art.v1": PageArt,
+    "provider_receipt.v1": ProviderReceipt,
+    "qa_report.v1": QaReport,
     "page_validation_report.v1": PageValidationReport,
     "revision_request.v1": RevisionRequest,
     "image_attempt.v1": ImageAttempt,
