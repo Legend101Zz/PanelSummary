@@ -649,6 +649,25 @@ async def generate_project_slice(
             last_page_hook=last_page_hook,
         )
 
+    if get_settings().agentic_manga_pipeline_v1:
+        # Blueprint §12.3 shadow lane (Session 4): direction -> page scripts
+        # -> thumbnails on the slice's frozen scope. Fallback-guarded inside
+        # the bridge — it logs and swallows every failure, so the v1 result
+        # below is returned unchanged no matter what happens here. Flag OFF
+        # (default) never reaches this import.
+        from app.services.agentic_pipeline_bridge import maybe_run_agentic_planning
+
+        agentic_outcome = await maybe_run_agentic_planning(
+            project_id=str(project.id),
+            compiled_slice_context=compiled_slice_context,
+        )
+        logger.info(
+            "agentic planning lane outcome for slice %s: %s (%s)",
+            str(slice_doc.id),
+            agentic_outcome.status,
+            agentic_outcome.detail or "ok",
+        )
+
     await _emit_progress(progress_callback, 98, "Manga slice persisted successfully…", "complete")
 
     return slice_doc, page_docs

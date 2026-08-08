@@ -85,6 +85,16 @@ class Settings(BaseSettings):
     # Generous by design: Phase 1 must never drop mandatory source evidence.
     compiled_context_max_input_tokens: int = 120_000
 
+    # --- Agentic manga pipeline (issues #5/#6 / blueprint §12.3) ---
+    # When True, a SUCCESSFUL v1 slice additionally runs the agentic
+    # planning lane (Manga Director -> page scripts -> thumbnails) as a
+    # fallback-guarded SHADOW lane against the slice's frozen scope: it
+    # writes only v2-lane rows and any failure is logged and swallowed, so
+    # v1 output is returned unchanged either way. Requires
+    # use_compiled_context (the lane needs the frozen scope). Default OFF:
+    # v1 behavior is byte-identical and the module is never even imported.
+    agentic_manga_pipeline_v1: bool = False
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
