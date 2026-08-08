@@ -14,6 +14,7 @@ control plane.
 """
 
 import hashlib
+from pathlib import Path
 import logging
 import os
 from datetime import datetime
@@ -26,6 +27,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
 from app.api.routes.internal_tools import internal_tools_router
+from app.api.routes.manga_v2_reader import manga_v2_reader_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.manga_projects import router as manga_projects_router
 from app.api.routes.media import router as media_router
@@ -71,6 +73,18 @@ app.include_router(scopes_router)
 # Session 4: MangaDomainToolService (donor dispatcher) adds the page-writing
 # and thumbnail planning tools on top of the Director tools.
 _bridged_repositories = V1BridgedRepositories()
+# Session 6: read-only reader-v2 seam over the v2 lane (ADR-009 consumer).
+# Additive router — the legacy v1 reader endpoints above are untouched.
+app.include_router(
+    manga_v2_reader_router(
+        _bridged_repositories,
+        # The v2 rendering lane writes to the REPO-ROOT storage tree (the
+        # stage drivers pass media_root=<repo>/storage), which is distinct
+        # from v1's backend/storage (settings.image_dir) — two trees, one
+        # per lane.
+        storage_root=Path(__file__).resolve().parents[2] / "storage",
+    )
+)
 app.include_router(
     internal_tools_router(
         MangaDomainToolService(_bridged_repositories, _bridged_repositories),
