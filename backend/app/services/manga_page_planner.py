@@ -138,7 +138,9 @@ def page_writing_instructions(beat_count: int) -> str:
         "exists — but never an empty text-element list. Use the exact "
         "accepted MangaPlan artifact ID and this fresh ContextPack ID. "
         "Fetch the accepted MangaPlan at most once. Do not create layouts, "
-        "request assets, or call an image model."
+        "request assets, or call an image model. Your final action MUST be "
+        "a successful submit_page_script_set tool call — never print the "
+        "script as message text."
     )
 
 
@@ -588,14 +590,20 @@ class MangaPagePlannerService:
         self, run: GenerationRunDoc, *, stage_name: str, kind: str
     ) -> ArtifactDoc:
         stages = await self._repositories.list_stages(run.run_id)
-        stage = next(
+        # Session 6: after a re-planning pass a run carries SEVERAL
+        # succeeded stages of the same name (the fresh prompt-v3 page
+        # writing landed beside the Session 4 stage). The LATEST succeeded
+        # stage is the authoritative planning output.
+        candidates = sorted(
             (
                 item
                 for item in stages
                 if item.stage_name == stage_name and item.status == "succeeded"
             ),
-            None,
+            key=lambda item: item.started_at,
+            reverse=True,
         )
+        stage = candidates[0] if candidates else None
         if stage is None or not stage.output_artifact_ids:
             raise MangaPagePlannerError(
                 f"Run {run.run_id} has no succeeded {stage_name} stage"

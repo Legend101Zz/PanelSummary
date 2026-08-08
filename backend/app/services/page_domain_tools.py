@@ -24,6 +24,7 @@ from .hashing import binary_content_hash
 from .manga_content_validation import (
     AGENT_CONTENT_RULE_POLICY,
     blocking_content_errors,
+    content_gate_detail,
     validate_script_content_enforced,
 )
 from .manga_craft_validation import validate_page_craft_enforced
@@ -32,6 +33,29 @@ from .manga_page_planning import MangaPagePlanningService
 from .manga_validation import validate_page_plan
 
 logger = logging.getLogger(__name__)
+
+
+def _pydantic_error_digest(error: ValidationError, *, budget: int = 900) -> str:
+    """Class-summarized validation digest for the sealed model.
+
+    The broker bounds the model-visible 422 text to 1,000 characters, so a
+    raw multi-error pydantic dump truncates into noise (live-measured:
+    Session 6 page-writing attempts saw 3 of 12 errors). Group by error
+    class, list every offending path, and instruct the class-wide fix —
+    the same shape as ``manga_content_validation.content_gate_detail``.
+    """
+    groups: dict[str, list[str]] = {}
+    for item in error.errors(include_input=False):
+        key = f"{item['type']}: {item['msg']}"
+        path = ".".join(str(part) for part in item["loc"])
+        groups.setdefault(key, []).append(path)
+    parts = []
+    for key, paths in groups.items():
+        shown = ", ".join(paths[:8])
+        if len(paths) > 8:
+            shown += f" (+{len(paths) - 8} more)"
+        parts.append(f"{key} at [{shown}] — fix EVERY field of this class")
+    return "; ".join(parts)[:budget]
 
 
 class MangaPlanningToolService:
@@ -230,7 +254,10 @@ class MangaPlanningToolService:
         try:
             script_set = PageScriptSet.model_validate(raw)
         except ValidationError as error:
-            raise ArtifactValidationError(f"PageScriptSet validation failed: {error}") from error
+            raise ArtifactValidationError(
+                "PageScriptSet validation failed — "
+                f"{_pydantic_error_digest(error)}"
+            ) from error
         # Session 6 step 0.1 (boundary edit, ADR-012 S6 addendum): the agent
         # submission seam applies the stricter content policy — a sealed
         # model must letter EVERY page (narration needs no speaker, so an
@@ -242,12 +269,9 @@ class MangaPlanningToolService:
             )
         )
         if agent_content_errors:
-            detail = "; ".join(
-                f"{issue.code} at {issue.path}: {issue.message}"
-                for issue in agent_content_errors
-            )
             raise ArtifactValidationError(
-                f"PageScriptSet failed the content-quality gate — {detail}"
+                "PageScriptSet failed the content-quality gate — "
+                f"{content_gate_detail(agent_content_errors)}"
             )
         artifact = await self._planning.submit_page_script_set(
             run_id=scope.run_id,
@@ -435,7 +459,10 @@ class MangaPlanningToolService:
         try:
             thumbnail_set = ThumbnailSet.model_validate(normalized)
         except ValidationError as error:
-            raise ArtifactValidationError(f"ThumbnailSet validation failed: {error}") from error
+            raise ArtifactValidationError(
+                "ThumbnailSet validation failed — "
+                f"{_pydantic_error_digest(error)}"
+            ) from error
         result = await self._planning.submit_thumbnail_set(
             run_id=scope.run_id,
             stage_run_id=scope.stage_run_id,

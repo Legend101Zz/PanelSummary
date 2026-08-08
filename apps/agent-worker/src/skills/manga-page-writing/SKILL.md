@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.4.0
+version: 1.4.3
 ---
 
 # Manga page writing
@@ -81,10 +81,42 @@ TextElement {
   content, speaker_ref?, emotion?, writing_direction: horizontal|vertical,
   shape: oval|round_rect|thought_cloud|jagged|caption|free_sfx,
   preferred_region:{x,y,width,height}, tail_target?:{subject_ref?,point:{x,y}},
-  typography:{font_token,weight,min_px,max_px,emphasis:normal|bold|whisper|shout},
+  typography:{font_token,
+              weight: INTEGER 100..900 (400=normal, 700=bold — NEVER a
+              keyword string),
+              min_px: INTEGER >= 8, max_px: INTEGER <= 256,
+              emphasis:normal|bold|whisper|shout},
   overflow:fit|reflow|split|reject, z_index
 }
 ```
+
+Field-type traps (submissions are rejected on any of these):
+
+- `typography.weight` is a NUMBER (400 or 700), never `"normal"`/`"bold"`;
+  `min_px`/`max_px` are integers with `min_px >= 8`.
+- Every `source_ref` must be the COMPLETE object copied verbatim from the
+  accepted MangaPlan — including its non-empty `quote`. Never leave a
+  quote empty and never retype one.
+- ALL `*_ref`/`*_refs` and `*_id` fields (`environment_ref`, `prop_refs`,
+  `subject_ref`, `speaker_ref`, `panel_id`, …) are IDENTIFIER TOKENS
+  matching `^[A-Za-z0-9][A-Za-z0-9._:-]*$` — no spaces, no prose. Write
+  `env_maze_corridor`, `prop_chalk_stub` — never `"dark maze corridor
+  junction"`. Prose about the setting belongs in `story_beat`; when no
+  accepted environment/prop exists, OMIT `environment_ref` and use empty
+  `prop_refs`.
+- Every region box (`preferred_region`, every `focal_regions` and
+  `avoid_text_regions` entry) must satisfy `x + width <= 1` AND
+  `y + height <= 1` — boxes live INSIDE the unit page. Check the
+  arithmetic before submitting (x=0.5 with width=0.6 is invalid).
+- When a submission is rejected, repair ONLY the fields named in the
+  error and resubmit; do not regenerate untouched parts of the set (a
+  full rewrite is how correct source_refs get corrupted). If several
+  errors share one class, fix EVERY field of that class across all
+  pages, not just the listed ones. A resubmission must ACTUALLY CHANGE
+  the named fields — never resubmit an unchanged payload.
+- Your final action MUST be a successful `submit_page_script_set` tool
+  call. Never print the script as message text instead of calling the
+  tool.
 
 All normalized coordinates and sizes are in `0..1`, and boxes must remain
 inside the page. Dialogue requires `speaker_ref`. Narration and SFX cannot have

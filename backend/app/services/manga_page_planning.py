@@ -24,6 +24,7 @@ from .hashing import binary_content_hash, content_hash
 from .manga_content_validation import (
     CONTENT_VALIDATOR_VERSION,
     blocking_content_errors,
+    content_gate_detail,
     validate_script_content_enforced,
 )
 from .manga_craft_validation import validate_page_craft_enforced
@@ -105,12 +106,9 @@ class MangaPagePlanningService:
         content_issues = validate_script_content_enforced(script_set)
         content_errors = blocking_content_errors(content_issues)
         if content_errors:
-            detail = "; ".join(
-                f"{issue.code} at {issue.path}: {issue.message}"
-                for issue in content_errors
-            )
             raise ArtifactValidationError(
-                f"PageScriptSet failed the content-quality gate — {detail}"
+                "PageScriptSet failed the content-quality gate — "
+                f"{content_gate_detail(content_errors)}"
             )
 
         payload = script_set.model_dump(mode="json")

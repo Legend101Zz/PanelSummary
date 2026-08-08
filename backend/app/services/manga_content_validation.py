@@ -117,6 +117,26 @@ def blocking_content_errors(
     return [issue for issue in issues if issue.severity == "error"]
 
 
+def content_gate_detail(errors: list[PageValidationIssue], *, budget: int = 900) -> str:
+    """Compact, repair-oriented rejection text.
+
+    The sealed model sees only the FIRST 1,000 characters of a broker 422
+    (HttpDomainToolBroker bounds ``message.slice(0, 1000)``), so the gate
+    must lead with what to FIX — one summary per rule with a single
+    concrete example — never the full per-panel enumeration.
+    """
+    by_code: dict[str, list[PageValidationIssue]] = {}
+    for issue in errors:
+        by_code.setdefault(issue.code, []).append(issue)
+    parts: list[str] = []
+    for code, group in by_code.items():
+        first = group[0]
+        summary = f"{code} x{len(group)} (e.g. at {first.path}): {first.message}"
+        parts.append(summary)
+    detail = " || ".join(parts)
+    return detail[:budget]
+
+
 def _beat_substance_issues(script_set: PageScriptSet) -> list[PageValidationIssue]:
     issues: list[PageValidationIssue] = []
     for page_index, page in enumerate(script_set.pages):
