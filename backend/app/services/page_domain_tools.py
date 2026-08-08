@@ -21,6 +21,7 @@ from .domain_tools import (
 )
 from .errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from .hashing import binary_content_hash
+from .manga_craft_validation import validate_page_craft_enforced
 from .manga_layout import LayoutCompilationError, compile_page_layout, render_thumbnail_svg
 from .manga_page_planning import MangaPagePlanningService
 from .manga_validation import validate_page_plan
@@ -348,7 +349,13 @@ class MangaPlanningToolService:
                     "issues": [issue.model_dump(mode="json") for issue in error.issues],
                 },
             )
-        issues = validate_page_plan(plan, compiled)
+        # Session 5 (step 0.2): craft rules ride the same issue list with the
+        # warn-vs-block policy applied, so the model sees RTL flow defects as
+        # blocking errors and the remaining craft rules as repairable warnings.
+        issues = [
+            *validate_page_plan(plan, compiled),
+            *validate_page_craft_enforced(plan, compiled),
+        ]
         svg = render_thumbnail_svg(plan, compiled)
         return DomainToolResponse(
             content="Layout draft compiled without any provider or image call.",

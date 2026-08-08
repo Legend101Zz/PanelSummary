@@ -15,12 +15,16 @@ page can still be accepted while its craft debt is visible and addressable:
   inside a row and never jump up-and-right across rows) — the one check
   the compiler deliberately does not enforce because ranks are authored.
 
-Wiring these into the broker's ``validate_layout_draft`` response and the
-eval harness is Session 5/6 scope (issues #5/#10); here they gate the SVG
-preview loop and the template library's own tests.
+Session 5 (step 0.2): the rules are wired into the live loop — the broker's
+``validate_layout_draft`` response and the thumbnail acceptance report both
+carry them, with a per-rule warn-vs-block policy applied first
+(``CRAFT_RULE_POLICY`` / ``validate_page_craft_enforced``). The eval-harness
+wiring remains Session 6 scope (issue #10).
 """
 
 from __future__ import annotations
+
+from typing import Literal
 
 from app.contracts.manga import (
     CompiledPageLayout,
@@ -28,7 +32,23 @@ from app.contracts.manga import (
     PageValidationIssue,
 )
 
-CRAFT_VALIDATOR_VERSION = "manga-craft-validator.v1"
+CRAFT_VALIDATOR_VERSION = "manga-craft-validator.v2"
+
+#: Session 5 warn-vs-block policy (issue #5, prompt step 0.2). Only the
+#: geometric RTL flow lint BLOCKS acceptance: it is the one objective manga
+#: grammar rule of the six (a broken right-to-left Z-path is a reading-order
+#: bug, not a style choice), it was live-proven on the Session 4 accepted WMC
+#: thumbnails, and every template in the layout library satisfies it — so a
+#: coherent alternative always exists for the model to repair toward. The
+#: other five rules encode craft judgment and stay advisory warnings.
+CRAFT_RULE_POLICY: dict[str, Literal["warn", "block"]] = {
+    "PANEL_COUNT_HIGH": "warn",
+    "CLIMAX_PAGE_UNJUSTIFIED": "warn",
+    "MONOTONE_SHOT_PAGE": "warn",
+    "FLAT_PAGE_ENDING": "warn",
+    "TEXT_BUDGET_EXCEEDED": "warn",
+    "RTL_READING_FLOW_INCOHERENT": "block",
+}
 
 #: Historically measured lettering failure line (repo bubble evidence).
 DIALOGUE_CHAR_BUDGET = 90
@@ -65,6 +85,25 @@ def validate_page_craft(
     issues.extend(_text_budget_issues(plan))
     issues.extend(_reading_flow_issues(plan, compiled))
     return issues
+
+
+def apply_craft_policy(
+    issues: list[PageValidationIssue],
+) -> list[PageValidationIssue]:
+    """Escalate blocked craft rules to error severity (Session 5 policy)."""
+    return [
+        issue.model_copy(update={"severity": "error"})
+        if CRAFT_RULE_POLICY.get(issue.code) == "block"
+        else issue
+        for issue in issues
+    ]
+
+
+def validate_page_craft_enforced(
+    plan: MangaPagePlan, compiled: CompiledPageLayout
+) -> list[PageValidationIssue]:
+    """Craft issues with the warn-vs-block policy applied — the live-loop entry."""
+    return apply_craft_policy(validate_page_craft(plan, compiled))
 
 
 def _panel_count_issues(plan: MangaPagePlan) -> list[PageValidationIssue]:

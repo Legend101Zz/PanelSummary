@@ -5,6 +5,7 @@ the template library's pages stay clean, so skills/validators keep a single
 source of truth for every threshold.
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -12,10 +13,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.contracts.manga import MangaPagePlan
 from app.services.manga_craft_validation import (
+    CRAFT_RULE_POLICY,
     DIALOGUE_CHAR_BUDGET,
+    apply_craft_policy,
     validate_page_craft,
+    validate_page_craft_enforced,
 )
 from app.services.manga_layout import compile_page_layout
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 CANVAS = {
     "width_px": 1600,
@@ -207,3 +213,66 @@ def test_clean_rtl_page_produces_no_craft_issues():
     panels[-1]["purpose"] = "reveal"
     plan = _plan(panels, ids, page_turn=ids[-1])
     assert _codes(plan) == []
+
+
+# ---------------------------------------------------------------------------
+# Session 5 (step 0.2): warn-vs-block policy + the live WMC regression fixture
+# ---------------------------------------------------------------------------
+
+
+def test_policy_covers_every_craft_rule_exactly_once():
+    assert set(CRAFT_RULE_POLICY) == {
+        "PANEL_COUNT_HIGH",
+        "CLIMAX_PAGE_UNJUSTIFIED",
+        "MONOTONE_SHOT_PAGE",
+        "FLAT_PAGE_ENDING",
+        "TEXT_BUDGET_EXCEEDED",
+        "RTL_READING_FLOW_INCOHERENT",
+    }
+    assert CRAFT_RULE_POLICY["RTL_READING_FLOW_INCOHERENT"] == "block"
+    assert all(
+        policy == "warn"
+        for code, policy in CRAFT_RULE_POLICY.items()
+        if code != "RTL_READING_FLOW_INCOHERENT"
+    )
+
+
+def test_policy_escalates_rtl_flow_to_error_and_keeps_warnings():
+    ids = [f"p{i}" for i in range(4)]
+    shots = ["close_up"] * 4  # monotone (warn) on an LTR-shaped page (block)
+    panels = [_panel(i, shot=s) for i, s in zip(ids, shots)]
+    plan = _plan(panels, ids, reading_rtl=False)
+    enforced = validate_page_craft_enforced(plan, compile_page_layout(plan))
+    by_code = {issue.code: issue.severity for issue in enforced}
+    assert by_code["RTL_READING_FLOW_INCOHERENT"] == "error"
+    assert by_code["MONOTONE_SHOT_PAGE"] == "warning"
+    assert by_code["FLAT_PAGE_ENDING"] == "warning"
+    # apply_craft_policy is idempotent and preserves order/count.
+    assert apply_craft_policy(enforced) == enforced
+
+
+def test_live_wmc_session4_accepted_page_is_now_blocked():
+    """Regression fixture from the LIVE defect (Session 4 handoff item 8).
+
+    The frozen plan is page 0 of the ACCEPTED WMC thumbnail set
+    (`accepted_thumbnail_set_e02b371798056f72398af1cc`, run
+    `run_dir_a99464c56fa3b96e777fe750`), reconstructed from Mongo — its top
+    row reads left-to-right, which every error-level validator missed and
+    the Session 4 SVG preview loop caught. Under the Session 5 policy the
+    same plan must carry an error-severity RTL flow issue, i.e. it can no
+    longer be accepted.
+    """
+    raw = json.loads(
+        (FIXTURES / "wmc_session4_rtl_defect_page_plan.json").read_text()
+    )
+    plan = MangaPagePlan.model_validate(raw)
+    compiled = compile_page_layout(plan)
+    advisory = validate_page_craft(plan, compiled)
+    assert any(
+        issue.code == "RTL_READING_FLOW_INCOHERENT" and issue.severity == "warning"
+        for issue in advisory
+    ), "the raw validator should still see the live defect as advisory"
+    enforced = validate_page_craft_enforced(plan, compiled)
+    errors = [issue for issue in enforced if issue.severity == "error"]
+    assert [issue.code for issue in errors] == ["RTL_READING_FLOW_INCOHERENT"]
+    assert errors[0].message.startswith("Panel panel_0_0 reads after panel_0_1")

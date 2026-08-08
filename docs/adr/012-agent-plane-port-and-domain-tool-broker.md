@@ -224,3 +224,18 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    plane. Fix for the measured 158k-token thumbnail input (Session 4
    handoff). Tools without a projection entry are unchanged.
    Regression-tested in `test/tool-adapter.test.ts`.
+2. Craft warn-vs-block gate (issue #5, live-proven defect class): the six
+   Session 4 craft rules now ride the live loop with a per-rule policy
+   (`CRAFT_RULE_POLICY` in `manga_craft_validation.py`, validator version
+   bumped to `manga-craft-validator.v2`). Only
+   `RTL_READING_FLOW_INCOHERENT` blocks (escalated to error severity); the
+   other five stay warnings. Boundary edits to the PORTED
+   `page_domain_tools._validate_layout_draft` (craft issues appended to the
+   verdict) and `manga_page_planning.submit_thumbnail_set` (craft issues on
+   the acceptance report; artifact `validation_report` issues now carry
+   `severity`). Consequence: a thumbnail set like Session 4's accepted WMC
+   set is now REJECTED — regression fixture frozen from the live artifact at
+   `backend/tests/fixtures/wmc_session4_rtl_defect_page_plan.json`
+   (`test_craft_gate_acceptance_v2.py`); the Session 4 accepted artifacts in
+   Mongo remain untouched evidence. Ported donor suites unchanged and green
+   (their fixture pages are vertical stacks, outside the RTL row lint).

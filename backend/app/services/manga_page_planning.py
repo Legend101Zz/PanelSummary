@@ -21,6 +21,7 @@ from app.persistence.protocols import ArtifactRepository, RunRepository
 
 from .errors import ArtifactValidationError, AuthorizationError, NotFoundError
 from .hashing import binary_content_hash, content_hash
+from .manga_craft_validation import validate_page_craft_enforced
 from .manga_layout import (
     LayoutCompilationError,
     compile_page_layout,
@@ -188,6 +189,14 @@ class MangaPagePlanningService:
                     known_source_fact_ids=known_fact_ids,
                 )
             )
+            # Session 5 (step 0.2): the thumbnail acceptance report carries the
+            # craft rules with the warn-vs-block policy applied — RTL flow
+            # incoherence now blocks acceptance (live-proven defect class);
+            # the other craft rules surface as warnings on the report.
+            issues.extend(
+                issue.model_copy(update={"path": f"/page_plans/{index}{issue.path}"})
+                for issue in validate_page_craft_enforced(plan, layout)
+            )
             compiled.append((plan, layout))
         if len(compiled) == len(thumbnail_set.page_plans):
             issues.extend(validate_page_sequence(compiled))
@@ -226,6 +235,7 @@ class MangaPagePlanningService:
                 "issues": [
                     {
                         "code": issue.code,
+                        "severity": issue.severity,
                         "message": issue.message,
                         "path": issue.path,
                     }
