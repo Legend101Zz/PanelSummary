@@ -154,3 +154,59 @@ recorded here rather than patched mid-session.
 - Every future agent goal type follows the same shape: policy in
   `GOAL_POLICIES`, tool service on the Python side, skill under
   `apps/agent-worker/src/skills/`, receipts on accepted artifacts.
+
+## Session 4 addendum (2026-08-08): layout lane port + live-run fixes
+
+Extends this ADR for the Session 4 port (issues #5/#6). Same donor pin
+(43300b5), same verbatim rule. Evidence: `docs/evidence/session4-bakeoff/`
+and `docs/evidence/session4-svg-previews/`.
+
+Ported verbatim: `manga_layout.py`, `manga_page_planning.py`,
+`manga_validation.py`, `page_domain_tools.py`, `test_manga_layout.py`,
+`test_manga_page_planning.py` (sys.path shim only, Session 1 convention).
+
+Boundary edits and deviations:
+
+1. `app/main.py` mounts `MangaDomainToolService` (donor dispatcher: planning
+   tools + Director tools). Donor quirk kept verbatim and PINNED by test:
+   `list_relevant_assets` is claimed by the planning (thumbnail) tool set
+   BEFORE the Director service, so direction-stage scopes are refused that
+   name (`test_prompt_injection_pages_v2.py`).
+2. NEW drivers (not ports, donor logic mirrored from
+   `generation_workflow.py`): `manga_page_planner.py` extends the Manga
+   Director run with `manga_page_writing` / `manga_thumbnail` stages; exact
+   per-instance model receipt gate (issue #3 policy: both planning purposes
+   -> MiniMax-M2.7-highspeed; overrides are explicit A/B only). DEVIATION
+   from donor constants after live evidence: the panel target derives from
+   the accepted plan's beat count (donor fixed "4"), because the trusted
+   skill demands each accepted beat map to exactly one panel.
+3. **Donor bug fixed in `tool-adapter.ts`**: the pinned Pi SDK never sends
+   tool-result `details` to the model ("extension-specific metadata (not
+   sent to LLM)" — SDK session-manager docs), so every READ tool degraded
+   to its one-line summary. First exposed by the first live page-writing
+   goal: the model reported "MangaPlan content not available" blockers
+   after three `get_manga_canon` calls. The bounded broker `data` payload
+   now rides in the model-visible text, escaped inside `<tool_data>`;
+   regression-tested. Session 3's live direction goal never noticed —
+   its model only submitted.
+4. Skills `manga-page-writing` 1.2.0 -> 1.3.0 and `manga-thumbnail`
+   1.3.0 -> 1.4.0: the bounded sections hard-coded the legacy Phase 1
+   3-panel shape; driver instructions arrive as UNTRUSTED user notes, so
+   the trusted skill text was unsatisfiable for an 8-beat plan and the
+   model (correctly) refused. Both sections are now goal-shape-generic,
+   keyed to `constraints.target_page_count` / `target_panel_count`.
+5. `AGENTIC_MANGA_PIPELINE_V1` (default OFF) wires the planning lane into
+   `generate_project_slice` as a fallback-guarded SHADOW lane
+   (`agentic_pipeline_bridge.py`): flag off never imports the module; any
+   lane failure is logged and swallowed; requires `use_compiled_context`.
+6. Layout-template library (`manga_layout_templates.py`) and craft
+   validators (`manga_craft_validation.py`) are NEW repo-native code
+   promoted from the `docs/research/layout-templates` spike — the donor has
+   no equivalent. Templates are data in ADR-009 node types; the ported
+   compiler stays the only geometry authority.
+
+Known rough edge from the live thumbnail goal: `validate_layout_draft`
+responses now reach the model in full (normalized plan + compiled layout +
+preview SVG), which drove the thumbnail goal to ~158k input tokens
+($0.13). Trimming the model-visible portion to issues + normalized plan is
+a named Session 5 task.

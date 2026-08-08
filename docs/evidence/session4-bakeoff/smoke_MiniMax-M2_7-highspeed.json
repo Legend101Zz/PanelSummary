@@ -1,0 +1,22 @@
+{
+  "smoke": "structured-json",
+  "provider": "minimax",
+  "model": "MiniMax-M2.7-highspeed",
+  "session_id": "019fe0ac-bb5d-71df-92f3-696edf4adcab",
+  "tokens": {
+    "input": 0,
+    "output": 60,
+    "cacheRead": 0,
+    "cacheWrite": 80,
+    "total": 140
+  },
+  "cost_usd": 0.000174,
+  "latency_ms": 2014,
+  "assistant_text": "\n{\"ready\": true, \"lane\": \"structured-json-smoke\"}",
+  "parsed": {
+    "ready": true,
+    "lane": "structured-json-smoke"
+  },
+  "passed": true,
+  "created_at": "2026-08-08T09:20:46.399Z"
+}

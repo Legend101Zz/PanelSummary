@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Thumbnail for page_0" viewBox="0 0 600 900">
+<defs>
+<marker id="reading_arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M 0 0 L 6 3 L 0 6 Z" fill="#bd392f" /></marker>
+<clipPath id="clip_node_panel_0_1"><polygon points="18.00,18.00 294.00,18.00 294.00,441.00 18.00,441.00" /></clipPath>
+<clipPath id="clip_node_panel_0_0"><polygon points="306.00,18.00 582.00,18.00 582.00,441.00 306.00,441.00" /></clipPath>
+<clipPath id="clip_node_panel_0_2"><polygon points="306.00,459.00 582.00,459.00 582.00,882.00 306.00,882.00" /></clipPath>
+<clipPath id="clip_node_panel_0_3"><polygon points="18.00,459.00 294.00,459.00 294.00,882.00 18.00,882.00" /></clipPath>
+</defs>
+<rect width="600" height="900" fill="#171512" />
+<polygon data-panel-id="panel_0_1" points="18.00,18.00 294.00,18.00 294.00,441.00 18.00,441.00" fill="#f4eedf" stroke="#171512" stroke-width="4" />
+<polygon data-panel-id="panel_0_0" points="306.00,18.00 582.00,18.00 582.00,441.00 306.00,441.00" fill="#f4eedf" stroke="#171512" stroke-width="4" />
+<polygon data-panel-id="panel_0_2" points="306.00,459.00 582.00,459.00 582.00,882.00 306.00,882.00" fill="#f4eedf" stroke="#171512" stroke-width="4" />
+<polygon data-panel-id="panel_0_3" points="18.00,459.00 294.00,459.00 294.00,882.00 18.00,882.00" fill="#f4eedf" stroke="#171512" stroke-width="4" />
+<path data-reading-edge="panel_0_1:panel_0_0" d="M 156.00 229.50 L 444.00 229.50" stroke="#bd392f" stroke-width="4" stroke-dasharray="8 6" fill="none" opacity="0.78" marker-end="url(#reading_arrow)" />
+<path data-reading-edge="panel_0_0:panel_0_2" d="M 444.00 229.50 L 444.00 670.50" stroke="#bd392f" stroke-width="4" stroke-dasharray="8 6" fill="none" opacity="0.78" marker-end="url(#reading_arrow)" />
+<path data-reading-edge="panel_0_2:panel_0_3" d="M 444.00 670.50 L 156.00 670.50" stroke="#bd392f" stroke-width="4" stroke-dasharray="8 6" fill="none" opacity="0.78" marker-end="url(#reading_arrow)" />
+<text x="156.00" y="229.50" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#171512" stroke="#f4eedf" stroke-width="7" paint-order="stroke">1. wide</text>
+<text x="444.00" y="229.50" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#171512" stroke="#f4eedf" stroke-width="7" paint-order="stroke">2. medium</text>
+<text x="444.00" y="670.50" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#171512" stroke="#f4eedf" stroke-width="7" paint-order="stroke">3. medium</text>
+<text x="156.00" y="670.50" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="700" fill="#171512" stroke="#f4eedf" stroke-width="7" paint-order="stroke">4. close_up</text>
+</svg>
