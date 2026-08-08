@@ -366,7 +366,182 @@ def border_adherence(
 
 # ---------------------------------------------------------------------------
 # v2 composition: frames + deterministic lettering over text-free art
+#
+# Session 6 (issue #5): the v1 reader's bubble rules are CARRIED here rather
+# than reimplemented — `resolve_tail_side`/`tail_geometry` port
+# `resolveBubbleTail` (frontend/components/MangaReader/dialogue_geometry.ts:
+# side from the target's position relative to the bubble box, offset along
+# that side toward the target, clamped 15-85%), and `nudge_region_clear`
+# ports `avoidSpriteFaceZones` (same candidate ladder: top, bottom, left,
+# right, top-center) with the v2 equivalents of v1's sprite face zones: the
+# panel's authored `avoid_text_regions` + `focal_regions`. Bubble tails and
+# per-shape bodies (oval / round_rect / jagged shout burst / scalloped
+# thought cloud + shrinking-circle thought tail) are new deterministic PIL.
 # ---------------------------------------------------------------------------
+
+COMPOSITION_VERSION = "manga-composition.v2"
+
+#: v1 rule constants (dialogue_geometry.ts): tail offset clamp along a side.
+TAIL_OFFSET_MIN = 0.15
+TAIL_OFFSET_MAX = 0.85
+#: Tail base width as a fraction of the bubble side it sits on.
+TAIL_BASE_FRACTION = 0.22
+
+TailSide = Literal["left", "right", "top", "bottom"]
+
+
+@dataclass(frozen=True)
+class ResolvedTail:
+    """Page-normalized tail geometry: triangle base on the bubble edge."""
+
+    side: TailSide
+    base_a: tuple[float, float]
+    base_b: tuple[float, float]
+    tip: tuple[float, float]
+
+
+def _clamp(value: float, low: float, high: float) -> float:
+    return min(high, max(low, value))
+
+
+def resolve_tail_side(
+    box: tuple[float, float, float, float], target: tuple[float, float]
+) -> tuple[TailSide, float]:
+    """Port of v1 ``resolveBubbleTail``: which bubble side faces the target,
+    and how far along that side (0..1, clamped 0.15..0.85) the tail sits.
+
+    ``box`` is (left, top, width, height); everything page-normalized.
+    """
+    left, top, width, height = box
+    right = left + width
+    bottom = top + height
+    tx, ty = target
+    if ty > bottom:
+        side: TailSide = "bottom"
+    elif ty < top:
+        side = "top"
+    elif tx < left:
+        side = "left"
+    elif tx > right:
+        side = "right"
+    else:
+        side = "bottom"  # v1 fallback when the target sits inside the box
+    if side in {"left", "right"}:
+        raw = (ty - top) / max(height, 1e-6)
+    else:
+        raw = (tx - left) / max(width, 1e-6)
+    return side, _clamp(raw, TAIL_OFFSET_MIN, TAIL_OFFSET_MAX)
+
+
+def tail_geometry(
+    box: tuple[float, float, float, float],
+    target: tuple[float, float],
+) -> ResolvedTail:
+    """Triangle tail from the resolved side toward the target point."""
+    side, offset = resolve_tail_side(box, target)
+    left, top, width, height = box
+    half_base = (
+        max(height, 1e-6) if side in {"left", "right"} else max(width, 1e-6)
+    ) * TAIL_BASE_FRACTION / 2
+    if side == "bottom":
+        ax = left + width * offset
+        base_a = (_clamp(ax - half_base, left, left + width), top + height)
+        base_b = (_clamp(ax + half_base, left, left + width), top + height)
+    elif side == "top":
+        ax = left + width * offset
+        base_a = (_clamp(ax - half_base, left, left + width), top)
+        base_b = (_clamp(ax + half_base, left, left + width), top)
+    elif side == "left":
+        ay = top + height * offset
+        base_a = (left, _clamp(ay - half_base, top, top + height))
+        base_b = (left, _clamp(ay + half_base, top, top + height))
+    else:  # right
+        ay = top + height * offset
+        base_a = (left + width, _clamp(ay - half_base, top, top + height))
+        base_b = (left + width, _clamp(ay + half_base, top, top + height))
+    return ResolvedTail(side=side, base_a=base_a, base_b=base_b, tip=target)
+
+
+def _boxes_overlap(
+    a: tuple[float, float, float, float], b: tuple[float, float, float, float]
+) -> bool:
+    return (
+        a[0] < b[0] + b[2]
+        and a[0] + a[2] > b[0]
+        and a[1] < b[1] + b[3]
+        and a[1] + a[3] > b[1]
+    )
+
+
+def nudge_region_clear(
+    box: tuple[float, float, float, float],
+    obstacles: list[tuple[float, float, float, float]],
+    *,
+    bounds: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+) -> tuple[float, float, float, float]:
+    """Port of v1 ``avoidSpriteFaceZones``: keep the box off authored
+    obstacle regions by trying the same candidate ladder (top edge, bottom
+    edge, left edge, right edge, top-center), first clear candidate wins,
+    original box kept when nothing clears."""
+    if not any(_boxes_overlap(box, obstacle) for obstacle in obstacles):
+        return box
+    left, top, width, height = box
+    b_left, b_top, b_width, b_height = bounds
+    margin_x = 0.04 * b_width
+    margin_y = 0.04 * b_height
+    candidates = [
+        (left, b_top + margin_y, width, height),
+        (left, b_top + b_height - height - margin_y, width, height),
+        (b_left + margin_x, top, width, height),
+        (b_left + b_width - width - margin_x, top, width, height),
+        (b_left + (b_width - width) / 2, b_top + margin_y, width, height),
+    ]
+    for candidate in candidates:
+        clamped = (
+            _clamp(candidate[0], b_left, max(b_left, b_left + b_width - width)),
+            _clamp(candidate[1], b_top, max(b_top, b_top + b_height - height)),
+            width,
+            height,
+        )
+        if not any(_boxes_overlap(clamped, obstacle) for obstacle in obstacles):
+            return clamped
+    return box
+
+
+def resolve_tail_target(
+    text, plan: MangaPagePlan
+) -> tuple[float, float] | None:
+    """Page-normalized tail target: the authored ``tail_target.point`` wins;
+    otherwise the speaker's blocking anchor in the text's panel (the v1
+    ``speakerTarget`` rule — anchors are page-normalized like the ported SVG
+    renderer draws them)."""
+    if text.tail_target is not None:
+        return (text.tail_target.point.x, text.tail_target.point.y)
+    if text.speaker_ref is None:
+        return None
+    panel = next(
+        (p for p in plan.page_script.panels if p.panel_id == text.panel_id), None
+    )
+    if panel is None:
+        return None
+    block = next(
+        (b for b in panel.blocking if b.subject_ref == text.speaker_ref), None
+    )
+    if block is None:
+        return None
+    return (block.anchor.x, block.anchor.y)
+
+
+def _panel_obstacles(text, plan: MangaPagePlan) -> list[tuple[float, float, float, float]]:
+    panel = next(
+        (p for p in plan.page_script.panels if p.panel_id == text.panel_id), None
+    )
+    if panel is None:
+        return []
+    return [
+        (region.x, region.y, region.width, region.height)
+        for region in [*panel.avoid_text_regions, *panel.focal_regions]
+    ]
 
 
 def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: float) -> list[str]:
@@ -385,6 +560,119 @@ def _wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: float) -> 
     return lines or [text]
 
 
+def _draw_tail(
+    draw: ImageDraw.ImageDraw,
+    tail: ResolvedTail,
+    scale: tuple[int, int],
+    center: tuple[float, float],
+    *,
+    outline_px: int = 3,
+) -> None:
+    """White-filled tail triangle with the two SIDE edges stroked — the base
+    edge stays unstroked and is pulled toward the bubble center so the tail
+    merges into the body even on curved (ellipse) shapes."""
+    width, height = scale
+
+    def _pull(point: tuple[float, float]) -> tuple[float, float]:
+        px, py = point[0] * width, point[1] * height
+        return (px + (center[0] - px) * 0.25, py + (center[1] - py) * 0.25)
+
+    base_a = _pull(tail.base_a)
+    base_b = _pull(tail.base_b)
+    tip = (tail.tip[0] * width, tail.tip[1] * height)
+    draw.polygon([base_a, base_b, tip], fill="white")
+    draw.line([base_a, tip], fill="black", width=outline_px)
+    draw.line([base_b, tip], fill="black", width=outline_px)
+
+
+def _draw_thought_tail(
+    draw: ImageDraw.ImageDraw,
+    tail: ResolvedTail,
+    scale: tuple[int, int],
+    *,
+    outline_px: int = 3,
+) -> None:
+    """Classic shrinking-circle thought tail from bubble edge to target."""
+    width, height = scale
+    base = (
+        (tail.base_a[0] + tail.base_b[0]) / 2 * width,
+        (tail.base_a[1] + tail.base_b[1]) / 2 * height,
+    )
+    tip = (tail.tip[0] * width, tail.tip[1] * height)
+    for step, radius_factor in ((0.35, 0.024), (0.68, 0.015), (0.92, 0.009)):
+        cx = base[0] + (tip[0] - base[0]) * step
+        cy = base[1] + (tip[1] - base[1]) * step
+        radius = radius_factor * min(width, height)
+        draw.ellipse(
+            [cx - radius, cy - radius, cx + radius, cy + radius],
+            fill="white",
+            outline="black",
+            width=outline_px,
+        )
+
+
+def _draw_bubble_body(
+    draw: ImageDraw.ImageDraw,
+    shape: str,
+    shape_box: list[float],
+    *,
+    outline_px: int = 3,
+) -> None:
+    left, top, right, bottom = shape_box
+    if shape == "caption":
+        draw.rectangle(shape_box, fill="white", outline="black", width=outline_px)
+        return
+    if shape == "round_rect":
+        radius = max(6.0, min(right - left, bottom - top) * 0.18)
+        draw.rounded_rectangle(
+            shape_box, radius=radius, fill="white", outline="black", width=outline_px
+        )
+        return
+    if shape == "jagged":
+        # Shout burst: alternate outer/inner radius spikes around the center.
+        import math
+
+        cx = (left + right) / 2
+        cy = (top + bottom) / 2
+        rx = (right - left) / 2
+        ry = (bottom - top) / 2
+        points = []
+        spikes = 12
+        for index in range(spikes * 2):
+            angle = math.pi * index / spikes
+            factor = 1.0 if index % 2 == 0 else 0.74
+            points.append(
+                (cx + math.cos(angle) * rx * factor, cy + math.sin(angle) * ry * factor)
+            )
+        draw.polygon(points, fill="white", outline="black", width=outline_px)
+        return
+    if shape == "thought_cloud":
+        # Scalloped cloud: ring of circles along the ellipse perimeter, then
+        # a clean white interior.
+        import math
+
+        cx = (left + right) / 2
+        cy = (top + bottom) / 2
+        rx = max((right - left) / 2, 1.0)
+        ry = max((bottom - top) / 2, 1.0)
+        scallop = max(6.0, min(rx, ry) * 0.38)
+        count = max(8, int((rx + ry) / scallop))
+        for index in range(count):
+            angle = 2 * math.pi * index / count
+            px = cx + math.cos(angle) * rx
+            py = cy + math.sin(angle) * ry
+            draw.ellipse(
+                [px - scallop, py - scallop, px + scallop, py + scallop],
+                fill="white",
+                outline="black",
+                width=outline_px,
+            )
+        draw.ellipse(shape_box, fill="white")
+        return
+    # oval (default): plain ellipse
+    draw.ellipse(shape_box, fill="white", outline="black", width=outline_px)
+
+
 def compose_lettered_page(
     art: Image.Image,
     plan: MangaPagePlan,
@@ -398,7 +686,10 @@ def compose_lettered_page(
     ALL text comes from the authored ``TextElement`` set (issue #5: code owns
     every glyph; the art must arrive text-free through the OCR gate).
     ``preferred_region`` boxes are PAGE-normalized — the ported SVG
-    renderer's convention.
+    renderer's convention. Dialogue/thought bubbles grow tails toward the
+    authored ``tail_target`` (or the speaker's blocking anchor), and bubble
+    boxes are nudged off the panel's authored avoid/focal regions — the v1
+    reader's rules, carried (see module comment).
     """
     page = art.convert("RGB").copy()
     draw = ImageDraw.Draw(page)
@@ -414,10 +705,15 @@ def compose_lettered_page(
 
     for text in sorted(plan.page_script.text_elements, key=lambda item: item.z_index):
         region = text.preferred_region
-        box_left = region.x * width
-        box_top = region.y * height
-        box_width = max(region.width * width, 40.0)
-        box_height = max(region.height * height, 24.0)
+        # v1 rule carry: keep authored regions off avoid/focal zones.
+        nudged = nudge_region_clear(
+            (region.x, region.y, region.width, region.height),
+            _panel_obstacles(text, plan),
+        )
+        box_left = nudged[0] * width
+        box_top = nudged[1] * height
+        box_width = max(nudged[2] * width, 40.0)
+        box_height = max(nudged[3] * height, 24.0)
         font_px = max(min(int(box_height * 0.28), text.typography.max_px), text.typography.min_px)
         font = _load_font(font_px)
         lines = _wrap_text(draw, text.content, font, box_width * 0.82)
@@ -432,14 +728,29 @@ def compose_lettered_page(
             cx + box_width / 2,
             cy + needed_height / 2,
         ]
-        if text.shape == "caption":
-            draw.rectangle(shape_box, fill="white", outline="black", width=3)
-        elif text.shape == "free_sfx":
+
+        tail: ResolvedTail | None = None
+        if text.kind in {"dialogue", "thought", "monologue"}:
+            target = resolve_tail_target(text, plan)
+            if target is not None:
+                normalized_box = (
+                    shape_box[0] / width,
+                    shape_box[1] / height,
+                    (shape_box[2] - shape_box[0]) / width,
+                    (shape_box[3] - shape_box[1]) / height,
+                )
+                tail = tail_geometry(normalized_box, target)
+
+        if text.shape == "free_sfx":
             pass  # SFX draw as bare display lettering, no container
-        elif text.shape == "thought_cloud":
-            draw.ellipse(shape_box, fill="white", outline="black", width=3)
-        else:  # oval / round_rect / jagged -> bubble
-            draw.ellipse(shape_box, fill="white", outline="black", width=3)
+        else:
+            _draw_bubble_body(draw, text.shape, shape_box)
+            if tail is not None:
+                if text.kind == "thought" or text.shape == "thought_cloud":
+                    _draw_thought_tail(draw, tail, (width, height))
+                else:
+                    _draw_tail(draw, tail, (width, height), (cx, cy))
+
         y = cy - text_height / 2
         for line in lines:
             line_width = draw.textlength(line, font=font)
@@ -453,6 +764,14 @@ def compose_lettered_page(
                     stroke_fill="white",
                 )
             else:
-                draw.text((cx - line_width / 2, y), line, fill="black", font=font)
+                stroke = 1 if text.typography.emphasis == "shout" else 0
+                draw.text(
+                    (cx - line_width / 2, y),
+                    line,
+                    fill="black",
+                    font=font,
+                    stroke_width=stroke,
+                    stroke_fill="black" if stroke else None,
+                )
             y += line_height
     return page

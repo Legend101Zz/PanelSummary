@@ -54,6 +54,7 @@ from app.services.errors import ArtifactValidationError, NotFoundError
 from app.services.hashing import binary_content_hash, content_hash
 from app.services.manga_page_art import (
     BORDER_ADHERENCE_MIN,
+    COMPOSITION_VERSION,
     PAGE_ART_COST_PER_IMAGE_USD,
     PAGE_ART_MODEL,
     PAGE_ART_VERSION,
@@ -72,6 +73,10 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 STAGE_NAME = "manga_page_art"
+#: Compose-only stage (Session 6): re-letters accepted page_art at ZERO
+#: image cost. Its identity includes COMPOSITION_VERSION, so composition
+#: improvements re-key THIS stage — never the paid page-art stage.
+COMPOSE_STAGE_NAME = "manga_page_compose"
 MAX_ATTEMPTS_PER_PAGE = 2
 
 #: Gate policy provenance — part of the stage input hash so a policy change
@@ -173,6 +178,7 @@ class MangaPageArtStageService:
         project_id: str,
         run_id: str,
         image_budget_usd: float | None = None,
+        thumbnail_artifact_id: str | None = None,
     ) -> PageArtOutcome:
         run = await self._authorized_run(project_id, run_id)
         if image_budget_usd is None:
@@ -180,9 +186,18 @@ class MangaPageArtStageService:
             # carry max_image_cost_usd=0.0, so flag-on spends ZERO image
             # dollars unless a budget was explicitly granted.
             image_budget_usd = float(run.budget.get("max_image_cost_usd", 0.0))
-        thumbnail_artifact = await self._accepted_stage_output(
-            run, stage_name="manga_thumbnail", kind="thumbnail_set"
-        )
+        # Session 6: a run can carry MORE than one accepted thumbnail set
+        # (the fresh Step-0 planning set landed beside the Session 4 set on
+        # the same run). Regeneration must select its lineage EXPLICITLY —
+        # the implicit path picks the latest succeeded thumbnail stage.
+        if thumbnail_artifact_id is not None:
+            thumbnail_artifact = await self._explicit_thumbnail(
+                run, thumbnail_artifact_id
+            )
+        else:
+            thumbnail_artifact = await self._accepted_stage_output(
+                run, stage_name="manga_thumbnail", kind="thumbnail_set"
+            )
         thumbnail_set = ThumbnailSet.model_validate(thumbnail_artifact.content)
         compiled_by_plan = await self._compiled_layouts(run, thumbnail_artifact)
 
@@ -250,6 +265,111 @@ class MangaPageArtStageService:
             total_vision_cost_usd=total_vision_cost,
         )
 
+    async def recompose_pages(
+        self,
+        *,
+        project_id: str,
+        run_id: str,
+        thumbnail_artifact_id: str | None = None,
+    ) -> list[ArtifactDoc]:
+        """Compose-only pass over the latest accepted page_art (ZERO image
+        cost): re-letters every page with the CURRENT composition code and
+        persists superseding ``composed_page`` rows. This is how composition
+        improvements (tails, bubble shapes, avoidance) reach accepted art
+        without re-keying — or re-spending — the paid page-art stage; it is
+        also the lane-A composition entry (pages without art compose from
+        the white DSL base)."""
+        run = await self._authorized_run(project_id, run_id)
+        if thumbnail_artifact_id is not None:
+            thumbnail_artifact = await self._explicit_thumbnail(
+                run, thumbnail_artifact_id
+            )
+        else:
+            thumbnail_artifact = await self._accepted_stage_output(
+                run, stage_name="manga_thumbnail", kind="thumbnail_set"
+            )
+        thumbnail_set = ThumbnailSet.model_validate(thumbnail_artifact.content)
+        compiled_by_plan = await self._compiled_layouts(run, thumbnail_artifact)
+
+        art_by_page: dict[int, ArtifactDoc] = {}
+        for plan in thumbnail_set.page_plans:
+            page_index = plan.page_script.page_index
+            art_id = await self._latest_accepted_for_page(
+                run, kind="page_art", page_index=page_index
+            )
+            if art_id is not None:
+                artifact = await self._repositories.get_artifact(art_id)
+                if artifact is not None:
+                    art_by_page[page_index] = artifact
+
+        stage = await self._start_stage(
+            run,
+            input_artifact_ids=[
+                thumbnail_artifact.artifact_id,
+                *[artifact.artifact_id for artifact in art_by_page.values()],
+            ],
+            input_hash=content_hash(
+                {
+                    "thumbnail_hash": thumbnail_artifact.content_hash,
+                    "composition_version": COMPOSITION_VERSION,
+                    "page_art_hashes": {
+                        str(index): artifact.content_hash
+                        for index, artifact in sorted(art_by_page.items())
+                    },
+                }
+            ),
+            stage_name=COMPOSE_STAGE_NAME,
+        )
+        if stage.status == "succeeded" and stage.output_artifact_ids:
+            existing = [
+                artifact
+                for artifact_id in stage.output_artifact_ids
+                if (artifact := await self._repositories.get_artifact(artifact_id))
+                is not None
+            ]
+            return existing
+
+        composed_artifacts: list[ArtifactDoc] = []
+        for plan in thumbnail_set.page_plans:
+            page_index = plan.page_script.page_index
+            compiled = compiled_by_plan[plan.page_plan_id]
+            art_artifact = art_by_page.get(page_index)
+            art_image: Image.Image | None = None
+            if art_artifact is not None and art_artifact.storage_ref:
+                art_path = self._media_root / art_artifact.storage_ref.removeprefix(
+                    "storage://"
+                )
+                if art_path.is_file():
+                    art_image = Image.open(art_path).convert("RGB")
+            composed = await self._persist_composed_page(
+                run,
+                stage,
+                thumbnail_artifact,
+                plan,
+                compiled,
+                art_image,
+                art_artifact if art_image is not None else None,
+            )
+            composed_artifacts.append(composed)
+
+        stage.trace = {
+            "stage": COMPOSE_STAGE_NAME,
+            "composition_version": COMPOSITION_VERSION,
+            "pages": [
+                {
+                    "page_index": artifact.content.get("page_index"),
+                    "has_art": artifact.content.get("has_art"),
+                    "supersedes": artifact.supersedes_artifact_id,
+                }
+                for artifact in composed_artifacts
+                if artifact.content is not None
+            ],
+        }
+        await self._succeed_stage(
+            run, stage, [artifact.artifact_id for artifact in composed_artifacts]
+        )
+        return composed_artifacts
+
     # ------------------------------------------------------------------
     # per-page pipeline
     # ------------------------------------------------------------------
@@ -271,7 +391,16 @@ class MangaPageArtStageService:
         )
         art_image: Image.Image | None = None
         page_art_artifact: ArtifactDoc | None = None
-        supersedes: str | None = None
+        # Session 6 (issue #5): regenerating over an earlier ACCEPTED page_art
+        # chains lineage — the new row supersedes the latest prior accepted
+        # art for the same page index (ADR-009: every revision retains its
+        # parent lineage).
+        supersedes: str | None = await self._latest_accepted_for_page(
+            run,
+            kind="page_art",
+            page_index=plan.page_script.page_index,
+            exclude_stage_run_id=stage.stage_run_id,
+        )
 
         if mode == "C":
             attempt = 0
@@ -798,11 +927,19 @@ class MangaPageArtStageService:
             "page_index": plan.page_script.page_index,
             "has_art": art_image is not None,
             "lettering": "deterministic (code-owned, all text elements)",
+            "composition_version": COMPOSITION_VERSION,
+            "image_content_hash": digest,
             "text_element_count": len(plan.page_script.text_elements),
             "page_art_artifact_id": (
                 page_art_artifact.artifact_id if page_art_artifact else None
             ),
         }
+        supersedes = await self._latest_accepted_for_page(
+            run,
+            kind="composed_page",
+            page_index=plan.page_script.page_index,
+            exclude_stage_run_id=stage.stage_run_id,
+        )
         parents = [thumbnail_artifact.artifact_id]
         if page_art_artifact is not None:
             parents.append(page_art_artifact.artifact_id)
@@ -819,7 +956,7 @@ class MangaPageArtStageService:
             content_hash=digest,
             parent_artifact_ids=parents,
             author="system",
-            supersedes_artifact_id=None,
+            supersedes_artifact_id=supersedes,
             source_refs=[
                 ref.model_dump(mode="json")
                 for panel in plan.page_script.panels
@@ -835,6 +972,38 @@ class MangaPageArtStageService:
             created_at=utc_now(),
         )
         return await self._repositories.save_artifact(artifact)
+
+    async def _latest_accepted_for_page(
+        self,
+        run: GenerationRunDoc,
+        *,
+        kind: str,
+        page_index: int,
+        exclude_stage_run_id: str | None = None,
+    ) -> str | None:
+        """Latest prior accepted page-scoped artifact — the supersedes link.
+
+        Run-scoped on purpose: every v2-lane artifact for a project's pages
+        lives on the project's direction run, so the lineage chain stays
+        inside the run the way ADR-009 resume expects.
+        """
+        artifacts = await self._repositories.list_artifacts(
+            run.run_id, accepted_only=True
+        )
+        rows = [
+            artifact
+            for artifact in artifacts
+            if artifact.kind == kind
+            and artifact.content is not None
+            and artifact.content.get("page_index") == page_index
+            and (
+                exclude_stage_run_id is None
+                or artifact.stage_run_id != exclude_stage_run_id
+            )
+        ]
+        if not rows:
+            return None
+        return max(rows, key=lambda artifact: artifact.created_at).artifact_id
 
     def _store_image(self, image: Image.Image, folder: str) -> tuple[str, str]:
         import io
@@ -866,18 +1035,40 @@ class MangaPageArtStageService:
             )
         return run
 
+    async def _explicit_thumbnail(
+        self, run: GenerationRunDoc, thumbnail_artifact_id: str
+    ) -> ArtifactDoc:
+        artifact = await self._repositories.get_artifact(thumbnail_artifact_id)
+        if (
+            artifact is None
+            or artifact.run_id != run.run_id
+            or artifact.project_id != run.project_id
+            or artifact.kind != "thumbnail_set"
+            or artifact.validation_status != "accepted"
+            or artifact.content is None
+        ):
+            raise ArtifactValidationError(
+                f"{thumbnail_artifact_id} is not an accepted thumbnail_set on "
+                f"run {run.run_id}"
+            )
+        return artifact
+
     async def _accepted_stage_output(
         self, run: GenerationRunDoc, *, stage_name: str, kind: str
     ) -> ArtifactDoc:
         stages = await self._repositories.list_stages(run.run_id)
-        stage = next(
+        # Latest succeeded stage wins (Session 6: a run may carry several
+        # succeeded planning stages after a re-planning pass).
+        candidates = sorted(
             (
                 item
                 for item in stages
                 if item.stage_name == stage_name and item.status == "succeeded"
             ),
-            None,
+            key=lambda item: item.started_at,
+            reverse=True,
         )
+        stage = candidates[0] if candidates else None
         if stage is None or not stage.output_artifact_ids:
             raise ArtifactValidationError(
                 f"Run {run.run_id} has no succeeded {stage_name} stage"
@@ -927,16 +1118,17 @@ class MangaPageArtStageService:
         *,
         input_artifact_ids: list[str],
         input_hash: str,
+        stage_name: str = STAGE_NAME,
     ) -> StageRunDoc:
         identity = content_hash(
             {
                 "project_id": run.project_id,
                 "run_id": run.run_id,
-                "stage_name": STAGE_NAME,
+                "stage_name": stage_name,
                 "input_hash": input_hash,
             }
         )
-        stage_run_id = f"stage_{STAGE_NAME}_{identity[:20]}"
+        stage_run_id = f"stage_{stage_name}_{identity[:20]}"
         existing = await self._repositories.get_stage(stage_run_id)
         if existing is not None:
             if existing.status == "failed":
@@ -951,7 +1143,7 @@ class MangaPageArtStageService:
                 existing = await self._repositories.save_stage(existing)
             if existing.status in {"running", "validating", "repairing"}:
                 run.status = "running"
-                run.active_stage = STAGE_NAME
+                run.active_stage = stage_name
                 run.updated_at = utc_now()
                 await self._repositories.save_run(run)
             return existing
@@ -960,7 +1152,7 @@ class MangaPageArtStageService:
             StageRunDoc,
             stage_run_id=stage_run_id,
             run_id=run.run_id,
-            stage_name=STAGE_NAME,
+            stage_name=stage_name,
             attempt=1,
             status="running",
             input_artifact_ids=input_artifact_ids,
@@ -974,7 +1166,7 @@ class MangaPageArtStageService:
             ended_at=None,
         )
         run.status = "running"
-        run.active_stage = STAGE_NAME
+        run.active_stage = stage_name
         run.updated_at = now
         await self._repositories.save_run(run)
         return await self._repositories.save_stage(stage)
