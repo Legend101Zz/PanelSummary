@@ -1458,3 +1458,166 @@ Known rough edges / carry-forwards (Session 6 — docs/next-prompt.md):
    ARTIFACT_REPAIR policy; (d) layout-template.v1 contract +
    list_layout_templates broker tool + seeded jitter (mask export DONE
    this session); (e) issue #6 knowledge-base rewrite.
+
+## 2026-08-09 Session 6: content gate + composition/QA/eval machinery live; fresh planning set BLOCKED by a measured M3 tool-frame wall (issues #5, #10, #7)
+
+Executed on `v2-architecture` (commits `7097b25` step 0.1, `e2fef66`
+composition, `40f4feb` vision QA v3, `091073b`+`006abc7` live-run
+firefight, `e7a9db8` contract promotion + recompose, `1fca8ed` reader v2,
+`1d43922` eval harness, plus this closeout). Read the ADR-012 Session 6
+addendum entries below and `docs/evidence/session6-*/`.
+
+**HEADLINE (two halves):**
+
+1. **The step-0 fresh planning set did NOT land.** Ten receipted live
+   page-writing attempts ($1.005732 total, every one in the stage's
+   `failure_history`, ledger at
+   `docs/evidence/session6-fresh-planning/page_writing_failure_ledger.json`)
+   peeled four distinct walls: (a) skill-spec gaps — typography INTEGER
+   weights, verbatim source_ref quotes, Identifier-token refs, region
+   x+width<=1 arithmetic (fixed, skill 1.3.0 -> 1.4.4); (b) a speed-lane
+   give-up pathology — M2.7-highspeed resubmits the IDENTICAL payload with
+   full error visibility (attempt 4: 2 visible errors, 3 unchanged
+   submissions); (c) the donor's 8,000-token per-turn output cap
+   truncating M3 mid-JSON at exactly 8,178 tokens (fixed: planning budget
+   24k); (d) the M3 anthropic-lane tool-frame TRANSPORT MANGLING —
+   arrays arrive `{"item": [...]}`, single-element arrays `{"item":
+   {obj}}`, empty arrays `""`/`{}`, and (attempt 10) a shape that drops
+   ALL top-level fields. Seam normalization (`_unwrap_item_wrappers`)
+   handles the first three shapes with tests; the fourth is unexplored —
+   STOPPED at the pre-committed budget line. NOTE: the model's CONTENT was
+   good by attempt 4 (real beats, real dialogue) — every failure was
+   contract/transport, never the content gate.
+2. **The judge lane independently measured the S5 headline finding.** M3
+   rubric scoring of the S5 accepted pages: readability 4-5, craft 3-4 —
+   the pages LOOK like manga — but **fidelity 1/5 on every page** (1-4 of
+   ~36 must-preserve claims conveyed). Wordless scripts cannot teach the
+   book; fidelity is content-bound, not render-bound. The content gate +
+   the landed fresh set are the only fix; no image-lane spend can buy it.
+
+What landed (all tested, all pushed):
+
+1. **Content-quality gate** (`7097b25`): `manga_content_validation.py` —
+   5 rules, warn-vs-block in the craft-gate shape. STORY_BEAT_TOO_THIN +
+   SET_TEXT_ELEMENTS_MISSING block on EVERY path;
+   PAGE_TEXT_ELEMENTS_MISSING blocks at the agent seam
+   (AGENT_CONTENT_RULE_POLICY) and warns at the service tier so the
+   donor's verbatim phase1 fixtures stay green (port rule). Skill 1.4.x
+   demands real beat sentences + authored text elements; the "empty
+   text_elements" instruction is KILLED everywhere.
+   PAGE_WRITING_PROMPT_VERSION v3 re-keys the stage.
+2. **v2 composition upgrades** (`e2fef66`): bubble TAILS (v1
+   resolveBubbleTail port: side from target, offset clamp 15-85%,
+   thought-bubble shrinking circles), v1 avoidSpriteFaceZones carried
+   over authored avoid/focal regions, shape differentiation (oval /
+   round_rect / jagged burst / scalloped thought cloud), `supersedes`
+   POPULATED on page_art + composed_page regeneration, and the
+   compose-only `manga_page_compose` stage — re-letters accepted art at
+   ZERO image cost; COMPOSITION_VERSION re-keys IT, never the paid stage.
+   Live-proven: both S5 pages recomposed ($0.00, supersedes chained,
+   `docs/evidence/session6-recompose/`).
+3. **Vision-QA gates v3** (`40f4feb`, issue #7): empty-balloon detection
+   is a REJECT reason; durable `qa_report` artifacts persist for EVERY
+   gated attempt (accepted AND rejected); the two donor heading images
+   are OCR red fixtures (both fail on the rendered "SATIATION..."
+   heading).
+4. **Contract promotion** (`e7a9db8`): PageArt / ComposedPage /
+   ProviderReceipt / QaReport registry models + schema JSONs + generated
+   TS + validators + canonical fixtures + manifest in one commit; ALL
+   live Mongo rows validate (12 receipts + 6 composed + 2 page_art, zero
+   invalid).
+5. **Reader v2 behind a flag** (`1fca8ed`, issue #5): read-only
+   `/manga-projects/{id}/v2/pages` (latest-per-page, SUPERSEDES-AWARE) +
+   allowlisted `/v2-media/*` (the v2 lane writes to the REPO-ROOT
+   storage tree — distinct from v1's backend/storage);
+   flag-gated `/books/[id]/manga/v2lane` route
+   (NEXT_PUBLIC_MANGA_V2_LANE_READER=1, default OFF) consuming COMPILED
+   GEOMETRY: RTL panel stepping by read rank, polygon overlay. Legacy
+   readers untouched; live-smoked; next build + tsc green.
+6. **Eval harness** (`1d43922`, issue #10): REAL Layout-IoU
+   (layout-iou.v1, seeded flood-fill vs authored polygon masks; the S5
+   border-adherence stand-in is kept — read the pair as a bracket, IoU
+   under-scores ink-dense interiors), M3 judge rubrics v1 with versioned
+   prompt + persisted receipts, diffable eval-scorecard.v1 artifacts +
+   CLI (`scripts/eval_wmc_s6.py`), red-fixture calibration (faithful
+   >0.85; borderless collapses; wrong-layout pairing drops >=0.15).
+   Measured on the S5 pages: IoU 0.38/0.33, border 0.80/1.00, judges as
+   in the headline. **3-lane cost/quality matrix published**:
+   `docs/research/rendering-lane-matrix.md` (the unticked #12 benchmark
+   box) — lane C $0.039/page exact-reconciled, judge $0.0005/page.
+7. **Live-run hardening from the firefight** (`091073b`, `006abc7`):
+   compact class-summarized 422 digests at the seam (the broker bounds
+   model-visible text to 1,000 chars — raw pydantic dumps truncated 12
+   errors to 3 visible, live-measured), latest-succeeded stage selection
+   in the planner AND the art stage (a re-planning run carries two
+   succeeded stages of one name), explicit `thumbnail_artifact_id`
+   lineage selection on the art stage, planning output budget 8k -> 24k.
+
+Verification: backend `uv run pytest tests/ -q` -> **767 passed** (722
+S5 baseline + 45 new; every S5 test preserved). TS: contracts **46**
+(42+4), agent-runtime 22, agent-worker 13. `node scripts/generate.mjs
+--check` + `PYTHONPATH=. uv run python scripts/export_contracts.py
+--check` clean. Injection suites green (33 backend + 7 TS). Frontend
+`next build` + `tsc --noEmit` green. `git diff --check` clean per commit.
+
+Spend ledger (ALL receipted):
+
+| lane | calls | cost | notes |
+|---|---|---|---|
+| MiniMax text — page-writing attempts | 10 | **$1.005732** | 4 speed ($0.6828) + 6 M3 ($0.3230); every attempt durably receipted in stage failure_history; ledger JSON in evidence |
+| MiniMax M3 — judge rubrics | 4 | **$0.001972** | 4 provider_receipt artifacts (purpose m3_judge); $0.0005/page class |
+| image (OpenRouter) | 0 | **$0.00** | key usage 0.3125613 before AND after — verified to the digit; the $1.00 image cap is 100% unspent |
+
+Total session provider spend: **$1.007704** (text cap ~$1.50: 67% used;
+image cap $1.00: 0%). Full-DB backups before live writes:
+`/tmp/bookreel-s6-before-planning.json` (113 docs),
+`/tmp/bookreel-s6-before-recompose.json` (114 docs). All DB writes were
+additive v2-lane rows (failure history, receipts, recomposed pages, eval
+scorecards); no destructive operation; v1 collections untouched.
+
+Deviations from the session brief (enumerated):
+
+1. **Step 0.2/0.3 NOT delivered**: no fresh accepted planning set (the
+   measured four-wall diagnosis above is the deliverable in its place);
+   lane-C regeneration + REAL lettered text therefore carries to S7 —
+   the image budget is intact and the regen is unblocked the moment
+   page-writing lands.
+2. Reader v2 serves `composed_page` + `compiled_layout` (the persisted
+   lineage); no `rendered-page.v2` assembly exists yet — that artifact
+   materializes with the lane-A/B composition paths.
+3. Composition carry is the BUBBLE rules + tails; the v1 vector-scene
+   layer and transparent-sprite placement (lane A path) are NOT carried
+   yet — the compose-only stage is their landing seam.
+4. Vision QA "style match vs reference" (issue #7 wording) is not a
+   scored check; identity + balloon + text + panel count are.
+5. Magi deferred with reasons (checkpoint download + trust_remote_code
+   need owner review; torch/transformers already installed).
+6. Layout-IoU v1 under-scores ink-dense interiors (documented lower
+   bound; bracket with border adherence). Metric iteration is versioned.
+7. Judges scored the S5 accepted pages only — the "fresh Step-0 pages"
+   half of the scoring brief has no subject until S7.
+8. Carry-forward (a) — flag-on v1 slice on a fresh project — NOT folded
+   in (advisor-confirmed: it would consume most of the image cap whose
+   stated core was the S6 regen); carried with reason.
+
+Known rough edges / carry-forwards (Session 7 — docs/next-prompt.md):
+
+1. **Land page-writing** (the binding constraint, now twice over): the
+   M3 tool-frame mangling's fourth shape (all top-level fields dropped —
+   dump `arguments` server-side on the next attempt before anything
+   else); OR the donor-proven assistant-text fallback lane (skill no
+   longer forbids it); OR an owner-reviewed ARTIFACT_REPAIR/normalization
+   policy. Then: fresh set -> lane-C regen with REAL lettering ->
+   re-score fidelity (the whole loop is ~$0.35 text + ~$0.16 image).
+2. supersedes chains + reader are live; the reader needs page_art
+   fallback display when composed rows are absent (currently 404s).
+3. Scorecard baseline/regression comparison + golden-flow wiring (#10);
+   embedding-similarity consistency metric; Magi after owner review.
+4. Lane A (sprites+vector) composition path via the compose-only stage;
+   lane B key-panel path; rendered-page.v2 assembly.
+5. Standing: (a) fresh flag-on v1 slice; (b) worker egress; (c)
+   ARTIFACT_REPAIR policy (now with live evidence FOR it); (d)
+   layout-template.v1 contract + broker tool + seeded jitter; (e) issue
+   #6 knowledge-base rewrite; (f) issue #3 leftovers (ModelReceipt on
+   every artifact kind, ADR-001 revision, dashboard-lite, per-purpose
+   smokes); (g) eval_scorecard/qa_report registry promotion follow-ups.

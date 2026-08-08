@@ -308,3 +308,71 @@ Extends this ADR for the Session 5 carry-fixes and Goal B. Boundary edits:
    dir (the first batch's rejected art was lost — fixed). Under v2 both
    pages ACCEPTED on attempt 1 ($0.078); evidence incl. accepted art in
    `docs/evidence/session5-page-art/`.
+
+## Session 6 addendum (2026-08-09): content gate, composition/QA/eval machinery, M3 tool-frame wall
+
+Extends this ADR for Session 6. Boundary edits and decisions:
+
+1. **Content-quality gate, two tiers by design**
+   (`manga_content_validation.py`): the ported
+   `MangaPagePlanningService.submit_page_script_set` gates EVERY
+   submission path (STORY_BEAT_TOO_THIN and SET_TEXT_ELEMENTS_MISSING
+   block; page-level text gaps warn), while the agent seam
+   (`MangaPlanningToolService._submit_page_script_set`) escalates
+   PAGE_TEXT_ELEMENTS_MISSING to block. The split exists because the
+   donor's verbatim phase1 fixtures (action page, zero text elements)
+   must stay byte-identical-green under the ADR-010/012 port rule, while
+   a sealed model must letter every page (narration needs no speaker).
+   Accepted script artifacts now carry `page-script-validator.v2` reports
+   with recorded content warnings.
+2. **Model-visible 422 texts are class-summarized digests**
+   (`_pydantic_error_digest`, `content_gate_detail`): the broker bounds
+   the model-visible error to `message.slice(0, 1000)`
+   (domain-tool-broker.ts), so raw multi-error pydantic dumps truncate
+   into noise — live-measured: page-writing attempts saw 3 of 12 errors.
+   Digests group by error class and list every offending path.
+3. **M3 anthropic-lane tool-frame transport mangling is normalized at the
+   submit tools** (`_unwrap_item_wrappers`): live-measured shapes —
+   arrays arrive `{"item": [...]}`; single-element arrays `{"item":
+   {object}}`; empty arrays `""`/`{}`. Unwrapping is mechanical and
+   lossless (no contract field is named `item`); it also explains why the
+   donor's live M3 direction submissions only ever landed through the
+   assistant-text fallback (Session 3 observation above). A FOURTH shape
+   (all top-level fields dropped, attempt 10) is unexplored — planning
+   spend stopped at the pre-committed budget line; full ledger in
+   `docs/evidence/session6-fresh-planning/`.
+4. **Planning per-turn output budget 8k -> 24k**
+   (`_planning_budget`): the donor constant truncated a reasoning-on M3
+   page-writing emission at exactly 8,178 output tokens (two live
+   attempts, zero parseable submissions). The Director goal already ran
+   at 16k; a fully-authored two-page script is a ~10-12k-token JSON
+   before reasoning overhead.
+5. **Latest-succeeded stage selection** in `_accepted_planning_output`
+   (planner) and `_accepted_stage_output` (page-art stage), plus explicit
+   `thumbnail_artifact_id` lineage selection on `run_page_art_stage`: a
+   re-planning pass stacks a second succeeded stage of the same name on
+   one run; first-found would silently rebuild from the defective S4 set.
+6. **Composition versioning is stage-split on purpose**: the paid
+   page-art stage's input hash NEVER includes COMPOSITION_VERSION; the
+   compose-only `manga_page_compose` stage re-keys on it and re-letters
+   accepted art at zero image cost. `supersedes` is populated on both
+   page_art and composed_page regeneration (ADR-009 lineage).
+   GATE_POLICY_VERSION v3 adds the empty-balloon reject + durable
+   `qa_report` rows per gated attempt.
+7. **Contract promotion** (`page_art.py` registry models): shapes mirror
+   the persisting code; post-S5 fields are OPTIONAL because accepted S5
+   rows are immutable evidence — all live rows validate. Schema JSONs +
+   generated TS + fixtures + manifest moved in ONE commit (the ported
+   fixtures test asserts manifest set == registry set).
+8. **Reader v2 is a read-only additive seam** (`manga_v2_reader.py`):
+   latest-per-page supersedes-aware composed rows + compiled geometry;
+   media serving is allowlisted to the v2 lane's REPO-ROOT storage tree
+   (`<repo>/storage` — distinct from v1's `backend/storage`; two trees,
+   one per lane). The frontend route is flag-gated default-OFF; legacy
+   readers untouched (ADR-009 compatibility).
+9. **Eval harness semantics** (`manga_eval.py`): layout-iou.v1 is a
+   seeded flood-fill metric and a documented LOWER BOUND on ink-dense
+   art (bracket with border adherence); judge rubrics are versioned
+   (`m3-judge-rubrics.v1`) with receipts persisted per call; Magi is
+   deferred pending owner review of the checkpoint download +
+   `trust_remote_code` under the standing egress posture.
