@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Manga page writing
@@ -66,16 +66,19 @@ inside the page. Dialogue requires `speaker_ref`. Narration and SFX cannot have
 a tail. Copy each `source_ref` exactly from the accepted MangaPlan; do not alter
 its book, source-unit, page, or hash fields. Use only accepted fact IDs.
 
-## Bounded two-page shape
+## Bounded goal shape
 
-For the Phase 1 two-page goal backed by a three-beat MangaPlan:
+The typed AgentGoal is the shape authority. Read
+`constraints.target_page_count` and `constraints.target_panel_count` and:
 
-- create exactly two pages with indices `0` and `1`;
-- create exactly three panels total: two on page 0 and one on page 1;
-- map each accepted beat exactly once, in source order;
-- use `standard` for both page kinds;
-- make the second panel on page 0 the page-turn panel and give the single page
-  1 panel the payoff;
+- create exactly `target_page_count` pages with contiguous indices from `0`;
+- create exactly `target_panel_count` panels total, never more than
+  `constraints.max_panels_per_page` on any page;
+- map each accepted MangaPlan beat to exactly one panel, in source order —
+  the accepted plan's beat count equals `target_panel_count`;
+- use `standard` page kinds unless the goal says otherwise;
+- set each page's `page_turn_panel_id` to its final panel and give the final
+  panel overall the payoff;
 - when the accepted context has no characters, facts, or assets, use empty
   `blocking`, `prop_refs`, `focal_regions`, `avoid_text_regions`,
   `source_fact_ids`, and `text_elements` arrays;

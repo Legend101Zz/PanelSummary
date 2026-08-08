@@ -91,3 +91,51 @@ describe("brokered submission repair budget", () => {
     expect(brokerCalls).toBe(2);
   });
 });
+
+describe("brokered read-tool results", () => {
+  it("carries the bounded data payload in the model-visible text", async () => {
+    // Session 4 regression (ADR-012 addendum): the pinned Pi SDK never sends
+    // `details` to the model, so read tools MUST serialize their data into
+    // the content text or the model only sees the one-line summary.
+    const [tool] = createBrokeredTools({
+      names: ["get_manga_canon"],
+      broker: {
+        async execute() {
+          return {
+            content: "Accepted project-scoped manga canon returned.",
+            data: {
+              artifacts: [{ artifact_id: "manga_plan_1", content: { beats: ["<b>"] } }],
+            },
+          };
+        },
+      },
+      scope: {
+        correlation_id: "correlation_1",
+        goal_id: "goal_read",
+        run_id: "run_1",
+        stage_run_id: "stage_1",
+        context_pack_id: "context_1",
+        project_id: "project_1",
+      },
+      maxToolCalls: 4,
+      maxRepairAttempts: 1,
+      onCandidate: () => undefined,
+      onToolCall: () => undefined,
+    });
+
+    const result = await tool.execute(
+      "read_1",
+      { artifact_ids: ["manga_plan_1"] },
+      undefined,
+      undefined,
+      {} as never,
+    );
+    const [part] = result.content as [{ type: string; text: string }];
+    expect(part.type).toBe("text");
+    expect(part.text).toContain("Accepted project-scoped manga canon returned.");
+    expect(part.text).toContain('"artifact_id":"manga_plan_1"');
+    expect(part.text).toContain("<tool_data>");
+    // Raw angle brackets from payloads stay escaped inside the wrapper.
+    expect(part.text).not.toContain("<b>");
+  });
+});

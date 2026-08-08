@@ -191,8 +191,20 @@ export function createBrokeredTools(options: ToolAdapterOptions): ToolDefinition
             options.onCandidate(candidate);
           }
           options.onToolCall(name, "succeeded");
+          // Session 4 boundary edit (ADR-012 addendum): the pinned Pi SDK
+          // treats `details` as extension metadata that is NEVER sent to the
+          // model, so the broker's bounded data payload must ride in the
+          // model-visible text or every read tool degrades to its one-line
+          // summary (first observed live: page-writing blocked on a
+          // get_manga_canon result that carried no plan). Broker responses
+          // are already size-bounded server-side; they remain untrusted data
+          // under the base system prompt.
+          const text =
+            response.data === undefined
+              ? response.content
+              : `${response.content}\n<tool_data>${JSON.stringify(response.data).replaceAll("<", "\\u003c")}</tool_data>`;
           return {
-            content: [{ type: "text", text: response.content }],
+            content: [{ type: "text", text }],
             details: response.data,
           };
         } catch (error) {

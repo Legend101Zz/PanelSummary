@@ -1,7 +1,7 @@
 ---
 name: manga-thumbnail
 description: Propose hierarchical page layouts and image-free SVG name previews.
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Manga thumbnail
@@ -64,37 +64,37 @@ For RTL horizontal splits, place the earlier-reading panel on the right.
 Validate every complete page plan through `validate_layout_draft`; repair all
 errors before submitting the set.
 
-## Bounded two-page layout
+## Bounded goal layout
 
-For the accepted Phase 1 script containing two panels on page 0 and one panel
-on page 1, use only this minimal layout family:
+The typed AgentGoal and the accepted PageScriptSet are the shape authority:
+create one `MangaPagePlan` per accepted page, each layout referencing that
+page's panels exactly once.
 
 - fetch the accepted PageScriptSet exactly once;
 - do not copy or rewrite `page_script`. For `validate_layout_draft`, pass the
   accepted `script_set_artifact_id` and `page_index` beside a `page_plan` that
   omits `page_script`; the broker injects the accepted page object;
-- page 0 uses one `overlay` root. Its `base` is the earlier-reading plain panel;
-  its single inset is the later page-turn plain panel;
-- use inset `anchor:"bottom_right"`,
-  `box:{x:0.12,y:0.55,width:0.76,height:0.40}`, `z_index:10`, and
-  `border_style:"standard"`. This overlap is required because both accepted
-  narration reserves occupy the lower-middle page region;
-- page 0 has exactly one reading edge, from its earlier panel to its later
-  page-turn panel;
-- page 1 uses its single `panel` node directly as `layout_root` and has an empty
-  `reading_edges` array;
-- both plans use `source_fact_ids:[]` and the documented 1600x2400 canvas;
-- use short stable IDs such as `page_plan_0`, `split_page_0`, `node_panel_0`,
-  and `page_plan_1`;
-- do not use split or freeform nodes in this bounded run;
+- a single-panel page uses its `panel` node directly as `layout_root` with an
+  empty `reading_edges` array;
+- a multi-panel page uses nested `split` trees: rows via `axis:"y"`, panels
+  inside a row via `axis:"x"`, two to four panels per row, and the
+  earlier-reading panel on the right of every horizontal split;
+- give each multi-panel page exactly `panel_count - 1` reading edges forming
+  one chain in panel source order, ending on that page's `page_turn_panel_id`
+  when one is set;
+- reserve `overlay` insets for deliberate emphasis panels only and keep every
+  inset box inside `0..1`;
+- every plan uses `source_fact_ids:[]` and the documented 1600x2400 canvas;
+- use short stable IDs such as `page_plan_0`, `split_page_0`, `node_panel_0`;
+- do not use freeform nodes in bounded runs;
 - validate each page plan once and use the returned `normalized_page_plan`, or
   submit each page plan without `page_script` plus its temporary `page_index`;
   the broker hydrates and validates the canonical ThumbnailSet before storage;
-- repair only the exact returned error if needed, then submit the two layouts
+- repair only the exact returned error if needed, then submit all layouts
   together.
 
 Do not invent, copy, summarize, or add fields to page scripts. Do not call the
-asset tool because this image-free run has no accepted assets.
+asset tool unless the goal lists accepted assets.
 
 ## Hard rules
 

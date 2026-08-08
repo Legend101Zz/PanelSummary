@@ -76,9 +76,14 @@ THUMBNAIL_STAGE = "manga_thumbnail"
 PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v2"
 THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v4"
 
-#: Donor non-hackathon vertical-slice shape: two pages, four panels.
+#: Two pages per planning goal (donor vertical-slice shape). The PANEL count
+#: is derived from the accepted plan's beat count at runtime — the ported
+#: skill demands "map each accepted beat exactly once", the planning service
+#: caps panels at the beat count, and Session 4's first live run proved a
+#: fixed panel constant contradicts real plans (the model correctly reported
+#: a blocker instead of forcing 8 beats into 4 panels).
 TARGET_PAGE_COUNT = 2
-TARGET_PANEL_COUNT = 4
+MAX_TARGET_PANEL_COUNT = 14  # 2 pages x max_panels_per_page (7)
 
 #: Donor `_run_page_writing` / `_run_thumbnail` goal allowlists @ 43300b5
 #: (deliberate subsets of the worker's per-goal-type policy sets).
@@ -105,29 +110,43 @@ PLANNING_CONSTRAINTS = GenerationConstraints(
     narration_enabled=True,
 )
 
-#: Donor `_run_page_writing` non-hackathon instructions @ 43300b5, verbatim.
-PAGE_WRITING_INSTRUCTIONS = (
-    "Create exactly two source-grounded manga pages with exactly four panels "
-    "total: two panels on each page. Map the accepted MangaPlan beats across "
-    "the four panels in source order. Use empty blocking, prop, "
-    "focal, avoid-text, source-fact, and text-element lists when no accepted "
-    "character, asset, fact, or speaker exists. Use the exact accepted MangaPlan "
-    "artifact ID and this fresh ContextPack ID. Fetch the accepted MangaPlan at "
-    "most once. Do not create layouts, request assets, or call an image model."
-)
+def page_writing_instructions(beat_count: int) -> str:
+    """Shape-aware variant of the donor's `_run_page_writing` instructions:
+    the panel total tracks the accepted plan's beat count so the skill's
+    "map each accepted beat exactly once" rule stays satisfiable."""
+    return (
+        "Create exactly two source-grounded manga pages with page indices 0 "
+        f"and 1. Create exactly {beat_count} panels total across the two "
+        "pages, at most 7 panels on a page. Map each accepted MangaPlan beat "
+        "exactly once, in source order. Use empty blocking, prop, "
+        "focal, avoid-text, source-fact, and text-element lists when no accepted "
+        "character, asset, fact, or speaker exists. Use the exact accepted MangaPlan "
+        "artifact ID and this fresh ContextPack ID. Fetch the accepted MangaPlan at "
+        "most once. Do not create layouts, request assets, or call an image model."
+    )
 
-#: Donor `_run_thumbnail` instructions @ 43300b5, verbatim.
-THUMBNAIL_INSTRUCTIONS = (
-    "Create exactly two image-free RTL SVG name plans for the accepted PageScriptSet. "
-    "Fetch the PageScriptSet exactly once. Page 0 must use one overlay: the earlier "
-    "panel as the full-page base and the later page-turn panel as one bottom-right "
-    "inset with box x=0.12, y=0.55, width=0.76, height=0.40, z_index=10, and standard "
-    "border. Use one earlier-to-later reading edge. Page 1 must use its single plain "
-    "panel node directly with no reading edges. Do not copy PageScript objects. "
-    "Validate with the accepted script artifact ID and page index, then submit page "
-    "plans without page_script using their temporary page_index for broker hydration. "
-    "Do not use assets, splits, freeform nodes, or image generation."
-)
+
+def thumbnail_instructions(panels_per_page: list[int]) -> str:
+    """Shape-aware variant of the donor's `_run_thumbnail` instructions: the
+    skill's bounded overlay family only applies to the legacy 2+1-panel
+    script, so multi-panel pages get split-tree guidance instead."""
+    shape = ", ".join(
+        f"page {index} has {count} panels" for index, count in enumerate(panels_per_page)
+    )
+    return (
+        "Create exactly "
+        f"{len(panels_per_page)} image-free RTL SVG name plans for the accepted "
+        f"PageScriptSet ({shape}). Fetch the PageScriptSet exactly once. For "
+        "each page use a split-based layout tree that references every panel "
+        "of that page exactly once; on RTL horizontal splits the "
+        "earlier-reading panel goes on the right. Give each multi-panel page "
+        "exactly panel_count minus one reading edges forming one chain in "
+        "panel source order. Do not copy PageScript objects. Validate every "
+        "page with validate_layout_draft using the accepted script artifact "
+        "ID and page index, repair addressable issues, then submit page plans "
+        "without page_script using their temporary page_index for broker "
+        "hydration. Do not use assets, freeform nodes, or image generation."
+    )
 
 DEFAULT_MAX_INPUT_TOKENS = 80_000
 
@@ -177,6 +196,12 @@ class MangaPagePlannerService:
     ) -> PlanningOutcome:
         run = await self._authorized_run(project_id, run_id)
         plan_artifact = await self._accepted_manga_plan(run)
+        beat_count = len((plan_artifact.content or {}).get("beats", []))
+        if not 2 <= beat_count <= MAX_TARGET_PANEL_COUNT:
+            raise ArtifactValidationError(
+                f"Accepted MangaPlan carries {beat_count} beats; the two-page "
+                f"planning goal supports 2..{MAX_TARGET_PANEL_COUNT}"
+            )
 
         context_artifact, context = await self._compile_planning_context(
             run,
@@ -222,6 +247,7 @@ class MangaPagePlannerService:
             ],
             constraints={
                 "target_page_count": TARGET_PAGE_COUNT,
+                "target_panel_count": beat_count,
                 "max_panels_per_page": 7,
                 "reading_direction": "rtl",
                 "image_attempts_allowed": 0,
@@ -240,7 +266,7 @@ class MangaPagePlannerService:
             budget=self._planning_budget(run),
         )
         result = await self._agent_worker.run(
-            goal, context, instructions=instructions or PAGE_WRITING_INSTRUCTIONS
+            goal, context, instructions=instructions or page_writing_instructions(beat_count)
         )
 
         try:
@@ -254,7 +280,7 @@ class MangaPagePlannerService:
             or script_set.plan_artifact_id != plan_artifact.artifact_id
             or script_set.context_pack_id != context.context_pack_id
             or len(script_set.pages) != TARGET_PAGE_COUNT
-            or sum(len(page.panels) for page in script_set.pages) != TARGET_PANEL_COUNT
+            or sum(len(page.panels) for page in script_set.pages) != beat_count
         ):
             raise ArtifactValidationError(
                 "PageScriptSet candidate violates the v2 run identity"
@@ -327,6 +353,9 @@ class MangaPagePlannerService:
         script_artifact = await self._accepted_planning_output(
             run, stage_name=PAGE_WRITING_STAGE, kind="page_script_set"
         )
+        panels_per_page = [
+            len(page["panels"]) for page in (script_artifact.content or {})["pages"]
+        ]
 
         context_artifact, context = await self._compile_planning_context(
             run,
@@ -391,7 +420,9 @@ class MangaPagePlannerService:
             budget=self._planning_budget(run),
         )
         result = await self._agent_worker.run(
-            goal, context, instructions=instructions or THUMBNAIL_INSTRUCTIONS
+            goal,
+            context,
+            instructions=instructions or thumbnail_instructions(panels_per_page),
         )
 
         try:
