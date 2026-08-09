@@ -436,3 +436,37 @@ def test_submit_manga_plan_enforces_page_budget():
             )
 
     run(scenario())
+
+
+def test_submit_manga_plan_normalizes_the_m3_tool_frame_artifacts():
+    """S7 golden-run live shape: the DIRECTION seam receives the same
+    transport mangling as planning — every empty list arrives as "" (17
+    list_type errors on the first live chain direction submission). The
+    seam unwraps it losslessly and the grounded candidate is accepted."""
+
+    def wrap(value):
+        if isinstance(value, dict):
+            return {key: wrap(item) for key, item in value.items()}
+        if isinstance(value, list):
+            if not value:
+                return ""  # the live empty-element artifact
+            wrapped = [wrap(item) for item in value]
+            return {"item": wrapped[0] if len(wrapped) == 1 else wrapped}
+        return value
+
+    async def scenario():
+        service = await build_service()
+        pack_payload = load_pack_payload()
+        plan_payload = build_plan_payload(pack_payload)
+        response = await service.execute(
+            "submit_manga_plan",
+            DomainToolRequest(
+                arguments={"plan": wrap(plan_payload)}, scope=build_scope()
+            ),
+        )
+        assert response.candidate == plan_payload
+        stored = await service._artifacts.get_artifact(response.data["artifact_id"])
+        assert stored is not None
+        assert stored.validation_status == "valid"
+
+    run(scenario())

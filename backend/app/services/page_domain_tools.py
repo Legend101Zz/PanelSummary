@@ -55,6 +55,19 @@ _LIST_FIELD_NAMES = frozenset(
         "page_plans",
         "reading_edges",
         "children",
+        # MangaPlan submission fields (S7 golden run: the direction seam
+        # hit the SAME empty-list-as-"" artifact — 17 list_type errors,
+        # every one input_value='').
+        "beats",
+        "required_fact_ids",
+        "character_intent",
+        "visual_intent",
+        "must_preserve",
+        "may_compress",
+        "character_state_updates",
+        "terminology_updates",
+        "new_facts",
+        "unresolved_thread_updates",
     }
 )
 

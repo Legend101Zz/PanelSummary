@@ -219,13 +219,29 @@ class MangaDirectorToolService:
         context: ContextPack,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
-        raw_plan = arguments.get("plan")
+        # Session 7 boundary edit (golden run, live-measured): the M3
+        # tool-frame mangles DIRECTION submissions exactly like planning
+        # ones (17 list_type errors, every empty list arriving as "").
+        # The proven seam treatment applies — raw dump, transport
+        # normalization, class-summarized digest. Imported lazily because
+        # page_domain_tools imports this module at load time.
+        from app.services.page_domain_tools import (
+            _dump_raw_submission,
+            _pydantic_error_digest,
+            _unwrap_item_wrappers,
+        )
+
+        _dump_raw_submission("submit_manga_plan", scope, arguments, None)
+        raw_plan = _unwrap_item_wrappers(arguments.get("plan"))
         if not isinstance(raw_plan, dict):
             raise ArtifactValidationError("plan must be an object")
         try:
             plan = MangaPlan.model_validate(raw_plan)
         except ValidationError as error:
-            raise ArtifactValidationError(f"MangaPlan validation failed: {error}") from error
+            raise ArtifactValidationError(
+                "MangaPlan validation failed — "
+                f"{_pydantic_error_digest(error)}"
+            ) from error
         if (
             plan.project_id != scope.project_id
             or plan.scope_id != context.scope_id
