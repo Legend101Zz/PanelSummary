@@ -75,6 +75,13 @@ _OPTIONAL_NULLABLE_FIELD_NAMES = frozenset(
         "environment_ref",
         "tail_target",
         "page_turn_panel_id",
+        # SourceRef optionals (S7 attempt 13, submit 2): the frame rendered
+        # the model's CORRECT nulls as "" — quote failed string_too_short
+        # and the offsets failed int_parsing on an otherwise complete,
+        # lineage-clean submission. These names exist only on SourceRef.
+        "quote",
+        "start_offset",
+        "end_offset",
     }
 )
 

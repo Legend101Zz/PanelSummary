@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.5.2
+version: 1.5.3
 ---
 
 # Manga page writing
@@ -139,21 +139,25 @@ its book, source-unit, page, or hash fields. Use only accepted fact IDs.
 
 The provider's tool-call frame can MANGLE a structurally correct
 submission in transit: arrays arrive wrapped in `{"item": ...}`, empty
-lists become `""`, or whole top-level fields vanish. The signature is a
-rejection reporting `missing` / `list_type` / `dict_type` errors for
-fields you KNOW you emitted correctly. That is a transport artifact, not
-a content problem — repairing content cannot fix it and resubmitting the
-same frame will fail the same way.
+lists and nulls become `""`, whole fields vanish — and a LARGE
+submission (a full two-page script is one) can be TRUNCATED mid-frame,
+so the server sees entire pages or panels missing that you wrote. The
+signature is a rejection reporting `missing` / `list_type` /
+`dict_type` / `int_parsing` / `string_too_short` errors for fields you
+KNOW you emitted correctly. That is a transport artifact, not a content
+problem — repairing content cannot fix it and resubmitting through the
+same frame usually fails the same way.
 
-After TWO rejected `submit_page_script_set` calls whose errors name
-fields you already wrote correctly, STOP calling tools entirely. Do NOT
-call `report_page_script_blocker` — a transport artifact is not an
-evidence blocker. Instead emit the complete, corrected PageScriptSet as
-your FINAL assistant message: ONE bare JSON object, starting with `{` and
-ending with `}`, the entire message — no prose, no markdown fences, no
-tool call. The runtime sends that object through the same authenticated
-submit tool and the same validation gates; acceptance then completes
-outside your turn.
+After ONE rejected `submit_page_script_set` call whose errors name
+fields, panels, or pages you already wrote correctly, STOP calling
+tools entirely. Do NOT call `report_page_script_blocker` — a transport
+artifact is not an evidence blocker — and do NOT burn a second tool
+submission on a frame that truncates. Instead emit the complete,
+corrected PageScriptSet as your FINAL assistant message: ONE bare JSON
+object, starting with `{` and ending with `}`, the entire message — no
+prose, no markdown fences, no tool call. The runtime sends that object
+through the same authenticated submit tool and the same validation
+gates; acceptance then completes outside your turn.
 
 Reserve `report_page_script_blocker` for genuine evidence gaps (the
 accepted plan or context cannot support a page beat) — never for

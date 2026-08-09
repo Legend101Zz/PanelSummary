@@ -490,3 +490,40 @@ def test_empty_speaker_on_dialogue_still_fails_with_the_contract_error(
 
     with pytest.raises(ArtifactValidationError, match="dialogue requires speaker_ref"):
         resolve(service.execute("submit_page_script_set", request))
+
+
+def test_frame_rendered_null_source_ref_fields_normalize_and_accept(
+    tmp_path: Path,
+) -> None:
+    """S7 attempt-13 submit-2 shape: the frame rendered the model's
+    CORRECT nulls as "" on SourceRef optionals — quote failed
+    string_too_short, offsets failed int_parsing — on an otherwise
+    complete submission. The seam maps "" -> None so the ref hash matches
+    the plan's verbatim null-quote refs and the set is accepted."""
+    service, request, script_set = _tool_scenario(tmp_path)
+    donor = script_set.pages[0].text_elements[0]
+    script_set.pages[1].text_elements = [
+        donor.model_copy(
+            update={
+                "text_id": "text_page1_narration",
+                "panel_id": script_set.pages[1].panels[0].panel_id,
+                "content": "The maze rewards the one who moves first.",
+            }
+        )
+    ]
+    payload = script_set.model_dump(mode="json")
+    for page in payload["pages"]:
+        for panel in page["panels"]:
+            for ref in panel["source_refs"]:
+                if ref.get("quote") is None:
+                    ref["quote"] = ""
+                if ref.get("start_offset") is None:
+                    ref["start_offset"] = ""
+                if ref.get("end_offset") is None:
+                    ref["end_offset"] = ""
+    request.arguments["script_set"] = payload
+
+    response = resolve(service.execute("submit_page_script_set", request))
+
+    assert isinstance(response.data, dict)
+    assert response.data["validation_status"] == "accepted"
