@@ -44,7 +44,13 @@ from app.contracts.manga import CompiledPageLayout, MangaPagePlan, PageScript
 
 logger = logging.getLogger(__name__)
 
-PAGE_ART_VERSION = "manga-page-art.v1"
+#: v2 (Session 7): the first fully-authored regen showed the image model
+#: paints the RIGHT story content in the WRONG panels — briefs are given
+#: in RTL read order but carried no spatial anchor, so content bound
+#: left-to-right. Briefs now name each panel's position on the page
+#: (derived from its compiled bbox) beside the badge number. Bumping the
+#: version re-keys the paid stage (conditioning changed).
+PAGE_ART_VERSION = "manga-page-art.v2"
 
 #: ADR-001 / issue #7 rule: ONE image model, no silent fallback.
 PAGE_ART_MODEL = "google/gemini-2.5-flash-image"

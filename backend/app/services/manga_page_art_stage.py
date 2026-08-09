@@ -517,6 +517,22 @@ class MangaPageArtStageService:
     # image call + receipts
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _panel_position_phrase(panel) -> str:
+        """Spatial anchor for a brief line (PAGE_ART_VERSION v2): name the
+        panel's position on the page from its compiled bbox so the image
+        model binds content by GEOMETRY, not by badge-reading. The S7
+        regen showed right content in wrong panels — briefs in RTL read
+        order bound left-to-right without this."""
+        bbox = panel.bbox
+        cx = bbox.x + bbox.width / 2
+        cy = bbox.y + bbox.height / 2
+        row = "top" if cy < 1 / 3 else "middle" if cy < 2 / 3 else "bottom"
+        column = "left" if cx < 1 / 3 else "center" if cx < 2 / 3 else "right"
+        if bbox.width > 0.8:
+            return f"the full-width {row} panel"
+        return f"the {row}-{column} panel"
+
     def _panel_briefs(self, plan: MangaPagePlan, compiled: CompiledPageLayout) -> str:
         script_by_id = {p.panel_id: p for p in plan.page_script.panels}
         lines = []
@@ -524,7 +540,8 @@ class MangaPageArtStageService:
             script = script_by_id[panel.panel_id]
             subjects = ", ".join(b.subject_ref for b in script.blocking) or "no named characters"
             lines.append(
-                f"Panel {panel.read_rank + 1} (badge {panel.read_rank + 1}): "
+                f"Panel {panel.read_rank + 1} (badge {panel.read_rank + 1}, "
+                f"{self._panel_position_phrase(panel)}): "
                 f"{script.camera.shot} shot, {script.purpose} — {script.story_beat} "
                 f"[{subjects}]"
             )

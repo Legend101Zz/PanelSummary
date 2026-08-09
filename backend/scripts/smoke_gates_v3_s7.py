@@ -55,13 +55,18 @@ async def main() -> int:
         for artifact in artifacts:
             by_kind.setdefault(artifact.kind, []).append(artifact)
 
-        thumbnails = sorted(by_kind["thumbnail_set"], key=lambda a: a.created_at)
-        thumbnail_set = ThumbnailSet.model_validate(thumbnails[0].content)
-        plans_by_id = {p.page_plan_id: p for p in thumbnail_set.page_plans}
-        layouts_by_plan: dict[str, CompiledPageLayout] = {}
+        # The run now carries TWO planning sets (S4 + the fresh S7 one)
+        # whose page_plan_ids collide, so lineage resolves through the
+        # page_art's own conditioning.compiler_hash — never by plan id.
+        plans_by_id: dict[str, object] = {}
+        for thumb in sorted(by_kind["thumbnail_set"], key=lambda a: a.created_at):
+            thumbnail_set = ThumbnailSet.model_validate(thumb.content)
+            for plan_item in thumbnail_set.page_plans:
+                plans_by_id.setdefault(plan_item.page_plan_id, []).append(plan_item)
+        layouts_by_hash: dict[str, CompiledPageLayout] = {}
         for artifact in by_kind.get("compiled_layout", []):
             layout = CompiledPageLayout.model_validate(artifact.content)
-            layouts_by_plan[layout.page_plan_id] = layout
+            layouts_by_hash[layout.compiler_hash] = layout
 
         vision = build_vision_qa()
         rows = []
@@ -71,8 +76,18 @@ async def main() -> int:
         ):
             content = artifact.content or {}
             plan_id = content.get("page_plan_id")
-            plan: MangaPagePlan | None = plans_by_id.get(plan_id)
-            compiled = layouts_by_plan.get(plan_id)
+            compiler_hash = (content.get("conditioning") or {}).get("compiler_hash")
+            compiled = layouts_by_hash.get(compiler_hash)
+            plan: MangaPagePlan | None = None
+            if compiled is not None:
+                compiled_panel_ids = {p.panel_id for p in compiled.panels}
+                for candidate in plans_by_id.get(plan_id, []):
+                    script_ids = {
+                        p.panel_id for p in candidate.page_script.panels
+                    }
+                    if script_ids == compiled_panel_ids:
+                        plan = candidate
+                        break
             if plan is None or compiled is None or not artifact.storage_ref:
                 print(f"skipping {artifact.artifact_id}: incomplete lineage")
                 continue
