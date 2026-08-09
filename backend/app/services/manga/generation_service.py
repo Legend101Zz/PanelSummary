@@ -61,7 +61,7 @@ from app.services.manga.arc_slice_planning_service import (
 )
 from app.services.manga.asset_image_service import build_generated_asset_doc, build_prompt_asset_doc
 from app.services.manga.project_service import load_project_ledger
-from app.services.manga.source_slice_service import choose_next_page_slice
+from app.services.manga.source_slice_service import choose_next_textful_page_slice
 
 
 GenerationProgressCallback = Callable[[int, str, str], Awaitable[None] | None]
@@ -407,12 +407,13 @@ def _pick_next_slice(
             raise ValueError("manga project arc outline is already fully covered")
         return plan.source_slice, plan
 
-    legacy_slice = choose_next_page_slice(
+    legacy_slice = choose_next_textful_page_slice(
         book_id=str(book.id),
         total_pages=book.total_pages,
         chapters=book.chapters,
         ledger=ledger,
         page_window=page_window,
+        has_text=lambda candidate: bool(build_source_text_for_slice(book.chapters, candidate)),
     )
     if legacy_slice is None:
         raise ValueError("manga project source is already fully covered")

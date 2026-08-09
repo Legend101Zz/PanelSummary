@@ -175,12 +175,18 @@ def extract_structure_with_docling(pdf_path: str) -> Optional[dict]:
             text = item.text if hasattr(item, 'text') else str(item)
 
             if text and text.strip():
-                elements.append({
+                element = {
                     "label": str(label),
                     "text": text.strip(),
                     "level": level,
                     "prov": getattr(item, 'prov', []),
-                })
+                }
+                # Chapter page ranges are derived from elem["page"]; without
+                # it every chapter collapses onto page 1 and slicing breaks.
+                page = _page_from_prov(element["prov"])
+                if page:
+                    element["page"] = page
+                elements.append(element)
 
         return {"elements": elements, "source": "docling"}
 
@@ -255,6 +261,24 @@ CHAPTER_PATTERNS = [
     r"^[ivxlcdm]+\.\s+[A-Z]",                  # "i. Overview" (roman numerals)
     r"^section\s+\d+",                          # "Section 3"
 ]
+
+
+def _page_from_prov(prov) -> int:
+    """Best-effort 1-based page number from a docling provenance list.
+
+    Docling's provenance entries vary by version: objects with a ``page_no``
+    attribute or plain dicts. Returns 0 when no page can be determined.
+    """
+    for entry in prov or []:
+        page_no = getattr(entry, "page_no", None)
+        if page_no is None and isinstance(entry, dict):
+            page_no = entry.get("page_no")
+        if page_no:
+            try:
+                return int(page_no)
+            except (TypeError, ValueError):
+                continue
+    return 0
 
 
 def detect_chapters(elements: list[dict]) -> list[dict]:
