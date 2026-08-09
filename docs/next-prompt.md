@@ -80,9 +80,14 @@ revision: lane B is the default standard-page lane).
 
 ## 3) Golden-chain runbook (end-to-end, as S8 ran it)
 
-Services (three processes; the stale docker `scrollstack-*` containers
-on :8000/:27017 belong to v1 — do NOT reuse them; the v2 lane's durable
-authority is the Atlas cluster in `backend/.env`):
+Services: `./start.sh` at the repo root now starts the whole stack —
+v1 surface plus broker :8010 and both workers :8788/:8789 — with tokens
+persisted in `.dev/agent-tokens.env` (`source` it before chain runs;
+`./check.sh` shows status, `./stop.sh` stops). The manual per-process
+form below remains for seam-dump/custom-env runs. (The stale docker
+`scrollstack-*` containers on :8000/:27017 are NOT this stack — do not
+reuse them; the v2 lane's durable authority is the Atlas cluster in
+`backend/.env`.)
 
 ```bash
 # 1) broker/backend on :8010 with the seam dump armed
