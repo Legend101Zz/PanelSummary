@@ -1,0 +1,156 @@
+[
+  {
+    "page_index": 0,
+    "attempts": [
+      {
+        "attempt": 1,
+        "cost_usd": 0.0390585,
+        "receipt_artifact_id": "provider_receipt_105ac8a98a06da5059f00a73",
+        "error": null,
+        "ocr_clean": false,
+        "border_adherence": 1.0,
+        "binding_score": 0.5,
+        "binding_panels": [
+          {
+            "panel": 1,
+            "position": "the top-right panel",
+            "matches": false,
+            "seen": "A young mouse-like character standing at a brick wall, writing something with a crayon. The text on the wall reads 'EARLY THE YOUR PATH' (unclear fragment). The character has a worried expression and is wearing a satchel."
+          },
+          {
+            "panel": 2,
+            "position": "the top-left panel",
+            "matches": false,
+            "seen": "A young mouse-like character running through a dark stone maze corridor with a scared, wide-eyed expression. He is hurrying forward with a satchel, not showing exhilaration or feeling a cool breeze."
+          },
+          {
+            "panel": 3,
+            "position": "the bottom-right panel",
+            "matches": true,
+            "seen": "Haw stands at Cheese Station C holding small pieces of cheese in both hands, offering them to a seated, reluctant-looking Hem who has his arms crossed."
+          },
+          {
+            "panel": 4,
+            "position": "the bottom-left panel",
+            "matches": true,
+            "seen": "Haw pauses along the maze corridor holding a crayon, with the writing 'Fear imagined is always than reality ahead' visible on the wall beside him."
+          }
+        ],
+        "verdict": "rejected"
+      },
+      {
+        "attempt": 2,
+        "cost_usd": 0.0391089,
+        "receipt_artifact_id": "provider_receipt_177bbc751240fed340bcca3a",
+        "error": null,
+        "ocr_clean": false,
+        "border_adherence": 1.0,
+        "binding_score": 0.25,
+        "binding_panels": [
+          {
+            "panel": 1,
+            "position": "top-right",
+            "matches": false,
+            "seen": "Young boy with spiky hair and big ears smiling excitedly, holding something small, standing against a stone wall in a brighter setting"
+          },
+          {
+            "panel": 2,
+            "position": "top-left",
+            "matches": false,
+            "seen": "Boy running through a dark maze corridor with spiral/swirl lines above him, smiling and carrying a satchel"
+          },
+          {
+            "panel": 3,
+            "position": "bottom-right",
+            "matches": true,
+            "seen": "Haw stands holding bits of cheese, offering them to a reluctant Hem who has arms crossed and shakes his head, at Cheese Station C"
+          },
+          {
+            "panel": 4,
+            "position": "bottom-left",
+            "matches": false,
+            "seen": "Haw paused against a stone wall holding a pen and a piece of cheese/bread, looking nervous with a sweat drop, not writing fear"
+          }
+        ],
+        "verdict": "rejected"
+      }
+    ]
+  },
+  {
+    "page_index": 1,
+    "attempts": [
+      {
+        "attempt": 1,
+        "cost_usd": 0.0391311,
+        "receipt_artifact_id": "provider_receipt_14ce1c86548f1abdc917bdb5",
+        "error": null,
+        "ocr_clean": true,
+        "border_adherence": 1.0,
+        "binding_score": 0.25,
+        "binding_panels": [
+          {
+            "panel": 1,
+            "position": "top-right",
+            "matches": false,
+            "seen": "A boy with arms outstretched in front of a huge pile of cheese with mice, but he is Haw celebrating rather than rounding the corner"
+          },
+          {
+            "panel": 2,
+            "position": "top-left",
+            "matches": false,
+            "seen": "Haw holding a cheese slice surrounded by floating cheese pieces and diagrams, not drawing on a wall"
+          },
+          {
+            "panel": 3,
+            "position": "bottom-right",
+            "matches": true,
+            "seen": "Group of well-dressed adults gathered in a hotel lounge with drinks, sharing conversation at a reunion"
+          },
+          {
+            "panel": 4,
+            "position": "bottom-left",
+            "matches": false,
+            "seen": "Haw standing in a corridor with shoes in hand and faint figures in the walls, not clearly hearing echoing footsteps wondering about Hem"
+          }
+        ],
+        "verdict": "rejected"
+      },
+      {
+        "attempt": 2,
+        "cost_usd": 0.0391092,
+        "receipt_artifact_id": "provider_receipt_60e4a74bdc7c35013fe78a82",
+        "error": null,
+        "ocr_clean": true,
+        "border_adherence": 0.875,
+        "binding_score": 0.25,
+        "binding_panels": [
+          {
+            "panel": 1,
+            "position": "top-right",
+            "matches": false,
+            "seen": "A massive pile of cheese fills the room with two small mice (Sniff and Scurry) at the bottom, but Haw is not visible rounding the corner."
+          },
+          {
+            "panel": 2,
+            "position": "top-left",
+            "matches": false,
+            "seen": "A mouse-like character (Haw) is drawing various symbols, shapes, and the words 'CHART YOUR OWN PATH' on the wall, not a large piece of cheese summarizing insights."
+          },
+          {
+            "panel": 3,
+            "position": "bottom-right",
+            "matches": false,
+            "seen": "A group of people in formal attire gathered in a hotel lounge, but they appear to be socializing and drinking, not sharing stories about acting like Hem, Haw, Sniff, or Scurry."
+          },
+          {
+            "panel": 4,
+            "position": "bottom-left",
+            "matches": true,
+            "seen": "Haw stands in a stone corridor with echoing sound lines, holding his shoes, appearing to listen for footsteps."
+          }
+        ],
+        "verdict": "rejected"
+      }
+    ]
+  }
+]
