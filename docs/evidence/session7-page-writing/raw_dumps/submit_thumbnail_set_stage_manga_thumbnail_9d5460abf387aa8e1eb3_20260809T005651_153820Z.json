@@ -1,0 +1,821 @@
+{
+  "tool": "submit_thumbnail_set",
+  "scope": {
+    "correlation_id": "goal_9d5460abf387aa8e1eb3_1",
+    "goal_id": "goal_9d5460abf387aa8e1eb3_1",
+    "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+    "stage_run_id": "stage_manga_thumbnail_9d5460abf387aa8e1eb3",
+    "context_pack_id": "context_b33f68f17d3cbdc911109698",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:56:51.153820+00:00",
+  "arguments": {
+    "thumbnail_set": {
+      "schema_version": "thumbnail-set.v1",
+      "thumbnail_set_id": "thumbnail_set_9d5460abf387aa8e1eb3_1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+      "page_plans": [
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_0",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "page_script": {
+            "page_id": "page_0",
+            "page_index": 0,
+            "page_kind": "standard",
+            "entry_state": "Reader enters the manga for the first time.",
+            "exit_state": "Reader anticipates the cheese station discovery.",
+            "page_turn_panel_id": "panel_003",
+            "panels": [
+              {
+                "panel_id": "panel_000",
+                "purpose": "setup",
+                "story_beat": "The four characters\u2014two small mice and two little people\u2014stand together at the maze entrance as vertical labels name them.",
+                "importance": "high",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "wide",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_maze_entrance",
+                "prop_refs": [
+                  "prop_maze_label"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.3,
+                    "y": 0.3,
+                    "width": 0.4,
+                    "height": 0.4
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.1,
+                    "y": 0.1,
+                    "width": 0.2,
+                    "height": 0.15
+                  }
+                ],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0001_000_00_0eba1c2a9b79",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "0eba1c2a9b790512c80d23c4d4ba7110aea4c21956d5833032018978d8e005ad"
+                  }
+                ],
+                "source_fact_ids": []
+              },
+              {
+                "panel_id": "panel_001",
+                "purpose": "reaction",
+                "story_beat": "Michael leans forward at a Chicago restaurant table, six classmates watching as he begins to tell a story about change.",
+                "importance": "high",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_chicago_restaurant",
+                "prop_refs": [],
+                "focal_regions": [
+                  {
+                    "x": 0.4,
+                    "y": 0.3,
+                    "width": 0.3,
+                    "height": 0.4
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.1,
+                    "y": 0.7,
+                    "width": 0.3,
+                    "height": 0.2
+                  }
+                ],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0007_000_00_f7c3296f3ced",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "f7c3296f3ceddc38b552fe980228510e90996ae3bec6fa007c9fa4f84e0f0e13"
+                  }
+                ],
+                "source_fact_ids": []
+              },
+              {
+                "panel_id": "panel_002",
+                "purpose": "setup",
+                "story_beat": "Sniff and Scurry race down the left corridor while Hem and Haw jog confidently down the right corridor, all wearing running gear.",
+                "importance": "high",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "wide",
+                  "angle": "eye",
+                  "movement": "tracking"
+                },
+                "blocking": [],
+                "environment_ref": "env_maze_corridor",
+                "prop_refs": [
+                  "prop_running_shoes"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.2,
+                    "y": 0.2,
+                    "width": 0.6,
+                    "height": 0.5
+                  }
+                ],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": "forward",
+                  "speed": "fast",
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3"
+                ]
+              },
+              {
+                "panel_id": "panel_003",
+                "purpose": "payoff",
+                "story_beat": "All four characters gather at Cheese Station C, surrounded by abundant piles of cheese on stone ledges, the mice alert and the little people comfortable.",
+                "importance": "page_turn",
+                "tempo": "hold",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_cheese_station_c",
+                "prop_refs": [
+                  "prop_cheese_piles"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.3,
+                    "y": 0.2,
+                    "width": 0.4,
+                    "height": 0.5
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.6,
+                    "y": 0.1,
+                    "width": 0.3,
+                    "height": 0.2
+                  }
+                ],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+                  }
+                ],
+                "source_fact_ids": []
+              }
+            ],
+            "text_elements": [
+              {
+                "text_id": "text_000",
+                "panel_id": "panel_000",
+                "kind": "narration",
+                "content": "A parable of four characters facing change",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.35,
+                  "y": 0.75,
+                  "width": 0.3,
+                  "height": 0.1
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "narrator",
+                  "weight": 400,
+                  "min_px": 10,
+                  "max_px": 20,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_001",
+                "panel_id": "panel_001",
+                "kind": "dialogue",
+                "content": "The story changed the way I looked at change\u2014from losing something to gaining something.",
+                "speaker_ref": "char_michael",
+                "emotion": "thoughtful",
+                "writing_direction": "horizontal",
+                "shape": "oval",
+                "preferred_region": {
+                  "x": 0.35,
+                  "y": 0.65,
+                  "width": 0.4,
+                  "height": 0.15
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "dialogue",
+                  "weight": 400,
+                  "min_px": 10,
+                  "max_px": 16,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_002",
+                "panel_id": "panel_003",
+                "kind": "narration",
+                "content": "They found their own kind of cheese\u2014abundance at Cheese Station C.",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.1,
+                  "y": 0.8,
+                  "width": 0.4,
+                  "height": 0.1
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "narrator",
+                  "weight": 400,
+                  "min_px": 10,
+                  "max_px": 18,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              }
+            ]
+          },
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_0",
+            "axis": "y",
+            "ratios": [
+              0.5,
+              0.5
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "angle_deg": 0,
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_row1_page_0",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "angle_deg": 0,
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_001",
+                    "panel_id": "panel_001"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_000",
+                    "panel_id": "panel_000"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_row2_page_0",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "angle_deg": 0,
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_003",
+                    "panel_id": "panel_003"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_002",
+                    "panel_id": "panel_002"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_000",
+              "to_panel_id": "panel_001",
+              "reason": "Panel 1 follows setup of four characters named in panel 0."
+            },
+            {
+              "from_panel_id": "panel_001",
+              "to_panel_id": "panel_002",
+              "reason": "Panel 2 shows characters racing to cheese after Michael's setup."
+            },
+            {
+              "from_panel_id": "panel_002",
+              "to_panel_id": "panel_003",
+              "reason": "Panel 3 reveals cheese station abundance as page turn payoff."
+            }
+          ],
+          "source_fact_ids": []
+        },
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_1",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "page_script": {
+            "page_id": "page_1",
+            "page_index": 1,
+            "page_kind": "standard",
+            "entry_state": "Reader anticipates the conflict and Haw's journey forward.",
+            "exit_state": "Reader feels inspired to anticipate and adapt to change.",
+            "page_turn_panel_id": "panel_007",
+            "panels": [
+              {
+                "panel_id": "panel_004",
+                "purpose": "action",
+                "story_beat": "The mice nod to each other and lace up their running shoes in the empty station while Hem yells with hands on hips and Haw stands frozen beside him.",
+                "importance": "high",
+                "tempo": "impact",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "low",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_cheese_station_empty",
+                "prop_refs": [
+                  "prop_running_shoes"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.25,
+                    "y": 0.2,
+                    "width": 0.5,
+                    "height": 0.6
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.7,
+                    "y": 0.1,
+                    "width": 0.25,
+                    "height": 0.15
+                  }
+                ],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+                  }
+                ],
+                "source_fact_ids": []
+              },
+              {
+                "panel_id": "panel_005",
+                "purpose": "action",
+                "story_beat": "Hem clutches a chisel in the empty station while Haw watches, both visibly thinner, and a small inset shows Hem gesturing angrily about being entitled to the cheese.",
+                "importance": "medium",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "close_up",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_cheese_station_empty",
+                "prop_refs": [
+                  "prop_chisel"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.3,
+                    "y": 0.25,
+                    "width": 0.4,
+                    "height": 0.5
+                  }
+                ],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0005_000_00_b184f4508866"
+                ]
+              },
+              {
+                "panel_id": "panel_006",
+                "purpose": "reveal",
+                "story_beat": "Haw holds up his worn running shoes with a smile while Hem slumps against the wall refusing to look, and the wall inscription reads beside a drawn cheese.",
+                "importance": "high",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": "env_cheese_station_empty",
+                "prop_refs": [
+                  "prop_running_shoes",
+                  "prop_wall_inscription"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.35,
+                    "y": 0.3,
+                    "width": 0.3,
+                    "height": 0.4
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.05,
+                    "y": 0.6,
+                    "width": 0.25,
+                    "height": 0.3
+                  }
+                ],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_01_14a3176ac46a",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "14a3176ac46a3048eb82c67119bfdfb78f6a0032737ed29c94cfbcf75da6b349"
+                  }
+                ],
+                "source_fact_ids": []
+              },
+              {
+                "panel_id": "panel_007",
+                "purpose": "payoff",
+                "story_beat": "Haw jogs slowly into an unexplored corridor of the maze, pausing to write on the wall, then lifting his head and looking alertly forward as he moves toward new cheese.",
+                "importance": "page_turn",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "tracking"
+                },
+                "blocking": [],
+                "environment_ref": "env_maze_corridor",
+                "prop_refs": [
+                  "prop_wall_inscription"
+                ],
+                "focal_regions": [
+                  {
+                    "x": 0.3,
+                    "y": 0.25,
+                    "width": 0.4,
+                    "height": 0.5
+                  }
+                ],
+                "avoid_text_regions": [
+                  {
+                    "x": 0.65,
+                    "y": 0.1,
+                    "width": 0.3,
+                    "height": 0.2
+                  }
+                ],
+                "motion": {
+                  "direction": "forward",
+                  "speed": "slow",
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0008_000_01_14a3176ac46a",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "14a3176ac46a3048eb82c67119bfdfb78f6a0032737ed29c94cfbcf75da6b349"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              }
+            ],
+            "text_elements": [
+              {
+                "text_id": "text_003",
+                "panel_id": "panel_004",
+                "kind": "sfx",
+                "content": "WHO MOVED MY CHEESE?!",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "jagged",
+                "preferred_region": {
+                  "x": 0.6,
+                  "y": 0.15,
+                  "width": 0.3,
+                  "height": 0.15
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "sfx",
+                  "weight": 700,
+                  "min_px": 12,
+                  "max_px": 24,
+                  "emphasis": "bold"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_004",
+                "panel_id": "panel_006",
+                "kind": "dialogue",
+                "content": "It's... Maze... time!",
+                "speaker_ref": "char_haw",
+                "emotion": "determined",
+                "writing_direction": "horizontal",
+                "shape": "oval",
+                "preferred_region": {
+                  "x": 0.55,
+                  "y": 0.2,
+                  "width": 0.35,
+                  "height": 0.15
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "dialogue",
+                  "weight": 700,
+                  "min_px": 12,
+                  "max_px": 20,
+                  "emphasis": "bold"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_005",
+                "panel_id": "panel_007",
+                "kind": "narration",
+                "content": "When you see change leading somewhere better, move with the Cheese.",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.1,
+                  "y": 0.8,
+                  "width": 0.45,
+                  "height": 0.12
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "narrator",
+                  "weight": 400,
+                  "min_px": 10,
+                  "max_px": 18,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              }
+            ]
+          },
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_1",
+            "axis": "y",
+            "ratios": [
+              0.5,
+              0.5
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "angle_deg": 0,
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_row1_page_1",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "angle_deg": 0,
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_005",
+                    "panel_id": "panel_005"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_004",
+                    "panel_id": "panel_004"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_row2_page_1",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "angle_deg": 0,
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_007",
+                    "panel_id": "panel_007"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_006",
+                    "panel_id": "panel_006"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_004",
+              "to_panel_id": "panel_005",
+              "reason": "Panel 5 shows entitled reaction following initial discovery of empty station."
+            },
+            {
+              "from_panel_id": "panel_005",
+              "to_panel_id": "panel_006",
+              "reason": "Panel 6 shows Haw's decision to change after observing entitlement."
+            },
+            {
+              "from_panel_id": "panel_006",
+              "to_panel_id": "panel_007",
+              "reason": "Panel 7 shows Haw's forward journey as page turn payoff."
+            }
+          ],
+          "source_fact_ids": []
+        }
+      ]
+    }
+  }
+}

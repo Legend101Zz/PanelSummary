@@ -1,0 +1,16 @@
+{
+  "schema_version": "page-validation-report.v1",
+  "report_id": "report_page_splash",
+  "candidate_artifact_id": "page_layout_splash",
+  "validator_version": "manga-page-validator.v1",
+  "passed": true,
+  "issues": [
+    {
+      "code": "SPLASH_EXCEPTION_RECORDED",
+      "severity": "info",
+      "message": "The single-panel splash has an explicit exception reason.",
+      "path": "/layout_root/exception_reason",
+      "node_id": "node_splash"
+    }
+  ]
+}

@@ -1,0 +1,745 @@
+{
+  "$defs": {
+    "BubblePlacement": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox_pct": {
+          "$ref": "#/$defs/LayoutBoxPct"
+        },
+        "line_index": {
+          "minimum": 0,
+          "title": "Line Index",
+          "type": "integer"
+        },
+        "speaker_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Speaker Id",
+          "type": "string"
+        },
+        "tail_offset_pct": {
+          "default": 50,
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Tail Offset Pct",
+          "type": "number"
+        },
+        "tail_side": {
+          "default": "bottom",
+          "enum": [
+            "left",
+            "right",
+            "bottom",
+            "top"
+          ],
+          "title": "Tail Side",
+          "type": "string"
+        },
+        "variant": {
+          "default": "speech",
+          "enum": [
+            "speech",
+            "thought",
+            "shout"
+          ],
+          "title": "Variant",
+          "type": "string"
+        },
+        "z_index": {
+          "default": 40,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "line_index",
+        "speaker_id",
+        "bbox_pct"
+      ],
+      "title": "BubblePlacement",
+      "type": "object"
+    },
+    "DialogueLine": {
+      "additionalProperties": false,
+      "properties": {
+        "delivery": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delivery"
+        },
+        "speaker_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Speaker Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "speaker_id",
+        "text"
+      ],
+      "title": "DialogueLine",
+      "type": "object"
+    },
+    "LayoutBoxPct": {
+      "additionalProperties": false,
+      "properties": {
+        "height_pct": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Height Pct",
+          "type": "number"
+        },
+        "width_pct": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Width Pct",
+          "type": "number"
+        },
+        "x_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "X Pct",
+          "type": "number"
+        },
+        "y_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Y Pct",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x_pct",
+        "y_pct",
+        "width_pct",
+        "height_pct"
+      ],
+      "title": "LayoutBoxPct",
+      "type": "object"
+    },
+    "PageComposition": {
+      "additionalProperties": false,
+      "properties": {
+        "bubble_placements": {
+          "maxProperties": 7,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "items": {
+                "$ref": "#/$defs/BubblePlacement"
+              },
+              "type": "array"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "Bubble Placements",
+          "type": "object"
+        },
+        "composition_notes": {
+          "default": "",
+          "maxLength": 2000,
+          "title": "Composition Notes",
+          "type": "string"
+        },
+        "gutter_px": {
+          "default": 6,
+          "maximum": 32,
+          "minimum": 0,
+          "title": "Gutter Px",
+          "type": "integer"
+        },
+        "page_index": {
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "page_turn_panel_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Turn Panel Id"
+        },
+        "panel_order": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Panel Order",
+          "type": "array"
+        },
+        "panel_placements": {
+          "maxProperties": 7,
+          "minProperties": 1,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "$ref": "#/$defs/PanelPlacement"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "Panel Placements",
+          "type": "object"
+        },
+        "sprite_layers": {
+          "maxProperties": 7,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "items": {
+                "$ref": "#/$defs/SpriteLayer"
+              },
+              "type": "array"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "Sprite Layers",
+          "type": "object"
+        }
+      },
+      "required": [
+        "page_index",
+        "panel_order",
+        "panel_placements"
+      ],
+      "title": "PageComposition",
+      "type": "object"
+    },
+    "PanelPlacement": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox_pct": {
+          "$ref": "#/$defs/LayoutBoxPct"
+        },
+        "bleed_edges": {
+          "items": {
+            "enum": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ],
+            "type": "string"
+          },
+          "maxItems": 4,
+          "title": "Bleed Edges",
+          "type": "array"
+        },
+        "z_index": {
+          "default": 0,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bbox_pct"
+      ],
+      "title": "PanelPlacement",
+      "type": "object"
+    },
+    "PanelRenderArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "aspect_ratio": {
+          "anyOf": [
+            {
+              "pattern": "^[1-9][0-9]*:[1-9][0-9]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Aspect Ratio"
+        },
+        "asset_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Asset Id"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code"
+        },
+        "render_status": {
+          "default": "not_requested",
+          "enum": [
+            "not_requested",
+            "rendered",
+            "failed"
+          ],
+          "title": "Render Status",
+          "type": "string"
+        },
+        "requested_character_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Requested Character Count",
+          "type": "integer"
+        },
+        "used_reference_asset_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Used Reference Asset Ids",
+          "type": "array"
+        }
+      },
+      "title": "PanelRenderArtifact",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "SpriteLayer": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "bbox_pct": {
+          "$ref": "#/$defs/LayoutBoxPct"
+        },
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "expression": {
+          "default": "neutral",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Expression",
+          "type": "string"
+        },
+        "flip_x": {
+          "default": false,
+          "title": "Flip X",
+          "type": "boolean"
+        },
+        "opacity": {
+          "default": 1.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Opacity",
+          "type": "number"
+        },
+        "z_index": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Z Index",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "character_id",
+        "asset_id",
+        "bbox_pct"
+      ],
+      "title": "SpriteLayer",
+      "type": "object"
+    },
+    "StoryboardPage": {
+      "additionalProperties": false,
+      "properties": {
+        "page_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Page Id",
+          "type": "string"
+        },
+        "page_index": {
+          "minimum": 0,
+          "title": "Page Index",
+          "type": "integer"
+        },
+        "page_turn_hook": {
+          "default": "",
+          "maxLength": 1000,
+          "title": "Page Turn Hook",
+          "type": "string"
+        },
+        "panels": {
+          "items": {
+            "$ref": "#/$defs/StoryboardPanel"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Panels",
+          "type": "array"
+        },
+        "reading_flow": {
+          "default": "top-right to bottom-left",
+          "enum": [
+            "top-right to bottom-left",
+            "top-left to bottom-right"
+          ],
+          "title": "Reading Flow",
+          "type": "string"
+        }
+      },
+      "required": [
+        "page_id",
+        "page_index",
+        "panels"
+      ],
+      "title": "StoryboardPage",
+      "type": "object"
+    },
+    "StoryboardPanel": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "anyOf": [
+            {
+              "maxLength": 20000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Action"
+        },
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "character_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Character Ids",
+          "type": "array"
+        },
+        "composition": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Composition",
+          "type": "string"
+        },
+        "dialogue": {
+          "items": {
+            "$ref": "#/$defs/DialogueLine"
+          },
+          "maxItems": 16,
+          "title": "Dialogue",
+          "type": "array"
+        },
+        "emotional_tone": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Emotional Tone",
+          "type": "string"
+        },
+        "narration": {
+          "items": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Narration",
+          "type": "array"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "purpose": {
+          "enum": [
+            "establishing",
+            "action",
+            "dialogue",
+            "reaction",
+            "explanation",
+            "reveal",
+            "transition"
+          ],
+          "title": "Purpose",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "shot_type": {
+          "enum": [
+            "extreme_wide",
+            "wide",
+            "medium",
+            "close_up",
+            "extreme_close_up",
+            "over_shoulder",
+            "insert"
+          ],
+          "title": "Shot Type",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Source Fact Ids",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "visual_asset_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Visual Asset Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "panel_id",
+        "scene_id",
+        "beat_ids",
+        "purpose",
+        "shot_type",
+        "composition",
+        "source_refs",
+        "emotional_tone"
+      ],
+      "title": "StoryboardPanel",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/rendered_page.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "composition": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PageComposition"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "panel_artifacts": {
+      "maxProperties": 7,
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "$ref": "#/$defs/PanelRenderArtifact"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Panel Artifacts",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "rendered-page.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "storyboard_page": {
+      "$ref": "#/$defs/StoryboardPage"
+    }
+  },
+  "required": [
+    "schema_version",
+    "storyboard_page",
+    "panel_artifacts"
+  ],
+  "title": "RenderedPage",
+  "type": "object"
+}

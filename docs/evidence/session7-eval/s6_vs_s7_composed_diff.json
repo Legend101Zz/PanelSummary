@@ -1,0 +1,47 @@
+{
+  "baseline": "eval_scorecard_36251607c7e230ab6cb25bff",
+  "candidate": "eval_scorecard_a575909be3d6023a2df175eb",
+  "diff": {
+    "schema_version": "eval-scorecard-diff.v1",
+    "verdict": "regression",
+    "baseline_run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "candidate_run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "baseline_subject": "latest-composed-pages",
+    "candidate_subject": "composed",
+    "pages_compared": [
+      0,
+      1
+    ],
+    "pages_only_in_baseline": [],
+    "pages_only_in_candidate": [],
+    "regressions": [
+      "page 0: craft_mean -3.000",
+      "page 0: readability -3.000",
+      "page 1: craft_mean -2.333",
+      "page 1: readability -2.000"
+    ],
+    "improvements": [],
+    "pages": [
+      {
+        "page_index": 0,
+        "layout_iou_delta": null,
+        "border_adherence_delta": null,
+        "judge_deltas": {
+          "craft_mean": -3.0,
+          "fidelity_rate": 0.02627627627627628,
+          "readability": -3.0
+        }
+      },
+      {
+        "page_index": 1,
+        "layout_iou_delta": null,
+        "border_adherence_delta": null,
+        "judge_deltas": {
+          "craft_mean": -2.333333333333333,
+          "fidelity_rate": -0.05705705705705705,
+          "readability": -2.0
+        }
+      }
+    ]
+  }
+}

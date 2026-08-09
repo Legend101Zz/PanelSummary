@@ -1,0 +1,138 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "RevisionOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "node_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node Id"
+        },
+        "op": {
+          "enum": [
+            "add",
+            "remove",
+            "replace"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 500,
+          "minLength": 1,
+          "pattern": "^/",
+          "title": "Path",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JsonValue"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "op",
+        "path"
+      ],
+      "title": "RevisionOperation",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/revision_request.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "issue_codes": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Issue Codes",
+      "type": "array"
+    },
+    "operations": {
+      "items": {
+        "$ref": "#/$defs/RevisionOperation"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "title": "Operations",
+      "type": "array"
+    },
+    "preserve_paths": {
+      "items": {
+        "maxLength": 500,
+        "minLength": 1,
+        "pattern": "^/",
+        "type": "string"
+      },
+      "maxItems": 128,
+      "title": "Preserve Paths",
+      "type": "array"
+    },
+    "rationale": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Rationale",
+      "type": "string"
+    },
+    "revision_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Revision Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "revision-request.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "target_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Target Artifact Id",
+      "type": "string"
+    },
+    "validation_report_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Validation Report Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "revision_id",
+    "target_artifact_id",
+    "validation_report_id",
+    "issue_codes",
+    "operations",
+    "rationale"
+  ],
+  "title": "RevisionRequest",
+  "type": "object"
+}

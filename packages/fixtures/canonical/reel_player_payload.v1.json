@@ -1,0 +1,207 @@
+{
+  "schema_version": "reel-player-payload.v1",
+  "book_id": "book_demo",
+  "project_id": "project_demo",
+  "series_id": "series_demo_001",
+  "manga_manifest_artifact_id": "artifact_manifest_001",
+  "reel_spec_artifact_id": "artifact_reel_spec_001",
+  "reel_spec": {
+    "schema_version": "reel-spec.v1",
+    "reel_id": "reel_demo_001",
+    "series_id": "series_demo_001",
+    "sequence": 0,
+    "manga_manifest_id": "artifact_manifest_001",
+    "beat_ids": ["beat_000"],
+    "format": { "width": 1080, "height": 1920, "fps": 30, "duration_frames": 180 },
+    "style_kit_id": "style_scrollstack_manga_v1",
+    "audio": {
+      "narration_asset_id": null,
+      "music_asset_id": "asset_music_tension_001",
+      "sfx_cues": [{ "asset_id": "asset_sfx_ink_hit", "frame": 60, "gain": 0.9 }],
+      "caption_track_id": "asset_captions_reel_001"
+    },
+    "scenes": [
+      {
+        "scene_id": "reel_scene_001",
+        "start_frame": 0,
+        "duration_frames": 90,
+        "beat_ids": ["beat_000"],
+        "scene_type": "panel_focus",
+        "component_id": "panel_focus",
+        "panel_id": "panel_001",
+        "asset_id": "asset_last_observatory_key_panel_v1",
+        "focus_box_pct": { "x_pct": 5, "y_pct": 35, "width_pct": 42, "height_pct": 40 },
+        "motion_preset": "push_in",
+        "caption": "The map remembers every failure."
+      },
+      {
+        "scene_id": "reel_scene_002",
+        "start_frame": 90,
+        "duration_frames": 90,
+        "beat_ids": ["beat_000"],
+        "scene_type": "narrator_card",
+        "component_id": "narrator_card",
+        "text": "Their route ends where the last crew vanished.",
+        "background_asset_id": null,
+        "text_preset": "ink_reverse"
+      }
+    ],
+    "interaction_map": [{ "beat_id": "beat_000", "start_frame": 0, "end_frame": 180 }],
+    "source_refs": [
+      {
+        "book_id": "book_demo",
+        "source_unit_id": "unit_ch01_p001_010",
+        "page_start": 1,
+        "page_end": 10,
+        "start_offset": 120,
+        "end_offset": 268,
+        "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+        "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  },
+  "manga_manifest": {
+    "schema_version": "manga-manifest.v1",
+    "manga_id": "manga_demo_001",
+    "project_id": "project_demo",
+    "scope_id": "scope_ch01",
+    "memory_version": 3,
+    "rendered_page_artifact_ids": ["artifact_rendered_pages_001"],
+    "beats": [
+      {
+        "beat_id": "beat_000",
+        "sequence": 0,
+        "source_refs": [
+          {
+            "book_id": "book_demo",
+            "source_unit_id": "unit_ch01_p001_010",
+            "page_start": 1,
+            "page_end": 10,
+            "start_offset": 120,
+            "end_offset": 268,
+            "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+            "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "required_fact_ids": ["fact_map_records_failures"],
+        "narrative_purpose": "reveal",
+        "book_essence": "The map preserves evidence of earlier failed journeys.",
+        "dramatization": "Kael turns the map toward the lantern and the old routes flare into view.",
+        "character_intent": [
+          {
+            "character_id": "character_kael",
+            "intent": "Convince the crew that the warnings are real.",
+            "emotional_state": "urgent"
+          }
+        ],
+        "visual_intent": ["Lantern light isolates the inked failure routes."],
+        "must_preserve": ["The map records earlier failed journeys."],
+        "may_compress": ["The individual names beside each route."],
+        "confidence": 0.98
+      }
+    ],
+    "panels": [
+      {
+        "panel_id": "panel_001",
+        "page_id": "page_001",
+        "sequence": 0,
+        "beat_ids": ["beat_000"],
+        "panel_type": "reveal",
+        "dialogue": [
+          {
+            "speaker_id": "character_kael",
+            "text": "These aren't roads. They're warnings.",
+            "delivery": "hushed"
+          }
+        ],
+        "narration": ["Old failures return in fresh ink."],
+        "visual_asset_ids": ["asset_last_observatory_key_panel_v1"],
+        "crop_hints": [
+          {
+            "crop_id": "crop_map_detail",
+            "box_pct": { "x_pct": 5, "y_pct": 35, "width_pct": 42, "height_pct": 40 },
+            "subject": "The hidden routes on the map"
+          }
+        ],
+        "emotional_tone": "revelatory",
+        "source_refs": [
+          {
+            "book_id": "book_demo",
+            "source_unit_id": "unit_ch01_p001_010",
+            "page_start": 1,
+            "page_end": 10,
+            "start_offset": 120,
+            "end_offset": 268,
+            "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+            "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ]
+      }
+    ],
+    "character_asset_ids": [],
+    "art_direction_artifact_id": "artifact_art_direction_001",
+    "content_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "assets": {
+    "asset_last_observatory_key_panel_v1": {
+      "asset_id": "asset_last_observatory_key_panel_v1",
+      "kind": "image",
+      "content_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "mime_type": "image/png",
+      "url": "/media/assets/asset_last_observatory_key_panel_v1.png",
+      "url_expires_at": null,
+      "width": 1080,
+      "height": 1920,
+      "duration_ms": null
+    },
+    "asset_music_tension_001": {
+      "asset_id": "asset_music_tension_001",
+      "kind": "audio",
+      "content_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "mime_type": "audio/mpeg",
+      "url": "https://media.scrollstack.dev/reels/asset_music_tension_001.mp3",
+      "url_expires_at": "2026-07-20T06:30:00Z",
+      "width": null,
+      "height": null,
+      "duration_ms": 6000
+    },
+    "asset_sfx_ink_hit": {
+      "asset_id": "asset_sfx_ink_hit",
+      "kind": "audio",
+      "content_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+      "mime_type": "audio/wav",
+      "url": "/media/assets/asset_sfx_ink_hit.wav",
+      "url_expires_at": null,
+      "width": null,
+      "height": null,
+      "duration_ms": 800
+    },
+    "asset_captions_reel_001": {
+      "asset_id": "asset_captions_reel_001",
+      "kind": "caption_track",
+      "content_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+      "mime_type": "text/vtt",
+      "url": "/media/assets/asset_captions_reel_001.vtt",
+      "url_expires_at": null,
+      "width": null,
+      "height": null,
+      "duration_ms": 6000
+    }
+  },
+  "captions": [
+    {
+      "text": "The map remembers every failure.",
+      "start_frame": 0,
+      "end_frame": 90,
+      "speaker_id": "character_kael"
+    },
+    {
+      "text": "Their route ends where the last crew vanished.",
+      "start_frame": 90,
+      "end_frame": 180,
+      "speaker_id": null
+    }
+  ],
+  "poster_url": "/media/reels/reel_demo_001/poster.png",
+  "rendered_mp4_url": "https://media.scrollstack.dev/reels/reel_demo_001.mp4"
+}

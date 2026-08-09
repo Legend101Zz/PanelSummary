@@ -1,0 +1,66 @@
+{
+  "schema_version": "manga-manifest.v1",
+  "manga_id": "manga_demo_001",
+  "project_id": "project_demo",
+  "scope_id": "scope_ch01",
+  "memory_version": 3,
+  "rendered_page_artifact_ids": ["artifact_rendered_pages_001"],
+  "beats": [
+    {
+      "beat_id": "beat_000",
+      "sequence": 0,
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "start_offset": 120,
+          "end_offset": 268,
+          "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "required_fact_ids": ["fact_map_records_failures"],
+      "narrative_purpose": "reveal",
+      "book_essence": "The map preserves evidence of earlier failed journeys.",
+      "dramatization": "Kael turns the map toward the lantern and the old routes flare into view.",
+      "character_intent": [{ "character_id": "character_kael", "intent": "Convince the crew that the warnings are real.", "emotional_state": "urgent" }],
+      "visual_intent": ["Lantern light isolates the inked failure routes."],
+      "must_preserve": ["The map records earlier failed journeys."],
+      "may_compress": ["The individual names beside each route."],
+      "confidence": 0.98
+    }
+  ],
+  "panels": [
+    {
+      "panel_id": "panel_001",
+      "page_id": "page_001",
+      "sequence": 0,
+      "beat_ids": ["beat_000"],
+      "panel_type": "reveal",
+      "dialogue": [{ "speaker_id": "character_kael", "text": "These aren't roads. They're warnings.", "delivery": "hushed" }],
+      "narration": ["Old failures return in fresh ink."],
+      "visual_asset_ids": ["asset_last_observatory_key_panel_v1"],
+      "crop_hints": [
+        { "crop_id": "crop_map_detail", "box_pct": { "x_pct": 5, "y_pct": 35, "width_pct": 42, "height_pct": 40 }, "subject": "The hidden routes on the map" }
+      ],
+      "emotional_tone": "revelatory",
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "start_offset": 120,
+          "end_offset": 268,
+          "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ],
+  "character_asset_ids": [],
+  "art_direction_artifact_id": "artifact_art_direction_001",
+  "content_hash": "7777777777777777777777777777777777777777777777777777777777777777"
+}

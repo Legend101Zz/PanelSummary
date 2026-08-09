@@ -51,6 +51,7 @@ def test_serialize_project_exposes_control_plane_fields():
         engine="v4",
         title="Manga Control Plane",
         status="pending",
+        last_failure={},
         project_options={},
         adaptation_plan={},
         character_world_bible={},
@@ -83,3 +84,5 @@ def test_serialize_project_exposes_control_plane_fields():
     assert payload["book_synopsis"] == {}
     assert payload["arc_outline"] == {}
     assert payload["character_voice_cards"] == {}
+    # Resume mechanism: the last build failure surfaces to the API/UI.
+    assert payload["last_failure"] == {}

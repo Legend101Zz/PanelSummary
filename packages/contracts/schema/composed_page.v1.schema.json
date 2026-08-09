@@ -1,0 +1,93 @@
+{
+  "$id": "https://scrollstack.dev/contracts/composed_page.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deterministically composed, code-lettered page (composed-page.v1).",
+  "properties": {
+    "composition_version": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Composition Version"
+    },
+    "has_art": {
+      "title": "Has Art",
+      "type": "boolean"
+    },
+    "image_content_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[a-f0-9]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Image Content Hash"
+    },
+    "lettering": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Lettering",
+      "type": "string"
+    },
+    "page_art_artifact_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page Art Artifact Id"
+    },
+    "page_index": {
+      "maximum": 999,
+      "minimum": 0,
+      "title": "Page Index",
+      "type": "integer"
+    },
+    "page_plan_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Page Plan Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "composed-page.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "text_element_count": {
+      "minimum": 0,
+      "title": "Text Element Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "page_plan_id",
+    "page_index",
+    "has_art",
+    "lettering",
+    "text_element_count"
+  ],
+  "title": "ComposedPage",
+  "type": "object"
+}

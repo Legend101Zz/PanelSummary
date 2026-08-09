@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "PageRange": {
+      "additionalProperties": false,
+      "properties": {
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "page_start",
+        "page_end"
+      ],
+      "title": "PageRange",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/scope_manifest.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "book_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Book Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "created_by": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Created By",
+      "type": "string"
+    },
+    "page_ranges": {
+      "items": {
+        "$ref": "#/$defs/PageRange"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Page Ranges",
+      "type": "array"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "scope-manifest.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Scope Hash",
+      "type": "string"
+    },
+    "scope_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Scope Id",
+      "type": "string"
+    },
+    "selection_label": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Selection Label",
+      "type": "string"
+    },
+    "source_unit_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Source Unit Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "project_id",
+    "book_id",
+    "scope_id",
+    "source_unit_ids",
+    "page_ranges",
+    "selection_label",
+    "scope_hash",
+    "created_by",
+    "created_at"
+  ],
+  "title": "ScopeManifest",
+  "type": "object"
+}

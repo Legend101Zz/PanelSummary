@@ -1,0 +1,456 @@
+{
+  "stage_run_id": "stage_manga_page_writing_f11184e54fba8ea75ee7",
+  "attempts": [
+    {
+      "attempt": 1,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.17506716,
+      "tokens": {
+        "input": 188917,
+        "output": 23122,
+        "cache_read": 16786,
+        "cache_write": 13912,
+        "total": 242737
+      },
+      "latency_ms": 237391,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 2,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.19939776,
+      "tokens": {
+        "input": 207800,
+        "output": 28539,
+        "cache_read": 16786,
+        "cache_write": 13912,
+        "total": 267037
+      },
+      "latency_ms": 265050,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 3,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.121297875,
+      "tokens": {
+        "input": 125153,
+        "output": 16775,
+        "cache_read": 13245,
+        "cache_write": 13737,
+        "total": 168910
+      },
+      "latency_ms": 167915,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 4,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.18695309999999998,
+      "tokens": {
+        "input": 198399,
+        "output": 25629,
+        "cache_read": 19710,
+        "cache_write": 13924,
+        "total": 257662
+      },
+      "latency_ms": 257575,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ]
+      ]
+    },
+    {
+      "attempt": 5,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.016189799999999997,
+      "tokens": {
+        "input": 18310,
+        "output": 8178,
+        "cache_read": 14720,
+        "cache_write": 0,
+        "total": 41208
+      },
+      "latency_ms": 35670,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 6,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.01628268,
+      "tokens": {
+        "input": 18490,
+        "output": 8204,
+        "cache_read": 14848,
+        "cache_write": 0,
+        "total": 41542
+      },
+      "latency_ms": 45994,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 7,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.07824834000000001,
+      "tokens": {
+        "input": 60755,
+        "output": 40975,
+        "cache_read": 180864,
+        "cache_write": 0,
+        "total": 282594
+      },
+      "latency_ms": 409587,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 8,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.08145774,
+      "tokens": {
+        "input": 62333,
+        "output": 43351,
+        "cache_read": 178944,
+        "cache_write": 0,
+        "total": 284628
+      },
+      "latency_ms": 429682,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 9,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.06727482,
+      "tokens": {
+        "input": 30211,
+        "output": 38340,
+        "cache_read": 203392,
+        "cache_write": 0,
+        "total": 271943
+      },
+      "latency_ms": 214923,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    },
+    {
+      "attempt": 10,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.0635628,
+      "tokens": {
+        "input": 19196,
+        "output": 36810,
+        "cache_read": 227200,
+        "cache_write": 0,
+        "total": 283206
+      },
+      "latency_ms": 155387,
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "worker_error": null,
+      "tool_calls": [
+        [
+          "get_manga_canon",
+          "started"
+        ],
+        [
+          "get_manga_canon",
+          "succeeded"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "submit_page_script_set",
+          "started"
+        ],
+        [
+          "submit_page_script_set",
+          "failed"
+        ],
+        [
+          "report_page_script_blocker",
+          "started"
+        ],
+        [
+          "report_page_script_blocker",
+          "succeeded"
+        ]
+      ]
+    }
+  ],
+  "total_text_cost_usd": 1.0057320749999998
+}

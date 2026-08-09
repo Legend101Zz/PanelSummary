@@ -1,0 +1,319 @@
+{
+  "criteria": {
+    "committed_before_any_spend": true,
+    "primary": "judge fidelity score on the COMPOSED page (m3-judge-rubrics.v1, same rubric as the S7 baseline \u2014 untouched this session)",
+    "mechanism_check": "vision binding_score over ART-BEARING panels only (A: probed panels; B: the key panel; C: all panels). Binding is undefined for the dsl_only baseline and is A/B/C-relative only.",
+    "tiebreak": "measured image cost per page (receipts, not price sheets)",
+    "excluded": "border adherence for code-assembled pages (A/B): geometry is drawn by code, adherence ~1.0 by construction \u2014 recorded, not scored",
+    "candidate_a_gate": "steering rule: if the probe's measured per-panel price does not undercut $0.039/panel, A is NOT scaled \u2014 its economics become an OPEN OWNER COST DECISION and B/C compete for the win"
+  },
+  "candidates": {
+    "B": {
+      "scorecard_artifact_id": "eval_scorecard_008ebc2c06f3523e9dceda4c",
+      "scorecard": {
+        "schema_version": "eval-scorecard.v1",
+        "harness_version": "manga-eval-harness.v1",
+        "layout_iou_version": "layout-iou.v1",
+        "judge_rubric_version": "m3-judge-rubrics.v1",
+        "project_id": "6a0b5a5b201a8d03f1d82503",
+        "run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "lane": "C",
+        "subject": "composed",
+        "pages": [
+          {
+            "page_index": 0,
+            "layout_iou": {
+              "page_iou": 0.7254707872732427,
+              "panel_ious": {
+                "panel_0": 0.7503631660997733,
+                "panel_1": 0.9573944160997733,
+                "panel_2": 0.35487528344671204,
+                "panel_3": 0.839250283446712
+              },
+              "seeded_panels": 4,
+              "metric_version": "layout-iou.v1"
+            },
+            "border_adherence_score": 0.9869791666666666,
+            "ocr_clean": true,
+            "judge": {
+              "readability": 2,
+              "fidelity": {
+                "score": 1,
+                "claims_conveyed": 3,
+                "claims_total": 36
+              },
+              "craft": {
+                "page_turn_hook": 1,
+                "shot_variety": 1,
+                "text_density_comfort": 2
+              },
+              "notes": "Three of four panels are empty; only panel 2 has a single caption. The illustration in panel 2 depicts Hem (an old cloaked figure) seated, with a young mouse offering what appears to be New Cheese and a speech bubble reading 'I want my old Cheese back. I'm not going to change until I get it.' This partially conveys Hem's resistance to change and his rejection of New Cheese. However, the visual depicts Hem as the speaker while the caption mentions Haw's fear in the dark passage \u2014 there's a character mismatch. None of the four planned story beats are properly represented: no Haw at a maze junction gripping a wall, no Haw running with exhilaration and a cool breeze, no Cheese Station C scene, no close-up of Haw writing a wall message. The caption 'What you are afraid of is never as bad as what you imagine' is present but disconnected from the imagery. The vast majority of must-preserve claims are missing entirely."
+            },
+            "judge_cost_usd": 0.0005,
+            "notes": [
+              "s8 bake-off candidate B (composed)",
+              "binding_score=1.0 over 1 art panels"
+            ]
+          },
+          {
+            "page_index": 1,
+            "layout_iou": {
+              "page_iou": 0.7773105335884354,
+              "panel_ious": {
+                "panel_4": 0.4409943664965986,
+                "panel_5": 0.7615238803854876,
+                "panel_6": 0.9573944160997733,
+                "panel_7": 0.9493294713718821
+              },
+              "seeded_panels": 4,
+              "metric_version": "layout-iou.v1"
+            },
+            "border_adherence_score": 1.0,
+            "ocr_clean": true,
+            "judge": {
+              "readability": 3,
+              "fidelity": {
+                "score": 2,
+                "claims_conveyed": 4,
+                "claims_total": 37
+              },
+              "craft": {
+                "page_turn_hook": 2,
+                "shot_variety": 2,
+                "text_density_comfort": 3
+              },
+              "notes": "The page contains four panels but only two convey actual story content. Panel 1 shows a cheese pile with mice and a small figure, conveying 'Sniff and Scurry were already there and welcomed Haw' and possibly 'greatest supply of Cheese' - though Haw's figure is oddly tiny and his discovery moment is muted. The 'Hooray for Change' speech bubble conveys that claim, and the narrator box conveys 'biggest inhibitor to change lies within yourself.' Panel 3 has a tiny 'Hem...?' thought balloon but no visual of footsteps or Hem approaching, so the payoff of Panel 4 is barely readable. Panels 2 and 4 in the intended beat order (Haw drawing on wall; reunion at hotel lounge) are entirely missing or replaced with empty panels. The vast majority of the 37 must-preserve claims are not conveyed. Shot variety is poor (two empty panels dominate), and the page-turn hook into the next page is weak given that Panel 3's 'Hem...?' offers only minimal curiosity."
+            },
+            "judge_cost_usd": 0.000513,
+            "notes": [
+              "s8 bake-off candidate B (composed)",
+              "binding_score=0.75 over 1 art panels"
+            ]
+          }
+        ],
+        "totals": {
+          "mean_layout_iou": 0.751390660430839,
+          "judged_pages": 2,
+          "judge_cost_usd": 0.001013
+        },
+        "extra": {
+          "session": 8,
+          "bakeoff_candidate": "B",
+          "binding_scores": [
+            1.0,
+            0.75
+          ],
+          "art_panels": {
+            "0": [
+              "panel_2"
+            ],
+            "1": [
+              "panel_4"
+            ]
+          }
+        }
+      },
+      "binding_scores": [
+        1.0,
+        0.75
+      ],
+      "diff_vs_s7_baseline": {
+        "schema_version": "eval-scorecard-diff.v1",
+        "verdict": "regression",
+        "baseline_run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "candidate_run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "baseline_subject": "composed",
+        "candidate_subject": "composed",
+        "pages_compared": [
+          0,
+          1
+        ],
+        "pages_only_in_baseline": [],
+        "pages_only_in_candidate": [],
+        "regressions": [
+          "page 0: layout_iou -0.116",
+          "page 1: layout_iou -0.107"
+        ],
+        "improvements": [
+          "page 1: craft_mean +1.000"
+        ],
+        "pages": [
+          {
+            "page_index": 0,
+            "layout_iou_delta": -0.1157924107142857,
+            "border_adherence_delta": 0.0,
+            "judge_deltas": {
+              "craft_mean": 0.0,
+              "fidelity_rate": 0.02927927927927927,
+              "readability": 0.0
+            }
+          },
+          {
+            "page_index": 1,
+            "layout_iou_delta": -0.10706313775510201,
+            "border_adherence_delta": 0.0,
+            "judge_deltas": {
+              "craft_mean": 1.0000000000000002,
+              "fidelity_rate": 0.05405405405405406,
+              "readability": 0.0
+            }
+          }
+        ]
+      }
+    },
+    "B-v3": {
+      "scorecard_artifact_id": "eval_scorecard_29911e2dbf23757662dec881",
+      "scorecard": {
+        "schema_version": "eval-scorecard.v1",
+        "harness_version": "manga-eval-harness.v1",
+        "layout_iou_version": "layout-iou.v1",
+        "judge_rubric_version": "m3-judge-rubrics.v1",
+        "project_id": "6a0b5a5b201a8d03f1d82503",
+        "run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "lane": "C",
+        "subject": "composed",
+        "pages": [
+          {
+            "page_index": 0,
+            "layout_iou": {
+              "page_iou": 0.6868899252409297,
+              "panel_ious": {
+                "panel_0": 0.7503631660997733,
+                "panel_1": 0.8030709679705216,
+                "panel_2": 0.35487528344671204,
+                "panel_3": 0.839250283446712
+              },
+              "seeded_panels": 4,
+              "metric_version": "layout-iou.v1"
+            },
+            "border_adherence_score": 0.9869791666666666,
+            "ocr_clean": true,
+            "judge": {
+              "readability": 3,
+              "fidelity": {
+                "score": 1,
+                "claims_conveyed": 3,
+                "claims_total": 37
+              },
+              "craft": {
+                "page_turn_hook": 1,
+                "shot_variety": 1,
+                "text_density_comfort": 2
+              },
+              "notes": "Only one of four panels is actually illustrated (bottom-right). Panels 1, 2, and 3 are empty frames with only narration/caption text floating in them, so no visuals carry the story beats: Haw at the maze junction gripping the wall (Panel 1), Haw running with breeze/invigoration and smiling (Panel 2), and Haw offering New Cheese bits at Cheese Station C to a reluctant Hem (Panel 3) are all missing as imagery. Panel 4 shows Hem refusing change (speech bubble 'I want my old Cheese back, I'm not going to change until I get it') and a caption 'What you are afraid of is never as bad as what you imagine,' so a couple of claims are partially conveyed (Hem refusing/denying change, fear-imagined-worse-than-reality). However, Haw is not shown writing on the wall, no Cheese Station is identified, no running/breeze/smiling, no Sniff/Scurry, no toast, no shoes around neck, no trails, no 'Hooray for Change,' no empty cheese station reveal, no one approaching, no peer pressure beat, etc. Reading order is clear but three of four panels have zero story content. Shot variety is absent (one image), page-turn hook is weak since the climax panels are blank. Heavy reliance on caption text to do the storytelling, with one mismatched image that doesn't match its intended beat."
+            },
+            "judge_cost_usd": 0.00056,
+            "notes": [
+              "s8 bake-off candidate B-v3 (composed)",
+              "binding_score=1.0 over 1 art panels"
+            ]
+          },
+          {
+            "page_index": 1,
+            "layout_iou": {
+              "page_iou": 0.7303259194302721,
+              "panel_ious": {
+                "panel_4": 0.4409943664965986,
+                "panel_5": 0.7615238803854876,
+                "panel_6": 0.7694559594671202,
+                "panel_7": 0.9493294713718821
+              },
+              "seeded_panels": 4,
+              "metric_version": "layout-iou.v1"
+            },
+            "border_adherence_score": 1.0,
+            "ocr_clean": true,
+            "judge": {
+              "readability": 3,
+              "fidelity": {
+                "score": 1,
+                "claims_conveyed": 4,
+                "claims_total": 37
+              },
+              "craft": {
+                "page_turn_hook": 2,
+                "shot_variety": 2,
+                "text_density_comfort": 3
+              },
+              "notes": "The page is largely empty/text-only and fails to convey nearly all of the required story beats. Panel order appears shuffled vs. the stated reading order: the 'former classmates reunion' narration is placed in panel 4 (bottom right) while the 'Haw rounds the corner into Cheese Station N' image is in panel 2 (top right) and panels 1 and 3 are nearly blank except for a single line of narration/text. The two visual panels show: (1) Haw arriving at a mountain of cheese with Sniff and Scurry on top, with a 'Hooray for Change!' speech bubble, and (2) a thought balloon 'Hem...?' \u2014 but these are not arranged in the specified reading order (panel 2 should be Haw writing on the wall, panel 4 should show hearing footsteps; neither is depicted as authored). Massive information loss: no depiction of the wall writing, the hotel lounge reunion gathering, classmates raising hands, Hem's resistance, Haw's smile while running, hanging shoes, cool breeze, imagery of new cheese, peer pressure reversal, etc. Only a handful of claims are even tangentially suggested: Sniff/Scurry welcoming Haw (panel 2), greatest cheese supply (panel 2), Haw saying 'Hooray for Change' (panel 2), Hem being wondered about (panel 4 balloon), and the 'biggest inhibitor' line (panel 1 caption). Shot variety is limited to one establishing shot and one tiny reaction; page-turn hook is weak with mostly white space."
+            },
+            "judge_cost_usd": 0.000576,
+            "notes": [
+              "s8 bake-off candidate B-v3 (composed)",
+              "binding_score=0.0 over 1 art panels"
+            ]
+          }
+        ],
+        "totals": {
+          "mean_layout_iou": 0.708607922335601,
+          "judged_pages": 2,
+          "judge_cost_usd": 0.0011359999999999999
+        },
+        "extra": {
+          "session": 8,
+          "bakeoff_candidate": "B-v3",
+          "binding_scores": [
+            1.0,
+            0.0
+          ],
+          "art_panels": {
+            "0": [
+              "panel_2"
+            ],
+            "1": [
+              "panel_4"
+            ]
+          }
+        }
+      },
+      "binding_scores": [
+        1.0,
+        0.0
+      ],
+      "diff_vs_s7_baseline": {
+        "schema_version": "eval-scorecard-diff.v1",
+        "verdict": "regression",
+        "baseline_run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "candidate_run_id": "run_dir_a99464c56fa3b96e777fe750",
+        "baseline_subject": "composed",
+        "candidate_subject": "composed",
+        "pages_compared": [
+          0,
+          1
+        ],
+        "pages_only_in_baseline": [],
+        "pages_only_in_candidate": [],
+        "regressions": [
+          "page 0: layout_iou -0.154",
+          "page 1: layout_iou -0.154"
+        ],
+        "improvements": [
+          "page 0: readability +1.000",
+          "page 1: craft_mean +1.000"
+        ],
+        "pages": [
+          {
+            "page_index": 0,
+            "layout_iou_delta": -0.15437327274659862,
+            "border_adherence_delta": 0.0,
+            "judge_deltas": {
+              "craft_mean": 0.0,
+              "fidelity_rate": 0.02702702702702703,
+              "readability": 1.0
+            }
+          },
+          {
+            "page_index": 1,
+            "layout_iou_delta": -0.15404775191326525,
+            "border_adherence_delta": 0.0,
+            "judge_deltas": {
+              "craft_mean": 1.0000000000000002,
+              "fidelity_rate": 0.05405405405405406,
+              "readability": 0.0
+            }
+          }
+        ]
+      }
+    }
+  }
+}

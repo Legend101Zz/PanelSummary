@@ -1,0 +1,127 @@
+{
+  "plan_hash": "c6330967d477381b34d30c5cb5dd26b297d4af9d0a8da7dc2633c02b1e29c9fe",
+  "status": "stopped_failure",
+  "elapsed_seconds": 100.5,
+  "granted": {
+    "text_usd": 0.9,
+    "image_usd": 0.25
+  },
+  "remaining": {
+    "text_usd": 0.80557,
+    "image_usd": 0.25
+  },
+  "totals": {
+    "text_usd": 0.09443013,
+    "image_usd": 0.0
+  },
+  "scopes_planned": [
+    {
+      "sequence": 0,
+      "label": "chain 00: An A-Mazing Way To Deal With Change In Your Work And In Your Life / An A-Mazing Way To Deal With Change In You",
+      "source_unit_ids": [
+        "section_0001_000_00_0eba1c2a9b79",
+        "section_0007_000_00_f7c3296f3ced",
+        "section_0008_000_00_b4b4dc270b13",
+        "section_0008_000_01_14a3176ac46a"
+      ],
+      "token_count": 7506,
+      "budget": {
+        "text_usd": 0.73185,
+        "image_usd": 0.156,
+        "judge_usd": 0.0018
+      }
+    },
+    {
+      "sequence": 1,
+      "label": "chain 01: weighed down by fearful beliefs. / weighed down by fearful beliefs.",
+      "source_unit_ids": [
+        "section_0009_000_00_ab5005823d0b",
+        "section_0010_000_00_8b6cac48cbd7",
+        "section_0010_000_01_747a90de2166"
+      ],
+      "token_count": 9664,
+      "budget": {
+        "text_usd": 0.73185,
+        "image_usd": 0.156,
+        "judge_usd": 0.0018
+      }
+    }
+  ],
+  "skipped_units": [
+    {
+      "source_unit_id": "section_0004_000_00_222d767c39c3",
+      "reason": "below_token_floor",
+      "heading": "Parts of All of Us / Parts of All of Us",
+      "token_count": 99
+    },
+    {
+      "source_unit_id": "section_0005_000_00_b184f4508866",
+      "reason": "below_token_floor",
+      "heading": "Hem / Hem",
+      "token_count": 20
+    },
+    {
+      "source_unit_id": "section_0006_000_00_74437bd5ed8f",
+      "reason": "below_token_floor",
+      "heading": "Haw / Haw",
+      "token_count": 56
+    },
+    {
+      "source_unit_id": "section_0011_000_00_14cb14ad2b29",
+      "reason": "below_token_floor",
+      "heading": "Services / Services",
+      "token_count": 21
+    },
+    {
+      "source_unit_id": "section_0012_000_00_809f4d300f0c",
+      "reason": "below_token_floor",
+      "heading": "The 'New Cheese 'Experience / The 'New Cheese 'Experience",
+      "token_count": 34
+    },
+    {
+      "source_unit_id": "section_0013_000_00_dd1ea7815e42",
+      "reason": "below_token_floor",
+      "heading": "Who Moved My Cheese? The Movie: / Who Moved My Cheese? The Movie:",
+      "token_count": 56
+    },
+    {
+      "source_unit_id": "section_0014_000_00_603ae87a15c8",
+      "reason": "below_token_floor",
+      "heading": "Aft A-Mawng Change Profile: / Aft A-Mawng Change Profile:",
+      "token_count": 34
+    },
+    {
+      "source_unit_id": "section_0015_000_00_a03e37358e0d",
+      "reason": "below_token_floor",
+      "heading": "NEW! Who Moved My Cheese? Personal Planner Inserts / Binder: / NEW! Who Moved My Cheese? Personal Planner Inserts / Binder:",
+      "token_count": 40
+    },
+    {
+      "source_unit_id": "section_0016_000_00_140559a2b8b3",
+      "reason": "below_token_floor",
+      "heading": "Fun, Practical Reminders / Fun, Practical Reminders",
+      "token_count": 50
+    }
+  ],
+  "executions": [
+    {
+      "sequence": 0,
+      "scope_id": "scope_b16102b70da51717717ce2de",
+      "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+      "status": "failed",
+      "text_cost_usd": 0.09443013,
+      "image_cost_usd": 0.0,
+      "judge_cost_usd": 0.0,
+      "reused_stages": [
+        "manga_direction",
+        "manga_page_writing"
+      ],
+      "plan_artifact_id": "manga_plan_6e7ed0b7403aeae08da9bb5a",
+      "script_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+      "thumbnail_artifact_id": null,
+      "scorecard_artifact_id": null,
+      "memory_version_after": null,
+      "error": "AgentWorkerError: Agent worker returned HTTP 422"
+    }
+  ]
+}

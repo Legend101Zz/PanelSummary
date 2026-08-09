@@ -1,0 +1,55 @@
+{
+  "schema_version": "eval-scorecard.v1",
+  "harness_version": "manga-eval-harness.v1",
+  "layout_iou_version": "layout-iou.v1",
+  "judge_rubric_version": "m3-judge-rubrics.v1",
+  "project_id": "6a0b5a5b201a8d03f1d82503",
+  "run_id": "run_dir_a99464c56fa3b96e777fe750",
+  "lane": "C",
+  "subject": "s5-accepted-page-art",
+  "pages": [
+    {
+      "page_index": 0,
+      "layout_iou": {
+        "page_iou": 0.3841439113454248,
+        "panel_ious": {
+          "panel_0_1": 0.6433133149092971,
+          "panel_0_0": 0.6136621315192744,
+          "panel_0_2": 0.0,
+          "panel_0_3": 0.2796001989531276
+        },
+        "seeded_panels": 3,
+        "metric_version": "layout-iou.v1"
+      },
+      "border_adherence_score": 0.7994791666666666,
+      "ocr_clean": true,
+      "judge": null,
+      "judge_cost_usd": 0.0,
+      "notes": []
+    },
+    {
+      "page_index": 1,
+      "layout_iou": {
+        "page_iou": 0.32857231434240364,
+        "panel_ious": {
+          "panel_1_1": 0.5275120464852607,
+          "panel_1_0": 0.006226969954648526,
+          "panel_1_2": 0.6405187074829932,
+          "panel_1_3": 0.14003153344671201
+        },
+        "seeded_panels": 4,
+        "metric_version": "layout-iou.v1"
+      },
+      "border_adherence_score": 1.0,
+      "ocr_clean": true,
+      "judge": null,
+      "judge_cost_usd": 0.0,
+      "notes": []
+    }
+  ],
+  "totals": {
+    "mean_layout_iou": 0.3563581128439142,
+    "judged_pages": 0,
+    "judge_cost_usd": 0.0
+  }
+}

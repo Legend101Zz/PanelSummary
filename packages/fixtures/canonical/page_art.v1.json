@@ -1,0 +1,70 @@
+{
+  "schema_version": "page-art.v1",
+  "page_art_version": "manga-page-art.v1",
+  "page_plan_id": "page_plan_demo_0",
+  "page_index": 0,
+  "rendering_mode": "C",
+  "image_model": "google/gemini-2.5-flash-image",
+  "attempt": 1,
+  "cost_usd": 0.039,
+  "conditioning": {
+    "skeleton": "compiled-layout skeleton (thick borders + read badges)",
+    "compiler_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "character_references": [
+      "haw__reference_sheet__front.png"
+    ]
+  },
+  "gates": {
+    "accepted": true,
+    "gate_policy_version": "page-art-gates.v3",
+    "vision_text_advisory": false,
+    "vision_empty_balloon": false,
+    "reject_reason": "",
+    "ocr": {
+      "clean": true,
+      "text_words": [],
+      "raw_word_count": 38,
+      "gate_version": "page-art-ocr-gate.v1"
+    },
+    "border_adherence": {
+      "page_score": 1.0,
+      "panel_scores": {
+        "panel_1": 1.0
+      },
+      "passed": true,
+      "threshold": 0.55,
+      "metric_version": "page-art-border-adherence.v1"
+    },
+    "vision_qa": {
+      "panel_count": 2,
+      "panels": [],
+      "overall_ok": true
+    },
+    "vision_cost_usd": 0.0004
+  },
+  "slicing_map": {
+    "panel_1": {
+      "bbox": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 1.0,
+        "height": 0.48
+      },
+      "clip_path": "polygon(0% 0%, 100% 0%, 100% 48%, 0% 48%)",
+      "read_rank": 0,
+      "mask_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "panel_2": {
+      "bbox": {
+        "x": 0.0,
+        "y": 0.52,
+        "width": 1.0,
+        "height": 0.48
+      },
+      "clip_path": "polygon(0% 52%, 100% 52%, 100% 100%, 0% 100%)",
+      "read_rank": 1,
+      "mask_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  "receipt_artifact_id": "provider_receipt_demo0000000001"
+}

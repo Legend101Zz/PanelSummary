@@ -1,0 +1,23 @@
+{
+  "schema_version": "compiled-layout.v1",
+  "page_plan_id": "page_plan_splash",
+  "layout_engine_version": "manga-layout.v1",
+  "compiler_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "panels": [
+    {
+      "panel_id": "panel_splash",
+      "node_id": "node_splash",
+      "polygon": [
+        { "x": 0.03, "y": 0.02 },
+        { "x": 0.97, "y": 0.02 },
+        { "x": 0.97, "y": 0.98 },
+        { "x": 0.03, "y": 0.98 }
+      ],
+      "bbox": { "x": 0.03, "y": 0.02, "width": 0.94, "height": 0.96 },
+      "clip_path": "M 0.03 0.02 L 0.97 0.02 L 0.97 0.98 L 0.03 0.98 Z",
+      "z_index": 0,
+      "read_rank": 0
+    }
+  ],
+  "adjacency": []
+}

@@ -1,0 +1,700 @@
+{
+  "tool": "submit_page_script_set",
+  "scope": {
+    "correlation_id": "goal_379729208df88e8cf8e1_1",
+    "goal_id": "goal_379729208df88e8cf8e1_1",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "stage_run_id": "stage_manga_page_writing_379729208df88e8cf8e1",
+    "context_pack_id": "context_058ec480dbfd284cad53af5b",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:13:04.978679+00:00",
+  "arguments": {
+    "script_set": {
+      "schema_version": "page-script-set.v1",
+      "script_set_id": "pss_haw_maze_379729208df88e8cf8e1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "plan_artifact_id": "manga_plan_02734c7ca4e0282f06195a84",
+      "context_pack_id": "context_058ec480dbfd284cad53af5b",
+      "pages": [
+        {
+          "page_id": "page_0",
+          "page_index": 0,
+          "page_kind": "standard",
+          "entry_state": "Haw stands in the dark maze corridor, fear tightening his chest as he grips the wall to write a marker.",
+          "exit_state": "Haw runs through the maze with greater strength and agility, having written wisdom on the walls for Hem.",
+          "page_turn_panel_id": "panel_p0_3",
+          "panels": [
+            {
+              "panel_id": "panel_p0_0",
+              "purpose": "setup",
+              "story_beat": "Haw grips a chalk stub and writes on the dark maze wall, recalling the times he felt his best when moving along.",
+              "importance": "high",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "reaching up to scrawl on the wall while gripping chalk",
+                  "expression": "wary yet hopeful",
+                  "anchor": {
+                    "x": 0.7,
+                    "y": 0.35
+                  },
+                  "scale": 0.6,
+                  "facing": "left",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_1",
+              "purpose": "action",
+              "story_beat": "Haw charges into the dark corridor, arms pumping and a spreading smile on his face as the cool breeze washes over him.",
+              "importance": "medium",
+              "tempo": "quick",
+              "camera": {
+                "shot": "wide",
+                "angle": "low",
+                "movement": "tracking"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "running mid-stride with arms pumping and feet lifting off the floor",
+                  "expression": "exhilarated and free",
+                  "anchor": {
+                    "x": 0.25,
+                    "y": 0.35
+                  },
+                  "scale": 0.55,
+                  "facing": "right",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.05,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_2",
+              "purpose": "reaction",
+              "story_beat": "Haw extends bits of New Cheese toward Hem at Cheese Station C, but Hem crosses his arms and shakes his head, refusing to change.",
+              "importance": "medium",
+              "tempo": "normal",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "extending his hand holding small cheese bits toward Hem",
+                  "expression": "disappointed but accepting",
+                  "anchor": {
+                    "x": 0.7,
+                    "y": 0.7
+                  },
+                  "scale": 0.5,
+                  "facing": "left",
+                  "depth": "midground"
+                },
+                {
+                  "subject_ref": "char_hem",
+                  "pose": "arms crossed, stepping back and shaking his head firmly",
+                  "expression": "resistant and fearful",
+                  "anchor": {
+                    "x": 0.9,
+                    "y": 0.75
+                  },
+                  "scale": 0.45,
+                  "facing": "front",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.55,
+                  "width": 0.4,
+                  "height": 0.4
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_3",
+              "purpose": "reveal",
+              "story_beat": "Haw pauses at the maze wall to write that what you are afraid of is never as bad as what you imagine, leaving a marked trail.",
+              "importance": "page_turn",
+              "tempo": "hold",
+              "camera": {
+                "shot": "close_up",
+                "angle": "eye",
+                "movement": "push_in"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "writing intently on the wall with chalk, looking back at his words",
+                  "expression": "enlightened and purposeful",
+                  "anchor": {
+                    "x": 0.2,
+                    "y": 0.7
+                  },
+                  "scale": 0.5,
+                  "facing": "right",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.05,
+                  "y": 0.55,
+                  "width": 0.4,
+                  "height": 0.4
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            }
+          ],
+          "text_elements": [
+            {
+              "text_id": "txt_p0_0",
+              "panel_id": "panel_p0_0",
+              "kind": "narration",
+              "content": "Haw wrote on the wall, knowing it was as much a reminder to himself as a marker for Hem to follow.",
+              "writing_direction": "horizontal",
+              "shape": "caption",
+              "preferred_region": {
+                "x": 0.52,
+                "y": 0.02,
+                "width": 0.45,
+                "height": 0.1
+              },
+              "typography": {
+                "font_token": "caption_serif",
+                "weight": 400,
+                "min_px": 10,
+                "max_px": 22,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            },
+            {
+              "text_id": "txt_p0_2",
+              "panel_id": "panel_p0_2",
+              "kind": "dialogue",
+              "content": "I want my own Cheese back. I'm not going to change until I get what I want.",
+              "speaker_ref": "char_hem",
+              "emotion": "resistant",
+              "writing_direction": "vertical",
+              "shape": "oval",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.55,
+                "width": 0.4,
+                "height": 0.18
+              },
+              "tail_target": {
+                "subject_ref": "char_hem",
+                "point": {
+                  "x": 0.9,
+                  "y": 0.75
+                }
+              },
+              "typography": {
+                "font_token": "dialogue_sans",
+                "weight": 700,
+                "min_px": 11,
+                "max_px": 22,
+                "emphasis": "bold"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            },
+            {
+              "text_id": "txt_p0_3",
+              "panel_id": "panel_p0_3",
+              "kind": "narration",
+              "content": "What you are afraid of is never as bad as what you imagine. The fear built up in your mind is worse than the situation.",
+              "writing_direction": "horizontal",
+              "shape": "caption",
+              "preferred_region": {
+                "x": 0.05,
+                "y": 0.55,
+                "width": 0.4,
+                "height": 0.1
+              },
+              "typography": {
+                "font_token": "caption_serif",
+                "weight": 400,
+                "min_px": 10,
+                "max_px": 20,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            }
+          ]
+        },
+        {
+          "page_id": "page_1",
+          "page_index": 1,
+          "page_kind": "standard",
+          "entry_state": "Haw rounds a corner into an unfamiliar corridor with mounting anticipation.",
+          "exit_state": "Haw hears movement echoing from the maze and wonders if Hem is finally arriving.",
+          "page_turn_panel_id": "panel_p1_3",
+          "panels": [
+            {
+              "panel_id": "panel_p1_0",
+              "purpose": "payoff",
+              "story_beat": "Haw rounds the corner and finds Cheese Station N piled high with the greatest supply of Cheese he has ever seen, greeted by Sniff and Scurry.",
+              "importance": "high",
+              "tempo": "impact",
+              "camera": {
+                "shot": "extreme_wide",
+                "angle": "low",
+                "movement": "push_in"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "standing at the station entrance with mouth open in joyful surprise",
+                  "expression": "triumphant and joyful",
+                  "anchor": {
+                    "x": 0.65,
+                    "y": 0.35
+                  },
+                  "scale": 0.4,
+                  "facing": "left",
+                  "depth": "midground"
+                },
+                {
+                  "subject_ref": "char_sniff",
+                  "pose": "nodding head in welcome beside a towering cheese pile",
+                  "expression": "content and welcoming",
+                  "anchor": {
+                    "x": 0.85,
+                    "y": 0.4
+                  },
+                  "scale": 0.3,
+                  "facing": "left",
+                  "depth": "background"
+                },
+                {
+                  "subject_ref": "char_scurry",
+                  "pose": "waving paw from atop a stacked cheese pile",
+                  "expression": "cheerful and amused",
+                  "anchor": {
+                    "x": 0.9,
+                    "y": 0.25
+                  },
+                  "scale": 0.3,
+                  "facing": "left",
+                  "depth": "background"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p1_1",
+              "purpose": "reveal",
+              "story_beat": "Haw reflects on his journey and writes a summary of his lessons on the largest wall at Cheese Station N, surrounded by a drawn cheese.",
+              "importance": "medium",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "writing on the largest wall with chalk, glancing at the cheese drawing around the text",
+                  "expression": "reflective and at peace",
+                  "anchor": {
+                    "x": 0.25,
+                    "y": 0.35
+                  },
+                  "scale": 0.55,
+                  "facing": "right",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.05,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p1_2",
+              "purpose": "reaction",
+              "story_beat": "At the hotel lounge reunion, Carlos admits he was like Hem who wanted to stay in familiar territory, while Laura leans in with intent attention.",
+              "importance": "medium",
+              "tempo": "normal",
+              "camera": {
+                "shot": "wide",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_carlos",
+                  "pose": "speaking across a lounge table with a rueful half-smile",
+                  "expression": "self-aware and rueful",
+                  "anchor": {
+                    "x": 0.65,
+                    "y": 0.7
+                  },
+                  "scale": 0.4,
+                  "facing": "left",
+                  "depth": "midground"
+                },
+                {
+                  "subject_ref": "char_laura",
+                  "pose": "leaning forward with elbows on the table, listening intently",
+                  "expression": "thoughtful and resolute",
+                  "anchor": {
+                    "x": 0.85,
+                    "y": 0.75
+                  },
+                  "scale": 0.35,
+                  "facing": "left",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.55,
+                  "width": 0.4,
+                  "height": 0.4
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0010_000_00_8b6cac48cbd7",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "8b6cac48cbd7d1bc4a5d6b48448619cd6022e48e0e1ab910180eda101289db68"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p1_3",
+              "purpose": "payoff",
+              "story_beat": "Haw hears the sound of movement in the Maze and wonders if Hem is finally arriving at Cheese Station N.",
+              "importance": "page_turn",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "low",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "standing still at the station entrance, head tilted toward the maze sound",
+                  "expression": "hopeful and alert",
+                  "anchor": {
+                    "x": 0.2,
+                    "y": 0.7
+                  },
+                  "scale": 0.55,
+                  "facing": "right",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.05,
+                  "y": 0.55,
+                  "width": 0.4,
+                  "height": 0.4
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0010_000_01_747a90de2166",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": "",
+                  "end_offset": "",
+                  "quote": "",
+                  "text_hash": "747a90de21660a8038f38d261ded546e826565f5c275c1a66d4a7a6fc5387125"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            }
+          ],
+          "text_elements": [
+            {
+              "text_id": "txt_p1_0",
+              "panel_id": "panel_p1_0",
+              "kind": "dialogue",
+              "content": "Hooray for Change!",
+              "speaker_ref": "char_haw",
+              "emotion": "joyful",
+              "writing_direction": "vertical",
+              "shape": "jagged",
+              "preferred_region": {
+                "x": 0.52,
+                "y": 0.3,
+                "width": 0.45,
+                "height": 0.15
+              },
+              "tail_target": {
+                "subject_ref": "char_haw",
+                "point": {
+                  "x": 0.65,
+                  "y": 0.35
+                }
+              },
+              "typography": {
+                "font_token": "dialogue_sans",
+                "weight": 700,
+                "min_px": 16,
+                "max_px": 36,
+                "emphasis": "shout"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            },
+            {
+              "text_id": "txt_p1_1",
+              "panel_id": "panel_p1_1",
+              "kind": "narration",
+              "content": "The fastest way to change is to laugh at your own folly\u2014then you can let go and quickly move on.",
+              "writing_direction": "horizontal",
+              "shape": "caption",
+              "preferred_region": {
+                "x": 0.05,
+                "y": 0.02,
+                "width": 0.45,
+                "height": 0.1
+              },
+              "typography": {
+                "font_token": "caption_serif",
+                "weight": 400,
+                "min_px": 10,
+                "max_px": 22,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            },
+            {
+              "text_id": "txt_p1_2",
+              "panel_id": "panel_p1_2",
+              "kind": "dialogue",
+              "content": "I was more like Hem, who wanted to stay in familiar territory.",
+              "speaker_ref": "char_carlos",
+              "emotion": "rueful",
+              "writing_direction": "vertical",
+              "shape": "oval",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.55,
+                "width": 0.4,
+                "height": 0.18
+              },
+              "tail_target": {
+                "subject_ref": "char_carlos",
+                "point": {
+                  "x": 0.65,
+                  "y": 0.7
+                }
+              },
+              "typography": {
+                "font_token": "dialogue_sans",
+                "weight": 400,
+                "min_px": 11,
+                "max_px": 22,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 10
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

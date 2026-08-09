@@ -1,0 +1,168 @@
+{
+  "$defs": {
+    "JsonValue": {},
+    "PageArtConditioning": {
+      "additionalProperties": false,
+      "properties": {
+        "character_references": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Character References",
+          "type": "array"
+        },
+        "compiler_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Compiler Hash",
+          "type": "string"
+        },
+        "skeleton": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Skeleton",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skeleton",
+        "compiler_hash"
+      ],
+      "title": "PageArtConditioning",
+      "type": "object"
+    },
+    "PageArtSlicingEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Bbox",
+          "type": "object"
+        },
+        "clip_path": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Clip Path",
+          "type": "string"
+        },
+        "mask_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Mask Hash",
+          "type": "string"
+        },
+        "read_rank": {
+          "minimum": 0,
+          "title": "Read Rank",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "bbox",
+        "clip_path",
+        "read_rank",
+        "mask_hash"
+      ],
+      "title": "PageArtSlicingEntry",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/page_art.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Accepted text-free lane-C art for one page (page-art.v1).",
+  "properties": {
+    "attempt": {
+      "minimum": 1,
+      "title": "Attempt",
+      "type": "integer"
+    },
+    "conditioning": {
+      "$ref": "#/$defs/PageArtConditioning"
+    },
+    "cost_usd": {
+      "minimum": 0.0,
+      "title": "Cost Usd",
+      "type": "number"
+    },
+    "gates": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Gates",
+      "type": "object"
+    },
+    "image_model": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Image Model",
+      "type": "string"
+    },
+    "page_art_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Page Art Version",
+      "type": "string"
+    },
+    "page_index": {
+      "maximum": 999,
+      "minimum": 0,
+      "title": "Page Index",
+      "type": "integer"
+    },
+    "page_plan_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Page Plan Id",
+      "type": "string"
+    },
+    "receipt_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Receipt Artifact Id",
+      "type": "string"
+    },
+    "rendering_mode": {
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ],
+      "title": "Rendering Mode",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "page-art.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "slicing_map": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PageArtSlicingEntry"
+      },
+      "title": "Slicing Map",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "page_art_version",
+    "page_plan_id",
+    "page_index",
+    "rendering_mode",
+    "image_model",
+    "attempt",
+    "cost_usd",
+    "conditioning",
+    "gates",
+    "slicing_map",
+    "receipt_artifact_id"
+  ],
+  "title": "PageArt",
+  "type": "object"
+}

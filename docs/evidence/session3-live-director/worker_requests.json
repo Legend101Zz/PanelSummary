@@ -1,0 +1,81 @@
+[
+ {
+  "msg": "Server listening at http://127.0.0.1:8788"
+ },
+ {
+  "msg": "incoming request",
+  "reqId": "58d2c70a-50b0-46ab-94ce-4d4327160365",
+  "req": {
+   "method": "GET",
+   "url": "/healthz",
+   "host": "127.0.0.1:8788",
+   "remoteAddress": "127.0.0.1",
+   "remotePort": 59948
+  }
+ },
+ {
+  "msg": "request completed",
+  "reqId": "58d2c70a-50b0-46ab-94ce-4d4327160365",
+  "res": {
+   "statusCode": 200
+  },
+  "responseTime": 3.150707960128784
+ },
+ {
+  "msg": "incoming request",
+  "reqId": "b1aae0a6-d198-49f0-87b4-b55dc94d4087",
+  "req": {
+   "method": "GET",
+   "url": "/readyz",
+   "host": "127.0.0.1:8788",
+   "remoteAddress": "127.0.0.1",
+   "remotePort": 59949
+  }
+ },
+ {
+  "msg": "request completed",
+  "reqId": "b1aae0a6-d198-49f0-87b4-b55dc94d4087",
+  "res": {
+   "statusCode": 200
+  },
+  "responseTime": 0.23604202270507812
+ },
+ {
+  "msg": "incoming request",
+  "reqId": "goal_5ddeedc9f000559a3a36_1",
+  "req": {
+   "method": "POST",
+   "url": "/internal/v1/agent-runs",
+   "host": "127.0.0.1:8788",
+   "remoteAddress": "127.0.0.1",
+   "remotePort": 59978
+  }
+ },
+ {
+  "msg": "request completed",
+  "reqId": "goal_5ddeedc9f000559a3a36_1",
+  "res": {
+   "statusCode": 422
+  },
+  "responseTime": 310193.4835841656
+ },
+ {
+  "msg": "incoming request",
+  "reqId": "goal_5ddeedc9f000559a3a36_1",
+  "req": {
+   "method": "POST",
+   "url": "/internal/v1/agent-runs",
+   "host": "127.0.0.1:8788",
+   "remoteAddress": "127.0.0.1",
+   "remotePort": 60119
+  }
+ },
+ {
+  "msg": "request completed",
+  "reqId": "goal_5ddeedc9f000559a3a36_1",
+  "res": {
+   "statusCode": 200
+  },
+  "responseTime": 291388.1258330345
+ }
+]

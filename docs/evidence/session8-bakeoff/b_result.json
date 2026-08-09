@@ -1,0 +1,22 @@
+[
+  {
+    "page_index": 0,
+    "key_panel_id": "panel_2",
+    "cost_usd": 0.0389013,
+    "receipt_artifact_id": "provider_receipt_f2c9437bebc740bbd5c98d54",
+    "error": null,
+    "ocr_clean": true,
+    "composed_artifact_id": "composed_page_3e6d122787d548c13f9bd760",
+    "composed_saved": "docs/evidence/session8-bakeoff/b_composed_p0.png"
+  },
+  {
+    "page_index": 1,
+    "key_panel_id": "panel_4",
+    "cost_usd": 0.0389028,
+    "receipt_artifact_id": "provider_receipt_9238ceed51184f1bd427325b",
+    "error": null,
+    "ocr_clean": true,
+    "composed_artifact_id": "composed_page_5ecb9ecfa652c48a215c73de",
+    "composed_saved": "docs/evidence/session8-bakeoff/b_composed_p1.png"
+  }
+]

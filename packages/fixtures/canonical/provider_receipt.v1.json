@@ -1,0 +1,21 @@
+{
+  "schema_version": "provider-receipt.v1",
+  "purpose": "page_art_image",
+  "provider": "openrouter",
+  "model": "google/gemini-2.5-flash-image",
+  "request": {
+    "page_index": 0,
+    "attempt": 1,
+    "panel_count": 2,
+    "conditioned": true
+  },
+  "usage": {
+    "cost": 0.039
+  },
+  "cost_usd": 0.039,
+  "latency_ms": 9500,
+  "error": null,
+  "response_text": null,
+  "n_images": 1,
+  "at": "2026-08-09T12:00:00+00:00"
+}

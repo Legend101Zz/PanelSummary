@@ -1,0 +1,371 @@
+{
+ "schema_version": "manga-plan.v1",
+ "plan_id": "plan_scope_e440233874519846e51c4e2c",
+ "project_id": "6a0b5a5b201a8d03f1d82503",
+ "scope_id": "scope_e440233874519846e51c4e2c",
+ "context_pack_id": "context_0983806e6ea7926d74f27197",
+ "memory_version": 1,
+ "title": "Who Moved My Cheese - Haw's Run and the Reunion's Lesson",
+ "summary": "An 8-page right-to-left manga dramatizing Haw's escape from fear into the Maze, his empty-handed return to a resistant Hem, his joyful discovery of Cheese Station N alongside Sniff and Scurry, and a framed reunion discussion where Michael and his classmates translate the parable into action at work, in family life, and in themselves. All three ContextPack source units are cited and all three canon facts are referenced across the beats.",
+ "target_page_count": 8,
+ "beats": [
+  {
+   "beat_id": "beat_00_dark_passage",
+   "sequence": 0,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "hook",
+   "book_essence": "Haw pauses before a darkened corridor, his fear conjuring imagined dangers, but he remembers he felt best in the Maze when he was moving, then chooses to act as if he were not afraid.",
+   "dramatization": "An establishing shot of a yawning black corridor swallows Haw's small figure. Sweat beads on his brow. His chalk scrapes a message for Hem across the wall. He squares his shoulders and steps in, breaking the held breath of the previous slice.",
+   "character_intent": [],
+   "visual_intent": [
+    "wide low-angle establishing shot of a darkened Maze corridor stretching off-panel",
+    "close-up of Haw's hand chalking a message on cold stone",
+    "medium shot of Haw squaring his shoulders and stepping into shadow",
+    "small inset panel of imagined monsters dissolving as he moves"
+   ],
+   "must_preserve": [
+    "Haw pauses at a dark passageway aware of his fear",
+    "Haw's fear conjures imagined dangers",
+    "Haw remembers feeling best in the Maze when he was moving",
+    "Haw writes on the wall as a reminder for himself and a marker for Hem"
+   ],
+   "may_compress": [
+    "the exact wording of the wall inscription may be paraphrased",
+    "the imagined monsters may be shown as a quick sketch rather than narrated"
+   ],
+   "confidence": 0.95
+  },
+  {
+   "beat_id": "beat_01_run_and_laugh",
+   "sequence": 1,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "explanation",
+   "book_essence": "Haw laughs at his own fear, runs the dark corridor, and discovers that the movement itself - not the Cheese - nourishes his soul.",
+   "dramatization": "Haw's laughter echoes across a sequence of medium shots as he runs. The corridor lights shift from oppressive black to a cool blue breeze; his pace quickens. Page reads right-to-left so the run reads naturally toward the page turn.",
+   "character_intent": [],
+   "visual_intent": [
+    "medium shot of Haw laughing at himself, shoulders dropping from fear",
+    "tracking panels of Haw running through the corridor, pace accelerating",
+    "close-up of a cool breeze rippling Haw's hem",
+    "small panel of Haw realizing movement itself feeds him"
+   ],
+   "must_preserve": [
+    "Haw laughs at his own fear",
+    "Haw runs down the dark corridor and begins to smile",
+    "the cool breeze in this part of the Maze is refreshing",
+    "Haw feels nourished by movement, not by having Cheese"
+   ],
+   "may_compress": [
+    "Haw's wondering dialogue can be shown as a small caption rather than a full balloon",
+    "the deep-breath moment can be implied through pose rather than narration"
+   ],
+   "confidence": 0.94
+  },
+  {
+   "beat_id": "beat_02_picture_new_cheese",
+   "sequence": 2,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "payoff",
+   "book_essence": "Haw paints a vivid mental picture of himself enjoying piles of New Cheese, and the clearer the image, the more believable and attainable it feels.",
+   "dramatization": "A quiet, dreamlike double-page panel: Haw seated center, surrounded by an imagined heap of cheeses from Cheddar to Brie. A thought bubble blooms into reality as his smile steadies.",
+   "character_intent": [],
+   "visual_intent": [
+    "soft-focus imagined tableau of Haw sitting in a pile of varied cheeses",
+    "close-up of Haw's face as the imagined image sharpens",
+    "small panel of Haw sensing he will find New Cheese",
+    "Haw writing again on the wall to capture the new belief"
+   ],
+   "must_preserve": [
+    "Haw paints a picture in his mind of himself enjoying New Cheese",
+    "the image includes Cheddar to Brie and other favorite cheeses",
+    "the clearer the imagined image, the more real and believable it becomes",
+    "Haw senses he is going to find New Cheese"
+   ],
+   "may_compress": [
+    "the imagined tableau may be a single wash panel rather than a detailed spread"
+   ],
+   "confidence": 0.93
+  },
+  {
+   "beat_id": "beat_03_empty_station_and_hem",
+   "sequence": 3,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0005_000_00_b184f4508866",
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "conflict",
+   "book_essence": "Haw finds a Cheese Station with a few bits of New Cheese but it has been mostly emptied; he returns to Hem, who refuses New Cheese, and Haw goes on alone.",
+   "dramatization": "Haw reaches a small station, eyes bright with hope, only to see mostly bare shelves. Cut back to Cheese Station C where Hem refuses the offered Cheese. Haw's face falls; he turns back toward the Maze alone.",
+   "character_intent": [],
+   "visual_intent": [
+    "Haw entering a small Cheese Station with excitement",
+    "wide shot of nearly bare shelves inside the station",
+    "medium shot of Hem refusing the offered New Cheese",
+    "Haw's small figure walking alone into the dark corridor"
+   ],
+   "must_preserve": [
+    "Haw finds a Cheese Station with only bits of New Cheese near the entrance",
+    "the station is empty inside; someone had been there first",
+    "Haw realizes he would have found more Cheese if he had moved sooner",
+    "Hem refuses New Cheese and wants only his own Cheese back",
+    "Haw goes back out on his own"
+   ],
+   "may_compress": [
+    "the specific types of Cheese Haw tried can be summarized as new varieties",
+    "the dialogue between Haw and Hem can be condensed into a single exchanged look plus one line"
+   ],
+   "confidence": 0.94
+  },
+  {
+   "beat_id": "beat_04_station_n_reunion",
+   "sequence": 4,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0004_000_00_222d767c39c3"
+   ],
+   "narrative_purpose": "reveal",
+   "book_essence": "Haw rounds a corner into Cheese Station N, piled high with New Cheese, and finds his old mouse friends Sniff and Scurry already there with fat little bellies.",
+   "dramatization": "A reveal page: Haw rounds the corner and the panel floods with Cheese. Sniff nods, Scurry waves a paw; their plump bellies signal they have been here some time. Haw's eyes widen and he begins to feast.",
+   "character_intent": [],
+   "visual_intent": [
+    "Haw rounding a corner into a brightly lit Cheese Station N",
+    "wide shot of Cheese piled high in every direction",
+    "Sniff nodding a greeting from atop a cheese pile",
+    "Scurry waving a paw, his plump belly visible",
+    "Haw pulling off his shoes and hanging them around his neck"
+   ],
+   "must_preserve": [
+    "Haw proceeds along a new corridor and finds New Cheese at Cheese Station N",
+    "the Cheese is piled high everywhere - the greatest supply he has ever seen",
+    "Sniff welcomes Haw with a nod of his head",
+    "Scurry waves his paw",
+    "their fat little bellies show they had been at Station N for some time",
+    "Haw pulls off his shoes and hangs them around his neck in case he needs them again"
+   ],
+   "may_compress": [
+    "the exact varieties of Cheese can be rendered as a varied palette rather than listed"
+   ],
+   "confidence": 0.96
+  },
+  {
+   "beat_id": "beat_05_hooray_and_footsteps",
+   "sequence": 5,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0009_000_00_ab5005823d0b",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0004_000_00_222d767c39c3",
+    "proof-section_0005_000_00_b184f4508866",
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "cliffhanger",
+   "book_essence": "Haw toasts Hooray for Change, reflects on what he has learned, writes a summary on the wall, and hears footsteps in the Maze - perhaps Hem finally arriving.",
+   "dramatization": "Haw lifts a wedge of Cheese in toast, smiling wide. Cut to his reflection as he summarizes the lesson on the largest wall. Final panel: a long shadow stretches across the Maze floor; Haw's smile falters into hope. Page reads right-to-left, the open wall facing the page turn.",
+   "character_intent": [],
+   "visual_intent": [
+    "Haw lifting a wedge of Cheese in toast with Hooray for Change",
+    "close-up of Haw's smile softening into reflection",
+    "wide shot of Haw drawing a large cheese-shape outline on the largest wall, filling it with sayings",
+    "distant shot of movement in the Maze, a shadow rounding a corner",
+    "Haw's small prayerful pause, eyes lifted toward the off-panel sound"
+   ],
+   "must_preserve": [
+    "Haw lifts a piece of fresh Cheese and toasts Hooray for Change",
+    "Haw reflects on the lessons learned at Station N",
+    "Haw writes a summary on the largest wall of Cheese Station N, drawing a cheese around the insights",
+    "Haw hears the sound of movement out in the Maze",
+    "the noise grows louder and someone may be coming - perhaps Hem"
+   ],
+   "may_compress": [
+    "the full list of insights on the wall can be rendered as visible symbols and short tags rather than full text",
+    "Sniff and Scurry's reactions can be conveyed through their earlier expressions rather than additional panels"
+   ],
+   "confidence": 0.92
+  },
+  {
+   "beat_id": "beat_06_reunion_discussion",
+   "sequence": 6,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0010_000_00_8b6cac48cbd7",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "8b6cac48cbd7d1bc4a5d6b48448619cd6022e48e0e1ab910180eda101289db68"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0004_000_00_222d767c39c3",
+    "proof-section_0005_000_00_b184f4508866"
+   ],
+   "narrative_purpose": "setup",
+   "book_essence": "After Michael finishes telling the story, his classmates gather in a lounge and identify themselves as Sniff, Scurry, Hem, or Haw - confessing where they have resisted change and where they are ready to move.",
+   "dramatization": "A framed flashback dissolves into a warmly lit lounge. The four characters are sketched in a small inset above each classmate's shoulder as they identify. Angela's hand goes up; only one hand raised when Laura asks who is afraid of change, then nearly all when asked about others.",
+   "character_intent": [],
+   "visual_intent": [
+    "warm establishing shot of classmates gathered in a hotel lounge",
+    "inset character cards of Sniff, Scurry, Hem, Haw floating above each speaker's shoulder",
+    "Carlos admitting he was Hem, facing a small mirror image",
+    "Angela's raised hand alone, then the forest of hands at Laura's second question",
+    "Nathan's quiet admission about his family stores closing"
+   ],
+   "must_preserve": [
+    "Michael finishes telling the story to his former classmates",
+    "the group arranges to meet later for a drink to discuss it",
+    "Angela asks who they were - Sniff, Scurry, Hem, or Haw",
+    "Carlos identifies himself as Hem, denying change when his job shifted",
+    "Frank tells of a friend whose department closed and who did not want to see it",
+    "Nathan's family business is closing many stores after a megastore arrived",
+    "Laura's show-of-hands reveals denial: only one admits fear of change; nearly everyone says others are afraid"
+   ],
+   "may_compress": [
+    "multiple classmate exchanges may be summarized through representative speakers",
+    "the encyclopedia anecdote can be condensed into a single panel reference"
+   ],
+   "confidence": 0.91
+  },
+  {
+   "beat_id": "beat_07_apply_the_lesson",
+   "sequence": 7,
+   "source_refs": [
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0010_000_00_8b6cac48cbd7",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "8b6cac48cbd7d1bc4a5d6b48448619cd6022e48e0e1ab910180eda101289db68"
+    },
+    {
+     "book_id": "6a0b5a11201a8d03f1d82501",
+     "source_unit_id": "section_0010_000_01_747a90de2166",
+     "page_start": 1,
+     "page_end": 1,
+     "start_offset": null,
+     "end_offset": null,
+     "quote": null,
+     "text_hash": "747a90de21660a8038f38d261ded546e826565f5c275c1a66d4a7a6fc5387125"
+    }
+   ],
+   "required_fact_ids": [
+    "proof-section_0004_000_00_222d767c39c3",
+    "proof-section_0005_000_00_b184f4508866",
+    "proof-section_0006_000_00_74437bd5ed8f"
+   ],
+   "narrative_purpose": "payoff",
+   "book_essence": "Michael explains how he applied the story at work - Sniffs updated the vision, Scurrys took action, Hems were anchors (some had to be let go), Haws led the change - and peer pressure flipped so no one wanted to look like Hem; Jessica departs to find some New Cheese.",
+   "dramatization": "A circular inset returns to the Maze: Sniff and Scurry in the foreground as archetypes, with the classmates arrayed behind. The four archetypes are shown lighting four lamps in a corporate corridor; the panel flips to show the banner that no one wanted to look like Hem. Jessica rises, slinging her bag, and the lounge empties with the call to action.",
+   "character_intent": [],
+   "visual_intent": [
+    "Michael at the center of the lounge, gesturing to four symbolic lamps being lit",
+    "inset showing Sniff updating the corporate vision",
+    "inset showing Scurry scurrying into action, monitored but rewarded",
+    "inset showing Hem as an anchor; some anchors remain, others are gently released",
+    "inset showing Haw leading the change with humor",
+    "Jessica rising with a small smile, sling bag over her shoulder",
+    "the group dispersing into a wide rtl panel, leaving an open doorway"
+   ],
+   "must_preserve": [
+    "Michael saw all four characters in his organization and treated them differently",
+    "Sniffs were encouraged to sniff out marketplace change and update the corporate vision",
+    "Scurrys were encouraged to take action and rewarded for results",
+    "Hems were anchors; some changed when the vision made sense to them, others had to be let go",
+    "Haws were open-minded, helped paint a realistic vision of New Cheese, and kept the sense of humor",
+    "peer pressure changed so no one wanted to look like Hem",
+    "an organization can only change when enough people in it change",
+    "passing the story along could make them better partners - New Cheese for others",
+    "Jessica says it is time to leave this Cheese Station and find some New Cheese and departs",
+    "the group thanks Michael and disperses, intending to share the story"
+   ],
+   "may_compress": [
+    "the exact titles of the various alumni can be conveyed through role labels rather than full introductions",
+    "the encyclopedia and Nathan's chain anecdotes may be referenced as a single visible storefront symbol"
+   ],
+   "confidence": 0.9
+  }
+ ],
+ "character_state_updates": [],
+ "terminology_updates": [],
+ "new_facts": [],
+ "ending_state": "In Haw's narrative thread, he has filled Cheese Station N with New Cheese, written a summary of his lessons on the largest wall, and now listens to footsteps in the Maze - wondering if Hem will finally round the corner. In the reunion thread, Michael's story has reframed how his classmates see themselves and their organizations: peer pressure has flipped so no one wants to look like Hem, Jessica has left to find some New Cheese, and the group disperses carrying the conviction that an organization - like a person - can only change when enough people in it change.",
+ "unresolved_thread_updates": []
+}

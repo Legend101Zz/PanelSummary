@@ -1,0 +1,92 @@
+{
+  "schema_version": "manga-page-plan.v1",
+  "page_plan_id": "page_plan_normal",
+  "project_id": "project_phase1",
+  "script_set_artifact_id": "script_set_phase1",
+  "canvas": {
+    "width_px": 1600,
+    "height_px": 2400,
+    "trim": { "x": 0.03, "y": 0.02, "width": 0.94, "height": 0.96 },
+    "safe": { "x": 0.06, "y": 0.05, "width": 0.88, "height": 0.9 },
+    "bleed_pct": 0.02
+  },
+  "reading_direction": "rtl",
+  "page_script": {
+    "page_id": "page_normal",
+    "page_index": 0,
+    "page_kind": "standard",
+    "entry_state": "Distance appears solved.",
+    "exit_state": "A missed invitation creates doubt.",
+    "page_turn_panel_id": "panel_2",
+    "panels": [
+      {
+        "panel_id": "panel_1",
+        "purpose": "setup",
+        "story_beat": "A map collapses into a global network.",
+        "importance": "medium",
+        "tempo": "hold",
+        "camera": { "shot": "extreme_wide", "angle": "high", "movement": "push_in" },
+        "blocking": [],
+        "prop_refs": [],
+        "focal_regions": [{ "x": 0.4, "y": 0.2, "width": 0.2, "height": 0.3 }],
+        "avoid_text_regions": [{ "x": 0.35, "y": 0.15, "width": 0.3, "height": 0.45 }],
+        "motion": { "direction": "inward", "speed": "slow", "effects": ["network_lines"] },
+        "source_refs": [{
+          "book_id": "book_phase1", "source_unit_id": "source_page_14", "page_start": 14,
+          "page_end": 14, "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }],
+        "source_fact_ids": ["fact_global_access"]
+      },
+      {
+        "panel_id": "panel_2",
+        "purpose": "reveal",
+        "story_beat": "A local invitation expires while the narrator sleeps.",
+        "importance": "page_turn",
+        "tempo": "impact",
+        "camera": { "shot": "close_up", "angle": "high", "movement": "push_in" },
+        "blocking": [],
+        "prop_refs": ["prop_phone"],
+        "focal_regions": [{ "x": 0.15, "y": 0.55, "width": 0.3, "height": 0.25 }],
+        "avoid_text_regions": [{ "x": 0.1, "y": 0.5, "width": 0.4, "height": 0.35 }],
+        "motion": { "direction": "down", "speed": "still", "effects": ["screen_glow"] },
+        "source_refs": [{
+          "book_id": "book_phase1", "source_unit_id": "source_page_15", "page_start": 15,
+          "page_end": 15, "text_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }],
+        "source_fact_ids": ["fact_locality"]
+      }
+    ],
+    "text_elements": [
+      {
+        "text_id": "text_1", "panel_id": "panel_1", "kind": "narration",
+        "content": "Distance looked solved.", "writing_direction": "horizontal", "shape": "caption",
+        "preferred_region": { "x": 0.67, "y": 0.06, "width": 0.25, "height": 0.12 },
+        "typography": { "font_token": "manga_narration", "weight": 600, "min_px": 20, "max_px": 38, "emphasis": "normal" },
+        "overflow": "reject", "z_index": 40
+      },
+      {
+        "text_id": "text_2", "panel_id": "panel_2", "kind": "sfx",
+        "content": "MISSED", "writing_direction": "horizontal", "shape": "free_sfx",
+        "preferred_region": { "x": 0.1, "y": 0.75, "width": 0.28, "height": 0.1 },
+        "typography": { "font_token": "manga_sfx", "weight": 800, "min_px": 24, "max_px": 56, "emphasis": "bold" },
+        "overflow": "fit", "z_index": 45
+      }
+    ]
+  },
+  "layout_root": {
+    "kind": "split",
+    "node_id": "root_normal",
+    "axis": "y",
+    "ratios": [0.42, 0.58],
+    "gutter": { "value": 0.012, "unit": "page_pct" },
+    "angle_deg": 0,
+    "children": [
+      { "kind": "panel", "node_id": "node_panel_1", "panel_id": "panel_1" },
+      { "kind": "panel", "node_id": "node_panel_2", "panel_id": "panel_2" }
+    ]
+  },
+  "reading_edges": [
+    { "from_panel_id": "panel_1", "to_panel_id": "panel_2", "reason": "top-to-bottom reveal" }
+  ],
+  "source_fact_ids": ["fact_global_access", "fact_locality"]
+}

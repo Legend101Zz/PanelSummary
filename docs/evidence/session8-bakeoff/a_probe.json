@@ -1,0 +1,31 @@
+{
+  "rows": [
+    {
+      "panel_id": "panel_0",
+      "read_rank": 0,
+      "cost_usd": 0.038901,
+      "receipt_artifact_id": "provider_receipt_b6b73ada6b8aceaf56b639ad",
+      "error": null,
+      "image_saved": "docs/evidence/session8-bakeoff/a_probe_p0_panel_0.png"
+    },
+    {
+      "panel_id": "panel_1",
+      "read_rank": 1,
+      "cost_usd": 0.0389001,
+      "receipt_artifact_id": "provider_receipt_ae2419b91e0b88187619e929",
+      "error": null,
+      "image_saved": "docs/evidence/session8-bakeoff/a_probe_p0_panel_1.png"
+    }
+  ],
+  "economics": {
+    "measured_per_panel_usd": [
+      0.038901,
+      0.0389001
+    ],
+    "flat_full_page_usd": 0.039,
+    "undercuts_full_page_pricing": true,
+    "naive_full_set_usd": 0.312,
+    "steering_rule": "steering rule: if the probe's measured per-panel price does not undercut $0.039/panel, A is NOT scaled \u2014 its economics become an OPEN OWNER COST DECISION and B/C compete for the win",
+    "honest_verdict": "Pricing is FLAT per image (~$0.0389) regardless of panel size \u2014 the $0.0001 delta below 0.039 is rounding noise, not an undercut. A 4-panel page via per-panel generation costs ~$0.1556 vs $0.039 one-shot (4x). Per the steering rule A is NOT scaled this session; whether exact binding-by-construction is worth 4x image cost is an OPEN OWNER COST DECISION."
+  }
+}

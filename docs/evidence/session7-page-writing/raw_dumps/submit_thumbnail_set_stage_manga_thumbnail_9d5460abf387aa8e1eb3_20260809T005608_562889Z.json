@@ -1,0 +1,236 @@
+{
+  "tool": "submit_thumbnail_set",
+  "scope": {
+    "correlation_id": "goal_9d5460abf387aa8e1eb3_1",
+    "goal_id": "goal_9d5460abf387aa8e1eb3_1",
+    "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+    "stage_run_id": "stage_manga_thumbnail_9d5460abf387aa8e1eb3",
+    "context_pack_id": "context_b33f68f17d3cbdc911109698",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:56:08.562889+00:00",
+  "arguments": {
+    "thumbnail_set": {
+      "schema_version": "thumbnail-set.v1",
+      "thumbnail_set_id": "thumbnail_set_9d5460abf387aa8e1eb3_1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+      "page_plans": [
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_0",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_0",
+            "axis": "y",
+            "ratios": [
+              0.5,
+              0.5
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_row1_page_0",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_001",
+                    "panel_id": "panel_001"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_000",
+                    "panel_id": "panel_000"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_row2_page_0",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_003",
+                    "panel_id": "panel_003"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_002",
+                    "panel_id": "panel_002"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_000",
+              "to_panel_id": "panel_001",
+              "reason": "Panel 1 follows setup of four characters named in panel 0."
+            },
+            {
+              "from_panel_id": "panel_001",
+              "to_panel_id": "panel_002",
+              "reason": "Panel 2 shows characters racing to cheese after Michael's setup."
+            },
+            {
+              "from_panel_id": "panel_002",
+              "to_panel_id": "panel_003",
+              "reason": "Panel 3 reveals cheese station abundance as page turn payoff."
+            }
+          ],
+          "source_fact_ids": []
+        },
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_1",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_1",
+            "axis": "y",
+            "ratios": [
+              0.5,
+              0.5
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_row1_page_1",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_005",
+                    "panel_id": "panel_005"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_004",
+                    "panel_id": "panel_004"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_row2_page_1",
+                "axis": "x",
+                "ratios": [
+                  0.5,
+                  0.5
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_007",
+                    "panel_id": "panel_007"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_006",
+                    "panel_id": "panel_006"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_004",
+              "to_panel_id": "panel_005",
+              "reason": "Panel 5 shows entitled reaction following initial discovery of empty station."
+            },
+            {
+              "from_panel_id": "panel_005",
+              "to_panel_id": "panel_006",
+              "reason": "Panel 6 shows Haw's decision to change after observing entitlement."
+            },
+            {
+              "from_panel_id": "panel_006",
+              "to_panel_id": "panel_007",
+              "reason": "Panel 7 shows Haw's forward journey as page turn payoff."
+            }
+          ],
+          "source_fact_ids": []
+        }
+      ]
+    }
+  }
+}

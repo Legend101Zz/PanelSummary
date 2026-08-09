@@ -22,6 +22,7 @@ from app.manga_models import (  # noqa: E402,F401  (re-exported)
     MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc,
 )
 from app.models import Book, JobStatus  # noqa: E402,F401  (re-exported)
+from app.persistence.v1_bridge import init_wired_documents  # noqa: E402,F401
 from beanie import init_beanie  # noqa: E402
 from motor.motor_asyncio import AsyncIOMotorClient  # noqa: E402
 
@@ -38,4 +39,7 @@ async def connect():
             MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
         ],
     )
+    # Durable-context collections (ADR-011): separate tz-aware client; donor
+    # Book/Project Docs stay out — the live v1 documents own those collections.
+    await init_wired_documents(settings.mongodb_url, settings.db_name)
     return settings

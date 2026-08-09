@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Callable, Protocol
 
 from app.domain.manga import ContinuityLedger, SourceRange, SourceSlice, SourceSliceMode
 
@@ -96,3 +96,35 @@ def choose_next_page_slice(
         page_end=next_end,
         slice_id=f"slice_{slice_number:03d}",
     )
+
+
+def choose_next_textful_page_slice(
+    *,
+    book_id: str,
+    total_pages: int,
+    chapters: list[ChapterLike],
+    ledger: ContinuityLedger,
+    page_window: int = 10,
+    has_text: Callable[[SourceSlice], bool],
+) -> SourceSlice | None:
+    """Like ``choose_next_page_slice`` but skips windows with no source text.
+
+    Windows that overlap no adaptable text (image-only stretches, trailing
+    back matter, page-map gaps) are recorded on the in-memory ledger as
+    covered and the picker advances, instead of surfacing a build-killing
+    "no extractable text" failure. Returns None when everything remaining
+    is textless — callers treat that as full coverage.
+    """
+    while True:
+        candidate = choose_next_page_slice(
+            book_id=book_id,
+            total_pages=total_pages,
+            chapters=chapters,
+            ledger=ledger,
+            page_window=page_window,
+        )
+        if candidate is None:
+            return None
+        if has_text(candidate):
+            return candidate
+        ledger.add_covered_range(candidate.source_range)

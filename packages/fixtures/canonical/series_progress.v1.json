@@ -1,0 +1,8 @@
+{
+  "schema_version": "series-progress.v1",
+  "series_id": "series_demo_001",
+  "last_manga_page": 0,
+  "last_reel_id": "reel_demo_001",
+  "viewed_reel_ids": ["reel_demo_001"],
+  "updated_at": "2026-07-20T05:30:00Z"
+}

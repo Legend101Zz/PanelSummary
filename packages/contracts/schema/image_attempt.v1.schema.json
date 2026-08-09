@@ -1,0 +1,237 @@
+{
+  "$id": "https://scrollstack.dev/contracts/image_attempt.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Attempt Id",
+      "type": "string"
+    },
+    "cost_usd": {
+      "anyOf": [
+        {
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cost Usd"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "model": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Model",
+      "type": "string"
+    },
+    "negative_prompt": {
+      "anyOf": [
+        {
+          "maxLength": 20000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Negative Prompt"
+    },
+    "output_asset_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Asset Id"
+    },
+    "panel_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Panel Id",
+      "type": "string"
+    },
+    "parameters": {
+      "maxProperties": 64,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Parameters",
+      "type": "object"
+    },
+    "prompt_snapshot": {
+      "maxLength": 20000,
+      "minLength": 1,
+      "title": "Prompt Snapshot",
+      "type": "string"
+    },
+    "provider": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Provider",
+      "type": "string"
+    },
+    "provider_response_id": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Provider Response Id"
+    },
+    "purpose": {
+      "enum": [
+        "panel",
+        "character_reference",
+        "environment",
+        "prop",
+        "texture"
+      ],
+      "title": "Purpose",
+      "type": "string"
+    },
+    "receipt_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Receipt Id"
+    },
+    "reference_asset_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 32,
+      "title": "Reference Asset Ids",
+      "type": "array"
+    },
+    "request_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Request Hash",
+      "type": "string"
+    },
+    "revision_instruction": {
+      "anyOf": [
+        {
+          "maxLength": 20000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Revision Instruction"
+    },
+    "schema_version": {
+      "const": "image-attempt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seed"
+    },
+    "status": {
+      "enum": [
+        "requested",
+        "succeeded",
+        "failed",
+        "rejected",
+        "accepted"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "validation_report_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Validation Report Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "panel_id",
+    "purpose",
+    "provider",
+    "model",
+    "prompt_snapshot",
+    "request_hash",
+    "status",
+    "created_at"
+  ],
+  "title": "ImageAttempt",
+  "type": "object"
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "memory-delta.v1",
+  "project_id": "project_demo",
+  "base_memory_version": 3,
+  "new_facts": [
+    {
+      "fact_id": "fact_map_records_failures",
+      "claim": "The map records earlier failed journeys.",
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "start_offset": 120,
+          "end_offset": 268,
+          "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "confidence": 0.99
+    }
+  ],
+  "fact_corrections": [],
+  "character_state_updates": [
+    {
+      "character_id": "character_kael",
+      "state_patch": { "belief": "The map is a warning." },
+      "source_refs": []
+    }
+  ],
+  "continuity_updates": [
+    { "key": "last_accepted_ending", "value": "The failed routes flare into view.", "source_refs": [] }
+  ],
+  "coverage_additions": [
+    { "source_unit_id": "unit_ch01_p001_010", "beat_ids": ["beat_000"], "coverage_status": "covered" }
+  ],
+  "unresolved_thread_updates": [
+    { "thread_id": "thread_cartographer", "summary": "The final cartographer remains unidentified.", "status": "open", "source_refs": [] }
+  ],
+  "source_artifact_ids": ["artifact_beats_001", "artifact_manifest_001"]
+}

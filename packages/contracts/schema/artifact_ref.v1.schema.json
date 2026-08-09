@@ -1,0 +1,67 @@
+{
+  "$defs": {
+    "ArtifactKind": {
+      "enum": [
+        "context_pack",
+        "adaptation_beat_set",
+        "manga_plan",
+        "page_script_set",
+        "thumbnail_set",
+        "page_layout",
+        "compiled_layout",
+        "thumbnail_preview",
+        "validation_report",
+        "revision_request",
+        "image_attempt",
+        "image_asset",
+        "asset_request_set",
+        "manga_script",
+        "storyboard",
+        "page_composition",
+        "rendered_page",
+        "rendered_page_set",
+        "manga_edition",
+        "manga_manifest",
+        "reel_spec",
+        "render_receipt",
+        "memory_delta"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/artifact_ref.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "content_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/ArtifactKind"
+    },
+    "schema_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "kind",
+    "schema_version",
+    "content_hash"
+  ],
+  "title": "ArtifactRef",
+  "type": "object"
+}

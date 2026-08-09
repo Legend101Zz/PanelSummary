@@ -1,0 +1,75 @@
+=== POST /books/{id}/scopes (chapter selection, front-matter default skip) ===
+{
+    "schema_version": "scope-manifest.v1",
+    "project_id": "6a0b5a5b201a8d03f1d82503",
+    "book_id": "6a0b5a11201a8d03f1d82501",
+    "scope_id": "scope_308d0e7fe5edcac9aa5532eb",
+    "source_unit_ids": [
+        "section_0004_000_00_222d767c39c3",
+        "section_0005_000_00_b184f4508866",
+        "section_0006_000_00_74437bd5ed8f",
+        "section_0007_000_00_f7c3296f3ced",
+        "section_0008_000_00_b4b4dc270b13",
+        "section_0008_000_01_14a3176ac46a"
+    ],
+    "page_ranges": [
+        {
+            "page_start": 1,
+            "page_end": 1
+        }
+    ],
+    "selection_label": "curl scope A (story chapters)",
+    "scope_hash": "308d0e7fe5edcac9aa5532eb5f8062d0fd36d9b3b1dc91e36a3b03d623917600",
+    "created_by": "api",
+    "created_at": "2026-08-07T10:51:15.875493Z"
+}
+=== POST same selection again (idempotent scope hash) ===
+{
+ "scope_id": "scope_308d0e7fe5edcac9aa5532eb",
+ "scope_hash": "308d0e7fe5edcac9aa5532eb5f8062d0fd36d9b3b1dc91e36a3b03d623917600"
+}
+=== GET /books/{id}/scopes (list) ===
+[
+ {
+  "scope_id": "scope_308d0e7fe5edcac9aa5532eb",
+  "label": "curl scope A (story chapters)",
+  "units": 6
+ },
+ {
+  "scope_id": "scope_e440233874519846e51c4e2c",
+  "label": "proof scope B (continuation)",
+  "units": 3
+ },
+ {
+  "scope_id": "scope_418d0d03ac56e40a40ea0ded",
+  "label": "proof scope A (story chapters)",
+  "units": 6
+ },
+ {
+  "scope_id": "scope_ec7fd261bea8643cd31f77eb",
+  "label": "v1 slice pages 1-14",
+  "units": 16
+ }
+]
+=== GET /books/{id}/scopes/coverage?project_id=... (ToC + front matter + memory coverage) ===
+{
+ "memory_version": 1,
+ "total_units": 16
+}
+ch[ 0] fm=True  units=0 covered=0 'Who Moved My Cheese?'
+ch[ 1] fm=False units=1 covered=0 'An A-Mazing Way To Deal With Change In Your Work'
+ch[ 2] fm=True  units=0 covered=0 'Who Moved My Cheese?'
+ch[ 3] fm=True  units=0 covered=0 'Contents'
+ch[ 4] fm=False units=1 covered=1 'Parts of All of Us'
+ch[ 5] fm=False units=1 covered=1 'Hem'
+ch[ 6] fm=False units=1 covered=1 'Haw'
+ch[ 7] fm=False units=1 covered=1 'A Gathering'
+ch[ 8] fm=False units=2 covered=2 'Who Moved My Cheese? The Story'
+ch[ 9] fm=False units=1 covered=0 'weighed down by fearful beliefs.'
+ch[10] fm=False units=2 covered=0 'A Discussion'
+ch[11] fm=False units=1 covered=0 'Services'
+ch[12] fm=False units=1 covered=0 "The 'New Cheese 'Experience"
+ch[13] fm=False units=1 covered=0 'Who Moved My Cheese? The Movie:'
+ch[14] fm=False units=1 covered=0 'Aft A-Mawng Change Profile:'
+ch[15] fm=False units=1 covered=0 'NEW! Who Moved My Cheese? Personal Planner Inser'
+ch[16] fm=False units=1 covered=0 'Fun, Practical Reminders'

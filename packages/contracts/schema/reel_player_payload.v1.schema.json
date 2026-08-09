@@ -1,0 +1,1704 @@
+{
+  "$defs": {
+    "AdaptationBeat": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "book_essence": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Book Essence",
+          "type": "string"
+        },
+        "character_intent": {
+          "items": {
+            "$ref": "#/$defs/CharacterIntent"
+          },
+          "maxItems": 64,
+          "title": "Character Intent",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "dramatization": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Dramatization",
+          "type": "string"
+        },
+        "may_compress": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "May Compress",
+          "type": "array"
+        },
+        "must_preserve": {
+          "items": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Must Preserve",
+          "type": "array"
+        },
+        "narrative_purpose": {
+          "enum": [
+            "hook",
+            "setup",
+            "conflict",
+            "explanation",
+            "reveal",
+            "payoff",
+            "cliffhanger"
+          ],
+          "title": "Narrative Purpose",
+          "type": "string"
+        },
+        "required_fact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 128,
+          "title": "Required Fact Ids",
+          "type": "array"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "visual_intent": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Visual Intent",
+          "type": "array"
+        }
+      },
+      "required": [
+        "beat_id",
+        "sequence",
+        "source_refs",
+        "narrative_purpose",
+        "book_essence",
+        "dramatization",
+        "visual_intent",
+        "must_preserve",
+        "confidence"
+      ],
+      "title": "AdaptationBeat",
+      "type": "object"
+    },
+    "CaptionCue": {
+      "additionalProperties": false,
+      "properties": {
+        "end_frame": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "speaker_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speaker Id"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "start_frame",
+        "end_frame"
+      ],
+      "title": "CaptionCue",
+      "type": "object"
+    },
+    "CharacterIntent": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "emotional_state": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Emotional State",
+          "type": "string"
+        },
+        "intent": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "character_id",
+        "intent",
+        "emotional_state"
+      ],
+      "title": "CharacterIntent",
+      "type": "object"
+    },
+    "CropHint": {
+      "additionalProperties": false,
+      "properties": {
+        "box_pct": {
+          "$ref": "#/$defs/LayoutBoxPct"
+        },
+        "crop_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Crop Id",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Subject",
+          "type": "string"
+        }
+      },
+      "required": [
+        "crop_id",
+        "box_pct",
+        "subject"
+      ],
+      "title": "CropHint",
+      "type": "object"
+    },
+    "DialogueExchangeScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "bubble_motion": {
+          "default": "pop",
+          "enum": [
+            "pop",
+            "slide",
+            "type_on"
+          ],
+          "title": "Bubble Motion",
+          "type": "string"
+        },
+        "component_id": {
+          "const": "dialogue_exchange",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "dialogue": {
+          "items": {
+            "$ref": "#/$defs/DialogueLine"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Dialogue",
+          "type": "array"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "dialogue_exchange",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "panel_id",
+        "dialogue"
+      ],
+      "title": "DialogueExchangeScene",
+      "type": "object"
+    },
+    "DialogueLine": {
+      "additionalProperties": false,
+      "properties": {
+        "delivery": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delivery"
+        },
+        "speaker_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Speaker Id",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "speaker_id",
+        "text"
+      ],
+      "title": "DialogueLine",
+      "type": "object"
+    },
+    "ImpactCutScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "component_id": {
+          "const": "impact_cut",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "impact_preset": {
+          "default": "ink_burst",
+          "enum": [
+            "flash",
+            "shake",
+            "speedlines",
+            "ink_burst"
+          ],
+          "title": "Impact Preset",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "impact_cut",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "sfx_text": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Sfx Text",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "panel_id",
+        "sfx_text"
+      ],
+      "title": "ImpactCutScene",
+      "type": "object"
+    },
+    "InteractionMapEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Beat Id",
+          "type": "string"
+        },
+        "end_frame": {
+          "exclusiveMinimum": 0,
+          "title": "End Frame",
+          "type": "integer"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "beat_id",
+        "start_frame",
+        "end_frame"
+      ],
+      "title": "InteractionMapEntry",
+      "type": "object"
+    },
+    "LayoutBoxPct": {
+      "additionalProperties": false,
+      "properties": {
+        "height_pct": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Height Pct",
+          "type": "number"
+        },
+        "width_pct": {
+          "exclusiveMinimum": 0.0,
+          "maximum": 100.0,
+          "title": "Width Pct",
+          "type": "number"
+        },
+        "x_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "X Pct",
+          "type": "number"
+        },
+        "y_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Y Pct",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x_pct",
+        "y_pct",
+        "width_pct",
+        "height_pct"
+      ],
+      "title": "LayoutBoxPct",
+      "type": "object"
+    },
+    "MangaManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "art_direction_artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Art Direction Artifact Id",
+          "type": "string"
+        },
+        "beats": {
+          "items": {
+            "$ref": "#/$defs/AdaptationBeat"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Beats",
+          "type": "array"
+        },
+        "character_asset_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "title": "Character Asset Ids",
+          "type": "array"
+        },
+        "content_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "manga_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Manga Id",
+          "type": "string"
+        },
+        "memory_version": {
+          "minimum": 0,
+          "title": "Memory Version",
+          "type": "integer"
+        },
+        "panels": {
+          "items": {
+            "$ref": "#/$defs/ManifestPanel"
+          },
+          "maxItems": 10000,
+          "minItems": 1,
+          "title": "Panels",
+          "type": "array"
+        },
+        "project_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Project Id",
+          "type": "string"
+        },
+        "rendered_page_artifact_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Rendered Page Artifact Ids",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "manga-manifest.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "scope_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scope Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "manga_id",
+        "project_id",
+        "scope_id",
+        "memory_version",
+        "rendered_page_artifact_ids",
+        "beats",
+        "panels",
+        "art_direction_artifact_id",
+        "content_hash"
+      ],
+      "title": "MangaManifest",
+      "type": "object"
+    },
+    "ManifestPanel": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "crop_hints": {
+          "items": {
+            "$ref": "#/$defs/CropHint"
+          },
+          "maxItems": 16,
+          "title": "Crop Hints",
+          "type": "array"
+        },
+        "dialogue": {
+          "items": {
+            "$ref": "#/$defs/DialogueLine"
+          },
+          "maxItems": 16,
+          "title": "Dialogue",
+          "type": "array"
+        },
+        "emotional_tone": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Emotional Tone",
+          "type": "string"
+        },
+        "narration": {
+          "items": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Narration",
+          "type": "array"
+        },
+        "page_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Page Id",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "panel_type": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Panel Type",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "visual_asset_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Visual Asset Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "panel_id",
+        "page_id",
+        "sequence",
+        "beat_ids",
+        "panel_type",
+        "emotional_tone",
+        "source_refs"
+      ],
+      "title": "ManifestPanel",
+      "type": "object"
+    },
+    "MontageScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "component_id": {
+          "const": "panel_montage",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "layout_preset": {
+          "default": "cascade",
+          "enum": [
+            "cascade",
+            "grid",
+            "rapid_cuts"
+          ],
+          "title": "Layout Preset",
+          "type": "string"
+        },
+        "panel_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 2,
+          "title": "Panel Ids",
+          "type": "array"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "montage",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "panel_ids"
+      ],
+      "title": "MontageScene",
+      "type": "object"
+    },
+    "NarratorCardScene": {
+      "additionalProperties": false,
+      "properties": {
+        "background_asset_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background Asset Id"
+        },
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "component_id": {
+          "const": "narrator_card",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "narrator_card",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "text_preset": {
+          "default": "paper_box",
+          "enum": [
+            "paper_box",
+            "ink_reverse",
+            "chapter_card"
+          ],
+          "title": "Text Preset",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "text"
+      ],
+      "title": "NarratorCardScene",
+      "type": "object"
+    },
+    "PageTurnScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "component_id": {
+          "const": "page_turn",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "direction": {
+          "default": "rtl",
+          "enum": [
+            "rtl",
+            "ltr"
+          ],
+          "title": "Direction",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "from_panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "From Panel Id",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "page_turn",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        },
+        "to_panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "To Panel Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "from_panel_id",
+        "to_panel_id"
+      ],
+      "title": "PageTurnScene",
+      "type": "object"
+    },
+    "PanelFocusScene": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Asset Id"
+        },
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "caption": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption"
+        },
+        "component_id": {
+          "const": "panel_focus",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "focus_box_pct": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LayoutBoxPct"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "motion_preset": {
+          "default": "push_in",
+          "enum": [
+            "hold",
+            "push_in",
+            "pull_out",
+            "pan_left",
+            "pan_right"
+          ],
+          "title": "Motion Preset",
+          "type": "string"
+        },
+        "panel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Panel Id",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "panel_focus",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "panel_id"
+      ],
+      "title": "PanelFocusScene",
+      "type": "object"
+    },
+    "ReelAudio": {
+      "additionalProperties": false,
+      "properties": {
+        "caption_track_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Caption Track Id"
+        },
+        "music_asset_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Music Asset Id"
+        },
+        "narration_asset_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Narration Asset Id"
+        },
+        "sfx_cues": {
+          "items": {
+            "$ref": "#/$defs/SfxCue"
+          },
+          "maxItems": 128,
+          "title": "Sfx Cues",
+          "type": "array"
+        }
+      },
+      "title": "ReelAudio",
+      "type": "object"
+    },
+    "ReelFormat": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "fps": {
+          "const": 30,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "height": {
+          "const": 1920,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "const": 1080,
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "fps",
+        "duration_frames"
+      ],
+      "title": "ReelFormat",
+      "type": "object"
+    },
+    "ReelSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "audio": {
+          "$ref": "#/$defs/ReelAudio"
+        },
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "format": {
+          "$ref": "#/$defs/ReelFormat"
+        },
+        "interaction_map": {
+          "items": {
+            "$ref": "#/$defs/InteractionMapEntry"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Interaction Map",
+          "type": "array"
+        },
+        "manga_manifest_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Manga Manifest Id",
+          "type": "string"
+        },
+        "reel_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Reel Id",
+          "type": "string"
+        },
+        "scenes": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "dialogue_exchange": "#/$defs/DialogueExchangeScene",
+                "impact_cut": "#/$defs/ImpactCutScene",
+                "montage": "#/$defs/MontageScene",
+                "narrator_card": "#/$defs/NarratorCardScene",
+                "page_turn": "#/$defs/PageTurnScene",
+                "panel_focus": "#/$defs/PanelFocusScene",
+                "split_panel": "#/$defs/SplitPanelScene"
+              },
+              "propertyName": "scene_type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PanelFocusScene"
+              },
+              {
+                "$ref": "#/$defs/SplitPanelScene"
+              },
+              {
+                "$ref": "#/$defs/DialogueExchangeScene"
+              },
+              {
+                "$ref": "#/$defs/ImpactCutScene"
+              },
+              {
+                "$ref": "#/$defs/NarratorCardScene"
+              },
+              {
+                "$ref": "#/$defs/PageTurnScene"
+              },
+              {
+                "$ref": "#/$defs/MontageScene"
+              }
+            ]
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Scenes",
+          "type": "array"
+        },
+        "schema_version": {
+          "const": "reel-spec.v1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "sequence": {
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "series_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Series Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "style_kit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Style Kit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "reel_id",
+        "series_id",
+        "sequence",
+        "manga_manifest_id",
+        "beat_ids",
+        "format",
+        "style_kit_id",
+        "audio",
+        "scenes",
+        "interaction_map",
+        "source_refs"
+      ],
+      "title": "ReelSpec",
+      "type": "object"
+    },
+    "ResolvedReelAsset": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "kind": {
+          "enum": [
+            "image",
+            "audio",
+            "caption_track"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "mime_type": {
+          "maxLength": 128,
+          "minLength": 3,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$",
+          "title": "Mime Type",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^(?:https?://[^\\s/]+(?:/[^\\s]*)?|/[^/\\s][^\\s]*)$",
+          "title": "Url",
+          "type": "string"
+        },
+        "url_expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url Expires At"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        }
+      },
+      "required": [
+        "asset_id",
+        "kind",
+        "content_hash",
+        "mime_type",
+        "url"
+      ],
+      "title": "ResolvedReelAsset",
+      "type": "object"
+    },
+    "SfxCue": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Asset Id",
+          "type": "string"
+        },
+        "frame": {
+          "minimum": 0,
+          "title": "Frame",
+          "type": "integer"
+        },
+        "gain": {
+          "default": 1,
+          "maximum": 2.0,
+          "minimum": 0.0,
+          "title": "Gain",
+          "type": "number"
+        }
+      },
+      "required": [
+        "asset_id",
+        "frame"
+      ],
+      "title": "SfxCue",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "SplitPanelScene": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "component_id": {
+          "const": "split_panel_reveal",
+          "title": "Component Id",
+          "type": "string"
+        },
+        "divider_style": {
+          "default": "ink",
+          "enum": [
+            "ink",
+            "clean",
+            "jagged"
+          ],
+          "title": "Divider Style",
+          "type": "string"
+        },
+        "duration_frames": {
+          "exclusiveMinimum": 0,
+          "title": "Duration Frames",
+          "type": "integer"
+        },
+        "panel_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Panel Ids",
+          "type": "array"
+        },
+        "reveal_order": {
+          "default": "first_then_second",
+          "enum": [
+            "simultaneous",
+            "first_then_second"
+          ],
+          "title": "Reveal Order",
+          "type": "string"
+        },
+        "scene_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Scene Id",
+          "type": "string"
+        },
+        "scene_type": {
+          "const": "split_panel",
+          "title": "Scene Type",
+          "type": "string"
+        },
+        "start_frame": {
+          "minimum": 0,
+          "title": "Start Frame",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "scene_id",
+        "start_frame",
+        "duration_frames",
+        "beat_ids",
+        "scene_type",
+        "component_id",
+        "panel_ids"
+      ],
+      "title": "SplitPanelScene",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/reel_player_payload.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "maxProperties": 10000,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "$ref": "#/$defs/ResolvedReelAsset"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Assets",
+      "type": "object"
+    },
+    "book_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Book Id",
+      "type": "string"
+    },
+    "captions": {
+      "items": {
+        "$ref": "#/$defs/CaptionCue"
+      },
+      "maxItems": 10000,
+      "title": "Captions",
+      "type": "array"
+    },
+    "manga_manifest": {
+      "$ref": "#/$defs/MangaManifest"
+    },
+    "manga_manifest_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Manga Manifest Artifact Id",
+      "type": "string"
+    },
+    "poster_url": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^(?:https?://[^\\s/]+(?:/[^\\s]*)?|/[^/\\s][^\\s]*)$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Poster Url"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "reel_spec": {
+      "$ref": "#/$defs/ReelSpec"
+    },
+    "reel_spec_artifact_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Reel Spec Artifact Id",
+      "type": "string"
+    },
+    "rendered_mp4_url": {
+      "anyOf": [
+        {
+          "maxLength": 2048,
+          "minLength": 1,
+          "pattern": "^(?:https?://[^\\s/]+(?:/[^\\s]*)?|/[^/\\s][^\\s]*)$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rendered Mp4 Url"
+    },
+    "schema_version": {
+      "const": "reel-player-payload.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "series_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Series Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "book_id",
+    "project_id",
+    "series_id",
+    "manga_manifest_artifact_id",
+    "reel_spec_artifact_id",
+    "reel_spec",
+    "manga_manifest",
+    "assets"
+  ],
+  "title": "ReelPlayerPayload",
+  "type": "object"
+}

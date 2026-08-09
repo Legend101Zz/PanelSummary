@@ -1,0 +1,136 @@
+{
+  "$id": "https://scrollstack.dev/contracts/source_unit.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "book_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Book Id",
+      "type": "string"
+    },
+    "chapter_index": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Chapter Index"
+    },
+    "heading_path": {
+      "items": {
+        "maxLength": 500,
+        "minLength": 1,
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Heading Path",
+      "type": "array"
+    },
+    "image_refs": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 256,
+      "title": "Image Refs",
+      "type": "array"
+    },
+    "kind": {
+      "enum": [
+        "chapter",
+        "section",
+        "page_window"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "page_end": {
+      "minimum": 1,
+      "title": "Page End",
+      "type": "integer"
+    },
+    "page_start": {
+      "minimum": 1,
+      "title": "Page Start",
+      "type": "integer"
+    },
+    "parse_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Parse Version",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "source-unit.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_unit_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Source Unit Id",
+      "type": "string"
+    },
+    "text": {
+      "anyOf": [
+        {
+          "maxLength": 100000,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Text"
+    },
+    "text_hash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Text Hash",
+      "type": "string"
+    },
+    "text_storage_ref": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Text Storage Ref"
+    },
+    "token_count": {
+      "minimum": 0,
+      "title": "Token Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "book_id",
+    "source_unit_id",
+    "kind",
+    "page_start",
+    "page_end",
+    "text_hash",
+    "token_count",
+    "parse_version"
+  ],
+  "title": "SourceUnit",
+  "type": "object"
+}

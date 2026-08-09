@@ -1,0 +1,55 @@
+{
+  "schema_version": "reel-spec.v1",
+  "reel_id": "reel_demo_001",
+  "series_id": "series_demo_001",
+  "sequence": 0,
+  "manga_manifest_id": "artifact_manifest_001",
+  "beat_ids": ["beat_000"],
+  "format": { "width": 1080, "height": 1920, "fps": 30, "duration_frames": 180 },
+  "style_kit_id": "style_scrollstack_manga_v1",
+  "audio": {
+    "narration_asset_id": null,
+    "music_asset_id": "asset_music_tension_001",
+    "sfx_cues": [{ "asset_id": "asset_sfx_ink_hit", "frame": 60, "gain": 0.9 }],
+    "caption_track_id": "asset_captions_reel_001"
+  },
+  "scenes": [
+    {
+      "scene_id": "reel_scene_001",
+      "start_frame": 0,
+      "duration_frames": 90,
+      "beat_ids": ["beat_000"],
+      "scene_type": "panel_focus",
+      "component_id": "panel_focus",
+      "panel_id": "panel_001",
+      "asset_id": "asset_last_observatory_key_panel_v1",
+      "focus_box_pct": { "x_pct": 5, "y_pct": 35, "width_pct": 42, "height_pct": 40 },
+      "motion_preset": "push_in",
+      "caption": "The map remembers every failure."
+    },
+    {
+      "scene_id": "reel_scene_002",
+      "start_frame": 90,
+      "duration_frames": 90,
+      "beat_ids": ["beat_000"],
+      "scene_type": "narrator_card",
+      "component_id": "narrator_card",
+      "text": "Their route ends where the last crew vanished.",
+      "background_asset_id": null,
+      "text_preset": "ink_reverse"
+    }
+  ],
+  "interaction_map": [{ "beat_id": "beat_000", "start_frame": 0, "end_frame": 180 }],
+  "source_refs": [
+    {
+      "book_id": "book_demo",
+      "source_unit_id": "unit_ch01_p001_010",
+      "page_start": 1,
+      "page_end": 10,
+      "start_offset": 120,
+      "end_offset": 268,
+      "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+      "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}

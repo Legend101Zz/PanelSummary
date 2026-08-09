@@ -27,6 +27,9 @@ class MangaProjectDoc(Document):
     engine: str = "v4"
     title: str = ""
     status: str = "pending"
+    # Set when a build fails: {message, phase, task_id, at}. Cleared when the
+    # next build starts, so "continue" can report what it resumed from.
+    last_failure: dict[str, Any] = Field(default_factory=dict)
 
     project_options: dict[str, Any] = Field(default_factory=dict)
     book_synopsis: dict[str, Any] = Field(default_factory=dict)
@@ -58,6 +61,13 @@ class MangaProjectDoc(Document):
 
     legacy_summary_id: str | None = None
     active_version: int = 1
+    # Durable-context wiring (issue #4 / blueprint §7.2 Layer C): pointer to
+    # the accepted ProjectMemorySnapshotDoc version. Additive with a default —
+    # v1 code never reads or writes it; the v2 bridge advances it atomically.
+    # NOTE: raw Mongo queries on this field do NOT match documents where the
+    # field is missing, so the bridge's ensure_genesis_snapshot materializes
+    # it with $set before the first optimistic advance (ADR-011).
+    active_memory_version: int = 0
     created_at: datetime = Field(default_factory=_now)
     updated_at: datetime = Field(default_factory=_now)
 

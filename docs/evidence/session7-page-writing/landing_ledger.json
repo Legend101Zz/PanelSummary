@@ -1,0 +1,59 @@
+{
+  "session": 7,
+  "page_writing_attempts": [
+    {
+      "stage_run_id": "stage_manga_page_writing_f11184e54fba8ea75ee7",
+      "attempt": 11,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.04206318,
+      "outcome": "failed",
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "at": "2026-08-08T23:57:55.992147+00:00"
+    },
+    {
+      "stage_run_id": "stage_manga_page_writing_2db1d27d51825cc5e6b6",
+      "attempt": 1,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.061782119999999996,
+      "outcome": "failed",
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "at": "2026-08-09T00:07:12.770456+00:00"
+    },
+    {
+      "stage_run_id": "stage_manga_page_writing_379729208df88e8cf8e1",
+      "attempt": 1,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.0745644,
+      "outcome": "failed",
+      "error_code": "AGENT_RUNTIME_ERROR",
+      "at": "2026-08-09T00:13:41.663246+00:00"
+    },
+    {
+      "stage_run_id": "stage_manga_page_writing_379729208df88e8cf8e1",
+      "attempt": 2,
+      "model": "MiniMax-M3",
+      "cost_usd": 0.03573738,
+      "outcome": "ACCEPTED"
+    }
+  ],
+  "thumbnail_attempts": [
+    {
+      "stage_run_id": "stage_manga_thumbnail_ff6f91db4595b4953f23",
+      "attempt": 1,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.141728055,
+      "outcome": "failed"
+    },
+    {
+      "stage_run_id": "stage_manga_thumbnail_8f57b8f9a2bbd3fe849f",
+      "attempt": 1,
+      "model": "MiniMax-M2.7-highspeed",
+      "cost_usd": 0.09058485000000001,
+      "outcome": "ACCEPTED",
+      "at": "2026-08-09 00:25:45.962000"
+    }
+  ],
+  "totals": {
+    "planning_text_usd": 0.446459985
+  }
+}

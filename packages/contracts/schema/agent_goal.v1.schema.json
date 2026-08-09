@@ -1,0 +1,261 @@
+{
+  "$defs": {
+    "AcceptanceTestRef": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "test_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Test Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "test_id",
+        "description"
+      ],
+      "title": "AcceptanceTestRef",
+      "type": "object"
+    },
+    "AgentBudget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_cost_usd": {
+          "minimum": 0.0,
+          "title": "Max Cost Usd",
+          "type": "number"
+        },
+        "max_input_tokens": {
+          "minimum": 1,
+          "title": "Max Input Tokens",
+          "type": "integer"
+        },
+        "max_output_tokens": {
+          "minimum": 1,
+          "title": "Max Output Tokens",
+          "type": "integer"
+        },
+        "max_repair_attempts": {
+          "maximum": 2,
+          "minimum": 0,
+          "title": "Max Repair Attempts",
+          "type": "integer"
+        },
+        "max_steps": {
+          "minimum": 1,
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "max_tool_calls": {
+          "minimum": 0,
+          "title": "Max Tool Calls",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_steps",
+        "max_tool_calls",
+        "max_input_tokens",
+        "max_output_tokens",
+        "max_repair_attempts",
+        "max_cost_usd"
+      ],
+      "title": "AgentBudget",
+      "type": "object"
+    },
+    "AgentGoalType": {
+      "enum": [
+        "BOOK_CANON",
+        "MANGA_DIRECTION",
+        "MANGA_PAGE_WRITING",
+        "MANGA_THUMBNAIL",
+        "MANGA_COMPOSITION",
+        "REEL_DIRECTION",
+        "ARTIFACT_REPAIR"
+      ],
+      "title": "AgentGoalType",
+      "type": "string"
+    },
+    "ArtifactKind": {
+      "enum": [
+        "context_pack",
+        "adaptation_beat_set",
+        "manga_plan",
+        "page_script_set",
+        "thumbnail_set",
+        "page_layout",
+        "compiled_layout",
+        "thumbnail_preview",
+        "validation_report",
+        "revision_request",
+        "image_attempt",
+        "image_asset",
+        "asset_request_set",
+        "manga_script",
+        "storyboard",
+        "page_composition",
+        "rendered_page",
+        "rendered_page_set",
+        "manga_edition",
+        "manga_manifest",
+        "reel_spec",
+        "render_receipt",
+        "memory_delta"
+      ],
+      "title": "ArtifactKind",
+      "type": "string"
+    },
+    "ArtifactRef": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "content_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "schema_version": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "kind",
+        "schema_version",
+        "content_hash"
+      ],
+      "title": "ArtifactRef",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/agent_goal.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "acceptance_tests": {
+      "items": {
+        "$ref": "#/$defs/AcceptanceTestRef"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "title": "Acceptance Tests",
+      "type": "array"
+    },
+    "allowed_tools": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Allowed Tools",
+      "type": "array"
+    },
+    "budget": {
+      "$ref": "#/$defs/AgentBudget"
+    },
+    "constraints": {
+      "maxProperties": 128,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Constraints",
+      "type": "object"
+    },
+    "goal_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Goal Id",
+      "type": "string"
+    },
+    "goal_type": {
+      "$ref": "#/$defs/AgentGoalType"
+    },
+    "input_artifact_refs": {
+      "items": {
+        "$ref": "#/$defs/ArtifactRef"
+      },
+      "maxItems": 1000,
+      "title": "Input Artifact Refs",
+      "type": "array"
+    },
+    "output_schema": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Output Schema",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "maxLength": 500,
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "stage_run_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Stage Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "goal_id",
+    "run_id",
+    "stage_run_id",
+    "goal_type",
+    "output_schema",
+    "schema_version",
+    "acceptance_tests",
+    "budget"
+  ],
+  "title": "AgentGoal",
+  "type": "object"
+}

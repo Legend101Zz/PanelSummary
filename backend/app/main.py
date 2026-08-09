@@ -14,6 +14,7 @@ control plane.
 """
 
 import hashlib
+from pathlib import Path
 import logging
 import os
 from datetime import datetime
@@ -25,12 +26,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 
+from app.api.routes.internal_tools import internal_tools_router
+from app.api.routes.manga_v2_reader import manga_v2_reader_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.manga_projects import router as manga_projects_router
 from app.api.routes.media import router as media_router
+from app.api.routes.scopes import router as scopes_router
 from app.config import get_settings
 from app.manga_models import MangaAssetDoc, MangaPageDoc, MangaProjectDoc, MangaSliceDoc
 from app.models import Book, JobStatus, ProcessingStatus
+from app.persistence.v1_bridge import V1BridgedRepositories, init_wired_documents
+from app.services.page_domain_tools import MangaDomainToolService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,15 +65,47 @@ app.add_middleware(
 app.include_router(jobs_router)
 app.include_router(manga_projects_router)
 app.include_router(media_router)
+app.include_router(scopes_router)
+
+# Internal agent domain-tool boundary (ADR-012). The sealed Node agent
+# worker is the only intended caller; the shared bearer token gates it and
+# every tool call is re-authorized against run/stage/context ownership.
+# Session 4: MangaDomainToolService (donor dispatcher) adds the page-writing
+# and thumbnail planning tools on top of the Director tools.
+_bridged_repositories = V1BridgedRepositories()
+# Session 6: read-only reader-v2 seam over the v2 lane (ADR-009 consumer).
+# Additive router — the legacy v1 reader endpoints above are untouched.
+app.include_router(
+    manga_v2_reader_router(
+        _bridged_repositories,
+        # The v2 rendering lane writes to the REPO-ROOT storage tree (the
+        # stage drivers pass media_root=<repo>/storage), which is distinct
+        # from v1's backend/storage (settings.image_dir) — two trees, one
+        # per lane.
+        storage_root=Path(__file__).resolve().parents[2] / "storage",
+    )
+)
+app.include_router(
+    internal_tools_router(
+        MangaDomainToolService(_bridged_repositories, _bridged_repositories),
+        service_token=os.getenv(
+            "DOMAIN_TOOL_BROKER_TOKEN", "local-domain-tool-token-change-me"
+        ),
+    )
+)
 
 # MongoDB connection — created once at startup, reused for the process lifetime.
 motor_client: AsyncIOMotorClient | None = None
+# Separate tz-aware client for the durable-context collections (ADR-011):
+# the ported contracts require aware datetimes while v1's client must stay
+# naive so v1 API responses keep their exact shape.
+motor_client_v2: AsyncIOMotorClient | None = None
 
 
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize MongoDB + Beanie ODM and ensure storage dirs exist."""
-    global motor_client
+    global motor_client, motor_client_v2
     motor_client = AsyncIOMotorClient(settings.mongodb_url)
     db = motor_client[settings.db_name]
 
@@ -78,6 +116,11 @@ async def startup_event() -> None:
             MangaProjectDoc, MangaSliceDoc, MangaPageDoc, MangaAssetDoc,
         ],
     )
+    # Durable-context collections (ADR-011). Donor BookDoc / MangaProjectDoc
+    # are deliberately NOT registered: the live v1 documents above own the
+    # colliding `books` / `manga_projects` collections; the v2 lane reaches
+    # them through the bridge.
+    motor_client_v2 = await init_wired_documents(settings.mongodb_url, settings.db_name)
 
     os.makedirs(settings.upload_dir, exist_ok=True)
     os.makedirs(settings.pdf_dir, exist_ok=True)
@@ -91,6 +134,8 @@ async def startup_event() -> None:
 async def shutdown_event() -> None:
     if motor_client:
         motor_client.close()
+    if motor_client_v2:
+        motor_client_v2.close()
 
 
 # ============================================================

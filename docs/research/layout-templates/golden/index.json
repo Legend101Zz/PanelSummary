@@ -1,0 +1,90 @@
+{
+  "t_ref_rows_2_3_2": {
+    "use_when": {
+      "purpose": [
+        "setup",
+        "conflict",
+        "reaction"
+      ],
+      "panels": 7,
+      "tempo": "normal"
+    },
+    "panel_count": 7,
+    "read_order": [
+      "p2",
+      "p1",
+      "p5",
+      "p4",
+      "p3",
+      "p7",
+      "p6"
+    ]
+  },
+  "t_page_turn_reveal": {
+    "use_when": {
+      "purpose": [
+        "reveal",
+        "payoff"
+      ],
+      "panels": 4,
+      "tempo": "impact"
+    },
+    "panel_count": 4,
+    "read_order": [
+      "p3",
+      "p2",
+      "p1",
+      "p4_reveal"
+    ]
+  },
+  "t_action_diagonals": {
+    "use_when": {
+      "purpose": [
+        "conflict",
+        "action"
+      ],
+      "panels": 4,
+      "tempo": "quick"
+    },
+    "panel_count": 4,
+    "read_order": [
+      "p2",
+      "p1",
+      "p4",
+      "p3"
+    ]
+  },
+  "t_splash_inset": {
+    "use_when": {
+      "purpose": [
+        "reveal",
+        "hook"
+      ],
+      "panels": 3,
+      "tempo": "hold"
+    },
+    "panel_count": 3,
+    "read_order": [
+      "p2",
+      "p1_splash",
+      "p3"
+    ]
+  },
+  "t_quiet_grid_4": {
+    "use_when": {
+      "purpose": [
+        "explanation",
+        "setup"
+      ],
+      "panels": 4,
+      "tempo": "hold"
+    },
+    "panel_count": 4,
+    "read_order": [
+      "p2",
+      "p1",
+      "p4",
+      "p3"
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "$id": "https://scrollstack.dev/contracts/asset_request.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "aspect_ratio": {
+      "pattern": "^[1-9][0-9]*:[1-9][0-9]*$",
+      "title": "Aspect Ratio",
+      "type": "string"
+    },
+    "asset_request_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Asset Request Id",
+      "type": "string"
+    },
+    "asset_type": {
+      "enum": [
+        "character_sprite",
+        "expression",
+        "key_panel",
+        "background"
+      ],
+      "title": "Asset Type",
+      "type": "string"
+    },
+    "camera": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Camera"
+    },
+    "character_id": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Character Id"
+    },
+    "consistency_reference_asset_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 16,
+      "title": "Consistency Reference Asset Ids",
+      "type": "array"
+    },
+    "expression": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Expression"
+    },
+    "idempotency_key": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Idempotency Key",
+      "type": "string"
+    },
+    "model_policy_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Model Policy Id",
+      "type": "string"
+    },
+    "pose": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Pose"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "prompt_fields": {
+      "maxProperties": 32,
+      "minProperties": 1,
+      "patternProperties": {
+        "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "propertyNames": {
+        "maxLength": 128,
+        "minLength": 1
+      },
+      "title": "Prompt Fields",
+      "type": "object"
+    }
+  },
+  "required": [
+    "asset_request_id",
+    "project_id",
+    "asset_type",
+    "aspect_ratio",
+    "prompt_fields",
+    "model_policy_id",
+    "idempotency_key"
+  ],
+  "title": "AssetRequest",
+  "type": "object"
+}

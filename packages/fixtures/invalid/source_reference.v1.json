@@ -1,0 +1,8 @@
+{
+  "schema_version": "invalid-fixture.v1",
+  "base_fixture": "canonical/manga_page_plan.v1.json",
+  "operation": "replace",
+  "path": "/source_fact_ids/0",
+  "value": "fact_outside_context",
+  "expected_code": "SOURCE_FACT_NOT_IN_SCOPE"
+}

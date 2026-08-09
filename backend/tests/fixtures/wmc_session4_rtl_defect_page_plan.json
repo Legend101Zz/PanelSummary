@@ -1,0 +1,272 @@
+{
+ "schema_version": "manga-page-plan.v1",
+ "page_plan_id": "page_plan_0",
+ "project_id": "6a0b5a5b201a8d03f1d82503",
+ "script_set_artifact_id": "accepted_page_script_set_0624a13960d4a58b79683073",
+ "canvas": {
+  "width_px": 1600,
+  "height_px": 2400,
+  "trim": {
+   "x": 0.03,
+   "y": 0.02,
+   "width": 0.94,
+   "height": 0.96
+  },
+  "safe": {
+   "x": 0.06,
+   "y": 0.05,
+   "width": 0.88,
+   "height": 0.9
+  },
+  "bleed_pct": 0.02
+ },
+ "reading_direction": "rtl",
+ "page_script": {
+  "page_id": "page_0",
+  "page_index": 0,
+  "page_kind": "standard",
+  "entry_state": "Haw at Cheese Station C, fearful of entering the maze",
+  "exit_state": "Haw has conquered initial fear and continues through the maze",
+  "page_turn_panel_id": null,
+  "panels": [
+   {
+    "panel_id": "panel_0_0",
+    "purpose": "setup",
+    "story_beat": "hook",
+    "importance": "high",
+    "tempo": "impact",
+    "camera": {
+     "shot": "medium",
+     "angle": "eye",
+     "movement": "static"
+    },
+    "blocking": [],
+    "environment_ref": null,
+    "prop_refs": [],
+    "focal_regions": [],
+    "avoid_text_regions": [],
+    "motion": {
+     "direction": null,
+     "speed": null,
+     "effects": []
+    },
+    "source_refs": [
+     {
+      "book_id": "6a0b5a11201a8d03f1d82501",
+      "source_unit_id": "section_0009_000_00_ab5005823d0b",
+      "page_start": 1,
+      "page_end": 1,
+      "start_offset": null,
+      "end_offset": null,
+      "quote": null,
+      "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+     }
+    ],
+    "source_fact_ids": [
+     "proof-section_0004_000_00_222d767c39c3",
+     "proof-section_0006_000_00_74437bd5ed8f"
+    ]
+   },
+   {
+    "panel_id": "panel_0_1",
+    "purpose": "action",
+    "story_beat": "conflict",
+    "importance": "high",
+    "tempo": "normal",
+    "camera": {
+     "shot": "wide",
+     "angle": "eye",
+     "movement": "pan"
+    },
+    "blocking": [],
+    "environment_ref": null,
+    "prop_refs": [],
+    "focal_regions": [],
+    "avoid_text_regions": [],
+    "motion": {
+     "direction": "forward",
+     "speed": "medium",
+     "effects": []
+    },
+    "source_refs": [
+     {
+      "book_id": "6a0b5a11201a8d03f1d82501",
+      "source_unit_id": "section_0009_000_00_ab5005823d0b",
+      "page_start": 1,
+      "page_end": 1,
+      "start_offset": null,
+      "end_offset": null,
+      "quote": null,
+      "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+     }
+    ],
+    "source_fact_ids": [
+     "proof-section_0006_000_00_74437bd5ed8f"
+    ]
+   },
+   {
+    "panel_id": "panel_0_2",
+    "purpose": "reaction",
+    "story_beat": "explanation",
+    "importance": "high",
+    "tempo": "normal",
+    "camera": {
+     "shot": "medium",
+     "angle": "eye",
+     "movement": "static"
+    },
+    "blocking": [],
+    "environment_ref": null,
+    "prop_refs": [],
+    "focal_regions": [],
+    "avoid_text_regions": [],
+    "motion": {
+     "direction": null,
+     "speed": null,
+     "effects": []
+    },
+    "source_refs": [
+     {
+      "book_id": "6a0b5a11201a8d03f1d82501",
+      "source_unit_id": "section_0009_000_00_ab5005823d0b",
+      "page_start": 1,
+      "page_end": 1,
+      "start_offset": null,
+      "end_offset": null,
+      "quote": null,
+      "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+     }
+    ],
+    "source_fact_ids": [
+     "proof-section_0005_000_00_b184f4508866",
+     "proof-section_0006_000_00_74437bd5ed8f"
+    ]
+   },
+   {
+    "panel_id": "panel_0_3",
+    "purpose": "reveal",
+    "story_beat": "reveal",
+    "importance": "page_turn",
+    "tempo": "hold",
+    "camera": {
+     "shot": "close_up",
+     "angle": "eye",
+     "movement": "static"
+    },
+    "blocking": [],
+    "environment_ref": null,
+    "prop_refs": [],
+    "focal_regions": [],
+    "avoid_text_regions": [],
+    "motion": {
+     "direction": null,
+     "speed": null,
+     "effects": []
+    },
+    "source_refs": [
+     {
+      "book_id": "6a0b5a11201a8d03f1d82501",
+      "source_unit_id": "section_0009_000_00_ab5005823d0b",
+      "page_start": 1,
+      "page_end": 1,
+      "start_offset": null,
+      "end_offset": null,
+      "quote": null,
+      "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+     }
+    ],
+    "source_fact_ids": [
+     "proof-section_0004_000_00_222d767c39c3",
+     "proof-section_0006_000_00_74437bd5ed8f"
+    ]
+   }
+  ],
+  "text_elements": []
+ },
+ "layout_root": {
+  "kind": "split",
+  "node_id": "split_page_0",
+  "axis": "y",
+  "ratios": [
+   0.5,
+   0.5
+  ],
+  "gutter": {
+   "value": 0.02,
+   "unit": "page_pct"
+  },
+  "angle_deg": 0.0,
+  "children": [
+   {
+    "kind": "split",
+    "node_id": "split_row0_page_0",
+    "axis": "x",
+    "ratios": [
+     0.5,
+     0.5
+    ],
+    "gutter": {
+     "value": 0.02,
+     "unit": "page_pct"
+    },
+    "angle_deg": 0.0,
+    "children": [
+     {
+      "kind": "panel",
+      "node_id": "node_panel_0_1",
+      "panel_id": "panel_0_1"
+     },
+     {
+      "kind": "panel",
+      "node_id": "node_panel_0_0",
+      "panel_id": "panel_0_0"
+     }
+    ]
+   },
+   {
+    "kind": "split",
+    "node_id": "split_row1_page_0",
+    "axis": "x",
+    "ratios": [
+     0.5,
+     0.5
+    ],
+    "gutter": {
+     "value": 0.02,
+     "unit": "page_pct"
+    },
+    "angle_deg": 0.0,
+    "children": [
+     {
+      "kind": "panel",
+      "node_id": "node_panel_0_3",
+      "panel_id": "panel_0_3"
+     },
+     {
+      "kind": "panel",
+      "node_id": "node_panel_0_2",
+      "panel_id": "panel_0_2"
+     }
+    ]
+   }
+  ]
+ },
+ "reading_edges": [
+  {
+   "from_panel_id": "panel_0_1",
+   "to_panel_id": "panel_0_0",
+   "reason": "RTL: right panel reads first in top row"
+  },
+  {
+   "from_panel_id": "panel_0_0",
+   "to_panel_id": "panel_0_2",
+   "reason": "vertical row transition to bottom row"
+  },
+  {
+   "from_panel_id": "panel_0_2",
+   "to_panel_id": "panel_0_3",
+   "reason": "RTL: right panel reads first in bottom row"
+  }
+ ],
+ "source_fact_ids": []
+}

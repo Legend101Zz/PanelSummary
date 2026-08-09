@@ -1,0 +1,91 @@
+{
+  "arm": "hs",
+  "model": "MiniMax-M2.7-highspeed",
+  "scope_id": "scope_fcf2959ab6b4ef8cfd45bb23",
+  "base_scope_id": "scope_e440233874519846e51c4e2c",
+  "goals": [
+    {
+      "goal": "manga_direction",
+      "reused": true,
+      "run_id": "run_dir_a99464c56fa3b96e777fe750",
+      "stage_run_id": "stage_dir_b579cd93c3a9bfafaea4d152",
+      "context_pack_id": "context_8404beaa4614b963b62e691b",
+      "artifact_id": "manga_plan_02734c7ca4e0282f06195a84",
+      "content_hash": "02734c7ca4e0282f06195a8421abc31a84000dc5a8d3dd571e03fc8899b90a32",
+      "model_receipt": {
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "purpose": "manga_direction",
+        "prompt_version": "manga-direction.v2",
+        "skill_hashes": [
+          "f634de4a41b3d640d7c78245eac25e1a0db0bacf9b62e9cf6c0de8d87fc448eb"
+        ],
+        "input_artifact_ids": [
+          "context_8404beaa4614b963b62e691b"
+        ],
+        "input_tokens": 16102,
+        "output_tokens": 4725,
+        "cost_usd": 0.02645298,
+        "latency_ms": 77368,
+        "attempt": 1,
+        "created_at": "2026-08-08T09:22:45.994649Z"
+      }
+    },
+    {
+      "goal": "manga_page_writing",
+      "reused": false,
+      "run_id": "run_dir_a99464c56fa3b96e777fe750",
+      "stage_run_id": "stage_manga_page_writing_0624a13960d4a58b7968",
+      "context_pack_id": "context_058ec480dbfd284cad53af5b",
+      "artifact_id": "accepted_page_script_set_0624a13960d4a58b79683073",
+      "content_hash": "47404315a645d01964a44b7709871031da80c0853aaa7a4efab74315a758e94a",
+      "model_receipt": {
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "purpose": "manga_page_writing",
+        "prompt_version": "manga-page-writing.v2",
+        "skill_hashes": [
+          "4f4654da8af09a04b86bae34526f95edda6cf6064a19053b7ec9ee6287129f85"
+        ],
+        "input_artifact_ids": [
+          "manga_plan_02734c7ca4e0282f06195a84",
+          "context_058ec480dbfd284cad53af5b"
+        ],
+        "input_tokens": 34135,
+        "output_tokens": 3599,
+        "cost_usd": 0.03016284,
+        "latency_ms": 42039,
+        "attempt": 1,
+        "created_at": "2026-08-08T09:49:56.812092Z"
+      }
+    },
+    {
+      "goal": "manga_thumbnail",
+      "reused": false,
+      "run_id": "run_dir_a99464c56fa3b96e777fe750",
+      "stage_run_id": "stage_manga_thumbnail_e02b371798056f72398a",
+      "context_pack_id": "context_87b053685567540c94a41866",
+      "artifact_id": "accepted_thumbnail_set_e02b371798056f72398af1cc",
+      "content_hash": "55a20617f2c9801f3b1f1366d16d6d5d543006ed0b384a386948a2a2bce999b6",
+      "model_receipt": {
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "purpose": "manga_thumbnail",
+        "prompt_version": "manga-thumbnail.v4",
+        "skill_hashes": [
+          "bde5d7022232dc54e836d5bfdf3707f62f264cacae44a2c7686305c55ab002e8"
+        ],
+        "input_artifact_ids": [
+          "accepted_page_script_set_0624a13960d4a58b79683073",
+          "context_87b053685567540c94a41866"
+        ],
+        "input_tokens": 157944,
+        "output_tokens": 12939,
+        "cost_usd": 0.13169665499999997,
+        "latency_ms": 165445,
+        "attempt": 1,
+        "created_at": "2026-08-08T09:52:43.569801Z"
+      }
+    }
+  ]
+}

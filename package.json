@@ -1,0 +1,22 @@
+{
+  "name": "scrollstack",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.10"
+    }
+  },
+  "scripts": {
+    "build": "corepack pnpm -r --if-present build",
+    "test": "corepack pnpm -r --if-present test",
+    "typecheck": "corepack pnpm -r --if-present typecheck",
+    "contracts:generate": "corepack pnpm --filter @scrollstack/contracts generate",
+    "contracts:test": "corepack pnpm --filter @scrollstack/contracts test",
+    "check": "corepack pnpm contracts:test && corepack pnpm typecheck && corepack pnpm test"
+  }
+}

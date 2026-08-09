@@ -1,0 +1,185 @@
+{
+  "run_id": "run_dir_a99464c56fa3b96e777fe750",
+  "stage_run_id": "stage_manga_page_art_d69ce9bcb9def21aab00",
+  "thumbnail_artifact_id": "accepted_thumbnail_set_8f57b8f9a2bbd3fe849f7b19",
+  "reused": false,
+  "total_image_cost_usd": 0.1562776,
+  "total_vision_cost_usd": 0.0019370000000000001,
+  "pages": [
+    {
+      "page_index": 0,
+      "mode": "C",
+      "status": "dsl_only_after_rejected",
+      "attempts": 2,
+      "image_cost_usd": 0.07811219999999999,
+      "page_art_artifact_id": null,
+      "composed_artifact_id": "composed_page_1460e3dd1b4f6cb9a1dd51eb",
+      "receipt_artifact_ids": [
+        "provider_receipt_2b2612d2c3e25b9d0efac083",
+        "provider_receipt_8cc6c2819eaad4292acbcc60",
+        "provider_receipt_1ddb7afcfe6c7d0e78ea29cc",
+        "provider_receipt_e37a338faba8c100267b325b"
+      ],
+      "qa_report_artifact_ids": [
+        "qa_report_aa435cc20419af15414fc224",
+        "qa_report_35962f1e0a63b9583492e0e2"
+      ],
+      "gate_summary": {
+        "accepted": false,
+        "gate_policy_version": "page-art-gates.v3",
+        "vision_text_advisory": true,
+        "vision_empty_balloon": false,
+        "reject_reason": "vision QA overall_ok=false",
+        "ocr": {
+          "clean": true,
+          "text_words": [],
+          "raw_word_count": 40,
+          "gate_version": "page-art-ocr-gate.v1"
+        },
+        "border_adherence": {
+          "page_score": 1.0,
+          "panel_scores": {
+            "panel_0": 1.0,
+            "panel_1": 1.0,
+            "panel_2": 1.0,
+            "panel_3": 1.0
+          },
+          "passed": true,
+          "threshold": 0.55,
+          "metric_version": "page-art-border-adherence.v1"
+        },
+        "vision_qa": {
+          "panel_count": 4,
+          "panels": [
+            {
+              "index": 1,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": true,
+              "empty_balloon": false,
+              "notes": "Top-right panel: boy at maze wall, fear expression, writing motion lines. Matches setup brief."
+            },
+            {
+              "index": 2,
+              "matches_brief": false,
+              "identity_ok": true,
+              "contains_text": false,
+              "empty_balloon": false,
+              "notes": "Top-left panel shows boy running through tunnel, but appears fearful/fleeing rather than exhilarated with cool breeze; mood does not match action brief."
+            },
+            {
+              "index": 3,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "empty_balloon": false,
+              "notes": "Bottom-right panel: boy offering cheese bits to seated cloaked figure who shakes head. Matches reveal brief."
+            },
+            {
+              "index": 4,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": true,
+              "empty_balloon": false,
+              "notes": "Bottom-left panel: close-up of boy writing on wall with sound-effect text. Matches reaction brief."
+            }
+          ],
+          "overall_ok": false
+        },
+        "vision_cost_usd": 0.0009350000000000001
+      }
+    },
+    {
+      "page_index": 1,
+      "mode": "C",
+      "status": "dsl_only_after_rejected",
+      "attempts": 2,
+      "image_cost_usd": 0.0781654,
+      "page_art_artifact_id": null,
+      "composed_artifact_id": "composed_page_981262c6d0840ee2bc059227",
+      "receipt_artifact_ids": [
+        "provider_receipt_47b08a2714699cbb2ffc6b53",
+        "provider_receipt_3ac2a8a45a4e341b0e02d5b3",
+        "provider_receipt_1835b886e9955a9359d72e63",
+        "provider_receipt_053af29ab73db906be0baf94"
+      ],
+      "qa_report_artifact_ids": [
+        "qa_report_492d113422fe56f5a64f8f45",
+        "qa_report_f26ef1b73a1d7f5ae155145e"
+      ],
+      "gate_summary": {
+        "accepted": false,
+        "gate_policy_version": "page-art-gates.v3",
+        "vision_text_advisory": true,
+        "vision_empty_balloon": false,
+        "reject_reason": "OCR gate found real text: ['Fear', 'new']; border adherence 0.48 below 0.55; vision QA overall_ok=false",
+        "ocr": {
+          "clean": false,
+          "text_words": [
+            {
+              "text": "Fear",
+              "confidence": 90.887314
+            },
+            {
+              "text": "new",
+              "confidence": 77.27253
+            }
+          ],
+          "raw_word_count": 53,
+          "gate_version": "page-art-ocr-gate.v1"
+        },
+        "border_adherence": {
+          "page_score": 0.4791666666666667,
+          "panel_scores": {
+            "panel_4": 0.4791666666666667,
+            "panel_5": 0.4791666666666667,
+            "panel_6": 0.4791666666666667,
+            "panel_7": 0.4791666666666667
+          },
+          "passed": false,
+          "threshold": 0.55,
+          "metric_version": "page-art-border-adherence.v1"
+        },
+        "vision_qa": {
+          "panel_count": 4,
+          "panels": [
+            {
+              "index": 1,
+              "matches_brief": false,
+              "identity_ok": false,
+              "contains_text": false,
+              "empty_balloon": false,
+              "notes": "Brief: Haw rounds corner into Cheese Station N piled high, greeted by Sniff and Scurry. Image shows two mice (Sniff and Scurry) at a large pile of cheese in a stone corridor, but Haw is not visible. Scene partially matches but Haw is missing."
+            },
+            {
+              "index": 2,
+              "matches_brief": false,
+              "identity_ok": false,
+              "contains_text": true,
+              "empty_balloon": false,
+              "notes": "Brief: Haw draws a cheese-shaped insight summary on the wall. Image shows a small person drawing on a wall with sketches/doodles and text 'Fear', 'CHART YOUR PATH', 'NEW PATH'. Scene roughly matches the drawing-on-wall idea, but identity of Haw cannot be confirmed; no empty speech balloon."
+            },
+            {
+              "index": 3,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "empty_balloon": false,
+              "notes": "Brief: Classmates gather at a hotel lounge reunion with drinks and cheese. Image shows a group of suited people in a lounge with wine glasses, a seated man, and cheese on a table. Matches well."
+            },
+            {
+              "index": 4,
+              "matches_brief": true,
+              "identity_ok": false,
+              "contains_text": false,
+              "empty_balloon": false,
+              "notes": "Brief: Haw hears echoing footsteps in a maze corridor near Cheese Station N. Image shows a small figure walking down a stone corridor with sound-wave arcs indicating echoes. Matches the scene; Haw's identity not explicitly confirmable but consistent."
+            }
+          ],
+          "overall_ok": false
+        },
+        "vision_cost_usd": 0.001002
+      }
+    }
+  ]
+}

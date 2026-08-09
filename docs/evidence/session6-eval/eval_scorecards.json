@@ -1,0 +1,245 @@
+{
+  "scorecards": [
+    {
+      "schema_version": "eval-scorecard.v1",
+      "harness_version": "manga-eval-harness.v1",
+      "layout_iou_version": "layout-iou.v1",
+      "judge_rubric_version": "m3-judge-rubrics.v1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "run_id": "run_dir_a99464c56fa3b96e777fe750",
+      "lane": "C",
+      "subject": "s5-accepted-page-art",
+      "pages": [
+        {
+          "page_index": 0,
+          "layout_iou": {
+            "page_iou": 0.3841439113454248,
+            "panel_ious": {
+              "panel_0_1": 0.6433133149092971,
+              "panel_0_0": 0.6136621315192744,
+              "panel_0_2": 0.0,
+              "panel_0_3": 0.2796001989531276
+            },
+            "seeded_panels": 3,
+            "metric_version": "layout-iou.v1"
+          },
+          "border_adherence_score": 0.7994791666666666,
+          "ocr_clean": true,
+          "judge": {
+            "readability": 4,
+            "fidelity": {
+              "score": 1,
+              "claims_conveyed": 1,
+              "claims_total": 36
+            },
+            "craft": {
+              "page_turn_hook": 3,
+              "shot_variety": 4,
+              "text_density_comfort": 4
+            },
+            "notes": "The page shows a rodent-like character (presumably Haw) leaping amid flying cheese while two hooded monk figures react in alarm, ending with a close-up of a terrified hooded figure. While the artwork is competent and the panel composition reads clearly, virtually none of the listed must-preserve claims are conveyed. Only 'fear makes things worse but action helps' is arguably legible through the monk's terrified reaction. The page appears to depict the moment cheese is discovered/explodes into view, but the 36 listed claims cover extensive narrative beats about Haw's journey, Hem's resistance, Sniff and Scurry, organizational change lessons, writing on walls, hanging shoes, toasts, New Cheese, Cheese Station N, etc.\u2014none of which are depicted. The page also does not include any text/captions that could transmit these claims. The final close-up of the fearful monk is a decent page-turn hook, but fidelity to the source claims is extremely low."
+          },
+          "judge_cost_usd": 0.000489,
+          "notes": []
+        },
+        {
+          "page_index": 1,
+          "layout_iou": {
+            "page_iou": 0.32857231434240364,
+            "panel_ious": {
+              "panel_1_1": 0.5275120464852607,
+              "panel_1_0": 0.006226969954648526,
+              "panel_1_2": 0.6405187074829932,
+              "panel_1_3": 0.14003153344671201
+            },
+            "seeded_panels": 4,
+            "metric_version": "layout-iou.v1"
+          },
+          "border_adherence_score": 1.0,
+          "ocr_clean": true,
+          "judge": {
+            "readability": 4,
+            "fidelity": {
+              "score": 1,
+              "claims_conveyed": 2,
+              "claims_total": 37
+            },
+            "craft": {
+              "page_turn_hook": 3,
+              "shot_variety": 4,
+              "text_density_comfort": 4
+            },
+            "notes": "Page shows an adventurer-style character with map/compass (Panel 1: map reading), joyful leap among floating stones (Panel 2), running through rats/rocks toward a huddled figure (Panel 3), and elderly figure with two rabbit-like creatures (Panel 4). The page is generic fantasy art with no dialogue, no text, no Cheesy/who/which references, and no clear 'Who Moved My Cheese' narrative beats. The only claims arguably conveyed are vague ones about 'envisioning/finding something better' and 'facing fear and moving in a new direction.' Claims about Haw, Hem, Sniff, Scurry, Cheese Station N, handwriting on walls, mice, toast, shoes around neck, peer pressure, etc. are entirely absent. No text whatsoever, so virtually zero fidelity to the specific source claims. Reading order is clear and shot variety is decent, but it tells a completely different story than the source."
+          },
+          "judge_cost_usd": 0.000489,
+          "notes": []
+        }
+      ],
+      "totals": {
+        "mean_layout_iou": 0.3563581128439142,
+        "judged_pages": 2,
+        "judge_cost_usd": 0.000978
+      },
+      "artifact_id": "eval_scorecard_56bb6551285ae08211553b35"
+    },
+    {
+      "schema_version": "eval-scorecard.v1",
+      "harness_version": "manga-eval-harness.v1",
+      "layout_iou_version": "layout-iou.v1",
+      "judge_rubric_version": "m3-judge-rubrics.v1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "run_id": "run_dir_a99464c56fa3b96e777fe750",
+      "lane": "C",
+      "subject": "latest-composed-pages",
+      "pages": [
+        {
+          "page_index": 0,
+          "layout_iou": null,
+          "border_adherence_score": null,
+          "ocr_clean": null,
+          "judge": {
+            "readability": 5,
+            "fidelity": {
+              "score": 1,
+              "claims_conveyed": 1,
+              "claims_total": 36
+            },
+            "craft": {
+              "page_turn_hook": 4,
+              "shot_variety": 4,
+              "text_density_comfort": 5
+            },
+            "notes": "The page depicts a mouse/creature bursting through a stone wall causing cheese chunks to fly, two robed figures reacting with shock, and a dramatic mirrored close-up of a terrified face. None of the listed claims are preserved. The scene shows destruction rather than any of the specific narrative beats: Haw smiling while running, hoisting shoes around his neck, writing 'Hooray for Change' on walls, tasting New Cheese, toast, marking trails for Hem, Sniff and Scurry, empty Cheese Station, Hem's resistance, fear of change themes, etc. Only the general thematic idea of 'fear/shock at change' is loosely suggested. The robed figures don't read as Hem/Sniff/Scurry. With four panels labeled action/setup/reaction/reveal and ~36 must-preserve claims, nearly all fail. The closest conveyed claim might be 'fear makes things worse' via the terrified close-up. Craft-wise the page is solid with strong shot variety, dramatic reveal panel, and clean reading order, but fidelity to source is catastrophically low."
+          },
+          "judge_cost_usd": 0.000502,
+          "notes": [
+            "composition=manga-composition.v2"
+          ]
+        },
+        {
+          "page_index": 1,
+          "layout_iou": null,
+          "border_adherence_score": null,
+          "ocr_clean": null,
+          "judge": {
+            "readability": 5,
+            "fidelity": {
+              "score": 1,
+              "claims_conveyed": 4,
+              "claims_total": 36
+            },
+            "craft": {
+              "page_turn_hook": 3,
+              "shot_variety": 4,
+              "text_density_comfort": 4
+            },
+            "notes": "Page is visually polished with strong shot variety (map insert, wide cliff pose, wide chase, ECU sweat drop) and reads cleanly L\u2192R, top\u2192bottom. However, this is an original/fantasy page (map, compass, cliffs, magical sunlight, rabbits, rodents) that has essentially no connection to the 'Who Moved My Cheese?' source beats. Almost none of the listed claims survive: there is no cheese station, no Hem, no Sniff/Scurry welcoming scene, no marked trails, no toast, no handwriting-on-the-wall, no fear-vs-adaptation theme legible. The few legible resonances are generic: a young character running joyfully (Haw smiling as he runs - loosely), movement/action over fear (loosely), and an ECU cliffhanger of an older sweating figure (could map to 'someone approaching' or fear). No organization-change, no Hem resisting, no cheese imagery, no writing on walls. Craft is high; fidelity is very low."
+          },
+          "judge_cost_usd": 0.000492,
+          "notes": [
+            "composition=manga-composition.v2"
+          ]
+        }
+      ],
+      "totals": {
+        "mean_layout_iou": null,
+        "judged_pages": 2,
+        "judge_cost_usd": 0.000994
+      },
+      "extra": {
+        "note": "Structural metrics live on the page_art subject; the composed subject is judge-only (the compositor draws frames at compiled geometry by construction)."
+      },
+      "artifact_id": "eval_scorecard_36251607c7e230ab6cb25bff"
+    }
+  ],
+  "judge_receipts": [
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "db947b04c59a069d180a4ed2a5f725f8147184634d87c4026e4c4e981e07f839.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37
+      },
+      "usage": {
+        "prompt_tokens": 2204,
+        "completion_tokens": 264
+      },
+      "cost_usd": 0.000489,
+      "latency_ms": 6195,
+      "error": null,
+      "response_text": "{\"readability\": 4, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 1, \"claims_total\": 36}, \"craft\": {\"page_turn_hook\": 3, \"shot_variety\": 4, \"text_density_comfort\": 4}, \"notes\": \"The page shows a rodent-like character (presumably Haw) leaping amid flying cheese while two hooded monk figures react in alarm, ending with a close-up of a terrified hooded figure. While the artwork is competent and the panel composition reads clearly, virtually none of the listed must-preserve claims are conveyed. Only 'fear makes things worse but action helps' is arguably legible through the monk's terrified reaction. The page appears to depict the moment cheese is discovered/explodes into view, but the 36 listed claims cover extensive narrative beats about Haw's journey, Hem's resistance, Sniff and Scurry, organizational change lessons, writing on walls, hanging shoes, toasts, New Cheese, Cheese Station N, etc.\\u2014none of which are depicted. The page also does not include any text/captions that could transmit these claims. The final close-up of the fearful monk is a decent page-turn hook, but fidelity to the source claims is extremely low.\"}",
+      "n_images": 0,
+      "at": "2026-08-08T23:25:49.539598+00:00",
+      "artifact_id": "provider_receipt_e1d434ed0428110fff12c0f4"
+    },
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "20fac1c68aea0a891b71c48c9b7da7c22cc2ad10da563d8f9e82b07e75aa98f8.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37
+      },
+      "usage": {
+        "prompt_tokens": 2207,
+        "completion_tokens": 264
+      },
+      "cost_usd": 0.000489,
+      "latency_ms": 5867,
+      "error": null,
+      "response_text": "{\"readability\": 4, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 2, \"claims_total\": 37}, \"craft\": {\"page_turn_hook\": 3, \"shot_variety\": 4, \"text_density_comfort\": 4}, \"notes\": \"Page shows an adventurer-style character with map/compass (Panel 1: map reading), joyful leap among floating stones (Panel 2), running through rats/rocks toward a huddled figure (Panel 3), and elderly figure with two rabbit-like creatures (Panel 4). The page is generic fantasy art with no dialogue, no text, no Cheesy/who/which references, and no clear 'Who Moved My Cheese' narrative beats. The only claims arguably conveyed are vague ones about 'envisioning/finding something better' and 'facing fear and moving in a new direction.' Claims about Haw, Hem, Sniff, Scurry, Cheese Station N, handwriting on walls, mice, toast, shoes around neck, peer pressure, etc. are entirely absent. No text whatsoever, so virtually zero fidelity to the specific source claims. Reading order is clear and shot variety is decent, but it tells a completely different story than the source.\"}",
+      "n_images": 0,
+      "at": "2026-08-08T23:25:56.037867+00:00",
+      "artifact_id": "provider_receipt_55204aa0f5ad8c73531ed82e"
+    },
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "d94e1fe597d62ec87e3068ba8fb2b36b04d8032d38c709cd361674947ba091f6.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37
+      },
+      "usage": {
+        "prompt_tokens": 2204,
+        "completion_tokens": 285
+      },
+      "cost_usd": 0.000502,
+      "latency_ms": 8755,
+      "error": null,
+      "response_text": "{\"readability\": 5, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 1, \"claims_total\": 36}, \"craft\": {\"page_turn_hook\": 4, \"shot_variety\": 4, \"text_density_comfort\": 5}, \"notes\": \"The page depicts a mouse/creature bursting through a stone wall causing cheese chunks to fly, two robed figures reacting with shock, and a dramatic mirrored close-up of a terrified face. None of the listed claims are preserved. The scene shows destruction rather than any of the specific narrative beats: Haw smiling while running, hoisting shoes around his neck, writing 'Hooray for Change' on walls, tasting New Cheese, toast, marking trails for Hem, Sniff and Scurry, empty Cheese Station, Hem's resistance, fear of change themes, etc. Only the general thematic idea of 'fear/shock at change' is loosely suggested. The robed figures don't read as Hem/Sniff/Scurry. With four panels labeled action/setup/reaction/reveal and ~36 must-preserve claims, nearly all fail. The closest conveyed claim might be 'fear makes things worse' via the terrified close-up. Craft-wise the page is solid with strong shot variety, dramatic reveal panel, and clean reading order, but fidelity to source is catastrophically low.\"}",
+      "n_images": 0,
+      "at": "2026-08-08T23:26:04.860629+00:00",
+      "artifact_id": "provider_receipt_049980dad1744713e5f89ebf"
+    },
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "971202508735ffac176d260593ecc194efc2d6e21786a7ae40227d36bf6be9ee.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37
+      },
+      "usage": {
+        "prompt_tokens": 2207,
+        "completion_tokens": 269
+      },
+      "cost_usd": 0.000492,
+      "latency_ms": 9332,
+      "error": null,
+      "response_text": "{\"readability\": 5, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 4, \"claims_total\": 36}, \"craft\": {\"page_turn_hook\": 3, \"shot_variety\": 4, \"text_density_comfort\": 4}, \"notes\": \"Page is visually polished with strong shot variety (map insert, wide cliff pose, wide chase, ECU sweat drop) and reads cleanly L\\u2192R, top\\u2192bottom. However, this is an original/fantasy page (map, compass, cliffs, magical sunlight, rabbits, rodents) that has essentially no connection to the 'Who Moved My Cheese?' source beats. Almost none of the listed claims survive: there is no cheese station, no Hem, no Sniff/Scurry welcoming scene, no marked trails, no toast, no handwriting-on-the-wall, no fear-vs-adaptation theme legible. The few legible resonances are generic: a young character running joyfully (Haw smiling as he runs - loosely), movement/action over fear (loosely), and an ECU cliffhanger of an older sweating figure (could map to 'someone approaching' or fear). No organization-change, no Hem resisting, no cheese imagery, no writing on walls. Craft is high; fidelity is very low.\"}",
+      "n_images": 0,
+      "at": "2026-08-08T23:26:14.229743+00:00",
+      "artifact_id": "provider_receipt_d47136ad7ce3caf30f2e12db"
+    }
+  ]
+}

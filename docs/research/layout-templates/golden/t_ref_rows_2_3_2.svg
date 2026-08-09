@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="800" height="1200" fill="white"/>
+<title>t_ref_rows_2_3_2</title>
+<polygon points="35.1,34.8 440.4,34.8 420.8,409.2 35.1,426.1" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="232.8" cy="226.2" r="16" fill="#ddd" stroke="black"/>
+<text x="232.8" y="231.2" font-family="Helvetica" font-size="16" text-anchor="middle">1</text>
+<polygon points="454.2,35.7 765.2,35.7 765.2,393.3 434.7,407.7" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="604.8" cy="218.1" r="16" fill="#ddd" stroke="black"/>
+<text x="604.8" y="223.1" font-family="Helvetica" font-size="16" text-anchor="middle">0</text>
+<ellipse cx="600.0" cy="35.7" rx="52" ry="34" fill="white" stroke="black" stroke-width="2.5" stroke-dasharray="4,4"/>
+<text x="600.0" y="40.7" font-family="Helvetica" font-size="11" text-anchor="middle">breakout</text>
+<polygon points="295.3,782.5 34.8,775.7 34.8,442.1 283.0,431.3" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="162.0" cy="607.9" r="16" fill="#ddd" stroke="black"/>
+<text x="162.0" y="612.9" font-family="Helvetica" font-size="16" text-anchor="middle">4</text>
+<polygon points="506.0,786.1 308.7,780.9 296.5,432.7 518.7,423.0" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="407.5" cy="605.6" r="16" fill="#ddd" stroke="black"/>
+<text x="407.5" y="610.6" font-family="Helvetica" font-size="16" text-anchor="middle">3</text>
+<polygon points="765.2,411.6 765.2,793.4 519.4,787.0 532.2,421.8" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="645.5" cy="603.5" r="16" fill="#ddd" stroke="black"/>
+<text x="645.5" y="608.5" font-family="Helvetica" font-size="16" text-anchor="middle">2</text>
+<polygon points="360.8,1164.1 34.9,1164.1 34.9,792.8 351.3,801.1" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="195.5" cy="980.5" r="16" fill="#ddd" stroke="black"/>
+<text x="195.5" y="985.5" font-family="Helvetica" font-size="16" text-anchor="middle">6</text>
+<polygon points="764.4,810.9 764.4,1165.1 375.3,1165.1 365.7,800.5" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="567.5" cy="985.4" r="16" fill="#ddd" stroke="black"/>
+<text x="567.5" y="990.4" font-family="Helvetica" font-size="16" text-anchor="middle">5</text>
+</svg>

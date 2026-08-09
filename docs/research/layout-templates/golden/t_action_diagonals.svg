@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="800" height="1200" fill="white"/>
+<title>t_action_diagonals</title>
+<polygon points="34.2,38.3 338.1,38.3 434.0,582.3 34.2,667.3" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="210.1" cy="331.5" r="16" fill="#ddd" stroke="black"/>
+<text x="210.1" y="336.5" font-family="Helvetica" font-size="16" text-anchor="middle">1</text>
+<polygon points="350.4,36.6 765.8,36.6 765.8,513.5 446.5,581.3" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="582.1" cy="292.0" r="16" fill="#ddd" stroke="black"/>
+<text x="582.1" y="297.0" font-family="Helvetica" font-size="16" text-anchor="middle">0</text>
+<polygon points="349.3,1162.8 34.3,1162.8 34.3,686.8 428.0,603.1" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="211.5" cy="903.9" r="16" fill="#ddd" stroke="black"/>
+<text x="211.5" y="908.9" font-family="Helvetica" font-size="16" text-anchor="middle">3</text>
+<polygon points="765.7,532.4 765.7,1161.7 361.9,1161.7 440.7,601.5" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="583.5" cy="864.3" r="16" fill="#ddd" stroke="black"/>
+<text x="583.5" y="869.3" font-family="Helvetica" font-size="16" text-anchor="middle">2</text>
+</svg>

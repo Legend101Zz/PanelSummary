@@ -1,0 +1,70 @@
+{
+  "schema_version": "page-script-set.v1",
+  "script_set_id": "script_set_phase1",
+  "project_id": "project_phase1",
+  "plan_artifact_id": "manga_plan_phase1",
+  "context_pack_id": "context_phase1",
+  "pages": [
+    {
+      "page_id": "page_splash",
+      "page_index": 0,
+      "page_kind": "splash",
+      "entry_state": "The claim still feels universal.",
+      "exit_state": "The local cost becomes visible.",
+      "page_turn_panel_id": "panel_splash",
+      "panels": [
+        {
+          "panel_id": "panel_splash",
+          "purpose": "payoff",
+          "story_beat": "A global network glows above one missed local invitation.",
+          "importance": "page_turn",
+          "tempo": "impact",
+          "camera": {
+            "shot": "extreme_wide",
+            "angle": "high",
+            "movement": "push_in"
+          },
+          "blocking": [],
+          "prop_refs": ["prop_phone"],
+          "focal_regions": [
+            { "x": 0.55, "y": 0.2, "width": 0.3, "height": 0.35 }
+          ],
+          "avoid_text_regions": [
+            { "x": 0.5, "y": 0.15, "width": 0.4, "height": 0.5 }
+          ],
+          "motion": { "direction": "inward", "speed": "slow", "effects": ["screen_glow"] },
+          "source_refs": [
+            {
+              "book_id": "book_phase1",
+              "source_unit_id": "source_page_14",
+              "page_start": 14,
+              "page_end": 14,
+              "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "source_fact_ids": ["fact_locality"]
+        }
+      ],
+      "text_elements": [
+        {
+          "text_id": "text_splash",
+          "panel_id": "panel_splash",
+          "kind": "narration",
+          "content": "Access is global. Opportunity still happens somewhere.",
+          "writing_direction": "horizontal",
+          "shape": "caption",
+          "preferred_region": { "x": 0.08, "y": 0.08, "width": 0.34, "height": 0.12 },
+          "typography": {
+            "font_token": "manga_narration",
+            "weight": 600,
+            "min_px": 24,
+            "max_px": 44,
+            "emphasis": "bold"
+          },
+          "overflow": "reject",
+          "z_index": 40
+        }
+      ]
+    }
+  ]
+}

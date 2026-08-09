@@ -1,0 +1,17 @@
+{
+  "schema_version": "revision-request.v1",
+  "revision_id": "revision_action_angle",
+  "target_artifact_id": "page_layout_action",
+  "validation_report_id": "report_action_invalid",
+  "issue_codes": ["ANGLE_OUT_OF_RANGE"],
+  "preserve_paths": ["/page_script", "/layout_root/children"],
+  "operations": [
+    {
+      "op": "replace",
+      "path": "/layout_root/angle_deg",
+      "value": -9,
+      "node_id": "action_split"
+    }
+  ],
+  "rationale": "Keep the action rhythm while bringing the cut into the approved angle range."
+}

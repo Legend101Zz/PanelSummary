@@ -1,0 +1,15 @@
+{
+  "schema_version": "reel-series.v1",
+  "book_id": "book_demo",
+  "project_id": "project_demo",
+  "series_id": "series_demo_001",
+  "manga_manifest_artifact_id": "artifact_manifest_001",
+  "reels": [
+    {
+      "reel_id": "reel_demo_001",
+      "reel_spec_artifact_id": "artifact_reel_spec_001",
+      "sequence": 0,
+      "duration_frames": 180
+    }
+  ]
+}

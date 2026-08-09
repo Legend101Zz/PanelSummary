@@ -1,0 +1,93 @@
+{
+  "schema_version": "manga-plan.v1",
+  "plan_id": "plan_ch01",
+  "project_id": "project_demo",
+  "scope_id": "scope_ch01",
+  "context_pack_id": "context_pack_001",
+  "memory_version": 3,
+  "title": "The Hidden Routes",
+  "summary": "Kael reveals that the map preserves evidence of earlier failed journeys.",
+  "target_page_count": 8,
+  "beats": [
+    {
+      "beat_id": "beat_000",
+      "sequence": 0,
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "start_offset": 120,
+          "end_offset": 268,
+          "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "required_fact_ids": ["fact_map_records_failures"],
+      "narrative_purpose": "reveal",
+      "book_essence": "The map preserves evidence of earlier failed journeys.",
+      "dramatization": "Kael turns the map toward the lantern and the old routes flare into view.",
+      "character_intent": [
+        {
+          "character_id": "character_kael",
+          "intent": "Convince the crew that the warnings are real.",
+          "emotional_state": "urgent"
+        }
+      ],
+      "visual_intent": ["Lantern light isolates the inked failure routes."],
+      "must_preserve": ["The map records earlier failed journeys."],
+      "may_compress": [],
+      "confidence": 0.98
+    }
+  ],
+  "character_state_updates": [
+    {
+      "character_id": "character_kael",
+      "state_patch": { "current_state": "Kael knows the map is a warning." },
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ],
+  "terminology_updates": [
+    {
+      "term": "failure routes",
+      "canonical_form": "failed routes",
+      "meaning": "Routes attempted by prior crews that did not reach the destination.",
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ],
+  "new_facts": [],
+  "ending_state": "The failed routes flare into view under the lantern.",
+  "unresolved_thread_updates": [
+    {
+      "thread_id": "thread_cartographer",
+      "summary": "The final cartographer remains unidentified.",
+      "status": "open",
+      "source_refs": [
+        {
+          "book_id": "book_demo",
+          "source_unit_id": "unit_ch01_p001_010",
+          "page_start": 1,
+          "page_end": 10,
+          "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  ]
+}

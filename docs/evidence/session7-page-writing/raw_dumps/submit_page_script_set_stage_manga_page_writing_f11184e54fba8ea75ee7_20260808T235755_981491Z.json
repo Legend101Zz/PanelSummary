@@ -1,0 +1,597 @@
+{
+  "tool": "submit_page_script_set",
+  "scope": {
+    "correlation_id": "goal_f11184e54fba8ea75ee7_11",
+    "goal_id": "goal_f11184e54fba8ea75ee7_11",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "stage_run_id": "stage_manga_page_writing_f11184e54fba8ea75ee7",
+    "context_pack_id": "context_058ec480dbfd284cad53af5b",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-08T23:57:55.981491+00:00",
+  "arguments": {
+    "script_set": {
+      "schema_version": "page-script-set.v1",
+      "script_set_id": "script-set-f11184e54fba8ea75ee7-v1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "plan_artifact_id": "manga_plan_02734c7ca4e0282f06195a84",
+      "context_pack_id": "context_058ec480dbfd284cad53af5b",
+      "pages": [
+        {
+          "page_id": "page-0",
+          "page_index": 0,
+          "page_kind": "standard",
+          "entry_state": "Haw stands paralyzed at a dark maze corridor junction, fear knotting his face before a new direction.",
+          "exit_state": "Haw writes fresh wisdom on the maze walls and moves onward with renewed belief, leaving a marked trail toward Hem's choice.",
+          "page_turn_panel_id": "panel-3",
+          "panels": [
+            {
+              "panel_id": "panel-0",
+              "purpose": "setup",
+              "story_beat": "Haw hesitates at the dark maze corridor junction, his knuckles white against the cold stone wall as fear crosses his face.",
+              "importance": "high",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.65,
+                  "y": 0.15,
+                  "width": 0.25,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0.5,
+                  "y": 0,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "direction": "inward",
+                "speed": "slow",
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-1",
+              "purpose": "action",
+              "story_beat": "Haw laughs at his own fear, grips a chalk stub, and charges into the dark corridor with a widening smile as cool air meets his face.",
+              "importance": "medium",
+              "tempo": "quick",
+              "camera": {
+                "shot": "wide",
+                "angle": "low",
+                "movement": "tracking"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.1,
+                  "y": 0.15,
+                  "width": 0.3,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0,
+                  "y": 0.4,
+                  "width": 0.5,
+                  "height": 0.1
+                }
+              ],
+              "motion": {
+                "direction": "leftward",
+                "speed": "fast",
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-2",
+              "purpose": "conflict",
+              "story_beat": "Haw holds out small pieces of New Cheese to a frowning Hem inside Cheese Station C, offering the discovery he fought through fear to find.",
+              "importance": "high",
+              "tempo": "normal",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.65,
+                  "y": 0.6,
+                  "width": 0.25,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0.5,
+                  "y": 0.85,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-3",
+              "purpose": "payoff",
+              "story_beat": "Haw pauses at a maze junction, chalk in hand, writing a fresh maxim on the stone wall as his old fears fade into the corridor behind him.",
+              "importance": "page_turn",
+              "tempo": "hold",
+              "camera": {
+                "shot": "close_up",
+                "angle": "over_shoulder",
+                "movement": "push_in"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.1,
+                  "y": 0.6,
+                  "width": 0.3,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0,
+                  "y": 0.85,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            }
+          ],
+          "text_elements": [
+            {
+              "text_id": "text-0-0",
+              "panel_id": "panel-0",
+              "kind": "thought",
+              "content": "What if something worse is waiting in the dark?",
+              "speaker_ref": "Haw",
+              "emotion": "fearful",
+              "writing_direction": "horizontal",
+              "shape": "thought_cloud",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.02,
+                "width": 0.4,
+                "height": 0.12
+              },
+              "tail_target": {
+                "point": {
+                  "x": 0.78,
+                  "y": 0.32
+                }
+              },
+              "typography": {
+                "font_token": "font_handwritten",
+                "weight": 400,
+                "min_px": 14,
+                "max_px": 28,
+                "emphasis": "whisper"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            },
+            {
+              "text_id": "text-0-1",
+              "panel_id": "panel-2",
+              "kind": "dialogue",
+              "content": "I want my own Cheese back. I'm not changing.",
+              "speaker_ref": "Hem",
+              "emotion": "resistant",
+              "writing_direction": "horizontal",
+              "shape": "oval",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.86,
+                "width": 0.4,
+                "height": 0.12
+              },
+              "tail_target": {
+                "point": {
+                  "x": 0.82,
+                  "y": 0.7
+                }
+              },
+              "typography": {
+                "font_token": "font_default",
+                "weight": 400,
+                "min_px": 14,
+                "max_px": 28,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            },
+            {
+              "text_id": "text-0-2",
+              "panel_id": "panel-3",
+              "kind": "narration",
+              "content": "When you change what you believe, you change what you do.",
+              "speaker_ref": "",
+              "emotion": "reflective",
+              "writing_direction": "horizontal",
+              "shape": "caption",
+              "preferred_region": {
+                "x": 0.05,
+                "y": 0.86,
+                "width": 0.4,
+                "height": 0.12
+              },
+              "typography": {
+                "font_token": "font_handwritten",
+                "weight": 400,
+                "min_px": 12,
+                "max_px": 24,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            }
+          ]
+        },
+        {
+          "page_id": "page-1",
+          "page_index": 1,
+          "page_kind": "standard",
+          "entry_state": "Haw rounds a corner into Cheese Station N where a great pile of New Cheese waits and old mice friends greet him.",
+          "exit_state": "Haw stands watchful at Cheese Station N as footsteps echo from the maze, his hope and uncertainty hanging on who is coming.",
+          "page_turn_panel_id": "panel-7",
+          "panels": [
+            {
+              "panel_id": "panel-4",
+              "purpose": "reveal",
+              "story_beat": "Haw rounds the final corner into Cheese Station N and sees piles of New Cheese stacked high, while two mice wave from atop the mound.",
+              "importance": "page_turn",
+              "tempo": "impact",
+              "camera": {
+                "shot": "extreme_wide",
+                "angle": "low",
+                "movement": "push_in"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.65,
+                  "y": 0.15,
+                  "width": 0.25,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0.5,
+                  "y": 0,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "direction": "inward",
+                "speed": "medium",
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-5",
+              "purpose": "explanation",
+              "story_beat": "Haw sits among the cheeses, chalk in hand, writing a long summary of his lessons on the largest wall of Cheese Station N.",
+              "importance": "medium",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.1,
+                  "y": 0.15,
+                  "width": 0.3,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0,
+                  "y": 0.4,
+                  "width": 0.5,
+                  "height": 0.1
+                }
+              ],
+              "motion": {
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-6",
+              "purpose": "explanation",
+              "story_beat": "Former classmates lean forward around a lounge table, hands raised in turn as they confess which Cheese character they have been.",
+              "importance": "medium",
+              "tempo": "normal",
+              "camera": {
+                "shot": "wide",
+                "angle": "high",
+                "movement": "static"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.65,
+                  "y": 0.6,
+                  "width": 0.25,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0.5,
+                  "y": 0.85,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0010_000_00_8b6cac48cbd7",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "8b6cac48cbd7d1bc4a5d6b48448619cd6022e48e0e1ab910180eda101289db68"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel-7",
+              "purpose": "transition",
+              "story_beat": "Haw turns toward the dark maze entrance at Cheese Station N, ears pricked at distant footsteps echoing from a shadowed corridor.",
+              "importance": "page_turn",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "over_shoulder",
+                "movement": "static"
+              },
+              "blocking": [],
+              "prop_refs": [],
+              "focal_regions": [
+                {
+                  "x": 0.1,
+                  "y": 0.6,
+                  "width": 0.3,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": [
+                {
+                  "x": 0,
+                  "y": 0.85,
+                  "width": 0.5,
+                  "height": 0.13
+                }
+              ],
+              "motion": {
+                "direction": "outward",
+                "speed": "slow",
+                "effects": []
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0010_000_01_747a90de2166",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "text_hash": "747a90de21660a8038f38d261ded546e826565f5c275c1a66d4a7a6fc5387125"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            }
+          ],
+          "text_elements": [
+            {
+              "text_id": "text-1-0",
+              "panel_id": "panel-4",
+              "kind": "dialogue",
+              "content": "Hooray for Change!",
+              "speaker_ref": "Haw",
+              "emotion": "triumphant",
+              "writing_direction": "horizontal",
+              "shape": "jagged",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.02,
+                "width": 0.4,
+                "height": 0.13
+              },
+              "tail_target": {
+                "point": {
+                  "x": 0.78,
+                  "y": 0.32
+                }
+              },
+              "typography": {
+                "font_token": "font_default",
+                "weight": 700,
+                "min_px": 18,
+                "max_px": 40,
+                "emphasis": "shout"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            },
+            {
+              "text_id": "text-1-1",
+              "panel_id": "panel-6",
+              "kind": "dialogue",
+              "content": "No one wanted to look like Hem.",
+              "speaker_ref": "Michael",
+              "emotion": "knowing",
+              "writing_direction": "horizontal",
+              "shape": "oval",
+              "preferred_region": {
+                "x": 0.55,
+                "y": 0.86,
+                "width": 0.4,
+                "height": 0.12
+              },
+              "tail_target": {
+                "point": {
+                  "x": 0.78,
+                  "y": 0.72
+                }
+              },
+              "typography": {
+                "font_token": "font_default",
+                "weight": 400,
+                "min_px": 14,
+                "max_px": 28,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            },
+            {
+              "text_id": "text-1-2",
+              "panel_id": "panel-7",
+              "kind": "narration",
+              "content": "Haw heard movement out in the Maze. Could it be Hem at last?",
+              "speaker_ref": "",
+              "emotion": "hopeful",
+              "writing_direction": "horizontal",
+              "shape": "caption",
+              "preferred_region": {
+                "x": 0.05,
+                "y": 0.86,
+                "width": 0.4,
+                "height": 0.12
+              },
+              "typography": {
+                "font_token": "font_handwritten",
+                "weight": 400,
+                "min_px": 12,
+                "max_px": 24,
+                "emphasis": "normal"
+              },
+              "overflow": "fit",
+              "z_index": 2
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

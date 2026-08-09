@@ -1,0 +1,460 @@
+{
+  "$defs": {
+    "CharacterStateUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "character_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Character Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "state_patch": {
+          "maxProperties": 64,
+          "minProperties": 1,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9._:-]*$": {
+              "$ref": "#/$defs/JsonValue"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 128,
+            "minLength": 1
+          },
+          "title": "State Patch",
+          "type": "object"
+        }
+      },
+      "required": [
+        "character_id",
+        "state_patch"
+      ],
+      "title": "CharacterStateUpdate",
+      "type": "object"
+    },
+    "ContinuityUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Key",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "key",
+        "value"
+      ],
+      "title": "ContinuityUpdate",
+      "type": "object"
+    },
+    "FactCorrection": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "replacement_claim": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Replacement Claim",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact_id",
+        "replacement_claim",
+        "reason",
+        "source_refs"
+      ],
+      "title": "FactCorrection",
+      "type": "object"
+    },
+    "GroundedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "claim": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Claim",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "fact_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact_id",
+        "claim",
+        "source_refs",
+        "confidence"
+      ],
+      "title": "GroundedFact",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "SourceCoverage": {
+      "additionalProperties": false,
+      "properties": {
+        "beat_ids": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+            "type": "string"
+          },
+          "maxItems": 1000,
+          "minItems": 1,
+          "title": "Beat Ids",
+          "type": "array"
+        },
+        "coverage_status": {
+          "enum": [
+            "covered",
+            "partially_covered",
+            "deferred"
+          ],
+          "title": "Coverage Status",
+          "type": "string"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_unit_id",
+        "beat_ids",
+        "coverage_status"
+      ],
+      "title": "SourceCoverage",
+      "type": "object"
+    },
+    "SourceRef": {
+      "additionalProperties": false,
+      "properties": {
+        "book_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Book Id",
+          "type": "string"
+        },
+        "end_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Offset"
+        },
+        "page_end": {
+          "minimum": 1,
+          "title": "Page End",
+          "type": "integer"
+        },
+        "page_start": {
+          "minimum": 1,
+          "title": "Page Start",
+          "type": "integer"
+        },
+        "quote": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quote"
+        },
+        "source_unit_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Source Unit Id",
+          "type": "string"
+        },
+        "start_offset": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Offset"
+        },
+        "text_hash": {
+          "pattern": "^[a-f0-9]{64}$",
+          "title": "Text Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "book_id",
+        "source_unit_id",
+        "page_start",
+        "page_end",
+        "text_hash"
+      ],
+      "title": "SourceRef",
+      "type": "object"
+    },
+    "StoryThreadUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "status": {
+          "enum": [
+            "open",
+            "resolved",
+            "deferred"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "thread_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "title": "Thread Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "thread_id",
+        "summary",
+        "status"
+      ],
+      "title": "StoryThreadUpdate",
+      "type": "object"
+    },
+    "TerminologyUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_form": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Canonical Form",
+          "type": "string"
+        },
+        "meaning": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "title": "Meaning",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "term": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Term",
+          "type": "string"
+        }
+      },
+      "required": [
+        "term",
+        "canonical_form",
+        "meaning",
+        "source_refs"
+      ],
+      "title": "TerminologyUpdate",
+      "type": "object"
+    }
+  },
+  "$id": "https://scrollstack.dev/contracts/memory_delta.v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "base_memory_version": {
+      "minimum": 0,
+      "title": "Base Memory Version",
+      "type": "integer"
+    },
+    "character_state_updates": {
+      "items": {
+        "$ref": "#/$defs/CharacterStateUpdate"
+      },
+      "maxItems": 1000,
+      "title": "Character State Updates",
+      "type": "array"
+    },
+    "continuity_updates": {
+      "items": {
+        "$ref": "#/$defs/ContinuityUpdate"
+      },
+      "maxItems": 1000,
+      "title": "Continuity Updates",
+      "type": "array"
+    },
+    "coverage_additions": {
+      "items": {
+        "$ref": "#/$defs/SourceCoverage"
+      },
+      "maxItems": 1000,
+      "title": "Coverage Additions",
+      "type": "array"
+    },
+    "fact_corrections": {
+      "items": {
+        "$ref": "#/$defs/FactCorrection"
+      },
+      "maxItems": 1000,
+      "title": "Fact Corrections",
+      "type": "array"
+    },
+    "new_facts": {
+      "items": {
+        "$ref": "#/$defs/GroundedFact"
+      },
+      "maxItems": 2000,
+      "title": "New Facts",
+      "type": "array"
+    },
+    "project_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "title": "Project Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "memory-delta.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_artifact_ids": {
+      "items": {
+        "maxLength": 128,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "type": "string"
+      },
+      "maxItems": 1000,
+      "minItems": 1,
+      "title": "Source Artifact Ids",
+      "type": "array"
+    },
+    "terminology_updates": {
+      "items": {
+        "$ref": "#/$defs/TerminologyUpdate"
+      },
+      "maxItems": 512,
+      "title": "Terminology Updates",
+      "type": "array"
+    },
+    "unresolved_thread_updates": {
+      "items": {
+        "$ref": "#/$defs/StoryThreadUpdate"
+      },
+      "maxItems": 1000,
+      "title": "Unresolved Thread Updates",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "project_id",
+    "base_memory_version",
+    "source_artifact_ids"
+  ],
+  "title": "MemoryDelta",
+  "type": "object"
+}

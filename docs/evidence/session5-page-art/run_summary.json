@@ -1,0 +1,153 @@
+{
+  "run_id": "run_dir_a99464c56fa3b96e777fe750",
+  "stage_run_id": "stage_manga_page_art_83eab679113f31812918",
+  "reused": false,
+  "total_image_cost_usd": 0.07802970000000001,
+  "total_vision_cost_usd": 0.000818,
+  "pages": [
+    {
+      "page_index": 0,
+      "mode": "C",
+      "status": "art_accepted",
+      "attempts": 1,
+      "image_cost_usd": 0.0390144,
+      "page_art_artifact_id": "page_art_4ac800610e0512af74e8dd07",
+      "composed_artifact_id": "composed_page_a56c27741a4e2e66fceb9761",
+      "receipt_artifact_ids": [
+        "provider_receipt_6a9ce8b014fc2cac4f25f2aa",
+        "provider_receipt_972570c49939e23d765082bb"
+      ],
+      "gate_summary": {
+        "accepted": true,
+        "gate_policy_version": "page-art-gates.v2",
+        "vision_text_advisory": false,
+        "reject_reason": "",
+        "ocr": {
+          "clean": true,
+          "text_words": [],
+          "raw_word_count": 47,
+          "gate_version": "page-art-ocr-gate.v1"
+        },
+        "border_adherence": {
+          "page_score": 0.7994791666666666,
+          "panel_scores": {
+            "panel_0_1": 0.8125,
+            "panel_0_0": 0.84375,
+            "panel_0_2": 0.8125,
+            "panel_0_3": 0.7291666666666666
+          },
+          "passed": true,
+          "threshold": 0.55,
+          "metric_version": "page-art-border-adherence.v1"
+        },
+        "vision_cost_usd": 0.000411,
+        "vision_qa": {
+          "panel_count": 4,
+          "panels": [
+            {
+              "index": 1,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Wide action shot of spiky-haired creature leaping amid flying cheese blocks and dust, with a hooded figure watching from the side. Dynamic sound-effect marks present but no letters."
+            },
+            {
+              "index": 2,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Medium shot of two robed, bald figures in a stone corridor observing cheese blocks with wisps of steam rising. Setting established, no text."
+            },
+            {
+              "index": 3,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Medium shot showing the two monks reacting with surprise/shock as cheese blocks transform or dissolve into wisps. Conveys reaction, no text."
+            },
+            {
+              "index": 4,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Close-up of a monk's wide-eyed, sweating face revealing shock or realization. Striking reveal shot, no text."
+            }
+          ],
+          "overall_ok": true
+        }
+      }
+    },
+    {
+      "page_index": 1,
+      "mode": "C",
+      "status": "art_accepted",
+      "attempts": 1,
+      "image_cost_usd": 0.0390153,
+      "page_art_artifact_id": "page_art_70d018e17a3e5d388e75c10a",
+      "composed_artifact_id": "composed_page_8e2c70d52188d87dab69b035",
+      "receipt_artifact_ids": [
+        "provider_receipt_25d0b8adc83f1cc5f27a9efb",
+        "provider_receipt_cd6e9f1ce66680c818d26772"
+      ],
+      "gate_summary": {
+        "accepted": true,
+        "gate_policy_version": "page-art-gates.v2",
+        "vision_text_advisory": true,
+        "reject_reason": "",
+        "ocr": {
+          "clean": true,
+          "text_words": [],
+          "raw_word_count": 56,
+          "gate_version": "page-art-ocr-gate.v1"
+        },
+        "border_adherence": {
+          "page_score": 1.0,
+          "panel_scores": {
+            "panel_1_1": 1.0,
+            "panel_1_0": 1.0,
+            "panel_1_2": 1.0,
+            "panel_1_3": 1.0
+          },
+          "passed": true,
+          "threshold": 0.55,
+          "metric_version": "page-art-border-adherence.v1"
+        },
+        "vision_cost_usd": 0.000407,
+        "vision_qa": {
+          "panel_count": 4,
+          "panels": [
+            {
+              "index": 1,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": true,
+              "notes": "Close-up insert of gloved hand with compass on a map with paths and a sun symbol. Matches 'medium shot insert explanation' brief."
+            },
+            {
+              "index": 2,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Wide shot of boy joyfully leaping from cliff edge with glowing sun and floating rocks. Matches 'wide shot payoff' brief."
+            },
+            {
+              "index": 3,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Wide shot showing rats/creatures attacking near rock formation with cowering figure and bunny slippers. Matches 'wide shot action conflict' brief."
+            },
+            {
+              "index": 4,
+              "matches_brief": true,
+              "identity_ok": true,
+              "contains_text": false,
+              "notes": "Extreme close-up of terrified older man clutching bunny slippers on cobblestones. Matches 'extreme close-up cliffhanger' brief."
+            }
+          ],
+          "overall_ok": true
+        }
+      }
+    }
+  ]
+}

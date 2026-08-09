@@ -1,0 +1,31 @@
+{
+  "beat_id": "beat_000",
+  "sequence": 0,
+  "source_refs": [
+    {
+      "book_id": "book_demo",
+      "source_unit_id": "unit_ch01_p001_010",
+      "page_start": 1,
+      "page_end": 10,
+      "start_offset": 120,
+      "end_offset": 268,
+      "quote": "The crew discovers that the map is also a record of earlier failed journeys.",
+      "text_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "required_fact_ids": ["fact_map_records_failures"],
+  "narrative_purpose": "reveal",
+  "book_essence": "The map preserves evidence of earlier failed journeys.",
+  "dramatization": "Kael turns the map toward the lantern and the old routes flare into view.",
+  "character_intent": [
+    {
+      "character_id": "character_kael",
+      "intent": "Convince the crew that the warnings are real.",
+      "emotional_state": "urgent"
+    }
+  ],
+  "visual_intent": ["Lantern light isolates the inked failure routes.", "End on Kael's realization."],
+  "must_preserve": ["The map records earlier failed journeys."],
+  "may_compress": ["The individual names written beside each route."],
+  "confidence": 0.98
+}

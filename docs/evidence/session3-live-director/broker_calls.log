@@ -1,0 +1,5 @@
+WARNING:app.api.routes.internal_tools:agent tool submit_manga_plan rejected (artifact_validation_failed) run=run_dir_d03359d53a8a34199836b06b stage=stage_dir_5ddeedc9f000559a3a3616f8: MangaPlan validation failed: 12 validation errors for MangaPlan
+INFO:     127.0.0.1:60263 - "POST /internal/v1/agent-tools/submit_manga_plan HTTP/1.1" 422 Unprocessable Entity
+WARNING:app.api.routes.internal_tools:agent tool submit_manga_plan rejected (artifact_validation_failed) run=run_dir_d03359d53a8a34199836b06b stage=stage_dir_5ddeedc9f000559a3a3616f8: MangaPlan validation failed: 39 validation errors for MangaPlan
+INFO:     127.0.0.1:60271 - "POST /internal/v1/agent-tools/submit_manga_plan HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:60289 - "POST /internal/v1/agent-tools/submit_manga_plan HTTP/1.1" 200 OK

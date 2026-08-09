@@ -1,0 +1,18 @@
+{
+ "provider": "minimax",
+ "model": "MiniMax-M3",
+ "purpose": "manga_direction",
+ "prompt_version": "manga-direction.v2",
+ "skill_hashes": [
+  "f634de4a41b3d640d7c78245eac25e1a0db0bacf9b62e9cf6c0de8d87fc448eb"
+ ],
+ "input_artifact_ids": [
+  "context_0983806e6ea7926d74f27197"
+ ],
+ "input_tokens": 18844,
+ "output_tokens": 43940,
+ "cost_usd": 0.06791976,
+ "latency_ms": 291379,
+ "attempt": 1,
+ "created_at": "2026-08-07T12:55:27.595422Z"
+}

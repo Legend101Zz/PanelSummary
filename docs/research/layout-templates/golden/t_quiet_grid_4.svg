@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="800" height="1200" fill="white"/>
+<title>t_quiet_grid_4</title>
+<polygon points="35.0,38.8 393.0,38.8 393.0,589.2 35.0,589.2" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="214.0" cy="314.0" r="16" fill="#ddd" stroke="black"/>
+<text x="214.0" y="319.0" font-family="Helvetica" font-size="16" text-anchor="middle">1</text>
+<polygon points="407.0,38.8 765.0,38.8 765.0,589.2 407.0,589.2" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="586.0" cy="314.0" r="16" fill="#ddd" stroke="black"/>
+<text x="586.0" y="319.0" font-family="Helvetica" font-size="16" text-anchor="middle">0</text>
+<polygon points="393.0,1161.2 35.0,1161.2 35.0,610.8 393.0,610.8" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="214.0" cy="886.0" r="16" fill="#ddd" stroke="black"/>
+<text x="214.0" y="891.0" font-family="Helvetica" font-size="16" text-anchor="middle">3</text>
+<polygon points="765.0,610.8 765.0,1161.2 407.0,1161.2 407.0,610.8" fill="white" stroke="black" stroke-width="3.5"/>
+<circle cx="586.0" cy="886.0" r="16" fill="#ddd" stroke="black"/>
+<text x="586.0" y="891.0" font-family="Helvetica" font-size="16" text-anchor="middle">2</text>
+</svg>
