@@ -208,6 +208,20 @@ def _dump_raw_submission(
         logger.exception("raw submission dump FAILED for %s", tool_name)
 
 
+def _coerce_int(value: object) -> int | None:
+    """Accept the tool frame's stringified integers (golden-run live shape:
+    a whole submission arrived string-typed — page_index "0"). Pydantic's
+    lax mode coerces at model level, but the pre-validation hydration
+    checks run on raw dicts and must tolerate the same artifact."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().lstrip("-").isdigit():
+        return int(value.strip())
+    return None
+
+
 def _pydantic_error_digest(error: ValidationError, *, budget: int = 900) -> str:
     """Class-summarized validation digest for the sealed model.
 
@@ -535,8 +549,8 @@ class MangaPlanningToolService:
         normalized = deepcopy(raw)
         if "page_script" not in normalized:
             script_set_artifact_id = arguments.get("script_set_artifact_id")
-            page_index = arguments.get("page_index")
-            if not isinstance(script_set_artifact_id, str) or not isinstance(page_index, int):
+            page_index = _coerce_int(arguments.get("page_index"))
+            if not isinstance(script_set_artifact_id, str) or page_index is None:
                 raise ArtifactValidationError(
                     "script_set_artifact_id and page_index are required when page_script is omitted"
                 )
@@ -623,9 +637,9 @@ class MangaPlanningToolService:
                     hydrated_plans.append(raw_plan)
                     continue
                 plan = deepcopy(raw_plan)
-                page_index = plan.pop("page_index", None)
+                page_index = _coerce_int(plan.pop("page_index", None))
                 if "page_script" not in plan:
-                    if not isinstance(page_index, int) or page_index >= len(script_set.pages):
+                    if page_index is None or page_index >= len(script_set.pages):
                         raise ArtifactValidationError(
                             "Each page plan without page_script requires a valid page_index"
                         )
