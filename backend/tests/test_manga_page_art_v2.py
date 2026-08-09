@@ -132,6 +132,64 @@ def test_crop_panel_matches_bbox():
     assert crop.size[1] == pytest.approx(panel.bbox.height * 1248, abs=2)
 
 
+def test_paste_panel_art_binds_by_construction():
+    """Session 8 bake-off primitive: pasted art lands INSIDE the target
+    panel's polygon (exact binding), the rest of the page is untouched,
+    and the frame is re-inked on top."""
+    from app.services.manga_page_art import paste_panel_art
+
+    plan = _plan()
+    compiled = compile_page_layout(plan)
+    base = Image.new("RGB", (832, 1248), "white")
+    art = Image.new("RGB", (640, 480), (200, 30, 30))  # red marks the art
+    target = compiled.panels[0]
+    other = compiled.panels[1]
+
+    page = paste_panel_art(base, art, compiled, target.panel_id)
+
+    def center_pixel(panel):
+        cx = int((panel.bbox.x + panel.bbox.width / 2) * 832)
+        cy = int((panel.bbox.y + panel.bbox.height / 2) * 1248)
+        return page.getpixel((cx, cy))
+
+    # Target panel center carries the pasted art; the sibling stays white.
+    assert center_pixel(target)[0] > 150 and center_pixel(target)[1] < 100
+    assert center_pixel(other) == (255, 255, 255)
+
+
+def test_paste_panel_art_cover_fits_without_distortion():
+    """A wildly mismatched aspect ratio is center-crop cover-fitted: the
+    pasted region fills the whole bbox (no white bars inside the panel)."""
+    from app.services.manga_page_art import paste_panel_art
+
+    plan = _plan()
+    compiled = compile_page_layout(plan)
+    base = Image.new("RGB", (832, 1248), "white")
+    art = Image.new("RGB", (1000, 100), (30, 30, 200))  # extreme wide art
+    target = compiled.panels[0]
+    page = paste_panel_art(base, art, compiled, target.panel_id, frame_px=1)
+
+    # Sample four interior points near the bbox corners — all must be art.
+    left = (target.bbox.x + 0.1 * target.bbox.width) * 832
+    right = (target.bbox.x + 0.9 * target.bbox.width) * 832
+    top = (target.bbox.y + 0.1 * target.bbox.height) * 1248
+    bottom = (target.bbox.y + 0.9 * target.bbox.height) * 1248
+    for x, y in [(left, top), (right, top), (left, bottom), (right, bottom)]:
+        pixel = page.getpixel((int(x), int(y)))
+        assert pixel[2] > 150, f"white bar at {(x, y)}: {pixel}"
+
+
+def test_select_key_panel_prefers_area_then_money_purpose():
+    from app.services.manga_page_art import select_key_panel
+
+    plan = _plan()
+    compiled = compile_page_layout(plan)
+    largest = max(
+        compiled.panels, key=lambda item: item.bbox.width * item.bbox.height
+    )
+    assert select_key_panel(compiled, plan.page_script) == largest.panel_id
+
+
 # ---------------------------------------------------------------------------
 # OCR gate (findings guardrail 3 — screentone noise filter)
 # ---------------------------------------------------------------------------

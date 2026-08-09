@@ -217,6 +217,70 @@ def crop_panel(
     return page_image.crop((left, top, right, bottom))
 
 
+def paste_panel_art(
+    base: Image.Image,
+    panel_art: Image.Image,
+    compiled: CompiledPageLayout,
+    panel_id: str,
+    *,
+    frame_px: int = 5,
+) -> Image.Image:
+    """Deterministic per-panel binding (Session 8 bake-off primitive).
+
+    Pastes generated art INTO one compiled panel: cover-fit the art to the
+    panel's bbox (center-crop, aspect preserved), clip it to the panel's
+    POLYGON mask (angled cuts stay angled), and re-ink the frame on top.
+    Because code owns the placement, panel binding is exact by
+    construction — the failure mode the one-shot lane could not cure
+    (8/8 S7 rejections) does not exist on this path. Candidate B letters
+    over the result; a funded candidate A would tile every panel this way.
+    """
+    page = base.convert("RGB").copy()
+    width, height = page.size
+    panel = next(item for item in compiled.panels if item.panel_id == panel_id)
+    box_left = int(panel.bbox.x * width)
+    box_top = int(panel.bbox.y * height)
+    box_width = max(1, int(panel.bbox.width * width))
+    box_height = max(1, int(panel.bbox.height * height))
+
+    art = panel_art.convert("RGB")
+    scale = max(box_width / art.width, box_height / art.height)
+    resized = art.resize(
+        (max(1, int(art.width * scale)), max(1, int(art.height * scale)))
+    )
+    crop_left = (resized.width - box_width) // 2
+    crop_top = (resized.height - box_height) // 2
+    fitted = resized.crop(
+        (crop_left, crop_top, crop_left + box_width, crop_top + box_height)
+    )
+
+    polygon_mask = Image.new("L", (width, height), 0)
+    ImageDraw.Draw(polygon_mask).polygon(
+        _polygon_pixels(panel.polygon, width, height), fill=255
+    )
+    layer = Image.new("RGB", (width, height), "white")
+    layer.paste(fitted, (box_left, box_top))
+    page = Image.composite(layer, page, polygon_mask)
+
+    ImageDraw.Draw(page).polygon(
+        _polygon_pixels(panel.polygon, width, height),
+        outline="black",
+        width=frame_px,
+    )
+    return page
+
+
+def select_key_panel(compiled: CompiledPageLayout, page_script: PageScript) -> str:
+    """Candidate B's deterministic money-shot pick: the largest panel by
+    bbox area; ties break toward reveal/payoff purpose, then read rank."""
+    purpose_by_id = {panel.panel_id: panel.purpose for panel in page_script.panels}
+    def sort_key(panel):
+        area = panel.bbox.width * panel.bbox.height
+        purpose_bonus = 1 if purpose_by_id.get(panel.panel_id) in {"reveal", "payoff"} else 0
+        return (-area, -purpose_bonus, panel.read_rank)
+    return sorted(compiled.panels, key=sort_key)[0].panel_id
+
+
 # ---------------------------------------------------------------------------
 # OCR gate (findings guardrail 3)
 # ---------------------------------------------------------------------------

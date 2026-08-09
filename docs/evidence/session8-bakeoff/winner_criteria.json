@@ -1,0 +1,8 @@
+{
+  "committed_before_any_spend": true,
+  "primary": "judge fidelity score on the COMPOSED page (m3-judge-rubrics.v1, same rubric as the S7 baseline \u2014 untouched this session)",
+  "mechanism_check": "vision binding_score over ART-BEARING panels only (A: probed panels; B: the key panel; C: all panels). Binding is undefined for the dsl_only baseline and is A/B/C-relative only.",
+  "tiebreak": "measured image cost per page (receipts, not price sheets)",
+  "excluded": "border adherence for code-assembled pages (A/B): geometry is drawn by code, adherence ~1.0 by construction \u2014 recorded, not scored",
+  "candidate_a_gate": "steering rule: if the probe's measured per-panel price does not undercut $0.039/panel, A is NOT scaled \u2014 its economics become an OPEN OWNER COST DECISION and B/C compete for the win"
+}
