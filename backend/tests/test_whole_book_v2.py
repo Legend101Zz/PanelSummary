@@ -519,3 +519,106 @@ def test_resume_reuses_completed_scopes_without_respend_or_double_merge() -> Non
     project = resolve(repository.get_project(PROJECT))
     assert project is not None
     assert project.active_memory_version == 2
+
+
+# ---------------------------------------------------------------------------
+# Session 8: failed-attempt spend decrements the chain budget (S7 dev. 6)
+# ---------------------------------------------------------------------------
+
+
+def _stage_doc_with_failures(
+    run_id: str, stage_run_id: str, costs: list[float]
+) -> Any:
+    from app.persistence.documents import StageRunDoc
+
+    return construct_document(
+        StageRunDoc,
+        stage_run_id=stage_run_id,
+        run_id=run_id,
+        stage_name="manga_thumbnail",
+        attempt=len(costs),
+        status="failed",
+        input_artifact_ids=[],
+        input_hash="a" * 64,
+        output_artifact_ids=[],
+        idempotency_key=f"{stage_run_id}_key",
+        started_at=NOW,
+        ended_at=None,
+        failure_history=[
+            {"attempt": index + 1, "trace": {"cost_usd": cost}}
+            for index, cost in enumerate(costs)
+        ],
+    )
+
+
+def test_failed_attempt_spend_decrements_the_chain_budget() -> None:
+    """A failed attempt's receipted cost is real spend: it must reduce the
+    chain's remaining text budget even though no accepted receipt exists."""
+    repository = seeded_executor_repo()
+    stages = StubStages(repository)
+
+    original_thumbnail = stages.thumbnail
+
+    async def thumbnail_with_failed_attempt(*, project_id: str, run_id: str):
+        # A failed attempt lands in failure_history DURING this execution
+        # (the live golden-chain shape: receipted, then the retry succeeds).
+        repository.stages[f"stage_thumb_fail_{run_id}"] = _stage_doc_with_failures(
+            run_id, f"stage_thumb_fail_{run_id}", [0.06]
+        )
+        return await original_thumbnail(project_id=project_id, run_id=run_id)
+
+    executor = WholeBookChainExecutor(
+        repository,
+        direction_runner=stages.direction,
+        page_writing_runner=stages.page_writing,
+        thumbnail_runner=thumbnail_with_failed_attempt,
+        page_art_runner=stages.page_art,
+        eval_runner=stages.evaluate,
+        memory_merge=MemoryMergeService(repository, repository, repository),
+        text_budget_usd=5.0,
+        image_budget_usd=1.0,
+    )
+    outcome = resolve(executor.execute(chain_plan()))
+
+    assert outcome.status == "completed"
+    first = outcome.executions[0]
+    # Accepted receipts (0.07 + 0.16 + 0.2) PLUS the failed attempt's 0.06.
+    assert first.text_cost_usd == pytest.approx(0.49)
+    expected_remaining = 5.0 - sum(
+        item.text_cost_usd + item.judge_cost_usd for item in outcome.executions
+    )
+    assert outcome.remaining_text_usd == pytest.approx(expected_remaining)
+
+
+def test_prior_invocation_failures_are_never_recharged_on_resume() -> None:
+    """Resume-safety: failure_history rows that predate this chain
+    invocation were paid under an earlier ledger — the delta accounting
+    must not subtract them again."""
+    repository = seeded_executor_repo()
+    stages = StubStages(repository)
+    plan = chain_plan()
+    # Pre-existing failures from a previous session on BOTH scopes' runs.
+    for planned in plan.scopes:
+        scope_payload = {
+            "project_id": PROJECT,
+            "book_id": BOOK,
+            "source_unit_ids": list(planned.source_unit_ids),
+            "page_ranges": [
+                {"page_start": planned.page_start, "page_end": planned.page_end}
+            ],
+            "selection_label": planned.label,
+            "created_by": "whole-book-chain",
+        }
+        scope_id = f"scope_{content_hash(scope_payload)[:24]}"
+        run_id = f"run_{scope_id}"
+        repository.stages[f"stage_old_fail_{run_id}"] = _stage_doc_with_failures(
+            run_id, f"stage_old_fail_{run_id}", [0.15, 0.06]
+        )
+
+    executor = build_executor(repository, stages, text_budget=5.0, image_budget=1.0)
+    outcome = resolve(executor.execute(plan))
+
+    assert outcome.status == "completed"
+    for execution in outcome.executions:
+        # Only the accepted receipts (0.43) — never the 0.21 of old failures.
+        assert execution.text_cost_usd == pytest.approx(0.43)

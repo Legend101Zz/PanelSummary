@@ -103,7 +103,15 @@ PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v5"
 #: The instructions now state the compiler geometry (children[0] =
 #: leftmost/topmost) and that edges chain in SOURCE order regardless of
 #: placement.
-THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v5"
+#: v6 (Session 8 step 0, golden-chain wall-4 diagnosis): the failing
+#: chain's submits alternated between omitting page_index entirely
+#: (hydration 422) and embedding page_script (frame-truncation risk on
+#: the largest payload + 3x TEXT_REGION_OUT_OF_PANEL at the deterministic
+#: gate that validate_layout_draft would have reported pre-submit). The
+#: instructions now demand a TOP-LEVEL integer page_index per plan, name
+#: the TEXT_REGION_OUT_OF_PANEL repair loop, and forbid derived/truncated
+#: artifact ids (attempt 2 invented `..._cf19f45c6e614cafa06d_1`).
+THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v6"
 
 #: Two pages per planning goal (donor vertical-slice shape). The PANEL count
 #: is derived from the accepted plan's beat count at runtime — the ported
@@ -193,11 +201,19 @@ def thumbnail_instructions(panels_per_page: list[int]) -> str:
         "panel source order (panel_0 to panel_1 to ...), never reversed: "
         "RTL lives in the placement, not the edges. Every layout node "
         "carries its kind field; a page plan has no page_id field. "
-        "Do not copy PageScript objects. Validate every "
-        "page with validate_layout_draft using the accepted script artifact "
-        "ID and page index, repair addressable issues, then submit page plans "
-        "without page_script using their temporary page_index for broker "
-        "hydration. Do not use assets, freeform nodes, or image generation."
+        "Do not copy PageScript objects — NEVER include a page_script key: "
+        "every submitted page plan must instead carry a TOP-LEVEL integer "
+        "page_index (0-based, matching the fetched script's page order) for "
+        "broker hydration. Use the accepted script artifact ID byte-for-byte "
+        "exactly as returned by get_page_script_set — never shorten, "
+        "re-derive, or suffix an artifact id. Validate every page with "
+        "validate_layout_draft using that artifact ID and the page_index; a "
+        "TEXT_REGION_OUT_OF_PANEL error means a text element's authored "
+        "preferred_region center falls outside its panel under your split "
+        "ratios — adjust the ratios or structure until validation passes, "
+        "and re-validate after EVERY layout change: submit only plans whose "
+        "latest validate_layout_draft response says passed true. "
+        "Do not use assets, freeform nodes, or image generation."
     )
 
 DEFAULT_MAX_INPUT_TOKENS = 80_000

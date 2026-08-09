@@ -32,19 +32,31 @@ function skillName(goalType: SupportedGoalType): string {
   return goalType.toLowerCase().replaceAll("_", "-");
 }
 
+// Session 8: traces used to report a HARDCODED "1.0.0" while SKILL.md
+// frontmatter advanced (1.5.x by Session 7) — the durable receipts could
+// not prove which skill wording a paid attempt ran under (the S7 evidence
+// had to fall back to content hashes). The served version now comes from
+// the primary SKILL.md frontmatter so receipts are honest.
+export function frontmatterVersion(source: string): string {
+  const match = /^---\n[\s\S]*?^version:\s*([^\s]+)\s*$/m.exec(source);
+  return match?.[1] ?? "0.0.0";
+}
+
 export async function loadProductionSkills(): Promise<Readonly<Record<SupportedGoalType, ProductionSkill>>> {
   const entries = await Promise.all(
     Object.entries(SKILL_PATHS).map(async ([goalType, urls]) => {
-      const parts = await Promise.all(
-        urls.map(async (url) => {
-          const source = await readFile(fileURLToPath(url), "utf8");
-          return `\n<!-- approved-resource:${url.pathname.split("/").at(-1)} -->\n${source}`;
-        }),
+      const sources = await Promise.all(
+        urls.map(async (url) => ({
+          name: url.pathname.split("/").at(-1),
+          source: await readFile(fileURLToPath(url), "utf8"),
+        })),
       );
-      const content = parts.join("\n");
+      const content = sources
+        .map(({ name, source }) => `\n<!-- approved-resource:${name} -->\n${source}`)
+        .join("\n");
       const value: ProductionSkill = {
         name: skillName(goalType as SupportedGoalType),
-        version: "1.0.0",
+        version: frontmatterVersion(sources[0]?.source ?? ""),
         content,
         content_hash: createHash("sha256").update(content).digest("hex"),
       };

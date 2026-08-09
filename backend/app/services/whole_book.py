@@ -538,6 +538,7 @@ class WholeBookChainExecutor:
         result = ScopeExecutionResult(
             sequence=planned.sequence, scope_id=None, run_id=None, status="failed"
         )
+        failed_spend_before = 0.0
         try:
             scope = await self._ensure_scope(plan, planned)
             result.scope_id = scope.scope_id
@@ -547,6 +548,12 @@ class WholeBookChainExecutor:
             )
             result.run_id = direction.run_id
             result.plan_artifact_id = direction.artifact.artifact_id
+            # Session 8 (S7 deviation 6): failed-attempt text spend is real
+            # spend — receipted in failure_history but previously invisible
+            # to the chain's remaining budget. Snapshot the run's failure
+            # ledger now and charge the DELTA after the scope resolves, so
+            # a resume never re-charges a previous invocation's failures.
+            failed_spend_before = await self._failed_attempt_spend(direction.run_id)
             self._record_stage(result, "manga_direction", direction)
 
             script = await self._page_writing_runner(
@@ -590,7 +597,28 @@ class WholeBookChainExecutor:
                 planned.sequence,
                 result.error,
             )
+        if result.run_id is not None:
+            # Charge THIS execution's failed-attempt text spend (success or
+            # failure — an accepted stage may still have burned failed
+            # attempts first). Direction failures on a run this execution
+            # never learned about remain the documented gap: without a
+            # run_id there is no ledger to read.
+            failed_spend_after = await self._failed_attempt_spend(result.run_id)
+            delta = failed_spend_after - failed_spend_before
+            if delta > 0:
+                result.text_cost_usd += delta
         return result
+
+    async def _failed_attempt_spend(self, run_id: str) -> float:
+        """Sum receipted provider cost across every stage's failure_history."""
+        total = 0.0
+        for stage in await self._repositories.list_stages(run_id):
+            for entry in getattr(stage, "failure_history", None) or []:
+                trace = entry.get("trace") if isinstance(entry, dict) else None
+                cost = (trace or {}).get("cost_usd") if isinstance(trace, dict) else None
+                if isinstance(cost, (int, float)):
+                    total += float(cost)
+        return total
 
     async def _ensure_scope(
         self, plan: ScopeChainPlan, planned: PlannedScope

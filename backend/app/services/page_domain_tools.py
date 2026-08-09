@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
@@ -212,14 +213,37 @@ def _coerce_int(value: object) -> int | None:
     """Accept the tool frame's stringified integers (golden-run live shape:
     a whole submission arrived string-typed — page_index "0"). Pydantic's
     lax mode coerces at model level, but the pre-validation hydration
-    checks run on raw dicts and must tolerate the same artifact."""
+    checks run on raw dicts and must tolerate the same artifact.
+
+    Session 8: negatives return ``None`` (S7 deviation 7) — every caller
+    uses the result as a page index, where Python's negative indexing
+    would silently select from the END of the accepted set instead of
+    failing the ``page_index >= len(pages)`` bound check."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
-        return value
+        return value if value >= 0 else None
     if isinstance(value, str) and value.strip().lstrip("-").isdigit():
-        return int(value.strip())
+        parsed = int(value.strip())
+        return parsed if parsed >= 0 else None
     return None
+
+
+def _infer_page_index(plan: dict[str, JsonValue], position: int) -> int | None:
+    """Deterministic page_index fallback for hydration (Session 8 step 0).
+
+    Preference order: trailing digits of ``page_plan_id`` (the live golden
+    chain named its plans ``page_plan_0`` / ``page_plan_1``), then the
+    plan's position in the submitted ``page_plans`` list. Both sources are
+    deterministic and a wrong guess fails loudly downstream (panel-id
+    mismatch against the hydrated page's script), never silently.
+    """
+    plan_id = plan.get("page_plan_id")
+    if isinstance(plan_id, str):
+        match = re.search(r"(\d+)\s*$", plan_id)
+        if match is not None:
+            return int(match.group(1))
+    return position if position >= 0 else None
 
 
 def _pydantic_error_digest(error: ValidationError, *, budget: int = 900) -> str:
@@ -543,6 +567,15 @@ class MangaPlanningToolService:
         context: ContextPack,
         arguments: dict[str, JsonValue],
     ) -> DomainToolResponse:
+        # Session 8 step 0: the golden-chain wall-4 diagnosis found this
+        # was the ONE model-facing seam without the dump instrument — the
+        # failing chain's validate calls (attempt 2: 2x failed with the
+        # invented id accepted_page_script_set_cf19f45c6e614cafa06d_1)
+        # left no arrived-shape evidence. Same contract as the submit
+        # seams: fires on every invocation, never breaks the call.
+        _dump_raw_submission(
+            "validate_layout_draft", scope, arguments, self._raw_dump_dir
+        )
         raw = arguments.get("page_plan")
         if not isinstance(raw, dict):
             raise ArtifactValidationError("page_plan must be an object")
@@ -632,16 +665,36 @@ class MangaPlanningToolService:
                 script_set_artifact_id,
             )
             hydrated_plans: list[JsonValue] = []
-            for raw_plan in raw_plans:
+            for position, raw_plan in enumerate(raw_plans):
                 if not isinstance(raw_plan, dict):
                     hydrated_plans.append(raw_plan)
                     continue
                 plan = deepcopy(raw_plan)
                 page_index = _coerce_int(plan.pop("page_index", None))
                 if "page_script" not in plan:
+                    if page_index is None:
+                        # Session 8 step 0 (golden-chain wall 4, submit 1 at
+                        # 00:56:08Z): the model followed "submit without
+                        # page_script" but omitted page_index entirely.
+                        # Deterministic inference, in preference order:
+                        # trailing digits of page_plan_id ("page_plan_1"),
+                        # then LIST POSITION. A wrong inference cannot land
+                        # silently — the hydrated plan compiles against the
+                        # wrong page's panel ids and fails the deterministic
+                        # validators loudly.
+                        page_index = _infer_page_index(plan, position)
+                        logger.info(
+                            "submit_thumbnail_set: inferred page_index %s for "
+                            "plan %s (stage %s)",
+                            page_index,
+                            plan.get("page_plan_id"),
+                            scope.stage_run_id,
+                        )
                     if page_index is None or page_index >= len(script_set.pages):
                         raise ArtifactValidationError(
-                            "Each page plan without page_script requires a valid page_index"
+                            "Each page plan without page_script requires a valid "
+                            "non-negative page_index (or a page_plan_id ending "
+                            "in the page's index)"
                         )
                     plan = self._normalize_page_plan(
                         plan,
@@ -741,8 +794,21 @@ class MangaPlanningToolService:
             ):
                 later, earlier = panels[1].panel_id, panels[0].panel_id
                 child_nodes = cast(list[dict[str, JsonValue]], children)
-                child_nodes[0]["panel_id"] = later
-                child_nodes[1]["panel_id"] = earlier
+                if layout.get("axis") == "y":
+                    # Session 8: children are laid out in ARRAY ORDER along
+                    # the axis (children[0] = topmost on y) and vertical
+                    # reading order is unaffected by RTL — the earlier
+                    # panel is the TOP one. The unconditional [later,
+                    # earlier] remap below is only correct for x-splits
+                    # (earlier on the RIGHT = last index); applied to a
+                    # y-split it swapped the panels and pushed every
+                    # authored text region out of its panel
+                    # (TEXT_REGION_OUT_OF_PANEL from a correct submission).
+                    child_nodes[0]["panel_id"] = earlier
+                    child_nodes[1]["panel_id"] = later
+                else:
+                    child_nodes[0]["panel_id"] = later
+                    child_nodes[1]["panel_id"] = earlier
                 normalized["reading_edges"] = [
                     {
                         "from_panel_id": earlier,

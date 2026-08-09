@@ -304,6 +304,27 @@ def test_dump_covers_the_thumbnail_seam(tmp_path: Path) -> None:
     assert dumped["arguments"]["thumbnail_set"] == "not-an-object"
 
 
+def test_dump_covers_the_validate_layout_draft_seam(tmp_path: Path) -> None:
+    """Session 8 step 0: the golden-chain wall-4 diagnosis found this was
+    the ONE model-facing seam without the instrument — attempt 2's two
+    failing validate calls (the invented truncated artifact id) left no
+    arrived-shape evidence. Same contract: fires on every invocation."""
+    dumps = tmp_path / "dumps"
+    service, request, _ = _tool_scenario(
+        tmp_path, raw_dump_dir=dumps, purpose="manga_thumbnail"
+    )
+    request.arguments.clear()
+    request.arguments["page_plan"] = "not-an-object"
+
+    with pytest.raises(ArtifactValidationError, match="page_plan must be an object"):
+        resolve(service.execute("validate_layout_draft", request))
+
+    files = sorted(dumps.glob("validate_layout_draft_*.json"))
+    assert len(files) == 1
+    dumped = json.loads(files[0].read_text(encoding="utf-8"))
+    assert dumped["arguments"]["page_plan"] == "not-an-object"
+
+
 def test_dump_failure_never_breaks_the_submission(tmp_path: Path) -> None:
     """An unwritable dump target (a FILE where the dir should be) is
     swallowed with a logged exception; the submission still lands."""

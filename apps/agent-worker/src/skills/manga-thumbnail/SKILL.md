@@ -1,7 +1,7 @@
 ---
 name: manga-thumbnail
 description: Propose hierarchical page layouts and image-free SVG name previews.
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Manga thumbnail
@@ -28,18 +28,26 @@ ThumbnailSet {
   thumbnail_set_id, project_id, script_set_artifact_id,
   page_plans: MangaPagePlan[]
 }
-MangaPagePlan {
+MangaPagePlan (as submitted) {
   schema_version: "manga-page-plan.v1",
   page_plan_id, project_id, script_set_artifact_id,
+  page_index,          // TOP-LEVEL integer, 0-based, REQUIRED on submit
   canvas:{ width_px, height_px,
            trim:{x,y,width,height}, safe:{x,y,width,height}, bleed_pct },
   reading_direction: rtl|ltr,
-  page_script, layout_root, reading_edges, source_fact_ids
+  layout_root, reading_edges, source_fact_ids
 }
 reading edge { from_panel_id, to_panel_id, reason }
 ```
 
-`page_script` must be copied exactly from the accepted PageScriptSet. Use a
+NEVER include a `page_script` key in a submitted plan: the broker hydrates
+the accepted page object from `script_set_artifact_id` + the plan's
+top-level `page_index` (0-based, matching the fetched script's page
+order). Embedding the script risks transport truncation of the largest
+payload and any drift fails the exact-match gate. Copy
+`script_set_artifact_id` BYTE-FOR-BYTE from the goal refs or the
+`get_page_script_set` response — never shorten an id, never append a
+suffix, never reconstruct one from memory. Use a
 1600x2400 canvas with trim `{x:0.03,y:0.02,width:0.94,height:0.96}`, safe
 `{x:0.06,y:0.05,width:0.88,height:0.90}`, and `bleed_pct:0.02` unless the goal
 explicitly says otherwise.
@@ -71,7 +79,13 @@ PLACEMENT, not in reversed edges. Every layout node carries its `kind`
 field, and a page plan has NO `page_id` field (that belongs to the page
 script).
 Validate every complete page plan through `validate_layout_draft`; repair all
-errors before submitting the set.
+errors before submitting the set. A `TEXT_REGION_OUT_OF_PANEL` error means
+an authored text element's `preferred_region` center falls OUTSIDE its
+panel's polygon under your split ratios — the page script is immutable, so
+the LAYOUT must move: adjust split ratios or restructure until every text
+region center sits inside its panel. Re-validate after EVERY layout change
+and submit only plans whose LATEST validation response says `passed: true`
+— a plan edited after its last validation is an unvalidated plan.
 
 ## Bounded goal layout
 
@@ -98,9 +112,9 @@ page's panels exactly once.
 - every plan uses `source_fact_ids:[]` and the documented 1600x2400 canvas;
 - use short stable IDs such as `page_plan_0`, `split_page_0`, `node_panel_0`;
 - do not use freeform nodes in bounded runs;
-- validate each page plan once and use the returned `normalized_page_plan`, or
-  submit each page plan without `page_script` plus its temporary `page_index`;
-  the broker hydrates and validates the canonical ThumbnailSet before storage;
+- submit each page plan WITHOUT `page_script` and WITH its top-level
+  `page_index`; the broker hydrates and validates the canonical
+  ThumbnailSet before storage;
 - repair only the exact returned error if needed, then submit all layouts
   together.
 
