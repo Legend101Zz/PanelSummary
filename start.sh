@@ -203,9 +203,9 @@ start_celery() {
 start_frontend() {
   step "Starting Next.js frontend (:3000)"
   cd "$FRONTEND"
-  # </dev/null matters here: next dev reads stdin for keyboard shortcuts and
-  # exits when the launching terminal closes — detach it or it dies with the tab.
-  nohup npm run dev </dev/null >"$LOGS/frontend.log" 2>&1 &
+  # next dev shuts itself down (exit 0) when stdin reaches EOF — a closed
+  # terminal OR </dev/null both kill it. Hold stdin open forever with a pipe.
+  tail -f /dev/null | nohup npm run dev >"$LOGS/frontend.log" 2>&1 &
   echo $! >"$PIDS/frontend.pid"
   ok "Next.js starting on http://localhost:3000 (pid $!)"
 }
