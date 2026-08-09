@@ -1,0 +1,32 @@
+{
+  "tool": "validate_layout_draft",
+  "scope": {
+    "correlation_id": "goal_69e7bd8e3afe0f4830a1_2",
+    "goal_id": "goal_69e7bd8e3afe0f4830a1_2",
+    "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+    "stage_run_id": "stage_manga_thumbnail_69e7bd8e3afe0f4830a1",
+    "context_pack_id": "context_b33f68f17d3cbdc911109698",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T01:43:05.394823+00:00",
+  "arguments": {
+    "page_plan": {
+      "page_index": 0,
+      "reading_direction": "rtl",
+      "layout_root": {
+        "kind": "panel",
+        "node_id": "node_panel_0",
+        "panel_id": "panel_000"
+      },
+      "reading_edges": [],
+      "schema_version": "manga-page-plan.v1",
+      "page_plan_id": "page_plan_0",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+      "page_turn_panel_id": "panel_000",
+      "source_fact_ids": []
+    },
+    "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+    "page_index": 0
+  }
+}

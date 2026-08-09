@@ -1,0 +1,123 @@
+{
+  "tool": "validate_layout_draft",
+  "scope": {
+    "correlation_id": "goal_69e7bd8e3afe0f4830a1_1",
+    "goal_id": "goal_69e7bd8e3afe0f4830a1_1",
+    "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+    "stage_run_id": "stage_manga_thumbnail_69e7bd8e3afe0f4830a1",
+    "context_pack_id": "context_b33f68f17d3cbdc911109698",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T01:34:42.527927+00:00",
+  "arguments": {
+    "page_plan": {
+      "canvas": {
+        "bleed_pct": 0.02,
+        "height_px": 2400,
+        "safe": {
+          "height": 0.9,
+          "width": 0.88,
+          "x": 0.06,
+          "y": 0.05
+        },
+        "trim": {
+          "height": 0.96,
+          "width": 0.94,
+          "x": 0.03,
+          "y": 0.02
+        },
+        "width_px": 1600
+      },
+      "layout_root": {
+        "children": [
+          {
+            "children": [
+              {
+                "kind": "panel",
+                "node_id": "node_p1_0",
+                "panel_id": "panel_004"
+              },
+              {
+                "kind": "panel",
+                "node_id": "node_p1_1",
+                "panel_id": "panel_005"
+              }
+            ],
+            "gutter": {
+              "unit": "page_pct",
+              "value": 0.02
+            },
+            "kind": "split",
+            "node_id": "split_top_1",
+            "ratios": [
+              0.55,
+              0.45
+            ],
+            "axis": "x"
+          },
+          {
+            "children": [
+              {
+                "kind": "panel",
+                "node_id": "node_p1_2",
+                "panel_id": "panel_006"
+              },
+              {
+                "kind": "panel",
+                "node_id": "node_p1_3",
+                "panel_id": "panel_007"
+              }
+            ],
+            "gutter": {
+              "unit": "page_pct",
+              "value": 0.02
+            },
+            "kind": "split",
+            "node_id": "split_bottom_1",
+            "ratios": [
+              0.55,
+              0.45
+            ],
+            "axis": "x"
+          }
+        ],
+        "gutter": {
+          "unit": "page_pct",
+          "value": 0.02
+        },
+        "kind": "split",
+        "node_id": "split_page_1",
+        "ratios": [
+          0.48,
+          0.52
+        ],
+        "axis": "y"
+      },
+      "page_index": 1,
+      "page_plan_id": "page_plan_1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "reading_direction": "rtl",
+      "reading_edges": [
+        {
+          "from_panel_id": "panel_004",
+          "reason": "empty cheese station confrontation, mice adapt and little people resist",
+          "to_panel_id": "panel_005"
+        },
+        {
+          "from_panel_id": "panel_005",
+          "reason": "Haw finds his running shoes and declares it's maze time",
+          "to_panel_id": "panel_006"
+        },
+        {
+          "from_panel_id": "panel_006",
+          "reason": "Haw ventures into the maze corridor writing on walls, page turn",
+          "to_panel_id": "panel_007"
+        }
+      ],
+      "schema_version": "manga-page-plan.v1",
+      "source_fact_ids": []
+    },
+    "script_set_artifact_id": "accepted_page_script_set_cf19f45c6e614cafa06d254d",
+    "page_index": 1
+  }
+}
