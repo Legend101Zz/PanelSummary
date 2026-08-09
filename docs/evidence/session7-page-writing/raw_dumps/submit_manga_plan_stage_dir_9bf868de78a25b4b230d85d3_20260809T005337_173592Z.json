@@ -1,0 +1,320 @@
+{
+  "tool": "submit_manga_plan",
+  "scope": {
+    "correlation_id": "goal_9bf868de78a25b4b230d_3",
+    "goal_id": "goal_9bf868de78a25b4b230d_3",
+    "run_id": "run_dir_c6bfbb6ab031c36645ee3151",
+    "stage_run_id": "stage_dir_9bf868de78a25b4b230d85d3",
+    "context_pack_id": "context_6d40cb5e067cc1c9afca9617",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:53:37.173592+00:00",
+  "arguments": {
+    "plan": {
+      "schema_version": "manga-plan.v1",
+      "plan_id": "plan_scope_b16102b70da51717717ce2de_8p",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "scope_id": "scope_b16102b70da51717717ce2de",
+      "context_pack_id": "context_6d40cb5e067cc1c9afca9617",
+      "memory_version": 1,
+      "title": "Who Moved My Cheese? \u2014 An A-Mazing Parable of Change",
+      "summary": "An eight-page right-to-left manga adaptation of the parable. The plan opens with a stylized hook introducing the four characters and the Cheese/Maze metaphor, pivots to Michael telling the story at a Chicago class reunion, then unfolds the Maze adventure in source order: the four characters race through the corridors daily, all find abundance at Cheese Station C, the cheese disappears, the mice move on while Hem denies and resists, and Haw eventually laughs at himself, finds his running shoes, writes a saying on the wall, and jogs into the unknown with renewed vigilance. Eight beats alternate establishing, medium, and detail emphasis.",
+      "target_page_count": 8,
+      "beats": [
+        {
+          "beat_id": "beat_000_hook_intro",
+          "sequence": 0,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0001_000_00_0eba1c2a9b79",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "0eba1c2a9b790512c80d23c4d4ba7110aea4c21956d5833032018978d8e005ad"
+            }
+          ],
+          "required_fact_ids": "",
+          "narrative_purpose": "hook",
+          "book_essence": "The book presents itself as a simple parable about change, in which four characters who live in a 'Maze' look for 'Cheese' to nourish them and make them happy.",
+          "dramatization": "Opening title panel drawn as a wide establishing shot: the curving outline of a maze frames four small character silhouettes stepping forward together, with vertical labels naming Sniff, Scurry, Hem, and Haw, and the words Cheese and Maze hovering above as glowing metaphor.",
+          "character_intent": "",
+          "visual_intent": [
+            "wide establishing shot of maze corridors",
+            "four small character silhouettes entering the maze",
+            "vertical name labels for Sniff, Scurry, Hem, Haw",
+            "soft glow distinguishing Cheese and Maze as metaphors"
+          ],
+          "must_preserve": [
+            "The story is a simple parable that reveals truths about change",
+            "There are four characters: two mice named Sniff and Scurry, and two little people named Hem and Haw",
+            "Cheese is a metaphor for what you want to have in life",
+            "The Maze is the place where you look for what you want"
+          ],
+          "may_compress": [
+            "The full enumeration of what Cheese may represent, such as job, relationship, money, possession, health, or spiritual peace",
+            "The note that the story takes less than an hour to read but its insights can last a lifetime"
+          ],
+          "confidence": 0.95
+        },
+        {
+          "beat_id": "beat_001_setup_gathering",
+          "sequence": 1,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0007_000_00_f7c3296f3ced",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "f7c3296f3ceddc38b552fe980228510e90996ae3bec6fa007c9fa4f84e0f0e13"
+            }
+          ],
+          "required_fact_ids": "",
+          "narrative_purpose": "setup",
+          "book_essence": "In Chicago, several former classmates gather for lunch after a high school reunion and discover they are all coping with unexpected change; Michael shares a story called 'Who Moved My Cheese?' that changed the way he looked at change.",
+          "dramatization": "Medium shot of a round restaurant table in Chicago with six classmates mid-conversation; Michael leans forward, hands gesturing, as the title of the story appears beside him in a small caption bubble.",
+          "character_intent": "",
+          "visual_intent": [
+            "round restaurant table composition",
+            "six classmates seated around the table",
+            "Michael leaning forward as narrator",
+            "Chicago skyline hinted through a window"
+          ],
+          "must_preserve": [
+            "The gathering takes place in Chicago",
+            "The group are former classmates who attended their high school reunion the night before",
+            "Michael tells a story called 'Who Moved My Cheese?'",
+            "Michael says the story changed the way he looked at change, from losing something to gaining something"
+          ],
+          "may_compress": [
+            "The specific names of Angela, Nathan, Carlos, Jessica, and other classmates",
+            "Michael's full account of passing the story through his company"
+          ],
+          "confidence": 0.9
+        },
+        {
+          "beat_id": "beat_002_setup_four_characters",
+          "sequence": 2,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+            }
+          ],
+          "required_fact_ids": [
+            "proof-section_0004_000_00_222d767c39c3"
+          ],
+          "narrative_purpose": "setup",
+          "book_essence": "Four characters run through a Maze each day searching for cheese: the mice Sniff and Scurry use simple trial-and-error, while the little people Hem and Haw rely on their complex brains filled with beliefs and emotions.",
+          "dramatization": "Wide shot split by a corridor: on the left, two small mice in running gear race forward sniffing; on the right, two little people in jogging suits run past with confident smiles; both pairs move deeper into twisting maze passages.",
+          "character_intent": "",
+          "visual_intent": [
+            "wide parallel corridor composition",
+            "two mice in running gear on the left track",
+            "two little people in jogging suits on the right track",
+            "twisting maze passages receding into distance"
+          ],
+          "must_preserve": [
+            "Two mice are named Sniff and Scurry",
+            "Two little people are named Hem and Haw",
+            "Every morning the four characters put on jogging suits and running shoes and race into the Maze",
+            "The mice use simple trial-and-error while Hem and Haw use complex brains filled with beliefs and emotions"
+          ],
+          "may_compress": [
+            "Detailed descriptions of the mice getting lost and bumping into walls",
+            "The contrast that Hem and Haw sometimes did well and sometimes had their thinking clouded"
+          ],
+          "confidence": 0.95
+        },
+        {
+          "beat_id": "beat_003_setup_cheese_station_c",
+          "sequence": 3,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+            }
+          ],
+          "required_fact_ids": "",
+          "narrative_purpose": "setup",
+          "book_essence": "All four characters find cheese at Cheese Station C; the mice keep an early, alert routine, while Hem and Haw settle in, hang up their running gear, decorate the walls, and grow comfortable assuming the cheese will always be there.",
+          "dramatization": "Warm detail shot of a brightly lit cheese station interior: piles of cheese on a ledge, the mice sitting alert with their shoes still tied around their necks, and Hem and Haw hanging up their jogging suits and putting on slippers beside walls decorated with little cheese drawings.",
+          "character_intent": "",
+          "visual_intent": [
+            "warm interior of Cheese Station C",
+            "piles of cheese on a stone ledge",
+            "mice alert with shoes around their necks",
+            "Hem and Haw hanging up jogging suits and putting on slippers",
+            "walls decorated with cheese drawings and sayings"
+          ],
+          "must_preserve": [
+            "All four characters find cheese at Cheese Station C",
+            "The mice arrive early, sniff and scratch around the station, and inspect for changes",
+            "Hem and Haw wake later, dress slower, and walk to Cheese Station C assuming the cheese will be there",
+            "Hem and Haw decorate the walls with sayings and pictures of cheese"
+          ],
+          "may_compress": [
+            "The line of dialogue in which Hem says 'This is great. There's enough Cheese here to last us forever'",
+            "Hem and Haw inviting friends to see their pile of Cheese"
+          ],
+          "confidence": 0.93
+        },
+        {
+          "beat_id": "beat_004_conflict_cheese_gone",
+          "sequence": 4,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+            }
+          ],
+          "required_fact_ids": "",
+          "narrative_purpose": "conflict",
+          "book_essence": "One morning the mice arrive to find no cheese at Cheese Station C; they had noticed the supply shrinking and immediately set off in search of New Cheese, while Hem and Haw arrive later unprepared and react with shock and anger.",
+          "dramatization": "Two-part panel: first, the mice in the empty station tying on their running shoes and nodding to each other; second, Hem with hands on hips yelling, mouth open wide, while Haw stands frozen beside him in the same bare station.",
+          "character_intent": "",
+          "visual_intent": [
+            "empty cheese station with bare shelves",
+            "mice lacing up running shoes side by side",
+            "Hem with hands on hips and face turned red",
+            "Haw frozen with shoulders tight"
+          ],
+          "must_preserve": [
+            "The mice discovered there was no cheese and were not surprised because they had been watching the supply shrink",
+            "The mice immediately put their running shoes back on and headed into the Maze in search of New Cheese",
+            "Hem yells 'Who moved my Cheese?' and screams that it is not fair",
+            "Haw shakes his head in disbelief and stands frozen, tuning everything out"
+          ],
+          "may_compress": [
+            "Sniff lifting his nose and Scurry taking off running ahead",
+            "Haw's specific thoughts about not being ready for this"
+          ],
+          "confidence": 0.95
+        },
+        {
+          "beat_id": "beat_005_conflict_hem_resists",
+          "sequence": 5,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_00_b4b4dc270b13",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "b4b4dc270b13292c5e23be40bd1be561fc92200c2ff9c7ea021dffac9ec283c4"
+            }
+          ],
+          "required_fact_ids": [
+            "proof-section_0005_000_00_b184f4508866"
+          ],
+          "narrative_purpose": "conflict",
+          "book_essence": "Hem denies and resists the change, claiming the cheese was moved unfairly and that they are entitled to it; Hem and Haw return again and again to the empty station, growing weaker, while Haw begins to recognize the difference between activity and productivity.",
+          "dramatization": "Medium shot inside the empty station: Hem holds a chisel and pounds the wall while Haw looks on, both visibly thinner than before; in a small inset, Hem gestures angrily, claiming they are entitled to the cheese.",
+          "character_intent": "",
+          "visual_intent": [
+            "empty station with a freshly broken hole in the wall",
+            "Hem holding a chisel, mouth set",
+            "Haw growing thin and tired beside him",
+            "small inset of Hem gesturing angrily"
+          ],
+          "must_preserve": [
+            "Hem denies and resists change as he fears it will lead to something worse",
+            "Hem claims they are entitled to the Cheese because they did not cause the problem",
+            "Hem and Haw return daily to the empty station and grow weak from hunger and stress",
+            "Haw begins to see the difference between activity and productivity"
+          ],
+          "may_compress": [
+            "Haw's specific fear about what would happen if the Cheese was not there tomorrow",
+            "Hem's belief that the cheese was simply hidden behind the wall"
+          ],
+          "confidence": 0.94
+        },
+        {
+          "beat_id": "beat_006_reveal_haw_decides",
+          "sequence": 6,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_01_14a3176ac46a",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "14a3176ac46a3048eb82c67119bfdfb78f6a0032737ed29c94cfbcf75da6b349"
+            }
+          ],
+          "required_fact_ids": "",
+          "narrative_purpose": "reveal",
+          "book_essence": "Haw finally laughs at himself and his fear, decides to stop waiting for the cheese to return, finds his long-stored running shoes, writes a saying on the wall for Hem to think about, and announces it is Maze time.",
+          "dramatization": "Detail shot: Haw, gaunt but smiling, holds up a pair of worn running shoes and a small sharp rock; behind him, Hem sits slumped against the wall refusing to look; a small caption shows the words Haw has just written beside a sketched piece of cheese.",
+          "character_intent": "",
+          "visual_intent": [
+            "Haw smiling while holding worn running shoes",
+            "small sharp rock in Haw's other hand",
+            "Hem slumped and refusing to look",
+            "wall inscription with a drawn cheese beside it",
+            "maze corridor disappearing into shadow"
+          ],
+          "must_preserve": [
+            "Haw laughs at himself and the repetitive folly of returning to the empty station",
+            "Haw asks where they put their running shoes and finds them stored away",
+            "Haw writes a serious thought on the wall for Hem to think about, with a cheese drawing around it",
+            "Haw announces 'It's ... Maze ... time' and steps out into the unknown"
+          ],
+          "may_compress": [
+            "Haw's internal dialogue imagining himself finding and enjoying New Cheese",
+            "Hem's specific objections about being too old and afraid to look foolish"
+          ],
+          "confidence": 0.93
+        },
+        {
+          "beat_id": "beat_007_payoff_haw_adapts",
+          "sequence": 7,
+          "source_refs": [
+            {
+              "book_id": "6a0b5a11201a8d03f1d82501",
+              "source_unit_id": "section_0008_000_01_14a3176ac46a",
+              "page_start": 1,
+              "page_end": 1,
+              "text_hash": "14a3176ac46a3048eb82c67119bfdfb78f6a0032737ed29c94cfbcf75da6b349"
+            }
+          ],
+          "required_fact_ids": [
+            "proof-section_0006_000_00_74437bd5ed8f"
+          ],
+          "narrative_purpose": "payoff",
+          "book_essence": "Haw ventures into the unknown corridors of the Maze, recognizes that fear had been immobilizing him, decides to anticipate change and watch for it, and learns to adapt in time when changing can lead to something better.",
+          "dramatization": "Medium-to-wide shot of Haw jogging slowly into a dim, unexplored corridor; he pauses to write on the wall, then lifts his head and looks alertly forward as if sniffing the air, his posture upright and his stride renewed.",
+          "character_intent": "",
+          "visual_intent": [
+            "Haw jogging into an unexplored corridor",
+            "wall inscription in Haw's handwriting mid-journey",
+            "Haw lifting his head alertly, sensing change",
+            "twisting maze passages opening ahead"
+          ],
+          "must_preserve": [
+            "Haw turns right into the unknown part of the Maze and jogs slowly into it",
+            "Haw realizes the change at Cheese Station C had been gradual and that he could have seen it coming",
+            "Haw decides to expect change, look for it, and trust his basic instincts",
+            "Haw learns to adapt in time when he sees that changing can lead to something better"
+          ],
+          "may_compress": [
+            "The specific phrase 'Smell the Cheese Often So You Know When It Is Getting Old'",
+            "Haw's two-steps-forward-one-step-back rhythm through the corridors"
+          ],
+          "confidence": 0.94
+        }
+      ],
+      "character_state_updates": "",
+      "terminology_updates": "",
+      "new_facts": "",
+      "unresolved_thread_updates": "",
+      "ending_state": "Haw has left Cheese Station C behind and jogged slowly into the unknown corridors of the Maze, deciding to anticipate change, stay alert for it, and trust his instincts; Hem remains at the empty station, still denying and resisting, waiting for cheese that will not come back on its own."
+    }
+  }
+}

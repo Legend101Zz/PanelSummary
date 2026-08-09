@@ -1,0 +1,720 @@
+{
+  "tool": "submit_thumbnail_set",
+  "scope": {
+    "correlation_id": "goal_ff6f91db4595b4953f23_1",
+    "goal_id": "goal_ff6f91db4595b4953f23_1",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "stage_run_id": "stage_manga_thumbnail_ff6f91db4595b4953f23",
+    "context_pack_id": "context_95b9e2d2d62e9d491dca1b88",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:22:49.899657+00:00",
+  "arguments": {
+    "thumbnail_set": {
+      "schema_version": "thumbnail-set.v1",
+      "thumbnail_set_id": "thumbnail_set_6a0b5a5b201a8d03f1d82503",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+      "page_plans": [
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_0",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "source_fact_ids": [],
+          "page_script": {
+            "page_id": "page_0",
+            "page_index": 0,
+            "page_kind": "standard",
+            "entry_state": "Haw pauses before a dark maze junction, fear tightening his face as he grips the wall to write a marker for Hem.",
+            "exit_state": "Haw stands in the maze corridor having written new wisdom on the wall, fear transformed into quiet resolve.",
+            "page_turn_panel_id": "panel_3",
+            "panels": [
+              {
+                "panel_id": "panel_0",
+                "purpose": "setup",
+                "story_beat": "Haw stands at a dark maze junction, fear tightening his face as he grips the wall to write a message for Hem.",
+                "importance": "high",
+                "tempo": "hold",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_1",
+                "purpose": "action",
+                "story_beat": "Haw runs through the dark maze corridor feeling a cool breeze on his face as exhilaration replaces his fear.",
+                "importance": "high",
+                "tempo": "quick",
+                "camera": {
+                  "shot": "wide",
+                  "angle": "eye",
+                  "movement": "tracking"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_2",
+                "purpose": "reveal",
+                "story_beat": "Haw stands at Cheese Station C holding a few bits of New Cheese, offering them to a reluctant Hem who shakes his head.",
+                "importance": "high",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0005_000_00_b184f4508866",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_3",
+                "purpose": "reaction",
+                "story_beat": "Haw pauses along the maze corridor and writes on the wall that fear imagined is always worse than the reality ahead.",
+                "importance": "medium",
+                "tempo": "hold",
+                "camera": {
+                  "shot": "close_up",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              }
+            ],
+            "text_elements": [
+              {
+                "text_id": "text_p0_p0",
+                "panel_id": "panel_0",
+                "kind": "narration",
+                "content": "Haw wondered what lay ahead in the dark passage, his fears running wild.",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.52,
+                  "y": 0.04,
+                  "width": 0.46,
+                  "height": 0.1
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_serif",
+                  "weight": 400,
+                  "min_px": 12,
+                  "max_px": 18,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_p0_p2",
+                "panel_id": "panel_2",
+                "kind": "dialogue",
+                "content": "I want my old Cheese back. I'm not going to change until I get it.",
+                "speaker_ref": "Hem",
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "oval",
+                "preferred_region": {
+                  "x": 0.56,
+                  "y": 0.58,
+                  "width": 0.38,
+                  "height": 0.1
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_sans",
+                  "weight": 700,
+                  "min_px": 14,
+                  "max_px": 22,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 2
+              },
+              {
+                "text_id": "text_p0_p3",
+                "panel_id": "panel_3",
+                "kind": "narration",
+                "content": "What you are afraid of is never as bad as what you imagine.",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.05,
+                  "y": 0.9,
+                  "width": 0.42,
+                  "height": 0.06
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_serif",
+                  "weight": 400,
+                  "min_px": 12,
+                  "max_px": 18,
+                  "emphasis": "bold"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              }
+            ]
+          },
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_0",
+            "axis": "y",
+            "ratios": [
+              1,
+              1
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_page_0_top",
+                "axis": "x",
+                "ratios": [
+                  1,
+                  1
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_1",
+                    "panel_id": "panel_1"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_0",
+                    "panel_id": "panel_0"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_page_0_bot",
+                "axis": "x",
+                "ratios": [
+                  1,
+                  1
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_2",
+                    "panel_id": "panel_2"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_3",
+                    "panel_id": "panel_3"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_1",
+              "to_panel_id": "panel_0",
+              "reason": "RTL top row: panel_1 (action run through the maze) is rightmost, read first"
+            },
+            {
+              "from_panel_id": "panel_0",
+              "to_panel_id": "panel_2",
+              "reason": "RTL chain: panel_0 (setup at dark junction) precedes panel_2 (reunion with Hem at Cheese Station C)"
+            },
+            {
+              "from_panel_id": "panel_2",
+              "to_panel_id": "panel_3",
+              "reason": "RTL chain: panel_2 (Hem refuses New Cheese) precedes page-turn panel_3 (wall inscription on fear vs. reality)"
+            }
+          ]
+        },
+        {
+          "schema_version": "manga-page-plan.v1",
+          "page_plan_id": "page_plan_1",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+          "canvas": {
+            "width_px": 1600,
+            "height_px": 2400,
+            "trim": {
+              "x": 0.03,
+              "y": 0.02,
+              "width": 0.94,
+              "height": 0.96
+            },
+            "safe": {
+              "x": 0.06,
+              "y": 0.05,
+              "width": 0.88,
+              "height": 0.9
+            },
+            "bleed_pct": 0.02
+          },
+          "reading_direction": "rtl",
+          "source_fact_ids": [],
+          "page_script": {
+            "page_id": "page_1",
+            "page_index": 1,
+            "page_kind": "standard",
+            "entry_state": "Haw arrives at Cheese Station N piled high with New Cheese, greeted warmly by Sniff and Scurry.",
+            "exit_state": "Haw stands listening in the maze near Cheese Station N, hearing footsteps approaching in the distance.",
+            "page_turn_panel_id": "panel_7",
+            "panels": [
+              {
+                "panel_id": "panel_4",
+                "purpose": "payoff",
+                "story_beat": "Haw rounds the corner into Cheese Station N piled high with the greatest supply of Cheese he has ever seen, greeted by Sniff and Scurry.",
+                "importance": "page_turn",
+                "tempo": "impact",
+                "camera": {
+                  "shot": "wide",
+                  "angle": "low",
+                  "movement": "push_in"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_5",
+                "purpose": "transition",
+                "story_beat": "Haw draws a large piece of cheese around his insights on the largest wall of Cheese Station N, summarizing what he has learned.",
+                "importance": "medium",
+                "tempo": "hold",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3",
+                  "proof-section_0005_000_00_b184f4508866",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_6",
+                "purpose": "setup",
+                "story_beat": "Former classmates gather at a hotel lounge for the reunion, sharing how each one has acted like Hem, Haw, Sniff, or Scurry during their own changes.",
+                "importance": "medium",
+                "tempo": "normal",
+                "camera": {
+                  "shot": "wide",
+                  "angle": "eye",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0010_000_00_8b6cac48cbd7",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "8b6cac48cbd7d1bc4a5d6b48448619cd6022e48e0e1ab910180eda101289db68"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3",
+                  "proof-section_0005_000_00_b184f4508866",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              },
+              {
+                "panel_id": "panel_7",
+                "purpose": "payoff",
+                "story_beat": "Haw hears footsteps echoing in the maze corridor near Cheese Station N and wonders if Hem is finally approaching at last.",
+                "importance": "page_turn",
+                "tempo": "hold",
+                "camera": {
+                  "shot": "medium",
+                  "angle": "low",
+                  "movement": "static"
+                },
+                "blocking": [],
+                "environment_ref": null,
+                "prop_refs": [],
+                "focal_regions": [],
+                "avoid_text_regions": [],
+                "motion": {
+                  "direction": null,
+                  "speed": null,
+                  "effects": []
+                },
+                "source_refs": [
+                  {
+                    "book_id": "6a0b5a11201a8d03f1d82501",
+                    "source_unit_id": "section_0010_000_01_747a90de2166",
+                    "page_start": 1,
+                    "page_end": 1,
+                    "start_offset": null,
+                    "end_offset": null,
+                    "quote": null,
+                    "text_hash": "747a90de21660a8038f38d261ded546e826565f5c275c1a66d4a7a6fc5387125"
+                  }
+                ],
+                "source_fact_ids": [
+                  "proof-section_0004_000_00_222d767c39c3",
+                  "proof-section_0006_000_00_74437bd5ed8f"
+                ]
+              }
+            ],
+            "text_elements": [
+              {
+                "text_id": "text_p1_p4",
+                "panel_id": "panel_4",
+                "kind": "dialogue",
+                "content": "Hooray for Change!",
+                "speaker_ref": "Haw",
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "oval",
+                "preferred_region": {
+                  "x": 0.56,
+                  "y": 0.3,
+                  "width": 0.3,
+                  "height": 0.08
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_sans",
+                  "weight": 700,
+                  "min_px": 16,
+                  "max_px": 26,
+                  "emphasis": "shout"
+                },
+                "overflow": "fit",
+                "z_index": 2
+              },
+              {
+                "text_id": "text_p1_p5",
+                "panel_id": "panel_5",
+                "kind": "narration",
+                "content": "The biggest inhibitor to change lies within yourself, and nothing gets better until you change.",
+                "speaker_ref": null,
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "caption",
+                "preferred_region": {
+                  "x": 0.05,
+                  "y": 0.05,
+                  "width": 0.42,
+                  "height": 0.1
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_serif",
+                  "weight": 400,
+                  "min_px": 12,
+                  "max_px": 18,
+                  "emphasis": "normal"
+                },
+                "overflow": "fit",
+                "z_index": 1
+              },
+              {
+                "text_id": "text_p1_p7",
+                "panel_id": "panel_7",
+                "kind": "thought",
+                "content": "Hem...?",
+                "speaker_ref": "Haw",
+                "emotion": null,
+                "writing_direction": "horizontal",
+                "shape": "thought_cloud",
+                "preferred_region": {
+                  "x": 0.1,
+                  "y": 0.6,
+                  "width": 0.18,
+                  "height": 0.08
+                },
+                "tail_target": null,
+                "typography": {
+                  "font_token": "body_sans",
+                  "weight": 400,
+                  "min_px": 14,
+                  "max_px": 22,
+                  "emphasis": "whisper"
+                },
+                "overflow": "fit",
+                "z_index": 2
+              }
+            ]
+          },
+          "layout_root": {
+            "kind": "split",
+            "node_id": "split_page_1",
+            "axis": "y",
+            "ratios": [
+              1,
+              1
+            ],
+            "gutter": {
+              "value": 0.015,
+              "unit": "page_pct"
+            },
+            "children": [
+              {
+                "kind": "split",
+                "node_id": "split_page_1_top",
+                "axis": "x",
+                "ratios": [
+                  1,
+                  1
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_5",
+                    "panel_id": "panel_5"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_4",
+                    "panel_id": "panel_4"
+                  }
+                ]
+              },
+              {
+                "kind": "split",
+                "node_id": "split_page_1_bot",
+                "axis": "x",
+                "ratios": [
+                  1,
+                  1
+                ],
+                "gutter": {
+                  "value": 0.015,
+                  "unit": "page_pct"
+                },
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_6",
+                    "panel_id": "panel_6"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_7",
+                    "panel_id": "panel_7"
+                  }
+                ]
+              }
+            ]
+          },
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_5",
+              "to_panel_id": "panel_4",
+              "reason": "RTL top row: panel_5 (insights wall summary) is rightmost, read first after the payoff panel_4"
+            },
+            {
+              "from_panel_id": "panel_4",
+              "to_panel_id": "panel_6",
+              "reason": "RTL chain: panel_4 (payoff arrival at Cheese Station N) precedes panel_6 (class discussion at hotel lounge)"
+            },
+            {
+              "from_panel_id": "panel_6",
+              "to_panel_id": "panel_7",
+              "reason": "RTL chain: panel_6 (classmates discuss change) precedes page-turn panel_7 (footsteps in the maze corridor)"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

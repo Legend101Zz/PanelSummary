@@ -1,0 +1,212 @@
+{
+  "tool": "submit_page_script_set",
+  "scope": {
+    "correlation_id": "goal_379729208df88e8cf8e1_1",
+    "goal_id": "goal_379729208df88e8cf8e1_1",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "stage_run_id": "stage_manga_page_writing_379729208df88e8cf8e1",
+    "context_pack_id": "context_058ec480dbfd284cad53af5b",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:12:39.103695+00:00",
+  "arguments": {
+    "script_set": {
+      "schema_version": "page-script-set.v1",
+      "script_set_id": "pss_haw_maze_379729208df88e8cf8e1",
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "plan_artifact_id": "manga_plan_02734c7ca4e0282f06195a84",
+      "context_pack_id": "context_058ec480dbfd284cad53af5b",
+      "pages": [
+        {
+          "page_id": "page_0",
+          "page_index": 0,
+          "page_kind": "standard",
+          "entry_state": "Haw stands in the dark maze corridor, fear tightening his chest as he grips the wall to write a marker.",
+          "exit_state": "Haw runs through the maze with greater strength and agility, having written wisdom on the walls for Hem.",
+          "page_turn_panel_id": "panel_p0_3",
+          "panels": [
+            {
+              "panel_id": "panel_p0_0",
+              "purpose": "setup",
+              "story_beat": "Haw grips a chalk stub and writes on the dark maze wall, recalling the times he felt his best when moving along.",
+              "importance": "high",
+              "tempo": "hold",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "reaching up to scrawl on the wall while gripping chalk",
+                  "expression": "wary yet hopeful",
+                  "anchor": {
+                    "x": 0.7,
+                    "y": 0.35
+                  },
+                  "scale": 0.6,
+                  "facing": "left",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": null,
+                  "end_offset": null,
+                  "quote": null,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0004_000_00_222d767c39c3",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_1",
+              "purpose": "action",
+              "story_beat": "Haw charges into the dark corridor, arms pumping and a spreading smile on his face as the cool breeze washes over him.",
+              "importance": "medium",
+              "tempo": "quick",
+              "camera": {
+                "shot": "wide",
+                "angle": "low",
+                "movement": "tracking"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "running mid-stride with arms pumping and feet lifting off the floor",
+                  "expression": "exhilarated and free",
+                  "anchor": {
+                    "x": 0.25,
+                    "y": 0.35
+                  },
+                  "scale": 0.55,
+                  "facing": "right",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.05,
+                  "y": 0.15,
+                  "width": 0.4,
+                  "height": 0.3
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": null,
+                  "end_offset": null,
+                  "quote": null,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_2",
+              "purpose": "reaction",
+              "story_beat": "Haw extends bits of New Cheese toward Hem at Cheese Station C, but Hem crosses his arms and shakes his head, refusing to change.",
+              "importance": "medium",
+              "tempo": "normal",
+              "camera": {
+                "shot": "medium",
+                "angle": "eye",
+                "movement": "static"
+              },
+              "blocking": [
+                {
+                  "subject_ref": "char_haw",
+                  "pose": "extending his hand holding small cheese bits toward Hem",
+                  "expression": "disappointed but accepting",
+                  "anchor": {
+                    "x": 0.7,
+                    "y": 0.7
+                  },
+                  "scale": 0.5,
+                  "facing": "left",
+                  "depth": "midground"
+                },
+                {
+                  "subject_ref": "char_hem",
+                  "pose": "arms crossed, stepping back and shaking his head firmly",
+                  "expression": "resistant and fearful",
+                  "anchor": {
+                    "x": 0.9,
+                    "y": 0.75
+                  },
+                  "scale": 0.45,
+                  "facing": "front",
+                  "depth": "midground"
+                }
+              ],
+              "prop_refs": "",
+              "focal_regions": [
+                {
+                  "x": 0.55,
+                  "y": 0.55,
+                  "width": 0.4,
+                  "height": 0.4
+                }
+              ],
+              "avoid_text_regions": "",
+              "motion": {
+                "effects": ""
+              },
+              "source_refs": [
+                {
+                  "book_id": "6a0b5a11201a8d03f1d82501",
+                  "source_unit_id": "section_0009_000_00_ab5005823d0b",
+                  "page_start": 1,
+                  "page_end": 1,
+                  "start_offset": null,
+                  "end_offset": null,
+                  "quote": null,
+                  "text_hash": "ab5005823d0ba5685fc546089565bc4b43b783ed6d051a0e2ec40fcdbe5fd6c4"
+                }
+              ],
+              "source_fact_ids": [
+                "proof-section_0005_000_00_b184f4508866",
+                "proof-section_0006_000_00_74437bd5ed8f"
+              ]
+            },
+            {
+              "panel_id": "panel_p0_3"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

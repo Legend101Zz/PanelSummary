@@ -1621,3 +1621,175 @@ Known rough edges / carry-forwards (Session 7 — docs/next-prompt.md):
    #6 knowledge-base rewrite; (f) issue #3 leftovers (ModelReceipt on
    every artifact kind, ADR-001 revision, dashboard-lite, per-purpose
    smokes); (g) eval_scorecard/qa_report registry promotion follow-ups.
+
+## 2026-08-09 Session 7: the tool-frame wall FELL — first fully-authored planning set accepted; whole-book chain mechanism live; fidelity needs both channels (issues #13, #5, #10)
+
+Executed on `v2-architecture` (commits `336f9f5` seam dump + armed text
+lane, `43a43fe` attempt-11 fixes, `9a22ead` attempt-12 verbatim-refs fix,
+`96d3006` attempt-13 SourceRef normalization, `f1d3818` whole-book
+mechanism, `8eaa76e` folds + thumbnail axis fix, `ed057d5` eval_scorecard
+promotion, `7246a52` live-loop scripts + PAGE_ART v2, `53aa744` direction
+seam treatment, `a131a56` stringified-null + ADR addendum, plus the
+page_index coercion and this closeout). Read the ADR-012 Session 7
+addendum (entries 1-10) and `docs/evidence/session7-*/`.
+
+**HEADLINE (two halves again):**
+
+1. **The page-writing wall is DOWN.** Attempt 14 (M3, $0.035737)
+   accepted the first fully-authored PageScriptSet — real beats, real
+   dialogue ("I want my old Cheese back…", "Hooray for Change!"),
+   narration carrying the book's claims — landing on the FIRST tool-frame
+   submission once the seam normalized every measured transport artifact.
+   The thumbnail landed next (attempt 2 after the axis-orientation fix,
+   $0.090585, speed lane), and in the golden chain the SPEED lane
+   accepted page-writing under the content gate for the first time
+   ($0.038370, first submission). Every wall was diagnosed from the new
+   seam raw-arguments dump (`AGENT_SEAM_RAW_DUMP_DIR`, default off) and
+   fixed free: the S6 "fourth shape" is frame TRUNCATION of large tool
+   calls (dodged by the skill-armed assistant-text lane); empty optionals
+   arrive as ""/{}; SourceRef nulls arrive as ""; a whole submission can
+   arrive string-typed (nulls as "null", ints as "1"); and the S6 skill
+   wording "non-empty quote" CONTRADICTED the verbatim-lineage gate on
+   null-quote plans (attempt 12's content passed the ENTIRE pipeline
+   offline once refs were reverted — the wording was the last wall).
+2. **Fidelity did NOT move: 1/5 either way — it needs BOTH channels.**
+   The lane-C regen ran twice (2 batches x $0.156, exact worst-case
+   ceilings, key-reconciled to 7 decimals) and ALL 8 art attempts were
+   rejected: the image model paints the RIGHT story content in the WRONG
+   panels (briefs bound LTR against RTL read order; PAGE_ART v2's
+   bbox-position anchors did not cure it). The stage degraded as designed
+   — composed `dsl_only` pages carry the full authored lettering — and
+   the eval measured the mirror of S6: text-without-art scores fidelity
+   1/5 (2/37 claims) with readability 2-3, where S6's art-without-text
+   scored readability 4-5 with fidelity 1/5. The scorecard-diff fold
+   reported the regression honestly. Lane-C per-panel content binding is
+   the ONE blocker left between the authored text channel and a moving
+   fidelity number — the Session 8 problem.
+
+What landed (all tested, all pushed):
+
+1. **Landing machinery** (`336f9f5`, `43a43fe`, `9a22ead`, `96d3006`,
+   `a131a56`, page_index coercion): seam raw-arguments dump (settings
+   flag, fires on every submit invocation, never breaks the seam, 5
+   tests); `_unwrap_item_wrappers` extended with optional-nullable
+   normalization (""/{}/"null" -> None for speaker_ref, emotion,
+   environment_ref, tail_target, page_turn_panel_id, quote,
+   start_offset, end_offset) + MangaPlan list fields + digit-string
+   page_index coercion; skills 1.5.x (armed text-lane fallback after ONE
+   transport-shaped rejection, purpose-enum and omit-optionals traps,
+   byte-for-byte source_ref copies with nulls); prompts v4/v5 (both
+   planning purposes re-keyed); the direction seam got the full
+   treatment after the golden chain hit it live.
+2. **Whole-book mechanism** (`f1d3818`, issue #13 session cut):
+   deterministic ScopeChainPlanner (heading-marker + token-floor skips
+   with recorded reasons, whole-chapter packing under a 10k token
+   budget, unit-boundary splits, per-scope budgets from the MEASURED
+   matrix numbers, order-insensitive plan_hash) + WholeBookChainExecutor
+   (injected stage runners; HARD cost preflight that REFUSES a scope the
+   remaining budget cannot cover; per-scope eval_scorecard persistence;
+   rolling canon via plan-derived MemoryDeltas merged exactly once,
+   guarded by the plan's compiled memory_version). 10 tests: packing
+   shapes, budgets, determinism, preflight refusal, continuity ordering,
+   crash resume with zero re-spend and no double-merge.
+3. **Golden run** (`whole_book_wmc_s7.py`, 4 live chain executions):
+   the planner planned WMC into 2 scopes + 9 skipped units; the chain
+   landed direction (a3) and the FIRST speed-lane page-writing, proved
+   LIVE resume (both reused at $0 on the next pass), and stopped
+   honestly at the thumbnail each time — attempt 3's stringified
+   page_index is FIXED; attempt 4 stopped at "PageScriptSet is not an
+   accepted ContextPack parent" (the model cites a script id outside the
+   thumbnail ContextPack parents — UNDIAGNOSED, next session's first
+   look; validate_layout_draft has no dump). Chain outcomes persisted in
+   `docs/evidence/session7-golden-run/chain_outcome.json`.
+4. **Folds**: reader-v2 page_art fallback (art-only pages serve instead
+   of 404; frontend renders with a "raw page art" badge; TestClient
+   test); `compare_scorecards` -> eval-scorecard-diff.v1 (per-page
+   deltas, S6-calibrated thresholds, hard cross-version refusal; 4
+   tests) — live-proven on S6-vs-S7; eval_scorecard.v1 registry
+   promotion (model + schema + TS + fixture from a live row + manifest;
+   all 4 live rows validate; contracts 47).
+5. **Gates-v3 calibration smoke** (`smoke_gates_v3_s7.py`): NO
+   empty-balloon false positive on either S5 accepted page ($0.000817,
+   receipted) — the v3 reject stayed for the paid batch and correctly
+   never fired on real art all session.
+
+Verification: backend `uv run pytest tests/ -q` -> **793 passed** (767
+S6 baseline + 26 new; every S6 test preserved). TS: contracts **47**
+(46+1), agent-runtime 22, agent-worker 13. Both generators `--check`
+clean (35 schemas / 35 contracts). Injection suites green. Frontend
+`tsc --noEmit` + `next build` green. `git diff --check` clean per
+commit. Pre-existing (untouched, NOT from this session):
+`packages/agent-runtime` `tsc --noEmit` fails in test/injection.test.ts
+(vitest suite passes).
+
+Spend ledger (ALL receipted; per-attempt table in
+`docs/evidence/session7-page-writing/landing_ledger.json` + Mongo
+failure_history/receipts):
+
+| lane | calls | cost | notes |
+|---|---|---|---|
+| MiniMax text — page-writing landing (attempts 11-14) | 4 | $0.214146 | 3 failed + 1 ACCEPTED ($0.035737); stop line was $0.45 |
+| MiniMax text — thumbnail (S7 set) | 2 | $0.232313 | 1 failed + 1 ACCEPTED ($0.090585) |
+| MiniMax text — golden chain (direction 3 + speed page-writing 1 + thumbnail 2) | 6 | $0.395271 | direction a3 + page-writing a1 ACCEPTED; thumbnail failed twice (2nd wall undiagnosed) |
+| MiniMax vision QA (2 regen batches, 8 calls) | 8 | $0.003773 | every gated attempt receipted |
+| MiniMax vision — gates-v3 smoke | 2 | $0.000817 | steering binned this under the image cap; it bills MiniMax (vision is LOCKED M3) — flagged, ~$0.001 |
+| MiniMax M3 judges (S7 eval) | 2 | $0.001035 | fidelity re-score receipts |
+| **MiniMax total** | 24 | **$0.847356** | cap $2.00 -> 42% used |
+| OpenRouter images (2 lane-C batches, 8 calls) | 8 | **$0.3124744** | receipts equal the key delta to 7 decimals (0.3125613 -> 0.6250357); cap $1.00 -> 31% used |
+
+Full-DB backups before live writes: `/tmp/bookreel-s7-before-planning.json`
+(125 docs), `-before-regen.json` (144), `-before-golden.json` (177). All
+writes additive v2-lane rows; v1 untouched; both dev servers and workers
+shut down at session end. The dump flag is env-armed only (config default
+off). NOTE: direction-seam dumps land in
+`docs/evidence/session7-page-writing/raw_dumps/` beside the planning ones
+(one dump dir per backend process).
+
+Deviations from the session brief (enumerated):
+
+1. Accepted ART did not land — 8/8 lane-C attempts rejected across two
+   conditioning versions (v1 briefs, v2 spatial anchors); the composed
+   set is `dsl_only` + authored lettering. The SECOND regen batch went
+   beyond the brief's single regen (stated first, capped, receipted).
+2. The golden chain is a PARTIAL: 4 executions, each stopping one wall
+   deeper (direction empty-lists -> "null" strings -> thumbnail
+   page_index string -> ContextPack-parent authorization); scope 0
+   direction + page-writing accepted and live-reuse proven; no per-scope
+   scorecard persisted from the chain (the eval fold ran standalone on
+   the regen instead), no live memory merge yet.
+3. Thumbnail reuse in the S7 landing required
+   `AGENT_MODEL_MODE_PAGE_WRITING=quality` (explicit env config,
+   receipted `model_mode_source`) because the accepted page-writing
+   artifact is quality-lane while the purpose default is speed.
+4. The calibration smoke ran 2 calls (both S5 pages), not the brief's 1.
+5. The scope planner includes WMC's 406-token title section in scope 0
+   (heading not in the conservative marker list); include/exclude
+   overrides are the #13 follow-up.
+6. Executor budget tracking decrements ACCEPTED-stage receipts only;
+   failed-attempt spend is receipted in failure_history but not
+   subtracted from the chain's remaining budget (S8 note).
+7. `_coerce_int` (like the original isinstance check) admits negative
+   page_index (Python negative indexing) — pre-existing behavior, log
+   for a one-line guard.
+
+Known rough edges / carry-forwards (Session 8 — docs/next-prompt.md):
+
+1. **Lane-C per-panel content binding** (the blocker): candidates —
+   per-panel generation + deterministic assembly, lane-B key panel +
+   DSL, stronger region-tagged conditioning; bake-off with the eval
+   harness as referee (diff fold is live). Rejected-art exemplars in
+   `docs/evidence/session7-page-art/` (batch-2 candidates; batch-1
+   files were overwritten by name collision — receipts JSONL has both).
+2. **Golden chain wall 4**: "PageScriptSet is not an accepted
+   ContextPack parent" at the thumbnail — needs a dump on
+   validate_layout_draft/the authorization path; then ONE resume
+   completes scope 0 end-to-end (direction + page-writing already
+   accepted and reused free).
+3. #13 leftovers: AdaptationPlanDoc spine, Celery wiring, cancellation/
+   supersede, continue UX, preflight UI, full-book + 2-chunk golden.
+4. Standing carry-forwards (a)-(i) from S6 minus resolved: (c)
+   ARTIFACT_REPAIR policy now has FOUR normalized artifact classes as
+   evidence FOR a reviewed lane; the rest unchanged.
+5. Updated measured costs for planning: M3 page-writing actual
+   $0.036-0.075/attempt (NOT the $0.16 speed constant); direction
+   $0.034-0.053/attempt; speed page-writing $0.038 accepted.

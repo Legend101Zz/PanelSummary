@@ -1,0 +1,143 @@
+{
+  "scorecard_artifact_id": "eval_scorecard_a575909be3d6023a2df175eb",
+  "scorecard": {
+    "schema_version": "eval-scorecard.v1",
+    "harness_version": "manga-eval-harness.v1",
+    "layout_iou_version": "layout-iou.v1",
+    "judge_rubric_version": "m3-judge-rubrics.v1",
+    "project_id": "6a0b5a5b201a8d03f1d82503",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "lane": "C",
+    "subject": "composed",
+    "pages": [
+      {
+        "page_index": 0,
+        "layout_iou": {
+          "page_iou": 0.8412631979875284,
+          "panel_ious": {
+            "panel_0": 0.7503631660997733,
+            "panel_1": 0.9573944160997733,
+            "panel_2": 0.8180449263038548,
+            "panel_3": 0.839250283446712
+          },
+          "seeded_panels": 4,
+          "metric_version": "layout-iou.v1"
+        },
+        "border_adherence_score": 0.9869791666666666,
+        "ocr_clean": false,
+        "judge": {
+          "readability": 2,
+          "fidelity": {
+            "score": 1,
+            "claims_conveyed": 2,
+            "claims_total": 37
+          },
+          "craft": {
+            "page_turn_hook": 1,
+            "shot_variety": 1,
+            "text_density_comfort": 2
+          },
+          "notes": "Page is essentially four empty panels with only two text boxes: one narration ('Haw wondered what lay ahead in the dark passage, his fears running wild') and one wall inscription ('What you are afraid of is never as bad as what you imagine'), plus a stray speech bubble ('I want my old Cheese back...'). No characters, settings, actions, or visual storytelling are present. Reading order is ambiguous because panels 1 and 2 are visually identical and empty, forcing the reader to infer sequencing purely from text position. Only 'What you are afraid of is never as bad as imagined' is clearly conveyed via wall text; 'Hem wanted his own Cheese back and wouldn't change' is partially suggested by the speech bubble, though it's unattributed and disconnected. The remaining ~35 must-preserve claims (Haw running, smiling, cool breeze, Cheese Station N/New Cheese, Sniff and Scurry, wall writing for Hem, etc.) are entirely absent. Shot variety is nonexistent (four near-identical empty rectangles). Page-turn hook is absent \u2014 the page ends on a static wall inscription with no tension. Text density is low but the sparse text itself is poorly integrated (narrator box floats in an empty panel, speech bubble has no speaker visible)."
+        },
+        "judge_cost_usd": 0.000536,
+        "notes": [
+          "subject: S7 composed (dsl_only base, authored text)"
+        ]
+      },
+      {
+        "page_index": 1,
+        "layout_iou": {
+          "page_iou": 0.8843736713435374,
+          "panel_ious": {
+            "panel_4": 0.8692469175170068,
+            "panel_5": 0.7615238803854876,
+            "panel_6": 0.9573944160997733,
+            "panel_7": 0.9493294713718821
+          },
+          "seeded_panels": 4,
+          "metric_version": "layout-iou.v1"
+        },
+        "border_adherence_score": 1.0,
+        "ocr_clean": false,
+        "judge": {
+          "readability": 3,
+          "fidelity": {
+            "score": 1,
+            "claims_conveyed": 2,
+            "claims_total": 37
+          },
+          "craft": {
+            "page_turn_hook": 1,
+            "shot_variety": 1,
+            "text_density_comfort": 2
+          },
+          "notes": "The page is almost entirely empty whitespace with minimal text. Only two claims are even partially conveyed: 'The biggest inhibitor to change lies within yourself' (Panel 1 narration box) and 'Haw made a toast saying Hooray for Change' (Panel 2 speech bubble). The panel order also contradicts the stated story beats\u2014Panel 1 shows the philosophical quote instead of the Cheese Station N payoff, and Panel 3 shows 'Hem...?' instead of the reunion setup. Sniff and Scurry's welcome, the wall writing, the marked trails, the empty Cheese Station, the new cheese being delicious, Hem's resistance, peer pressure reversal, fear imagery, the toast setup\u2014none of these are depicted. There are no characters drawn, no maze, no cheese, no environment, and the final empty panel fails to deliver the hearing-footsteps payoff. Reads as a near-empty placeholder page rather than a manga page."
+        },
+        "judge_cost_usd": 0.000499,
+        "notes": [
+          "subject: S7 composed (dsl_only base, authored text)"
+        ]
+      }
+    ],
+    "totals": {
+      "mean_layout_iou": 0.8628184346655329,
+      "judged_pages": 2,
+      "judge_cost_usd": 0.001035
+    },
+    "extra": {
+      "session": 7,
+      "planning_set": "S7 fresh (page-writing v5 M3 + thumbnail v5 speed)",
+      "art_status": "dsl_only_after_rejected (8/8 art attempts rejected)"
+    }
+  },
+  "receipts": [
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "a1323f4dba3548c509effb7383322de7c00e2f7b692572e742437cd9fd05ad11.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37,
+        "subject": "s7_composed"
+      },
+      "usage": {
+        "prompt_tokens": 2288,
+        "completion_tokens": 321
+      },
+      "cost_usd": 0.000536,
+      "latency_ms": 3845,
+      "error": null,
+      "response_text": "{\"readability\": 2, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 2, \"claims_total\": 37}, \"craft\": {\"page_turn_hook\": 1, \"shot_variety\": 1, \"text_density_comfort\": 2}, \"notes\": \"Page is essentially four empty panels with only two text boxes: one narration ('Haw wondered what lay ahead in the dark passage, his fears running wild') and one wall inscription ('What you are afraid of is never as bad as what you imagine'), plus a stray speech bubble ('I want my old Cheese back...'). No characters, settings, actions, or visual storytelling are present. Reading order is ambiguous because panels 1 and 2 are visually identical and empty, forcing the reader to infer sequencing purely from text position. Only 'What you are afraid of is never as bad as imagined' is clearly conveyed via wall text; 'Hem wanted his own Cheese back and wouldn't change' is partially suggested by the speech bubble, though it's unattributed and disconnected. The remaining ~35 must-preserve claims (Haw running, smiling, cool breeze, Cheese Station N/New Cheese, Sniff and Scurry, wall writing for Hem, etc.) are entirely absent. Shot variety is nonexistent (four near-identical empty rectangles). Page-turn hook is absent \\u2014 the page ends on a static wall inscription with no tension. Text density is low but the sparse text itself is poorly integrated (narrator box floats in an empty panel, speech bubble has no speaker visible).\"}",
+      "n_images": 0,
+      "at": "2026-08-09T00:39:09.298280+00:00",
+      "artifact_id": "provider_receipt_f418ea3233541af777ae63ea"
+    },
+    {
+      "schema_version": "provider-receipt.v1",
+      "purpose": "m3_judge",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "request": {
+        "image": "bfd360ec1b0bc96143d4efe1122417377a171d42513ceecaf96d9076e15c2bd5.png",
+        "rubric_version": "m3-judge-rubrics.v1",
+        "claims": 37,
+        "subject": "s7_composed"
+      },
+      "usage": {
+        "prompt_tokens": 2306,
+        "completion_tokens": 256
+      },
+      "cost_usd": 0.000499,
+      "latency_ms": 5599,
+      "error": null,
+      "response_text": "{\"readability\": 3, \"fidelity\": {\"score\": 1, \"claims_conveyed\": 2, \"claims_total\": 37}, \"craft\": {\"page_turn_hook\": 1, \"shot_variety\": 1, \"text_density_comfort\": 2}, \"notes\": \"The page is almost entirely empty whitespace with minimal text. Only two claims are even partially conveyed: 'The biggest inhibitor to change lies within yourself' (Panel 1 narration box) and 'Haw made a toast saying Hooray for Change' (Panel 2 speech bubble). The panel order also contradicts the stated story beats\\u2014Panel 1 shows the philosophical quote instead of the Cheese Station N payoff, and Panel 3 shows 'Hem...?' instead of the reunion setup. Sniff and Scurry's welcome, the wall writing, the marked trails, the empty Cheese Station, the new cheese being delicious, Hem's resistance, peer pressure reversal, fear imagery, the toast setup\\u2014none of these are depicted. There are no characters drawn, no maze, no cheese, no environment, and the final empty panel fails to deliver the hearing-footsteps payoff. Reads as a near-empty placeholder page rather than a manga page.\"}",
+      "n_images": 0,
+      "at": "2026-08-09T00:39:15.704415+00:00",
+      "artifact_id": "provider_receipt_929e973110b6e2d8137e6f2d"
+    }
+  ],
+  "baseline_artifact_id": null,
+  "diff": null
+}

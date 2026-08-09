@@ -1,0 +1,230 @@
+{
+  "tool": "submit_thumbnail_set",
+  "scope": {
+    "correlation_id": "goal_ff6f91db4595b4953f23_1",
+    "goal_id": "goal_ff6f91db4595b4953f23_1",
+    "run_id": "run_dir_a99464c56fa3b96e777fe750",
+    "stage_run_id": "stage_manga_thumbnail_ff6f91db4595b4953f23",
+    "context_pack_id": "context_95b9e2d2d62e9d491dca1b88",
+    "project_id": "6a0b5a5b201a8d03f1d82503"
+  },
+  "received_at": "2026-08-09T00:21:21.616143+00:00",
+  "arguments": {
+    "thumbnail_set": {
+      "page_plans": [
+        {
+          "canvas": {
+            "bleed_pct": 0.02,
+            "height_px": 2400,
+            "safe": {
+              "height": 0.9,
+              "unit": "page_pct",
+              "width": 0.88,
+              "x": 0.06,
+              "y": 0.05
+            },
+            "trim": {
+              "height": 0.96,
+              "unit": "page_pct",
+              "width": 0.94,
+              "x": 0.03,
+              "y": 0.02
+            },
+            "width_px": 1600
+          },
+          "layout_root": {
+            "axis": "y",
+            "children": [
+              {
+                "axis": "x",
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_1",
+                    "panel_id": "panel_1"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_0",
+                    "panel_id": "panel_0"
+                  }
+                ],
+                "gutter": {
+                  "unit": "page_pct",
+                  "value": 0.015
+                },
+                "node_id": "split_page_0_top",
+                "ratios": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "axis": "x",
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_2",
+                    "panel_id": "panel_2"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_3",
+                    "panel_id": "panel_3"
+                  }
+                ],
+                "gutter": {
+                  "unit": "page_pct",
+                  "value": 0.015
+                },
+                "node_id": "split_page_0_bot",
+                "ratios": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "node_id": "split_page_0",
+            "ratios": [
+              1,
+              1
+            ]
+          },
+          "page_id": "page_0",
+          "page_index": 0,
+          "page_plan_id": "page_plan_0",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "reading_direction": "rtl",
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_1",
+              "reason": "RTL top row: panel_1 (action run) is the rightmost panel, read first in the reading chain",
+              "to_panel_id": "panel_0"
+            },
+            {
+              "from_panel_id": "panel_0",
+              "reason": "RTL chain: panel_0 (setup) precedes panel_2 (reunion) in the story sequence",
+              "to_panel_id": "panel_2"
+            },
+            {
+              "from_panel_id": "panel_2",
+              "reason": "RTL chain: panel_2 (reunion with Hem) precedes the page-turn panel_3 (wall inscription)",
+              "to_panel_id": "panel_3"
+            }
+          ],
+          "schema_version": "manga-page-plan.v1",
+          "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+          "source_fact_ids": []
+        },
+        {
+          "canvas": {
+            "bleed_pct": 0.02,
+            "height_px": 2400,
+            "safe": {
+              "height": 0.9,
+              "unit": "page_pct",
+              "width": 0.88,
+              "x": 0.06,
+              "y": 0.05
+            },
+            "trim": {
+              "height": 0.96,
+              "unit": "page_pct",
+              "width": 0.94,
+              "x": 0.03,
+              "y": 0.02
+            },
+            "width_px": 1600
+          },
+          "layout_root": {
+            "axis": "y",
+            "children": [
+              {
+                "axis": "x",
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_5",
+                    "panel_id": "panel_5"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_4",
+                    "panel_id": "panel_4"
+                  }
+                ],
+                "gutter": {
+                  "unit": "page_pct",
+                  "value": 0.015
+                },
+                "node_id": "split_page_1_top",
+                "ratios": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "axis": "x",
+                "children": [
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_6",
+                    "panel_id": "panel_6"
+                  },
+                  {
+                    "kind": "panel",
+                    "node_id": "node_panel_7",
+                    "panel_id": "panel_7"
+                  }
+                ],
+                "gutter": {
+                  "unit": "page_pct",
+                  "value": 0.015
+                },
+                "node_id": "split_page_1_bot",
+                "ratios": [
+                  1,
+                  1
+                ]
+              }
+            ],
+            "node_id": "split_page_1",
+            "ratios": [
+              1,
+              1
+            ]
+          },
+          "page_id": "page_1",
+          "page_index": 1,
+          "page_plan_id": "page_plan_1",
+          "project_id": "6a0b5a5b201a8d03f1d82503",
+          "reading_direction": "rtl",
+          "reading_edges": [
+            {
+              "from_panel_id": "panel_5",
+              "reason": "RTL top row: panel_5 (insights wall) is the rightmost panel, read first after panel_4 payoff",
+              "to_panel_id": "panel_4"
+            },
+            {
+              "from_panel_id": "panel_4",
+              "reason": "RTL chain: panel_4 (payoff arrival) precedes panel_6 (class discussion) in the story sequence",
+              "to_panel_id": "panel_6"
+            },
+            {
+              "from_panel_id": "panel_6",
+              "reason": "RTL chain: panel_6 (discussion) precedes the page-turn panel_7 (footsteps)",
+              "to_panel_id": "panel_7"
+            }
+          ],
+          "schema_version": "manga-page-plan.v1",
+          "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+          "source_fact_ids": []
+        }
+      ],
+      "project_id": "6a0b5a5b201a8d03f1d82503",
+      "schema_version": "thumbnail-set.v1",
+      "script_set_artifact_id": "accepted_page_script_set_379729208df88e8cf8e19d12",
+      "thumbnail_set_id": "thumbnail_set_6a0b5a5b201a8d03f1d82503"
+    }
+  }
+}

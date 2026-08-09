@@ -1,0 +1,96 @@
+{
+  "gate_policy_version": "page-art-gates.v3",
+  "run_id": "run_dir_a99464c56fa3b96e777fe750",
+  "total_cost_usd": 0.000817,
+  "verdict": "no false positive on accepted art -> v3 reject stays",
+  "pages": [
+    {
+      "page_art_artifact_id": "page_art_4ac800610e0512af74e8dd07",
+      "page_index": 0,
+      "receipt_artifact_id": "provider_receipt_b3ee5f9ebe6dd6c8db6f63bf",
+      "cost_usd": 0.000415,
+      "error": null,
+      "empty_balloon": false,
+      "panel_count": 4,
+      "overall_ok": true,
+      "panels": [
+        {
+          "index": 1,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Wide shot of cheese exploding and a small goblin-like character leaping away with an action pose; matches action/conflict brief."
+        },
+        {
+          "index": 2,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Medium shot of two robed monks confronting cheese on the ground with smoke wisps; serves as setup/hook."
+        },
+        {
+          "index": 3,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Medium shot of the two monks reacting with shock/horror to the cheese; matches reaction/explanation."
+        },
+        {
+          "index": 4,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Close-up of one robed monk's terrified face with wide yellow eyes against black background; matches reveal."
+        }
+      ]
+    },
+    {
+      "page_art_artifact_id": "page_art_70d018e17a3e5d388e75c10a",
+      "page_index": 1,
+      "receipt_artifact_id": "provider_receipt_ca01e7688bdc38b6cd290232",
+      "cost_usd": 0.000402,
+      "error": null,
+      "empty_balloon": false,
+      "panel_count": 4,
+      "overall_ok": true,
+      "panels": [
+        {
+          "index": 1,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Gloved hand holding compass over a map \u2014 insert shot, no speech balloons, no text."
+        },
+        {
+          "index": 2,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Wide shot of a child leaping joyfully off a cliff into the sky \u2014 payoff moment."
+        },
+        {
+          "index": 3,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Wide action shot with child, huddled figure, and rats emerging \u2014 conflict setup."
+        },
+        {
+          "index": 4,
+          "matches_brief": true,
+          "identity_ok": true,
+          "contains_text": false,
+          "empty_balloon": false,
+          "notes": "Extreme close-up of terrified older man hugging rabbit slippers \u2014 cliffhanger."
+        }
+      ]
+    }
+  ]
+}
