@@ -97,7 +97,13 @@ THUMBNAIL_STAGE = "manga_thumbnail"
 #: whole pipeline, so the instructions now demand byte-for-byte copies
 #: with nulls preserved.
 PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v5"
-THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v4"
+#: v5 (Session 7): the first 4-panel-per-page thumbnail goal exposed an
+#: axis-orientation ambiguity — the model placed rows correctly but
+#: REVERSED the reading edges, believing children[0] was the rightmost.
+#: The instructions now state the compiler geometry (children[0] =
+#: leftmost/topmost) and that edges chain in SOURCE order regardless of
+#: placement.
+THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v5"
 
 #: Two pages per planning goal (donor vertical-slice shape). The PANEL count
 #: is derived from the accepted plan's beat count at runtime — the ported
@@ -179,9 +185,15 @@ def thumbnail_instructions(panels_per_page: list[int]) -> str:
         f"PageScriptSet ({shape}). Fetch the PageScriptSet exactly once. For "
         "each page use a split-based layout tree that references every panel "
         "of that page exactly once; on RTL horizontal splits the "
-        "earlier-reading panel goes on the right. Give each multi-panel page "
+        "earlier-reading panel goes on the right — split children are laid "
+        "out in ARRAY ORDER along the axis (children[0] is leftmost on x, "
+        "topmost on y), so the earlier panel sits at the LAST index of an x "
+        "row. Give each multi-panel page "
         "exactly panel_count minus one reading edges forming one chain in "
-        "panel source order. Do not copy PageScript objects. Validate every "
+        "panel source order (panel_0 to panel_1 to ...), never reversed: "
+        "RTL lives in the placement, not the edges. Every layout node "
+        "carries its kind field; a page plan has no page_id field. "
+        "Do not copy PageScript objects. Validate every "
         "page with validate_layout_draft using the accepted script artifact "
         "ID and page index, repair addressable issues, then submit page plans "
         "without page_script using their temporary page_index for broker "

@@ -26,33 +26,41 @@ from app.persistence.protocols import Repositories
 V2_MEDIA_FOLDERS = frozenset({"composed-pages", "page-art"})
 
 
-def latest_composed_per_page(artifacts: list[ArtifactDoc]) -> list[ArtifactDoc]:
-    """Latest accepted composed_page per page_index, supersedes-aware.
+def latest_accepted_per_page(
+    artifacts: list[ArtifactDoc], *, kind: str
+) -> dict[int, ArtifactDoc]:
+    """Latest accepted artifact of ``kind`` per page_index, supersedes-aware.
 
     A row that any OTHER accepted row supersedes is history, never served;
     among the remainder the newest ``created_at`` wins per page index.
     Pure function — unit-tested without Mongo.
     """
-    composed = [
+    accepted = [
         artifact
         for artifact in artifacts
-        if artifact.kind == "composed_page"
+        if artifact.kind == kind
         and artifact.validation_status == "accepted"
         and artifact.content is not None
     ]
     superseded = {
         artifact.supersedes_artifact_id
-        for artifact in composed
+        for artifact in accepted
         if artifact.supersedes_artifact_id
     }
     by_page: dict[int, ArtifactDoc] = {}
-    for artifact in composed:
+    for artifact in accepted:
         if artifact.artifact_id in superseded:
             continue
         page_index = int(artifact.content.get("page_index", -1))
         current = by_page.get(page_index)
         if current is None or artifact.created_at > current.created_at:
             by_page[page_index] = artifact
+    return by_page
+
+
+def latest_composed_per_page(artifacts: list[ArtifactDoc]) -> list[ArtifactDoc]:
+    """Session 6 shape, kept for its tests: composed rows in page order."""
+    by_page = latest_accepted_per_page(artifacts, kind="composed_page")
     return [by_page[index] for index in sorted(by_page)]
 
 
@@ -99,8 +107,9 @@ def manga_v2_reader_router(
             artifacts.extend(
                 await repositories.list_artifacts(run.run_id, accepted_only=True)
             )
-        composed_rows = latest_composed_per_page(artifacts)
-        if not composed_rows:
+        composed_by_page = latest_accepted_per_page(artifacts, kind="composed_page")
+        art_by_page = latest_accepted_per_page(artifacts, kind="page_art")
+        if not composed_by_page and not art_by_page:
             raise HTTPException(
                 status_code=404, detail="Project has no accepted composed pages"
             )
@@ -114,38 +123,54 @@ def manga_v2_reader_router(
             for artifact in artifacts
             if artifact.kind == "page_art"
         }
+
+        def art_payload(art: ArtifactDoc | None) -> dict | None:
+            if art is None:
+                return None
+            return {
+                "artifact_id": art.artifact_id,
+                "image_url": storage_media_url(art.storage_ref),
+                "rendering_mode": (art.content or {}).get("rendering_mode"),
+                "gates_accepted": bool(
+                    ((art.content or {}).get("gates") or {}).get("accepted")
+                ),
+            }
+
         pages = []
-        for composed in composed_rows:
-            content = composed.content or {}
-            art_id = content.get("page_art_artifact_id")
-            art = art_by_id.get(art_id) if isinstance(art_id, str) else None
-            layout = layouts_by_plan.get(content.get("page_plan_id"))
+        for page_index in sorted(set(composed_by_page) | set(art_by_page)):
+            composed = composed_by_page.get(page_index)
+            if composed is not None:
+                content = composed.content or {}
+                art_id = content.get("page_art_artifact_id")
+                art = art_by_id.get(art_id) if isinstance(art_id, str) else None
+                layout = layouts_by_plan.get(content.get("page_plan_id"))
+                pages.append(
+                    {
+                        "page_index": content.get("page_index"),
+                        "composed": {
+                            "artifact_id": composed.artifact_id,
+                            "schema_version": composed.schema_version,
+                            "content": content,
+                            "image_url": storage_media_url(composed.storage_ref),
+                            "supersedes_artifact_id": composed.supersedes_artifact_id,
+                        },
+                        "page_art": art_payload(art),
+                        "compiled_layout": (
+                            layout.content if layout is not None else None
+                        ),
+                    }
+                )
+                continue
+            # Session 7 fold: a page with accepted ART but no composed row
+            # (a mid-pipeline crash or a compose-stage regression) serves
+            # its raw page_art instead of 404ing the whole page.
+            art = art_by_page[page_index]
+            layout = layouts_by_plan.get((art.content or {}).get("page_plan_id"))
             pages.append(
                 {
-                    "page_index": content.get("page_index"),
-                    "composed": {
-                        "artifact_id": composed.artifact_id,
-                        "schema_version": composed.schema_version,
-                        "content": content,
-                        "image_url": storage_media_url(composed.storage_ref),
-                        "supersedes_artifact_id": composed.supersedes_artifact_id,
-                    },
-                    "page_art": (
-                        {
-                            "artifact_id": art.artifact_id,
-                            "image_url": storage_media_url(art.storage_ref),
-                            "rendering_mode": (art.content or {}).get(
-                                "rendering_mode"
-                            ),
-                            "gates_accepted": bool(
-                                ((art.content or {}).get("gates") or {}).get(
-                                    "accepted"
-                                )
-                            ),
-                        }
-                        if art is not None
-                        else None
-                    ),
+                    "page_index": (art.content or {}).get("page_index"),
+                    "composed": None,
+                    "page_art": art_payload(art),
                     "compiled_layout": (
                         layout.content if layout is not None else None
                     ),

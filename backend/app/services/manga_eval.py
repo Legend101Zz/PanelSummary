@@ -168,6 +168,152 @@ async def judge_page(
     )
 
 
+#: Session 7 fold (issue #10): deterministic scorecard-to-scorecard diff.
+SCORECARD_DIFF_VERSION = "eval-scorecard-diff.v1"
+#: The S6 red-fixture calibration measured a wrong-layout pairing at
+#: >= 0.15 IoU drop; a third of that is treated as a real structural move.
+IOU_REGRESSION_DELTA = 0.05
+#: One whole point on the 1-5 judge scales is a real move; fidelity is
+#: compared as the conveyed/total claim RATE.
+JUDGE_SCORE_REGRESSION_DELTA = 1.0
+FIDELITY_RATE_REGRESSION_DELTA = 0.10
+
+
+def _judge_metrics(judge: dict[str, Any] | None) -> dict[str, float]:
+    if not isinstance(judge, dict):
+        return {}
+    metrics: dict[str, float] = {}
+    readability = judge.get("readability")
+    if isinstance(readability, (int, float)):
+        metrics["readability"] = float(readability)
+    fidelity = judge.get("fidelity")
+    if isinstance(fidelity, dict):
+        conveyed = fidelity.get("claims_conveyed")
+        total = fidelity.get("claims_total")
+        if isinstance(conveyed, (int, float)) and isinstance(total, (int, float)) and total:
+            metrics["fidelity_rate"] = float(conveyed) / float(total)
+    craft = judge.get("craft")
+    if isinstance(craft, dict):
+        values = [v for v in craft.values() if isinstance(v, (int, float))]
+        if values:
+            metrics["craft_mean"] = sum(float(v) for v in values) / len(values)
+    return metrics
+
+
+def compare_scorecards(
+    baseline: dict[str, Any], candidate: dict[str, Any]
+) -> dict[str, Any]:
+    """Two eval-scorecard.v1 payloads -> a deterministic diff verdict.
+
+    Metric iteration is versioned (ADR-012 S6 addendum entry 9), so
+    scorecards produced by DIFFERENT metric or rubric versions are
+    ``incomparable`` — never silently compared. Otherwise every shared
+    page contributes deltas (candidate minus baseline) for layout IoU,
+    border adherence, and the judge metrics; the verdict is
+    ``regression`` when any tracked metric drops beyond its threshold,
+    ``improvement`` when at least one rises beyond threshold and none
+    regress, else ``unchanged``.
+    """
+    reasons: list[str] = []
+    for key in ("layout_iou_version", "judge_rubric_version"):
+        if baseline.get(key) != candidate.get(key):
+            reasons.append(
+                f"{key} differs: {baseline.get(key)} vs {candidate.get(key)}"
+            )
+    if reasons:
+        return {
+            "schema_version": SCORECARD_DIFF_VERSION,
+            "verdict": "incomparable",
+            "reasons": reasons,
+            "pages": [],
+        }
+
+    baseline_pages = {
+        page.get("page_index"): page for page in baseline.get("pages", [])
+    }
+    candidate_pages = {
+        page.get("page_index"): page for page in candidate.get("pages", [])
+    }
+    shared = sorted(set(baseline_pages) & set(candidate_pages), key=str)
+    regressions: list[str] = []
+    improvements: list[str] = []
+    page_rows: list[dict[str, Any]] = []
+
+    def track(
+        page_index: Any, metric: str, delta: float | None, threshold: float
+    ) -> None:
+        if delta is None:
+            return
+        if delta <= -threshold:
+            regressions.append(f"page {page_index}: {metric} {delta:+.3f}")
+        elif delta >= threshold:
+            improvements.append(f"page {page_index}: {metric} {delta:+.3f}")
+
+    for page_index in shared:
+        base = baseline_pages[page_index]
+        cand = candidate_pages[page_index]
+        base_iou = (base.get("layout_iou") or {}).get("page_iou")
+        cand_iou = (cand.get("layout_iou") or {}).get("page_iou")
+        iou_delta = (
+            cand_iou - base_iou
+            if isinstance(base_iou, (int, float)) and isinstance(cand_iou, (int, float))
+            else None
+        )
+        base_border = base.get("border_adherence_score")
+        cand_border = cand.get("border_adherence_score")
+        border_delta = (
+            cand_border - base_border
+            if isinstance(base_border, (int, float))
+            and isinstance(cand_border, (int, float))
+            else None
+        )
+        base_judge = _judge_metrics(base.get("judge"))
+        cand_judge = _judge_metrics(cand.get("judge"))
+        judge_deltas = {
+            metric: cand_judge[metric] - base_judge[metric]
+            for metric in sorted(set(base_judge) & set(cand_judge))
+        }
+        track(page_index, "layout_iou", iou_delta, IOU_REGRESSION_DELTA)
+        track(page_index, "border_adherence", border_delta, IOU_REGRESSION_DELTA)
+        for metric, delta in judge_deltas.items():
+            threshold = (
+                FIDELITY_RATE_REGRESSION_DELTA
+                if metric == "fidelity_rate"
+                else JUDGE_SCORE_REGRESSION_DELTA
+            )
+            track(page_index, metric, delta, threshold)
+        page_rows.append(
+            {
+                "page_index": page_index,
+                "layout_iou_delta": iou_delta,
+                "border_adherence_delta": border_delta,
+                "judge_deltas": judge_deltas,
+            }
+        )
+
+    verdict = (
+        "regression"
+        if regressions
+        else "improvement"
+        if improvements
+        else "unchanged"
+    )
+    return {
+        "schema_version": SCORECARD_DIFF_VERSION,
+        "verdict": verdict,
+        "baseline_run_id": baseline.get("run_id"),
+        "candidate_run_id": candidate.get("run_id"),
+        "baseline_subject": baseline.get("subject"),
+        "candidate_subject": candidate.get("subject"),
+        "pages_compared": shared,
+        "pages_only_in_baseline": sorted(set(baseline_pages) - set(candidate_pages), key=str),
+        "pages_only_in_candidate": sorted(set(candidate_pages) - set(baseline_pages), key=str),
+        "regressions": regressions,
+        "improvements": improvements,
+        "pages": page_rows,
+    }
+
+
 def build_scorecard(
     *,
     project_id: str,

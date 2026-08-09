@@ -128,3 +128,83 @@ def test_scorecard_totals_and_versions():
     assert card["totals"]["mean_layout_iou"] == iou.page_iou
     assert card["totals"]["judge_cost_usd"] == 0.003
     assert card["pages"][1]["layout_iou"] is None
+
+
+# ---------------------------------------------------------------------------
+# Session 7 fold (issue #10): scorecard baseline/regression compare
+# ---------------------------------------------------------------------------
+
+
+def _scorecard_payload(
+    *,
+    iou: float,
+    border: float,
+    readability: float,
+    conveyed: int,
+    total: int = 36,
+    iou_version: str = "layout-iou.v1",
+    rubric_version: str = "m3-judge-rubrics.v1",
+) -> dict:
+    return {
+        "schema_version": "eval-scorecard.v1",
+        "layout_iou_version": iou_version,
+        "judge_rubric_version": rubric_version,
+        "run_id": "run_dir_demo",
+        "subject": "composed",
+        "pages": [
+            {
+                "page_index": 0,
+                "layout_iou": {"page_iou": iou},
+                "border_adherence_score": border,
+                "judge": {
+                    "readability": readability,
+                    "fidelity": {"claims_conveyed": conveyed, "claims_total": total},
+                    "craft": {"page_turn_hook": 3, "shot_variety": 4},
+                },
+            }
+        ],
+    }
+
+
+def test_scorecard_diff_flags_a_fidelity_improvement() -> None:
+    from app.services.manga_eval import compare_scorecards
+
+    baseline = _scorecard_payload(iou=0.38, border=0.8, readability=4, conveyed=2)
+    candidate = _scorecard_payload(iou=0.39, border=0.82, readability=4, conveyed=20)
+    diff = compare_scorecards(baseline, candidate)
+    assert diff["verdict"] == "improvement"
+    assert any("fidelity_rate" in item for item in diff["improvements"])
+    assert diff["regressions"] == []
+    assert abs(diff["pages"][0]["judge_deltas"]["fidelity_rate"] - 0.5) < 1e-9
+
+
+def test_scorecard_diff_flags_a_structural_regression() -> None:
+    from app.services.manga_eval import compare_scorecards
+
+    baseline = _scorecard_payload(iou=0.38, border=0.80, readability=4, conveyed=2)
+    candidate = _scorecard_payload(iou=0.20, border=0.79, readability=4, conveyed=2)
+    diff = compare_scorecards(baseline, candidate)
+    assert diff["verdict"] == "regression"
+    assert any("layout_iou" in item for item in diff["regressions"])
+
+
+def test_scorecard_diff_is_unchanged_below_thresholds() -> None:
+    from app.services.manga_eval import compare_scorecards
+
+    baseline = _scorecard_payload(iou=0.38, border=0.80, readability=4, conveyed=2)
+    candidate = _scorecard_payload(iou=0.40, border=0.81, readability=4, conveyed=3)
+    diff = compare_scorecards(baseline, candidate)
+    assert diff["verdict"] == "unchanged"
+    assert diff["regressions"] == [] and diff["improvements"] == []
+
+
+def test_scorecard_diff_refuses_cross_version_comparison() -> None:
+    from app.services.manga_eval import compare_scorecards
+
+    baseline = _scorecard_payload(iou=0.38, border=0.8, readability=4, conveyed=2)
+    candidate = _scorecard_payload(
+        iou=0.38, border=0.8, readability=4, conveyed=2, iou_version="layout-iou.v2"
+    )
+    diff = compare_scorecards(baseline, candidate)
+    assert diff["verdict"] == "incomparable"
+    assert any("layout_iou_version" in reason for reason in diff["reasons"])

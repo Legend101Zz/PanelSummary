@@ -1,7 +1,7 @@
 ---
 name: manga-thumbnail
 description: Propose hierarchical page layouts and image-free SVG name previews.
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Manga thumbnail
@@ -60,7 +60,16 @@ freeform node {kind:"freeform_panel", node_id, panel_id,
                polygon:[{x,y}...], exception_reason}
 ```
 
-For RTL horizontal splits, place the earlier-reading panel on the right.
+AXIS ORIENTATION (the compiler's geometry, not a preference): split
+`children` are laid out in ARRAY ORDER along the axis — `children[0]` is
+the LEFTMOST for `axis:"x"` and the TOPMOST for `axis:"y"`. RTL therefore
+means: on every `axis:"x"` split the EARLIER-reading panel goes at the
+LAST index (rightmost) and the LATER-reading panel at index 0 (leftmost).
+Reading edges NEVER encode direction: they chain panels in SOURCE order
+(`panel_0 -> panel_1 -> ...`) regardless of placement — RTL lives in the
+PLACEMENT, not in reversed edges. Every layout node carries its `kind`
+field, and a page plan has NO `page_id` field (that belongs to the page
+script).
 Validate every complete page plan through `validate_layout_draft`; repair all
 errors before submitting the set.
 
@@ -78,7 +87,9 @@ page's panels exactly once.
   empty `reading_edges` array;
 - a multi-panel page uses nested `split` trees: rows via `axis:"y"`, panels
   inside a row via `axis:"x"`, two to four panels per row, and the
-  earlier-reading panel on the right of every horizontal split;
+  earlier-reading panel on the right of every horizontal split — with
+  `children` in array order left-to-right, that means the earlier panel
+  sits at the LAST index of the row's `children`;
 - give each multi-panel page exactly `panel_count - 1` reading edges forming
   one chain in panel source order, ending on that page's `page_turn_panel_id`
   when one is set;

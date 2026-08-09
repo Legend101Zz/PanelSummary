@@ -71,8 +71,13 @@ export function V2LaneReader({ pages }: V2LaneReaderProps) {
     );
   }
 
-  const imageUrl = v2MediaUrl(page.composed.image_url);
-  const content = page.composed.content;
+  // Session 7 fallback: a page with accepted art but no composed row yet
+  // serves its raw page_art instead of disappearing from the reader.
+  const composed = page.composed;
+  const imageUrl = composed
+    ? v2MediaUrl(composed.image_url)
+    : v2MediaUrl(page.page_art?.image_url ?? null);
+  const content = composed?.content ?? null;
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -84,9 +89,15 @@ export function V2LaneReader({ pages }: V2LaneReaderProps) {
             : ""}
         </span>
         <span>
-          {content.composition_version ?? "composed-page.v1"}
-          {content.has_art ? " · art" : " · DSL-only"}
-          {` · ${content.text_element_count} text element(s)`}
+          {content ? (
+            <>
+              {content.composition_version ?? "composed-page.v1"}
+              {content.has_art ? " · art" : " · DSL-only"}
+              {` · ${content.text_element_count} text element(s)`}
+            </>
+          ) : (
+            "raw page art · not yet composed"
+          )}
         </span>
       </div>
 
@@ -97,7 +108,11 @@ export function V2LaneReader({ pages }: V2LaneReaderProps) {
           // pattern config that belongs to a deploy change, not this seam.
           <img
             src={imageUrl}
-            alt={`Composed manga page ${page.page_index + 1}`}
+            alt={
+              composed
+                ? `Composed manga page ${page.page_index + 1}`
+                : `Raw page art ${page.page_index + 1} (not yet composed)`
+            }
             className="block w-full"
           />
         ) : (

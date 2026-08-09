@@ -48,13 +48,15 @@ export interface V2ComposedPageContent {
 
 export interface V2ReaderPage {
   page_index: number;
+  /** Null when the page has accepted art but no composed row yet (the
+   * Session 7 fallback: raw page_art serves instead of a 404). */
   composed: {
     artifact_id: string;
     schema_version: string;
     content: V2ComposedPageContent;
     image_url: string | null;
     supersedes_artifact_id: string | null;
-  };
+  } | null;
   page_art: {
     artifact_id: string;
     image_url: string | null;
