@@ -376,3 +376,79 @@ Extends this ADR for Session 6. Boundary edits and decisions:
    (`m3-judge-rubrics.v1`) with receipts persisted per call; Magi is
    deferred pending owner review of the checkpoint download +
    `trust_remote_code` under the standing egress posture.
+
+## Session 7 addendum (2026-08-09): the tool-frame wall falls — landing instruments, transport-empty normalization, whole-book chain
+
+Extends this ADR for Session 7. Boundary edits and decisions:
+
+1. **Seam raw-arguments dump** (`_dump_raw_submission`,
+   `AGENT_SEAM_RAW_DUMP_DIR`, default off): every submit-seam invocation
+   persists its PRE-normalization arguments verbatim before unwrap or
+   validation — success and failure — and can never break the submission.
+   This instrument produced every diagnosis below; `failure_history`
+   carries bounded traces only and Pi sessions are in-memory, so the dump
+   is the ONLY source of arrived-shape evidence.
+2. **The S6 "fourth shape" is frame TRUNCATION**, not a wrapper variant:
+   attempt 13's dump shows page 2 dropped entirely and panel 3 gutted to
+   `{panel_id}` while sibling panels carried the model's nulls intact. A
+   ~12k-token tool call can lose its tail in transit; the S6 attempt-10
+   "all top-level fields dropped" was the same cut landing earlier. Not
+   seam-fixable — dodged by the armed text lane (below).
+3. **The assistant-text fallback lane is now ARMED in the skills**
+   (manga-page-writing 1.5.x): the runtime's
+   `extractAssistantJsonCandidate` lane existed since S3 but S6 attempts
+   never used it — the model reported blockers instead. The skill now
+   names the transport-artifact signature (missing/list_type/int_parsing/
+   string_too_short on fields the model emitted) and instructs ONE bare
+   JSON object as the final message after a single transport-shaped
+   rejection. Live-proven in attempt 11 (the fallback frame arrived
+   UNMANGLED — pages as a real list).
+4. **Transport-empty normalization extends to optional scalars**
+   (`_OPTIONAL_NULLABLE_FIELD_NAMES`): the frame renders intended-omitted
+   optionals as `{}`/`""` (attempt 11: `speaker_ref` on narration;
+   attempt 13: SourceRef `quote`/`start_offset`/`end_offset` — the model
+   emitted CORRECT nulls, the frame emptied them). `""`/`{}` -> None is
+   lossless for names that are `X | None` in the contracts; a dialogue
+   element losing its speaker still fails the clear contract rule. The
+   landing attempt (14) validated on the FIRST tool-frame submission with
+   this in place.
+5. **The direction seam gets the same treatment** (golden-run live
+   diagnosis): `submit_manga_plan` failed with 17 `list_type` errors —
+   every empty list arrived as `""` — on the one submit seam without the
+   normalizer (this ADR's S3 observation that donor M3 direction only
+   landed via the text fallback was the same artifact all along).
+   `_LIST_FIELD_NAMES` now carries the MangaPlan list fields; the digest
+   and dump ride along (lazy import breaks the module cycle).
+6. **Skill wording must match the deterministic gates byte-for-byte**:
+   attempt 12 failed ONLY because the S6 "non-empty quote" instruction
+   contradicts the verbatim-lineage hash compare on plans whose refs
+   carry null quotes — the model dutifully filled in real book quotes and
+   every panel was rejected as citing source outside the plan. Offline
+   replay with verbatim refs passed the ENTIRE pipeline, proving the
+   wording was the last wall. The gate is donor logic and stays; the
+   skill (1.5.2) now demands byte-for-byte copies with nulls preserved.
+7. **Thumbnail axis orientation is stated, not assumed** (skill 1.5.0 +
+   prompt v5): the first 4-panel-per-page goal exposed that nothing told
+   the model `children[0]` is the LEFTMOST/TOPMOST (compiler geometry).
+   It placed rows correctly but reversed the reading edges. Edges chain
+   in SOURCE order; RTL lives in PLACEMENT. Landed attempt 2.
+8. **PAGE_ART_VERSION v2 — spatial anchors — and the lane-C binding
+   finding**: the first fully-authored regen showed the image model
+   painting the RIGHT story content in the WRONG panels (briefs in RTL
+   read order bound left-to-right). v2 briefs carry bbox-derived position
+   phrases; the follow-up batch STILL rejected 4/4 — per-panel content
+   binding in one-shot full-page generation is now a twice-measured
+   limitation and the open S8 problem. The stage degraded exactly as
+   designed: composed `dsl_only` pages carry the authored lettering.
+9. **Eval closes the loop on the two-channel thesis**: S6 measured art
+   without text (readability 4-5, fidelity 1/5); S7 measures text without
+   art (fidelity STILL 1/5 at 2/37 claims, readability 2-3, the
+   scorecard-diff fold reporting the regression honestly). Fidelity needs
+   BOTH channels bound to the same panels; neither alone buys anything.
+10. **Whole-book chain (issue #13 cut)**: deterministic ScopeChainPlanner
+    (heading markers + token floor skips, whole-chapter packing under a
+    token budget, unit-boundary splits) + WholeBookChainExecutor over
+    injected stage runners with a HARD cost preflight, per-scope
+    eval_scorecard persistence, and rolling canon via plan-derived
+    MemoryDeltas guarded by the plan's compiled memory_version (merge
+    exactly once; resume can never double-spend or double-merge).

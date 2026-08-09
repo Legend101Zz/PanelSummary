@@ -124,15 +124,21 @@ def _unwrap_item_wrappers(value: object) -> object:
         for key, item in value.items():
             unwrapped = _unwrap_item_wrappers(item)
             if key in _LIST_FIELD_NAMES and not isinstance(unwrapped, list):
-                # Empty XML elements arrive as "" / {} / null (live
-                # attempt 9: every EMPTY list field failed list_type).
+                # Empty XML elements arrive as "" / {} / null — and the
+                # golden-run direction frame stringified null as "null"
+                # (every scalar arrived string-typed).
                 unwrapped = (
-                    [] if unwrapped in ("", None, {}) else [unwrapped]
+                    [] if unwrapped in ("", None, {}, "null") else [unwrapped]
                 )
-            elif key in _OPTIONAL_NULLABLE_FIELD_NAMES and unwrapped in ("", {}):
+            elif key in _OPTIONAL_NULLABLE_FIELD_NAMES and unwrapped in (
+                "",
+                {},
+                "null",
+            ):
                 # Empty representations of an intended-omitted optional
-                # scalar (S7 attempt 11) normalize to the contractually
-                # valid None.
+                # scalar (S7 attempts 11/13 + the golden-run direction
+                # frame's literal "null" strings) normalize to the
+                # contractually valid None.
                 unwrapped = None
             normalized[key] = unwrapped
         return normalized
