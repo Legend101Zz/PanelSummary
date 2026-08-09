@@ -622,3 +622,62 @@ def test_prior_invocation_failures_are_never_recharged_on_resume() -> None:
     for execution in outcome.executions:
         # Only the accepted receipts (0.43) — never the 0.21 of old failures.
         assert execution.text_cost_usd == pytest.approx(0.43)
+
+
+# ---------------------------------------------------------------------------
+# Session 8: include/exclude overrides (#13 fold)
+# ---------------------------------------------------------------------------
+
+
+def test_exclude_override_force_skips_an_admitted_unit() -> None:
+    """The live case: WMC's 406-token title section plans into scope 0
+    because its heading escapes the conservative marker list — the owner
+    can now exclude it explicitly, with the reason recorded."""
+    units = wmc_like_units()
+    baseline = ScopeChainPlanner(scope_token_budget=10_000).plan_units(
+        units, book_id=BOOK, project_id=PROJECT
+    )
+    target = baseline.scopes[0].source_unit_ids[0]
+    plan = ScopeChainPlanner(
+        scope_token_budget=10_000, exclude_unit_ids={target}
+    ).plan_units(units, book_id=BOOK, project_id=PROJECT)
+    assert all(target not in scope.source_unit_ids for scope in plan.scopes)
+    skip = next(s for s in plan.skipped if s.source_unit_id == target)
+    assert skip.reason == "excluded_by_override"
+    assert plan.plan_hash != baseline.plan_hash
+
+
+def test_include_override_admits_a_skipped_unit() -> None:
+    units = wmc_like_units()
+    baseline = ScopeChainPlanner(scope_token_budget=10_000).plan_units(
+        units, book_id=BOOK, project_id=PROJECT
+    )
+    floored = next(
+        s for s in baseline.skipped if s.reason == "below_token_floor"
+    )
+    plan = ScopeChainPlanner(
+        scope_token_budget=10_000, include_unit_ids={floored.source_unit_id}
+    ).plan_units(units, book_id=BOOK, project_id=PROJECT)
+    planned_ids = {
+        unit_id for scope in plan.scopes for unit_id in scope.source_unit_ids
+    }
+    assert floored.source_unit_id in planned_ids
+    assert plan.plan_hash != baseline.plan_hash
+
+
+def test_no_overrides_keeps_the_s7_plan_hash_byte_stable() -> None:
+    """Defaults must never perturb existing plan hashes — the golden
+    chain's $0 stage reuse depends on the plan identity."""
+    units = wmc_like_units()
+    a = ScopeChainPlanner(scope_token_budget=10_000).plan_units(
+        units, book_id=BOOK, project_id=PROJECT
+    )
+    b = ScopeChainPlanner(
+        scope_token_budget=10_000, include_unit_ids=set(), exclude_unit_ids=None
+    ).plan_units(units, book_id=BOOK, project_id=PROJECT)
+    assert a.plan_hash == b.plan_hash
+
+
+def test_conflicting_overrides_are_rejected() -> None:
+    with pytest.raises(ValueError, match="both included and excluded"):
+        ScopeChainPlanner(include_unit_ids={"u1"}, exclude_unit_ids={"u1"})

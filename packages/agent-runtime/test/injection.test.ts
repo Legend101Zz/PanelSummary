@@ -86,7 +86,7 @@ describe("book text cannot expand agent capability", () => {
       onToolCall: () => {},
     });
     expect(tools.map((tool) => tool.name).sort()).toEqual(
-      [...honestGoal.allowed_tools].sort(),
+      [...(honestGoal.allowed_tools ?? [])].sort(),
     );
     for (const banned of ["bash", "read", "write", "edit", "grep", "find", "ls"]) {
       expect(tools.some((tool) => tool.name === banned)).toBe(false);
@@ -110,7 +110,17 @@ describe("book text cannot expand agent capability", () => {
       onToolCall: () => {},
     });
     const call = () =>
-      tools[0].execute("call-id", { source_unit_id: "unit_attacker_tool" }, undefined);
+      // The pinned pi ToolDefinition.execute takes 5 positional params
+      // (toolCallId, params, signal, onUpdate, ctx); the adapter's
+      // implementation reads only the first three — the trailing two are
+      // type-satisfied here (S8: the known tsc-only failure, fixed).
+      tools[0].execute(
+        "call-id",
+        { source_unit_id: "unit_attacker_tool" },
+        undefined,
+        undefined,
+        undefined as never,
+      );
     await call();
     await call();
     await expect(call()).rejects.toThrowError(/Tool-call budget exceeded/);
@@ -137,6 +147,8 @@ describe("book text cannot expand agent capability", () => {
       "call-id",
       { source_unit_id: maliciousContext.source_units[0].source_ref.source_unit_id },
       undefined,
+      undefined,
+      undefined as never,
     );
     expect(seen).toHaveLength(1);
     expect(seen[0].scope).toEqual(scope);

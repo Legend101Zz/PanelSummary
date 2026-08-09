@@ -192,13 +192,32 @@ class ScopeChainPlanner:
         min_adaptable_tokens: int = DEFAULT_MIN_ADAPTABLE_TOKENS,
         non_narrative_markers: tuple[str, ...] = DEFAULT_NON_NARRATIVE_MARKERS,
         target_page_count: int = SCOPE_TARGET_PAGE_COUNT,
+        include_unit_ids: frozenset[str] | set[str] | None = None,
+        exclude_unit_ids: frozenset[str] | set[str] | None = None,
     ) -> None:
+        """Session 8 (#13 fold): explicit per-unit overrides.
+
+        ``exclude_unit_ids`` force-skips units the heuristics admit (the
+        live case: WMC's 406-token title section planned into scope 0
+        because its heading is not in the conservative marker list);
+        ``include_unit_ids`` force-admits units the heuristics would skip
+        (a short unit the owner wants adapted). Overrides are part of the
+        plan payload, so a plan with overrides NEVER hash-collides with
+        the heuristic plan; defaults keep S7 plans byte-identical.
+        """
         if scope_token_budget <= 0:
             raise ValueError("scope_token_budget must be positive")
         self._scope_token_budget = scope_token_budget
         self._min_adaptable_tokens = min_adaptable_tokens
         self._markers = tuple(marker.lower() for marker in non_narrative_markers)
         self._target_page_count = target_page_count
+        self._include_unit_ids = frozenset(include_unit_ids or ())
+        self._exclude_unit_ids = frozenset(exclude_unit_ids or ())
+        overlap = self._include_unit_ids & self._exclude_unit_ids
+        if overlap:
+            raise ValueError(
+                f"unit ids cannot be both included and excluded: {sorted(overlap)}"
+            )
 
     async def plan(
         self, repositories: Repositories, *, book_id: str, project_id: str
@@ -272,6 +291,19 @@ class ScopeChainPlanner:
             "min_adaptable_tokens": self._min_adaptable_tokens,
             "non_narrative_markers": list(self._markers),
             "target_page_count": self._target_page_count,
+            # Overrides join the hash ONLY when set, so every pre-S8 plan
+            # hash stays byte-stable (the live golden chain's reuse
+            # depends on it).
+            **(
+                {"include_unit_ids": sorted(self._include_unit_ids)}
+                if self._include_unit_ids
+                else {}
+            ),
+            **(
+                {"exclude_unit_ids": sorted(self._exclude_unit_ids)}
+                if self._exclude_unit_ids
+                else {}
+            ),
             "scopes": [
                 {
                     "sequence": scope.sequence,
@@ -294,6 +326,10 @@ class ScopeChainPlanner:
         )
 
     def _skip_reason(self, unit: SourceUnitDoc, heading: str) -> str | None:
+        if unit.source_unit_id in self._exclude_unit_ids:
+            return "excluded_by_override"
+        if unit.source_unit_id in self._include_unit_ids:
+            return None  # force-admitted past the heuristics
         lowered = heading.lower()
         if any(marker in lowered for marker in self._markers):
             return "non_narrative_heading"
