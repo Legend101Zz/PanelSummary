@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.5.3
+version: 1.6.0
 ---
 
 # Manga page writing
@@ -180,8 +180,11 @@ The typed AgentGoal is the shape authority. Read
   `blocking`, `prop_refs`, `focal_regions`, `avoid_text_regions`, and
   `source_fact_ids` arrays — but NEVER an empty `text_elements` array:
   author narration captions from the source in that case;
-- write one to three text elements per page, grounded in the source; give
-  dialogue a `speaker_ref` from accepted continuity and place each
+- write THREE text elements per page (the upper end of the 1-3 range —
+  the S7/S8 judge measured fidelity 1/5 with 2-3 of ~37 claims conveyed:
+  under-lettered pages are the binding constraint on fidelity, so use
+  every authored text slot to carry a distinct must-preserve claim);
+  give dialogue a `speaker_ref` from accepted continuity and place each
   element's `preferred_region` inside its panel, away from focal regions;
 - use `{ "effects": [] }` for motion when no motion is required;
 - copy the one complete source reference for each beat exactly from the

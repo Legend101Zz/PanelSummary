@@ -449,7 +449,20 @@ def border_adherence(
 # thought cloud + shrinking-circle thought tail) are new deterministic PIL.
 # ---------------------------------------------------------------------------
 
-COMPOSITION_VERSION = "manga-composition.v2"
+#: v3 (Session 8, issue #6 fold): the S7/S8 judge scored dsl_only pages
+#: readability 2-3 with "three panels are essentially blank" — panels
+#: without art or an authored text element had NO content channel at all.
+#: v3 adds (a) a compositor-wide lettering floor (authored typography can
+#: still go bigger, never smaller than readable) and (b) OPT-IN story-beat
+#: captions for artless panels: the caller names the panels, and each gets
+#: its authored story_beat as a small bordered caption — an authored-
+#: content channel, not invented text. Bumping re-keys compose-only
+#: stages ($0 image).
+COMPOSITION_VERSION = "manga-composition.v3"
+
+#: The readability floor: never letter below this size on the 832x1248
+#: canvas class regardless of how small the authored region is.
+COMPOSITOR_MIN_FONT_PX = 18
 
 #: v1 rule constants (dialogue_geometry.ts): tail offset clamp along a side.
 TAIL_OFFSET_MIN = 0.15
@@ -750,6 +763,7 @@ def compose_lettered_page(
     *,
     draw_frames: bool = True,
     frame_px: int = 5,
+    beat_caption_panel_ids: set[str] | None = None,
 ) -> Image.Image:
     """Deterministic v2 composition: panel frames + code-rendered lettering.
 
@@ -773,6 +787,38 @@ def compose_lettered_page(
                 width=frame_px,
             )
 
+    # COMPOSITION v3 (issue #6): artless panels named by the caller get
+    # their AUTHORED story_beat as a bordered caption — every panel gains
+    # a claims channel; text-element panels are untouched.
+    if beat_caption_panel_ids:
+        script_by_id = {p.panel_id: p for p in plan.page_script.panels}
+        text_panel_ids = {t.panel_id for t in plan.page_script.text_elements}
+        for panel in compiled.panels:
+            if panel.panel_id not in beat_caption_panel_ids:
+                continue
+            if panel.panel_id in text_panel_ids:
+                continue
+            script = script_by_id.get(panel.panel_id)
+            if script is None or not script.story_beat:
+                continue
+            font = _load_font(COMPOSITOR_MIN_FONT_PX)
+            box_left = (panel.bbox.x + 0.05 * panel.bbox.width) * width
+            box_width = panel.bbox.width * 0.9 * width
+            lines = _wrap_text(draw, script.story_beat, font, box_width * 0.92)
+            line_height = COMPOSITOR_MIN_FONT_PX + 4
+            box_top = (panel.bbox.y + 0.04 * panel.bbox.height) * height
+            box_height = line_height * len(lines) + 12
+            draw.rectangle(
+                [box_left, box_top, box_left + box_width, box_top + box_height],
+                fill="white",
+                outline="black",
+                width=2,
+            )
+            y = box_top + 6
+            for line in lines:
+                draw.text((box_left + 10, y), line, fill="black", font=font)
+                y += line_height
+
     for text in sorted(plan.page_script.text_elements, key=lambda item: item.z_index):
         region = text.preferred_region
         # v1 rule carry: keep authored regions off avoid/focal zones.
@@ -784,7 +830,15 @@ def compose_lettered_page(
         box_top = nudged[1] * height
         box_width = max(nudged[2] * width, 40.0)
         box_height = max(nudged[3] * height, 24.0)
-        font_px = max(min(int(box_height * 0.28), text.typography.max_px), text.typography.min_px)
+        # COMPOSITION v3 (issue #6): the compositor-wide readability floor
+        # binds LAST — authored typography can raise the size, never sink
+        # lettering below the readable minimum (judge readability 2-3 on
+        # dsl_only pages was the measured argument).
+        font_px = max(
+            min(int(box_height * 0.28), text.typography.max_px),
+            text.typography.min_px,
+            COMPOSITOR_MIN_FONT_PX,
+        )
         font = _load_font(font_px)
         lines = _wrap_text(draw, text.content, font, box_width * 0.82)
         line_height = font_px + 4

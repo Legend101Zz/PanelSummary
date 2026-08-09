@@ -226,7 +226,9 @@ def test_bubble_shapes_render_distinctly():
 
 
 def test_composition_version_is_stamped():
-    assert COMPOSITION_VERSION == "manga-composition.v2"
+    # v3 (Session 8, issue #6): beat captions for artless panels + the
+    # compositor-wide type floor — the bump re-keys compose-only stages.
+    assert COMPOSITION_VERSION == "manga-composition.v3"
 
 
 # ---------------------------------------------------------------------------

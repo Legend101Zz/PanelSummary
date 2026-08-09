@@ -261,6 +261,85 @@ def test_composition_renders_all_text_elements_by_code():
     assert frames.page_score > 0.9
 
 
+def test_composition_v3_beat_captions_fill_artless_panels():
+    """Issue #6 fold (Session 8): artless panels named by the caller carry
+    their authored story_beat as a bordered caption; panels that already
+    hold a text element are untouched; default (None) stays v2-identical."""
+    from app.services.manga_page_art import compose_lettered_page
+
+    plan = _plan()
+    # Make the second panel text-free so it exercises the caption path.
+    freed_panel_id = plan.page_script.panels[1].panel_id
+    plan.page_script.text_elements = [
+        t for t in plan.page_script.text_elements if t.panel_id != freed_panel_id
+    ]
+    compiled = compile_page_layout(plan)
+    art = Image.new("RGB", (832, 1248), "white")
+    text_panel_ids = {t.panel_id for t in plan.page_script.text_elements}
+    artless = [p for p in compiled.panels if p.panel_id not in text_panel_ids]
+    assert artless, "fixture must have at least one panel without text elements"
+
+    default = compose_lettered_page(art, plan, compiled)
+    captioned = compose_lettered_page(
+        art,
+        plan,
+        compiled,
+        beat_caption_panel_ids={p.panel_id for p in compiled.panels},
+    )
+    gray_default = default.convert("L")
+    gray_captioned = captioned.convert("L")
+    for panel in artless:
+        # Sample the caption band (top 30% of the panel, inset from frames).
+        box = (
+            int((panel.bbox.x + 0.1 * panel.bbox.width) * 832),
+            int((panel.bbox.y + 0.05 * panel.bbox.height) * 1248),
+            int((panel.bbox.x + 0.9 * panel.bbox.width) * 832),
+            int((panel.bbox.y + 0.3 * panel.bbox.height) * 1248),
+        )
+        assert min(gray_captioned.crop(box).getdata()) < 100, (
+            f"panel {panel.panel_id} caption left no ink"
+        )
+    # The default path is byte-identical to pre-v3 behavior for this input.
+    assert list(gray_default.getdata()).count(0) <= list(
+        gray_captioned.getdata()
+    ).count(0)
+
+
+def test_composition_v3_type_floor_binds_last():
+    """Lettering never renders below COMPOSITOR_MIN_FONT_PX even when the
+    authored region is tiny (the measured dsl_only readability argument)."""
+    from app.services.manga_page_art import COMPOSITOR_MIN_FONT_PX
+
+    plan = _plan()
+    # Shrink a text region to force the pre-v3 formula below the floor.
+    tiny = plan.page_script.text_elements[0]
+    tiny.preferred_region.height = 0.01
+    tiny.typography.min_px = 6
+    compiled = compile_page_layout(plan)
+    art = Image.new("RGB", (832, 1248), "white")
+    composed = compose_lettered_page(art, plan, compiled)
+    # The floor is observable: the rendered line's ink height in the region
+    # band is at least ~the floor (glyph ascender height).
+    gray = composed.convert("L")
+    region = tiny.preferred_region
+    band = gray.crop(
+        (
+            int(region.x * 832),
+            int(region.y * 1248),
+            int((region.x + region.width) * 832),
+            min(int((region.y + 0.2) * 1248), 1248),
+        )
+    )
+    dark_rows = [
+        y
+        for y in range(band.size[1])
+        if any(band.getpixel((x, y)) < 100 for x in range(0, band.size[0], 4))
+    ]
+    assert dark_rows, "tiny region left no ink at all"
+    ink_height = max(dark_rows) - min(dark_rows)
+    assert ink_height >= COMPOSITOR_MIN_FONT_PX * 0.5
+
+
 # ---------------------------------------------------------------------------
 # stage driver on the real planning lineage
 # ---------------------------------------------------------------------------

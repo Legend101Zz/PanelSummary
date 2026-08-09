@@ -1013,7 +1013,18 @@ class MangaPageArtStageService:
             base = Image.new("RGB", (width, height), "white")
         else:
             base = art_image
-        composed = compose_lettered_page(base, plan, compiled)
+        # COMPOSITION v3 (issue #6): a dsl_only page has NO art in any
+        # panel — every artless panel carries its authored story_beat as a
+        # bordered caption so blank panels stop being claim-free (the
+        # S7/S8 judge's measured readability complaint).
+        beat_caption_panel_ids = (
+            {panel.panel_id for panel in compiled.panels}
+            if art_image is None
+            else None
+        )
+        composed = compose_lettered_page(
+            base, plan, compiled, beat_caption_panel_ids=beat_caption_panel_ids
+        )
         storage_ref, digest = self._store_image(composed, "composed-pages")
         content = {
             "schema_version": "composed-page.v1",
