@@ -20,6 +20,7 @@ import reelSpec from "../schema/reel_spec.v1.schema.json" with { type: "json" };
 import renderedPage from "../schema/rendered_page.v1.schema.json" with { type: "json" };
 import renderedPageV2 from "../schema/rendered_page.v2.schema.json" with { type: "json" };
 import composedPage from "../schema/composed_page.v1.schema.json" with { type: "json" };
+import evalScorecard from "../schema/eval_scorecard.v1.schema.json" with { type: "json" };
 import pageArt from "../schema/page_art.v1.schema.json" with { type: "json" };
 import providerReceipt from "../schema/provider_receipt.v1.schema.json" with { type: "json" };
 import qaReport from "../schema/qa_report.v1.schema.json" with { type: "json" };
@@ -56,6 +57,7 @@ export const contractSchemas = {
   "rendered_page.v1": renderedPage,
   "rendered_page.v2": renderedPageV2,
   "composed_page.v1": composedPage,
+  "eval_scorecard.v1": evalScorecard,
   "page_art.v1": pageArt,
   "provider_receipt.v1": providerReceipt,
   "qa_report.v1": qaReport,

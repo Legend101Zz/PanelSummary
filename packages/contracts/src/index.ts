@@ -16,6 +16,7 @@ export {
   isComposedPage,
   isPageArt,
   isProviderReceipt,
+  isEvalScorecard,
   isQaReport,
   isRenderedPageV2,
   isSeriesProgress,

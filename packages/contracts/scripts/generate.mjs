@@ -20,6 +20,7 @@ const contracts = [
   ["context_pack.v1", "ContextPack"],
   ["compiled_layout.v1", "CompiledPageLayout"],
   ["composed_page.v1", "ComposedPage"],
+  ["eval_scorecard.v1", "EvalScorecard"],
   ["page_art.v1", "PageArt"],
   ["provider_receipt.v1", "ProviderReceipt"],
   ["qa_report.v1", "QaReport"],

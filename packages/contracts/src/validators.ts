@@ -17,6 +17,7 @@ import type {
   PageArt,
   PageScriptSet,
   ProviderReceipt,
+  EvalScorecard,
   QaReport,
   ReelPlayerPayload,
   ReelSeries,
@@ -244,6 +245,9 @@ export const isProviderReceipt = (value: unknown): value is ProviderReceipt =>
 
 export const isQaReport = (value: unknown): value is QaReport =>
   validateContract("qa_report.v1", value).valid;
+
+export const isEvalScorecard = (value: unknown): value is EvalScorecard =>
+  validateContract("eval_scorecard.v1", value).valid;
 
 export const isSeriesProgress = (value: unknown): value is SeriesProgress =>
   validateContract("series_progress.v1", value).valid;

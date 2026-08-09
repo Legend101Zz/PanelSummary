@@ -38,6 +38,10 @@
       "path": "canonical/context_pack.v1.json"
     },
     {
+      "schema": "eval_scorecard.v1",
+      "path": "canonical/eval_scorecard.v1.json"
+    },
+    {
       "schema": "generation_run.v1",
       "path": "canonical/generation_run.v1.json"
     },

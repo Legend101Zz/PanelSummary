@@ -13,6 +13,7 @@ export type { AssetRequest } from "./asset_request.v1.js";
 export type { ContextPack } from "./context_pack.v1.js";
 export type { CompiledPageLayout } from "./compiled_layout.v1.js";
 export type { ComposedPage } from "./composed_page.v1.js";
+export type { EvalScorecard } from "./eval_scorecard.v1.js";
 export type { PageArt } from "./page_art.v1.js";
 export type { ProviderReceipt } from "./provider_receipt.v1.js";
 export type { QaReport } from "./qa_report.v1.js";
