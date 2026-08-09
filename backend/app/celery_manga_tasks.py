@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from app.celery_worker import celery_app, get_db, run_async, update_job_status
@@ -19,6 +20,10 @@ def _sum_trace_cost(llm_traces: list[dict[str, Any]]) -> float:
 def _is_source_covered_error(exc: Exception) -> bool:
     text = str(exc).lower()
     return "fully covered" in text or "source is already fully covered" in text
+
+
+def _is_no_text_error(exc: Exception) -> bool:
+    return "no extractable text" in str(exc).lower()
 
 
 def _count_rendered_panel_images(page_docs: list[Any]) -> int:
@@ -60,6 +65,10 @@ def build_manga_project_task(
     """
     logger.info("Starting manga build for project %s mode=%s", project_id, mode)
 
+    # Shared with _run_guarded so a failure records the phase it died in —
+    # the next build's resume message tells the user where it left off.
+    progress_state: dict[str, Any] = {"phase": "queued", "message": ""}
+
     async def _run() -> None:
         await get_db()
 
@@ -85,6 +94,9 @@ def build_manga_project_task(
         resolved_image_mode = image_mode or ("budgeted" if generate_images else "none")
         should_generate_sprites = resolved_image_mode in {"sprites_only", "budgeted", "full_panel_art"}
 
+        previous_failure = dict(project.last_failure or {})
+        project.last_failure = {}
+
         project_options = dict(project.project_options)
         project_options.update({
             "preferred_provider": provider,
@@ -102,6 +114,8 @@ def build_manga_project_task(
         await project.save()
 
         async def report(progress: int, message: str, phase: str) -> None:
+            progress_state["phase"] = phase
+            progress_state["message"] = message
             await update_job_status(
                 self.request.id,
                 "progress",
@@ -112,6 +126,18 @@ def build_manga_project_task(
             )
 
         await report(1, "Preparing manga workspace...", "build_prepare")
+        if previous_failure:
+            ledger_ranges = (project.continuity_ledger or {}).get("covered_source_ranges", [])
+            covered_through = max((r.get("page_end") or 0 for r in ledger_ranges), default=0)
+            await report(
+                2,
+                "Resuming after failure at "
+                f"{previous_failure.get('phase') or 'unknown phase'}: "
+                f"{str(previous_failure.get('message', ''))[:160]} — "
+                f"{len(ledger_ranges)} source range(s) already covered through page {covered_through}; "
+                "continuing from the coverage ledger.",
+                "resume",
+            )
         llm_client = LLMClient(api_key=api_key, provider=provider, model=model)
 
         run_options = dict(options or {})
@@ -188,6 +214,12 @@ def build_manga_project_task(
                 if _is_source_covered_error(exc):
                     await report(98, "All source pages are already covered.", "complete")
                     break
+                ledger_ranges = (project.continuity_ledger or {}).get("covered_source_ranges", [])
+                if _is_no_text_error(exc) and (generated_slices > 0 or ledger_ranges):
+                    # Remaining source has nothing adaptable (image-only pages,
+                    # back matter) — that's coverage, not a failure.
+                    await report(98, "Remaining source has no adaptable text — coverage complete.", "complete")
+                    break
                 raise
 
             generated_slices += 1
@@ -228,6 +260,12 @@ def build_manga_project_task(
                 project = await MangaProjectDoc.get(project_id)
                 if project:
                     project.status = "failed"
+                    project.last_failure = {
+                        "message": str(exc),
+                        "phase": progress_state.get("phase") or "unknown",
+                        "task_id": self.request.id,
+                        "at": datetime.now(UTC).isoformat(),
+                    }
                     await project.save()
             except Exception as save_exc:
                 logger.error("Could not mark manga build failed: %s", save_exc, exc_info=True)

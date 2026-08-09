@@ -27,6 +27,9 @@ class MangaProjectDoc(Document):
     engine: str = "v4"
     title: str = ""
     status: str = "pending"
+    # Set when a build fails: {message, phase, task_id, at}. Cleared when the
+    # next build starts, so "continue" can report what it resumed from.
+    last_failure: dict[str, Any] = Field(default_factory=dict)
 
     project_options: dict[str, Any] = Field(default_factory=dict)
     book_synopsis: dict[str, Any] = Field(default_factory=dict)
