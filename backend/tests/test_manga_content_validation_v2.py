@@ -429,3 +429,64 @@ def test_item_wrapped_frame_submission_is_unwrapped_and_accepted(tmp_path: Path)
     response = resolve(service.execute("submit_page_script_set", request))
     assert isinstance(response.data, dict)
     assert response.data["validation_status"] == "accepted"
+
+
+def test_empty_optional_scalars_normalize_to_null_and_accept(tmp_path: Path) -> None:
+    """S7 attempt-11 live shapes: an intended-omitted optional scalar
+    arrives as {} through the tool frame (submits 1-2: speaker_ref on
+    narration failed string_type) or as "" from the bare-JSON text lane
+    (submit 3: string_too_short). Both are empty REPRESENTATIONS of the
+    contractually valid None — the seam normalizes them losslessly."""
+    service, request, script_set = _tool_scenario(tmp_path)
+    donor = script_set.pages[0].text_elements[0]
+    script_set.pages[1].text_elements = [
+        donor.model_copy(
+            update={
+                "text_id": "text_page1_narration",
+                "panel_id": script_set.pages[1].panels[0].panel_id,
+                "content": "The maze rewards the one who moves first.",
+            }
+        )
+    ]
+    payload = script_set.model_dump(mode="json")
+    narration = payload["pages"][1]["text_elements"][0]
+    assert narration["kind"] == "narration"
+    narration["speaker_ref"] = {}  # tool-frame empty element (submits 1-2)
+    narration["emotion"] = ""  # text-lane empty string (submit 3)
+    request.arguments["script_set"] = payload
+
+    response = resolve(service.execute("submit_page_script_set", request))
+
+    assert isinstance(response.data, dict)
+    assert response.data["validation_status"] == "accepted"
+    accepted = cast(dict[str, Any], response.candidate)
+    normalized = accepted["pages"][1]["text_elements"][0]
+    assert normalized["speaker_ref"] is None
+    assert normalized["emotion"] is None
+
+
+def test_empty_speaker_on_dialogue_still_fails_with_the_contract_error(
+    tmp_path: Path,
+) -> None:
+    """Normalizing "" -> None must NOT weaken the dialogue rule: a dialogue
+    element whose speaker_ref normalizes away fails with the CLEAR
+    contract message, not a type error."""
+    service, request, script_set = _tool_scenario(tmp_path)
+    donor = script_set.pages[0].text_elements[0]
+    script_set.pages[1].text_elements = [
+        donor.model_copy(
+            update={
+                "text_id": "text_page1_narration",
+                "panel_id": script_set.pages[1].panels[0].panel_id,
+                "content": "The maze rewards the one who moves first.",
+            }
+        )
+    ]
+    payload = script_set.model_dump(mode="json")
+    dialogue = payload["pages"][0]["text_elements"][0]
+    dialogue["kind"] = "dialogue"
+    dialogue["speaker_ref"] = ""
+    request.arguments["script_set"] = payload
+
+    with pytest.raises(ArtifactValidationError, match="dialogue requires speaker_ref"):
+        resolve(service.execute("submit_page_script_set", request))

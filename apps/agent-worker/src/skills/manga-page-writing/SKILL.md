@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.5.0
+version: 1.5.1
 ---
 
 # Manga page writing
@@ -92,6 +92,16 @@ TextElement {
 
 Field-type traps (submissions are rejected on any of these):
 
+- `panel.purpose` takes ONLY the seven PageScriptPanel values listed in
+  the shape above. The MangaPlan beat's `narrative_purpose` uses a
+  DIFFERENT vocabulary — `"conflict"`, `"explanation"`, `"hook"` are plan
+  words and are REJECTED as panel purposes. Translate: explanation
+  beats usually become `setup`/`reaction` panels, conflict beats
+  `action`/`reveal`.
+- Optional reference fields (`speaker_ref`, `environment_ref`,
+  `emotion`, `tail_target`, `page_turn_panel_id`) are OMITTED or `null`
+  when unused — NEVER an empty string. Narration and SFX carry no
+  `speaker_ref` at all.
 - `typography.weight` is a NUMBER (400 or 700), never `"normal"`/`"bold"`;
   `min_px`/`max_px` are integers with `min_px >= 8`.
 - Every `source_ref` must be the COMPLETE object copied verbatim from the

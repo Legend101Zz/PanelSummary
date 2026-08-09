@@ -58,6 +58,26 @@ _LIST_FIELD_NAMES = frozenset(
     }
 )
 
+#: Contract fields typed ``X | None`` whose ABSENT value the transport
+#: cannot express: the XML-style tool frame renders an intended-omitted
+#: scalar as ``{}`` (S7 attempt 11, submits 1-2: ``speaker_ref`` on
+#: narration failed ``string_type`` as an empty dict) and models on the
+#: bare-JSON text lane write ``""`` for "no value" (submit 3:
+#: ``string_too_short``). ``None`` is contractually VALID for every name
+#: here, so mapping empty representations to ``None`` is lossless
+#: normalization — it can never overwrite an authored value, and a
+#: dialogue element whose ``speaker_ref`` normalizes away still fails the
+#: DIALOGUE_REQUIRES_SPEAKER contract rule with its clear message.
+_OPTIONAL_NULLABLE_FIELD_NAMES = frozenset(
+    {
+        "speaker_ref",
+        "emotion",
+        "environment_ref",
+        "tail_target",
+        "page_turn_panel_id",
+    }
+)
+
 
 def _unwrap_item_wrappers(value: object) -> object:
     """Undo the pinned Pi runtime's M3 tool-frame list mangling.
@@ -89,6 +109,11 @@ def _unwrap_item_wrappers(value: object) -> object:
                 unwrapped = (
                     [] if unwrapped in ("", None, {}) else [unwrapped]
                 )
+            elif key in _OPTIONAL_NULLABLE_FIELD_NAMES and unwrapped in ("", {}):
+                # Empty representations of an intended-omitted optional
+                # scalar (S7 attempt 11) normalize to the contractually
+                # valid None.
+                unwrapped = None
             normalized[key] = unwrapped
         return normalized
     if isinstance(value, list):

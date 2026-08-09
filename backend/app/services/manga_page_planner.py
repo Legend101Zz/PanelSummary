@@ -82,7 +82,14 @@ THUMBNAIL_STAGE = "manga_thumbnail"
 #: elements demanded by skill 1.4.0 + the driver instructions; bumping the
 #: version re-keys the stage identity so a fresh planning run never reuses
 #: a set accepted under the content-vacuous v2 prompt.
-PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v3"
+#: v4 (Session 7 step 0): the attempt-11 dumps isolated two stable
+#: authored-content defects the model never repaired across three
+#: submissions — panel ``purpose`` filled with the PLAN's
+#: narrative_purpose labels ("conflict"/"explanation"), and empty
+#: ``speaker_ref`` emitted on narration. The instructions now name both
+#: traps explicitly; the receipt's prompt_version must reflect the text
+#: the model actually saw.
+PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v4"
 THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v4"
 
 #: Two pages per planning goal (donor vertical-slice shape). The PANEL count
@@ -129,11 +136,17 @@ def page_writing_instructions(beat_count: int) -> str:
         "pages, at most 7 panels on a page. Map each accepted MangaPlan beat "
         "exactly once, in source order. Every panel's story_beat must be a "
         "concrete visual sentence (who does what, where) grounded in the "
-        "accepted beat — never a one-word label. Every page must carry "
+        "accepted beat — never a one-word label. Every panel's purpose must "
+        "be one of setup, action, reaction, reveal, transition, insert, or "
+        "payoff — NEVER the plan beat's narrative_purpose label: 'conflict' "
+        "and 'explanation' are MangaPlan vocabulary and are rejected here. "
+        "Every page must carry "
         "authored text elements (one to three per page): real dialogue with "
         "speaker_ref from accepted continuity where characters exist, plus "
         "narration captions carrying the book's ideas; narration needs no "
-        "speaker. Use empty blocking, prop, focal, avoid-text, and "
+        "speaker — for narration and sfx OMIT the speaker_ref key entirely "
+        "or set it to null, never an empty string. "
+        "Use empty blocking, prop, focal, avoid-text, and "
         "source-fact lists when no accepted character, asset, or fact "
         "exists — but never an empty text-element list. Use the exact "
         "accepted MangaPlan artifact ID and this fresh ContextPack ID. "
