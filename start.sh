@@ -184,8 +184,8 @@ EOF
 start_backend() {
   step "Starting FastAPI backend (:8000)"
   cd "$BACKEND"
-  .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
-    >"$LOGS/backend.log" 2>&1 &
+  nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
+    </dev/null >"$LOGS/backend.log" 2>&1 &
   echo $! >"$PIDS/backend.pid"
   ok "FastAPI backend starting on http://localhost:8000 (pid $!)"
 }
@@ -194,8 +194,8 @@ start_celery() {
   step "Starting Celery worker"
   cd "$BACKEND"
   # --pool=solo avoids macOS fork crashes in heavier PDF/image dependencies.
-  .venv/bin/celery -A app.celery_worker worker --loglevel=info --pool=solo \
-    >"$LOGS/celery.log" 2>&1 &
+  nohup .venv/bin/celery -A app.celery_worker worker --loglevel=info --pool=solo \
+    </dev/null >"$LOGS/celery.log" 2>&1 &
   echo $! >"$PIDS/celery.pid"
   ok "Celery worker started (pid $!)"
 }
@@ -203,7 +203,9 @@ start_celery() {
 start_frontend() {
   step "Starting Next.js frontend (:3000)"
   cd "$FRONTEND"
-  npm run dev >"$LOGS/frontend.log" 2>&1 &
+  # </dev/null matters here: next dev reads stdin for keyboard shortcuts and
+  # exits when the launching terminal closes — detach it or it dies with the tab.
+  nohup npm run dev </dev/null >"$LOGS/frontend.log" 2>&1 &
   echo $! >"$PIDS/frontend.pid"
   ok "Next.js starting on http://localhost:3000 (pid $!)"
 }
@@ -212,8 +214,8 @@ start_broker() {
   step "Starting domain-tool broker (:8010)"
   cd "$BACKEND"
   DOMAIN_TOOL_BROKER_TOKEN="$DOMAIN_TOOL_BROKER_TOKEN" \
-    .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010 \
-    >"$LOGS/broker.log" 2>&1 &
+    nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010 \
+    </dev/null >"$LOGS/broker.log" 2>&1 &
   echo $! >"$PIDS/broker.pid"
   ok "Broker starting on http://127.0.0.1:8010 (pid $!)"
 }
@@ -231,7 +233,7 @@ start_worker() {
     AGENT_MODEL="$model" \
     AGENT_MODEL_API_KEY_ENV=MINIMAX_API_KEY \
     MINIMAX_API_KEY="$MINIMAX_API_KEY" \
-    pnpm start >"$LOGS/worker-$mode.log" 2>&1 &
+    nohup pnpm start </dev/null >"$LOGS/worker-$mode.log" 2>&1 &
   echo $! >"$PIDS/worker-$mode.pid"
   ok "$mode worker starting on http://127.0.0.1:$port (pid $!)"
 }
