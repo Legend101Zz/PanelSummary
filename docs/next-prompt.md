@@ -1,158 +1,146 @@
-# Next-session prompt (Session 8 of the v2 roadmap)
+# Post-roadmap page (the 8-session manga-lane roadmap is COMPLETE)
 
-Session 7 (the tool-frame wall FELL — first fully-authored planning set
-accepted on both lanes; whole-book chain mechanism live with a 4-wall
-golden partial; fidelity measured 1/5 BOTH ways — it needs art AND text
-bound to the same panels) completed 2026-08-09 — commits
-`336f9f5`…HEAD on `v2-architecture`; see the Session 7 handoff at the
-end of NEXT_SESSION.md and the ADR-012 Session 7 addendum (entries
-1-10). Paste the block below into a fresh Claude Code session
-(recommended model: Fable 5, start in plan mode). Roadmap and rules live
-in https://github.com/Legend101Zz/PanelSummary/issues/11 and
-NEXT_SESSION.md.
+Session 8 (the final roadmap session) completed 2026-08-09 — commits
+`1ebedd9`…HEAD on `v2-architecture`. The manga lane's mechanism is
+built, instrumented, and measured end-to-end; what remains is the
+OWNER'S merge review plus the enumerated open threads below. This page
+replaces the per-session prompt: it is the merge-review checklist, the
+open-thread ledger, and the golden-chain runbook.
 
-```text
-Work in /Volumes/Mrigesh SSD/Book-Reel on branch v2-architecture (never
-commit to main; verify the branch before any commit). Read first:
-NEXT_SESSION.md (2026-08-09 Session 7 handoff at the end — the TWO-PART
-HEADLINE and deviations 1-7), docs/adr/012 INCLUDING the Session 7
-addendum (entries 1-10: the dump instrument, frame truncation, the armed
-text lane, transport-empty classes, the direction-seam treatment, the
-gate-wording rule, thumbnail axis geometry, PAGE_ART v2 + the
-twice-measured binding limitation, the two-channel fidelity thesis, the
-issue-#13 chain cut), docs/evidence/session7-page-art/ (the rejected-art
-exemplars + receipts.jsonl), docs/evidence/session7-eval/
-(s7_composed_scorecard.json + s6_vs_s7_composed_diff.json), and
-docs/evidence/session7-golden-run/chain_outcome.json.
+Read first: the Session 8 handoff at the end of NEXT_SESSION.md
+(HEADLINE + deviations 1-8 + the MERGE-READINESS section), the ADR-012
+Session 8 addendum (entries 1-10), `docs/evidence/session8-bakeoff/`
+(winner_criteria.json committed BEFORE spend; scorecards; the A′ probe
+economics), `docs/evidence/session8-golden-run/` (chain outcomes + raw
+seam dumps), and `docs/research/rendering-lane-matrix.md` (the S8
+revision: lane B is the default standard-page lane).
 
-Step 0 — FINISH THE GOLDEN CHAIN (small, surgical; the machinery is one
-wall from a complete scope):
-1. Diagnose wall 4 FREE first: "PageScriptSet is not an accepted
-   ContextPack parent" at the golden thumbnail
-   (stage_manga_thumbnail_9d5460abf387aa8e1eb3, run
-   run_dir_c6bfbb6ab031c36645ee3151). validate_layout_draft and the
-   _authorized_script_set path have NO raw dump — add one (the seam-dump
-   helper takes one call site), and check the simplest hypothesis
-   offline: the thumbnail ContextPack's parent_artifacts vs the id the
-   model cites (accepted_page_script_set_cf19f45c6e614cafa06d254d). The
-   context compile for the thumbnail purpose lists parents [plan,
-   script] — if the pack predates the accepted script (attempt-stacking)
-   the authorization is stale, which is a compile-ordering bug, not a
-   model error.
-2. ONE chain resume after the fix (direction + page-writing REUSE at $0;
-   thumbnail ~$0.09-0.16 speed; art ceiling 2 pages x $0.039 x 2; eval
-   ~$0.002). Expect art rejected again -> dsl_only; the scope still
-   completes: per-scope scorecard persisted BY THE CHAIN + the first
-   LIVE memory merge (verify project.active_memory_version advanced
-   exactly once and the next compile sees it). Budget the resume
-   explicitly and stop at your stated line.
+## 1) Merge-review checklist (owner)
 
-Main goal (the S8 headline problem — issue #12/#7/#10): LANE-C PANEL
-BINDING. Eight rejected art attempts across two conditioning versions
-prove one-shot full-page generation does not bind per-panel content to
-RTL geometry (right content, wrong panels, every time — see the
-session7-page-art exemplars). Fidelity cannot move until art and text
-land in the SAME panels. Run a budgeted BAKE-OFF with the eval harness
-as referee (compare_scorecards is live; judge $0.0005/page):
-1. Candidate A — per-panel generation + deterministic assembly: one
-   image call PER PANEL conditioned on that panel's brief + character
-   refs, pasted into the compiled geometry by code (the compose stage
-   already owns lettering/assembly). Probe a 2-panel page first and
-   STATE the economics before scaling (naive cost is panels x $0.039 —
-   4-8x lane-C — so measure whether smaller per-panel images price
-   lower; if not, this lane needs an explicit owner cost decision).
-2. Candidate B — lane-B key panel: ONE money-shot panel per page
-   ($0.039), DSL base for the rest; composed text carries the claims.
-   Cheapest path to a fidelity signal; splash/spread pages already
-   route here by policy.
-3. Candidate C — hardened one-shot conditioning: region-tagged prompt
-   (the v2 position phrases stay), panel-content thumbnails INSIDE the
-   skeleton image, retry-hardening that names the binding failure.
-   Cheapest if it works; two batches say it probably will not.
-Accept per the harness: vision QA panel match + judge fidelity on the
-composed result; persist scorecards + the diff vs the S7 baseline
-(eval_scorecard_a575909be3d6023a2df175eb). The winner becomes the
-default standard-page lane in the #12 matrix (update
-docs/research/rendering-lane-matrix.md with measured numbers).
+- [ ] Read the S8 MERGE-READINESS section (NEXT_SESSION.md end):
+      proven vs flag-guarded vs open.
+- [ ] Verify the gates yourself: `cd backend && uv run pytest tests/ -q`
+      (817), `pnpm --filter @scrollstack/contracts test` (47),
+      `pnpm --filter @scrollstack/agent-runtime test` (22) + `typecheck`
+      (now CLEAN), `pnpm --filter agent-worker test` (16),
+      `node scripts/generate.mjs --check` + `PYTHONPATH=. uv run python
+      scripts/export_contracts.py --check`, `git diff --check`.
+- [ ] Confirm v1 safety: `use_compiled_context` and
+      `agentic_manga_pipeline_v1` default OFF; v1's test surface inside
+      the 817 is untouched; v2 writes to `<repo>/storage`, v1 to
+      `backend/storage`.
+- [ ] Decide the TWO model-policy calls the evidence priced:
+      (a) `AGENT_MODEL_MODE_THUMBNAIL=quality` for the chain's thumbnail
+      (speed-lane schema flailing is the measured blocker; ~$0.09-0.16 a
+      resume); (b) the A′ per-panel question — exact binding at a FLAT
+      $0.0389/panel = 4x per page (docs/evidence/session8-bakeoff/
+      a_probe.json, honest_verdict field).
+- [ ] Decide merge timing: after one completed golden scope
+      (recommended; see runbook below) OR now with the chain carried as
+      flag-guarded WIP. Both defensible — flags keep v1 byte-identical.
+- [ ] Approve (or defer) lane-B default wiring into
+      `manga_page_art_stage` — the bake-off winner is script-proven;
+      promotion re-keys the paid stage (`PAGE_ART_VERSION` bump) and was
+      deliberately NOT done without review.
+- [ ] Magi integration: checkpoint download + `trust_remote_code` under
+      the egress posture (carry-forward h) — approve or park.
 
-Also fold in (small, high-value): skills iteration from the eval scores
-(issue #6 — readability 2-3 on dsl_only argues denser text placement +
-larger type floors in the compositor); the executor budget note
-(failed-attempt spend should decrement the chain's remaining budget —
-receipts already exist in failure_history); a negative-page_index guard
-in _coerce_int; scope planner include/exclude overrides (#13 — WMC's
-title section currently plans into scope 0).
+## 2) Open threads (carry-forwards, consolidated)
 
-Green gates before claiming done: cd backend && uv run pytest tests/ -q
-(793-test baseline preserved + new), pnpm suites (contracts 47 +
-agent-runtime 22 + agent-worker 13, preserved + new), node
-scripts/generate.mjs --check (packages/contracts) and PYTHONPATH=. uv
-run python scripts/export_contracts.py --check clean, injection suites
-green, frontend next build + tsc --noEmit green if touched, git diff
---check. Known pre-existing: packages/agent-runtime tsc --noEmit fails
-in test/injection.test.ts (vitest passes) — fix or record, do not hide.
-Then: update NEXT_SESSION.md with an evidence-backed handoff, tick ONLY
-genuinely completed checkboxes on #12/#10/#13 (gh issue view N --json
-body, edit exact lines, gh issue edit N --body-file — never retype),
-rewrite docs/next-prompt.md for Session 9 per the roadmap table, commit
-in logical units on v2-architecture, push origin v2-architecture.
+1. **Golden chain completion**: scope 0 needs ONE thumbnail acceptance
+   (capability wall, owner option above), then art (~$0.156 ceiling) +
+   per-scope scorecard + the FIRST LIVE memory merge
+   (`active_memory_version` 1 → 2, exactly once — currently test-proven
+   only, verified unchanged at 1).
+2. **Reel lane (#9)**: ~2-3 sessions, untouched by the roadmap.
+3. **#13 spine**: AdaptationPlanDoc, Celery wiring,
+   cancellation/supersede, continue UX, preflight UI, full-book +
+   2-chunk golden.
+4. **Bake-off follow-ups**: lane-B stage wiring (above); the A′ cost
+   decision; lane-A (sprites+vector) composition path + rendered-page.v2
+   assembly (still unmeasured — the one #12 matrix row without numbers);
+   binding-referee variance (single-panel verdicts move ±1 category
+   between runs — average 3 runs or gate on the composed-set level).
+5. **Fidelity**: the score is still 1/5 with binding SOLVED — the
+   channel is claims-density now: more pages per scope, composition-v3
+   captions (landed), denser authored text (skill 1.6.0 landed), or
+   more art panels (A′). Re-measure after the next accepted planning set.
+6. **Standing smaller items**: first REAL flag-on v1 slice on a FRESH
+   project; worker egress restriction; ARTIFACT_REPAIR reviewed-lane
+   policy (FIVE normalized transport classes now argue for it); issue #6
+   reference stubs; #3 leftovers (ModelReceipt on every accepted
+   artifact, ADR-001 revision, dashboard-lite, per-purpose smokes);
+   vision-QA style-match wording (#7); layout-template.v1 contract +
+   list_layout_templates + seeded jitter.
+7. **Housekeeping**: bake-off composed rows (author `s8-bakeoff`) are
+   latest-per-page on `run_dir_a99464c…` — future latest-pick evals on
+   that run see them; reader-v2 is flag-off so no user impact. The
+   defective first binding-referee scorecard is superseded, retained as
+   evidence.
 
-Hard rules (owner policy 2026-08-08 — standing, apply to every session):
-1. Model modes: speed=MiniMax-M2.7-highspeed, quality=MiniMax-M3, default
-   quality (M3). Per-purpose defaults are config (Settings.agent_model_mode_*):
-   direction=quality, page-writing/thumbnail=speed, vision LOCKED M3.
-   No silent default switches, ever; A/B overrides are explicit and
-   receipted (model_mode + model_mode_source prove it).
-2. ALL code changes on v2-architecture or feature branches off it. Nothing
-   merges to main until fully tested AND owner-confirmed. main untouched.
-3. The laptop's internal SSD is low on space: keep worktrees, artifacts,
-   evidence, and heavy files on /Volumes/Mrigesh SSD/.
-4. If the external SSD unmounts mid-work: STOP and report. No workarounds.
-Plus the constants: text LLM calls are MiniMax-only and budgeted — persist
-a receipt for EVERY provider call INCLUDING failures. Image spend needs an
-explicit stated budget BEFORE spending ($0.039/page lane-C measured;
-S7 burned 2x$0.156 on rejected batches — state ceilings AND stop lines).
-Vision QA $0.0004/page-call and judges $0.0005/page-call bill the
-MINIMAX key (vision is locked M3) — bin them there. Updated planning
-actuals: M3 page-writing $0.036-0.075/attempt, direction
-$0.034-0.053/attempt, speed page-writing $0.038, speed thumbnail
-$0.061-0.158/attempt. Preserve all v1 behavior (use_compiled_context AND
-agentic_manga_pipeline_v1 default OFF; 793-test baseline stays green;
-the v2 lane writes to <repo>/storage, v1 to backend/storage — never
-cross them). docs/ is gitignored — git add -f for curated docs. Full-DB
-backup before live writes: uv run python scripts/backup_db.py
-/tmp/bookreel-s8-before-<what>.json. AGENT_SEAM_RAW_DUMP_DIR arms the
-seam dump (env-only, default off) — run live attempts WITH it.
+## 3) Golden-chain runbook (end-to-end, as S8 ran it)
 
-Outstanding carry-forwards (do not lose): (a) first REAL flag-on v1
-slice run on a FRESH project (Sessions 2-7 carryover); (b) worker egress
-restriction; (c) ARTIFACT_REPAIR goal policy — S7 normalized FOUR
-transport artifact classes at the seam; the case for a reviewed repair
-lane is now strong; (d) layout-template.v1 contract schema +
-list_layout_templates broker tool + seeded jitter; (e) issue #6
-knowledge-base rewrite (reference files are still stubs); (f) issue #3
-leftovers: ModelReceipt on every accepted artifact kind, ADR-001
-revision, dashboard-lite, per-purpose smokes; (g) vision-QA style-match
-vs reference (the #7 wording not yet scored); (h) Magi integration after
-owner review of checkpoint download + trust_remote_code; (i) lane A
-(sprites+vector) composition path + rendered-page.v2 assembly; (j) #13
-spine: AdaptationPlanDoc, Celery wiring, cancellation/supersede,
-continue UX, preflight UI, full-book + 2-chunk golden.
+Services (three processes; the stale docker `scrollstack-*` containers
+on :8000/:27017 belong to v1 — do NOT reuse them; the v2 lane's durable
+authority is the Atlas cluster in `backend/.env`):
+
+```bash
+# 1) broker/backend on :8010 with the seam dump armed
+cd backend && AGENT_SEAM_RAW_DUMP_DIR=<abs-evidence-dir>/raw_dumps \
+  DOMAIN_TOOL_BROKER_TOKEN=<48-hex> \
+  uv run uvicorn app.main:app --host 127.0.0.1 --port 8010
+
+# 2) speed worker :8788 and quality worker :8789 (fresh shell each)
+cd apps/agent-worker && AGENT_WORKER_PORT=8788 \
+  AGENT_WORKER_TOKEN=<48-hex-2> \
+  DOMAIN_TOOL_BROKER_URL=http://127.0.0.1:8010 \
+  DOMAIN_TOOL_BROKER_TOKEN=<same-as-backend> \
+  AGENT_PROVIDER=minimax AGENT_MODEL=MiniMax-M2.7-highspeed \
+  AGENT_MODEL_API_KEY_ENV=MINIMAX_API_KEY MINIMAX_API_KEY=<from backend/.env> \
+  pnpm start
+# ...same with AGENT_WORKER_PORT=8789 and AGENT_MODEL=MiniMax-M3
+
+# 3) backup, then ONE budgeted chain execution (state the budget FIRST)
+cd backend && uv run python scripts/backup_db.py /tmp/bookreel-<tag>.json
+AGENT_WORKER_TOKEN=<48-hex-2> \
+  AGENT_SEAM_RAW_DUMP_DIR=<same-dir> \
+  uv run python scripts/whole_book_wmc_s8.py --text-budget 0.90 --image-budget 0.25
+# add AGENT_MODEL_MODE_THUMBNAIL=quality to the backend env for the
+# owner-option resume (receipted via model_mode_source)
 ```
 
-## Session roadmap (manga lane complete ≈ 8 sessions)
+Workers read skills from `src/skills/*/SKILL.md` at STARTUP (tsx, no
+build) — restart workers after skill edits; the served version is the
+frontmatter version (honest since S8). Evidence lands in
+`docs/evidence/<tag>/`; chain outcome JSON + raw dumps are the
+diagnosis surface. Expected: direction + page-writing REUSE at $0;
+thumbnail is the open wall; art degrades to dsl_only on rejection; the
+scope completes with a chain-persisted scorecard + ONE memory-version
+advance.
+
+Bake-off harness (repeatable):
+`uv run python scripts/bakeoff_s8_binding.py --phase criteria|a-probe|b|c|eval`
+(criteria first — it pre-commits the winner rules; every phase states a
+budget and refuses calls beyond it).
+
+## 4) Standing owner rules (unchanged, apply to ANY future session)
+
+1. Model modes: speed=MiniMax-M2.7-highspeed, quality=MiniMax-M3,
+   default quality; per-purpose defaults are config
+   (`Settings.agent_model_mode_*`); vision LOCKED M3. No silent
+   switches; A/B overrides explicit + receipted.
+2. ALL code on `v2-architecture` or branches off it; nothing merges to
+   main until fully tested AND owner-confirmed.
+3. Keep worktrees/artifacts/evidence on /Volumes/Mrigesh SSD/.
+4. If the external SSD unmounts mid-work: STOP and report.
+Plus: MiniMax-only text, receipts for EVERY provider call including
+failures; image spend needs a stated ceiling + stop line BEFORE
+spending; full-DB backup before live writes; docs/ is gitignored —
+`git add -f` for curated docs.
+
+## Roadmap ledger (complete)
 
 | # | Focus | Issues |
 |---|---|---|
-| 1 | ✅ 2026-08-07 — ADR-010 + port contracts & durable-context services | #2, #4, #12 |
-| 2 | ✅ 2026-08-07 — durable context wired into v1 (ADR-011), scope API, flag-gated ContextPack consumption, continuity proof | #4 |
-| 3 | ✅ 2026-08-07 — agent plane live (ADR-012): pnpm workspace, Pi runtime, broker, first live Director goal on M3, injection suites | #8, #3 |
-| 4 | ✅ 2026-08-08 — lane-C verdict verified (#12 done); layout compiler + page planning + page_domain_tools port; MANGA_PAGE_WRITING/THUMBNAIL drivers live; 18-template library + craft validators; AGENTIC_MANGA_PIPELINE_V1 shadow lane; Pi details adapter fix; skills 1.3.0/1.4.0; M2.7-highspeed vs M3 bake-off + SVG preview loop on WMC | #5, #6, #3, #8 |
-| 5 | ✅ 2026-08-09 — rendering mechanism LIVE: page-art stage + gates, both WMC pages accepted with exact receipt reconciliation; ModelPolicy speed/quality modes; carry-fix trio. Headline: page-writing content quality is the binding constraint | #12, #7, #5, #3, #8 |
-| 6 | ✅ 2026-08-09 — content gate + composition upgrades + vision-QA v3 + contract promotion + reader v2 behind a flag + eval harness. Judge lane measured fidelity 1/5 on wordless pages. Fresh planning set BLOCKED: 10 receipted attempts, four walls diagnosed; carried with a landing plan | #5, #10, #7 |
-| 7 | ✅ 2026-08-09 — the tool-frame wall FELL: seam dump + normalizations + armed text lane landed page-writing (M3 a14, speed in-chain) AND thumbnail; whole-book planner/executor with preflight+resume+rolling canon (10 tests) + 4-wall golden partial; eval_scorecard promotion + scorecard diff + reader art fallback; fidelity 1/5 both ways — lane-C panel BINDING is the blocker (8/8 art rejections, 2 conditioning versions) | #13, #5, #10 |
-| 8 | Panel-binding bake-off (per-panel / lane-B / hardened one-shot) with the harness as referee; finish the golden chain (wall 4 + one resume); skills iteration from eval scores; merge-review prep | #12, #7, #10, #6, epic |
-
-Reels (#9) afterwards: ~2-3 further sessions. Estimates assume one focused
-session per row with review gates between; the binding bake-off carries
-image-spend risk — state ceilings and stop lines before every batch.
+| 1-7 | ✅ (see prior versions of this file / NEXT_SESSION.md) | — |
+| 8 | ✅ 2026-08-09 — bake-off: B wins (binding 1.0 by construction, $0.039/page); one-shot binding failed a 3rd conditioning version (thrice-measured); A′ flat-price probe → owner decision; every chain SEAM wall down (capability wall remains, owner option priced); composition v3 + skills 1.6.0; overrides + budget folds; agent-runtime tsc FIXED; merge-readiness written | #12, #7, #10, #6, #13, epic #11 |

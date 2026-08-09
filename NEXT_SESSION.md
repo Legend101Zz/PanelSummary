@@ -1793,3 +1793,186 @@ Known rough edges / carry-forwards (Session 8 — docs/next-prompt.md):
 5. Updated measured costs for planning: M3 page-writing actual
    $0.036-0.075/attempt (NOT the $0.16 speed constant); direction
    $0.034-0.053/attempt; speed page-writing $0.038 accepted.
+
+## 2026-08-09 Session 8 (FINAL roadmap session): binding solved by code — B wins the bake-off; every chain seam wall down; merge-review prep (issues #12, #7, #10, #6, #13, epic #11)
+
+Executed on `v2-architecture` (commits `1ebedd9` wall-4 diagnosis +
+landing fixes, `5edb6fd` validate-seam symmetry fix, `652b923` bake-off
+machinery, `246d1e3` bake-off execution + winner, `ecb3e40` composition
+v3 + matrix revision, `139cfd8` scope overrides + agent-runtime tsc fix,
+plus this closeout). Read the ADR-012 Session 8 addendum (entries 1-10)
+and `docs/evidence/session8-*/`.
+
+**HEADLINE (two halves, one final):**
+
+1. **Panel binding is SOLVED — by code, not conditioning.** The bake-off
+   ran all three candidates against the S7 landing set with the eval
+   harness as referee and PRE-COMMITTED winner criteria
+   (`session8-bakeoff/winner_criteria.json`, written before any spend).
+   One-shot generation (C) failed its THIRD conditioning version — 4/4
+   rejected even with in-skeleton content tags + binding-specific retry
+   feedback; twelve rejected one-shot attempts total across S7+S8. The
+   A′ probe proved the image model was never bad at DRAWING briefs, only
+   at PLACING them (both probe panels are exactly their briefs) — and
+   that pricing is FLAT $0.0389/panel (4x per page; NOT scaled, per the
+   steering rule — open owner cost decision). Candidate B (ONE money-shot
+   panel pasted into compiled geometry by `paste_panel_art`, DSL base,
+   authored lettering) scored **binding 1.0/1.0** at unchanged
+   $0.039/page: **B is the new default standard-page lane** in the #12
+   matrix. What B did NOT buy: the fidelity SCORE (still 1/5;
+   claims_conveyed p1 2/37 → 5/35) — one art panel is not enough channel
+   for ~37 claims. The fidelity path forward is claims-density (more
+   pages per scope / composition v3 captions / the A′ owner decision),
+   not more conditioning.
+2. **The golden chain: every SEAM wall is down; what remains is a
+   capability finding.** The FREE wall-4 diagnosis DISPROVED the
+   stale-ContextPack hypothesis (all failing calls used the pack that
+   lists the accepted script). Fixes landed: page_index inference +
+   negative guard, the validate/submit seam symmetry fix (v6's mandated
+   in-plan page_index failed `extra_forbidden` on ALL 8 resume-1 drafts
+   — the seam the instructions mandate must accept the mandated shape),
+   the axis-aware 2-panel remap (a y-split remap bug that MANUFACTURED
+   TEXT_REGION_OUT_OF_PANEL from correct submissions), skill 1.6.0 (id
+   byte-copying trap, TEXT_REGION repair loop), prompt v6. Two budgeted
+   resumes ($0.211476, hard stop at the stated line): direction +
+   page-writing reused at $0 BOTH times; the budget-decrement fold
+   charged failed-attempt spend into the chain ledger on its first live
+   execution ($0.117046). Resume 2's dumps show the speed model flailing
+   on the MangaPagePlan schema itself (gutter constraints, forbidden
+   page_turn_panel_id, draft 6 ONE key from valid before regressing) —
+   a CAPABILITY wall, not a seam wall. The receipted owner option:
+   `AGENT_MODEL_MODE_THUMBNAIL=quality`. No live memory merge happened
+   (`active_memory_version` stayed 1, verified) — the merge-exactly-once
+   property remains proven in tests only.
+
+What landed (all tested, all pushed):
+
+1. **Wall-4 landing fixes** (`1ebedd9`, `5edb6fd`): seam dump on
+   validate_layout_draft (the ONE model-facing seam without it);
+   `_infer_page_index` (plan-id digits → list position; wrong guesses
+   fail loudly); `_coerce_int` negative guard; validate/submit seam
+   symmetry (argument wins, in-plan fallback, disagreement logged);
+   axis-aware 2-panel remap; skills manga-thumbnail 1.6.0 + prompt v6;
+   honest skill versions in receipts (frontmatter-parsed, live-proven).
+2. **Bake-off machinery + execution** (`652b923`, `246d1e3`):
+   `paste_panel_art` + `select_key_panel` primitives (unit-tested before
+   spend); phased referee script `bakeoff_s8_binding.py` (criteria /
+   a-probe / b / c / eval; per-phase budget guard REFUSES calls beyond
+   the stated line; every provider call receipted including failures);
+   the binding referee (scene-only prompt after the first version's
+   measured defect — both runs receipted, defective scorecard superseded
+   not deleted).
+3. **Composition v3** (`ecb3e40`, issue #6): compositor type floor +
+   opt-in story-beat captions for artless panels; COMPOSITION_VERSION
+   re-keys compose-only at $0 image; isolation measurement on re-lettered
+   B rows: page-0 readability 2→3, claims flat. Page-writing skill 1.6.0:
+   three text elements per page, each a distinct must-preserve claim.
+4. **#13 folds** (`139cfd8`): scope planner include/exclude overrides
+   (plan-hash byte-stable when unset — pinned by test; the WMC title
+   section now excludable); executor failed-attempt budget decrement
+   (resume-safe delta, live-proven); conflicting overrides rejected.
+5. **agent-runtime tsc FIXED** (was the S6/S7 "known pre-existing"):
+   type-only edits in test/injection.test.ts (pi ToolDefinition.execute
+   takes 5 positional params; possibly-undefined allowed_tools spread);
+   tsc --noEmit clean, vitest 22 green.
+
+Verification: backend `uv run pytest tests/ -q` -> **817 passed** (793
+S7 baseline + 24 new; every S7 test preserved). TS: contracts **47**,
+agent-runtime **22** (tsc now CLEAN), agent-worker **16** (13 + 3).
+Both generators `--check` clean (35/35). Injection suites green.
+Frontend untouched this session. `git diff --check` clean per commit.
+
+Spend ledger (ALL receipted; tallied from durable provider_receipt rows
++ stage failure_history):
+
+| lane | calls | cost | notes |
+|---|---|---|---|
+| MiniMax text — golden chain resumes 1+2 (thumbnail attempts) | 2 | $0.211476 | both failed; hard stop at stated line; direction+page-writing $0 reuse both times |
+| MiniMax vision — S8 binding referee | 12 | $0.004066 | includes both referee-prompt versions (defect documented) |
+| MiniMax M3 judges — bake-off scorecards | 8 | $0.004190 | B scored twice + B-v3 isolation |
+| **MiniMax total** | 22 | **$0.219732** | cap $2.00 → 11% used |
+| OpenRouter — A′ probe | 2 | $0.077801 | flat per-panel pricing measured |
+| OpenRouter — B key panels | 2 | $0.077804 | both accepted (OCR clean) |
+| OpenRouter — C one-shot | 4 | $0.156408 | ALL rejected (the result, receipted) |
+| **OpenRouter total** | 8 | **$0.312013** | cap $1.00 → 31% used |
+
+Full-DB backup before live writes: `/tmp/bookreel-s8-before-resume.json`
+(193 docs). All writes additive v2-lane rows (bake-off rows author
+`s8-bakeoff`); v1 untouched; backend + both workers shut down at session
+end. NOTE: bake-off composed rows are latest-per-page on
+`run_dir_a99464c…` — a future latest-pick eval on that run sees them
+(reader-v2 is flag-off; no user impact).
+
+Deviations from the session brief (enumerated):
+
+1. The prompt's wall-4 hypothesis (stale ContextPack parent /
+   compile-ordering bug) was DISPROVEN by primary evidence; the fixes
+   landed address the ACTUAL walls found in the dumps.
+2. TWO chain resumes ran, not one — resume 2 was advisor-authorized
+   after resume 1's failure traced to a bug in code shipped THIS session
+   (the validate-seam asymmetry), fixed and offline-replay-proven before
+   re-spending; hard stop after. The scope still did NOT complete: no
+   per-scope scorecard from the chain, no live memory merge
+   (active_memory_version verified unchanged at 1).
+3. "Probe a 2-panel page" for candidate A: no 2-panel page exists in the
+   S7 landing set (both pages are 4-panel) — probed 2 PANELS of page 0.
+4. The A-probe's raw boolean says per-panel $0.0389 < $0.039 — treated
+   as rounding noise, NOT an undercut (annotated in a_probe.json);
+   steering's no-scale rule applied.
+5. The binding referee was fixed mid-eval (scene-only prompt) after its
+   first version failed pages its own "seen" text described as matching;
+   both runs receipted, superseded scorecard retained.
+6. No issue checkboxes were ticked: the remaining boxes on #12/#10/#13
+   are each only partially satisfied (lane-A sprites unmeasured;
+   golden-flow wiring open; #13 spine open) — evidence comments posted
+   on all three issues instead.
+7. The known agent-runtime tsc failure was FIXED rather than documented
+   (type-only test edits; steering allowed either).
+8. Composition v3's stage wiring letters dsl_only pages with beat
+   captions by default — a behavior change on the compose path (gated by
+   COMPOSITION_VERSION re-key; art-bearing pages unchanged; old rows
+   immutable).
+
+## MERGE-READINESS (Session 8 closeout — the owner's merge-review map)
+
+**Proven (test-covered + live-receipted):**
+- The whole v2 planning seam chain: direction / page-writing / thumbnail
+  submissions with transport normalization, seam dumps, digests, content
+  gates — live acceptances on record for every planning purpose.
+- Whole-book planner/executor mechanics: packing, budgets, preflight
+  refusal, resume without re-spend, budget decrement for failures
+  (live), include/exclude overrides. Memory merge-exactly-once is
+  test-proven (NOT yet live-proven).
+- Rendering: lane-C stage with gates v3, composed dsl_only degradation,
+  composition v3, `paste_panel_art` binding primitive, eval harness +
+  scorecard diff. The bake-off verdict with receipts.
+- 817 backend / 47 contracts / 22 runtime / 16 worker tests green; both
+  generators --check clean; agent-runtime tsc clean.
+
+**Flag-guarded (default OFF, v1-safe):**
+- `use_compiled_context`, `agentic_manga_pipeline_v1`, reader-v2 route,
+  `AGENT_SEAM_RAW_DUMP_DIR` (env-armed only). v1's 793-test surface
+  never regressed; v2 writes to <repo>/storage, v1 to backend/storage.
+
+**Still open (known, receipted, not blockers to a branch merge):**
+- Golden chain scope 0 completion (speed-lane thumbnail capability wall;
+  owner option AGENT_MODEL_MODE_THUMBNAIL=quality) + first LIVE memory
+  merge.
+- Lane-B default wiring into the stage service (the bake-off winner is
+  script-proven; promotion re-keys the paid stage — owner review first).
+- A′ economics decision; lane-A sprites path; #13 spine (
+  AdaptationPlanDoc, Celery, cancellation, continue UX); Magi review;
+  first flag-on v1 slice on a fresh project; worker egress; issue #6
+  reference stubs; ModelReceipt-on-artifact + ADR-001 revision.
+
+**Recommended merge plan (OWNER DECISION — nothing merged this session):**
+1. Review this handoff + ADR-012 S8 addendum + the S8 evidence dirs.
+2. Decide the two open model-policy calls: thumbnail quality-lane
+   default, and the A′ 4x-cost question (they change per-scope $).
+3. Merge `v2-architecture` -> main as a unit AFTER the golden chain
+   completes one scope end-to-end (recommended: one more resume with
+   AGENT_MODEL_MODE_THUMBNAIL=quality, ~$0.09-0.16 + $0.156 art) — OR
+   merge now and carry the chain as a flag-guarded work-in-progress;
+   both are defensible, the flags keep v1 byte-identical either way.
+4. Post-merge: wire lane-B default + reader-v2 flag-on review, then the
+   reel lane (#9).

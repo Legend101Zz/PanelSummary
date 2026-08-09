@@ -452,3 +452,77 @@ Extends this ADR for Session 7. Boundary edits and decisions:
     eval_scorecard persistence, and rolling canon via plan-derived
     MemoryDeltas guarded by the plan's compiled memory_version (merge
     exactly once; resume can never double-spend or double-merge).
+
+## Session 8 addendum (2026-08-09): wall-4 truth, seam symmetry, the binding bake-off verdict
+
+Extends this ADR for Session 8 (the final roadmap session). Boundary
+edits and decisions:
+
+1. **The wall-4 hypothesis was DISPROVEN by its own instrument**: every
+   failing golden-chain thumbnail call was scoped to the pack that lists
+   the accepted script (compiled 00:55:04.743Z, AFTER the script) — no
+   compile-ordering bug exists. The dumps identified the real walls:
+   omitted `page_index` (submit 1), an embedded `page_script` reaching
+   the deterministic gate (submit 2, 3x TEXT_REGION_OUT_OF_PANEL), and a
+   model-invented truncated artifact id (attempt 2 — the 403 was correct
+   authorization behavior).
+2. **The hydration seam infers a missing page_index deterministically**
+   (`_infer_page_index`: page_plan_id trailing digits, then list
+   position). A wrong inference cannot land silently — the hydrated plan
+   fails panel-id validation loudly. `_coerce_int` rejects negatives
+   (Python negative indexing would silently select from the END of the
+   accepted set).
+3. **Model-facing seams must accept the shape the instructions mandate**
+   (resume-1 live lesson): prompt v6 demands a top-level `page_index`
+   INSIDE each plan; the submit seam popped it but `validate_layout_draft`
+   did not — every correctly-shaped draft failed `extra_forbidden` on all
+   8 iterations. The validate seam now mirrors the submit seam (argument
+   wins, in-plan is fallback, disagreement logged). Rule: when a prompt
+   changes the mandated shape, EVERY seam that shape passes through is
+   part of the change.
+4. **The 2-panel remap in `_normalize_page_plan` is axis-aware**: the
+   unconditional [later, earlier] child rebinding is only correct for
+   x-splits; on a y-split it swapped top/bottom panels and pushed every
+   authored text region out of its panel — manufacturing wall 2 from a
+   correct submission.
+5. **The golden chain's remaining blocker is CAPABILITY, not seams**:
+   resume 2's 8 drafts show speed-lane schema flailing (gutter
+   constraints, a forbidden `page_turn_panel_id`, one draft dropping
+   `canvas`) with draft 6 one key from valid before regressing. The
+   receipted owner option is `AGENT_MODEL_MODE_THUMBNAIL=quality`; no
+   silent default switch was made.
+6. **Failed-attempt spend decrements the chain budget** (S7 deviation 6):
+   a resume-safe before/after delta over `failure_history` receipts —
+   live-proven charging $0.117046 on its first execution. Prior-invocation
+   failures are never re-charged (pinned by test).
+7. **Skill versions in receipts are now honest**: the worker served a
+   hardcoded "1.0.0" while SKILL.md frontmatter advanced; the served
+   version now parses frontmatter (proven live in the resume-1 failure
+   trace: `manga-thumbnail 1.6.0`).
+8. **The bake-off verdict (issues #12/#7/#10)**: panel binding is solved
+   by CODE, not conditioning. One-shot full-page generation failed its
+   THIRD conditioning version (12 rejected attempts total across v1
+   briefs / v2 spatial anchors / v3-experimental in-skeleton content
+   tags; binding 0.25–0.5; guide-tag text leaked into art). Per-panel
+   generation binds trivially (probe images are exactly their briefs) at
+   FLAT ~$0.0389/panel (4x/page — open owner cost decision).
+   `paste_panel_art` (cover-fit + polygon mask + re-inked frame) makes
+   placement deterministic: candidate B (ONE money-shot panel + DSL base
+   + authored lettering) scored binding 1.0/1.0 at $0.039/page and is the
+   new default standard-page lane in the #12 matrix. Stage-service wiring
+   of that default is deliberately NOT done here — promotion re-keys the
+   paid stage and belongs after owner review.
+9. **Referee prompts are versioned evidence too**: the first binding
+   referee compared LETTERED DIALOGUE to brief wording and failed pages
+   whose drawn scene matched exactly (its own "seen" text proved it).
+   The scene-only prompt is the fix; both eval runs are receipted and the
+   defective scorecard is superseded, not deleted. Measured variance:
+   single-panel binding verdicts move ±1 category between runs on
+   near-identical images — single-run deltas are noise, not signal.
+10. **Composition v3** (issue #6 fold): a compositor-wide type floor
+    (18px on the 832x1248 class, binds LAST) and OPT-IN story-beat
+    captions for artless panels — an authored-content channel, not
+    invented text (the S7/S8 judge's measured complaint was "three
+    panels are essentially blank"). Version bump re-keys compose-only
+    stages at $0 image; isolation measurement: page-0 readability 2→3,
+    fidelity claims flat.
