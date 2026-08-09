@@ -89,7 +89,14 @@ THUMBNAIL_STAGE = "manga_thumbnail"
 #: ``speaker_ref`` emitted on narration. The instructions now name both
 #: traps explicitly; the receipt's prompt_version must reflect the text
 #: the model actually saw.
-PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v4"
+#: v5 (Session 7 step 0, attempt 12): the S6 skill wording "non-empty
+#: quote" CONTRADICTS the verbatim-lineage gate on plans whose refs carry
+#: null quotes — the model dutifully filled in real book quotes and every
+#: panel failed "cites source outside MangaPlan". Offline replay of the
+#: dumped submission with ONLY the refs reverted to verbatim passes the
+#: whole pipeline, so the instructions now demand byte-for-byte copies
+#: with nulls preserved.
+PAGE_WRITING_PROMPT_VERSION = "manga-page-writing.v5"
 THUMBNAIL_PROMPT_VERSION = "manga-thumbnail.v4"
 
 #: Two pages per planning goal (donor vertical-slice shape). The PANEL count
@@ -150,6 +157,10 @@ def page_writing_instructions(beat_count: int) -> str:
         "source-fact lists when no accepted character, asset, or fact "
         "exists — but never an empty text-element list. Use the exact "
         "accepted MangaPlan artifact ID and this fresh ContextPack ID. "
+        "Copy each panel's source_ref from the accepted MangaPlan "
+        "byte-for-byte: if the plan's quote or offsets are null, keep them "
+        "null — never fill in your own quote; any altered field fails the "
+        "lineage gate. "
         "Fetch the accepted MangaPlan at most once. Do not create layouts, "
         "request assets, or call an image model."
     )

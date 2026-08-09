@@ -1,7 +1,7 @@
 ---
 name: manga-page-writing
 description: Write source-grounded page scripts before layout or image generation.
-version: 1.5.1
+version: 1.5.2
 ---
 
 # Manga page writing
@@ -104,9 +104,14 @@ Field-type traps (submissions are rejected on any of these):
   `speaker_ref` at all.
 - `typography.weight` is a NUMBER (400 or 700), never `"normal"`/`"bold"`;
   `min_px`/`max_px` are integers with `min_px >= 8`.
-- Every `source_ref` must be the COMPLETE object copied verbatim from the
-  accepted MangaPlan — including its non-empty `quote`. Never leave a
-  quote empty and never retype one.
+- Every `source_ref` must be the COMPLETE object copied BYTE-FOR-BYTE
+  from the accepted MangaPlan — every field exactly as the plan carries
+  it, including `quote`, `start_offset`, and `end_offset` EVEN WHEN THEY
+  ARE NULL. A null quote stays null: never fill in, invent, or beautify
+  a quote the plan does not carry, and never retype one it does. The
+  submission gate hash-compares each ref against the plan's refs, so ANY
+  difference (an added quote, a changed offset) rejects the panel as
+  citing source outside the plan.
 - ALL `*_ref`/`*_refs` and `*_id` fields (`environment_ref`, `prop_refs`,
   `subject_ref`, `speaker_ref`, `panel_id`, …) are IDENTIFIER TOKENS
   matching `^[A-Za-z0-9][A-Za-z0-9._:-]*$` — no spaces, no prose. Write
