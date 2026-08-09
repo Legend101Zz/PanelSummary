@@ -350,6 +350,65 @@ def test_seam_inference_prefers_explicit_page_index_when_present(
     assert response.data["artifact_id"].startswith("thumbnail_set_")
 
 
+def test_validate_layout_draft_tolerates_in_plan_page_index(tmp_path: Path) -> None:
+    """Resume #1's live wall: the v6 instructions mandate a top-level
+    page_index INSIDE each submitted plan, and the submit seam pops it —
+    but validate_layout_draft did not, so the exact shape the instructions
+    demand failed extra_forbidden on ALL 8 draft iterations. The dump
+    shape (page_index both beside AND inside the plan) must now validate."""
+    service, request = _golden_chain_shaped_submission(tmp_path)
+    thumbnail_set = cast(dict[str, Any], request.arguments["thumbnail_set"])
+    plan_payload = cast(list[dict[str, Any]], thumbnail_set["page_plans"])[0]
+    plan_payload = dict(plan_payload)
+    plan_payload["page_index"] = 0  # the live dump shape
+    request.arguments.clear()
+    request.arguments["page_plan"] = plan_payload
+    request.arguments["script_set_artifact_id"] = plan_payload["script_set_artifact_id"]
+    request.arguments["page_index"] = 0
+
+    response = resolve(service.execute("validate_layout_draft", request))
+    assert isinstance(response.data, dict)
+    assert "passed" in response.data  # data verdict, never extra_forbidden
+
+
+def test_validate_layout_draft_argument_page_index_wins_disagreement(
+    tmp_path: Path,
+) -> None:
+    """When the argument-level and in-plan page_index disagree, the
+    argument wins (the in-plan value hydrating the WRONG page's script
+    would mismatch every panel reference)."""
+    service, request = _golden_chain_shaped_submission(tmp_path)
+    thumbnail_set = cast(dict[str, Any], request.arguments["thumbnail_set"])
+    plan_payload = dict(cast(list[dict[str, Any]], thumbnail_set["page_plans"])[0])
+    plan_payload["page_index"] = 1  # lies — this layout belongs to page 0
+    request.arguments.clear()
+    request.arguments["page_plan"] = plan_payload
+    request.arguments["script_set_artifact_id"] = plan_payload["script_set_artifact_id"]
+    request.arguments["page_index"] = 0
+
+    response = resolve(service.execute("validate_layout_draft", request))
+    assert isinstance(response.data, dict)
+    # Hydrated with page 0 (the argument) the layout compiles cleanly; had
+    # the in-plan 1 won, page 1's panel ids would mismatch every node.
+    assert response.data["passed"] is True
+
+
+def test_validate_layout_draft_in_plan_index_is_the_fallback(tmp_path: Path) -> None:
+    """A draft carrying page_index ONLY inside the plan (no argument) still
+    hydrates — symmetric with the submit seam's tolerance."""
+    service, request = _golden_chain_shaped_submission(tmp_path)
+    thumbnail_set = cast(dict[str, Any], request.arguments["thumbnail_set"])
+    plan_payload = dict(cast(list[dict[str, Any]], thumbnail_set["page_plans"])[0])
+    plan_payload["page_index"] = 0
+    request.arguments.clear()
+    request.arguments["page_plan"] = plan_payload
+    request.arguments["script_set_artifact_id"] = plan_payload["script_set_artifact_id"]
+
+    response = resolve(service.execute("validate_layout_draft", request))
+    assert isinstance(response.data, dict)
+    assert response.data["passed"] is True
+
+
 def test_normalize_page_plan_keeps_y_split_panel_order() -> None:
     """The 2-panel remap is axis-aware (Session 8): vertical reading order
     is unaffected by RTL, so a y-split keeps the earlier panel on TOP

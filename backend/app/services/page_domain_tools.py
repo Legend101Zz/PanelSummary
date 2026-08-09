@@ -580,9 +580,27 @@ class MangaPlanningToolService:
         if not isinstance(raw, dict):
             raise ArtifactValidationError("page_plan must be an object")
         normalized = deepcopy(raw)
+        # Session 8 (resume #1 live diagnosis): the submit seam POPS the
+        # in-plan page_index before validation, but this seam did not —
+        # so the exact shape the v6 instructions mandate for submission
+        # failed MangaPagePlan validation here with extra_forbidden, on
+        # ALL 8 draft iterations of the golden-chain resume. Mirror the
+        # submit seam unconditionally; the argument-level page_index wins
+        # and a disagreement is logged (model-confusion signal).
+        in_plan_index = _coerce_int(normalized.pop("page_index", None))
         if "page_script" not in normalized:
             script_set_artifact_id = arguments.get("script_set_artifact_id")
             page_index = _coerce_int(arguments.get("page_index"))
+            if page_index is None:
+                page_index = in_plan_index
+            elif in_plan_index is not None and in_plan_index != page_index:
+                logger.info(
+                    "validate_layout_draft: argument page_index %s disagrees "
+                    "with in-plan page_index %s (stage %s) — argument wins",
+                    page_index,
+                    in_plan_index,
+                    scope.stage_run_id,
+                )
             if not isinstance(script_set_artifact_id, str) or page_index is None:
                 raise ArtifactValidationError(
                     "script_set_artifact_id and page_index are required when page_script is omitted"
