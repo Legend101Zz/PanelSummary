@@ -106,12 +106,6 @@ For local development without Docker:
 - MongoDB reachable from `MONGODB_URL`,
 - LLM provider API key supplied in the UI when generating.
 
-Walmart environment note: use the Walmart Python index for `uv` commands:
-
-```bash
---index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
---allow-insecure-host pypi.ci.artifacts.walmart.com
-```
 
 Do not install dependencies into the Code Puppy venv. This repo owns its own
 `backend/.venv`. Yes, dependency isolation is boring. Boring is how weekends
@@ -164,9 +158,7 @@ Use this if you do not want the helper scripts.
 ```bash
 cd backend
 uv venv .venv --python 3.12
-uv pip install \
-  --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+uv pip install 
   -r requirements.txt
 source .venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -288,9 +280,7 @@ If manga generation fails, check:
 
 ```bash
 cd backend
-uv run \
-  --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com \
+uv run 
   pytest tests/ -q
 ```
 
