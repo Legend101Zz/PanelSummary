@@ -209,7 +209,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     )
     plan = plan_artifact.content
     planned_pages: list[dict[str, Any]] = plan["pages"]
-    await _set_edition(edition, plan_id=str(plan_artifact.id), page_total=len(planned_pages), status="drawing")
+    await _set_edition(edition, plan_id=str(plan_artifact.id), page_total=len(planned_pages), status="drawing", pages_failed=0)
 
     # 3. Page rows (unique per edition + page number).
     collection = EditionPage.get_motor_collection()
@@ -299,6 +299,9 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     page.updated_at = utcnow()
                     await page.save()
                     progress["done"] += 1
+                    await Edition.get_motor_collection().update_one(
+                        {"_id": edition.id}, {"$set": {"pages_accepted": progress["done"], "updated_at": utcnow()}}
+                    )
                     await ctx.event("drawing", f"Page {number} is ready ({progress['done']} of {len(planned_pages)})", done=progress["done"])
                     return
                 if outcome.state == "CANCELLED":
@@ -312,6 +315,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
             page.status = "failed"
             page.updated_at = utcnow()
             await page.save()
+            await Edition.get_motor_collection().update_one({"_id": edition.id}, {"$inc": {"pages_failed": 1}})
 
     results = await asyncio.gather(*(draw(p) for p in sorted(planned_pages, key=lambda p: p["page_number"])), return_exceptions=True)
     for result in results:
