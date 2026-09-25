@@ -38,6 +38,12 @@ interface Input {
 
 const MAX_PREVIEWS = 3;
 
+/** Distinct error codes for the trace note (diagnosis of repeated rejections). */
+function codesNote(issues: readonly ValidationIssue[]): string {
+  const codes = [...new Set(errorsOf(issues).map((issue) => issue.code))].slice(0, 6);
+  return codes.length ? ` ${codes.join(",")}` : "";
+}
+
 /** Lowercase, straight quotes, letters/digits/spaces only. */
 function normalizeWords(text: string): string {
   return text
@@ -53,8 +59,21 @@ function normalizeWords(text: string): string {
  * (split at ellipses and dashes) with 3+ words must occur in this page's
  * source text, ignoring case and punctuation.
  */
+/** The source sentence sharing the most words with `line` (to help the writer fix a misquote). */
+function closestSentence(line: string, sentences: readonly string[]): string | undefined {
+  const words = new Set(normalizeWords(line).split(" ").filter((w) => w.length > 2));
+  let best: { score: number; sentence: string } | undefined;
+  for (const sentence of sentences) {
+    const score = normalizeWords(sentence).split(" ").filter((w) => words.has(w)).length;
+    if (score > 0 && (!best || score > best.score)) best = { score, sentence };
+  }
+  return best?.sentence;
+}
+
 export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string }[]): ValidationIssue[] {
-  const source = ` ${normalizeWords(units.map((u) => u.text).join(" "))} `;
+  const raw = units.map((u) => u.text).join(" ");
+  const source = ` ${normalizeWords(raw)} `;
+  const sentences = raw.split(/(?<=[.!?\u201d"])\s+/).map((x) => x.trim()).filter((x) => x.length > 0);
   const issues: ValidationIssue[] = [];
   (spec.panels ?? []).forEach((panel) => {
     (panel.text ?? []).forEach((text, index) => {
@@ -69,7 +88,10 @@ export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string 
           code: "QUOTE_NOT_IN_SOURCE",
           severity: "error",
           path: `panel ${panel.id} text ${index}`,
-          message: `this line is labelled "quote" but "${missing[0].slice(0, 80)}" is not in the source text for this page. Use the book's exact words (you may cut with "..."), or label it "paraphrase" (or "dramatized" for invented dialogue).`,
+          message: `this line is labelled "quote" but "${missing[0].slice(0, 80)}" is not in the source text for this page. Use the book's exact words (you may cut with "..."), or label it "paraphrase" (or "dramatized" for invented dialogue).${(() => {
+            const near = closestSentence(text.text, sentences);
+            return near ? ` Closest source sentence: "${near.slice(0, 300)}"` : "";
+          })()}`,
         });
       }
     });
@@ -290,7 +312,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         if (render) parts.push(`Layout:\n${layoutReport(render)}`);
         const images = render && options.vision ? [{ data: svgToPng(render.svg, { width: 800 }).toString("base64"), mimeType: "image/png" as const }] : undefined;
         if (images) parts.push("The rendered page is attached. Judge it as a reader: reading order, who is speaking, legibility, whether the art carries the beat.");
-        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}` };
+        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
       },
     };
 
@@ -302,7 +324,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
         const { issues, render } = check(parsed.value);
-        if (errorsOf(issues).length > 0 || !render) return { text: rejection(issues), note: `errors=${errorsOf(issues).length}` };
+        if (errorsOf(issues).length > 0 || !render) return { text: rejection(issues), note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
         const spec = parsed.value as MangaPageSpec;
         lastRender = { spec, render: { ...render, issues } };
         const warnings = warningsOf(issues);
