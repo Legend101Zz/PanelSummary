@@ -93,6 +93,41 @@ BALLOON_TALL are errors; claim-evidence check (CLAIM_NOT_EVIDENT/CLAIM_THIN) cal
 run-2 pages; quote errors show the closest source sentence; page goals get 4 previews and 6
 submits.
 
-## Run 3
+## Run 3 (2026-09-26)
+
+| Measure | Value |
+|---|---|
+| Upload → book page | 4.0 s |
+| Generate → page 1 readable | 787 s (understanding with thinking low, before the patch tool: 11 min) |
+| Generate → finished | 41.7 min |
+| Pages | 60 planned (92 claims), 58 accepted in the first pass, 2 failed (page 50: output cap; page 57: submit limit) — both shown as failed; "Retry failed pages" in the UI then drew both in 85 s → `complete`, 60/60 |
+| Model calls (after the retry) | 68 (6 failed attempts), all MiniMax-M3 through the harness |
+| Tokens / cost (after the retry) | 1,956,837 in · 913,988 out · 8,045,672 cache-read · $2.17 (catalog estimate) |
+| **Worker egress (whole run)** | {"api.minimax.io/anthropic/v1/messages": 349} — zero image-model calls |
+| Journey | first pass 116/117 (one panel-framing reading taken mid-camera-move); re-verify after the fix 134/134 |
+
+Judge panel: **6 of 60 pages met the strict ship bar**; 19 of 60 had a mean ≥ 3.5 with no
+criterion below 3. Means: reading flow 4.62, speaker attribution 3.50, variety 3.48, legibility
+3.47, page turn 3.42, beat 3.15, fidelity 2.85, continuity 2.33 (overall 3.35). The statue now
+stands on its column, the Reed is by the river, the spirits and rose-trees speak. Remaining
+fidelity complaints: key quotes and sub-points of claims dropped; continuity: the writer placing
+the statue among people at street level. Changed in response: QUOTE_CLAIM_MISSING,
+STATUE_AMONG_PEOPLE, the revise tool and the sticky statue guard.
+
+## Nonfiction run (2026-09-26): *On the Duty of Civil Disobedience*
+
+| Measure | Value |
+|---|---|
+| Pages | 29 planned, 29 accepted, 0 failed — `complete` in one pass |
+| Claims | 59: 57 conveyed, 2 omitted by the plan with reasons, 0 lost |
+| Generate → page 1 | 569 s |
+| Model calls | 31, all MiniMax-M3 through the harness |
+| Worker egress | {"api.minimax.io/anthropic/v1/messages": 515} (cumulative for the worker process since it started, including run 3) |
+| Journey | 73/73 checks passed |
+
+Pages dramatise the argument with Thoreau in concrete places (Concord, the jail), the State as a
+labelled emblem (its lines are `metaphor`), and the book's formulations as quotes.
+
+## Run 4
 
 (pending)
