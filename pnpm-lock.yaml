@@ -9,7 +9,11 @@ overrides:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      playwright-core:
+        specifier: 1.55.0
+        version: 1.55.0
 
   apps/agent-worker:
     dependencies:
@@ -1309,6 +1313,11 @@ packages:
 
   pino@10.3.1:
     resolution: {integrity: sha512-r34yH/GlQpKZbU1BvFFqOjhISRo1MNx1tWYsYvmj6KIRHSPMT2+yHOEb1SG6NMvRoHRF0a07kCOox/9yakl1vg==}
+    hasBin: true
+
+  playwright-core@1.55.0:
+    resolution: {integrity: sha512-GvZs4vU3U5ro2nZpeiwyb0zuFaqb9sUiAJuyrWpcGouD8y9/HLgGbNRjIph7zU9D3hnPaisMl9zG9CgFi/biIg==}
+    engines: {node: '>=18'}
     hasBin: true
 
   postcss@8.5.10:
@@ -2795,6 +2804,8 @@ snapshots:
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 4.2.0
+
+  playwright-core@1.55.0: {}
 
   postcss@8.5.10:
     dependencies:

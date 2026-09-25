@@ -344,11 +344,20 @@ async def finalize(edition: Edition, understanding: dict[str, Any], plan: dict[s
         "not_planned": sorted(
             c["id"] for c in claims if c["id"] not in planned_claims and c["id"] not in omitted
         ),
+        "required_not_planned": sorted(
+            c["id"]
+            for c in claims
+            if c.get("importance") in ("core", "supporting") and c["id"] not in planned_claims and c["id"] not in omitted
+        ),
         "core_not_conveyed": sorted(
             c["id"] for c in claims if c.get("importance") == "core" and c["id"] not in conveyed and c["id"] not in omitted
         ),
     }
-    status = "complete" if not failed and not report["core_not_conveyed"] else "completed_with_failures"
+    status = (
+        "complete"
+        if not failed and not report["core_not_conveyed"] and not report["required_not_planned"]
+        else "completed_with_failures"
+    )
     await _set_edition(
         edition,
         status=status,
