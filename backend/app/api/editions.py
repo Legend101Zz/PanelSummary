@@ -200,6 +200,26 @@ async def resume(edition_id: str) -> dict:
     return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
 
 
+@router.post("/editions/{edition_id}/pages/{page_number}/redraw")
+async def redraw_page(edition_id: str, page_number: int) -> dict:
+    """Draw one page again (for example after a renderer or skill fix).
+
+    Only this page is reset; every other accepted page and artifact is reused.
+    The old attempt's receipts are kept on the page for audit.
+    """
+    edition = await get_edition_or_404(edition_id)
+    if edition.status in ACTIVE:
+        raise HTTPException(status_code=409, detail="The edition is still generating")
+    page = await EditionPage.find_one(EditionPage.edition_id == edition_id, EditionPage.page_number == page_number)
+    if page is None:
+        raise HTTPException(status_code=404, detail="Page not found")
+    page.status = "pending"
+    page.attempts = 0
+    page.updated_at = utcnow()
+    await page.save()
+    return await resume(edition_id)
+
+
 @router.get("/jobs/{job_id}")
 async def get_job(job_id: str) -> dict:
     view = await job_view(_check_id(job_id))
