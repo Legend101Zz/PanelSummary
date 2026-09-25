@@ -1,0 +1,39 @@
+{
+  "name": "@panelsummary/manga-render",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./raster": {
+      "types": "./src/raster.ts",
+      "import": "./src/raster.ts"
+    },
+    "./contracts": {
+      "types": "./src/contracts.ts",
+      "import": "./src/contracts.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "gallery": "tsx scripts/gallery.ts"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "2.6.2",
+    "opentype.js": "1.3.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/opentype.js": "1.3.8",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  }
+}
