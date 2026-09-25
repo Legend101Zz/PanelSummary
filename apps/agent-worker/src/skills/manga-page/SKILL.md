@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Manga page
@@ -235,6 +235,11 @@ change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
 - `dark_mood` is for dread, in one panel per page at most. `flashback` goes on every panel
   of a flashback and on no other panel. Weather FX must match `weather`.
 - A quiet page stays quiet: too many FX make every panel shout.
+
+**Season and weather are drawn, not told.** Set `time` and `weather` on every panel to
+match the story: a winter garden is `"weather": "snow"` (bare trees, snow on the ground),
+a storm is `"storm"`, night is `"time": "night"`. A place that is indoors in the story
+must use an indoor location.
 
 ## 9b. Opening a section
 
