@@ -209,8 +209,12 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
   });
 
   it("fires CHARACTER_NOT_INTRODUCED when a first appearance is never named", async () => {
-    // Page 1 is the Mayor's first appearance; the fixture's lettering never says his name.
+    // Page 1 is the Mayor's first appearance. Strip the fixture's name tag so
+    // no lettering names him.
     const spec = fixturePage(1);
+    for (const panel of spec.panels) {
+      panel.text = (panel.text ?? []).filter((text) => !(text.kind === "caption" && /mayor/i.test(text.text)));
+    }
     const prepared = prepare(OFF, 1);
     const submit = await call(prepared, "submit_page", spec);
     expect(submit.accepted).toBeUndefined();
@@ -219,6 +223,9 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
     expect(submit.text).not.toContain("cast prince"); // the narration names the Happy Prince
 
     const named = fixturePage(1);
+    for (const panel of named.panels) {
+      panel.text = (panel.text ?? []).filter((text) => !(text.kind === "caption" && /mayor/i.test(text.text)));
+    }
     const line = named.panels.flatMap((panel) => panel.text ?? []).find((text) => text.speaker === "mayor")!;
     line.text = "Our Mayor says: as fine as a weathercock...";
     const fixed = await call(prepare(OFF, 1), "submit_page", named);
