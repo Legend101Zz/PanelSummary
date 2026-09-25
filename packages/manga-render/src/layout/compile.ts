@@ -7,7 +7,6 @@
  * and reading order is unchanged.
  */
 import {
-  DEFAULT_GUTTER,
   PAGE_HEIGHT,
   PAGE_MARGIN,
   PAGE_WIDTH,
@@ -24,6 +23,12 @@ export const MAX_PANELS = 7;
 export const MIN_PANEL_SIDE = 140;
 export const MAX_PANEL_ASPECT = 5;
 export const MAX_SLANT = 12;
+/**
+ * Gutters: rows are separated by a wider gutter than columns so each tier
+ * reads as a unit (craft A2.4: row 24-28, column 10-12).
+ */
+export const ROW_GUTTER = 26;
+export const COL_GUTTER = 12;
 const MAX_DEPTH = 5;
 
 export interface CompiledPanel {
@@ -44,8 +49,18 @@ export interface CompiledLayout {
 }
 
 export interface CompileOptions {
+  /** One gutter for every split (overrides rowGutter/colGutter). */
   gutter?: number;
+  /** Gutter between stacked rows. Default ROW_GUTTER. */
+  rowGutter?: number;
+  /** Gutter between side-by-side columns. Default COL_GUTTER. */
+  colGutter?: number;
   margin?: number;
+}
+
+interface Gutters {
+  rows: number;
+  cols: number;
 }
 
 /** Page area inside the margins. */
@@ -213,7 +228,8 @@ function centreExtent(poly: readonly Point[], axis: "x" | "y"): { lo: number; hi
   return { lo, hi, mid: cy };
 }
 
-function splitRegion(region: Region, node: Extract<LayoutNode, { split: string }>, gutter: number): Region[] {
+function splitRegion(region: Region, node: Extract<LayoutNode, { split: string }>, gutters: Gutters): Region[] {
+  const gutter = node.split === "rows" ? gutters.rows : gutters.cols;
   const k = node.children.length;
   const total = node.sizes.reduce((a, b) => a + b, 0);
   const weights = node.sizes.map((s) => s / total);
@@ -243,13 +259,13 @@ function splitRegion(region: Region, node: Extract<LayoutNode, { split: string }
   return out;
 }
 
-function layoutTree(node: LayoutNode, region: Region, gutter: number, out: Map<string, Point[]>): void {
+function layoutTree(node: LayoutNode, region: Region, gutters: Gutters, out: Map<string, Point[]>): void {
   if ("panel" in node) {
     out.set(node.panel, region.poly);
     return;
   }
-  const regions = splitRegion(region, node, gutter);
-  node.children.forEach((child, i) => layoutTree(child, regions[i], gutter, out));
+  const regions = splitRegion(region, node, gutters);
+  node.children.forEach((child, i) => layoutTree(child, regions[i], gutters, out));
 }
 
 function mirror(poly: readonly Point[]): Point[] {
@@ -300,9 +316,12 @@ export function checkPanelGeometry(panels: readonly CompiledPanel[], path: strin
 }
 
 function compileNode(tree: LayoutNode, panelIds: readonly string[], rtl: boolean, opts: CompileOptions): CompiledPanel[] {
-  const gutter = opts.gutter ?? DEFAULT_GUTTER;
+  const gutters: Gutters = {
+    rows: opts.gutter ?? opts.rowGutter ?? ROW_GUTTER,
+    cols: opts.gutter ?? opts.colGutter ?? COL_GUTTER,
+  };
   const polys = new Map<string, Point[]>();
-  layoutTree(tree, { poly: pageFrame(opts.margin ?? PAGE_MARGIN) }, gutter, polys);
+  layoutTree(tree, { poly: pageFrame(opts.margin ?? PAGE_MARGIN) }, gutters, polys);
   return panelIds.map((id, order) => {
     let poly = polys.get(id) ?? [];
     if (rtl) poly = mirror(poly);
@@ -423,4 +442,71 @@ export function compileLayout(spec: LayoutSpec | undefined, panelIds: readonly s
     return fb;
   }
   return { panels, issues, source: "tree", ok: true };
+}
+
+/** Polygon area (absolute). */
+function polyArea(poly: readonly Point[]): number {
+  let a = 0;
+  for (let i = 0; i < poly.length; i += 1) {
+    const p = poly[i];
+    const q = poly[(i + 1) % poly.length];
+    a += p.x * q.y - q.x * p.y;
+  }
+  return Math.abs(a) / 2;
+}
+
+/** Each panel's share of the page's live area (inside the margins). */
+export function panelAreaShares(panels: readonly CompiledPanel[], margin = PAGE_MARGIN): number[] {
+  const live = (PAGE_WIDTH - 2 * margin) * (PAGE_HEIGHT - 2 * margin);
+  return panels.map((p) => (p.polygon.length >= 3 ? polyArea(p.polygon) / live : 0));
+}
+
+/**
+ * Blockage (craft A2.2): a panel that spans two or more stacked panels lying
+ * on its reading-EARLIER side. Experienced readers go down the stack first
+ * (the tree order), but readers new to comics keep the Z-path and read across
+ * into the tall panel before finishing the stack. Returns one warning per
+ * blocked panel. A tall panel on the reading-earlier side (l_shape) is safe.
+ */
+export function blockageIssues(panels: readonly CompiledPanel[], rtl = false, path = "page.layout"): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const tol = 30;
+  for (const t of panels) {
+    if (t.polygon.length < 3) continue;
+    const tb = t.bbox;
+    const earlier = panels.filter((s) => {
+      if (s === t || s.order >= t.order || s.polygon.length < 3) return false;
+      const sb = s.bbox;
+      const side = rtl ? sb.x >= tb.x + tb.w - tol : sb.x + sb.w <= tb.x + tol;
+      if (!side) return false;
+      const overlap = Math.min(sb.y + sb.h, tb.y + tb.h) - Math.max(sb.y, tb.y);
+      return overlap > Math.min(sb.h, tb.h) * 0.35;
+    });
+    if (earlier.length < 2) continue;
+    // at least two of them stacked (vertically disjoint)
+    const sorted = [...earlier].sort((a, b) => a.bbox.y - b.bbox.y);
+    let stacked = false;
+    for (let i = 0; i < sorted.length && !stacked; i += 1) {
+      for (let j = i + 1; j < sorted.length; j += 1) {
+        const a = sorted[i].bbox;
+        const b = sorted[j].bbox;
+        if (b.y >= a.y + a.h * 0.8) {
+          stacked = true;
+          break;
+        }
+      }
+    }
+    if (!stacked) continue;
+    const ids = sorted.map((s) => `"${s.id}"`).join(", ");
+    const z = [sorted[0].id, t.id, ...sorted.slice(1).map((s) => s.id)].join(" → ");
+    issues.push({
+      code: "BLOCKAGE_LAYOUT",
+      severity: "warning",
+      path,
+      message:
+        `panel "${t.id}" is a tall panel with stacked panels ${ids} on its reading-earlier side. Experienced readers go down the stack first, ` +
+        `but readers new to comics read across (${z}). Use it only when either order makes sense; otherwise put the tall panel first (an l_shape template) or stagger the panels.`,
+    });
+  }
+  return issues;
 }

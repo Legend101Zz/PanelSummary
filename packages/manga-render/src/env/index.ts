@@ -9,14 +9,14 @@
  */
 import type { Environment, EnvFeature, Shot } from "../contracts.js";
 import type { DrawContext, EnvironmentDrawing, EnvironmentModule, EnvironmentRequest } from "../internal.js";
-import { PAPER, STROKE, toneFill } from "../style.js";
+import { INK, PAPER, STROKE, toneFill } from "../style.js";
 import { n } from "../svg.js";
-import { seeded } from "../prng.js";
+import { hashString, seeded } from "../prng.js";
 import { groundDepthAt, makeCamera } from "./camera.js";
-import { LAYER, add, boxRect, compose, palette, pathEl, rectD, type Stage } from "./stage.js";
-import { cloudD, drawSky, drawWeather } from "./sky.js";
+import { LAYER, add, boxRect, compose, palette, pathEl, type Stage } from "./stage.js";
+import { compactSvg, cullOutside } from "./compact.js";
+import { drawSky, drawWeather } from "./sky.js";
 import { drawFeatures, type Sites } from "./features.js";
-import { scallop } from "./nature.js";
 import { church, citySquare, cottage, market, mill, rooftops, street, townHall } from "./scenes-town.js";
 import { abstractField, countryRoad, forest, garden, meadow, pond, riverbank, seaside, skyScene, voidScene } from "./scenes-nature.js";
 import { classroom, courtroom, garret, jailCell, palaceHall, roomPoor, roomRich, study } from "./scenes-interior.js";
@@ -136,6 +136,10 @@ export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage
   const lod = shot.lod;
   const p = ctx.idPrefix;
   const snow = request.weather === "snow" || request.features.includes("snow_ground");
+  // Background line weight by shot: close-range backgrounds recede behind the
+  // figures (about half weight in close shots, one step down in medium).
+  const baseLw = request.lineWidth > 0 ? request.lineWidth : STROKE.environment;
+  const shotLw = request.shot === "close" || request.shot === "extreme_close" ? 0.62 : request.shot === "medium" ? 0.85 : 1;
   return {
     env: request.environment,
     features: new Set<EnvFeature>(request.features),
@@ -147,7 +151,7 @@ export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage
     time: request.time,
     weather: request.weather,
     snow,
-    lw: request.lineWidth > 0 ? request.lineWidth : STROKE.environment,
+    lw: baseLw * shotLw,
     zmid,
     rand: seeded(request.seed, request.environment, request.shot, request.angle, n(box.w), n(box.h)),
     p,
@@ -158,84 +162,87 @@ export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage
   };
 }
 
-/** Close-up finish: soften the scene and lay a tone band so faces read. */
+/**
+ * Close-up finish: a paper veil softens the (already thin, grey) set so faces
+ * read against it. No screentone: close shots carry no pattern tone at all.
+ */
 function closeFinish(st: Stage): void {
-  const b = st.box;
-  let s = boxRect(st, PAPER, st.shot === "extreme_close" ? 0.62 : 0.42);
-  if (st.env !== "void" && st.env !== "abstract") {
-    // a soft screentone band across the top third (or bottom for night)
-    const h = b.h * (st.shot === "extreme_close" ? 0.45 : 0.3);
-    s += pathEl(rectD(b.x - 2, b.y - 2, b.w + 4, h), { fill: toneFill("dots", st.p), opacity: 0.55 });
-    let d = "";
-    for (let i = 0; i < 5; i += 1) {
-      const y = b.y + h + i * 3.2;
-      d += `M${n(b.x - 2)} ${n(y)}L${n(b.x + b.w * (0.25 + st.rand() * 0.7))} ${n(y)}`;
-    }
-    s += pathEl(d, { stroke: st.pal.ink, w: 0.6, opacity: 0.5 });
-  }
-  add(st, LAYER.atmos, -1, s);
+  add(st, LAYER.atmos, -1, boxRect(st, st.pal.night ? INK : PAPER, st.pal.night ? 0.3 : 0.4));
 }
 
-const URBAN: ReadonlySet<Environment> = new Set(["city_square", "street", "rooftops", "market", "town_hall", "church", "cottage", "mill"]);
-const WATERY: ReadonlySet<Environment> = new Set(["riverbank", "pond", "seaside"]);
 
 /**
- * Extreme close-ups drop the set entirely: a screentone gradation field with
- * a single soft hint of the place (a wall corner, window fragments, a foliage
- * band, ripples, a cloud), the way manga backs a face in tight framing.
+ * Extreme close-ups drop the set entirely (no architecture): one of a few
+ * calm manga backings, chosen from the location seed and the time of day so
+ * a location keeps its look — plain paper, a flat light tone with a soft edge
+ * gradation, or a focus-line field that leaves the centre clear. Night uses
+ * the dark versions.
  */
 function extremeField(st: Stage): void {
   const b = st.box;
-  const t = (x: Parameters<typeof toneFill>[0]) => toneFill(x, st.p);
   const night = st.pal.night;
-  let s = boxRect(st, night ? t("dark") : PAPER);
-  // gradation: dense band, lighter band, then thinning hatch lines
-  const h = b.h;
-  s += pathEl(rectD(b.x - 2, b.y - 2, b.w + 4, h * 0.2 + 2), { fill: night ? t("black") : t("dense_dots") });
-  s += pathEl(rectD(b.x - 2, b.y + h * 0.2, b.w + 4, h * 0.2), { fill: night ? t("dense_dots") : t("dots") });
-  let hatch = "";
-  for (let i = 0; i < 7; i += 1) {
-    const y = b.y + h * 0.4 + i * (2.4 + i * 0.9);
-    const x1 = b.x + b.w * (0.35 + st.rand() * 0.6);
-    hatch += `M${n(b.x - 2)} ${n(y)}L${n(x1)} ${n(y)}`;
-  }
-  s += pathEl(hatch, { stroke: night ? PAPER : st.pal.ink, w: 0.8, opacity: 0.7 });
-  // a soft hint of the place
-  const soft = { stroke: night ? "#bdbdbd" : "#8c8c8c", w: st.lw * 0.7 };
-  if (INTERIORS.has(st.env)) {
-    const x = b.x + b.w * (st.rand() < 0.5 ? 0.16 : 0.84);
-    s += pathEl(`M${n(x)} ${n(b.y + h * 0.4)}V${n(b.y + h * 0.8)}M${n(b.x - 2)} ${n(b.y + h * 0.8)}H${n(b.x + b.w + 2)}`, soft);
-  } else if (URBAN.has(st.env)) {
-    // one tall window cropped by the panel edge: frame, panes, muntins
-    const ww = b.w * 0.2;
-    const x0 = b.x + b.w * 0.86;
-    const y0 = b.y + h * 0.3;
-    const wh = h * 0.5;
-    let panes = rectD(x0, y0, ww, wh);
-    let mullions = `M${n(x0 + ww / 2)} ${n(y0)}V${n(y0 + wh)}M${n(x0)} ${n(y0 + wh * 0.45)}H${n(x0 + ww)}`;
-    mullions += `M${n(x0 - ww * 0.12)} ${n(y0 + wh + 4)}H${n(x0 + ww * 1.1)}`;
-    s += pathEl(panes, { fill: night ? PAPER : t("light"), stroke: soft.stroke, w: soft.w * 1.4 });
-    s += pathEl(mullions, soft);
-    panes = "";
-  } else if (WATERY.has(st.env)) {
-    let d = "";
-    for (let i = 0; i < 6; i += 1) {
-      const y = b.y + h * (0.66 + i * 0.05);
-      const x = b.x + b.w * st.rand() * 0.7;
-      d += `M${n(x)} ${n(y)}h${n(b.w * (0.12 + st.rand() * 0.2))}`;
+  const pick = hashString(`${st.seed}|${st.env}|${st.time}|xc`) % 3;
+  let s = boxRect(st, night ? toneFill("dark", st.p) : PAPER);
+  if (pick === 1) {
+    // flat tone field with a paper core, stepping lighter toward the centre
+    s = boxRect(st, night ? INK : toneFill("light", st.p));
+    const cx = b.x + b.w / 2;
+    const cy = b.y + b.h * 0.48;
+    for (const [k, o] of [
+      [0.62, 0.35],
+      [0.48, 0.6],
+    ] as const) {
+      const rx = b.w * k;
+      const ry = b.h * k;
+      s += pathEl(`M${n(cx - rx)} ${n(cy)}a${n(rx)} ${n(ry)} 0 1 0 ${n(rx * 2)} 0a${n(rx)} ${n(ry)} 0 1 0 ${n(-rx * 2)} 0Z`, { fill: night ? toneFill("dark", st.p) : PAPER, opacity: o });
     }
-    s += pathEl(d, soft);
-  } else if (st.env === "sky") {
-    s += pathEl(cloudD(b.x + b.w * 0.7, b.y + h * 0.62, b.w * 0.45, h * 0.2, st.rand), { fill: night ? t("dark") : PAPER, stroke: soft.stroke, w: soft.w });
-  } else if (st.env !== "void") {
-    // an out-of-focus leaf mass rising from a lower corner
-    const left = st.rand() < 0.5;
-    const cx = left ? b.x + b.w * 0.08 : b.x + b.w * 0.92;
-    s += pathEl(scallop(cx, b.y + h * 0.92, b.w * 0.26, h * 0.34, 11, st.rand), { fill: night ? t("dark") : t("light"), stroke: soft.stroke, w: soft.w });
-    s += pathEl(scallop(cx + (left ? 1 : -1) * b.w * 0.2, b.y + h * 1.02, b.w * 0.16, h * 0.2, 8, st.rand), { fill: night ? t("dark") : t("light"), stroke: soft.stroke, w: soft.w });
+  } else if (pick === 2) {
+    // focus-line field: thin wedges from the edges, a wide clear centre
+    const cx = b.x + b.w / 2;
+    const cy = b.y + b.h * 0.48;
+    const rx = b.w * 0.42;
+    const ry = b.h * 0.42;
+    const r = seeded(st.seed, st.env, "xc-lines");
+    const count = Math.round((b.w + b.h) / 9);
+    let d = "";
+    for (let i = 0; i < count; i += 1) {
+      const a = (i / count) * Math.PI * 2 + (r() - 0.5) * 0.08;
+      const reach = Math.hypot(b.w, b.h);
+      const ox = cx + Math.cos(a) * reach;
+      const oy = cy + Math.sin(a) * reach;
+      const k = 1 + r() * 0.35;
+      const tx = cx + Math.cos(a) * rx * k;
+      const ty = cy + Math.sin(a) * ry * k;
+      const w = (0.6 + r() * 1.6) * st.lw * 1.4;
+      const nx = -Math.sin(a) * w;
+      const ny = Math.cos(a) * w;
+      d += `M${n(ox + nx)} ${n(oy + ny)}L${n(tx)} ${n(ty)}L${n(ox - nx)} ${n(oy - ny)}Z`;
+    }
+    s += pathEl(d, { fill: night ? PAPER : "#6e6e6e" });
+  } else {
+    // plain paper with a few soft hatch strokes along one edge
+    const top = hashString(`${st.seed}|edge`) % 2 === 0;
+    let hatch = "";
+    for (let i = 0; i < 6; i += 1) {
+      const y = top ? b.y + 4 + i * (3 + i * 1.2) : b.y + b.h - 4 - i * (3 + i * 1.2);
+      const x1 = b.x + b.w * (0.3 + st.rand() * 0.5);
+      hatch += `M${n(b.x - 2)} ${n(y)}L${n(x1)} ${n(y)}`;
+    }
+    s += pathEl(hatch, { stroke: night ? "#bdbdbd" : "#8c8c8c", w: 0.8 });
   }
   add(st, LAYER.sky, 0, s);
 }
+
+/** Fraction of the panel that pattern tone may cover, by shot (craft rule: at most ~35%). */
+export const PATTERN_BUDGET: Record<Shot, number> = {
+  establishing: 0.35,
+  wide: 0.35,
+  full: 0.3,
+  medium: 0.2,
+  close: 0,
+  extreme_close: 0,
+  insert: 0.15,
+};
 
 export const environments: EnvironmentModule = {
   draw(request: EnvironmentRequest, ctx: DrawContext): EnvironmentDrawing {
@@ -247,7 +254,7 @@ export const environments: EnvironmentModule = {
       extremeField(st);
       if (st.weather !== "clear") drawWeather(st);
       const gy = groundYFor(st, request);
-      return withAnchors({ svg: compose(st), horizonY: st.cam.horizonY, groundY: Math.min(request.box.y + request.box.h * 0.985, Math.max(request.box.y + request.box.h * 0.55, gy)) }, st);
+      return withAnchors({ svg: finish(st, request), horizonY: st.cam.horizonY, groundY: Math.min(request.box.y + request.box.h * 0.985, Math.max(request.box.y + request.box.h * 0.55, gy)) }, st);
     }
     if (INTERIORS.has(request.environment)) add(st, LAYER.sky, 0, boxRect(st, st.pal.night ? toneFill("black", st.p) : PAPER));
     else if (!skyLess && request.environment !== "sky") drawSky(st);
@@ -260,11 +267,21 @@ export const environments: EnvironmentModule = {
       drawWeather(st);
       if (st.lod === 0) closeFinish(st);
     }
-    const svg = compose(st);
+    const svg = finish(st, request);
     const groundY = Math.min(request.box.y + request.box.h * 0.985, Math.max(request.box.y + request.box.h * 0.55, groundYFor(st, request)));
     return withAnchors({ svg, horizonY: st.cam.horizonY, groundY }, st);
   },
 };
+
+/**
+ * Serialise the stage: pattern tone limited to the shot's budget (the largest
+ * patterned areas fall back to flat greys), geometry wholly outside the panel
+ * culled, path data compacted (0.1-unit grid in page space).
+ */
+function finish(st: Stage, request: EnvironmentRequest): string {
+  const svg = compose(st, PATTERN_BUDGET[request.shot] ?? 0.35);
+  return compactSvg(cullOutside(svg, st.box, 24), 1);
+}
 
 function groundYFor(st: Stage, request: EnvironmentRequest): number {
   const shot = SHOT_CFG[request.shot];

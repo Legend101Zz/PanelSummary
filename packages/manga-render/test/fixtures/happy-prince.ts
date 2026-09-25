@@ -3,7 +3,10 @@
  * A small BookUnderstanding, AdaptationPlan and six MangaPageSpecs that
  * exercise every shot, several templates, one authored slanted tree,
  * two-speaker dialogue, off-panel speech, every text kind and every
- * fidelity value.
+ * fidelity value, plus staging: the statue on its column (automatic), the
+ * swallow at the statue's feet and on its shoulder (`on`), the sick boy in
+ * bed, the seamstress seated, name-tag captions (`about`) and distinct
+ * ruby/sapphire tones.
  */
 import type {
   AdaptationPlan,
@@ -229,6 +232,7 @@ export const PAGES: MangaPageSpec[] = [
         angle: "high",
         location: "square",
         time: "day",
+        figures: [fig({ character: "prince", pose: "stand", expression: "gentle", facing: "front", slot: "center" })],
         text: [{ kind: "narration", text: "High above the city, on a tall column, stood the statue of the Happy Prince.", fidelity: "quote", source: src("u01", 1) }],
         source: [src("u01", 1)],
       }),
@@ -253,6 +257,7 @@ export const PAGES: MangaPageSpec[] = [
         time: "day",
         figures: [fig({ character: "mayor", pose: "point", expression: "smug", facing: "right", slot: "center_left" })],
         text: [
+          { kind: "caption", about: "mayor", text: "The Mayor", fidelity: "paraphrase", source: src("u02", 1) },
           say("mayor", "He is as beautiful as a weathercock...", "dramatized", src("u02", 1)),
           say("mayor", "...only not quite so useful.", "dramatized", src("u02", 1)),
         ],
@@ -363,7 +368,7 @@ export const PAGES: MangaPageSpec[] = [
         time: "night",
         figures: [
           fig({ character: "prince", pose: "stand", expression: "sad", facing: "front", slot: "center" }),
-          fig({ character: "swallow", pose: "perch", expression: "happy", facing: "left", slot: "center_right", depth: "fore" }),
+          fig({ character: "swallow", pose: "perch", expression: "happy", facing: "left", slot: "center_right", on: { target: "prince", part: "feet" } }),
         ],
         text: [{ kind: "thought", speaker: "swallow", text: "I have a golden bedroom.", fidelity: "quote", source: src("u05", 3) }],
         source: [src("u05", 3)],
@@ -434,7 +439,10 @@ export const PAGES: MangaPageSpec[] = [
           fig({ character: "boy", pose: "lie", expression: "tired", facing: "right", slot: "left" }),
           fig({ character: "seamstress", pose: "sit", expression: "tired", facing: "left", slot: "center_right" }),
         ],
-        text: [say("prince", "He is asking for oranges, but she has only river water.", "paraphrase", src("u07", 4))],
+        text: [
+          { kind: "caption", about: "seamstress", text: "The seamstress", fidelity: "paraphrase", source: src("u07", 4) },
+          say("prince", "He is asking for oranges, but she has only river water.", "paraphrase", src("u07", 4)),
+        ],
         source: [src("u07", 4)],
       }),
       panel({
@@ -456,7 +464,7 @@ export const PAGES: MangaPageSpec[] = [
         angle: "eye",
         location: "square",
         time: "night",
-        props: [{ prop: "gem", slot: "center" }],
+        props: [{ prop: "gem", slot: "center", tone: "black" }],
         fx: ["sparkle"],
         text: [say("prince", "Swallow, little Swallow, will you not bring her the ruby out of my sword-hilt?", "quote", src("u08", 4))],
         source: [src("u08", 4)],
@@ -479,7 +487,7 @@ export const PAGES: MangaPageSpec[] = [
         angle: "birds_eye",
         location: "night_sky",
         time: "night",
-        figures: [fig({ character: "swallow", pose: "fly", expression: "determined", facing: "right", slot: "center_left", holding: "gem" })],
+        figures: [fig({ character: "swallow", pose: "fly", expression: "determined", facing: "right", slot: "center_left", holding: "gem", holding_tone: "black" })],
         fx: ["speed_lines"],
         text: [
           { kind: "caption", text: "Over the sleeping city", fidelity: "paraphrase", source: src("u09", 5) },
@@ -494,7 +502,7 @@ export const PAGES: MangaPageSpec[] = [
         angle: "high",
         location: "poor_room",
         time: "night",
-        props: [{ prop: "gem", slot: "center" }, { prop: "needle", slot: "right" }],
+        props: [{ prop: "gem", slot: "center", tone: "black" }, { prop: "needle", slot: "right" }],
         text: [{ kind: "caption", text: "He laid the great ruby on the table beside her thimble.", fidelity: "paraphrase", source: src("u09", 5) }],
         source: [src("u09", 5)],
       }),
@@ -506,7 +514,7 @@ export const PAGES: MangaPageSpec[] = [
         location: "poor_room",
         time: "night",
         figures: [
-          fig({ character: "boy", pose: "sit", expression: "gentle", facing: "right", slot: "center_left" }),
+          fig({ character: "boy", pose: "lie", expression: "gentle", facing: "right", slot: "center_left" }),
           fig({ character: "swallow", pose: "fly", expression: "gentle", facing: "left", slot: "right" }),
         ],
         fx: ["soft_glow"],
@@ -521,7 +529,7 @@ export const PAGES: MangaPageSpec[] = [
         location: "square",
         time: "night",
         figures: [
-          fig({ character: "swallow", pose: "perch", expression: "thinking", facing: "right", slot: "left" }),
+          fig({ character: "swallow", pose: "perch", expression: "thinking", facing: "right", slot: "left", on: { target: "prince", part: "shoulder" } }),
           fig({ character: "prince", pose: "stand", expression: "gentle", facing: "left", slot: "center_right" }),
         ],
         text: [
@@ -605,7 +613,7 @@ export const PAGES: MangaPageSpec[] = [
         angle: "high",
         location: "garret",
         time: "night",
-        props: [{ prop: "gem", slot: "center" }],
+        props: [{ prop: "gem", slot: "center", tone: "mid" }],
         fx: ["sparkle"],
         text: [
           { kind: "caption", text: "One sapphire eye", fidelity: "paraphrase", source: src("u11", 6) },

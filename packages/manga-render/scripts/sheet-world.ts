@@ -8,11 +8,17 @@ import path from "node:path";
 import { ENVIRONMENTS, FX, PROPS, type Angle, type Box, type EnvFeature, type Environment, type FxId, type Shot } from "../src/contracts.js";
 import type { DrawContext, EnvironmentRequest } from "../src/internal.js";
 import { environments } from "../src/env/index.js";
-import { props } from "../src/props/index.js";
+import { props, SEAT_KINDS } from "../src/props/index.js";
 import { fx } from "../src/fx/index.js";
 import { INK, STROKE, toneDefs } from "../src/style.js";
 import { esc, n } from "../src/svg.js";
 import { seeded } from "../src/prng.js";
+import { rig, seatContact } from "../src/rig/index.js";
+import { adoptFragment } from "../src/scene/ids.js";
+import type { CharacterLook } from "../src/contracts.js";
+
+const FX_LOOK_A: CharacterLook = { kind: "human", age: "adult", build: "average", height: "average", frame: "masc", hair: "messy", hair_tone: "dark", facial_hair: "none", outfit: "long_coat", outfit_tone: "dark", headwear: "none", accessories: [], skin: "light", material: "flesh" };
+const FX_LOOK_B: CharacterLook = { kind: "bird", species: "swallow", tone: "dark" };
 import { svgToPng } from "../src/raster.js";
 
 const OUT =
@@ -47,6 +53,7 @@ function sheet(name: string, width: number, height: number, cells: Cell[], pngWi
   console.log(`${file}  (${(svg.length / 1024).toFixed(0)} KB svg)`);
 }
 
+let envCells = 0;
 function envBody(box: Box, environment: Environment, o: Partial<EnvironmentRequest> = {}): string {
   const req: EnvironmentRequest = {
     environment,
@@ -59,7 +66,10 @@ function envBody(box: Box, environment: Environment, o: Partial<EnvironmentReque
     lineWidth: STROKE.environment,
     seed: o.seed ?? 7,
   };
-  const d = environments.draw(req, ctx(environment));
+  const raw = environments.draw(req, ctx(environment));
+  // scope ids per cell (shared window definitions restart per drawing), like the composer does
+  const scoped = adoptFragment(raw.svg, P, `e${(envCells += 1)}`);
+  const d = { ...raw, svg: `<defs>${scoped.defs}</defs>${scoped.body}` };
   const hz = d.horizonY > box.y && d.horizonY < box.y + box.h ? `<path d="M${n(box.x)} ${n(d.horizonY)}h8M${n(box.x + box.w - 8)} ${n(d.horizonY)}h8" stroke="#e33" stroke-width="2"/>` : "";
   const gy = `<path d="M${n(box.x)} ${n(d.groundY)}h14" stroke="#36c" stroke-width="3"/>`;
   return d.svg + (process.env.MARKS ? hz + gy : "");
@@ -211,19 +221,24 @@ function fxSheet(): void {
       { x: box.x + box.w, y: box.y + box.h },
       { x: box.x, y: box.y + box.h },
     ];
-    const heads = [
-      { point: { x: box.x + box.w * 0.3, y: box.y + box.h * 0.42 }, radius: 34 },
-      { point: { x: box.x + box.w * 0.72, y: box.y + box.h * 0.5 }, radius: 28 },
-    ];
+    // a real background (a toned night street for the dark fx) and two real figures
+    const night = id === "dark_mood" || id === "rain";
+    const bgEnv = envBody(box, "street", { shot: "full", time: night ? "night" : "day" });
+    const figs: string[] = [];
+    const heads: { point: { x: number; y: number }; radius: number }[] = [];
+    [0.3, 0.72].forEach((fx0, k) => {
+      const look = k === 0 ? FX_LOOK_A : FX_LOOK_B;
+      const probe = rig.draw({ look, pose: "stand", expression: "neutral", facing: k === 0 ? "right" : "front", lineWidth: 1, seed: 3 + k }, ctx(`fx${k}`));
+      const scale = (box.h * 0.8) / -probe.anchors.top;
+      const ox = box.x + box.w * fx0;
+      const oy = box.y + box.h * 0.97;
+      const d = rig.draw({ look, pose: "stand", expression: "neutral", facing: k === 0 ? "right" : "front", lineWidth: STROKE.figureOutline / scale, seed: 3 + k }, ctx(`fx${k}`));
+      const f = adoptFragment(d.svg, P, `fx${i}f${k}`);
+      figs.push(`<defs>${f.defs}</defs><g transform="translate(${n(ox)} ${n(oy)}) scale(${n(scale)})">${f.body}</g>`);
+      heads.push({ point: { x: ox + d.anchors.head.x * scale, y: oy + d.anchors.head.y * scale }, radius: d.anchors.headRadius * scale });
+    });
     const r = fx.draw({ fx: id, box, polygon, focus: heads[0].point, heads, lineWidth: STROKE.fx, seed: 11 }, ctx(id));
-    const bg = `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="#9a9a9a"/>`;
-    const figs = heads
-      .map(
-        (h) =>
-          `<ellipse cx="${n(h.point.x)}" cy="${n(h.point.y + h.radius * 2.6)}" rx="${n(h.radius * 1.1)}" ry="${n(h.radius * 1.7)}" fill="#fff" stroke="${INK}" stroke-width="2.6"/><circle cx="${n(h.point.x)}" cy="${n(h.point.y)}" r="${n(h.radius)}" fill="#fff" stroke="${INK}" stroke-width="2.6"/>`,
-      )
-      .join("");
-    return { box, label: id, body: bg + r.under + figs + r.over };
+    return { box, label: id, body: bgEnv + r.under + figs.join("") + r.over };
   });
   sheet("world-fx", g.width, g.height, cells);
 }
@@ -263,6 +278,101 @@ function phoneSheet(): void {
   );
 }
 
+const PRINCE: CharacterLook = { kind: "human", age: "adult", build: "average", height: "tall", frame: "masc", hair: "bald", hair_tone: "gold", facial_hair: "none", outfit: "royal", outfit_tone: "gold", headwear: "crown", accessories: ["sword_belt"], skin: "light", material: "gold" };
+const BOY: CharacterLook = { kind: "human", age: "child", build: "slim", height: "short", frame: "masc", hair: "messy", hair_tone: "mid", facial_hair: "none", outfit: "tunic", outfit_tone: "light", headwear: "none", accessories: [], skin: "light", material: "flesh" };
+const SEAMSTRESS: CharacterLook = { kind: "human", age: "adult", build: "slim", height: "short", frame: "fem", hair: "long_straight", hair_tone: "dark", facial_hair: "none", outfit: "dress", outfit_tone: "dark", headwear: "none", accessories: [], skin: "light", material: "flesh" };
+
+/** Place a rig drawing so figure point (fx, fy) lands on page point p at the given scale. */
+function placeFigure(look: CharacterLook, pose: "stand" | "lie" | "sit", facing: "right" | "left" | "front", scale: number, at: { x: number; y: number }, key: string, align: "feet" | "centre" = "feet"): string {
+  const d = rig.draw({ look, pose, expression: "neutral", facing: facing === "left" ? "right" : facing, lineWidth: STROKE.figureOutline / scale, seed: 5 }, ctx(key));
+  const f = adoptFragment(d.svg, P, key);
+  const a = d.anchors;
+  const cx = align === "centre" ? (a.left + a.right) / 2 : 0;
+  const sx = facing === "left" ? -scale : scale;
+  return `<defs>${f.defs}</defs><g transform="translate(${n(at.x - cx * sx)} ${n(at.y)}) scale(${n(sx)} ${n(scale)})">${f.body}</g>`;
+}
+
+/**
+ * Staging anchors in context: the statue stands on statue_top (scaled from
+ * statue_crown), the boy lies on the bed (scaled to bed_head..bed_foot), the
+ * seamstress sits on the stool anchor. Red marks show every anchor.
+ */
+function stagingSheet(): void {
+  const list: { env: Environment; o: Partial<EnvironmentRequest>; label: string }[] = [
+    { env: "city_square", o: { shot: "establishing", angle: "eye", features: ["statue_column", "lamp_post"] }, label: "city establishing eye" },
+    { env: "city_square", o: { shot: "establishing", angle: "low", features: ["statue_column", "lamp_post"] }, label: "city establishing low" },
+    { env: "city_square", o: { shot: "wide", angle: "eye", features: ["statue_column", "lamp_post"], time: "night" }, label: "city wide night" },
+    { env: "city_square", o: { shot: "wide", angle: "high", features: ["statue_column"] }, label: "city wide high" },
+    { env: "city_square", o: { shot: "full", angle: "eye", features: ["statue_column"] }, label: "city full" },
+    { env: "city_square", o: { shot: "full", angle: "low", features: ["statue_column"] }, label: "city full low" },
+    { env: "room_poor", o: { shot: "wide", features: ["window", "table", "bed"] }, label: "room_poor wide" },
+    { env: "room_poor", o: { shot: "full", features: ["window", "table", "bed"], time: "night" }, label: "room_poor full night" },
+    { env: "room_poor", o: { shot: "medium", features: ["window", "table", "bed"] }, label: "room_poor medium" },
+    { env: "garret", o: { shot: "full", features: ["window", "table", "bed"] }, label: "garret full" },
+    { env: "room_rich", o: { shot: "wide", features: ["bed", "table"] }, label: "room_rich wide + bed" },
+    { env: "meadow", o: { shot: "wide", features: ["bed", "table"] }, label: "meadow + bed/table" },
+  ];
+  const g = grid(3, 600, 400, list.length);
+  const cells = list.map((e, i) => {
+    const box = g.boxes[i];
+    const req: EnvironmentRequest = { environment: e.env, features: e.o.features ?? [], box, shot: e.o.shot ?? "wide", angle: e.o.angle ?? "eye", time: e.o.time ?? "day", weather: "clear", lineWidth: STROKE.environment, seed: 7 };
+    const d0 = environments.draw(req, ctx(`st${i}`));
+    const sc = adoptFragment(d0.svg, P, `st${i}`);
+    const d = { ...d0, svg: `<defs>${sc.defs}</defs>${sc.body}` };
+    const an = d.anchors ?? {};
+    let figs = "";
+    if (an.statue_top && an.statue_crown) {
+      const probe = rig.draw({ look: PRINCE, pose: "stand", expression: "neutral", facing: "front", lineWidth: 1, seed: 5 }, ctx("probe"));
+      const scale = (an.statue_top.y - an.statue_crown.y) / -probe.anchors.top;
+      figs += placeFigure(PRINCE, "stand", "front", scale, an.statue_top, `st${i}p`);
+    }
+    if (an.bed && an.bed_head && an.bed_foot) {
+      const probe = rig.draw({ look: BOY, pose: "lie", expression: "tired", facing: "right", lineWidth: 1, seed: 5 }, ctx("probe"));
+      const len = Math.abs(an.bed_foot.x - an.bed_head.x);
+      const scale = (len * 0.95) / (probe.anchors.right - probe.anchors.left);
+      // lie draws the head on the right: face left when the pillow is on the left
+      figs += placeFigure(BOY, "lie", an.bed_head.x < an.bed_foot.x ? "left" : "right", scale, an.bed, `st${i}b`, "centre");
+    }
+    if (an.stool) {
+      const seat = props.seat("stool", 1, ctx("seat"));
+      const probe = rig.draw({ look: SEAMSTRESS, pose: "sit", expression: "neutral", facing: "right", lineWidth: 1, seed: 5 }, ctx("probe"));
+      const scale = ((d.groundY - an.stool.y) / -seat.seatY) * 0.95;
+      const feet = { x: an.stool.x, y: an.stool.y + -seat.seatY * scale };
+      figs += placeFigure(SEAMSTRESS, "sit", "left", scale, feet, `st${i}s`);
+      void probe;
+    }
+    let marks = "";
+    for (const [k, p] of Object.entries(an)) {
+      marks += `<path d="M${n(p.x - 6)} ${n(p.y)}h12M${n(p.x)} ${n(p.y - 6)}v12" stroke="#e22" stroke-width="2"/><text x="${n(p.x + 5)}" y="${n(p.y - 5)}" font-size="11" fill="#e22" font-family="PS Comic">${esc(k)}</text>`;
+    }
+    return { box, label: e.label, body: d.svg + figs + marks };
+  });
+  sheet("world-staging", g.width, g.height, cells);
+}
+
+/** Every seat kind with a sitting adult and child aligned on seatY. */
+function seatSheet(): void {
+  const kinds = SEAT_KINDS;
+  const g = grid(4, 260, 300, kinds.length * 2, 24, 12);
+  const cells: Cell[] = [];
+  kinds.forEach((k, i) => {
+    for (const [j, look] of [SEAMSTRESS, BOY].entries()) {
+      const box = g.boxes[i * 2 + j];
+      const scale = 2.6;
+      const seat = props.seat(k, STROKE.figureOutline / scale, ctx(k));
+      const gy = box.y + box.h - 12;
+      const cx = box.x + box.w / 2;
+      const kScale = look === BOY ? seatContact(look, "sit", "right", 5).y / seat.seatY : 1;
+      const s2 = scale * kScale;
+      const seatSvg = `<g transform="translate(${n(cx)} ${n(gy)}) scale(${n(s2)})">${props.seat(k, STROKE.figureOutline / s2, ctx(k)).svg}</g>`;
+      const contact = seatContact(look, "sit", "right", 5);
+      const fig = placeFigure(look, "sit", "right", scale, { x: cx - contact.x * scale, y: gy }, `seat${i}${j}`);
+      cells.push({ box, label: `${k} ${look === BOY ? "child" : "adult"}`, body: `<rect x="${box.x}" y="${box.y}" width="${box.w}" height="${box.h}" fill="#fff"/>${seatSvg}${fig}` });
+    }
+  });
+  sheet("world-seats", g.width, g.height, cells);
+}
+
 const which = process.argv[2] ?? "all";
-const jobs: Record<string, () => void> = { shots: shotSheet, envs: envSheets, angles: angleSheets, time: timeSheet, features: featureSheet, props: propSheet, fx: fxSheet, phone: phoneSheet };
+const jobs: Record<string, () => void> = { staging: stagingSheet, seats: seatSheet, shots: shotSheet, envs: envSheets, angles: angleSheets, time: timeSheet, features: featureSheet, props: propSheet, fx: fxSheet, phone: phoneSheet };
 for (const [k, fn] of Object.entries(jobs)) if (which === "all" || which === k) fn();

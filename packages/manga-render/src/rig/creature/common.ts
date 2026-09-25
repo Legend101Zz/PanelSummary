@@ -88,12 +88,20 @@ export interface Pen {
   /** Fine texture weight. */
   fw: number;
   prefix: string;
+  /** Level of detail (FigureRequest.detail). */
+  detail?: "full" | "reduced" | "silhouette";
+  /** Paper knockout rim width under the outer outline (figure units); 0 = none. */
+  rim?: number;
 }
 
-export function makePen(lineWidth: number, prefix: string): Pen {
+/** Page-space width of the paper knockout rim (matches the human rig). */
+export const RIM_PAGE = 3.6;
+
+export function makePen(lineWidth: number, prefix: string, req?: { detail?: "full" | "reduced" | "silhouette"; rim?: boolean }): Pen {
   const lw = Math.max(lineWidth, 1e-4);
   const ratio = STROKE.figureDetail / STROKE.figureOutline;
-  return { lw, dw: lw * ratio, fw: lw * ratio * 0.62, prefix };
+  const rim = req?.rim === false ? 0 : (RIM_PAGE * lw) / STROKE.figureOutline;
+  return { lw, dw: lw * ratio, fw: lw * ratio * 0.62, prefix, detail: req?.detail ?? "full", rim };
 }
 
 export function fillOf(tone: Tone, pen: Pen): string {
@@ -394,6 +402,8 @@ export function sparkD(c: Point, r: number, waist = 0.22): string {
 interface Layer {
   back: string[];
   body: string[];
+  /** Back entries with their own stroke width (rimmed separately). */
+  wide: { d: string; w: number }[];
 }
 
 export interface ShapeOpts {
@@ -415,7 +425,7 @@ export interface LineOpts {
 }
 
 export class Sketch {
-  private layers: Layer[] = [{ back: [], body: [] }];
+  private layers: Layer[] = [{ back: [], body: [], wide: [] }];
   private ds: string[] = [];
   private extra: Point[] = [];
   constructor(readonly pen: Pen) {}
@@ -426,7 +436,7 @@ export class Sketch {
 
   /** Start a new silhouette layer on top of everything drawn so far. */
   layer(): this {
-    if (this.cur.back.length || this.cur.body.length) this.layers.push({ back: [], body: [] });
+    if (this.cur.back.length || this.cur.body.length) this.layers.push({ back: [], body: [], wide: [] });
     return this;
   }
 
@@ -434,8 +444,15 @@ export class Sketch {
     if (!d) return this;
     this.ds.push(d);
     if (opts.outline !== false) {
-      const w = this.pen.lw * 2 * (opts.weight ?? 1);
+      const w = this.pen.lw * 2 * (opts.weight ?? 1) * this.outlineK;
       this.cur.back.push(`<path d="${d}"${opts.weight !== undefined ? ` stroke-width="${n(w)}"` : ""}/>`);
+      if (opts.weight !== undefined) this.cur.wide.push({ d, w });
+    }
+    // silhouette LOD: parts merge into one shape (no inner edges; the body
+    // groups carry stroke="none" then, see svg())
+    if (this.pen.detail === "silhouette") {
+      this.cur.body.push(`<path d="${d}" fill="${fill}"/>`);
+      return this;
     }
     const edge = opts.edge === undefined ? this.pen.dw : opts.edge;
     if (edge === false) this.cur.body.push(`<path d="${d}" fill="${fill}" stroke="none"/>`);
@@ -447,10 +464,15 @@ export class Sketch {
   line(d: string, width: number, opts: LineOpts = {}): this {
     if (!d) return this;
     this.ds.push(d);
+    // level of detail: reduced drops fine texture, silhouette drops every inner line
+    if (!opts.outline && this.pen.detail === "silhouette") return this;
+    if (!opts.outline && this.pen.detail === "reduced" && width < this.pen.dw * 0.9) return this;
     const color = opts.color ?? INK;
     const cap = opts.cap === "butt" ? ` stroke-linecap="butt"` : "";
     if (opts.outline) {
-      this.cur.back.push(`<path d="${d}" fill="none" stroke-width="${n(width + this.pen.lw * 2)}"/>`);
+      const w = width + this.pen.lw * 2 * this.outlineK;
+      this.cur.back.push(`<path d="${d}" fill="none" stroke-width="${n(w)}"/>`);
+      this.cur.wide.push({ d, w });
     }
     if (opts.halo) {
       this.cur.body.push(`<path d="${d}" fill="none" stroke="${PAPER}" stroke-width="${n(width + this.pen.dw * 1.6)}"${cap}/>`);
@@ -482,19 +504,53 @@ export class Sketch {
     return this;
   }
 
+  /** Outline weight factor: the silhouette LOD carries the figure with a heavier line. */
+  private get outlineK(): number {
+    return this.pen.detail === "silhouette" ? 1.4 : 1;
+  }
+
+  /**
+   * Serialise. With a rim (the default), every layer's outline group is
+   * defined once and referenced twice: first all layers in paper at the
+   * outline width plus the rim (a knockout halo under the whole figure), then
+   * per layer in ink under that layer's fills.
+   */
   svg(): string {
-    const lw = n(this.pen.lw * 2);
+    const lwN = this.pen.lw * 2 * this.outlineK;
+    const lw = n(lwN);
     const dw = n(this.pen.dw);
+    const bodyAttrs = this.pen.detail === "silhouette" ? `stroke="none"` : `stroke="${INK}" stroke-width="${dw}"`;
+    const rim = this.pen.rim ?? 0;
     let out = "";
-    for (const l of this.layers) {
+    if (rim <= 0) {
+      for (const l of this.layers) {
+        if (l.back.length) {
+          out += `<g fill="${INK}" stroke="${INK}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round">${l.back.join("")}</g>`;
+        }
+        if (l.body.length) {
+          out += `<g ${bodyAttrs} stroke-linejoin="round" stroke-linecap="round">${l.body.join("")}</g>`;
+        }
+      }
+      return out;
+    }
+    const uid = hashString(this.layers.map((l) => l.back.join("")).join("|")).toString(36);
+    let defs = "";
+    let under = "";
+    let wide = "";
+    this.layers.forEach((l, i) => {
       if (l.back.length) {
-        out += `<g fill="${INK}" stroke="${INK}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round">${l.back.join("")}</g>`;
+        const id = `${this.pen.prefix}bk${uid}-${i}`;
+        defs += `<g id="${id}">${l.back.join("")}</g>`;
+        under += `<use href="#${id}" stroke-width="${n(lwN + rim * 2)}"/>`;
+        for (const w of l.wide) wide += `<path d="${w.d}" fill="none" stroke-width="${n(w.w + rim * 2)}"/>`;
+        out += `<use href="#${id}" fill="${INK}" stroke="${INK}" stroke-width="${lw}"/>`;
       }
       if (l.body.length) {
-        out += `<g stroke="${INK}" stroke-width="${dw}" stroke-linejoin="round" stroke-linecap="round">${l.body.join("")}</g>`;
+        out += `<g ${bodyAttrs}>${l.body.join("")}</g>`;
       }
-    }
-    return out;
+    });
+    const rimG = under ? `<g fill="${PAPER}" stroke="${PAPER}">${under}${wide}</g>` : "";
+    return `${defs ? `<defs>${defs}</defs>` : ""}<g stroke-linejoin="round" stroke-linecap="round">${rimG}${out}</g>`;
   }
 
   bounds(): { minX: number; minY: number; maxX: number; maxY: number } {

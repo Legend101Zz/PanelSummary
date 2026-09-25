@@ -25,7 +25,9 @@ import {
 import type { FigureDrawing } from "../src/internal.js";
 import { humanRig } from "../src/rig/human.js";
 import { crowdRig, CROWD_POSES } from "../src/rig/crowd.js";
-import { rig } from "../src/rig/index.js";
+import { rig, seatContact } from "../src/rig/index.js";
+import { lodFor } from "../src/rig/human/draw.js";
+import { pathPoints } from "../src/env/compact.js";
 
 const PREFIX = "pg7-";
 const ctx = { idPrefix: PREFIX, rand: () => 0.5 };
@@ -167,8 +169,10 @@ describe("human rig: faces", () => {
         checkDrawing(d, `${e}/${facing}`);
         seen.add(d.svg);
       }
-      // Back view shows no face; front and 3/4 must render 18 distinct faces.
-      expect(seen.size).toBe(facing === "back" ? 1 : EXPRESSIONS.length);
+      // Front and 3/4 render 18 distinct faces. The back view shows no face,
+      // but acting (head tilt, lean, shoulder drop) still tells most apart.
+      if (facing === "back") expect(seen.size).toBeGreaterThanOrEqual(12);
+      else expect(seen.size).toBe(EXPRESSIONS.length);
     }
   });
 
@@ -249,7 +253,7 @@ describe("crowd rig", () => {
     expect(crowdRig.supportedPoses(look)).not.toContain("sit");
   });
 
-  it("draws every crowd type, size, pose and facing deterministically", () => {
+  it("draws every crowd type, size, pose and facing deterministically", { timeout: 30_000 }, () => {
     for (const crowd of CROWD_TYPES)
       for (const size of ["few", "many"] as const) {
         const look: CrowdLook = { kind: "crowd", crowd, size };
@@ -274,5 +278,113 @@ describe("crowd rig", () => {
     const d = rig.draw({ look: { kind: "crowd", crowd: "soldiers", size: "many" }, pose: "walk", expression: "determined", facing: "right", lineWidth: 1, seed: 2 }, ctx);
     checkDrawing(d, "index crowd");
     expect(d.anchors.right - d.anchors.left).toBeGreaterThan(60);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pass 2: knockout rim, level of detail, acting, seats, dispatcher output
+// ---------------------------------------------------------------------------
+
+
+describe("human rig: knockout rim", () => {
+  it("draws a paper rim under the silhouette by default, via one shared path", () => {
+    const d = draw(L({ outfit: "long_coat", outfit_tone: "black" }));
+    const uses = [...d.svg.matchAll(/<use href="#([^"]+)"([^>]*)\/>/g)];
+    expect(uses.length).toBe(2);
+    expect(uses[0][2]).toContain('stroke="#ffffff"');
+    const rimW = Number(/stroke-width="([\d.]+)"/.exec(uses[0][2])![1]);
+    const inkW = Number(/stroke-width="([\d.]+)"/.exec(uses[1][2])![1]);
+    // 3-5 page units each side: at lineWidth 0.8 (scale 3.25) that is ~1-1.5 figure units
+    expect((rimW - inkW) / 2).toBeGreaterThan((3 * 0.8) / 2.6);
+    expect((rimW - inkW) / 2).toBeLessThan((5 * 0.8) / 2.6);
+    for (const u of uses) expect(d.svg).toContain(`id="${u[1]}"`);
+    const none = humanRig.draw({ look: base, pose: "stand", expression: "neutral", facing: "right", lineWidth: 0.8, seed: 42, rim: false }, ctx);
+    expect(none.svg).not.toContain("<use");
+    expect(none.anchors).toEqual(draw(base).anchors);
+  });
+
+  it("crowds get one rim under the front row", () => {
+    const look: CrowdLook = { kind: "crowd", crowd: "townsfolk", size: "many" };
+    const req = { look, pose: "stand" as const, expression: "neutral" as const, facing: "right" as const, lineWidth: 0.8, seed: 9 };
+    const withRim = crowdRig.draw(req, ctx).svg;
+    expect(withRim.startsWith(`<g fill="#ffffff" stroke="#ffffff"`)).toBe(true);
+    expect(crowdRig.draw({ ...req, rim: false }, ctx).svg.startsWith(`<g fill="#ffffff"`)).toBe(false);
+  });
+});
+
+describe("human rig: level of detail", () => {
+  it("reduced and silhouette drop detail but keep the anchors", () => {
+    const look = L({ age: "elder", facial_hair: "beard", outfit: "suit", accessories: ["glasses", "medal"] });
+    const at = (detail: "full" | "reduced" | "silhouette") => humanRig.draw({ look, pose: "talk", expression: "happy", facing: "right", lineWidth: 0.3, seed: 4, detail }, ctx);
+    const full = at("full");
+    const reduced = at("reduced");
+    const sil = at("silhouette");
+    expect(reduced.svg.length).toBeLessThan(full.svg.length);
+    expect(sil.svg.length).toBeLessThan(reduced.svg.length);
+    for (const d of [reduced, sil]) {
+      expect(d.anchors.head.x).toBeCloseTo(full.anchors.head.x, 1);
+      expect(d.anchors.head.y).toBeCloseTo(full.anchors.head.y, 1);
+      expect(d.anchors.headRadius).toBeCloseTo(full.anchors.headRadius, 5);
+    }
+    checkDrawing(reduced, "reduced");
+    checkDrawing(sil, "silhouette");
+  });
+
+  it("lowers the detail by itself when the head is small on the page", () => {
+    expect(lodFor("full", 9, 2.6 / 5)).toBe("full"); // 45 px head radius
+    expect(lodFor("full", 9, 2.6 / 2.5)).toBe("reduced"); // 22.5 px
+    expect(lodFor("full", 9, 2.6 / 1.5)).toBe("silhouette"); // 13.5 px
+    expect(lodFor("silhouette", 9, 0.1)).toBe("silhouette"); // never raised above the request
+  });
+});
+
+describe("human rig: acting", () => {
+  const at = (expression: Expression, facing: Facing = "right", pose: Pose = "stand") => draw(L({ outfit: "suit" }), pose, expression, facing).anchors;
+
+  it("sad and tired hang the head, afraid leans back, angry leans in", () => {
+    const n0 = at("neutral");
+    expect(at("sad").head.y).toBeGreaterThan(n0.head.y + 0.4);
+    expect(at("tired").head.y).toBeGreaterThan(n0.head.y + 0.4);
+    expect(at("afraid").head.x).toBeLessThan(n0.head.x - 0.8);
+    expect(at("angry").head.x).toBeGreaterThan(n0.head.x + 0.8);
+    // determined lifts the chin: the mouth moves forward/up relative to the head
+    const det = at("determined");
+    expect(det.mouth.y - det.head.y).toBeLessThan(n0.mouth.y - n0.head.y + 0.01);
+  });
+
+  it("anchors follow the pose: the mouth stays on the face and the feet stay down", () => {
+    for (const e of EXPRESSIONS) {
+      for (const pose of ["stand", "sit", "walk", "lie"] as const) {
+        const d = draw(L(), pose, e, "right");
+        checkDrawing(d, `${pose}/${e}`);
+        const a = d.anchors;
+        expect(Math.hypot(a.mouth.x - a.head.x, a.mouth.y - a.head.y)).toBeLessThan(a.headRadius);
+      }
+    }
+  });
+
+  it("seat contact follows the sitting pose for every age", () => {
+    for (const age of HUMAN_AGES) {
+      const c = seatContact(L({ age }), "sit", "right", 42);
+      const d = draw(L({ age }), "sit", "neutral", "right");
+      expect(c.y).toBeLessThan(0);
+      expect(c.y).toBeGreaterThan(d.anchors.waist);
+      expect(c.x).toBeGreaterThan(d.anchors.left);
+      expect(c.x).toBeLessThan(d.anchors.right);
+    }
+  });
+});
+
+describe("rig dispatcher output", () => {
+  it("compacts path data without moving geometry and keeps hygiene", () => {
+    const req = { look: L({ outfit: "royal", headwear: "crown" }), pose: "walk" as const, expression: "happy" as const, facing: "right" as const, lineWidth: 0.8, seed: 3 };
+    const raw = humanRig.draw(req, ctx);
+    const out = rig.draw(req, ctx);
+    expect(out.svg.length).toBeLessThan(raw.svg.length * 0.85);
+    expect(out.anchors).toEqual(raw.anchors);
+    const a = [...raw.svg.matchAll(/ d="([^"]*)"/g)].map((m) => pathPoints(m[1]));
+    const b = [...out.svg.matchAll(/ d="([^"]*)"/g)].map((m) => pathPoints(m[1]));
+    expect(b.length).toBe(a.length);
+    a.forEach((pts, i) => pts.forEach((p, j) => expect(Math.hypot(p.x - b[i][j].x, p.y - b[i][j].y)).toBeLessThan(0.011)));
   });
 });

@@ -8,7 +8,7 @@ import { PAPER, toneFill } from "../style.js";
 import { n, polyPath } from "../svg.js";
 import { between } from "../prng.js";
 import { project, projectPoly, scaleAt, toCam, type V3 } from "./camera.js";
-import { LAYER, add, pathEl, polyD, segD, visible, wAt, type Stage } from "./stage.js";
+import { LAYER, add, defineOnce, pathEl, polyD, segD, visible, wAt, type Stage } from "./stage.js";
 
 export type Orient = "front" | "left" | "right";
 
@@ -50,10 +50,12 @@ interface Batch {
   line: string[];
   thin: string[];
   deep: string[];
+  /** <use> references to shared window definitions. */
+  uses: string[];
 }
 
 function batch(): Batch {
-  return { fill: [], glass: [], glassLine: [], lit: [], line: [], thin: [], deep: [] };
+  return { fill: [], glass: [], glassLine: [], lit: [], line: [], thin: [], deep: [], uses: [] };
 }
 
 /** Screen height in px of a world-space vertical extent at p. */
@@ -69,6 +71,8 @@ export interface WindowGridOptions {
   winH: number;
   /** Local-y of the first floor's window sill. */
   firstSill: number;
+  /** Outline weight; enables shared window definitions on camera-parallel facades. */
+  lineW?: number;
   skipBay?: number;
   arched?: boolean;
   shutters?: boolean;
@@ -78,6 +82,12 @@ export interface WindowGridOptions {
 /** Windows on a planar vertical face given by a 2D→3D mapper. */
 export function windowGrid(st: Stage, map: (u: number, y: number) => V3, width: number, o: WindowGridOptions, out: Batch): void {
   const bayW = width / o.bays;
+  // A facade parallel to the image plane (level camera, constant depth) shows
+  // every window as an exact scaled copy: draw each variant once and <use> it.
+  const p0 = map(0, 0);
+  const p1 = map(width, 1);
+  const parallel = o.lineW !== undefined && Math.abs(st.cam.s) < 1e-9 && Math.abs(p0.z - p1.z) < 1e-9;
+  const shared: Record<"lit" | "dark", { id: string; x: number; y: number } | null> = { lit: null, dark: null };
   for (let f = 0; f < o.floors; f += 1) {
     for (let bIdx = 0; bIdx < o.bays; bIdx += 1) {
       if (f === 0 && bIdx === o.skipBay) continue;
@@ -90,42 +100,65 @@ export function windowGrid(st: Stage, map: (u: number, y: number) => V3, width: 
       const px = pxOf(st, c, o.winH);
       if (px < 3.2) continue;
       const lit = st.pal.night && st.rand() < (o.litChance ?? 0.55);
-      const glassTarget = lit ? out.lit : px >= 7 ? out.glassLine : out.glass;
-      const pts: V3[] = o.arched && px > 7 ? archPoints(map, u0, u1, y0, y1 - o.winW * 0.5, false) : [map(u0, y0), map(u1, y0), map(u1, y1), map(u0, y1)];
-      const d = polyD(st, pts);
-      if (!d) continue;
-      glassTarget.push(d);
-      if (lit && px >= 7) out.line.push(d);
-      if (px >= 16) {
-        // sill + lintel ledges
-        out.line.push(segD(st, map(u0 - 0.12, y0 - 0.06), map(u1 + 0.12, y0 - 0.06)));
-        if (!o.arched) out.thin.push(segD(st, map(u0 - 0.1, y1 + 0.14), map(u1 + 0.1, y1 + 0.14)));
-      }
-      if (px >= 24) {
-        // muntin cross
-        const mid = (u0 + u1) / 2;
-        const ym = y0 + (y1 - y0) * 0.58;
-        out.thin.push(segD(st, map(mid, y0), map(mid, y1)));
-        out.thin.push(segD(st, map(u0, ym), map(u1, ym)));
-        if (o.shutters) {
-          const sw = o.winW * 0.42;
-          out.fill.push(polyD(st, [map(u0 - sw, y0), map(u0, y0), map(u0, y1), map(u0 - sw, y1)]));
-          out.fill.push(polyD(st, [map(u1, y0), map(u1 + sw, y0), map(u1 + sw, y1), map(u1, y1)]));
+      if (parallel && px >= 7) {
+        const anchor = project(st.cam, map(u0, y1));
+        const far = project(st.cam, map(u1 + 0.5, y0 - 0.2));
+        if (!anchor || !far) continue;
+        if (!visible(st, [anchor, far], 6)) continue;
+        const key = lit ? "lit" : "dark";
+        let sym = shared[key];
+        if (!sym) {
+          const b = batch();
+          oneWindow(st, map, o, u0, u1, y0, y1, px, lit, b);
+          const id = defineOnce(st, "win", flush(st, b, o.lineW ?? st.lw));
+          sym = { id, x: anchor.x, y: anchor.y };
+          shared[key] = sym;
         }
+        out.uses.push(`<use href="#${sym.id}" x="${n(anchor.x - sym.x)}" y="${n(anchor.y - sym.y)}"/>`);
+        continue;
       }
-      if (px >= 32 && !lit) {
-        // glint: two short diagonal paper strokes
-        const g0 = map(u0 + o.winW * 0.15, y0 + o.winH * 0.5);
-        const g1 = map(u0 + o.winW * 0.4, y0 + o.winH * 0.85);
-        const seg = segD(st, g0, g1);
-        if (seg) out.deep.push(seg);
-      }
+      // oblique facades are foreshortened: their small details thin out sooner
+      oneWindow(st, map, o, u0, u1, y0, y1, parallel ? px : px / 1.5, lit, out);
     }
+  }
+}
+
+function oneWindow(st: Stage, map: (u: number, y: number) => V3, o: WindowGridOptions, u0: number, u1: number, y0: number, y1: number, px: number, lit: boolean, out: Batch): void {
+  const glassTarget = lit ? out.lit : px >= 7 ? out.glassLine : out.glass;
+  const pts: V3[] = o.arched && px > 7 ? archPoints(map, u0, u1, y0, y1 - o.winW * 0.5, false) : [map(u0, y0), map(u1, y0), map(u1, y1), map(u0, y1)];
+  const d = polyD(st, pts);
+  if (!d) return;
+  glassTarget.push(d);
+  if (lit && px >= 7) out.line.push(d);
+  if (px >= 16) {
+    // sill + lintel ledges
+    out.line.push(segD(st, map(u0 - 0.12, y0 - 0.06), map(u1 + 0.12, y0 - 0.06)));
+    if (!o.arched) out.thin.push(segD(st, map(u0 - 0.1, y1 + 0.14), map(u1 + 0.1, y1 + 0.14)));
+  }
+  if (px >= 24) {
+    // muntin cross
+    const mid = (u0 + u1) / 2;
+    const ym = y0 + (y1 - y0) * 0.58;
+    out.thin.push(segD(st, map(mid, y0), map(mid, y1)));
+    out.thin.push(segD(st, map(u0, ym), map(u1, ym)));
+    if (o.shutters) {
+      const sw = o.winW * 0.42;
+      out.fill.push(polyD(st, [map(u0 - sw, y0), map(u0, y0), map(u0, y1), map(u0 - sw, y1)]));
+      out.fill.push(polyD(st, [map(u1, y0), map(u1 + sw, y0), map(u1 + sw, y1), map(u1, y1)]));
+    }
+  }
+  if (px >= 32 && !lit) {
+    // glint: two short diagonal paper strokes
+    const g0 = map(u0 + o.winW * 0.15, y0 + o.winH * 0.5);
+    const g1 = map(u0 + o.winW * 0.4, y0 + o.winH * 0.85);
+    const seg = segD(st, g0, g1);
+    if (seg) out.deep.push(seg);
   }
 }
 
 function flush(st: Stage, b: Batch, lineW: number): string {
   return (
+    b.uses.join("") +
     pathEl(b.fill.join(""), { fill: st.pal.wall, stroke: st.pal.ink, w: lineW * 0.7 }) +
     pathEl(b.glass.join(""), { fill: st.pal.glass }) +
     pathEl(b.glassLine.join(""), { fill: st.pal.glass, stroke: st.pal.ink, w: lineW * 0.75 }) +
@@ -247,6 +280,7 @@ export function drawBuilding(st: Stage, spec: BuildingSpec): void {
             skipBay: doorBay,
             arched: spec.arched,
             shutters: spec.shutters,
+            lineW: lw,
           },
           b,
         );

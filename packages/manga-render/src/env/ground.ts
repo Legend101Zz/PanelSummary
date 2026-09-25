@@ -106,34 +106,49 @@ export function drawGround(st: Stage, kind: GroundKind, opts: GroundOptions = {}
   switch (effKind) {
     case "cobbles":
     case "flags": {
-      // stones as short sagging dashes, in patches that thin out with distance
+      // Stones as short sagging dashes. Coverage is even across the plaza
+      // (no blotchy patches) and thins smoothly with distance; stones outside
+      // the panel are never emitted.
       const sp = effKind === "cobbles" ? 0.42 : 0.9;
       const stoneW = sp * (effKind === "cobbles" ? 1.3 : 1.6);
-      const zs = rows(st, depth.near, depth.far, sp, 3);
+      const zs = rows(st, depth.near, depth.far, sp, 4.5);
       let stones = "";
       let joints = "";
-      let budget = 900;
+      const budget = 560;
+      const left = b.x - 6;
+      const right = b.x + b.w + 6;
+      // near rows complete, far rows sparse; the whole plaza shares one stone
+      // budget, spread over every row (never spent on the first rows alone)
+      const keepAt = (i: number) => 1 - 0.85 * Math.pow(zs.length > 1 ? i / (zs.length - 1) : 0, 1.2);
+      let expected = 0;
+      zs.forEach((z, i) => {
+        const [x0, x1] = clampX(xRangeAt(st.cam, z));
+        expected += Math.max(0, (x1 - x0) / stoneW) * keepAt(i);
+      });
+      // when over budget, thin the far rows much more than the near ones
+      const thin = expected > budget ? budget / expected : 1;
+      const rowThin = (i: number) => Math.pow(thin, 0.35 + 1.3 * (zs.length > 1 ? i / (zs.length - 1) : 0));
       zs.forEach((z, i) => {
         const [x0, x1] = clampX(xRangeAt(st.cam, z));
         const a = project(st.cam, { x: 0, y: 0, z });
         const b2 = project(st.cam, { x: 0, y: 0, z: z + sp });
         const rowPx = a && b2 ? Math.abs(a.y - b2.y) : 0;
-        const fade = Math.min(1, i / Math.max(4, zs.length));
-        const thresh = -0.75 + fade * 0.85;
+        const keep = keepAt(i) * rowThin(i);
         const off = i % 2 === 0 ? 0 : stoneW / 2;
-        for (let x = Math.floor(x0 / stoneW) * stoneW + off; x < x1 && budget > 0; x += stoneW) {
-          if (mask(x, z) < thresh) continue;
+        for (let x = Math.floor(x0 / stoneW) * stoneW + off; x < x1; x += stoneW) {
+          const roll = st.rand();
+          if (roll > keep) continue;
           const pa = project(st.cam, { x: x + stoneW * 0.08, y: 0, z });
           const pb = project(st.cam, { x: x + stoneW * 0.92, y: 0, z });
           if (!pa || !pb) continue;
+          if (Math.max(pa.x, pb.x) < left || Math.min(pa.x, pb.x) > right) continue;
           const sag = Math.max(0.6, rowPx * 0.28);
           stones += `M${n(pa.x)} ${n(pa.y)}q${n((pb.x - pa.x) / 2)} ${n(sag)} ${n(pb.x - pa.x)} ${n(pb.y - pa.y)}`;
-          if (rowPx >= 5 && mask(x, z) > thresh + 0.25) {
+          if (rowPx >= 9 && roll < keep * 0.4) {
             const pc = project(st.cam, { x: x + stoneW * 0.04, y: 0, z: z + sp * 0.2 });
             const pd2 = project(st.cam, { x: x + stoneW * 0.04, y: 0, z: z + sp * 0.8 });
             if (pc && pd2) joints += `M${n(pc.x)} ${n(pc.y)}L${n(pd2.x)} ${n(pd2.y)}`;
           }
-          budget -= 1;
         }
       });
       s += pathEl(stones, { stroke: ink, w: detailW }) + pathEl(joints, { stroke: ink, w: detailW * 0.8 });

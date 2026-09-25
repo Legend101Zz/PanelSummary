@@ -204,7 +204,7 @@ export function drawHair(pen: Pen, g: FaceGeo, look: HumanLook, pal: Palette, in
       out.cap += line(pen.curve([lerp(crown, tip, 0.2), add(mid, bend), lerp(crown, tip, 0.85)], false), ink.dw * 0.8, strandCol);
     }
   }
-  if (pal.hairDark && !statue && look.hair !== "buzz") {
+  if (pal.hairDark && !statue && look.hair !== "buzz" && !ink.lite) {
     // Glossy "angel ring": a row of thin white streaks across the crown.
     const r0 = radius(0);
     const t1 = view === "side" ? -62 : -46;

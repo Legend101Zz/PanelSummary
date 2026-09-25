@@ -145,7 +145,12 @@ export function drawFeatures(st: Stage, features: readonly EnvFeature[], sites: 
         const c = takeCentre();
         const roomH = sites.room ? (sites.room.knee ?? sites.room.h) : 0;
         if (sites.interior) statueColumn(st, c.x, c.z, Math.min(0.45, (roomH - 0.4) / 7.9));
-        else statueColumn(st, c.x, Math.max(c.z, st.zmid + 11), 1);
+        else {
+          // centred and tall in front of the back row, with room for the statue above
+          const far = Math.max(st.zmid + 6, sites.backZ - 3.5);
+          const near = Math.min(far, st.zmid + (st.shot === "establishing" || st.shot === "wide" ? 5 : 8));
+          statueColumn(st, st.env === "city_square" ? 0 : c.x, columnDepth(st, st.env === "city_square" ? 0 : c.x, near, far), 1);
+        }
         break;
       }
       case "fountain": {
@@ -192,7 +197,7 @@ export function drawFeatures(st: Stage, features: readonly EnvFeature[], sites: 
       }
       case "bed": {
         const s = takeSpot();
-        bed(st, s.x - 0.5, s.z + 1.2, { poor: st.env === "room_poor" || st.env === "garret" || st.env === "jail_cell", rich: st.env === "room_rich" || st.env === "palace_hall" });
+        bed(st, s.x, s.z + 0.6, { poor: st.env === "room_poor" || st.env === "garret" || st.env === "jail_cell", rich: st.env === "room_rich" || st.env === "palace_hall", headRight: s.x > 0 });
         break;
       }
       case "table": {
@@ -285,12 +290,22 @@ function paintingOnWall(st: Stage, slot: WallSlot | null, subject: "river" | "br
   wallDecal(st, s, wall);
 }
 
+/** Height of a statue standing on a column top (metres), for the `statue_crown` anchor. */
+export const STATUE_HEIGHT = 2.6;
+
+/**
+ * A stepped pedestal, a column and a platform on top. Publishes `statue_top`
+ * (centre of the platform, where a statue's feet stand) and `statue_crown`
+ * (where the head of a STATUE_HEIGHT statue would reach), so the composer can
+ * stand a figure on the column at the right scale:
+ *   scale = (statue_top.y - statue_crown.y) / figure height in figure units.
+ */
 export function statueColumn(st: Stage, x: number, z: number, scale = 1): void {
   const fr = frame("front", 0, 0);
   const H = 7.5 * scale;
   const zc = toCam(st.cam, { x, y: H / 2, z }).z;
   if (zc < st.cam.near) return;
-  const lw = wAt(st, zc);
+  const lw = wAt(st, zc) * 1.15;
   const fill = st.pal.wall;
   let s = "";
   // stepped pedestal
@@ -302,12 +317,38 @@ export function statueColumn(st: Stage, x: number, z: number, scale = 1): void {
     w: lw * 0.6,
   });
   s += boxSvg(st, fr, { a0: x - 1.55 * scale, a1: x + 1.55 * scale, y0: 2.2 * scale, y1: 2.5 * scale, d0: z - 1.55 * scale, d1: z + 1.55 * scale }, fill, lw);
-  s += columnSvg(st, x, z, 0.5 * scale, H - 2.5 * scale, { y0: 2.5 * scale, base: 0.4 * scale });
+  s += columnSvg(st, x, z, 0.6 * scale, H - 2.5 * scale, { y0: 2.5 * scale, base: 0.45 * scale });
   // platform slab on top with a small balustrade lip
   s += boxSvg(st, fr, { a0: x - 1.1 * scale, a1: x + 1.1 * scale, y0: H, y1: H + 0.35 * scale, d0: z - 1.1 * scale, d1: z + 1.1 * scale }, fill, lw * 1.1);
   const top = project(st.cam, { x, y: H + 0.35 * scale, z });
-  if (top) st.anchors.statue_top = top;
+  const crown = project(st.cam, { x, y: H + 0.35 * scale + STATUE_HEIGHT * scale, z });
+  if (top && crown && visible(st, [top, crown, project(st.cam, { x, y: 0, z }) ?? top], 40)) {
+    st.anchors.statue_top = top;
+    st.anchors.statue_crown = crown;
+  }
   add(st, LAYER.stand, zc, s);
+}
+
+/**
+ * Depth for an outdoor statue column: as close as the frame allows while the
+ * statue it carries (column + STATUE_HEIGHT) still ends below the top 12% of
+ * the panel, so the column reads tall and a statue fits on it. Never behind
+ * the back row of the scene.
+ */
+function columnDepth(st: Stage, x: number, near: number, far: number): number {
+  const crownY = 7.85 + STATUE_HEIGHT;
+  const target = st.box.y + st.box.h * 0.12;
+  const yAt = (z: number) => project(st.cam, { x, y: crownY, z })?.y ?? -Infinity;
+  if (yAt(near) >= target) return near;
+  if (yAt(far) < target) return far;
+  let lo = near;
+  let hi = far;
+  for (let i = 0; i < 30; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (yAt(mid) >= target) hi = mid;
+    else lo = mid;
+  }
+  return hi;
 }
 
 export function fountain(st: Stage, x: number, z: number, scale = 1): void {

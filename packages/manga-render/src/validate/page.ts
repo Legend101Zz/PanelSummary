@@ -10,13 +10,16 @@ import {
   FACINGS,
   FIDELITY,
   FX,
+  ENV_FEATURES,
   EXPRESSIONS,
+  PERCH_PARTS,
   POSES,
   PROPS,
   SHOTS,
   SLOTS,
   TEXT_KINDS,
   TIMES,
+  TONES,
   WEATHERS,
   type CastMember,
   type CharacterLook,
@@ -27,9 +30,10 @@ import {
   type ValidationIssue,
 } from "../contracts.js";
 import { rig } from "../rig/index.js";
-import { compileLayout, MAX_PANELS, templatesWithSlots, validateTree } from "../layout/index.js";
+import { blockageIssues, compileLayout, MAX_PANELS, panelAreaShares, templatesWithSlots, validateTree } from "../layout/index.js";
 import { countWords } from "../lettering/breaking.js";
 import { MAX_FIGURES, MAX_FX, MAX_PROPS } from "../scene/compose.js";
+import { STAGING_FEATURES } from "../scene/staging.js";
 import { checkEnum, checkSourceRef, isRecord, Issues, listValues, reqArray, reqBoolean, reqPositiveInt, reqString, show, warnUnknownKeys } from "./util.js";
 
 export interface BookRefs {
@@ -38,8 +42,8 @@ export interface BookRefs {
 }
 
 export const WORD_LIMITS = {
-  balloonWarn: 25,
-  balloonError: 40,
+  balloonWarn: 22,
+  balloonError: 35,
   panelWarn: 40,
   panelError: 60,
   pageWarn: 110,
@@ -52,9 +56,18 @@ export const SPEAKER_KINDS: readonly TextKind[] = ["speech", "thought", "shout",
 
 const PAGE_KEYS = ["schema", "page_number", "section_id", "purpose", "layout", "panels", "claims", "page_turn_hook"];
 const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather", "figures", "props", "fx", "text", "source"];
-const FIGURE_KEYS = ["character", "pose", "expression", "facing", "slot", "depth", "holding"];
-const PROP_KEYS = ["prop", "slot", "depth"];
-const TEXT_KEYS = ["kind", "speaker", "text", "fidelity", "source"];
+const FIGURE_KEYS = ["character", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
+const PROP_KEYS = ["prop", "slot", "depth", "tone"];
+const TEXT_KEYS = ["kind", "speaker", "about", "text", "fidelity", "source"];
+const ON_KEYS = ["target", "part"];
+
+/** Share of the page a first panel should take after a page-turn hook. */
+export const HOOK_PAYOFF_MIN_SHARE = 0.3;
+
+export interface PageCheckOptions {
+  /** The previous page ended on a page-turn hook (enables FIRST_PANEL_SMALL_AFTER_HOOK). */
+  previousPageHook?: boolean;
+}
 const LAYOUT_KEYS = ["template", "tree", "rtl"];
 
 function supported<T>(fn: () => readonly T[]): readonly T[] | undefined {
@@ -65,7 +78,7 @@ function supported<T>(fn: () => readonly T[]): readonly T[] | undefined {
   }
 }
 
-export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPage): ValidationIssue[] {
+export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPage, options: PageCheckOptions = {}): ValidationIssue[] {
   const issues = new Issues();
   if (!isRecord(spec)) {
     issues.error("PAGE_NOT_OBJECT", "page", `the page must be a JSON object with fields: ${PAGE_KEYS.join(", ")}.`);
@@ -135,6 +148,7 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
       const figures = reqArray(raw, "figures", issues, path, "characters drawn in this panel");
       const figureChars = new Set<string>();
       const slotDepth = new Set<string>();
+      const staged: { fi: number; fpath: string; on: unknown; character: string | undefined }[] = [];
       let heldProps = 0;
       if (figures && figures.length > MAX_FIGURES) {
         issues.error("TOO_MANY_FIGURES", path, `${figures.length} figures in one panel; the maximum is ${MAX_FIGURES}. Use a crowd character or split the panel.`);
@@ -165,6 +179,19 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         const depth = checkEnum(f, "depth", DEPTHS, issues, fpath, false) ?? "mid";
         const holding = checkEnum(f, "holding", PROPS, issues, fpath, false);
         if (holding) heldProps += 1;
+        const holdingTone = checkEnum(f, "holding_tone", TONES, issues, fpath, false);
+        if (holdingTone && !holding) {
+          issues.warn("HOLDING_TONE_UNUSED", fpath, `"holding_tone" only colours a held prop; add "holding" or remove "holding_tone".`);
+        }
+        if (f.on !== undefined) staged.push({ fi, fpath, on: f.on, character: charId });
+        const facing = f.facing;
+        if (facing === "back" && (shot === "close" || shot === "extreme_close")) {
+          issues.warn(
+            "FACING_BACK_CLOSE",
+            fpath,
+            `a ${shot} shot of "${charId ?? "?"}" from behind shows no face; use "front", "left" or "right" (the face is the point of a close-up).`,
+          );
+        }
         if (slot) {
           const key = `${slot}|${depth}`;
           if (slotDepth.has(key)) issues.warn("FIGURE_OVERLAP", fpath, `two figures share slot "${slot}" at depth "${depth}" and will overlap; move one to another slot or depth.`);
@@ -183,6 +210,71 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         }
       });
 
+      // staging anchors ("on")
+      const locFeatures = new Set<string>(loc ? (book.locations.find((l) => l.id === loc)?.features ?? []) : []);
+      const stagingTargets = (self?: string) => [
+        ...[...figureChars].filter((c) => c !== self),
+        ...STAGING_FEATURES.filter((ft) => locFeatures.has(ft)),
+      ];
+      const onGraph = new Map<string, string>();
+      for (const st of staged) {
+        const onPath = `${st.fpath}.on`;
+        if (!isRecord(st.on)) {
+          issues.error("FIELD_TYPE", onPath, `"on" must be an object {"target": "<cast id in this panel or a feature of this location>", "part"?: ${PERCH_PARTS.map((x) => `"${x}"`).join(" | ")}}.`);
+          continue;
+        }
+        warnUnknownKeys(st.on, ON_KEYS, issues, onPath);
+        const target = st.on.target;
+        const valid = stagingTargets(st.character);
+        if (typeof target !== "string" || target.trim() === "") {
+          issues.error("FIELD_MISSING", onPath, `"on" needs a "target": ${valid.length ? `one of ${listValues(valid)}` : "a cast id drawn in this panel or a feature of this location (none here)"}.`);
+          continue;
+        }
+        const part = checkEnum(st.on, "part", PERCH_PARTS, issues, onPath, false);
+        if (target === st.character) {
+          issues.error("ON_TARGET_SELF", onPath, `a figure cannot stand on itself; use ${valid.length ? `one of ${listValues(valid)}` : "another figure or a feature"}.`);
+        } else if (figureChars.has(target)) {
+          onGraph.set(st.character ?? "", target);
+          if (shot === "insert") issues.warn("ON_IGNORED", onPath, `insert shots draw no figures, so "on" has no effect here.`);
+        } else if ((ENV_FEATURES as readonly string[]).includes(target) && locFeatures.has(target)) {
+          if (!(STAGING_FEATURES as readonly string[]).includes(target)) {
+            issues.error("ON_TARGET_UNSUPPORTED", onPath, `figures cannot be staged on "${target}"; features that hold a figure: ${listValues(STAGING_FEATURES)}. Valid targets here: ${listValues(valid) || "none"}.`);
+          } else if (part) {
+            issues.warn("ON_PART_IGNORED", onPath, `"part" applies only when the target is another figure; "${target}" is a feature, so "part": "${part}" is ignored.`);
+          }
+        } else {
+          issues.error(
+            "ON_TARGET_UNKNOWN",
+            onPath,
+            `"on" target "${target}" is neither a figure in this panel nor a feature of this location. Valid targets: ${listValues(valid) || "none (add the other figure to this panel, or use a location with that feature)"}.`,
+          );
+        }
+      }
+      for (const [start] of onGraph) {
+        const seen = new Set<string>([start]);
+        let cur = onGraph.get(start);
+        while (cur !== undefined) {
+          if (seen.has(cur)) {
+            issues.error("ON_CYCLE", path, `staging anchors form a loop (${[...seen].join(" → ")} → ${cur}); one of them must stand on the ground or a feature.`);
+            break;
+          }
+          seen.add(cur);
+          cur = onGraph.get(cur);
+        }
+        if (cur !== undefined) break;
+      }
+      const figCount = figures?.length ?? 0;
+      if (shot === "extreme_close" && figCount >= 2) {
+        const first = isRecord(figures?.[0]) && typeof figures[0].character === "string" ? figures[0].character : "the first figure";
+        issues.warn(
+          "EXTREME_CLOSE_MULTI",
+          path,
+          `an extreme_close frames one face: only "${first}" is drawn and the other ${figCount - 1} figure(s) are dropped (their lines get off-panel tails). Use "close" for two faces, or split the moment into two panels.`,
+        );
+      } else if (shot === "close" && figCount >= 3) {
+        issues.warn("CLOSE_CROWDED", path, `${figCount} figures in a close shot crowd the faces; keep close shots to 1-2 figures, or use "medium" or "full".`);
+      }
+
       // props
       const props = reqArray(raw, "props", issues, path, "objects on the ground");
       if (props && props.length > MAX_PROPS) {
@@ -198,6 +290,7 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         checkEnum(p, "prop", PROPS, issues, ppath);
         checkEnum(p, "slot", SLOTS, issues, ppath);
         checkEnum(p, "depth", DEPTHS, issues, ppath, false);
+        checkEnum(p, "tone", TONES, issues, ppath, false);
       });
 
       // fx
@@ -256,6 +349,19 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
           }
         } else if (kind && speaker !== undefined) {
           issues.error("SPEAKER_FORBIDDEN", tpath, `${kind} must not have a "speaker"; remove it (only ${SPEAKER_KINDS.join("/")} have speakers).`);
+        }
+        if (t.about !== undefined) {
+          if (kind && kind !== "caption") {
+            issues.error("ABOUT_NOT_CAPTION", tpath, `"about" (a name tag next to a character) is only allowed on captions; remove it from this ${kind}.`);
+          } else if (typeof t.about !== "string") {
+            issues.error("FIELD_TYPE", tpath, `"about" must be the cast id this caption names, got ${show(t.about)}.`);
+          } else if (!figureChars.has(t.about) || shot === "insert") {
+            issues.warn(
+              "ABOUT_NOT_IN_PANEL",
+              tpath,
+              `caption "about" "${t.about}" is not drawn in this panel${shot === "insert" ? " (insert shots draw no figures)" : ""}, so it is placed as an ordinary caption. Name a figure drawn here: ${listValues([...figureChars]) || "none"}.`,
+            );
+          }
         }
         if (t.source !== undefined) {
           const unit = checkSourceRef(t.source, issues, `${tpath}.source`);
@@ -330,6 +436,26 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         else issues.push(...compileLayout(layout as LayoutSpec, panelIds).issues);
       } else {
         issues.push(...compileLayout(layout as LayoutSpec, panelIds).issues);
+      }
+      const compiled = compileLayout(layout as LayoutSpec, panelIds);
+      if (compiled.ok && compiled.panels.length === panelIds.length) {
+        issues.push(...blockageIssues(compiled.panels, layout.rtl === true));
+        const shares = panelAreaShares(compiled.panels);
+        const last = shares.length - 1;
+        if (hook === true && shares.length >= 2 && shares[last] >= Math.max(...shares.slice(0, last)) - 1e-6) {
+          issues.warn(
+            "HOOK_PANEL_LARGEST",
+            "page.layout",
+            `page_turn_hook is true but the last panel "${panelIds[last]}" is the page's largest (${Math.round(shares[last] * 100)}% of the page). The pull panel before a turn should be small or medium and pose the question; give the big slot to an earlier panel.`,
+          );
+        }
+        if (options.previousPageHook === true && shares.length >= 1 && shares[0] < HOOK_PAYOFF_MIN_SHARE) {
+          issues.warn(
+            "FIRST_PANEL_SMALL_AFTER_HOOK",
+            "page.layout",
+            `the previous page ended on a hook, but the first panel "${panelIds[0]}" takes only ${Math.round(shares[0] * 100)}% of the page. Pay the hook off large (${Math.round(HOOK_PAYOFF_MIN_SHARE * 100)}% or more): pick a template whose first slot is big.`,
+          );
+        }
       }
     }
   }

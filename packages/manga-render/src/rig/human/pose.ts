@@ -7,7 +7,7 @@
  * `spread` swings the limb outward, away from the body. "near" is the limb
  * nearest the viewer in the canonical right-facing view (the figure's right).
  */
-import type { Pose } from "../../contracts.js";
+import type { Expression, Pose } from "../../contracts.js";
 import { add3, mul3, v3, type V3 } from "./geom.js";
 import type { Metrics } from "./look.js";
 
@@ -69,6 +69,8 @@ export interface PoseDef {
   kneel?: boolean;
   /** No body-stiffening straighten for statues. */
   airborne?: boolean;
+  /** Shoulder raise as a fraction of height (+ = hunched up, - = dropped). */
+  shrug: number;
 }
 
 export const HUMAN_POSES = [
@@ -113,7 +115,49 @@ function base(): PoseDef {
     mirror: false,
     flow: 0,
     grip: "near",
+    shrug: 0,
   };
+}
+
+/**
+ * Acting: body language layered on a pose by expression (craft P1-9). Head
+ * pitch (+ = down), whole-body lean (+ = forward), head roll and a shoulder
+ * raise/drop. Anchors follow automatically because they come from the
+ * solved skeleton.
+ */
+const ACT: Record<Expression, { lean: number; head: number; roll: number; shrug: number }> = {
+  neutral: { lean: 0, head: 0, roll: 0, shrug: 0 },
+  happy: { lean: -1, head: -4, roll: 0, shrug: 0 },
+  laugh: { lean: -4, head: -8, roll: 0, shrug: 0.004 },
+  gentle: { lean: 0, head: 4, roll: 6, shrug: 0 },
+  sad: { lean: 4, head: 11, roll: 0, shrug: -0.012 },
+  cry: { lean: 6, head: 13, roll: 0, shrug: -0.01 },
+  angry: { lean: 6, head: 3, roll: 0, shrug: 0.008 },
+  shout: { lean: 5, head: -7, roll: 0, shrug: 0.004 },
+  surprised: { lean: -5, head: -5, roll: 0, shrug: 0.01 },
+  afraid: { lean: -8, head: 3, roll: 0, shrug: 0.016 },
+  determined: { lean: 2, head: -8, roll: 0, shrug: 0 },
+  thinking: { lean: 0, head: 2, roll: 7, shrug: 0 },
+  worried: { lean: 1, head: 6, roll: -3, shrug: 0.008 },
+  smug: { lean: -2, head: -6, roll: 5, shrug: 0 },
+  tired: { lean: 7, head: 10, roll: 0, shrug: -0.016 },
+  asleep: { lean: 3, head: 16, roll: 10, shrug: -0.012 },
+  pain: { lean: 7, head: 6, roll: 0, shrug: 0.01 },
+  love: { lean: 0, head: -2, roll: 6, shrug: 0 },
+};
+
+export function actPose(d: PoseDef, e: Expression, pose: Pose, _m: Metrics): void {
+  const a = ACT[e] ?? ACT.neutral;
+  // airborne and lying poses only move the head; poses that already fold the
+  // body (bow, cower, cover face) take a smaller share of the lean
+  const headOnly = d.airborne || pose === "lie" || pose === "fall" || pose === "jump";
+  const folded = pose === "bow" || pose === "cower" || pose === "cover_face";
+  const bodyK = headOnly ? 0 : folded ? 0.3 : 1;
+  const headK = headOnly ? 0.7 : folded ? 0.5 : 1;
+  d.lean += a.lean * bodyK;
+  d.headPitch += a.head * headK;
+  d.headRoll += a.roll * headK;
+  d.shrug += a.shrug * bodyK;
 }
 
 /** Point in body space: pelvis + spine·a + F·b + L·c (L signed by side). */

@@ -476,10 +476,18 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
         { c: v(g.eyeX, g.eyeY), out: 1, w: g.eyeW, h: g.eyeH },
       ];
   let under = "";
+  if (ink.detail === "silhouette") {
+    // silhouette LOD: at most two eye dots
+    for (const f of frames) under += circle(pen.circle(f.c, Math.max(g.eyeH, g.eyeW) * 0.42), INK);
+    return { under, mouth: "", brows: "" };
+  }
+  const reduced = ink.detail === "reduced";
   // Nose.
   const nd = ink.dw * 1.1;
   const noseY = (look.age === "child" ? 0.7 : look.age === "teen" ? 0.76 : 0.8) * R;
-  if (side) {
+  if (reduced) {
+    // reduced LOD: eyes, brows and mouth only
+  } else if (side) {
     const k = look.age === "child" ? 0.7 : 1;
     under += line(pen.curve([v(0.9 * R, noseY - 0.2 * k * R), v((0.9 + 0.07 * k) * R, noseY - 0.02 * R), v(0.86 * R, noseY + 0.02 * R)], false), nd);
   } else {
@@ -487,7 +495,7 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
     under += line(pen.curve([v(0.03 * R, noseY - 0.1 * k * R), v(-0.035 * R, noseY), v(0.025 * R, noseY + 0.02 * R)], false), nd);
   }
   // Age lines.
-  if (look.age === "elder") {
+  if (look.age === "elder" && !reduced) {
     for (const f of frames) {
       const o = f.out;
       under += line(pen.curve([v(f.c.x + o * f.w * 1.15, f.c.y - 0.02 * R), v(f.c.x + o * f.w * 1.3, f.c.y + 0.06 * R)], false), ink.dw * 0.7);
@@ -496,12 +504,12 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
     under += line(pen.curve([v(mx - 0.26 * R, 0.74 * R), v(mx - 0.3 * R, 0.86 * R), v(mx - 0.27 * R, 0.96 * R)], false), ink.dw * 0.7);
     if (!side) under += line(pen.curve([v(0.26 * R, 0.74 * R), v(0.3 * R, 0.86 * R), v(0.27 * R, 0.96 * R)], false), ink.dw * 0.7);
   }
-  if (look.build === "heavy" && look.age !== "child") {
+  if (look.build === "heavy" && look.age !== "child" && !reduced) {
     const cx = side ? 0.2 * R : 0;
     under += line(pen.curve([v(cx - 0.3 * R, 1.22 * R), v(cx, 1.3 * R), v(cx + 0.3 * R, 1.22 * R)], false), ink.dw * 0.8);
   }
   for (const f of frames) under += drawEye(pen, g, f, x, pal, ink, gem);
-  if (x.blush) {
+  if (x.blush && !reduced) {
     for (const f of frames) {
       const bc = v(f.c.x + f.out * f.w * 0.3, f.c.y + g.eyeH + 0.2 * R);
       for (let i = -1; i <= 1; i += 1) {

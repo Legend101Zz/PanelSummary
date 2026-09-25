@@ -7,6 +7,7 @@ import type { HumanLook } from "../../contracts.js";
 import type { DrawContext, FigureAnchors, FigureDrawing, FigureRequest } from "../../internal.js";
 import { INK, PAPER, STROKE, toneFill } from "../../style.js";
 import { n } from "../../svg.js";
+import { hashString } from "../../prng.js";
 import {
   add,
   Bounds,
@@ -30,7 +31,7 @@ import {
   type V2,
 } from "./geom.js";
 import { humanMetrics, humanPalette, type Palette } from "./look.js";
-import { poseDef } from "./pose.js";
+import { actPose, poseDef } from "./pose.js";
 import { projectDir, solveSkeleton, type ArmJ, type LegJ, type Skeleton, type ViewKind } from "./skeleton.js";
 import { armD, bootD, drawFoot, drawHand, foreD, legD, legPts, thumbPref, Torso } from "./body.js";
 import { drawEars, drawFace, drawHeadShape, faceGeo, type FaceGeo } from "./face.js";
@@ -53,6 +54,8 @@ import { circle, line, shape, solid, uni, type Ink } from "./paint.js";
 export interface HumanDrawOptions {
   /** Simplified rendering for crowds: fewer detail lines, no silhouette pass. */
   lite?: boolean;
+  /** Receives the silhouette path data (crowds build one knockout rim for all members). */
+  silOut?: string[];
 }
 
 type HumanRequest = FigureRequest & { look: HumanLook };
@@ -73,14 +76,18 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
   const look = req.look;
   const m = humanMetrics(look, req.seed);
   const def = poseDef(req.pose, m);
+  actPose(def, req.expression, req.pose, m);
   const view: ViewKind = req.facing === "front" ? "front" : req.facing === "back" ? "back" : "side";
   const sk = solveSkeleton(m, def, view);
   const pal = humanPalette(look, ctx.idPrefix);
   const fit = fitFor(look, pal, ctx.idPrefix);
   const bounds = new Bounds();
-  const pen = new Pen(IDENTITY, bounds);
+  const detail = lodFor(req.detail, m.R * 1.28, req.lineWidth);
+  // outline samples closer than ~1 page pixel add bytes, not shape (coarser
+  // for the small figures the lower levels of detail are used for)
+  const pen = new Pen(IDENTITY, bounds, req.lineWidth * (detail === "silhouette" ? 1.2 : detail === "reduced" ? 0.7 : 0.42));
   const lw = req.lineWidth;
-  const ink: Ink = { lw, dw: lw * (STROKE.figureDetail / STROKE.figureOutline), sil: [], lite: !!opts.lite };
+  const ink: Ink = { lw, dw: lw * (STROKE.figureDetail / STROKE.figureOutline), sil: [], lite: !!opts.lite || detail !== "full", detail };
   const torso = new Torso(sk);
   const H = m.H;
   const dctx: DetailCtx = { pen, sk, torso, fit, pal, ink, look, idPrefix: ctx.idPrefix, seed: req.seed, behind: [] };
@@ -410,8 +417,14 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
   const hand = def.grip === "both" && grips.length === 2 ? lerp(grips[0], grips[1], 0.5) : nearGrip;
 
   // ---- assemble ------------------------------------------------------------------
-  const silPad = lw * 1.2;
-  const silhouette = ink.sil.length && !ink.lite ? `<path d="${ink.sil.join("")}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(lw * 2.4)}"/>` : "";
+  // Silhouette pass: one thick outline around the union of every part, and
+  // under it a paper-white knockout rim so the figure reads on dark grounds.
+  // Silhouette LOD thickens the outline (it carries the figure alone).
+  const silW = lw * (detail === "silhouette" ? 3.4 : 2.4);
+  const silPad = silW / 2;
+  let silhouette = "";
+  if (ink.sil.length && !opts.lite) silhouette = silhouetteWithRim(ink.sil.join(""), silW, req.rim !== false ? rimWidth(lw) : 0, ctx.idPrefix);
+  if (opts.silOut) opts.silOut.push(ink.sil.join(""));
   const bodyOrder =
     view === "back"
       ? [L.back, L.behind, L.legs, L.skirt, L.neck, L.torso, L.torsoOver, L.front, L.backCape, L.head]
@@ -438,6 +451,45 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const LOD_RANK = { full: 2, reduced: 1, silhouette: 0 } as const;
+type Detail = keyof typeof LOD_RANK;
+
+/**
+ * Level of detail: the composer's request, lowered further when the head is
+ * small on the page (the drawing's scale is STROKE.figureOutline / lineWidth):
+ * head radius under 18 page units → silhouette, under 30 → reduced.
+ */
+export function lodFor(requested: Detail | undefined, headRadius: number, lineWidth: number): Detail {
+  const pageR = (headRadius * STROKE.figureOutline) / Math.max(1e-6, lineWidth);
+  const auto: Detail = pageR < 18 ? "silhouette" : pageR < 30 ? "reduced" : "full";
+  const req: Detail = requested ?? "full";
+  return LOD_RANK[auto] < LOD_RANK[req] ? auto : req;
+}
+
+/** Page-space width of the paper knockout rim around every figure (craft P0-1d: 3-5 units). */
+export const RIM_PAGE = 3.6;
+
+/** Rim width in figure units for a drawing made at `lineWidth` (= outline / scale). */
+export function rimWidth(lineWidth: number): number {
+  return (RIM_PAGE * lineWidth) / STROKE.figureOutline;
+}
+
+/**
+ * The silhouette union drawn thick in ink, with an optional paper rim under
+ * it. The path is defined once and referenced twice (<use>), so the rim
+ * costs a few bytes, not a second copy of the outline.
+ */
+export function silhouetteWithRim(d: string, strokeW: number, rimW: number, idPrefix: string): string {
+  if (!d) return "";
+  if (rimW <= 0) return `<path d="${d}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(strokeW)}"/>`;
+  const id = `${idPrefix}sil${hashString(d).toString(36)}`;
+  return (
+    `<defs><path id="${id}" d="${d}"/></defs>` +
+    `<use href="#${id}" fill="${PAPER}" stroke="${PAPER}" stroke-width="${n(strokeW + rimW * 2)}"/>` +
+    `<use href="#${id}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(strokeW)}"/>`
+  );
+}
 
 function ellipsePtsLocal(c: V2, rx: number, ry: number, rotDeg: number): V2[] {
   const out: V2[] = [];
@@ -672,3 +724,22 @@ function diagonalStrap(c: DetailCtx, from: [number, number], to: [number, number
   return shape(pen.curve([...left, ...right.reverse()], true, 0.5), fill, ink.dw * 1.2);
 }
 
+
+/**
+ * Figure-space point a sitting human rests on (underside of the pelvis/thighs,
+ * feet on y=0), for the same pose solve drawHuman uses. The composer puts a
+ * seat's surface (props.seat → seatY) here, scaling the seat by
+ * `contact.y / seatY` for children and other non-adult sizes.
+ */
+export function humanSeatContact(look: HumanLook, facing: FigureRequest["facing"], seed: number, expression: FigureRequest["expression"] = "neutral"): V2 {
+  const m = humanMetrics(look, seed);
+  const def = poseDef("sit", m);
+  actPose(def, expression, "sit", m);
+  const view: ViewKind = facing === "front" ? "front" : facing === "back" ? "back" : "side";
+  const sk = solveSkeleton(m, def, view);
+  const p = sk.P(sk.pelvis);
+  const kn = sk.P(sk.near.leg.knee);
+  // the seat supports the buttocks and the back of the thighs
+  const x = view === "side" ? (p.x * 2 + kn.x) / 3 : p.x;
+  return v(x, p.y + m.hipD * 0.9);
+}

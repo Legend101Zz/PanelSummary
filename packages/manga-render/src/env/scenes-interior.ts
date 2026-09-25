@@ -54,7 +54,8 @@ export function roomPoor(st: Stage): Sites {
   plasterCracks(st, back, 3);
   plasterCracks(st, right, 1);
   wallWindow(st, back, W * 0.56, 1.25, 0.9, 0.85, {});
-  bed(st, room.x0 + 0.08, room.zb - 0.05, { poor: true });
+  // the bed stands side-on in the middle depth of the room (a lying figure fits on it)
+  bed(st, room.x0 + 1.35, Math.min(room.zb - 0.6, st.zmid + 0.9), { poor: true });
   table(st, room.x1 - 1.1, room.zb - 1.6, 0.9, 0.6, 0.72);
   stool(st, room.x1 - 1.1, room.zb - 0.95);
   candleAt(st, room.x1 - 1.0, 0.72, room.zb - 1.65);
@@ -126,7 +127,7 @@ export function garret(st: Stage): Sites {
   // small window high in the gable
   wallWindow(st, back, W / 2 - 0.35, 1.55, 0.7, 0.7, {});
   skylight(st, room);
-  bed(st, room.x0 + 0.05, room.zb - 0.05, { poor: true });
+  bed(st, room.x0 + 1.35, Math.min(room.zb - 0.6, st.zmid + 0.9), { poor: true });
   // crate as a table + candle + clutter
   furniture(st, [{ b: { a0: room.x1 - 1.3, a1: room.x1 - 0.5, y0: 0, y1: 0.6, d0: room.zb - 1.6, d1: room.zb - 1.0 }, fill: st.pal.wood }]);
   crateSlats(st, room.x1 - 1.3, room.x1 - 0.5, room.zb - 1.6);

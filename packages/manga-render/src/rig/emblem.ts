@@ -462,7 +462,7 @@ export const emblemRig: KindRig<EmblemLook> = {
     const make = DEFS[look.emblem];
     if (!make) throw new Error(`unknown emblem ${String(look.emblem)}`);
     const pose = POSES.includes(request.pose) ? request.pose : "stand";
-    const pen = makePen(request.lineWidth, ctx.idPrefix);
+    const pen = makePen(request.lineWidth, ctx.idPrefix, request);
     const def = make();
     const px = poseXf(pose);
     const { xf, rot } = bodyXf({ rot: px.rot, pivot: P(0, 0), lift: px.lift, sx: px.sx, sy: px.sy, hull: def.hull, rest: true });

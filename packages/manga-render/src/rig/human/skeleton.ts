@@ -153,7 +153,7 @@ export function solveSkeleton(m: Metrics, def: PoseDef, view: ViewKind): Skeleto
   const face = add3(headC, add3(mul3(headUp, -0.45 * R), mul3(headFwd, 1.05 * R)));
 
   const L = v3(0, 0, 1);
-  const shoulderAt = (side: number) => add3(add3(neckBase, mul3(spine, -m.torsoLen * 0.1)), mul3(lat, side * m.shoulderHalf));
+  const shoulderAt = (side: number) => add3(add3(neckBase, mul3(spine, -m.torsoLen * 0.1 + (def.shrug ?? 0) * H)), mul3(lat, side * m.shoulderHalf));
   const hipAt = (side: number) => add3(pelvis, mul3(L, side * m.hipHalf));
 
   // Near side is the figure's right, except when drawn mirrored.

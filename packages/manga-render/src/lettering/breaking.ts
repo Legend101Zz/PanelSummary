@@ -126,7 +126,9 @@ export function breakBalanced(text: string, maxWidth: number, measure: Measure, 
         const w = lineWidth(i, j);
         if (w > width + 1e-6) break;
         const d = target(l - 1) - w;
-        const cost = dp[l - 1][i] + d * d;
+        // widows: a line holding a single word reads as a stutter (craft A5.7)
+        const widow = k > 1 && n >= 4 && j - i === 1 ? (width * 0.45) ** 2 : 0;
+        const cost = dp[l - 1][i] + d * d + widow;
         if (cost < dp[l][j]) {
           dp[l][j] = cost;
           from[l][j] = i;

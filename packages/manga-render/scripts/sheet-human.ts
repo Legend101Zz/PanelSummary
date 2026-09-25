@@ -297,3 +297,59 @@ const cast: [string, HumanLook, Pose, Expression][] = [
   sheet("crowd", 20 + 6 * cw, 50 + 2 * ch, s);
   void CROWD_POSES;
 }
+
+// ---------------------------------------------------------------------------
+// Pass 2: acting, level of detail and the knockout rim
+// ---------------------------------------------------------------------------
+{
+  const cw = 150;
+  const ch = 250;
+  const actors: [HumanLook, Pose][] = [
+    [L({ frame: "masc", hair: "messy", hair_tone: "dark", outfit: "long_coat", outfit_tone: "dark" }), "stand"],
+    [L({ frame: "fem", hair: "bun", hair_tone: "black", outfit: "dress", outfit_tone: "mid" }), "sit"],
+    [L({ age: "child", hair: "curly", hair_tone: "light", outfit: "tunic", outfit_tone: "white" }), "walk"],
+  ];
+  const acts: Expression[] = ["neutral", "sad", "cry", "tired", "afraid", "surprised", "angry", "shout", "determined", "happy", "thinking", "asleep"];
+  let s = title(10, 26, "Acting: head tilt, lean and shoulders follow the expression (3/4 view)");
+  actors.forEach(([look, pose], r) => {
+    acts.forEach((e, i) => {
+      s += cell(human(look, pose, e, "right", 21), { x: 10 + i * cw, y: 40 + r * ch, w: cw - 4, h: ch - 4, crop: "full", label: `${pose} ${e}`, scale: pose === "walk" ? 3 : pose === "stand" ? 1.9 : 2.2 });
+    });
+  });
+  sheet("acting", 20 + acts.length * cw, 50 + actors.length * ch, s);
+}
+{
+  const look = L({ age: "elder", frame: "masc", hair: "side_part", hair_tone: "white", facial_hair: "mustache", outfit: "suit", outfit_tone: "black", headwear: "top_hat", accessories: ["glasses", "medal"] });
+  let s = title(10, 26, "Level of detail: full / reduced / silhouette, at the page sizes they are chosen for");
+  const levels = ["full", "reduced", "silhouette"] as const;
+  // head radius on the page: ≥30 full, 18-30 reduced, <18 silhouette
+  const scales = [4.2, 2.6, 1.5];
+  levels.forEach((detail, i) => {
+    const draw: Draw = (lineWidth, prefix) => humanRig.draw({ look, pose: "talk", expression: "happy", facing: "right", lineWidth, seed: 5, detail }, { idPrefix: prefix, rand: () => 0.5 });
+    s += cell(draw, { x: 10 + i * 260, y: 40, w: 256, h: 470, crop: "full", scale: scales[i], label: `${detail} (x${scales[i]})` });
+    s += cell(draw, { x: 10 + i * 260, y: 520, w: 256, h: 300, crop: "close", label: `${detail} close-up` });
+  });
+  sheet("lod", 20 + 3 * 260, 830, s);
+}
+{
+  // dark figures on dark grounds: the paper rim keeps the silhouette
+  const cw = 200;
+  const ch = 300;
+  let s = title(10, 26, "Knockout rim on dark grounds (top: rim, bottom: rim off)");
+  const looks = [
+    L({ frame: "masc", hair: "messy", hair_tone: "black", outfit: "long_coat", outfit_tone: "black" }),
+    L({ frame: "fem", hair: "long_straight", hair_tone: "black", outfit: "gown", outfit_tone: "dark" }),
+    L({ frame: "masc", outfit: "uniform", outfit_tone: "dark", headwear: "helmet", accessories: ["sword_belt"] }),
+  ];
+  const bgs = ["#141414", "#4a4a4a", "#9a9a9a"];
+  looks.forEach((look, i) => {
+    for (const [r, rim] of [true, false].entries()) {
+      const draw: Draw = (lineWidth, prefix) => humanRig.draw({ look, pose: "walk", expression: "determined", facing: "right", lineWidth, seed: 5, rim }, { idPrefix: prefix, rand: () => 0.5 });
+      const x = 10 + i * cw;
+      const y = 40 + r * ch;
+      s += `<rect x="${x}" y="${y}" width="${cw - 4}" height="${ch - 4}" fill="${bgs[i]}"/>`;
+      s += cell(draw, { x, y, w: cw - 4, h: ch - 4, crop: "full", scale: 2.4 }).replace(/<rect x="[^"]*" y="[^"]*" width="[^"]*" height="[^"]*" fill="#fff" stroke="#ccc" stroke-width="1"\/>/, "");
+    }
+  });
+  sheet("rim", 20 + 3 * cw, 50 + 2 * ch, s);
+}

@@ -208,3 +208,69 @@ if (want("poses")) {
     sheet(`c-poses-${nameOf(look)}`, `(c) ${nameOf(look)}: poses`, [...cells, ...fr], 8, 170, 200);
   }
 }
+
+/**
+ * Close-ups the way the composer frames them: `close` puts head and shoulders
+ * in the panel, `extreme_close` makes the head circle fill it. Every faced
+ * creature must stay legible here (craft P1-9).
+ */
+function closeCell(look: CharacterLook, shot: "close" | "extreme_close", facing: Facing, expression: Expression, x: number, y: number, w: number, h: number, key: string, label: string): string {
+  const prefix = `cu${key}-`;
+  const probe = rig.draw({ look, pose: "talk", expression, facing, lineWidth: 1, seed: 7 }, { idPrefix: prefix, rand: () => 0.5 });
+  const a = probe.anchors;
+  const r = Math.max(0.5, a.headRadius);
+  let scale: number;
+  let headX: number;
+  let headY: number;
+  if (shot === "extreme_close") {
+    scale = (0.98 * Math.min(h, w * 1.1)) / (2 * r);
+    headX = x + w / 2;
+    headY = y + h * 0.52;
+  } else {
+    const bottom = Math.max(a.shoulders, a.head.y + r * 1.4);
+    const top = a.head.y - r * 1.15;
+    scale = Math.min((0.8 * h) / Math.max(1, bottom - top), (0.6 * w) / (2 * r));
+    headX = x + w / 2;
+    headY = y + h * 0.9 - (bottom - a.head.y) * scale;
+  }
+  const d = rig.draw({ look, pose: "talk", expression, facing, lineWidth: STROKE.figureOutline / scale, seed: 7 }, { idPrefix: prefix, rand: () => 0.5 });
+  const ox = headX - d.anchors.head.x * scale;
+  const oy = headY - d.anchors.head.y * scale;
+  const clip = `${prefix}clip`;
+  return (
+    `<defs>${scaledToneDefs(prefix, scale)}<clipPath id="${clip}"><rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}"/></clipPath></defs>` +
+    `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="#fff" stroke="#bbb"/>` +
+    `<g clip-path="url(#${clip})"><g transform="translate(${n(ox)} ${n(oy)}) scale(${n(scale)})">${d.svg}</g></g>` +
+    `<text x="${n(x + 4)}" y="${n(y + h + 16)}" font-family="PS Comic" font-weight="700" font-size="13" fill="${INK}">${esc(label)}</text>`
+  );
+}
+
+if (want("close")) {
+  for (const kind of ["bird", "animal", "insect", "object", "plant", "spirit", "emblem"]) {
+    const list = looks[kind].filter((l) => !(l.kind === "object" || l.kind === "plant") || l.face);
+    const cols = 6;
+    const cw = 230;
+    const ch = 200;
+    const cells: string[] = [];
+    let i = 0;
+    for (const look of list) {
+      for (const [shot, facing, e] of [
+        ["extreme_close", "right", "neutral"],
+        ["extreme_close", "front", "happy"],
+        ["close", "right", "angry"],
+      ] as const) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        cells.push(closeCell(look, shot, facing, e, 10 + col * (cw + 10), 46 + row * (ch + 30), cw, ch, `${kind}${i}`, `${nameOf(look)} ${shot === "close" ? "close" : "xclose"} ${facing} ${e}`));
+        i += 1;
+      }
+    }
+    const rows = Math.ceil(i / cols);
+    const W = 10 + cols * (cw + 10);
+    const H = 56 + rows * (ch + 30);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${PAGE_BG}"/><text x="14" y="32" font-family="PS Comic" font-weight="700" font-size="22" fill="${INK}">${esc(`(d) ${kind}: close-ups as framed by the composer`)}</text>${cells.join("")}</svg>`;
+    const file = path.join(OUT, `creatures-d-close-${kind}.png`);
+    writeFileSync(file, svgToPng(svg, { width: W }));
+    console.log(file);
+  }
+}

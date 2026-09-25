@@ -476,7 +476,7 @@ export const plantRig: KindRig<PlantLook> = {
     const look = request.look;
     if (!(look.species in HEIGHT)) throw new Error(`unknown plant species ${String(look.species)}`);
     const pose = POSES.includes(request.pose) ? request.pose : "stand";
-    const pen = makePen(request.lineWidth, ctx.idPrefix);
+    const pen = makePen(request.lineWidth, ctx.idPrefix, request);
     const facing = request.facing === "left" ? "right" : request.facing;
     const c: Ctx = {
       pen,

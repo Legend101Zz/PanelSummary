@@ -457,51 +457,75 @@ export function furniture(st: Stage, parts: { b: LocalBox; fill?: string; top?: 
   add(st, LAYER.stand, z, s);
 }
 
-export function bed(st: Stage, x0: number, zHead: number, opts: { rich?: boolean; poor?: boolean } = {}): void {
-  const x1 = x0 + (opts.rich ? 1.6 : 1.0);
-  const z0 = zHead - 2.1;
+/**
+ * A bed seen from its long side (parallel to the picture plane), so a lying
+ * figure — drawn horizontally — fits on it. Centred on (xc, zc), headboard at
+ * the left end unless `headRight`. Publishes page-space anchors:
+ * `bed` (centre of the mattress top, where a lying figure's back rests),
+ * `bed_head` (pillow end) and `bed_foot` (foot end), all on the mattress top;
+ * their distance is the length available to a lying figure.
+ */
+export function bed(st: Stage, xc: number, zc: number, opts: { rich?: boolean; poor?: boolean; headRight?: boolean } = {}): void {
+  const L = opts.rich ? 2.1 : 1.9;
+  const D = opts.rich ? 1.5 : 0.95;
+  const x0 = xc - L / 2;
+  const x1 = xc + L / 2;
+  const z0 = zc - D / 2;
+  const z1 = zc + D / 2;
   const blanket = opts.poor ? toneFill("dots", st.p) : opts.rich ? toneFill("flowers", st.p) : toneFill("stripes", st.p);
   const wood = st.pal.wood;
   const top = opts.poor ? 0.5 : 0.62;
-  const sortZ = st.cam.F / scaleAt(st.cam, { x: (x0 + x1) / 2, y: 0.5, z: z0 });
+  const headAt = opts.headRight ? x1 : x0;
+  const footAt = opts.headRight ? x0 : x1;
+  const hd = opts.headRight ? -1 : 1; // direction from head to foot along x
+  const sortZ = st.cam.F / scaleAt(st.cam, { x: xc, y: 0.5, z: z0 });
   const parts: { b: LocalBox; fill?: string; top?: string }[] = [];
-  // headboard with posts (behind everything else)
-  parts.push({ b: { a0: x0, a1: x1, y0: 0, y1: opts.rich ? 1.35 : 0.9, d0: zHead - 0.05, d1: zHead }, fill: wood });
-  for (const px of [x0, x1 - 0.08]) parts.push({ b: { a0: px, a1: px + 0.08, y0: 0, y1: opts.rich ? 1.5 : 1.0, d0: zHead - 0.09, d1: zHead }, fill: wood });
-  // legs + side rail
-  for (const [lx, lz] of [
-    [x0, z0],
-    [x1 - 0.07, z0],
-  ]) parts.push({ b: { a0: lx, a1: lx + 0.07, y0: 0, y1: 0.3, d0: lz, d1: lz + 0.07 }, fill: wood });
-  parts.push({ b: { a0: x0, a1: x1, y0: 0.18, y1: top - 0.14, d0: z0, d1: zHead }, fill: wood });
-  // mattress, then a blanket that drapes over the sides
-  parts.push({ b: { a0: x0 + 0.02, a1: x1 - 0.02, y0: top - 0.14, y1: top, d0: z0 + 0.03, d1: zHead - 0.05 }, fill: PAPER, top: PAPER });
-  parts.push({ b: { a0: x0 - 0.04, a1: x1 + 0.04, y0: top - 0.26, y1: top + 0.05, d0: z0 - 0.02, d1: zHead - 0.62 }, fill: blanket, top: blanket });
-  // turned-down sheet
-  parts.push({ b: { a0: x0 - 0.04, a1: x1 + 0.04, y0: top - 0.2, y1: top + 0.06, d0: zHead - 0.72, d1: zHead - 0.62 }, fill: PAPER, top: PAPER });
-  // low footboard
-  parts.push({ b: { a0: x0, a1: x1, y0: 0, y1: top + 0.12, d0: z0 - 0.06, d1: z0 }, fill: wood });
+  const xs = (a: number, b: number) => ({ a0: Math.min(a, b), a1: Math.max(a, b) });
+  // headboard (tall) and footboard (low) at the two ends
+  parts.push({ b: { ...xs(headAt, headAt + hd * 0.07), y0: 0, y1: opts.rich ? 1.35 : 0.95, d0: z0, d1: z1 }, fill: wood });
+  // legs, side rail along the visible long side
+  for (const lx of [x0 + 0.02, x1 - 0.09]) parts.push({ b: { a0: lx, a1: lx + 0.07, y0: 0, y1: 0.3, d0: z0, d1: z0 + 0.07 }, fill: wood });
+  parts.push({ b: { a0: x0, a1: x1, y0: 0.18, y1: top - 0.14, d0: z0, d1: z1 }, fill: wood });
+  // mattress, then a blanket over the foot half and a turned-down sheet
+  parts.push({ b: { a0: x0 + 0.04, a1: x1 - 0.04, y0: top - 0.14, y1: top, d0: z0 + 0.03, d1: z1 - 0.03 }, fill: PAPER, top: PAPER });
+  const mid = headAt + hd * L * 0.42;
+  parts.push({ b: { ...xs(mid, footAt - hd * 0.04), y0: top - 0.26, y1: top + 0.05, d0: z0 - 0.03, d1: z1 }, fill: blanket, top: blanket });
+  parts.push({ b: { ...xs(mid - hd * 0.1, mid), y0: top - 0.2, y1: top + 0.06, d0: z0 - 0.03, d1: z1 }, fill: PAPER, top: PAPER });
+  parts.push({ b: { ...xs(footAt, footAt - hd * 0.07), y0: 0, y1: top + 0.18, d0: z0, d1: z1 }, fill: wood });
   furniture(st, parts, sortZ);
-  // soft pillow: rounded outline over its top rectangle
+  // soft pillow against the headboard
   const py = top + 0.12;
+  const pa = headAt + hd * 0.1;
+  const pb = headAt + hd * 0.55;
   const corners: V3[] = [
-    { x: x0 + 0.12, y: py, z: zHead - 0.5 },
-    { x: x1 - 0.12, y: py, z: zHead - 0.5 },
-    { x: x1 - 0.12, y: py, z: zHead - 0.12 },
-    { x: x0 + 0.12, y: py, z: zHead - 0.12 },
+    { x: Math.min(pa, pb), y: py, z: z0 + 0.12 },
+    { x: Math.max(pa, pb), y: py, z: z0 + 0.12 },
+    { x: Math.max(pa, pb), y: py, z: z1 - 0.12 },
+    { x: Math.min(pa, pb), y: py, z: z1 - 0.12 },
   ];
   const q = corners.map((c) => project(st.cam, c));
   if (q.every((p) => p)) {
     const pts = q as Point[];
     const lift = { x: 0, y: -Math.max(2, scaleAt(st.cam, corners[0]) * 0.08) };
-    const mid = (a: Point, b: Point, bulge: number): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + lift.y * bulge });
-    const outline = [pts[0], mid(pts[0], pts[1], 0.6), pts[1], mid(pts[1], pts[2], 0.3), pts[2], mid(pts[2], pts[3], 1), pts[3], mid(pts[3], pts[0], 0.3)];
+    const midP = (a: Point, b: Point, bulge: number): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + lift.y * bulge });
+    const outline = [pts[0], midP(pts[0], pts[1], 0.6), pts[1], midP(pts[1], pts[2], 0.3), pts[2], midP(pts[2], pts[3], 1), pts[3], midP(pts[3], pts[0], 0.3)];
     const lw = wAt(st, sortZ);
-    const dent = mid(pts[0], pts[2], 0.2);
+    const dent = midP(pts[0], pts[2], 0.2);
     add(st, LAYER.stand, sortZ - 0.02, pathEl(smoothPath(outline, true, 0.6), { fill: PAPER, stroke: st.pal.ink, w: lw }) + pathEl(`M${n(dent.x - 4)} ${n(dent.y)}q4 2 8 0`, { stroke: st.pal.ink, w: lw * 0.5 }));
+  }
+  if (!st.anchors.bed) {
+    const c = project(st.cam, { x: xc, y: top + 0.04, z: zc });
+    const h = project(st.cam, { x: headAt + hd * 0.32, y: top + 0.04, z: zc });
+    const f = project(st.cam, { x: footAt - hd * 0.12, y: top + 0.04, z: zc });
+    if (c && h && f) {
+      st.anchors.bed = c;
+      st.anchors.bed_head = h;
+      st.anchors.bed_foot = f;
+    }
   }
 }
 
+/** Table top anchors: `table` (centre of the top), `table_left`/`table_right` (front corners). */
 export function table(st: Stage, x: number, z: number, w = 1.2, d = 0.8, h = 0.75, opts: { cloth?: boolean } = {}): void {
   const leg = 0.07;
   const parts: { b: LocalBox; fill?: string; top?: string }[] = [];
@@ -516,9 +540,22 @@ export function table(st: Stage, x: number, z: number, w = 1.2, d = 0.8, h = 0.7
   if (opts.cloth) parts.push({ b: { a0: x - w / 2 - 0.05, a1: x + w / 2 + 0.05, y0: h - 0.35, y1: h + 0.04, d0: z - d / 2 - 0.05, d1: z + d / 2 + 0.05 }, fill: PAPER, top: PAPER });
   else parts.push({ b: { a0: x - w / 2, a1: x + w / 2, y0: h - 0.06, y1: h, d0: z - d / 2, d1: z + d / 2 }, fill: st.pal.wood, top: st.pal.wood });
   furniture(st, parts);
+  if (!st.anchors.table) {
+    const c = project(st.cam, { x, y: h, z });
+    const l = project(st.cam, { x: x - w / 2, y: h, z: z - d / 2 });
+    const r = project(st.cam, { x: x + w / 2, y: h, z: z - d / 2 });
+    if (c && l && r) {
+      st.anchors.table = c;
+      st.anchors.table_left = l;
+      st.anchors.table_right = r;
+    }
+  }
 }
 
+/** A stool; publishes `stool` (centre of the seat top) for a sitting figure. */
 export function stool(st: Stage, x: number, z: number): void {
+  const seat = project(st.cam, { x, y: 0.5, z });
+  if (seat && !st.anchors.stool) st.anchors.stool = seat;
   furniture(st, [
     { b: { a0: x - 0.18, a1: x - 0.13, y0: 0, y1: 0.45, d0: z - 0.03, d1: z + 0.02 }, fill: st.pal.wood },
     { b: { a0: x + 0.13, a1: x + 0.18, y0: 0, y1: 0.45, d0: z - 0.03, d1: z + 0.02 }, fill: st.pal.wood },
@@ -526,7 +563,10 @@ export function stool(st: Stage, x: number, z: number): void {
   ]);
 }
 
+/** A chair; publishes `chair` (centre of the seat top) for a sitting figure. */
 export function chair(st: Stage, x: number, z: number, backAtZ = true): void {
+  const seat = project(st.cam, { x, y: 0.5, z });
+  if (seat && !st.anchors.chair) st.anchors.chair = seat;
   const bz = backAtZ ? z + 0.2 : z - 0.24;
   furniture(st, [
     { b: { a0: x - 0.22, a1: x - 0.17, y0: 0, y1: 0.45, d0: z - 0.2, d1: z - 0.15 }, fill: st.pal.wood },

@@ -2,11 +2,12 @@
  * The per-call drawing stage for environments: camera, palette, level of
  * detail, and a painter's list of SVG items (layer, then far-to-near depth).
  */
-import type { Box, EnvFeature, Environment, Point, Shot } from "../contracts.js";
+import type { Box, EnvFeature, Environment, Point, Shot, Tone } from "../contracts.js";
 import type { EnvironmentRequest } from "../internal.js";
 import { INK, PAPER, toneFill } from "../style.js";
 import { n, polyPath } from "../svg.js";
 import { bboxOf, intersects, project, projectPoly, projectSeg, scaleAt, type Camera, type V3 } from "./camera.js";
+import { pathAreaIn } from "./compact.js";
 
 export const LAYER = {
   sky: 0,
@@ -63,6 +64,20 @@ export interface Stage {
   items: Item[];
   anchors: Record<string, Point>;
   seed: number;
+  /** Shared <symbol>-style definitions (id → markup), emitted once in <defs>. */
+  defs?: Map<string, string>;
+}
+
+/**
+ * Register a reusable definition and return its id. Identical markup is
+ * stored once, so repeated parts (windows of one size) share one definition.
+ */
+export function defineOnce(st: Stage, kind: string, markup: string): string {
+  if (!st.defs) st.defs = new Map();
+  for (const [id, m] of st.defs) if (m === markup) return id;
+  const id = `${st.p}${kind}${st.defs.size.toString(36)}`;
+  st.defs.set(id, markup);
+  return id;
 }
 
 export function palette(time: EnvironmentRequest["time"], weather: EnvironmentRequest["weather"], p: string, soft: boolean, interior = false): Palette {
@@ -87,19 +102,20 @@ export function palette(time: EnvironmentRequest["time"], weather: EnvironmentRe
     dusk,
   };
   if (night && interior) {
-    // lamp-lit rooms: textured screentone walls rather than flat grey
+    // lamp-lit rooms: flat greys (screentone over a whole room reads as mush
+    // behind figures); the floor stays lighter than the walls
     return {
       ...base,
       sky: t("black"),
-      wall: t("dense_dots"),
-      shade: t("dark"),
+      wall: t("dark"),
+      shade: t("black"),
       deep: t("black"),
       roof: t("dark"),
       glass: t("black"),
-      ground: t("dots"),
-      foliage: t("dots"),
+      ground: t("mid"),
+      foliage: t("mid"),
       foliageShade: t("dark"),
-      wood: t("dots"),
+      wood: t("mid"),
     };
   }
   if (night) {
@@ -132,9 +148,76 @@ export function add(st: Stage, layer: number, z: number, svg: string): void {
   st.items.push({ layer, z, seq: st.items.length, svg });
 }
 
-export function compose(st: Stage): string {
+/**
+ * Serialise the painter's list. `patternBudget` is the fraction of the panel
+ * that screentone patterns may cover: the smallest patterned shapes (accents,
+ * shade sides, foliage) keep their tone and the largest fall back to flat
+ * greys once the budget is spent, so no panel drowns in dots.
+ */
+export function compose(st: Stage, patternBudget = 1): string {
   const sorted = [...st.items].sort((a, b) => a.layer - b.layer || b.z - a.z || a.seq - b.seq);
-  return `<g stroke-linejoin="round" stroke-linecap="round">${sorted.map((i) => i.svg).join("")}</g>`;
+  let body = sorted.map((i) => i.svg).join("");
+  let defs = st.defs && st.defs.size ? [...st.defs].map(([id, m]) => `<g id="${id}">${m}</g>`).join("") : "";
+  if (patternBudget < 1) {
+    body = limitPatternTone(body, st.box, st.p, patternBudget);
+    defs = limitPatternTone(defs, st.box, st.p, patternBudget);
+  }
+  return `${defs ? `<defs>${defs}</defs>` : ""}<g stroke-linejoin="round" stroke-linecap="round">${body}</g>`;
+}
+
+/** Flat grey that stands in for a screentone pattern. */
+export const FLAT_FOR_PATTERN: Record<string, Tone> = {
+  dots: "light",
+  dense_dots: "mid",
+  stripes: "mid",
+  check: "mid",
+  flowers: "light",
+  gold: "light",
+  stone: "light",
+};
+
+function escRe(v: string): string {
+  return v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function limitPatternTone(svg: string, box: Box, prefix: string, frac: number): string {
+  const budget = Math.max(0, frac) * box.w * box.h;
+  const el = new RegExp(`<(path|circle|ellipse|rect)\\b([^>]*?)fill="url\\(#${escRe(prefix)}tone-([a-z_]+)\\)"([^>]*)>`, "g");
+  const areas: { i: number; area: number }[] = [];
+  let i = 0;
+  for (const m of svg.matchAll(el)) {
+    const tone = m[3];
+    const idx = i;
+    i += 1;
+    if (!FLAT_FOR_PATTERN[tone]) continue;
+    const attrs = `${m[2]} ${m[4]}`;
+    let area = 0;
+    if (m[1] === "path") {
+      const d = /\sd="([^"]*)"/.exec(` ${attrs}`);
+      area = d ? pathAreaIn(d[1], box) : 0;
+    } else {
+      const num = (k: string) => Number(new RegExp(`\\s${k}="(-?[\\d.]+)"`).exec(` ${attrs}`)?.[1] ?? 0);
+      area = m[1] === "circle" ? Math.PI * num("r") ** 2 : m[1] === "ellipse" ? Math.PI * num("rx") * num("ry") : num("width") * num("height");
+      area = Math.min(area, box.w * box.h);
+    }
+    areas.push({ i: idx, area });
+  }
+  if (areas.length === 0) return svg;
+  const sorted = [...areas].sort((a, b) => a.area - b.area || a.i - b.i);
+  const flatten = new Set<number>();
+  let used = 0;
+  for (const a of sorted) {
+    if (used + a.area <= budget) used += a.area;
+    else flatten.add(a.i);
+  }
+  if (flatten.size === 0) return svg;
+  let k = 0;
+  return svg.replace(el, (all, _tag: string, _a: string, tone: string) => {
+    const idx = k;
+    k += 1;
+    if (!flatten.has(idx) || !FLAT_FOR_PATTERN[tone]) return all;
+    return all.replace(`fill="url(#${prefix}tone-${tone})"`, `fill="${toneFill(FLAT_FOR_PATTERN[tone], prefix)}"`);
+  });
 }
 
 /** Stroke width for an element at camera depth z (thinner with distance). */
@@ -193,10 +276,56 @@ export function relPoly(pts: readonly Point[], close = true): string {
   return close ? `${d}z` : d;
 }
 
+/**
+ * Guard rectangle: projected geometry is clipped to the panel grown by its
+ * own size on every side. Planes that pass close to the camera otherwise
+ * project to coordinates in the tens of thousands, which cost bytes and can
+ * make the preview rasteriser (resvg) panic.
+ */
+function guard(st: Stage): { x0: number; y0: number; x1: number; y1: number } {
+  const b = st.box;
+  const m = Math.max(b.w, b.h);
+  return { x0: b.x - m, y0: b.y - m, x1: b.x + b.w + m, y1: b.y + b.h + m };
+}
+
+/** Sutherland–Hodgman clip of a polygon to an axis-aligned rectangle. */
+export function clipPolygon(pts: readonly Point[], r: { x0: number; y0: number; x1: number; y1: number }): Point[] {
+  let out: Point[] = [...pts];
+  const edges: [(p: Point) => boolean, (a: Point, b: Point) => Point][] = [
+    [(p) => p.x >= r.x0, (a, b) => ({ x: r.x0, y: a.y + ((b.y - a.y) * (r.x0 - a.x)) / (b.x - a.x) })],
+    [(p) => p.x <= r.x1, (a, b) => ({ x: r.x1, y: a.y + ((b.y - a.y) * (r.x1 - a.x)) / (b.x - a.x) })],
+    [(p) => p.y >= r.y0, (a, b) => ({ x: a.x + ((b.x - a.x) * (r.y0 - a.y)) / (b.y - a.y), y: r.y0 })],
+    [(p) => p.y <= r.y1, (a, b) => ({ x: a.x + ((b.x - a.x) * (r.y1 - a.y)) / (b.y - a.y), y: r.y1 })],
+  ];
+  for (const [inside, cut] of edges) {
+    if (out.length === 0) break;
+    const input = out;
+    out = [];
+    for (let i = 0; i < input.length; i += 1) {
+      const a = input[i];
+      const b = input[(i + 1) % input.length];
+      const ain = inside(a);
+      const bin = inside(b);
+      if (ain) out.push(a);
+      if (ain !== bin) out.push(cut(a, b));
+    }
+  }
+  return out;
+}
+
+function outside(p: Point, r: { x0: number; y0: number; x1: number; y1: number }): boolean {
+  return p.x < r.x0 || p.x > r.x1 || p.y < r.y0 || p.y > r.y1;
+}
+
 /** Projected polygon path data, or "" when culled. */
 export function polyD(st: Stage, pts3: readonly V3[]): string {
-  const pts = projectPoly(st.cam, pts3);
+  let pts = projectPoly(st.cam, pts3);
   if (pts.length < 3 || !visible(st, pts)) return "";
+  const g = guard(st);
+  if (pts.some((p) => outside(p, g))) {
+    pts = clipPolygon(pts, g);
+    if (pts.length < 3) return "";
+  }
   return relPoly(pts, true);
 }
 
@@ -209,7 +338,38 @@ export function segD(st: Stage, a: V3, b: V3): string {
   const seg = projectSeg(st.cam, a, b);
   if (!seg) return "";
   if (!visible(st, seg, 4)) return "";
+  const g = guard(st);
+  if (outside(seg[0], g) || outside(seg[1], g)) {
+    const c = clipSegment(seg[0], seg[1], g);
+    if (!c) return "";
+    return relPoly(c, false);
+  }
   return relPoly(seg, false);
+}
+
+/** Liang–Barsky clip of a segment to an axis-aligned rectangle. */
+function clipSegment(a: Point, b: Point, r: { x0: number; y0: number; x1: number; y1: number }): [Point, Point] | null {
+  let t0 = 0;
+  let t1 = 1;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const test = (p: number, q: number): boolean => {
+    if (p === 0) return q >= 0;
+    const t = q / p;
+    if (p < 0) {
+      if (t > t1) return false;
+      if (t > t0) t0 = t;
+    } else {
+      if (t < t0) return false;
+      if (t < t1) t1 = t;
+    }
+    return true;
+  };
+  if (!test(-dx, a.x - r.x0) || !test(dx, r.x1 - a.x) || !test(-dy, a.y - r.y0) || !test(dy, r.y1 - a.y)) return null;
+  return [
+    { x: a.x + dx * t0, y: a.y + dy * t0 },
+    { x: a.x + dx * t1, y: a.y + dy * t1 },
+  ];
 }
 
 /** Polyline through world points (open), clipped per segment. */

@@ -21,6 +21,7 @@ import { plantRig } from "../src/rig/plant.js";
 import { spiritRig } from "../src/rig/spirit.js";
 import { emblemRig } from "../src/rig/emblem.js";
 import type { KindRig } from "../src/rig/kind.js";
+import { rig } from "../src/rig/index.js";
 
 const PREFIX = "pg7-";
 const ctx = () => ({ idPrefix: PREFIX, rand: () => 0.5 });
@@ -184,6 +185,89 @@ describe("creature rigs", () => {
       if (!c.rig.supportedPoses(c.look).includes("hold")) continue;
       const d = draw(c, "hold", "neutral", "right");
       expect(d.anchors.hand, c.name).toBeDefined();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pass 2: knockout rim, level of detail, creature acting through the dispatcher
+// ---------------------------------------------------------------------------
+
+
+describe("creature rigs: rim and level of detail", () => {
+  it("every kind draws a paper knockout rim (shared outline defs) unless rim is false", () => {
+    for (const c of cases) {
+      const h = c.rig.nominalHeight(c.look);
+      const req = { look: c.look, pose: "stand" as Pose, expression: "neutral" as Expression, facing: "right" as Facing, lineWidth: h / 180, seed: 5 };
+      const d = c.rig.draw(req, ctx());
+      const rim = /<g fill="#ffffff" stroke="#ffffff">(<use [^>]*>)+/.exec(d.svg);
+      expect(rim, c.name).not.toBeNull();
+      const ids = new Set([...d.svg.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+      for (const m of d.svg.matchAll(/href="#([^"]+)"/g)) expect(ids.has(m[1]), `${c.name}: #${m[1]}`).toBe(true);
+      const plain = c.rig.draw({ ...req, rim: false }, ctx());
+      expect(plain.svg, c.name).not.toContain("<use");
+      expect(plain.anchors, c.name).toEqual(d.anchors);
+    }
+  });
+
+  it("reduced and silhouette levels drop detail but keep anchors", () => {
+    for (const c of cases) {
+      const h = c.rig.nominalHeight(c.look);
+      const at = (detail: "full" | "reduced" | "silhouette") => c.rig.draw({ look: c.look, pose: "talk", expression: c.rig.supportedExpressions(c.look).includes("cry") ? "cry" : "neutral", facing: "right", lineWidth: h / 180, seed: 5, detail }, ctx());
+      const full = at("full");
+      const reduced = at("reduced");
+      const sil = at("silhouette");
+      expect(reduced.svg.length, c.name).toBeLessThanOrEqual(full.svg.length);
+      expect(sil.svg.length, c.name).toBeLessThan(full.svg.length);
+      expect(sil.anchors.head, c.name).toEqual(full.anchors.head);
+      expect(sil.anchors.headRadius, c.name).toBe(full.anchors.headRadius);
+      expect(sil.anchors.mouth, c.name).toEqual(full.anchors.mouth);
+      checkDrawing(c, sil, `${c.name} silhouette`);
+    }
+  });
+});
+
+describe("creature acting (dispatcher)", () => {
+  const swallow: CharacterLook = { kind: "bird", species: "swallow", tone: "dark" };
+  const state: CharacterLook = { kind: "emblem", emblem: "state" };
+  const at = (look: CharacterLook, expression: Expression, facing: Facing = "right") =>
+    rig.draw({ look, pose: "stand", expression, facing, lineWidth: 0.1, seed: 5 }, ctx()).anchors;
+
+  it("leans forward when angry or sad and back when afraid, in side views", () => {
+    for (const look of [swallow, state]) {
+      const n0 = at(look, "neutral");
+      expect(at(look, "angry").head.x).toBeGreaterThan(n0.head.x);
+      expect(at(look, "sad").head.x).toBeGreaterThan(n0.head.x);
+      expect(at(look, "afraid").head.x).toBeLessThan(n0.head.x);
+      // front views do not lean
+      expect(at(look, "angry", "front").head.x).toBeCloseTo(at(look, "neutral", "front").head.x, 6);
+    }
+  });
+
+  it("acted drawings stay on the ground and keep the mouth on the face", () => {
+    for (const c of cases) {
+      for (const e of ["angry", "afraid", "sad", "surprised"] as Expression[]) {
+        if (!c.rig.supportedExpressions(c.look).includes(e)) continue;
+        const req = { look: c.look, pose: "stand" as Pose, expression: e, facing: "right" as Facing, lineWidth: 0.2, seed: 5 };
+        const d = rig.draw(req, ctx());
+        const a = d.anchors;
+        const o = c.rig.draw(req, ctx()).anchors;
+        expect(a.top, c.name).toBeLessThan(0);
+        expect(a.left, c.name).toBeLessThan(a.right);
+        // the lean is rigid (plus a slight squash): the mouth keeps its place on the face
+        const dm = Math.hypot(a.mouth.x - a.head.x, a.mouth.y - a.head.y);
+        const dm0 = Math.hypot(o.mouth.x - o.head.x, o.mouth.y - o.head.y);
+        expect(Math.abs(dm - dm0), `${c.name} ${e}`).toBeLessThanOrEqual(dm0 * 0.06 + 0.01);
+        const m = /^<g transform="matrix\(([^)]+)\)">/.exec(d.svg);
+        if (m) {
+          const [ma, mb, mc, md, me, mf] = m[1].split(" ").map(Number);
+          // the lean keeps the base on or above the ground line
+          for (const x of [o.left, o.right]) expect(mb * x + md * 0 + mf, c.name).toBeLessThanOrEqual(0.05);
+          void ma;
+          void mc;
+          void me;
+        }
+      }
     }
   });
 });

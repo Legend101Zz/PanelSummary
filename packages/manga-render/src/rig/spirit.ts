@@ -459,7 +459,7 @@ export const spiritRig: KindRig<SpiritLook> = {
     const make = DEFS[look.element];
     if (!make) throw new Error(`unknown spirit element ${String(look.element)}`);
     const pose = POSES.includes(request.pose) ? request.pose : "stand";
-    const pen = makePen(request.lineWidth, ctx.idPrefix);
+    const pen = makePen(request.lineWidth, ctx.idPrefix, request);
     const def = make();
     const px = poseXf(pose);
     const floats = look.element === "sun" || look.element === "moon";

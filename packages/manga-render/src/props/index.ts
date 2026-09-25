@@ -5,10 +5,11 @@
  * Outer silhouette uses `lineWidth`; inner detail is thinner and is dropped
  * when the prop is small relative to the line weight (silhouette first).
  */
-import { PROPS, type Point, type PropId } from "../contracts.js";
-import type { DrawContext, PropDrawing, PropModule } from "../internal.js";
+import { PROPS, type Point, type PropId, type Tone } from "../contracts.js";
+import type { DrawContext, PropDrawing, PropModule, SeatKind } from "../internal.js";
 import { INK, PAPER, toneFill } from "../style.js";
 import { n, polyPath, smoothPath } from "../svg.js";
+import { compactSvg } from "../env/compact.js";
 
 interface Pen {
   lw: number;
@@ -16,6 +17,40 @@ interface Pen {
   p: string;
   /** Too small for interior detail. */
   simple: boolean;
+  /** Optional tone variant for the prop's main body (ruby vs sapphire). */
+  tone?: Tone;
+}
+
+/** Flat grey for a tone (props never use pattern tones; see G below). */
+const FLAT_OF: Record<Tone, "white" | "light" | "mid" | "dark" | "black"> = {
+  white: "white",
+  light: "light",
+  mid: "mid",
+  dark: "dark",
+  black: "black",
+  dots: "light",
+  dense_dots: "mid",
+  stripes: "mid",
+  check: "mid",
+  flowers: "light",
+  gold: "light",
+  stone: "light",
+};
+
+/** Main-body fill: the requested tone variant, or the prop's own default. */
+function body(k: Pen, fallback: string): string {
+  if (!k.tone) return fallback;
+  const f = FLAT_OF[k.tone] ?? "light";
+  return f === "white" ? PAPER : toneFill(f, k.p);
+}
+
+const bodyOf = body;
+
+/** True when the body is dark enough that ink detail on it must turn paper-white. */
+function darkBody(k: Pen): boolean {
+  if (!k.tone) return false;
+  const f = FLAT_OF[k.tone];
+  return f === "dark" || f === "black";
 }
 
 interface Spec {
@@ -92,7 +127,10 @@ const SPECS: Record<PropId, Spec> = {
       s += P(poly(-1.3, -11, 1.3, -11, 1.3, -3.8, -1.3, -3.8), g.dark, k.lw);
       if (!k.simple) s += L(`${M(-1.3, -9)}${Lto(1.3, -10.2)}${M(-1.3, -7)}${Lto(1.3, -8.2)}${M(-1.3, -5)}${Lto(1.3, -6.2)}`, k.dw, PAPER);
       s += P(`${M(-8, -13.2)}${Lto(8, -13.2)}${Q(9.4, -12.1, 8, -11)}${Lto(-8, -11)}${Q(-9.4, -12.1, -8, -13.2)}Z`, g.gold, k.lw);
-      s += C(0, -2.2, 2.1, g.gold, k.lw);
+      // the pommel carries the tone variant: a toned jewel set in the hilt
+      s += C(0, -2.2, 2.1, body(k, g.gold), k.lw);
+      if (k.tone && !k.simple) s += F(poly(-1.2, -3.2, -0.3, -3.8, -0.1, -3), PAPER);
+      if (k.tone) s += C(0, -12.1, 0.9, body(k, g.gold), k.dw);
       return s;
     },
   },
@@ -102,14 +140,27 @@ const SPECS: Record<PropId, Spec> = {
     grip: { x: 0, y: -5 },
     draw: (k) => {
       const g = G(k.p);
-      let s = P(poly(-5.5, -5.5, -3.2, -9, 3.2, -9, 5.5, -5.5, 0, 0), PAPER, k.lw);
-      s += F(poly(-5.5, -5.5, -2.4, -5.5, 0, 0), g.light) + F(poly(2.4, -5.5, 5.5, -5.5, 0, 0), g.dark);
-      if (!k.simple) {
-        s += L(`${M(-5.5, -5.5)}${Lto(5.5, -5.5)}${M(-3.2, -9)}${Lto(-2.4, -5.5)}${Lto(0, -9)}${Lto(2.4, -5.5)}${Lto(3.2, -9)}${M(-2.4, -5.5)}${Lto(0, 0)}${Lto(2.4, -5.5)}`, k.dw);
+      const outline = poly(-5.5, -5.5, -3.2, -9, 3.2, -9, 5.5, -5.5, 0, 0);
+      const facets = `${M(-5.5, -5.5)}${Lto(5.5, -5.5)}${M(-3.2, -9)}${Lto(-2.4, -5.5)}${Lto(0, -9)}${Lto(2.4, -5.5)}${Lto(3.2, -9)}${M(-2.4, -5.5)}${Lto(0, 0)}${Lto(2.4, -5.5)}`;
+      if (!k.tone || FLAT_OF[k.tone] === "white" || FLAT_OF[k.tone] === "light") {
+        // a clear diamond: paper body with light and dark facets
+        let s = P(outline, body(k, PAPER), k.lw);
+        s += F(poly(-5.5, -5.5, -2.4, -5.5, 0, 0), g.light) + F(poly(2.4, -5.5, 5.5, -5.5, 0, 0), g.dark);
+        if (!k.simple) s += L(facets, k.dw);
+        s += P(outline, "none", k.lw);
+        return s + sparkle(4.6, -9.6, 3, k.dw) + sparkle(-5.6, -8.4, 1.8, k.dw);
       }
-      s += P(poly(-5.5, -5.5, -3.2, -9, 3.2, -9, 5.5, -5.5, 0, 0), "none", k.lw);
-      s += sparkle(4.6, -9.6, 3, k.dw) + sparkle(-5.6, -8.4, 1.8, k.dw);
-      return s;
+      // a coloured stone: toned body, a darker pavilion side, paper facet lines and a
+      // bright table glint so a ruby (dark) and a sapphire (mid) never read alike
+      const dark = darkBody(k);
+      let s = P(outline, body(k, PAPER), k.lw);
+      s += F(poly(2.4, -5.5, 5.5, -5.5, 0, 0), dark ? INK : g.dark);
+      s += F(poly(-3.2, -9, 3.2, -9, 2.4, -5.5, -2.4, -5.5), dark ? g.dark : g.light);
+      if (!k.simple) s += L(facets, k.dw * 0.8, dark ? PAPER : INK);
+      s += F(poly(-4.6, -5.9, -2.9, -8.4, -1.9, -8.4, -3.1, -5.9), PAPER);
+      s += F(poly(-3.3, -4.6, -1.4, -4.6, -0.5, -2.2), PAPER);
+      s += P(outline, "none", k.lw);
+      return s + sparkle(4.6, -9.6, 3, k.dw) + sparkle(-5.6, -8.4, 1.8, k.dw);
     },
   },
   coin: {
@@ -118,9 +169,10 @@ const SPECS: Record<PropId, Spec> = {
     grip: { x: 0, y: -3.5 },
     draw: (k) => {
       const g = G(k.p);
-      let s = C(0, -3.5, 3.5, g.gold, k.lw);
+      const ink = darkBody(k) ? PAPER : INK;
+      let s = C(0, -3.5, 3.5, body(k, g.gold), k.lw);
       if (!k.simple) {
-        s += `<circle cx="0" cy="-3.5" r="2.6" fill="none" stroke="${INK}" stroke-width="${n(k.dw)}"/>`;
+        s += `<circle cx="0" cy="-3.5" r="2.6" fill="none" stroke="${ink}" stroke-width="${n(k.dw)}"/>`;
         // a simple five-point star emblem
         const star: number[] = [];
         for (let i = 0; i < 10; i += 1) {
@@ -128,7 +180,7 @@ const SPECS: Record<PropId, Spec> = {
           const r = i % 2 === 0 ? 1.5 : 0.65;
           star.push(Math.cos(a) * r, -3.5 + Math.sin(a) * r);
         }
-        s += P(poly(...star), INK, k.dw * 0.3);
+        s += P(poly(...star), ink, k.dw * 0.3).replace(`stroke="${INK}"`, `stroke="${ink}"`);
         s += L(`${M(-2.4, -5.2)}${Q(-2.9, -3.5, -2.3, -2.2)}`, k.dw, PAPER);
       }
       return s;
@@ -139,7 +191,7 @@ const SPECS: Record<PropId, Spec> = {
     w: 26,
     grip: { x: 0, y: -7 },
     draw: (k) => {
-      const g = G(k.p);
+      const g = { ...G(k.p), gold: body(k, G(k.p).gold) };
       const stack = (x: number, count: number, y0: number): string => {
         const rx = 4;
         const ry = 1.3;
@@ -167,7 +219,7 @@ const SPECS: Record<PropId, Spec> = {
     draw: (k) => {
       const g = G(k.p);
       const body = smooth(true, -2.4, -17, 2.4, -17, 5.5, -14.5, 9, -8, 7.5, -1.5, 0, 0, -7.5, -1.5, -9, -8, -5.5, -14.5);
-      let s = P(body, PAPER, k.lw);
+      let s = P(body, bodyOf(k, PAPER), k.lw);
       if (!k.simple) {
         s += F(smooth(true, 4.5, -13.5, 8.6, -8, 7, -1.8, 2.5, -0.6, 6.4, -6.5), g.dots);
         s += L(`${M(-1.5, -16)}${Q(-4, -10, -3.2, -4)}${M(1.2, -16)}${Q(2.2, -11, 1, -6)}`, k.dw);
@@ -232,6 +284,7 @@ const SPECS: Record<PropId, Spec> = {
       let s = P(poly(-4.5, -14.6, 6, -14.6, 7.2, -16, -3.3, -16), PAPER, k.lw);
       s += P(poly(6, -14.6, 7.2, -16, 7.2, -1.4, 6, 0), PAPER, k.lw);
       if (!k.simple) s += L(`${M(6.4, -14)}${Lto(6.4, -0.6)}${M(6.8, -14.6)}${Lto(6.8, -1)}`, k.dw * 0.6);
+      g.dark = bodyOf(k, g.dark);
       s += P(poly(-4.5, 0, 6, 0, 6, -14.6, -4.5, -14.6), g.dark, k.lw);
       s += P(`${M(-4.5, 0)}${Lto(-6.6, -0.6)}${Lto(-6.6, -15.2)}${Lto(-4.5, -14.6)}Z`, g.dark, k.lw);
       if (!k.simple) {
@@ -379,7 +432,7 @@ const SPECS: Record<PropId, Spec> = {
     draw: (k) => {
       const g = G(k.p);
       let s = P(`${M(4.6, -7.5)}${Q(9, -8, 8.6, -4.5)}${Q(8.2, -1.8, 4.3, -2.2)}`, "none", k.lw * 1.3);
-      s += P(`${M(-5, -9)}${Lto(-4.3, -0.8)}${Q(0, 0.4, 4.3, -0.8)}${Lto(5, -9)}Z`, PAPER, k.lw);
+      s += P(`${M(-5, -9)}${Lto(-4.3, -0.8)}${Q(0, 0.4, 4.3, -0.8)}${Lto(5, -9)}Z`, bodyOf(k, PAPER), k.lw);
       if (!k.simple) s += F(`${M(2.6, -8.6)}${Lto(4.9, -8.8)}${Lto(4.3, -1.2)}${Q(3.4, -0.9, 2.4, -0.7)}Z`, g.dots);
       s += E(0, -9, 5, 1.3, PAPER, k.lw);
       s += `<ellipse cx="0" cy="-8.8" rx="3.9" ry="0.85" fill="${g.dark}"/>`;
@@ -394,7 +447,7 @@ const SPECS: Record<PropId, Spec> = {
     draw: (k) => {
       const g = G(k.p);
       const body = `${M(-3.6, -1.2)}${Q(-3.6, 0, -2.4, 0)}${Lto(2.4, 0)}${Q(3.6, 0, 3.6, -1.2)}${Lto(3.6, -12)}${Q(3.6, -14.6, 1.25, -16)}${Lto(1.25, -20.2)}${Lto(-1.25, -20.2)}${Lto(-1.25, -16)}${Q(-3.6, -14.6, -3.6, -12)}Z`;
-      let s = P(body, g.dark, k.lw);
+      let s = P(body, bodyOf(k, g.dark), k.lw);
       s += P(poly(-1.5, -20.2, 1.5, -20.2, 1.5, -19.2, -1.5, -19.2), g.dark, k.dw);
       s += P(poly(-1.05, -20.2, 1.05, -20.2, 0.9, -22, -0.9, -22), g.dots, k.dw);
       s += P(poly(-3.6, -9.5, 3.6, -9.5, 3.6, -4, -3.6, -4), PAPER, k.dw);
@@ -437,7 +490,7 @@ const SPECS: Record<PropId, Spec> = {
       const g = G(k.p);
       let s = L(`${M(-4.5, -13.5)}${Q(-4.5, -20.5, 0, -20.3)}${Q(4.5, -20.5, 4.5, -13.5)}`, k.lw * 1.5);
       const body = `${M(-9.5, -13)}${Lto(9.5, -13)}${Q(12, -6, 11, -1.6)}${Q(10.6, 0, 8.5, 0)}${Lto(-8.5, 0)}${Q(-10.6, 0, -11, -1.6)}${Q(-12, -6, -9.5, -13)}Z`;
-      s += P(body, g.check, k.lw);
+      s += P(body, bodyOf(k, g.check), k.lw);
       if (!k.simple) {
         s += F(`${M(6.5, -12.6)}${Lto(9.5, -13)}${Q(12, -6, 11, -1.6)}${Q(10.6, 0, 8.5, 0)}${Lto(6.8, 0)}Z`, g.dark);
         s += P(body, "none", k.lw);
@@ -453,6 +506,7 @@ const SPECS: Record<PropId, Spec> = {
     grip: { x: 0, y: -11 },
     draw: (k) => {
       const g = G(k.p);
+      g.gold = bodyOf(k, g.gold);
       let s = P(`${M(-3.1, -11)}${A(3.1, 3.1, -11)}${A(3.1, -3.1, -11)}Z${M(-1.5, -11)}${A(1.5, 1.5, -11, 0)}${A(1.5, -1.5, -11, 0)}Z`, g.gold, k.lw, ` fill-rule="evenodd"`);
       s += P(poly(-0.75, -7.9, 0.75, -7.9, 0.75, 0, -0.75, 0), g.gold, k.lw);
       s += P(poly(0.75, -3.3, 3.4, -3.3, 3.4, -2.3, 2.3, -2.3, 2.3, -1.3, 3.4, -1.3, 3.4, 0, 0.75, 0), g.gold, k.lw);
@@ -491,7 +545,7 @@ const SPECS: Record<PropId, Spec> = {
     w: 17,
     grip: { x: 0, y: -4 },
     draw: (k) => {
-      const g = G(k.p);
+      const g = { ...G(k.p), gold: body(k, G(k.p).gold) };
       let s = P(poly(-8, -4, -8.6, -10, -5, -6.8, -2.6, -11.2, 0, -7.2, 2.6, -11.2, 5, -6.8, 8.6, -10, 8, -4), g.gold, k.lw);
       for (const [x, y] of [
         [-8.6, -10.6],
@@ -502,7 +556,7 @@ const SPECS: Record<PropId, Spec> = {
       s += P(poly(-8.2, 0, 8.2, 0, 8.2, -4.2, -8.2, -4.2), g.gold, k.lw);
       if (!k.simple) {
         s += C(0, -2.1, 1.1, g.dark, k.dw) + P(poly(-4.5, -3.2, -3.4, -2.1, -4.5, -1, -5.6, -2.1), PAPER, k.dw) + P(poly(4.5, -3.2, 5.6, -2.1, 4.5, -1, 3.4, -2.1), PAPER, k.dw);
-        s += L(`${M(-8.2, -3.3)}${Lto(8.2, -3.3)}${M(-8.2, -0.9)}${Lto(8.2, -0.9)}`, k.dw * 0.6);
+        s += L(`${M(-8.2, -3.3)}${Lto(8.2, -3.3)}${M(-8.2, -0.9)}${Lto(8.2, -0.9)}`, k.dw * 0.6, darkBody(k) ? PAPER : INK);
       }
       return s;
     },
@@ -697,7 +751,7 @@ const SPECS: Record<PropId, Spec> = {
       let s = P(`${M(-1.5, -10.5)}${Lto(-1.3, -16)}${Q(0, -18.6, 1.3, -16)}${Lto(1.5, -10.5)}Z`, g.dark, k.lw);
       const body = `${M(-2.6, -10.2)}${Q(-5.4, -9.6, -5.6, -5)}${Q(-6, -2.4, -7.5, -1.2)}${Lto(7.5, -1.2)}${Q(6, -2.4, 5.6, -5)}${Q(5.4, -9.6, 2.6, -10.2)}Z`;
       s += C(0, -0.9, 1.2, g.dark, k.dw);
-      s += P(body, g.gold, k.lw);
+      s += P(body, bodyOf(k, g.gold), k.lw);
       s += P(`${M(-7.7, -1.2)}${Lto(7.7, -1.2)}${Q(7.9, -0.3, 7.2, -0.2)}${Lto(-7.2, -0.2)}${Q(-7.9, -0.3, -7.7, -1.2)}Z`, g.gold, k.lw);
       if (!k.simple) s += L(`${M(-3.6, -8.2)}${Q(-4.5, -5, -5.3, -2.8)}`, k.dw * 1.2, PAPER);
       return s;
@@ -710,7 +764,7 @@ const SPECS: Record<PropId, Spec> = {
     draw: (k) => {
       const g = G(k.p);
       const cloth = `${M(1, -90)}${Q(10, -94, 18, -89.5)}${Q(26, -85.5, 34.5, -89)}${Lto(34.5, -68)}${Q(26, -64.5, 18, -68.5)}${Q(10, -73, 1, -69)}Z`;
-      let s = P(cloth, PAPER, k.lw);
+      let s = P(cloth, bodyOf(k, PAPER), k.lw);
       if (!k.simple) {
         s += F(`${M(1, -79.5)}${Q(10, -83.5, 18, -79)}${Q(26, -75, 34.5, -78.5)}${Lto(34.5, -68)}${Q(26, -64.5, 18, -68.5)}${Q(10, -73, 1, -69)}Z`, g.dark);
         s += L(`${M(17, -88)}${Q(16, -80, 17.5, -70)}`, k.dw * 0.7);
@@ -729,20 +783,118 @@ export function propSpec(prop: PropId): { h: number; w: number; grip: Point } {
   return { h: s.h, w: s.w, grip: s.grip };
 }
 
+/**
+ * Height of the sitting surface for an adult (figure units, negative = above
+ * the ground). It matches the human rig's "sit" pose: the underside of the
+ * pelvis of an average adult sits here (3/4 view -24, front view -25.8).
+ * Seats are drawn at adult size; for other figures the composer scales the
+ * seat by (that figure's seat contact height / -SEAT_Y). See
+ * `seatContact()` in rig/index.ts for the contact point of a given look.
+ */
+export const SEAT_Y = -24.5;
+
+interface SeatSpec {
+  w: number;
+  h: number;
+  draw: (k: Pen) => string;
+}
+
+const SEATS: Record<SeatKind, SeatSpec> = {
+  stool: {
+    w: 24,
+    h: 27,
+    draw: (k) => {
+      const g = G(k.p);
+      const y = SEAT_Y;
+      let s = L(`${M(0, y + 3)}${Lto(0.5, -0.6)}`, k.lw * 1.6);
+      s += L(`${M(-7, y + 2.2)}${Lto(-10.2, 0)}${M(7, y + 2.2)}${Lto(10.2, 0)}`, k.lw * 1.8);
+      if (!k.simple) s += L(`${M(-8.6, -9)}${Q(0, -7.4, 8.6, -9)}`, k.lw);
+      s += P(`${M(-11, y)}${Lto(-11, y + 2.4)}A11 2.6 0 0 0 11 ${n(y + 2.4)}${Lto(11, y)}Z`, g.dark, k.lw);
+      s += E(0, y, 11, 2.6, g.light, k.lw);
+      return s;
+    },
+  },
+  chair: {
+    w: 30,
+    h: 62,
+    draw: (k) => {
+      const g = G(k.p);
+      const y = SEAT_Y;
+      // back legs and back rest (behind the sitter), then seat, then front legs
+      let s = L(`${M(-13.5, y + 1)}${Lto(-14.5, 0)}${M(8, y)}${Lto(8.4, -1)}`, k.lw * 1.7);
+      s += P(poly(-15, y - 0.6, -11.4, y - 0.6, -13.4, -60, -17, -60), g.light, k.lw);
+      if (!k.simple) s += L(`${M(-12.9, y - 8)}${Lto(-14.8, -52)}`, k.dw);
+      s += P(poly(-17.6, -58, -12.6, -58, -12.8, -62, -17.8, -62), g.dark, k.lw);
+      s += P(poly(-14, y - 1.2, 9, y - 1.2, 13, y + 1.3, -10, y + 1.3), g.light, k.lw);
+      s += P(poly(-10, y + 1.3, 13, y + 1.3, 13, y + 3.4, -10, y + 3.4), g.dark, k.lw);
+      s += L(`${M(11.6, y + 3.4)}${Lto(11.8, 0)}${M(-8.6, y + 3.4)}${Lto(-9.2, 0)}`, k.lw * 1.7);
+      if (!k.simple) s += L(`${M(-8.9, -10)}${Lto(11.7, -10)}`, k.lw);
+      return s;
+    },
+  },
+  bench: {
+    w: 50,
+    h: 27,
+    draw: (k) => {
+      const g = G(k.p);
+      const y = SEAT_Y;
+      let s = L(`${M(-18, y)}${Lto(-18.5, -0.6)}${M(20, y)}${Lto(20.5, -0.6)}`, k.lw * 1.7);
+      s += P(poly(-24, y - 1.2, 22, y - 1.2, 25, y + 1.2, -21, y + 1.2), g.light, k.lw);
+      s += P(poly(-21, y + 1.2, 25, y + 1.2, 25, y + 3.4, -21, y + 3.4), g.dark, k.lw);
+      if (!k.simple) s += L(`${M(-16, y - 0.1)}${Lto(18, y - 0.1)}`, k.dw, PAPER);
+      s += L(`${M(-16, y + 3.4)}${Lto(-16.8, 0)}${M(22, y + 3.4)}${Lto(22.6, 0)}`, k.lw * 1.8);
+      return s;
+    },
+  },
+  throne: {
+    w: 42,
+    h: 84,
+    draw: (k) => {
+      const g = G(k.p);
+      const gold = toneFill("light", k.p);
+      const y = SEAT_Y;
+      // tall carved back with a crest, arm rests, a solid base
+      let s = P(`${M(-20, y)}${Lto(-20, -72)}${Q(-20, -80, -13, -82)}${Q(-9, -84, -6, -80)}${Lto(-6, y)}Z`, gold, k.lw);
+      if (!k.simple) {
+        s += P(`${M(-17, y - 6)}${Lto(-17, -70)}${Q(-17, -76, -13, -77)}${Q(-9.5, -78, -9, -74)}${Lto(-9, y - 6)}Z`, g.dark, k.dw);
+        s += C(-13, -80.5, 1.6, g.dark, k.dw);
+      }
+      s += P(poly(-20, y - 1.4, 12, y - 1.4, 15, y + 1.4, -17, y + 1.4), gold, k.lw);
+      s += P(poly(-17, y + 1.4, 15, y + 1.4, 15, -0.2, -17, -0.2), g.dark, k.lw);
+      if (!k.simple) s += P(poly(-13, y + 5, 11, y + 5, 11, -4, -13, -4), "none", k.dw).replace(`stroke="${INK}"`, `stroke="${PAPER}"`);
+      // arm rest on the far side (behind the sitter's arm)
+      s += P(poly(-19, -37, 11, -37, 12.5, -34.4, -17.5, -34.4), gold, k.lw);
+      s += L(`${M(10.5, -34.4)}${Lto(10.5, y - 1.4)}`, k.lw * 1.8);
+      s += C(11.5, -36.6, 1.8, gold, k.lw);
+      return s;
+    },
+  },
+};
+
 export const props: PropModule = {
   nominalHeight(prop: PropId): number {
     return propSpec(prop).h;
   },
-  draw(prop: PropId, lineWidth: number, ctx: DrawContext): PropDrawing {
+  draw(prop: PropId, lineWidth: number, ctx: DrawContext, tone?: Tone): PropDrawing {
     const spec = SPECS[prop];
     if (!spec) throw new Error(`unknown prop ${String(prop)}`);
     const lw = lineWidth > 0 ? lineWidth : 1;
     // detail survives only while the prop is several line-widths across
     const simple = Math.min(spec.h, spec.w) / lw < 7;
-    const pen: Pen = { lw, dw: lw * 0.55, p: ctx.idPrefix, simple };
-    const svg = `<g stroke-linejoin="round" stroke-linecap="round">${spec.draw(pen)}</g>`;
+    const pen: Pen = { lw, dw: lw * 0.55, p: ctx.idPrefix, simple, ...(tone ? { tone } : {}) };
+    const svg = `<g stroke-linejoin="round" stroke-linecap="round">${compactSvg(spec.draw(pen), 2)}</g>`;
     return { svg, width: spec.w, height: spec.h, grip: { ...spec.grip } };
   },
+  seat(kind: SeatKind, lineWidth: number, ctx: DrawContext): PropDrawing & { seatY: number } {
+    const spec = SEATS[kind];
+    if (!spec) throw new Error(`unknown seat ${String(kind)}`);
+    const lw = lineWidth > 0 ? lineWidth : 1;
+    const pen: Pen = { lw, dw: lw * 0.55, p: ctx.idPrefix, simple: 24 / lw < 7 };
+    const svg = `<g stroke-linejoin="round" stroke-linecap="round">${spec.draw(pen)}</g>`;
+    return { svg, width: spec.w, height: spec.h, grip: { x: 0, y: SEAT_Y }, seatY: SEAT_Y };
+  },
 };
+
+export const SEAT_KINDS: readonly SeatKind[] = ["stool", "chair", "bench", "throne"];
 
 export const PROP_IDS = PROPS;

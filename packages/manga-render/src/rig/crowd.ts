@@ -10,7 +10,8 @@ import type { DrawContext, FigureAnchors, FigureDrawing } from "../internal.js";
 import type { KindRig } from "./kind.js";
 import { n } from "../svg.js";
 import { seeded } from "../prng.js";
-import { drawHuman } from "./human/draw.js";
+import { drawHuman, lodFor, rimWidth } from "./human/draw.js";
+import { INK, PAPER } from "../style.js";
 import { nominalHumanHeight } from "./human/look.js";
 
 export const CROWD_POSES = ["stand", "walk", "run", "talk", "point", "cower", "wave"] as const satisfies readonly Pose[];
@@ -158,6 +159,53 @@ function slots(count: number, rand: Rand): Slot[] {
   return out;
 }
 
+/** A back-row crowd member as one flat silhouette: head, neck, shoulders, arms at the sides, legs, a hat hint. */
+function backRowSilhouette(a: FigureAnchors, look: HumanLook, lw: number, crowd: CrowdLook["crowd"]): string {
+  const r = a.headRadius * 0.7;
+  const cx = a.head.x;
+  const hy = a.head.y;
+  const sh = Math.max(a.shoulders, hy + r * 1.25);
+  const W = r * (look.build === "heavy" || look.build === "broad" ? 1.65 : 1.45);
+  const wy = Math.max(a.waist, sh + r * 1.2);
+  const hip = r * (look.frame === "fem" ? 1.2 : 1.05);
+  const crotch = wy + (0 - wy) * 0.35;
+  const pts: [number, number][] = [
+    [-r * 0.32, hy + r * 0.7],
+    [-r * 0.36, sh - r * 0.12],
+    [-W * 0.8, sh],
+    [-W, sh + r * 0.4],
+    [-W * 1.02, wy + r * 0.55],
+    [-W * 0.82, wy + r * 0.6],
+    [-hip, wy + r * 0.3],
+    [-hip * 0.95, -r * 0.08],
+    [-r * 0.14, -r * 0.08],
+    [0, crotch],
+    [r * 0.14, -r * 0.08],
+    [hip * 0.95, -r * 0.08],
+    [hip, wy + r * 0.3],
+    [W * 0.82, wy + r * 0.6],
+    [W * 1.02, wy + r * 0.55],
+    [W, sh + r * 0.4],
+    [W * 0.8, sh],
+    [r * 0.36, sh - r * 0.12],
+    [r * 0.32, hy + r * 0.7],
+  ];
+  const body = `M${pts.map(([x, y]) => `${n(cx + x)} ${n(y)}`).join("L")}Z`;
+  const fill = crowd === "soldiers" || crowd === "officials" ? "#4a4a4a" : "#9a9a9a";
+  const head = `M${n(cx - r)} ${n(hy)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0Z`;
+  let hat = "";
+  if (look.headwear === "helmet") hat = `M${n(cx - r * 1.1)} ${n(hy - r * 0.05)}a${n(r * 1.1)} ${n(r * 1.1)} 0 0 1 ${n(r * 2.2)} 0Z`;
+  else if (look.headwear === "top_hat") hat = `M${n(cx - r * 1.3)} ${n(hy - r * 0.7)}h${n(r * 2.6)}v${n(-r * 0.25)}h${n(-r * 0.6)}v${n(-r * 1.3)}h${n(-r * 1.4)}v${n(r * 1.3)}h${n(-r * 0.6)}Z`;
+  else if (look.headwear === "cap" || look.headwear === "wide_hat" || look.headwear === "bonnet") hat = `M${n(cx - r * 1.25)} ${n(hy - r * 0.35)}h${n(r * 2.5)}l${n(-r * 0.35)} ${n(-r * 0.75)}h${n(-r * 1.8)}Z`;
+  else hat = `M${n(cx - r * 1.02)} ${n(hy - r * 0.05)}a${n(r * 1.02)} ${n(r * 1.05)} 0 0 1 ${n(r * 2.04)} 0q${n(-r * 1.02)} ${n(-r * 0.45)} ${n(-r * 2.04)} 0Z`;
+  const hatFill = look.headwear === "none" ? (look.hair_tone === "white" || look.hair_tone === "light" ? "#d9d9d9" : "#4a4a4a") : INK;
+  return (
+    `<path d="${body}" fill="${fill}" stroke="${INK}" stroke-width="${n(lw * 2)}" paint-order="stroke" stroke-linejoin="round"/>` +
+    `<path d="${head}" fill="#ffffff" stroke="${INK}" stroke-width="${n(lw * 2)}" paint-order="stroke"/>` +
+    `<path d="${hat}" fill="${hatFill}" stroke="${INK}" stroke-width="${n(lw)}" stroke-linejoin="round"/>`
+  );
+}
+
 export const crowdRig: KindRig<CrowdLook> = {
   supportedPoses: () => CROWD_POSES,
   supportedExpressions: () => EXPRESSIONS,
@@ -170,6 +218,9 @@ export const crowdRig: KindRig<CrowdLook> = {
     // Paint back row first, front-centre last.
     const order = places.map((p, i) => ({ p, i })).sort((a, b) => b.p.row - a.p.row || Math.abs(b.p.x) - Math.abs(a.p.x));
     let svg = "";
+    // one paper knockout rim under the whole group, built from every member's silhouette
+    let rim = "";
+    const rimW = request.rim !== false ? rimWidth(request.lineWidth) : 0;
     let lead: FigureAnchors | null = null;
     let top = Infinity;
     let left = Infinity;
@@ -181,6 +232,8 @@ export const crowdRig: KindRig<CrowdLook> = {
       const scale = (p.s * (look.crowd === "children" ? 66 : 100)) / Math.max(H, 1) * (H / (look.crowd === "children" ? 62 : 97));
       const facing = request.facing === "front" || request.facing === "back" ? request.facing : i % 4 === 3 ? "front" : request.facing;
       const pose = memberPose(request.pose, i, i === 0);
+      const sils: string[] = [];
+      const memberLw = (request.lineWidth / scale) * (p.row === 1 ? 0.75 : 1);
       const d = drawHuman(
         {
           look: ml,
@@ -188,15 +241,23 @@ export const crowdRig: KindRig<CrowdLook> = {
           expression: memberExpression(request.expression, i),
           facing,
           // Back row: lighter ink reads as depth.
-          lineWidth: (request.lineWidth / scale) * (p.row === 1 ? 0.75 : 1),
+          lineWidth: memberLw,
           seed: (request.seed * 31 + i * 977) >>> 0,
+          // the back row sits one level of detail below the front row
+          detail: p.row === 1 ? (request.detail === "silhouette" || request.detail === "reduced" ? "silhouette" : "reduced") : request.detail ?? "full",
         },
         ctx,
-        { lite: true },
+        // the group rim follows the front row (the back row is mostly hidden behind it)
+        { lite: true, silOut: rimW > 0 && p.row === 0 ? sils : undefined },
       );
       const tx = p.x;
       const ty = p.y;
-      svg += `<g transform="translate(${n(tx)} ${n(ty)}) scale(${n(scale)})">${d.svg}</g>`;
+      const place = `translate(${n(tx)} ${n(ty)}) scale(${n(scale)})`;
+      // back-row members below full detail on the page become simple flat
+      // silhouettes (a manga crowd shorthand, and a fraction of the bytes)
+      const small = look.size === "many" && p.row === 1 && lodFor(request.detail ?? "full", d.anchors.headRadius, memberLw / 0.75) !== "full";
+      svg += `<g transform="${place}">${small ? backRowSilhouette(d.anchors, ml, memberLw, look.crowd) : d.svg}</g>`;
+      if (rimW > 0 && sils[0]) rim += `<path transform="${place}" d="${sils[0]}" stroke-width="${n((memberLw + rimW / scale) * 2)}"/>`;
       const a = d.anchors;
       const T = (pt: { x: number; y: number }) => ({ x: tx + pt.x * scale, y: ty + pt.y * scale });
       top = Math.min(top, ty + a.top * scale);
@@ -217,6 +278,7 @@ export const crowdRig: KindRig<CrowdLook> = {
       }
     }
     if (!lead) throw new Error("crowd without members");
-    return { svg, anchors: { ...lead, top, left, right } };
+    const rimG = rim ? `<g fill="${PAPER}" stroke="${PAPER}" stroke-linejoin="round">${rim}</g>` : "";
+    return { svg: rimG + svg, anchors: { ...lead, top, left, right } };
   },
 };

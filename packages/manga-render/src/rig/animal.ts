@@ -48,7 +48,7 @@ export const animalRig: KindRig<AnimalLook> = {
     if (!(sp in HEIGHTS)) throw new Error(`unknown animal species ${String(sp)}`);
     const pose = poses(sp).includes(request.pose) ? request.pose : "stand";
     const facing = request.facing === "left" ? "right" : request.facing;
-    const pen = makePen(request.lineWidth, ctx.idPrefix);
+    const pen = makePen(request.lineWidth, ctx.idPrefix, request);
     let built: AnimalBuilt;
     if (isQuad(sp)) built = drawQuad(sp, look.tone, pose, request.expression, facing, pen, request.seed);
     else if (sp === "frog") built = drawFrog(look.tone, pose, request.expression, facing, pen);

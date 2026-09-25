@@ -16,12 +16,14 @@ import {
   FX,
   PAGE_HEIGHT,
   PAGE_WIDTH,
+  PERCH_PARTS,
   POSES,
   PROPS,
   SHOTS,
   SLOTS,
   TEXT_KINDS,
   TIMES,
+  TONES,
   WEATHERS,
   type CastMember,
   type FigureSpec,
@@ -48,7 +50,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.1.0";
+export const RENDERER_VERSION = "manga-render/0.2.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -57,6 +59,11 @@ export interface RenderOptions {
   planned?: PlannedPage;
   /** Draw the small page number (folio) in the bottom margin. Default true. */
   folio?: boolean;
+  /**
+   * True when the previous page ended on a page-turn hook: the first panel
+   * should then pay it off large (FIRST_PANEL_SMALL_AFTER_HOOK otherwise).
+   */
+  previousPageHook?: boolean;
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -104,6 +111,12 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
     if (depth) fig.depth = depth;
     const holding = pickOpt(f.holding, PROPS);
     if (holding) fig.holding = holding;
+    const holdingTone = pickOpt(f.holding_tone, TONES);
+    if (holdingTone) fig.holding_tone = holdingTone;
+    if (isRecord(f.on) && typeof f.on.target === "string") {
+      const part = pickOpt(f.on.part, PERCH_PARTS);
+      fig.on = part ? { target: f.on.target, part } : { target: f.on.target };
+    }
     return fig;
   });
   const props: PropSpec[] = (Array.isArray(r.props) ? r.props : [])
@@ -113,6 +126,8 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
       const out: PropSpec = { prop: pick(p.prop, PROPS, "book"), slot: pick(p.slot, SLOTS, "center") };
       const depth = pickOpt(p.depth, DEPTHS);
       if (depth) out.depth = depth;
+      const tone = pickOpt(p.tone, TONES);
+      if (tone) out.tone = tone;
       return out;
     });
   const fx = (Array.isArray(r.fx) ? r.fx : []).filter((e): e is (typeof FX)[number] => pickOpt(e, FX) !== undefined);
@@ -126,6 +141,7 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
         fidelity: pick(t.fidelity, FIDELITY, "dramatized"),
       };
       if (typeof t.speaker === "string") out.speaker = t.speaker;
+      if (typeof t.about === "string" && out.kind === "caption") out.about = t.about;
       if (isRecord(t.source) && typeof t.source.unit === "string" && typeof t.source.page === "number") {
         out.source = { unit: t.source.unit, page: t.source.page };
       }
@@ -168,7 +184,7 @@ export function renderPageDetailed(
   book: BookRefs,
   options: RenderOptions = {},
 ): { result: RenderResult; details: PanelDetail[] } {
-  const issues: ValidationIssue[] = validatePage(spec, book, options.planned);
+  const issues: ValidationIssue[] = validatePage(spec, book, options.planned, { previousPageHook: options.previousPageHook });
   const page = isRecord(spec) ? spec : {};
   const pageNumber = typeof page.page_number === "number" && Number.isFinite(page.page_number) ? page.page_number : 0;
   const prefix = sanitizePrefix(options.idPrefix ?? `pg${pageNumber}-`);
@@ -195,9 +211,9 @@ export function renderPageDetailed(
     const geo = layout.panels[i];
     const textLoad = panel.text.filter((t) => t.kind !== "sfx").length;
     const textArea = estimateTextArea(panel.text);
-    composed.push(
-      composePanel({ panel, index: i, polygon: geo.polygon, bbox: geo.bbox, book, idPrefix: prefix, textLoad, textArea, rtl }),
-    );
+    const c = composePanel({ panel, index: i, polygon: geo.polygon, bbox: geo.bbox, book, idPrefix: prefix, textLoad, textArea, rtl });
+    issues.push(...c.issues);
+    composed.push(c);
   });
 
   // where each character is drawn on the page (for off-panel tails)
@@ -245,6 +261,9 @@ export function renderPageDetailed(
       offPanel,
       rtl,
       seed: hashString(`${pageSeed}|${panel.id}|${i}|letter`),
+      sfxBleed: panel.fx.includes("impact_burst") || panel.fx.includes("speed_lines"),
+      focus: c.focus,
+      names: Object.fromEntries(c.figures.map((f) => [f.character, castById.get(f.character)?.name ?? f.character])),
     });
     issues.push(...lettered.issues);
     texts.push(...lettered.texts);
@@ -259,10 +278,19 @@ export function renderPageDetailed(
   });
 
   const defs = [toneDefs(prefix), ...composed.map((c) => c.defs)].join("");
+  const total = composed.length;
   const panelSvg = composed
     .map((c, i) => {
       const poly = polyPath(layout.panels[i].polygon);
-      return `<g clip-path="url(#${c.clipId})">${c.content}</g><path d="${poly}" fill="none" stroke="${INK}" stroke-width="${n(STROKE.panelBorder)}" stroke-linejoin="miter"/>`;
+      const beat = panels[i]?.beat?.trim() ?? "";
+      const label = `Panel ${i + 1} of ${total}${beat ? `: ${beat}` : ""}`;
+      return (
+        `<g role="group" aria-label="${esc(label)}">` +
+        `<g clip-path="url(#${c.clipId})">${c.content}</g>` +
+        `<path d="${poly}" fill="none" stroke="${INK}" stroke-width="${n(STROKE.panelBorder)}" stroke-linejoin="miter"/>` +
+        (balloonLayers[i] ? `<g>${balloonLayers[i]}</g>` : "") +
+        `</g>`
+      );
     })
     .join("");
   const purpose = typeof page.purpose === "string" ? page.purpose : "";
@@ -270,13 +298,14 @@ export function renderPageDetailed(
   const folio =
     options.folio === false || pageNumber <= 0
       ? ""
-      : `<text x="${PAGE_WIDTH / 2}" y="${PAGE_HEIGHT - 12}" font-family="${FONT_FAMILY.dialogue}" font-weight="700" font-size="15" text-anchor="middle" fill="#8a8a86">${pageNumber}</text>`;
+      : `<text x="${PAGE_WIDTH / 2}" y="${PAGE_HEIGHT - 12}" font-family="${FONT_FAMILY.dialogue}" font-weight="700" font-size="15" text-anchor="middle" fill="#8a8a86" aria-hidden="true">${pageNumber}</text>`;
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}" width="${PAGE_WIDTH}" height="${PAGE_HEIGHT}" role="img" aria-label="${esc(label)}">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}" width="${PAGE_WIDTH}" height="${PAGE_HEIGHT}" role="group" aria-label="${esc(label)}">` +
+    `<title>${esc(`Page ${pageNumber}`)}</title>` +
+    `<desc>${esc(purpose)}</desc>` +
     `<defs>${defs}</defs>` +
     `<rect width="${PAGE_WIDTH}" height="${PAGE_HEIGHT}" fill="${PAGE_BG}"/>` +
     `<g>${panelSvg}</g>` +
-    `<g>${balloonLayers.join("")}</g>` +
     `<g>${sfxLayers.join("")}</g>` +
     folio +
     `</svg>`;

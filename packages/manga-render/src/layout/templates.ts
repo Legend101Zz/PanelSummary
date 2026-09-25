@@ -70,7 +70,7 @@ export const TEMPLATES: readonly LayoutTemplate[] = [
   {
     id: "stacked_to_tall_3",
     slots: 3,
-    description: "Two stacked beats on the left lead into a tall payoff panel on the right: build-up, then the reveal.",
+    description: "Two stacked beats on the left lead into a tall payoff panel on the right: build-up, then the reveal. Blockage layout: readers new to comics may read the top-left panel, then the tall panel, then the bottom-left one — use only when either order makes sense.",
     tree: cols([0.42, 0.58], [rows([0.5, 0.5], [P(0), P(1)]), P(2)]),
   },
   {

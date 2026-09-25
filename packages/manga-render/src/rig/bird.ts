@@ -70,7 +70,7 @@ interface Spec {
 }
 
 const SPECS: Record<Species, Spec> = {
-  swallow: { h: 16, a: 4.4, b: 2.3, tilt: 26, hr: 2.75, hx: 0.78, hy: 0.95, beak: "thin", beakL: 1.0, tail: "fork", tailL: 7.5, tailW: 2.4, tailDroop: 6, wingL: 11, pointed: true, fold: 1.25, legL: 1.8, eyeR: 0.4, belly: "white", marks: "swallow" },
+  swallow: { h: 16, a: 4.4, b: 2.3, tilt: 26, hr: 2.75, hx: 0.78, hy: 0.95, beak: "thin", beakL: 1.35, tail: "fork", tailL: 7.5, tailW: 2.4, tailDroop: 6, wingL: 11, pointed: true, fold: 1.25, legL: 1.8, eyeR: 0.4, belly: "white", marks: "swallow" },
   nightingale: { h: 14, a: 4.0, b: 2.85, tilt: 22, hr: 2.8, hx: 0.72, hy: 0.95, beak: "thin", beakL: 1.25, tail: "round", tailL: 4.6, tailW: 2.6, tailDroop: -12, wingL: 8, pointed: false, fold: 0.35, legL: 2.6, eyeR: 0.42, belly: "light", marks: "nightingale" },
   sparrow: { h: 14, a: 4.0, b: 2.75, tilt: 20, hr: 2.85, hx: 0.74, hy: 0.9, beak: "cone", beakL: 1.25, tail: "notch", tailL: 4.0, tailW: 2.3, tailDroop: 4, wingL: 8, pointed: false, fold: 0.4, legL: 2.2, eyeR: 0.38, belly: "light", marks: "sparrow" },
   linnet: { h: 14, a: 3.8, b: 2.4, tilt: 26, hr: 2.65, hx: 0.76, hy: 0.95, beak: "cone", beakL: 1.05, tail: "fork", tailL: 4.4, tailW: 2.0, tailDroop: 8, wingL: 8.5, pointed: true, fold: 0.6, legL: 2.3, eyeR: 0.4, belly: "white", marks: "linnet" },
@@ -450,8 +450,9 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   const marks: string[] = [];
   switch (s.marks) {
     case "swallow": {
-      // throat patch + dark cap blending into back
-      sk.shape(blobD([hpt(hr * 0.72, hr * 0.15), hpt(hr * 0.55, hr * 0.8), hpt(-hr * 0.1, hr * 0.95), hpt(-hr * 0.2, hr * 0.35), hpt(hr * 0.35, hr * 0.2)], 0.5), fillOf(dark ? "mid" : "dark", pen), { edge: pen.fw });
+      // throat bib low under the beak (kept clear of the face: a big dark
+      // patch right under the eyes reads as a gaping mouth in close-ups)
+      sk.shape(blobD([hpt(hr * 0.8, hr * 0.42), hpt(hr * 0.66, hr * 0.98), hpt(hr * 0.12, hr * 1.06), hpt(hr * 0.3, hr * 0.66), hpt(hr * 0.6, hr * 0.5)], 0.5), fillOf(dark ? "mid" : "dark", pen), { edge: pen.fw });
       break;
     }
     case "sparrow": {
@@ -781,7 +782,7 @@ export const birdRig: KindRig<BirdLook> = {
     const s = SPECS[look.species];
     if (!s) throw new Error(`unknown bird species ${String(look.species)}`);
     const pose: Pose = BIRD_POSES.includes(request.pose) ? request.pose : "stand";
-    const pen = makePen(request.lineWidth, ctx.idPrefix);
+    const pen = makePen(request.lineWidth, ctx.idPrefix, request);
     const built =
       request.facing === "front" || request.facing === "back"
         ? drawFrontBack(look.species, s, look, pose, request.expression, pen, request.facing === "back")

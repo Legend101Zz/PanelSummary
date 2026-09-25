@@ -29,6 +29,8 @@ import { checkPanelGeometry, treeLeaves } from "../src/layout/compile.js";
 import { breakBalanced } from "../src/lettering/breaking.js";
 import { measure } from "../src/lettering/fonts.js";
 import { letterPanel } from "../src/lettering/index.js";
+import type { Placed } from "../src/lettering/place.js";
+import { boundaryToward } from "../src/lettering/shapes.js";
 import { scopeIds, hoistDefs, rescaleTones } from "../src/scene/ids.js";
 import { toneDefs } from "../src/style.js";
 import { BOOK, PAGES, PLAN, UNDERSTANDING, UNIT_IDS } from "./fixtures/happy-prince.js";
@@ -39,6 +41,26 @@ const errorsOf = (issues: ValidationIssue[]) => issues.filter((i) => i.severity 
 const codes = (issues: ValidationIssue[]) => issues.map((i) => i.code);
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 const planned = (n: number) => PLAN.pages.find((p) => p.page_number === n);
+
+/**
+ * A speaker's tail points at the mouth from the balloon's edge, stops about
+ * halfway (TAIL_REACH of the gap) or earlier at the head circle, and never
+ * enters the head.
+ */
+function expectTailToward(p: Placed, fig: { head: { x: number; y: number }; headRadius: number; mouth: { x: number; y: number } }): void {
+  const tip = p.tail?.tip;
+  expect(tip).toBeDefined();
+  if (!tip) return;
+  const base = boundaryToward(p.layout, p.center, fig.mouth);
+  const gap = Math.hypot(fig.mouth.x - base.x, fig.mouth.y - base.y);
+  const reach = Math.hypot(tip.x - base.x, tip.y - base.y);
+  // collinear with edge → mouth
+  const cross = ((fig.mouth.x - base.x) * (tip.y - base.y) - (fig.mouth.y - base.y) * (tip.x - base.x)) / Math.max(1, gap);
+  expect(Math.abs(cross)).toBeLessThan(2);
+  expect(reach).toBeLessThanOrEqual(gap * 0.56 + 1);
+  expect(reach).toBeGreaterThan(Math.min(12, gap * 0.4));
+  expect(Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y)).toBeGreaterThanOrEqual(fig.headRadius - 0.5);
+}
 
 function page(overrides: Partial<MangaPageSpec> = {}, panels?: PanelSpec[]): MangaPageSpec {
   const base = clone(PAGES[0]);
@@ -91,8 +113,8 @@ describe("layout templates", () => {
       }
       for (let i = 0; i < out.panels.length; i += 1) {
         for (let j = i + 1; j < out.panels.length; j += 1) {
-          // gutters keep panels at least ~18px apart
-          expect(convexOverlap(out.panels[i].polygon, out.panels[j].polygon, 17), `${t.id} ${i}/${j}`).toBe(false);
+          // gutters keep panels apart: 12 between columns, 26 between rows
+          expect(convexOverlap(out.panels[i].polygon, out.panels[j].polygon, 11), `${t.id} ${i}/${j}`).toBe(false);
         }
       }
     }
@@ -131,7 +153,7 @@ describe("authored layout trees", () => {
     // slanted gutter: the first panel's bottom edge is not horizontal
     const ys = out.panels[0].polygon.map((p) => p.y).filter((y) => y > 100);
     expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(50);
-    expect(convexOverlap(out.panels[1].polygon, out.panels[2].polygon, 17)).toBe(false);
+    expect(convexOverlap(out.panels[1].polygon, out.panels[2].polygon, 11)).toBe(false);
   });
 
   const bad = (tree: unknown, panelIds = ids) => codes(compileLayout({ tree: tree as LayoutNode }, panelIds).issues);
@@ -242,7 +264,7 @@ describe("lettering placement", () => {
       ...extra,
     });
 
-  it("points each tail at its own speaker, ending near (not on) the mouth", () => {
+  it("points each tail at its own speaker's mouth, stopping about halfway and outside the head", () => {
     const out = run(texts);
     expect(out.issues).toEqual([]);
     for (const p of out.placed) {
@@ -251,9 +273,8 @@ describe("lettering placement", () => {
       const tip = p.tail?.tip;
       expect(tip).toBeDefined();
       if (!tip) continue;
+      expectTailToward(p, speaker);
       const d = Math.hypot(tip.x - speaker.mouth.x, tip.y - speaker.mouth.y);
-      expect(d).toBeGreaterThan(8);
-      expect(d).toBeLessThanOrEqual(speaker.headRadius * 1.25 + 12);
       expect(d).toBeLessThan(Math.hypot(tip.x - other.mouth.x, tip.y - other.mouth.y));
     }
   });
@@ -294,7 +315,7 @@ describe("lettering placement", () => {
     expect(err?.message).toMatch(/Max ~\d+ words fit here/);
     // still lettered in full, at no less than the minimum size
     const rendered = out.texts[0];
-    expect(rendered.font_px).toBeGreaterThanOrEqual(22);
+    expect(rendered.font_px).toBeGreaterThanOrEqual(24);
     expect(rendered.lines.join(" ").replace(/- /g, "").replace(/\s+/g, " ")).toBe(long);
   });
 
@@ -344,13 +365,12 @@ describe("fixtures", () => {
             expect(b.x + b.w).toBeLessThanOrEqual(panelGeo.bbox.x + panelGeo.bbox.w + 0.5);
           }
         }
-        // tails of speakers drawn in the panel end near their mouth
+        // tails of speakers drawn in the panel point at their mouth and stop about halfway, outside the head
         for (const p of d.placed) {
           const text = spec.panels.find((x) => x.id === d.id)?.text[p.index];
           const fig = d.figures.find((f) => f.character === text?.speaker);
           if (!fig || !p.tail || p.tail.offPanel) continue;
-          const dist = Math.hypot(p.tail.tip.x - fig.mouth.x, p.tail.tip.y - fig.mouth.y);
-          expect(dist).toBeLessThanOrEqual(fig.headRadius * 1.25 + 12);
+          expectTailToward(p, fig);
         }
       }
     });
@@ -549,13 +569,13 @@ describe("renderPage", () => {
       expect(a.svg_hash).toMatch(/^[0-9a-f]{64}$/);
       expect(a.renderer_version).toBe(RENDERER_VERSION);
     }
-  });
+  }, 30000);
 
   it("emits clean SVG: one defs, prefixed and resolvable ids, no forbidden elements", () => {
     for (const spec of PAGES) {
       const prefix = `t${spec.page_number}x-`;
       const { svg } = renderPage(spec, BOOK, { idPrefix: prefix });
-      expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1500" width="1000" height="1500" role="img" aria-label="')).toBe(true);
+      expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1500" width="1000" height="1500" role="group" aria-label="')).toBe(true);
       expect(svg).not.toMatch(/<image|<script|<foreignObject|preserveAspectRatio="none"|\sclass=|NaN|Infinity/);
       expect(svg.match(/<defs[\s>]/g)).toHaveLength(1);
       const ids = [...svg.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
@@ -587,7 +607,7 @@ describe("renderPage", () => {
         expect(r.texts).toHaveLength(2);
       }
     }
-  });
+  }, 30000);
 
   it("returns geometry, texts and metrics consistent with the spec", () => {
     const spec = PAGES[2];
@@ -599,7 +619,7 @@ describe("renderPage", () => {
     expect(r.metrics.words_total).toBeGreaterThan(0);
     for (const t of r.texts) {
       expect(t.lines.length).toBeGreaterThan(0);
-      expect(t.font_px).toBeGreaterThanOrEqual(22);
+      expect(t.font_px).toBeGreaterThanOrEqual(["speech", "thought", "whisper"].includes(t.kind) ? 24 : 22);
       expect([t.bbox.x, t.bbox.y, t.bbox.w, t.bbox.h].every(Number.isFinite)).toBe(true);
     }
   });

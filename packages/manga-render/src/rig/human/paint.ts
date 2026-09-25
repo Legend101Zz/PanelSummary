@@ -34,6 +34,8 @@ export interface Ink {
   dw: number;
   /** Paths that make up the outer silhouette (drawn thick underneath). */
   sil: string[];
-  /** Simplified rendering (crowds): fewer detail lines. */
+  /** Simplified rendering (crowds, reduced/silhouette LOD): fewer detail lines. */
   lite: boolean;
+  /** Level of detail requested by the composer (see FigureRequest.detail). */
+  detail?: "full" | "reduced" | "silhouette";
 }

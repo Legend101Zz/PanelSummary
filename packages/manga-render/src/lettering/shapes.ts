@@ -8,7 +8,7 @@ import { INK, PAPER, STROKE } from "../style.js";
 import { esc, n, polyPath, smoothPath } from "../svg.js";
 import { faceAttrs, measure, metrics, type FontFace } from "./fonts.js";
 import { breakBalanced, type LineBlock } from "./breaking.js";
-import { KIND_STYLES, type BalloonShape } from "./styles.js";
+import { KIND_STYLES, TAIL_HALF_BASE, type BalloonShape } from "./styles.js";
 import type { TextKind } from "../contracts.js";
 
 export interface BalloonLayout {
@@ -233,7 +233,8 @@ function wedgeTail(layout: BalloonLayout, c: Point, tip: Point, curved: boolean,
   const uy = (tip.y - base.y) / len;
   const px = -uy;
   const py = ux;
-  const halfBase = Math.min(layout.shape === "burst" ? 17 : 12.5, Math.max(7, layout.fontSize * 0.42), Math.min(layout.rx, layout.ry) * 0.5);
+  // one base width for every tail on the page (never a needle, never a wedge)
+  const halfBase = Math.min(TAIL_HALF_BASE, Math.min(layout.rx, layout.ry) * 0.5);
   const b1 = { x: base.x + px * halfBase, y: base.y + py * halfBase };
   const b2 = { x: base.x - px * halfBase, y: base.y - py * halfBase };
   if (!curved) {
@@ -289,8 +290,43 @@ function textLines(layout: BalloonLayout, c: Point, fill: string, extra = ""): s
   return `<text font-family="${attrs.family}"${weight}${style} font-size="${n(layout.fontSize)}" text-anchor="middle" fill="${fill}"${extra}>${spans}</text>`;
 }
 
-/** Draw a placed balloon (body + tail + lettering). */
-export function drawBalloon(layout: BalloonLayout, c: Point, tail: TailSpec | undefined, rand: () => number): string {
+/**
+ * A short neck joining a balloon to the previous balloon of the same speaker
+ * (connected balloons: one speaker, one breath, two beats).
+ */
+function neckPath(from: { layout: BalloonLayout; center: Point }, layout: BalloonLayout, c: Point): string {
+  const a = boundaryToward(from.layout, from.center, c, 0.9);
+  const b = boundaryToward(layout, c, from.center, 0.9);
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  if (len < 1) return "";
+  const ux = (b.x - a.x) / len;
+  const uy = (b.y - a.y) / len;
+  const px = -uy;
+  const py = ux;
+  const w = Math.min(TAIL_HALF_BASE * 1.05, Math.min(layout.rx, layout.ry, from.layout.rx, from.layout.ry) * 0.3);
+  const pinch = 0.72;
+  const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  return (
+    `M${n(a.x + px * w)} ${n(a.y + py * w)}Q${n(m.x + px * w * pinch)} ${n(m.y + py * w * pinch)} ${n(b.x + px * w)} ${n(b.y + py * w)}` +
+    `L${n(b.x - px * w)} ${n(b.y - py * w)}Q${n(m.x - px * w * pinch)} ${n(m.y - py * w * pinch)} ${n(a.x - px * w)} ${n(a.y - py * w)}Z`
+  );
+}
+
+export interface BalloonDraw {
+  layout: BalloonLayout;
+  center: Point;
+  tail?: TailSpec;
+  rand: () => number;
+}
+
+interface BalloonParts {
+  strokes: string[];
+  fills: string[];
+  text: string;
+}
+
+function balloonParts(d: BalloonDraw): BalloonParts | string {
+  const { layout, center: c, tail, rand } = d;
   const sw = STROKE.balloon;
   const wide = n(sw * 2);
   let body: string;
@@ -311,33 +347,64 @@ export function drawBalloon(layout: BalloonLayout, c: Point, tail: TailSpec | un
       break;
     case "box":
     case "caption":
+      // boxes: a crisp single stroke, square corners
       body = boxOutline(c, layout.rx, layout.ry);
-      break;
+      return `<g><path d="${body}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(sw)}" stroke-linejoin="miter"/>${textLines(layout, c, INK)}</g>`;
     case "sfx":
       return drawSfx(layout, c);
   }
-  const parts: string[] = [];
   let tailPath = "";
   const bubbles: string[] = [];
   if (tail) {
     if (layout.shape === "cloud") bubbles.push(...thoughtBubbles(layout, c, tail.tip));
-    else if (layout.shape !== "box" && layout.shape !== "caption") tailPath = wedgeTail(layout, c, tail.tip, layout.shape !== "burst", rand);
+    else tailPath = wedgeTail(layout, c, tail.tip, layout.shape !== "burst", rand);
   }
   const strokeAttrs = `fill="none" stroke="${INK}" stroke-width="${wide}" stroke-linejoin="round"`;
-  if (layout.shape === "box" || layout.shape === "caption") {
-    // boxes: a crisp single stroke, square corners
-    parts.push(`<path d="${body}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(sw)}" stroke-linejoin="miter"/>`);
-  } else {
-    // stroke everything at double width, then fill on top: a seamless union
-    // outline (body + tail) with the visible half of the stroke outside.
-    parts.push(`<path d="${body}" ${strokeAttrs}${dash}/>`);
-    if (tailPath) parts.push(`<path d="${tailPath}" ${strokeAttrs}${dash}/>`);
-    parts.push(`<path d="${body}" fill="${PAPER}"/>`);
-    if (tailPath) parts.push(`<path d="${tailPath}" fill="${PAPER}"/>`);
-    for (const b of bubbles) parts.push(`<path d="${b}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(sw)}"/>`);
-  }
-  parts.push(textLines(layout, c, INK));
-  return `<g>${parts.join("")}</g>`;
+  // stroke everything at double width, then fill on top: a seamless union
+  // outline (body + tail) with the visible half of the stroke outside.
+  const strokes = [`<path d="${body}" ${strokeAttrs}${dash}/>`];
+  if (tailPath) strokes.push(`<path d="${tailPath}" ${strokeAttrs}${dash}/>`);
+  const fills = [`<path d="${body}" fill="${PAPER}"/>`];
+  if (tailPath) fills.push(`<path d="${tailPath}" fill="${PAPER}"/>`);
+  for (const b of bubbles) fills.push(`<path d="${b}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(sw)}"/>`);
+  return { strokes, fills, text: textLines(layout, c, INK) };
+}
+
+/** Draw a placed balloon (body + tail + lettering). */
+export function drawBalloon(layout: BalloonLayout, c: Point, tail: TailSpec | undefined, rand: () => number): string {
+  return drawBalloonChain([{ layout, center: c, tail, rand }]);
+}
+
+/**
+ * Draw connected balloons (one speaker, consecutive lines) as one inked
+ * shape: every outline first, then every fill, so the connector necks merge
+ * into both bodies without a seam. A chain of one is a plain balloon.
+ */
+export function drawBalloonChain(chain: readonly BalloonDraw[]): string {
+  const parts = chain.map(balloonParts);
+  if (parts.length === 1 && typeof parts[0] === "string") return parts[0];
+  const strokes: string[] = [];
+  const fills: string[] = [];
+  const texts: string[] = [];
+  const loose: string[] = [];
+  const wide = n(STROKE.balloon * 2);
+  parts.forEach((p, i) => {
+    if (typeof p === "string") {
+      loose.push(p);
+      return;
+    }
+    strokes.push(...p.strokes);
+    fills.push(...p.fills);
+    texts.push(p.text);
+    if (i > 0 && typeof parts[i - 1] !== "string") {
+      const neck = neckPath({ layout: chain[i - 1].layout, center: chain[i - 1].center }, chain[i].layout, chain[i].center);
+      if (neck) {
+        strokes.push(`<path d="${neck}" fill="none" stroke="${INK}" stroke-width="${wide}" stroke-linejoin="round"/>`);
+        fills.push(`<path d="${neck}" fill="${PAPER}"/>`);
+      }
+    }
+  });
+  return `${loose.join("")}<g>${strokes.join("")}${fills.join("")}${texts.join("")}</g>`;
 }
 
 function drawSfx(layout: BalloonLayout, c: Point): string {

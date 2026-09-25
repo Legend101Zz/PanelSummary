@@ -400,6 +400,13 @@ export function drawFace(o: FaceOpts, expression: Expression): string {
     eyes.push({ c: P(c.x - o.gap * (1 - 0.55 * t) + shift, c.y), rx: r * (1 - 0.4 * t), side: -1 });
     eyes.push({ c: P(c.x + o.gap * (1 - 0.1 * t) + shift, c.y), rx: r, side: 1 });
   }
+  if (o.pen.detail === "silhouette") {
+    // silhouette LOD: at most two eye dots
+    let dots = "";
+    for (const e of eyes) dots += `<path d="${polyPath(ellipsePts(e.c, e.rx * 0.5, ry * 0.5, 10), true)}" fill="${o.dark ? PAPER : INK}"/>`;
+    return `<g>${dots}</g>`;
+  }
+  const reduced = o.pen.detail === "reduced";
   for (const e of eyes) eyeMarks(e.c, e.rx, ry, e.side, x, o, marks);
   // brows
   if (o.brows !== false) {
@@ -420,7 +427,7 @@ export function drawFace(o: FaceOpts, expression: Expression): string {
     const m = P(c.x + (o.mouth.dx ?? 0) + shift, c.y + o.mouth.dy);
     mouthMarks(kind, m, o.mouth.w, 1 - 0.3 * t, o, marks);
   }
-  // extras
+  // extras (reduced LOD keeps tears, drops sweat and blush)
   if (!o.plain) {
     if (x.tears) {
       for (const e of eyes) {
@@ -432,11 +439,11 @@ export function drawFace(o: FaceOpts, expression: Expression): string {
         marks.push({ d, fill: PAPER, stroke: o.pen.dw });
       }
     }
-    if (x.sweat) {
+    if (x.sweat && !reduced) {
       const sc = P(c.x - o.headR * 0.7 + (profile ? -o.headR * 0.1 : 0), c.y - o.headR * 0.25);
       marks.push({ d: dropD(sc, o.headR * 0.13, -0.35), fill: PAPER, stroke: o.pen.dw });
     }
-    if (x.blush) {
+    if (x.blush && !reduced) {
       for (const e of eyes) {
         const bc = P(e.c.x + e.side * e.rx * 0.3, e.c.y + ry * 1.55);
         for (let i = -1; i <= 1; i += 1) {

@@ -5,11 +5,12 @@
 import type { Box, Point, RenderedText, TextSpec, ValidationIssue } from "../contracts.js";
 import { mulberry32 } from "../prng.js";
 import { countWords } from "./breaking.js";
-import { drawBalloon, layoutBalloon } from "./shapes.js";
+import { drawBalloonChain, layoutBalloon, type BalloonDraw } from "./shapes.js";
 import { measure } from "./fonts.js";
 import {
   placeCandidates,
   placeOne,
+  tailSegment,
   type HeadCircle,
   type Placed,
   type PlacementPanel,
@@ -17,13 +18,14 @@ import {
   type SpeakerAnchor,
   type TailTarget,
 } from "./place.js";
-import { KIND_STYLES, SPEAKING_KINDS, minFontSize } from "./styles.js";
+import { distPointSegment, segmentsIntersect } from "../layout/geometry.js";
+import { KIND_STYLES, MAX_BALLOON_LINES, SPEAKING_KINDS, minFontSize } from "./styles.js";
 
-export { KIND_STYLES, minFontSize, SPEAKING_KINDS } from "./styles.js";
+export { KIND_STYLES, minFontSize, SPEAKING_KINDS, MAX_BALLOON_LINES, TAIL_HALF_BASE, TAIL_REACH } from "./styles.js";
 export { breakBalanced, countWords } from "./breaking.js";
 export { measure, metrics } from "./fonts.js";
 export { layoutBalloon } from "./shapes.js";
-export { readsAfter, speakerTip, offPanelTip, type HeadCircle, type SpeakerAnchor } from "./place.js";
+export { readsAfter, speakerTip, tailToward, tailSegment, faceHit, offPanelTip, type HeadCircle, type SpeakerAnchor } from "./place.js";
 
 export interface LetterPanelInput {
   panelId: string;
@@ -42,6 +44,42 @@ export interface LetterPanelInput {
   offPanel?: Readonly<Record<string, Point>>;
   rtl?: boolean;
   seed: number;
+  /** SFX may cross the panel border (the panel has impact_burst or speed_lines). */
+  sfxBleed?: boolean;
+  /** Where the action is (main figure's head, or the insert's subject), for SFX. */
+  focus?: Point;
+  /**
+   * Display names of the characters drawn here (id → name). A short caption
+   * that names exactly one of them is treated as that character's name tag
+   * even without `about`.
+   */
+  names?: Readonly<Record<string, string>>;
+}
+
+const words = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9' -]+/g, " ")
+    .replace(/'s\b/g, "")
+    .split(/[\s-]+/)
+    .filter(Boolean);
+
+/**
+ * The character a short caption names ("Henry David Thoreau, of Concord."
+ * names "Henry Thoreau"; "The Seamstress" names "The Seamstress"), when
+ * exactly one drawn character matches: every word of the name (without a
+ * leading "the") appears among the caption's first words.
+ */
+export function inferNameTag(text: string, names: Readonly<Record<string, string>>): string | undefined {
+  const cw = words(text);
+  if (cw.length === 0 || cw.length > 8) return undefined;
+  const head = cw[0] === "the" ? cw.slice(1) : cw;
+  const all = new Set(cw);
+  const nameWords = Object.entries(names).map(([id, name]) => [id, words(name).filter((w) => w !== "the")] as const);
+  const hits = nameWords.filter(([, nw]) => nw.length > 0 && nw.every((w) => new Set(head.slice(0, nw.length + 1)).has(w)));
+  // a caption that also names another character here is not a name tag
+  const mentions = nameWords.filter(([, nw]) => nw.length > 0 && nw.every((w) => all.has(w)));
+  return hits.length === 1 && mentions.length === 1 ? hits[0][0] : undefined;
 }
 
 export interface LetterPanelResult {
@@ -78,7 +116,8 @@ export function estimateTextArea(texts: readonly TextSpec[]): number {
 }
 
 /** Font sizes to try; SFX are capped relative to the panel so they never swamp it. */
-function sizesFor(kind: TextSpec["kind"], bbox: Box): readonly number[] {
+function sizesFor(kind: TextSpec["kind"], bbox: Box, label = false): readonly number[] {
+  if (label) return [minFontSize("caption")];
   const sizes = KIND_STYLES[kind].sizes;
   if (kind !== "sfx") return sizes;
   const cap = Math.max(minFontSize("sfx"), Math.min(bbox.h * 0.2, bbox.w * 0.22));
@@ -179,6 +218,9 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     bodies: input.bodies,
     obstacles: input.obstacles ?? [],
     rtl: input.rtl === true,
+    figures: input.speakers,
+    sfxBleed: input.sfxBleed === true,
+    ...(input.focus ? { focus: input.focus } : {}),
   };
   const issues: ValidationIssue[] = [];
   const rand = mulberry32(input.seed);
@@ -188,11 +230,28 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
   // --- balloons and boxes: beam search in reading order -------------------
   const order = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
   const isBox = (t: TextSpec) => t.kind === "narration" || t.kind === "caption";
+  /** Name tag: a caption about a character drawn here sits by that character's head. */
+  const labelOf = (t: TextSpec): HeadCircle | undefined => {
+    if (t.kind !== "caption") return undefined;
+    const about = typeof t.about === "string" ? t.about : input.names ? inferNameTag(t.text, input.names) : undefined;
+    return about ? input.heads.find((h) => h.character === about) : undefined;
+  };
+  const flowing = order.filter(({ t }) => !labelOf(t));
   /** Box anchoring: open the panel from the start corner, close it from the end corner, otherwise flow. */
   const anchorFor = (k: number, flowOnly: boolean): PlaceRequest["boxAnchor"] => {
-    if (order.slice(0, k).every(({ t }) => isBox(t))) return "start";
-    if (!flowOnly && k === order.length - 1) return "end";
+    const pos = flowing.findIndex((o) => o === order[k]);
+    if (pos < 0) return "flow";
+    // the first box opens the panel from the start corner; boxes that follow it flow after it
+    if (pos === 0) return "start";
+    if (!flowOnly && pos === flowing.length - 1) return "end";
     return "flow";
+  };
+  /** Same speaker, consecutive balloons: the second is connected to the first. */
+  const connectsToPrevious = (k: number): boolean => {
+    if (k === 0) return false;
+    const a = order[k - 1].t;
+    const b = order[k].t;
+    return SPEAKING_KINDS.includes(a.kind) && SPEAKING_KINDS.includes(b.kind) && typeof a.speaker === "string" && a.speaker === b.speaker && a.kind !== "thought" && b.kind !== "thought";
   };
   const runBeam = (width: number, branch: number, flowOnly: boolean, allSizes: boolean) => {
     let beam: BeamState[] = [{ placed: [], cost: 0, order: 0 }];
@@ -200,14 +259,19 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     order.forEach(({ t, i }, k) => {
       const text = clean(t);
       const target = targetFor(t, input);
-      const sizes = sizesFor(t.kind, input.bbox);
+      const label = labelOf(t);
+      const sizes = sizesFor(t.kind, input.bbox, label !== undefined);
       const boxAnchor = anchorFor(k, flowOnly);
+      const connect = connectsToPrevious(k);
       const next: BeamState[] = [];
       for (const state of beam) {
-        const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor };
+        const prev = connect ? state.placed.find((p) => p.index === order[k - 1].i) : undefined;
+        const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor, ...(label ? { label } : {}), ...(prev ? { connect: prev } : {}) };
         if (!allSizes) {
           for (const c of placeCandidates(req, panel, state.placed, sizes, "strict", branch)) {
-            next.push({ placed: [...state.placed, c], cost: state.cost + c.cost, order: state.order + 1 });
+            // prefer layouts where every balloon keeps the preferred size (consistent lettering)
+            const step = Math.max(0, sizes.indexOf(c.layout.fontSize));
+            next.push({ placed: [...state.placed, c], cost: state.cost + c.cost + 5 * step, order: state.order + 1 });
           }
           continue;
         }
@@ -226,7 +290,7 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
       }
       // Nothing fits in any partial layout: report it, then draw it relaxed.
       const state = beam[0];
-      const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor };
+      const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor, ...(label ? { label } : {}) };
       failures.push(overflowIssue(input.panelId, i, t, text, maxWordsThatFit(req, panel, state.placed)));
       const relaxed = relaxedPlacement(req, panel, state.placed, input.bbox);
       beam = [{ placed: relaxed ? [...state.placed, relaxed] : state.placed, cost: state.cost + 1e6, order: state.order + 1 }];
@@ -249,12 +313,68 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     const rotate = (rand() < 0.5 ? -1 : 1) * (6 + rand() * 7);
     const req: PlaceRequest = { index: i, kind: "sfx", text, target: { type: "none" }, order: 0, rotate };
     let result = placeOne(req, panel, placed, sizesFor("sfx", input.bbox), "strict");
+    if (!result && (input.obstacles?.length ?? 0) > 0) {
+      // no room beside the insert's subject: overlap it as little as possible, and say so
+      result = placeOne({ ...req, softObstacles: true }, panel, placed, sizesFor("sfx", input.bbox), "strict");
+      if (result) {
+        issues.push({
+          code: "SFX_OVER_SUBJECT",
+          severity: "warning",
+          path: `panel ${input.panelId} text ${i}`,
+          message: `sfx "${snippet(text)}" had to overlap the subject of this panel; there is no free space beside it. Drop the SFX, shorten it, or move it to the panel where the sound happens.`,
+        });
+      }
+    }
     if (!result) {
       issues.push(overflowIssue(input.panelId, i, t, text, maxWordsThatFit(req, panel, placed)));
       result = relaxedPlacement(req, panel, placed, input.bbox);
     }
     if (result) placed.push(result);
   });
+
+  // --- craft checks on the final lettering ---------------------------------
+  for (const p of placed) {
+    if (p.kind === "sfx") continue;
+    const lines = p.layout.block.lines.length;
+    if (lines > MAX_BALLOON_LINES) {
+      const t = input.texts[p.index];
+      issues.push({
+        code: "BALLOON_TALL",
+        severity: "warning",
+        path: `panel ${input.panelId} text ${p.index}`,
+        message: `${t.kind} "${snippet(t.text)}" is lettered in ${lines} lines, a tall column that reads badly (at most ${MAX_BALLOON_LINES}). Shorten it, split it across panels, or give this panel more width.`,
+      });
+    }
+  }
+  for (let a = 0; a < placed.length; a += 1) {
+    const sa = tailSegment(placed[a]);
+    if (!sa) continue;
+    for (let b = a + 1; b < placed.length; b += 1) {
+      const sb = tailSegment(placed[b]);
+      if (!sb || !segmentsIntersect(sa[0], sa[1], sb[0], sb[1])) continue;
+      issues.push({
+        code: "TAILS_CROSS",
+        severity: "warning",
+        path: `panel ${input.panelId}`,
+        message: `the tails of texts ${placed[a].index} and ${placed[b].index} cross. Put the speakers left to right in the order they speak (first speaker "left" or "center_left"), or split the exchange across panels.`,
+      });
+    }
+  }
+
+  for (const p of placed) {
+    const seg = tailSegment(p);
+    const speaker = input.texts[p.index]?.speaker;
+    if (!seg || !speaker) continue;
+    const over = input.heads.find((h) => h.character !== speaker && distPointSegment(h.center, seg[0], seg[1]) < h.radius * 0.9);
+    if (over) {
+      issues.push({
+        code: "TAIL_CROSSES_FACE",
+        severity: "warning",
+        path: `panel ${input.panelId} text ${p.index}`,
+        message: `the ${input.texts[p.index].kind} tail for "${speaker}" passes over the face of "${over.character ?? "another figure"}", so the line may read as theirs. Put the speaker on the side of the panel where their line is lettered, or split the exchange.`,
+      });
+    }
+  }
 
   const texts: RenderedText[] = placed.map((p) => {
     const t = input.texts[p.index];
@@ -276,12 +396,25 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
 
   const balloons: string[] = [];
   const sfx: string[] = [];
+  // connected balloons are inked together as one chain
+  let chain: BalloonDraw[] = [];
+  let chainLast = -1;
+  const flush = () => {
+    if (chain.length) balloons.push(drawBalloonChain(chain));
+    chain = [];
+  };
   for (const p of placed) {
     const drawRand = mulberry32((input.seed ^ Math.imul(p.index + 1, 0x9e3779b1)) >>> 0);
-    const svg = drawBalloon(p.layout, p.center, p.tail, drawRand);
-    if (p.kind === "sfx") sfx.push(svg);
-    else balloons.push(svg);
+    const item: BalloonDraw = { layout: p.layout, center: p.center, rand: drawRand, ...(p.tail ? { tail: p.tail } : {}) };
+    if (p.kind === "sfx") {
+      sfx.push(drawBalloonChain([item]));
+      continue;
+    }
+    if (p.connectTo === undefined || p.connectTo !== chainLast) flush();
+    chain.push(item);
+    chainLast = p.index;
   }
+  flush();
   return { balloons: balloons.join(""), sfx: sfx.join(""), texts, issues, placed };
 }
 

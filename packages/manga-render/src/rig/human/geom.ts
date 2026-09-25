@@ -303,10 +303,37 @@ export function densify(pts: readonly V2[], step: number, closed = true): V2[] {
  * A pen draws local shapes into figure space through an affine transform and
  * records every emitted point in shared bounds.
  */
+/**
+ * Drop points closer than `step` to the last kept one (corners, the first
+ * and the last point always stay). Outlines are sampled densely in body
+ * space; once scaled onto the page many samples are under a pixel apart.
+ */
+export function thin<T extends CPt>(pts: T[], step: number, closed: boolean): T[] {
+  if (step <= 0 || pts.length <= 5) return pts;
+  const out: T[] = [pts[0]];
+  const s2 = step * step;
+  for (let i = 1; i < pts.length; i += 1) {
+    const p = pts[i];
+    const last = out[out.length - 1];
+    const isEnd = !closed && i === pts.length - 1;
+    const dx = p.x - last.x;
+    const dy = p.y - last.y;
+    if (p.c || isEnd || dx * dx + dy * dy >= s2) out.push(p);
+  }
+  if (closed && out.length > 3) {
+    const a = out[out.length - 1];
+    const b = out[0];
+    if (!a.c && (a.x - b.x) ** 2 + (a.y - b.y) ** 2 < s2) out.pop();
+  }
+  return out.length >= (closed ? 4 : 2) ? out : pts;
+}
+
 export class Pen {
   constructor(
     readonly m: Mat,
     readonly bounds: Bounds,
+    /** Minimum spacing of outline samples (figure units); 0 keeps every sample. */
+    readonly minStep = 0,
   ) {}
   p(q: V2): V2 {
     return apply(this.m, q);
@@ -318,7 +345,7 @@ export class Pen {
     return this.m.a * this.m.d - this.m.b * this.m.c < 0;
   }
   with(m: Mat): Pen {
-    return new Pen(compose(this.m, m), this.bounds);
+    return new Pen(compose(this.m, m), this.bounds, this.minStep);
   }
   pts(q: readonly CPt[], pad = 0): CPt[] {
     return q.map((pt) => {
@@ -329,11 +356,11 @@ export class Pen {
   }
   /** Smooth path; `closed` shapes are oriented positively (for union paths). */
   curve(q: readonly CPt[], closed = true, tension = 1, pad = 0): string {
-    const t = this.pts(q, pad);
+    const t = thin(this.pts(q, pad), this.minStep, closed);
     return curveD(closed ? orient(t) : t, closed, tension);
   }
   poly(q: readonly V2[], closed = true, pad = 0): string {
-    const t = this.pts(q, pad);
+    const t = thin(this.pts(q, pad), this.minStep, closed);
     return polyD(closed ? orient(t) : t, closed);
   }
   quad(a: V2, c: V2, b: V2, pad = 0): string {

@@ -501,58 +501,102 @@ function postAndRail(st: Stage, x: number, z0: number, z1: number): void {
   add(st, LAYER.stand, zc, pathEl(d, { stroke: st.pal.ink, w: lw * 1.2 }));
 }
 
+/**
+ * Abstract backdrop for ideas (nonfiction pages use it a lot), so it must stay
+ * calm and varied. Six seeded compositions, chosen per location and panel
+ * shape: a soft vertical gradation, flowing contour lines, a paper vignette, a
+ * subtle dotted band, a thin-line radiance with a wide clear centre, and
+ * horizontal hatch bands. Close shots always take one of the three quietest.
+ * Pattern tone stays in a band (never the whole panel).
+ */
 export function abstractField(st: Stage): Sites {
   const b = st.box;
-  const r = seeded(st.seed, st.env, "abstract");
-  const variant = Math.floor(r() * 3);
+  const r = seeded(st.seed, st.env, "abstract", st.shot, n(b.w), n(b.h));
+  const close = st.shot === "close" || st.shot === "extreme_close" || st.shot === "insert";
+  const variant = close ? [0, 2, 5][Math.floor(r() * 3) % 3] : Math.floor(r() * 6) % 6;
   const cx = b.x + b.w * 0.5;
   const cy = b.y + b.h * 0.45;
   const t = (x: Parameters<typeof toneFill>[0]) => toneFill(x, st.p);
-  let s = boxRect(st, st.pal.night ? t("black") : t("dense_dots"));
+  const night = st.pal.night;
+  const soft = night ? "#bdbdbd" : "#8c8c8c";
+  let s = boxRect(st, night ? t("dark") : PAPER);
+  const band = (y0: number, y1: number, fill: string, wave: number): string => {
+    const top: Point[] = [];
+    const bot: Point[] = [];
+    const ph = r() * 6.28;
+    for (let k = 0; k <= 10; k += 1) {
+      const x = b.x - 10 + ((b.w + 20) * k) / 10;
+      top.push({ x, y: y0 + Math.sin((k / 10) * Math.PI * 2 + ph) * wave });
+      bot.push({ x, y: y1 + Math.sin((k / 10) * Math.PI * 2 + ph + 1.3) * wave });
+    }
+    return pathEl(`${smoothPath(top, false)}L${n(bot[bot.length - 1].x)} ${n(bot[bot.length - 1].y)}${smoothPath([...bot].reverse(), false).replace(/^M/, "L")}Z`, { fill });
+  };
   if (variant === 0) {
-    // radiating white wedges from the centre
-    const rays = 36;
+    // soft gradation: a light tone at one edge stepping to paper
+    const fromTop = r() < 0.5;
+    const steps = 4;
+    for (let i = 0; i < steps; i += 1) {
+      const h = b.h * (0.42 - i * 0.09);
+      const y = fromTop ? b.y - 2 : b.y + b.h - h + 2;
+      s += pathEl(rectD(b.x - 2, y, b.w + 4, h), { fill: night ? INK : t("light"), opacity: 0.28 });
+    }
+  } else if (variant === 1) {
+    // flowing contour lines, with one light band between two of them
+    let d = "";
+    const lines = 6;
+    const ph0 = r() * 6.28;
+    const amp = b.h * between(r, 0.04, 0.08);
+    for (let i = 0; i < lines; i += 1) {
+      const y0 = b.y + b.h * (0.12 + (i / lines) * 0.85);
+      const pts: Point[] = [];
+      for (let k = 0; k <= 12; k += 1) {
+        const x = b.x - 10 + ((b.w + 20) * k) / 12;
+        pts.push({ x, y: y0 + Math.sin((k / 12) * Math.PI * 2 + ph0 + i * 0.5) * amp });
+      }
+      d += smoothPath(pts, false);
+    }
+    s += band(b.y + b.h * 0.55, b.y + b.h * 0.7, night ? INK : t("light"), amp);
+    s += pathEl(d, { stroke: soft, w: st.lw * 0.7 });
+  } else if (variant === 2) {
+    // paper vignette: flat light tone in the corners, a clear oval centre
+    const rx = b.w * 0.62;
+    const ry = b.h * 0.6;
+    const oval = `M${n(cx - rx)} ${n(cy)}a${n(rx)} ${n(ry)} 0 1 0 ${n(rx * 2)} 0a${n(rx)} ${n(ry)} 0 1 0 ${n(-rx * 2)} 0Z`;
+    s += pathEl(rectD(b.x - 4, b.y - 4, b.w + 8, b.h + 8) + oval, { fill: night ? INK : t("light"), evenodd: true, opacity: 0.8 });
+  } else if (variant === 3) {
+    // a subtle dotted band across the lower third with a wavy edge
+    const y0 = b.y + b.h * between(r, 0.66, 0.74);
+    s += band(y0, b.y + b.h + 12, night ? t("mid") : t("dots"), b.h * 0.03);
+    let d = "";
+    for (let i = 0; i < 3; i += 1) {
+      const y = b.y + b.h * (0.12 + i * 0.07);
+      const x0 = b.x + b.w * between(r, 0.05, 0.4);
+      d += `M${n(x0)} ${n(y)}h${n(b.w * between(r, 0.2, 0.45))}`;
+    }
+    s += pathEl(d, { stroke: soft, w: st.lw * 0.6 });
+  } else if (variant === 4) {
+    // thin-line radiance: fine rays from the edges toward a wide clear centre
+    const rays = 44;
     const R = Math.hypot(b.w, b.h);
     let d = "";
     for (let i = 0; i < rays; i += 1) {
-      const a = (i / rays) * Math.PI * 2 + r() * 0.05;
-      const w = between(r, 0.012, 0.05);
-      const r0 = Math.min(b.w, b.h) * between(r, 0.12, 0.25);
-      d += `M${n(cx + Math.cos(a) * r0)} ${n(cy + Math.sin(a) * r0)}L${n(cx + Math.cos(a - w) * R)} ${n(cy + Math.sin(a - w) * R)}L${n(cx + Math.cos(a + w) * R)} ${n(cy + Math.sin(a + w) * R)}Z`;
+      const a = (i / rays) * Math.PI * 2 + r() * 0.04;
+      const r0x = b.w * between(r, 0.36, 0.44);
+      const r0y = b.h * between(r, 0.36, 0.44);
+      d += `M${n(cx + Math.cos(a) * r0x)} ${n(cy + Math.sin(a) * r0y)}L${n(cx + Math.cos(a) * R)} ${n(cy + Math.sin(a) * R)}`;
     }
-    s += pathEl(d, { fill: PAPER });
-    s += `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(Math.min(b.w, b.h) * 0.16)}" fill="${PAPER}"/>`;
-  } else if (variant === 1) {
-    // flowing bands
-    let d = "";
-    const bands = 7;
-    for (let i = 0; i < bands; i += 1) {
-      const y0 = b.y + (i / bands) * b.h * 1.2 - b.h * 0.1;
-      const amp = b.h * between(r, 0.04, 0.1);
-      const th = b.h * between(r, 0.03, 0.07);
-      const ph = r() * 6.28;
-      const pts: Point[] = [];
-      const pts2: Point[] = [];
-      for (let k = 0; k <= 12; k += 1) {
-        const x = b.x - 10 + ((b.w + 20) * k) / 12;
-        const y = y0 + Math.sin((k / 12) * Math.PI * 2 + ph) * amp;
-        pts.push({ x, y });
-        pts2.push({ x, y: y + th * (0.6 + 0.4 * Math.sin((k / 12) * Math.PI * 3 + ph)) });
-      }
-      d += `${smoothPath(pts, false)}L${n(pts2[pts2.length - 1].x)} ${n(pts2[pts2.length - 1].y)}${smoothPath(pts2.reverse(), false).replace(/^M/, "L")}Z`;
-    }
-    s += pathEl(d, { fill: PAPER, stroke: INK, w: st.lw * 0.6 });
+    s += pathEl(d, { stroke: soft, w: st.lw * 0.55 });
   } else {
-    // concentric ripples
+    // horizontal hatch bands thinning toward the middle (a calm "beta" backing)
     let d = "";
-    const R = Math.hypot(b.w, b.h) * 0.6;
-    for (let rr = Math.min(b.w, b.h) * 0.12; rr < R; rr *= 1.28) {
-      const w = rr * 0.12;
-      d += `M${n(cx - rr - w)} ${n(cy)}a${n(rr + w)} ${n(rr + w)} 0 1 0 ${n((rr + w) * 2)} 0a${n(rr + w)} ${n(rr + w)} 0 1 0 ${n(-(rr + w) * 2)} 0Z`;
-      d += `M${n(cx - rr)} ${n(cy)}a${n(rr)} ${n(rr)} 0 1 1 ${n(rr * 2)} 0a${n(rr)} ${n(rr)} 0 1 1 ${n(-rr * 2)} 0Z`;
+    const top = b.y + b.h * 0.1;
+    for (let i = 0; i < 9; i += 1) {
+      const y = top + i * (2.5 + i * 1.1);
+      d += `M${n(b.x - 2)} ${n(y)}L${n(b.x + b.w * between(r, 0.55, 1.02))} ${n(y)}`;
+      const y2 = b.y + b.h - 6 - i * (2.5 + i * 1.1);
+      d += `M${n(b.x + b.w * between(r, -0.02, 0.45))} ${n(y2)}L${n(b.x + b.w + 2)} ${n(y2)}`;
     }
-    s += pathEl(d, { fill: PAPER, evenodd: true });
-    s += `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(Math.min(b.w, b.h) * 0.1)}" fill="${PAPER}"/>`;
+    s += pathEl(d, { stroke: soft, w: st.lw * 0.6 });
   }
   add(st, LAYER.sky, 0, s);
   st.anchors.focus = { x: cx, y: cy };
