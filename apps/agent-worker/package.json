@@ -1,5 +1,5 @@
 {
-  "name": "@scrollstack/agent-worker",
+  "name": "@panelsummary/agent-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,11 +14,9 @@
     "experiment": "tsx scripts/experiment.ts"
   },
   "dependencies": {
-    "@scrollstack/agent-runtime": "workspace:*",
-    "@scrollstack/contracts": "workspace:*",
-    "@sinclair/typebox": "0.34.41",
-    "fastify": "5.8.5",
+    "@panelsummary/agent-runtime": "workspace:*",
     "@panelsummary/manga-render": "workspace:*",
+    "fastify": "5.8.5",
     "typebox": "1.1.38"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 /**
- * Agent worker HTTP surface (v2). The backend runner calls it; nothing else
+ * Agent worker HTTP surface. The backend job runner calls it; nothing else
  * should. Runs are idempotent by run_id: a repeated request for a running or
  * finished run returns that run instead of starting (and paying for) another.
  */

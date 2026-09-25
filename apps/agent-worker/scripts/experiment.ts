@@ -7,20 +7,24 @@
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage understanding
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage plan --understanding DIR/understanding.json
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage pages --understanding U --plan P --pages 1-4 --model MiniMax-M3 --vision
+ *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage review --understanding U --plan P --from DIR_OF_ACCEPTED_PAGES
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage section --understanding U --plan P --section s1
+ *
+ * "review" and "section" run the experiment-only goals in src/goals/experimental/.
  *
  * The key comes from MINIMAX_API_KEY in the environment (never printed).
  */
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
 import path from "node:path";
 
-import type { AllowedModel, ThinkingLevel } from "@scrollstack/agent-runtime";
+import type { AllowedModel, ThinkingLevel } from "@panelsummary/agent-runtime";
 import type { AdaptationPlan, BookUnderstanding } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
 import { egressSnapshot, installEgressRecorder } from "../src/egress.js";
 import { GOALS } from "../src/goals/index.js";
-import { mangaSectionGoal } from "../src/goals/manga-section.js";
+import { mangaSectionGoal } from "../src/goals/experimental/manga-section.js";
+import { pageReviewGoal } from "../src/goals/experimental/page-review.js";
 import type { GoalDefinition } from "../src/goals/types.js";
 import { executeDefinition, type GoalOutcome } from "../src/run-goal.js";
 
@@ -161,7 +165,7 @@ async function main() {
         const planned = plan.pages.find((p) => p.page_number === pageNumber)!;
         const units = bookInput.units.filter((u) => planned.units.includes(u.id));
         const spec = JSON.parse(readFileSync(path.join(from, `page-${pageNumber}.json`), "utf8")).spec;
-        const outcome = await run(GOALS.PAGE_REVIEW, `exp-rv${pageNumber}-${label}`, {
+        const outcome = await run(pageReviewGoal as GoalDefinition<unknown>, `exp-rv${pageNumber}-${label}`, {
           book: { title: book.title, author: book.author }, understanding, plan, page_number: pageNumber, units, spec,
         });
         const approved = outcome.state === "SUCCEEDED" ? Boolean((outcome.result as { approved?: boolean }).approved) : undefined;

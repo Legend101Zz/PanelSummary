@@ -5,9 +5,9 @@
  */
 import type { MangaPageSpec } from "@panelsummary/manga-render";
 
-import { dataBlock } from "./common.js";
-import { mangaPageGoal } from "./manga-page.js";
-import { InputError, requireObject, type GoalDefinition } from "./types.js";
+import { dataBlock } from "../common.js";
+import { mangaPageGoal } from "../manga-page.js";
+import { InputError, requireObject, type GoalDefinition } from "../types.js";
 
 type PageInput = ReturnType<typeof mangaPageGoal.parseInput>;
 interface Input {

@@ -1,7 +1,10 @@
-import type { AllowedModel, GoalLimits, GoalTool, JsonValue, ThinkingLevel } from "@scrollstack/agent-runtime";
+import type { AllowedModel, GoalLimits, GoalTool, JsonValue, ThinkingLevel } from "@panelsummary/agent-runtime";
 
-export const GOAL_TYPES = ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE", "PAGE_REVIEW"] as const;
+/** Goal types the HTTP worker accepts. */
+export const GOAL_TYPES = ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE"] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
+/** Goal types that only scripts/experiment.ts runs (never served over HTTP). */
+export type ExperimentalGoalType = "PAGE_REVIEW";
 
 export interface GoalOptions {
   model: AllowedModel;
@@ -22,7 +25,7 @@ export interface PreparedGoal {
 }
 
 export interface GoalDefinition<I> {
-  type: GoalType;
+  type: GoalType | ExperimentalGoalType;
   skillName: string;
   defaults: { model: AllowedModel; thinking: ThinkingLevel; limits: GoalLimits };
   parseInput(input: unknown): I;

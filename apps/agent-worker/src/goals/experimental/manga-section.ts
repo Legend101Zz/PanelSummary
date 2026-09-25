@@ -6,9 +6,9 @@
 import { castCapabilities, catalog, renderPage, validatePage } from "@panelsummary/manga-render";
 import type { AdaptationPlan, BookUnderstanding, MangaPageSpec, RenderResult, ValidationIssue } from "@panelsummary/manga-render";
 
-import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
-import { InputError, requireObject, type GoalDefinition } from "./types.js";
-import { pageVocabulary } from "./vocabulary.js";
+import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "../common.js";
+import { InputError, requireObject, type GoalDefinition } from "../types.js";
+import { pageVocabulary } from "../vocabulary.js";
 
 interface Input {
   understanding: BookUnderstanding;

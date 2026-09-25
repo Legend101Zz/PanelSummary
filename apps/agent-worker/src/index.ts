@@ -1,5 +1,5 @@
 import { installEgressRecorder } from "./egress.js";
-import { buildServer } from "./server-v2.js";
+import { buildServer } from "./server.js";
 
 installEgressRecorder();
 

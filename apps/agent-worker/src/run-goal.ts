@@ -1,12 +1,12 @@
 /** Run one production goal through the sealed Pi harness. Used by the HTTP server and the experiment CLI. */
-import { runGoal, GoalRunError, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@scrollstack/agent-runtime";
+import { runGoal, GoalRunError, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@panelsummary/agent-runtime";
 
-import { GOALS, InputError, type GoalType } from "./goals/index.js";
+import { GOALS, InputError, type ExperimentalGoalType, type GoalType } from "./goals/index.js";
 import type { GoalDefinition } from "./goals/types.js";
-import { loadSkill } from "./skills/load-v2.js";
+import { loadSkill } from "./skills/load.js";
 
-export interface GoalRequest {
-  goal_type: GoalType;
+export interface GoalRequest<T extends string = GoalType> {
+  goal_type: T;
   run_id: string;
   input: unknown;
   model?: AllowedModel;
@@ -24,7 +24,11 @@ export async function executeGoal(request: GoalRequest, signal?: AbortSignal): P
   return executeDefinition(goal, request, signal);
 }
 
-export async function executeDefinition(goal: GoalDefinition<unknown>, request: GoalRequest, signal?: AbortSignal): Promise<GoalOutcome> {
+export async function executeDefinition(
+  goal: GoalDefinition<unknown>,
+  request: GoalRequest<GoalType | ExperimentalGoalType>,
+  signal?: AbortSignal,
+): Promise<GoalOutcome> {
   let input: unknown;
   try {
     input = goal.parseInput(request.input);

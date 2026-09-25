@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-import type { GoalSkill } from "@scrollstack/agent-runtime";
+import type { GoalSkill } from "@panelsummary/agent-runtime";
 
 export function frontmatterVersion(source: string): string {
   const match = /^---\n[\s\S]*?^version:\s*([^\s]+)\s*$/m.exec(source);
