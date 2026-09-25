@@ -11,7 +11,7 @@ import { lookVocabulary } from "./vocabulary.js";
  * effigy) of a person must be drawn as that person in stone/gold/bronze, never
  * as an object — seen live: the Happy Prince cast as a gold "rocket".
  */
-export function lookSenseIssues(value: unknown): ValidationIssue[] {
+export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new Set()): ValidationIssue[] {
   const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
   if (!Array.isArray(cast)) return [];
   const issues: ValidationIssue[] = [];
@@ -22,7 +22,12 @@ export function lookSenseIssues(value: unknown): ValidationIssue[] {
     if (!Array.isArray(memberSections) || memberSections.length === 0 || memberSections.some((id) => !sectionIds.has(id as string))) {
       issues.push({ code: "CAST_SECTIONS", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} needs "sections": the ids of the sections it appears in (from: ${[...sectionIds].join(", ")}). Two different people with the same role in different stories must be two cast members.` });
     }
-    const personStatue = /\b(statue|effigy|carving|carved figure|monument)\b/.test(text) && /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel)\b/.test(text);
+    const nameText = `${(member as { name?: string }).name ?? ""} ${text}`.toLowerCase();
+    const statueWords = /\b(statue|effigy|carving|carved figure|monument|gilded|pedestal|on a (tall )?column|on its column|bronze figure|stone figure)\b/.test(nameText);
+    const personWords = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/.test(nameText);
+    // Once flagged in this session, the rule sticks to the id: rewording the
+    // description does not make a statue of a person into an object.
+    const personStatue = (statueWords && personWords) || stickyStatues.has(member?.id ?? "");
     const look = member?.look as { kind?: string; height?: string } | undefined;
     if (look?.kind === "crowd" && /\b(duckling|ducks?|birds?|sheep|cattle|cows?|geese|goose|hens?|chickens?|dogs?|cats?|mice|rats?|frogs?|fish|insects?|bees?|flowers?|trees?)\b/.test(text)) {
       issues.push({ code: "CROWD_NOT_PEOPLE", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} is a group of animals or plants, but "crowd" draws people. Use one "bird"/"animal"/"plant" cast member for the group instead.` });
@@ -31,12 +36,13 @@ export function lookSenseIssues(value: unknown): ValidationIssue[] {
       issues.push({ code: "GIANT_NOT_GIANT", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} is described as a giant: set "height": "giant" so pages show it.` });
     }
     if (!personStatue) continue;
+    if (member?.id) stickyStatues.add(member.id);
     if (member?.look?.kind !== "human" || !["gold", "stone", "bronze"].includes(member.look.material ?? "")) {
       issues.push({
         code: "STATUE_NOT_HUMAN",
         severity: "error",
         path: `cast ${member?.id ?? "?"}`,
-        message: `${member?.id} is described as a statue of a person: give it a "human" look (age, build, outfit, headwear as the statue shows them) with "material": "gold", "stone" or "bronze" — not an object.`,
+        message: `${member?.id} is described as a statue of a person: give it a "human" look (age, build, outfit, headwear as the statue shows them) with "material": "gold", "stone" or "bronze" — not an object. Rewording its description does not change this.`,
       });
     }
   }
@@ -72,8 +78,9 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     // The last complete candidate: revise_understanding patches it instead of
     // making the model re-emit a 40-100k-token JSON for a few fixes.
     let current: Record<string, unknown> | undefined;
+    const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value)];
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

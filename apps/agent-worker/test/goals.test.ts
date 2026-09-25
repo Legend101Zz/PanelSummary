@@ -330,3 +330,17 @@ describe("revise_understanding", () => {
     expect((fixed.accepted as unknown as { cast: unknown[] }).cast).toHaveLength(1);
   });
 });
+
+describe("statue guard cannot be reworded away", () => {
+  it("keeps flagging a statue id after its description drops the word statue", async () => {
+    const { lookSenseIssues } = await import("../src/goals/book-understanding.js");
+    const sticky = new Set<string>();
+    const sections = [{ id: "s1" }];
+    const first = { sections, cast: [{ id: "c_prince", name: "The Happy Prince", description: "A statue of a prince on a tall column.", sections: ["s1"], look: { kind: "object" } }] };
+    expect(lookSenseIssues(first, sticky).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
+    const reworded = { sections, cast: [{ id: "c_prince", name: "The Happy Prince", description: "Stands high above the city, shining.", sections: ["s1"], look: { kind: "object" } }] };
+    expect(lookSenseIssues(reworded, sticky).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
+    const gilded = { sections, cast: [{ id: "c_x", name: "The Happy Prince", description: "Gilded all over, on a tall column.", sections: ["s1"], look: { kind: "object" } }] };
+    expect(lookSenseIssues(gilded).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
+  });
+});
