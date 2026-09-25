@@ -1,10 +1,35 @@
 import { validateUnderstanding } from "@panelsummary/manga-render";
-import type { BookUnderstanding } from "@panelsummary/manga-render";
+import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-render";
 
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { lookVocabulary } from "./vocabulary.js";
+
+/**
+ * Looks that contradict the character's own description. A statue (or carving,
+ * effigy) of a person must be drawn as that person in stone/gold/bronze, never
+ * as an object — seen live: the Happy Prince cast as a gold "rocket".
+ */
+export function lookSenseIssues(value: unknown): ValidationIssue[] {
+  const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
+  if (!Array.isArray(cast)) return [];
+  const issues: ValidationIssue[] = [];
+  for (const member of cast) {
+    const text = `${member?.description ?? ""} ${member?.role ?? ""}`.toLowerCase();
+    const personStatue = /\b(statue|effigy|carving|carved figure|monument)\b/.test(text) && /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel)\b/.test(text);
+    if (!personStatue) continue;
+    if (member?.look?.kind !== "human" || !["gold", "stone", "bronze"].includes(member.look.material ?? "")) {
+      issues.push({
+        code: "STATUE_NOT_HUMAN",
+        severity: "error",
+        path: `cast ${member?.id ?? "?"}`,
+        message: `${member?.id} is described as a statue of a person: give it a "human" look (age, build, outfit, headwear as the statue shows them) with "material": "gold", "stone" or "bronze" — not an object.`,
+      });
+    }
+  }
+  return issues;
+}
 
 /** Books above this size need a chunked understanding pass (not implemented: fail visibly). */
 const MAX_WORDS_SINGLE_PASS = 250_000;
@@ -18,7 +43,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   skillName: "book-understanding",
   defaults: {
     model: "MiniMax-M3",
-    thinking: "off",
+    thinking: "low",
     limits: { maxTurns: 8, maxToolCalls: 8, maxSubmits: 5, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 15 * 60_000 },
   },
   parseInput(input) {
@@ -40,7 +65,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       async execute(args: Record<string, unknown>) {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
-        const issues = validateUnderstanding(parsed.value, unitIds);
+        const issues = [...validateUnderstanding(parsed.value, unitIds), ...lookSenseIssues(parsed.value)];
         if (errorsOf(issues).length > 0) {
           return { text: rejection(issues), note: `errors=${errorsOf(issues).length}` };
         }

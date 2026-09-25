@@ -285,3 +285,13 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
     expect(fourth.text).toMatch(/^Preview limit \(3\) reached/);
   });
 });
+
+describe("understanding look sense", () => {
+  it("rejects a statue of a person cast as an object, accepts it as a gilded human", async () => {
+    const { lookSenseIssues } = await import("../src/goals/book-understanding.js");
+    const statue = { id: "c_prince", description: "A life-sized statue of a prince on a tall column.", role: "hero" };
+    expect(lookSenseIssues({ cast: [{ ...statue, look: { kind: "object", shape: "rocket", tone: "gold", face: true } }] }).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
+    expect(lookSenseIssues({ cast: [{ ...statue, look: { kind: "human", material: "gold" } }] })).toEqual([]);
+    expect(lookSenseIssues({ cast: [{ id: "c_rocket", description: "A proud firework rocket.", look: { kind: "object" } }] })).toEqual([]);
+  });
+});

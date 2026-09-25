@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     # --- generation policy (recorded on every edition) ---
     understanding_model: str = "MiniMax-M3"
-    understanding_thinking: str = "off"
+    understanding_thinking: str = "low"
     plan_model: str = "MiniMax-M3"
     plan_thinking: str = "off"
     page_model: str = "MiniMax-M3"
