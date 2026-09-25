@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Book understanding
@@ -178,7 +178,10 @@ giant's garden, bars for a jail).
   relative to people. Staging features are present on locations.
 - No invented cast other than at most one labelled adaptation device (nonfiction).
 - Every speaking or acting character in every section is in the cast, including
-  personified forces (as `spirit`). Re-read each section and check.
+  personified forces (as `spirit`). Re-read each section and check. Anyone the book gives
+  two or more lines to ("said the Frog", "said a little Squib") must be a cast member of
+  that section; a plain word the book uses for an existing character ("said the girl" for
+  the Professor's daughter) goes in that character's `role`.
 - Call `submit_understanding` with the whole JSON as one string. If it is rejected, do
   NOT resend everything: call `revise_understanding` with only the entries you change
   (`{"cast": [the corrected members], "claims": [...], "remove": {"claims": ["k9"]}}` —

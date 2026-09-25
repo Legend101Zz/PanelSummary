@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Manga page
@@ -267,8 +267,11 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 Never state as fact anything the source does not support. Cite `source` (unit + PDF page)
 on every panel, and on every `quote`/`paraphrase` text.
 
-- **Attribute quotes correctly.** A `quote` goes to the character who says it in the book.
-  If the book's speaker is not in the cast, use narration or a caption instead.
+- **Attribute quotes correctly.** A `quote` (or a near-verbatim `paraphrase`) goes to the
+  character who says it in the book: check the "said the ..." next to it in the source.
+  If the book's speaker is not in the cast, use narration that names the speaker instead
+  (`"He looks just like an angel," said the Charity Children`). Never hand a line to
+  whoever happens to be drawn.
 - **Keep the book's precision.** Names, numbers, dates and the book's key formulations
   appear exactly.
 - **Do not moralise.** Do not add commentary the book does not make at this point, even

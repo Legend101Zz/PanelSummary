@@ -11,6 +11,7 @@ import { bookUnderstandingGoal } from "../src/goals/book-understanding.js";
 import { CANDIDATE_ARG, parseCandidate } from "../src/goals/common.js";
 import { GOAL_TYPES, GOALS } from "../src/goals/index.js";
 import { mangaPageGoal, quoteIssues } from "../src/goals/manga-page.js";
+import { attributions, quoteSpeakerIssues, speakerCastIssues } from "../src/goals/attribution.js";
 import type { GoalOptions, PreparedGoal } from "../src/goals/types.js";
 
 const OFF: GoalOptions = { model: "MiniMax-M3", thinking: "off", vision: false };
@@ -164,6 +165,71 @@ describe("quote fidelity", () => {
     expect(issues.map((i) => i.code)).toEqual(["QUOTE_NOT_IN_SOURCE"]);
     panel.text[0].text = "High above the city... stood the statue";
     expect(quoteIssues(spec, [{ text: "HIGH above the city, on a tall column, stood the statue of the Happy Prince." }])).toEqual([]);
+    // a typeset PDF extracts "off" as "o\uFB00"; the page must be able to quote it in plain letters
+    panel.text[0].text = "Take it off, leaf by leaf";
+    expect(quoteIssues(spec, [{ text: "\u201cYou must take it o\uFB00, leaf by leaf,\u201d said the Prince." }])).toEqual([]);
+  });
+});
+
+describe("speaker attribution", () => {
+  const BOOK_TEXT =
+    "\u201cHe is as beautiful as a weathercock,\u201d remarked one of the Town Councillors. " +
+    "\u201cHe looks just like an angel,\u201d said the Charity Children as they came out of the cathedral. " +
+    "\u201cThe ruby has fallen out of his sword,\u201d said the Mayor; \u201cin fact, he is little better than a beggar!\u201d " +
+    "\u201cLittle better than a beggar,\u201d said the Town Councillors. " +
+    "\u201cI am afraid it will not go with my dress,\u201d she answered. " +
+    "\u201cShall I love you?\u201d said the Swallow sadly. " +
+    "And the Miller said: \u2018Little Hans, don\u2019t forget the flour,\u2019 said the Miller.";
+
+  it("finds the speaker the prose names, including split quotes and quotes inside a story", () => {
+    const found = attributions(BOOK_TEXT).map((a) => [a.quote.slice(0, 18), a.head]);
+    expect(found).toContainEqual(["He is as beautiful", "councillors"]);
+    expect(found).toContainEqual(["He looks just like", "children"]);
+    expect(found).toContainEqual(["in fact, he is lit", "mayor"]); // the gap "said the Mayor;" attributes the second half
+    expect(found).toContainEqual(["Shall I love you?", "swallow"]);
+    expect(found).toContainEqual(["Little Hans, don\u2019t", "miller"]); // single quotes; the apostrophe does not close it
+    expect(found.some(([q]) => q.startsWith("I am afraid"))).toBe(false); // "she answered" names nobody
+  });
+
+  const cast = [
+    { ...UNDERSTANDING.cast.find((c) => c.id === "mayor")!, sections: ["s1"] },
+    { ...UNDERSTANDING.cast.find((c) => c.id === "prince")!, id: "councillors", name: "The Town Councillors", role: "officials", sections: ["s1"] },
+    { ...UNDERSTANDING.cast.find((c) => c.id === "swallow")!, sections: ["s1"] },
+  ];
+  const balloon = (speaker: string, text: string, fidelity: "quote" | "paraphrase" | "dramatized" = "quote"): MangaPageSpec => {
+    const spec = fixturePage(1);
+    for (const other of spec.panels) other.text = [];
+    spec.panels[0].text = [{ kind: "speech", speaker, text, fidelity }];
+    return spec;
+  };
+
+  it("rejects a quote in the wrong mouth and says who the book gives it to", () => {
+    const wrong = quoteSpeakerIssues(balloon("councillors", "He looks just like an angel!"), [{ text: BOOK_TEXT }], cast, "s1");
+    expect(wrong.map((i) => i.code)).toEqual(["QUOTE_WRONG_SPEAKER"]);
+    expect(wrong[0].message).toContain("the Charity Children");
+    expect(wrong[0].message).toContain("narration");
+    const toMayor = quoteSpeakerIssues(balloon("mayor", "Shall I love you? he asked the reed"), [{ text: BOOK_TEXT }], cast, "s1");
+    expect(toMayor[0]?.message).toContain("Give it to The Swallow (swallow)");
+  });
+
+  it("passes the right speaker, an echo, an unattributed line and invented dialogue", () => {
+    const pass = (speaker: string, text: string, fidelity?: "quote" | "paraphrase" | "dramatized") =>
+      quoteSpeakerIssues(balloon(speaker, text, fidelity), [{ text: BOOK_TEXT }], cast, "s1");
+    expect(pass("councillors", "He is as beautiful as a weathercock")).toEqual([]);
+    expect(pass("mayor", "In fact, he is little better than a beggar!")).toEqual([]); // not outvoted by the Councillors' echo
+    expect(pass("swallow", "I am afraid it will not go with my dress")).toEqual([]); // the book names no speaker
+    expect(pass("councillors", "He looks just like an angel!", "dramatized")).toEqual([]);
+  });
+
+  it("asks the understanding to cast anyone the book gives two or more lines to", () => {
+    const units = [
+      { section_id: "s5", text: "\u201cA new arrival, I see!\u201d said the Frog. \u201cWell, well,\u201d said the Frog. \u201cHallo!\u201d cried a Goose." },
+    ];
+    const issues = speakerCastIssues({ cast }, units);
+    expect(issues.map((i) => i.code)).toEqual(["SPEAKER_NOT_IN_CAST"]);
+    expect(issues[0].message).toContain("2 lines to the Frog");
+    const withFrog = [...cast, { ...cast[2], id: "frog", name: "The Frog", sections: ["s5"] }];
+    expect(speakerCastIssues({ cast: withFrog }, units)).toEqual([]);
   });
 });
 

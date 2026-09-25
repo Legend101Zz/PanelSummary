@@ -1,6 +1,7 @@
 import { validateUnderstanding } from "@panelsummary/manga-render";
 import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-render";
 
+import { speakerCastIssues } from "./attribution.js";
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
@@ -62,7 +63,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   defaults: {
     model: "MiniMax-M3",
     thinking: "low",
-    limits: { maxTurns: 10, maxToolCalls: 10, maxSubmits: 3, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 18 * 60_000 },
+    limits: { maxTurns: 16, maxToolCalls: 16, maxSubmits: 3, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 18 * 60_000 },
   },
   parseInput(input) {
     const record = requireObject(input, "input");
@@ -80,7 +81,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     let current: Record<string, unknown> | undefined;
     const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues)];
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

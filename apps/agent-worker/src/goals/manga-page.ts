@@ -14,6 +14,7 @@ import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate,
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
+import { quoteSpeakerIssues } from "./attribution.js";
 
 interface UnitText {
   id: string;
@@ -45,9 +46,10 @@ function codesNote(issues: readonly ValidationIssue[]): string {
   return codes.length ? ` ${codes.join(",")}` : "";
 }
 
-/** Lowercase, straight quotes, letters/digits/spaces only. */
+/** Lowercase, straight quotes, letters/digits/spaces only; PDF ligatures (U+FB00-FB06) as plain letters. */
 function normalizeWords(text: string): string {
   return text
+    .replace(/[\uFB00-\uFB06]/g, (m) => m.normalize("NFKC"))
     .toLowerCase()
     .replace(/[\u2018\u2019\u201c\u201d"'`]/g, "")
     .replace(/[^a-z0-9\s]/g, " ")
@@ -335,6 +337,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...introductionIssues(spec, input),
         ...templateIssues(spec, input),
         ...quoteIssues(spec, input.units),
+        ...quoteSpeakerIssues(spec, input.units, input.cast, input.page.section_id),
         ...sectionTitleIssues(spec, input.opens_section),
         ...claimMapIssues(spec, input.page.claims),
         ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
