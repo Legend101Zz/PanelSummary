@@ -88,6 +88,12 @@ export interface FigureRequest {
   detail?: "full" | "reduced" | "silhouette";
   /** Draw a paper-white knockout rim under the outline (figure–ground separation). Default true. */
   rim?: boolean;
+  /**
+   * Eye state for this appearance. "blind" = empty/closed sockets with no iris
+   * (a statue without its gem eyes), "dead" = closed-line or X eyes, no pupils.
+   * Material/tone variants arrive already merged into `look` by the composer.
+   */
+  eyes?: "open" | "closed" | "blind" | "dead";
 }
 
 export interface RigModule {

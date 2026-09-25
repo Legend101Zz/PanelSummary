@@ -77,6 +77,68 @@ export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string 
   return issues;
 }
 
+/** Every planned claim must be mapped to real panels with a stated method. */
+export function claimMapIssues(spec: MangaPageSpec, plannedClaims: readonly string[]): ValidationIssue[] {
+  if (plannedClaims.length === 0) return [];
+  const panelIds = new Set((spec.panels ?? []).map((panel) => panel.id));
+  const map = Array.isArray(spec.claim_map) ? spec.claim_map : [];
+  const issues: ValidationIssue[] = [];
+  for (const claim of plannedClaims) {
+    const entry = map.find((item) => item?.claim === claim);
+    if (!entry) {
+      issues.push({ code: "CLAIM_MAP_MISSING", severity: "error", path: "page.claim_map", message: `add {"claim": "${claim}", "panels": [...], "how": "..."} saying which panels convey ${claim} and how (picture, line, or both). Every part of the claim must reach the reader.` });
+      continue;
+    }
+    const panels = Array.isArray(entry.panels) ? entry.panels : [];
+    if (panels.length === 0 || panels.some((id) => !panelIds.has(id))) {
+      issues.push({ code: "CLAIM_MAP_PANELS", severity: "error", path: "page.claim_map", message: `claim_map for ${claim} must list existing panel ids (${[...panelIds].join(", ")}).` });
+    }
+    if (typeof entry.how !== "string" || entry.how.trim().split(/\s+/).length < 4) {
+      issues.push({ code: "CLAIM_MAP_HOW", severity: "error", path: "page.claim_map", message: `claim_map for ${claim}: "how" must say in a sentence how the page conveys it.` });
+    }
+  }
+  return issues;
+}
+
+/** Spoken words belong in balloons; conversation keeps its sides (the 180-degree rule). */
+export function stagingIssues(spec: MangaPageSpec): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const slotIndex: Record<string, number> = { left: 0, center_left: 1, center: 2, center_right: 3, right: 4 };
+  let lastOrder: Map<string, number> | undefined;
+  (spec.panels ?? []).forEach((panel) => {
+    (panel.text ?? []).forEach((text, index) => {
+      if ((text.kind === "narration" || text.kind === "caption") && /["\u201c][^"\u201d]{12,}["\u201d]/.test(text.text ?? "")) {
+        issues.push({ code: "SPEECH_IN_NARRATION", severity: "warning", path: `panel ${panel.id} text ${index}`, message: "this box quotes someone speaking; put spoken words in a speech balloon from the drawn speaker so readers see who says them." });
+      }
+    });
+    const figs = (panel.figures ?? []).filter((f) => f && typeof f.character === "string" && f.slot in slotIndex);
+    const order = new Map(figs.map((f) => [f.character, slotIndex[f.slot]] as [string, number]));
+    if (lastOrder) {
+      const shared = [...order.keys()].filter((id) => lastOrder!.has(id));
+      for (let i = 0; i < shared.length; i += 1) {
+        for (let j = i + 1; j < shared.length; j += 1) {
+          const a = shared[i];
+          const b = shared[j];
+          const before = Math.sign(lastOrder.get(a)! - lastOrder.get(b)!);
+          const now = Math.sign(order.get(a)! - order.get(b)!);
+          if (before !== 0 && now !== 0 && before !== now) {
+            issues.push({ code: "SIDES_SWAPPED", severity: "warning", path: `panel ${panel.id}`, message: `${a} and ${b} swap sides from the previous panel; keep each on the same side through a conversation (the 180-degree rule).` });
+          }
+        }
+      }
+    }
+    if (figs.length === 2) {
+      const [l, r] = [...figs].sort((x, y) => slotIndex[x.slot] - slotIndex[y.slot]);
+      const talking = (panel.text ?? []).some((t) => t.speaker === l.character || t.speaker === r.character);
+      if (talking && l.facing === "left" && r.facing === "right") {
+        issues.push({ code: "BACK_TO_BACK", severity: "warning", path: `panel ${panel.id}`, message: `the two characters talking face away from each other; the one on the left should face "right" and the one on the right "left".` });
+      }
+    }
+    if (figs.length > 0) lastOrder = order;
+  });
+  return issues;
+}
+
 function sectionTitleIssues(spec: MangaPageSpec, opens?: { id: string; title: string }): ValidationIssue[] {
   if (!opens) return [];
   const want = normalizeWords(opens.title).replace(/^(the|a|an) /, "");
@@ -190,6 +252,8 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...templateIssues(spec, input),
         ...quoteIssues(spec, input.units),
         ...sectionTitleIssues(spec, input.opens_section),
+        ...claimMapIssues(spec, input.page.claims),
+        ...stagingIssues(spec),
       ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;
         if (seen.has(key)) return false;

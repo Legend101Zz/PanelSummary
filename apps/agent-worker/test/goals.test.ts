@@ -145,7 +145,12 @@ function pageInput(pageNumber: number, extra: Record<string, unknown> = {}) {
   };
 }
 
-const fixturePage = (pageNumber: number): MangaPageSpec => clone(PAGES.find((p) => p.page_number === pageNumber)!);
+/** Fixture page plus the claim_map the page goal now requires. */
+const fixturePage = (pageNumber: number): MangaPageSpec => {
+  const spec = clone(PAGES.find((p) => p.page_number === pageNumber)!);
+  spec.claim_map = spec.claims.map((claim) => ({ claim, panels: [spec.panels[0].id], how: "the first panel shows and says it" }));
+  return spec;
+};
 
 describe("quote fidelity", () => {
   it("rejects a quote that is not in the page's source text and accepts one that is", () => {

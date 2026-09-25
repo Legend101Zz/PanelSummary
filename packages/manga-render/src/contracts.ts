@@ -465,6 +465,7 @@ export const FX = [
   "snow",
   "wind",
   "light_rays",
+  "fireworks",
   "dark_mood",
   "soft_glow",
   "flashback",
@@ -536,8 +537,28 @@ export interface StagingAnchor {
   part?: PerchPart;
 }
 
+/** Eye state for one appearance (a statue that has given its sapphires is "blind"). */
+export const EYE_STATES = ["open", "closed", "blind", "dead"] as const;
+export type EyeState = (typeof EYE_STATES)[number];
+
+/**
+ * How a character looks in THIS panel when the story has changed them: the
+ * Happy Prince stripped of his gold (`material: "stone"`, `eyes: "blind"`), a
+ * bird that has died (`eyes: "dead"`), a coat soaked dark (`outfit_tone`).
+ * Unset fields keep the cast look.
+ */
+export interface LookVariant {
+  eyes?: EyeState;
+  material?: (typeof MATERIALS)[number];
+  outfit_tone?: Tone;
+  hair_tone?: Tone;
+  tone?: Tone;
+}
+
 export interface FigureSpec {
   character: string;
+  /** Per-appearance change of look (see LookVariant). */
+  variant?: LookVariant;
   pose: Pose;
   expression: Expression;
   facing: Facing;
@@ -584,6 +605,11 @@ export interface MangaPageSpec {
   panels: PanelSpec[];
   /** Claim ids (from the adaptation plan) this page conveys. */
   claims: string[];
+  /**
+   * For each claim: the panels that convey it and one sentence on HOW (the
+   * picture, the line, or both). Not lettered; checked for completeness.
+   */
+  claim_map?: { claim: string; panels: string[]; how: string }[];
   /** True when the last panel is a page-turn hook. */
   page_turn_hook: boolean;
 }

@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Manga page
@@ -36,9 +36,15 @@ Think like a manga storyboarder: pictures carry the story, words carry what pict
     }
   ],
   "claims": ["k4"],
+  "claim_map": [{ "claim": "k4", "panels": ["p1", "p3"], "how": "p1 shows him arriving at night; p3 he says he will sleep at the statue's feet." }],
   "page_turn_hook": false
 }
 ```
+
+`claim_map` is your coverage check: for every planned claim, list the panels that carry it
+and say HOW (the picture, the line, or both). Every part of the claim must reach a reader
+who has not read the book — if a claim names a cause (why he weeps), a gift (a ruby, an
+eye) or a consequence, the page must show or say it.
 
 `layout` is either `{ "template": id }` from the trusted template list (panels fill the
 slots in reading order, panel count must equal the template's slot count) or an authored
