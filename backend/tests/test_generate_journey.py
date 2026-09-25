@@ -222,6 +222,9 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 failed = (await api.get(f"/editions/{edition_id}/pages/2")).json()
                 assert failed["svg"] is None and failed["error"]["message"] == "fake failure"
 
+                # Totals are exact sums of the receipts (5 calls x 10/5 tokens, $0.001 each).
+                assert edition["totals"]["calls"] == 5 and edition["totals"]["failed_calls"] == 2
+                assert edition["totals"]["input_tokens"] == 50 and edition["totals"]["output_tokens"] == 25
                 receipts = (await api.get(f"/editions/{edition_id}/receipts")).json()
                 assert all(call["provider"] == "minimax" for call in receipts["calls"])
                 assert len(receipts["calls"]) == 5

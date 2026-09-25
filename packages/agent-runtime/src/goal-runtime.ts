@@ -118,8 +118,14 @@ export interface GoalTrace {
   tool_calls: GoalToolCallRecord[];
   submits: number;
   text_fallback_used: boolean;
+  /** Assistant turns cut off at the output limit (runaway generation). */
+  truncated_turns: number;
+  /** Nudges sent after a turn ended without the submit tool. */
+  nudges: number;
   stop_reason: "accepted" | "no_submission" | "limit" | "cancelled" | "timeout" | "error";
   error?: string;
+  /** Head and tail of the last assistant text when the run failed without a submission. */
+  last_output_excerpt?: string;
 }
 
 export interface GoalRunResult {
@@ -240,6 +246,8 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     tool_calls: [],
     submits: 0,
     text_fallback_used: false,
+    truncated_turns: 0,
+    nudges: 0,
     stop_reason: "error",
   };
 
@@ -360,10 +368,39 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     trace.latency_ms = Math.round(performance.now() - started);
   };
 
+  const lastAssistant = () => {
+    const messages = session.messages as unknown as Array<{ role?: string; stopReason?: string; content?: Array<{ type?: string; text?: string }> }>;
+    for (let i = messages.length - 1; i >= 0; i -= 1) if (messages[i]?.role === "assistant") return messages[i];
+    return undefined;
+  };
+  const excerpt = () => {
+    const text = (lastAssistant()?.content ?? []).filter((c) => c?.type === "text").map((c) => c.text ?? "").join("\n");
+    return text.length > 1600 ? `${text.slice(0, 1000)} … ${text.slice(-500)}` : text;
+  };
+  const stillOpen = () => accepted === undefined && !limitHit && !timedOut && !request.signal?.aborted;
+
   try {
     try {
       await session.prompt(request.userPrompt, { expandPromptTemplates: false, source: "rpc" });
       await session.waitForIdle();
+      // A turn that ends without the submit tool gets ONE nudge in the same
+      // session: a runaway reply (cut off at the output limit) or a plain-text
+      // answer would otherwise waste the whole attempt.
+      if (stillOpen()) {
+        const last = lastAssistant();
+        if (last?.stopReason === "length") trace.truncated_turns += 1;
+        const fallbackReady = request.textFallbackArgument !== undefined && extractFinalJson(session.messages as unknown[]) !== undefined;
+        if (!fallbackReady) {
+          trace.nudges += 1;
+          const reason = last?.stopReason === "length" ? "Your previous reply was cut off at the output limit before you called a tool." : "Your previous reply ended without calling a tool.";
+          await session.prompt(
+            `${reason} Do not repeat it. Call ${request.submitTool} now with ONE compact, complete JSON object as its argument. Keep every text short.`,
+            { expandPromptTemplates: false, source: "rpc" },
+          );
+          await session.waitForIdle();
+          if (lastAssistant()?.stopReason === "length") trace.truncated_turns += 1;
+        }
+      }
     } catch (error) {
       if (accepted === undefined) throw error;
     }
@@ -392,7 +429,8 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     else if (timedOut) trace.stop_reason = "timeout";
     else if (limitHit) trace.stop_reason = "limit";
     else trace.stop_reason = "no_submission";
-    trace.error = limitHit ?? (timedOut ? "timeout" : request.signal?.aborted ? "cancelled" : "finished without an accepted submission");
+    trace.error = limitHit ?? (timedOut ? "timeout" : request.signal?.aborted ? "cancelled" : trace.truncated_turns > 0 ? "output cut off at the token limit without a submission" : "finished without an accepted submission");
+    trace.last_output_excerpt = excerpt();
     throw new GoalRunError(trace.error, trace);
   } catch (error) {
     snapshot();

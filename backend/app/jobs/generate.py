@@ -21,6 +21,7 @@ from typing import Any, Optional
 
 from app.documents import (
     BookSource,
+    Totals,
     Edition,
     EditionArtifact,
     EditionPage,
@@ -59,6 +60,9 @@ def receipt_from(goal_type: str, run_id: str, outcome: WorkerOutcome) -> dict[st
         "tool_calls": trace.get("tool_calls"),
         "text_fallback_used": trace.get("text_fallback_used"),
         "stop_reason": trace.get("stop_reason"),
+        "truncated_turns": trace.get("truncated_turns"),
+        "nudges": trace.get("nudges"),
+        "last_output_excerpt": trace.get("last_output_excerpt") if outcome.state != "SUCCEEDED" else None,
         "error": outcome.error,
         "at": utcnow().isoformat(),
     }
@@ -121,10 +125,32 @@ def _book_payload(book: LibraryBook, source: BookSource) -> dict[str, Any]:
 
 
 async def _set_edition(edition: Edition, **fields: Any) -> None:
+    """Partial update: never overwrite counters other writers increment ($inc totals)."""
+    fields["updated_at"] = utcnow()
     for key, value in fields.items():
         setattr(edition, key, value)
-    edition.updated_at = utcnow()
-    await edition.save()
+    payload = {key: (value.model_dump() if hasattr(value, "model_dump") else value) for key, value in fields.items()}
+    await Edition.get_motor_collection().update_one({"_id": edition.id}, {"$set": payload})
+
+
+async def _recompute_totals(edition_id: str) -> dict[str, Any]:
+    """Exact totals from every stored receipt (artifacts and every page attempt)."""
+    totals = {"calls": 0, "failed_calls": 0, "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "model_ms": 0}
+    receipts = [a.receipt for a in await EditionArtifact.find(EditionArtifact.edition_id == edition_id).to_list()]
+    for page in await EditionPage.find(EditionPage.edition_id == edition_id).to_list():
+        receipts.extend(page.receipts)
+    for receipt in receipts:
+        tokens = receipt.get("tokens") or {}
+        totals["calls"] += 1
+        totals["failed_calls"] += 0 if receipt.get("state") == "SUCCEEDED" else 1
+        totals["input_tokens"] += int(tokens.get("input") or 0)
+        totals["output_tokens"] += int(tokens.get("output") or 0)
+        totals["cache_read_tokens"] += int(tokens.get("cache_read") or 0)
+        totals["cache_write_tokens"] += int(tokens.get("cache_write") or 0)
+        totals["cost_usd"] += float(receipt.get("cost_usd") or 0.0)
+        totals["model_ms"] += int(receipt.get("latency_ms") or 0)
+    totals["cost_usd"] = round(totals["cost_usd"], 6)
+    return totals
 
 
 async def _artifact_stage(
@@ -361,6 +387,7 @@ async def finalize(edition: Edition, understanding: dict[str, Any], plan: dict[s
     await _set_edition(
         edition,
         status=status,
+        totals=Totals(**await _recompute_totals(str(edition.id))),
         pages_accepted=len(accepted),
         pages_failed=len(failed),
         coverage=report,

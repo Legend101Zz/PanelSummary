@@ -39,8 +39,8 @@ const OUT = arg("out");
 const READ_PAGES = Number(arg("pages", "4"));
 const FULL = arg("full") === "true";
 const TIMEOUT_MS = Number(arg("timeout-min", "90")) * 60_000;
-if (!PDF || !OUT) {
-  console.error("usage: --pdf FILE --out DIR [--full]");
+if ((!PDF && !process.argv.includes("--edition")) || !OUT) {
+  console.error("usage: --pdf FILE --out DIR [--full]   |   --edition ID --out DIR");
   process.exit(2);
 }
 mkdirSync(OUT, { recursive: true });
@@ -95,31 +95,54 @@ async function readerMatchesStored(page, editionId, pageNumber) {
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 try {
+  await runJourney();
+} catch (error) {
+  check("journey ran to the end", false, error instanceof Error ? error.message.split("\n")[0] : String(error));
+} finally {
+  await browser.close();
+  report.finished_at = new Date().toISOString();
+  report.passed = report.checks.length > 0 && report.checks.every((c) => c.ok);
+  writeFileSync(path.join(OUT, "journey-report.json"), JSON.stringify(report, null, 2));
+  console.log(`\n${report.passed ? "JOURNEY PASSED" : "JOURNEY FAILED"} — report: ${path.join(OUT, "journey-report.json")}`);
+  process.exitCode = report.passed ? 0 : 1;
+}
+
+async function runJourney() {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await desktop.newPage();
 
-  // 1. Upload through the UI.
-  const t0 = Date.now();
-  await page.goto(`${WEB}/upload`);
-  await page.setInputFiles('input[type="file"]', PDF);
-  await page.waitForURL(/\/books\/[0-9a-f]{24}/, { timeout: 5 * 60_000 });
-  const bookId = page.url().match(/books\/([0-9a-f]{24})/)[1];
-  report.book_id = bookId;
-  report.timings.upload_to_book_page_s = (Date.now() - t0) / 1000;
-  await page.getByRole("button", { name: "Generate manga" }).waitFor({ timeout: 5 * 60_000 });
-  await shot(page, "01-book-parsed");
-
-  // 2. Generate.
-  const tGen = Date.now();
-  await page.getByRole("button", { name: "Generate manga" }).click();
+  const EXISTING = arg("edition");
+  let bookId;
   let edition;
-  for (;;) {
-    const list = await api(`/books/${bookId}/editions`);
-    if (list.length) {
-      edition = list[0];
-      break;
+  const tGen = Date.now();
+  if (EXISTING) {
+    // Re-verify an existing edition (after a fix/redraw) without generating again.
+    edition = await api(`/editions/${EXISTING}`);
+    bookId = edition.book_id;
+    report.book_id = bookId;
+    report.reverified_existing_edition = true;
+  } else {
+    // 1. Upload through the UI.
+    const t0 = Date.now();
+    await page.goto(`${WEB}/upload`);
+    await page.setInputFiles('input[type="file"]', PDF);
+    await page.waitForURL(/\/books\/[0-9a-f]{24}/, { timeout: 5 * 60_000 });
+    bookId = page.url().match(/books\/([0-9a-f]{24})/)[1];
+    report.book_id = bookId;
+    report.timings.upload_to_book_page_s = (Date.now() - t0) / 1000;
+    await page.getByRole("button", { name: "Generate manga" }).waitFor({ timeout: 5 * 60_000 });
+    await shot(page, "01-book-parsed");
+
+    // 2. Generate.
+    await page.getByRole("button", { name: "Generate manga" }).click();
+    for (;;) {
+      const list = await api(`/books/${bookId}/editions`);
+      if (list.length) {
+        edition = list[0];
+        break;
+      }
+      await sleep(1000);
     }
-    await sleep(1000);
   }
   report.edition_id = edition.id;
   report.job_id = edition.job_id;
@@ -144,22 +167,34 @@ try {
   }
   report.stage_log = stageLog;
   report.timings.generate_to_first_page_s = firstPageAt ? (firstPageAt - tGen) / 1000 : null;
-  check("page 1 was drawn", Boolean(firstPageAt), `${report.timings.generate_to_first_page_s}s after Generate`);
+  check("page 1 was drawn", Boolean(firstPageAt) || EXISTING, EXISTING ? "existing edition" : `${report.timings.generate_to_first_page_s}s after Generate`);
   await page.reload();
   await shot(page, "02-book-progress");
 
   // 4. Desktop reader: consecutive pages, exact artifact, geometry.
   const readable = state.pages.filter((p) => p.status === "accepted").map((p) => p.page_number).slice(0, FULL ? 999 : READ_PAGES);
-  await page.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=${readable[0] ?? 1}`);
   for (const n of readable) {
-    await page.waitForURL(new RegExp(`page=${n}(\\b|&|$)`), { timeout: 30_000 });
+    await page.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=${n}`);
     await page.waitForFunction(() => Array.from(document.querySelectorAll("div")).some((d) => d.shadowRoot?.querySelector("svg")), null, { timeout: 30_000 });
     await sleep(400);
     const m = await readerMatchesStored(page, edition.id, n);
     check(`page ${n}: reader shows the exact persisted SVG`, m.ok && m.storedHashOk, `renderer ${m.renderer}`);
     check(`page ${n}: authored panel geometry present`, m.panelGroups === m.storedPanels && m.storedPanels > 0, `${m.panelGroups} panel groups / ${m.storedPanels} stored panels`);
-    if (n <= 6 || n % 5 === 0) await shot(page, `03-desktop-page-${String(n).padStart(2, "0")}`);
-    await page.keyboard.press("ArrowRight");
+    await shot(page, `03-desktop-page-${String(n).padStart(2, "0")}`);
+  }
+  // Keyboard reading: → from the first page moves to the next page in the URL.
+  await page.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=1`);
+  await sleep(800);
+  await page.keyboard.press("ArrowRight");
+  await sleep(800);
+  check("→ turns to the next page (URL keeps the page)", /[?&]page=2(\b|&|$)/.test(page.url()), page.url());
+  // Failed pages are shown honestly, never blank or faked.
+  for (const failed of state.pages.filter((p) => p.status === "failed")) {
+    await page.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=${failed.page_number}`);
+    await sleep(1200);
+    const body = await page.locator("main, body").first().innerText();
+    check(`failed page ${failed.page_number} is shown as failed with its reason`, /could not be drawn/i.test(body), failed.error ?? "");
+    await shot(page, `03-desktop-failed-page-${failed.page_number}`);
   }
   // Sources drawer on the first page.
   await page.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=${readable[0] ?? 1}`);
@@ -226,11 +261,4 @@ try {
     totals: receipts.totals,
     worker_egress: receipts.worker_egress,
   };
-} finally {
-  await browser.close();
-  report.finished_at = new Date().toISOString();
-  report.passed = report.checks.every((c) => c.ok);
-  writeFileSync(path.join(OUT, "journey-report.json"), JSON.stringify(report, null, 2));
-  console.log(`\n${report.passed ? "JOURNEY PASSED" : "JOURNEY FAILED"} — report: ${path.join(OUT, "journey-report.json")}`);
-  process.exitCode = report.passed ? 0 : 1;
 }

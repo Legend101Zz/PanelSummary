@@ -81,7 +81,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
   defaults: {
     model: "MiniMax-M3",
     thinking: "off",
-    limits: { maxTurns: 12, maxToolCalls: 12, maxSubmits: 5, maxOutputTokens: 32_000, maxCostUsd: 0.6, timeoutMs: 10 * 60_000 },
+    limits: { maxTurns: 12, maxToolCalls: 12, maxSubmits: 5, maxOutputTokens: 16_000, maxCostUsd: 0.6, timeoutMs: 10 * 60_000 },
   },
   parseInput(input) {
     const record = requireObject(input, "input");
