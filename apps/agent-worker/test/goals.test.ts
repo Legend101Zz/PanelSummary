@@ -278,11 +278,11 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
     expect(Buffer.from(withVision.images![0].data, "base64").subarray(1, 4).toString("latin1")).toBe("PNG");
   });
 
-  it("caps previews at three", async () => {
+  it("caps previews at four", async () => {
     const prepared = prepare();
-    for (let i = 0; i < 3; i += 1) await call(prepared, "preview_page", { schema: "x" });
-    const fourth = await call(prepared, "preview_page", valid());
-    expect(fourth.text).toMatch(/^Preview limit \(3\) reached/);
+    for (let i = 0; i < 4; i += 1) await call(prepared, "preview_page", { schema: "x" });
+    const fifth = await call(prepared, "preview_page", valid());
+    expect(fifth.text).toMatch(/^Preview limit \(4\) reached/);
   });
 });
 

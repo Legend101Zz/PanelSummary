@@ -37,7 +37,7 @@ interface Input {
   opens_section?: { id: string; title: string };
 }
 
-const MAX_PREVIEWS = 3;
+const MAX_PREVIEWS = 4;
 
 /** Distinct error codes for the trace note (diagnosis of repeated rejections). */
 function codesNote(issues: readonly ValidationIssue[]): string {
@@ -222,7 +222,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
   defaults: {
     model: "MiniMax-M3",
     thinking: "off",
-    limits: { maxTurns: 12, maxToolCalls: 12, maxSubmits: 5, maxOutputTokens: 16_000, maxCostUsd: 0.6, timeoutMs: 10 * 60_000 },
+    limits: { maxTurns: 16, maxToolCalls: 16, maxSubmits: 6, maxOutputTokens: 16_000, maxCostUsd: 0.8, timeoutMs: 12 * 60_000 },
   },
   parseInput(input) {
     const record = requireObject(input, "input");
@@ -352,7 +352,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       input.first_appearances.length ? `First appearance in the book on this page (introduce them by name): ${input.first_appearances.join(", ")}.` : "",
       input.opens_section ? `This page OPENS the section "${input.opens_section.title}": letter that title in a caption in the first panel.` : "",
       `Use schema "manga-page.v1" with page_number ${input.page.page_number} and section_id "${input.page.section_id}".`,
-      options.vision ? "You may call preview_page (up to 3 times) to see the rendered page before submit_page." : "You may call preview_page (up to 3 times) for a layout report before submit_page.",
+      options.vision ? "You may call preview_page (up to 4 times) to see the rendered page before submit_page." : "You may call preview_page (up to 4 times) for a layout report before submit_page.",
       "</goal>",
       dataBlock("trusted_templates", vocab.templates),
       dataBlock("trusted_catalog", { limits: vocab.limits, vocabularies: { ...pageVocabulary(), ...vocab.vocabularies }, shots: vocab.shots, text_kinds: vocab.text_kinds, slant: vocab.slant }),
