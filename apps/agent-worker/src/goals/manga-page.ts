@@ -1,4 +1,4 @@
-import { catalog, renderPage, validatePage } from "@panelsummary/manga-render";
+import { castCapabilities, catalog, renderPage, validatePage } from "@panelsummary/manga-render";
 import type {
   AdaptationPlan,
   BookUnderstanding,
@@ -199,7 +199,8 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       options.vision ? "You may call preview_page (up to 3 times) to see the rendered page before submit_page." : "You may call preview_page (up to 3 times) for a layout report before submit_page.",
       "</goal>",
       dataBlock("trusted_templates", vocab.templates),
-      dataBlock("trusted_vocabulary", { ...pageVocabulary(), poses_by_kind: vocab.posesByKind, expressions_by_kind: vocab.expressionsByKind }),
+      dataBlock("trusted_catalog", { limits: vocab.limits, vocabularies: { ...pageVocabulary(), ...vocab.vocabularies }, shots: vocab.shots, text_kinds: vocab.text_kinds, slant: vocab.slant }),
+      dataBlock("trusted_cast_capabilities", castCapabilities(input.cast)),
       dataBlock("cast", input.cast),
       dataBlock("locations", input.locations),
       dataBlock("claims_for_this_page", pageClaims),

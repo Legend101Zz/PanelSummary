@@ -3,7 +3,7 @@
  * section in a single pass. Used by scripts/experiment.ts to compare against
  * the per-page MANGA_PAGE goal. Same validators and renderer.
  */
-import { catalog, renderPage, validatePage } from "@panelsummary/manga-render";
+import { castCapabilities, catalog, renderPage, validatePage } from "@panelsummary/manga-render";
 import type { AdaptationPlan, BookUnderstanding, MangaPageSpec, RenderResult, ValidationIssue } from "@panelsummary/manga-render";
 
 import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
@@ -75,7 +75,8 @@ export const mangaSectionGoal: GoalDefinition<Input> = {
       JSON.stringify(pages),
       "</goal>",
       dataBlock("trusted_templates", vocab.templates),
-      dataBlock("trusted_vocabulary", { ...pageVocabulary(), poses_by_kind: vocab.posesByKind, expressions_by_kind: vocab.expressionsByKind }),
+      dataBlock("trusted_catalog", { limits: vocab.limits, vocabularies: { ...pageVocabulary(), ...vocab.vocabularies }, shots: vocab.shots, text_kinds: vocab.text_kinds, slant: vocab.slant }),
+      dataBlock("trusted_cast_capabilities", castCapabilities(input.understanding.cast)),
       dataBlock("cast", input.understanding.cast),
       dataBlock("locations", input.understanding.locations),
       dataBlock("claims_for_this_section", claims),

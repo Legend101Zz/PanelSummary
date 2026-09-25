@@ -99,7 +99,7 @@ if ! port_busy "$WORKER_PORT"; then
   start_service worker "agent-worker/src/index.ts" env -i PATH="$PATH" HOME="$HOME" \
     MINIMAX_API_KEY="$MINIMAX_KEY" AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" \
     AGENT_WORKER_PORT="$WORKER_PORT" AGENT_WORKER_HOST=127.0.0.1 AGENT_MAX_CONCURRENCY="${AGENT_MAX_CONCURRENCY:-4}" \
-    "$ROOT/node_modules/.bin/tsx" "$ROOT/apps/agent-worker/src/index.ts"
+    "$ROOT/apps/agent-worker/node_modules/.bin/tsx" "$ROOT/apps/agent-worker/src/index.ts"
 fi
 wait_url "http://127.0.0.1:$WORKER_PORT/readyz" 60 || fail "Agent worker not ready (see .dev/logs/worker.log)"
 ok "Agent worker ready"

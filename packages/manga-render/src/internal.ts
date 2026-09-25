@@ -14,6 +14,14 @@
  *   Rigs must still draw "front" and "back" views themselves.
  * - Fills use the tone palette in style.ts only: `fill="url(#<prefix>tone-dots)"`
  *   style references are produced by `toneFill()` so ids stay page-unique.
+ *   Screentones must stay PAGE-constant: the composer re-emits pattern copies
+ *   with patternTransform=scale(1/s) for scaled figure groups (rescaleTones).
+ *   Modules must NOT compensate themselves (that would double-correct).
+ * - Never emit a raw `opacity` attribute (resvg can panic on it inside clip
+ *   groups); use fill-opacity / stroke-opacity.
+ * - Props are horizontally centred on x=0 with the ground at y=0.
+ * - headRadius must cover the hair silhouette: lettering never covers it and
+ *   tails stop at it.
  */
 import type {
   Angle,
@@ -102,6 +110,8 @@ export interface EnvironmentDrawing {
   horizonY: number;
   /** Page-space y where standing figures' feet go for depth "mid". */
   groundY: number;
+  /** Optional page-space hints (e.g. statue_top, fountain, moon) for the composer. */
+  anchors?: Record<string, Point>;
 }
 
 export interface EnvironmentModule {

@@ -140,7 +140,17 @@ async def get_page(edition_id: str, page_number: int) -> dict:
     page = await EditionPage.find_one(EditionPage.edition_id == edition_id, EditionPage.page_number == page_number)
     if page is None:
         raise HTTPException(status_code=404, detail="Page not found")
+    understanding = await EditionArtifact.find_one(EditionArtifact.edition_id == edition_id, EditionArtifact.kind == "understanding")
+    claim_ids = (page.spec or {}).get("claims", page.claims)
+    claim_index = {c["id"]: c for c in (understanding.content.get("claims", []) if understanding else [])}
+    cast_index = {c["id"]: c.get("name", c["id"]) for c in (understanding.content.get("cast", []) if understanding else [])}
     return {
+        "claim_details": [
+            {"id": cid, "text": claim_index[cid].get("text", ""), "kind": claim_index[cid].get("kind"), "importance": claim_index[cid].get("importance"), "source": claim_index[cid].get("source", [])}
+            for cid in claim_ids
+            if cid in claim_index
+        ],
+        "speakers": {t.get("speaker"): cast_index.get(t.get("speaker"), "") for t in page.texts if t.get("speaker")},
         "page_number": page.page_number,
         "section_id": page.section_id,
         "status": page.status,

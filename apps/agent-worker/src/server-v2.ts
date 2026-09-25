@@ -40,10 +40,10 @@ function view(record: RunRecord) {
   return {
     run_id: record.run_id,
     goal_type: record.goal_type,
-    state: record.state,
     started_at: record.started_at,
     finished_at: record.finished_at,
     ...(record.outcome ?? {}),
+    state: record.state,
   };
 }
 

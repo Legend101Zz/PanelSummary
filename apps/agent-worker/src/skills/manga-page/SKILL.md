@@ -80,7 +80,7 @@ punchy: "FLAP", "CRACK", "DRIP"). `caption` for place/time labels ("The city, at
 
 **Characters.** Use each character's defined look; only choose pose, expression, facing,
 slot, depth. Poses and expressions must be supported for that character's kind (see
-`poses_by_kind`, `expressions_by_kind`). Face characters toward each other when they talk
+`trusted_cast_capabilities`). Face characters toward each other when they talk
 (the one on the left faces `right`). When a character appears for the first time in the
 book, name them in a caption or line on that page.
 

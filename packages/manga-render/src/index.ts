@@ -16,3 +16,4 @@ export {
   type CompiledPanel,
   type LayoutTemplate,
 } from "./layout/index.js";
+export { castCapabilities, type CastCapability } from "./capabilities.js";
