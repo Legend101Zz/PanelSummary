@@ -554,7 +554,7 @@ describe("pages: accessibility and fixtures", () => {
     expect(staging(3, "p2")).toEqual({ prince: "on:statue_column", swallow: "on:prince:feet" });
     expect(staging(4, "p2").boy).toBe("on:bed");
     expect(staging(5, "p3").boy).toBe("on:bed");
-    expect(staging(5, "p4").swallow).toBe("on:prince:shoulder");
+    expect(staging(5, "p4").swallow).toBe("on:prince:feet");
   }, 30000);
 
   it("documents the new fields and warnings in the catalog", () => {

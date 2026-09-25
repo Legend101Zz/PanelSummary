@@ -470,7 +470,7 @@ export function checkLettering(input: LetterPanelInput, placed: readonly Placed[
       const t = input.texts[p.index];
       issues.push({
         code: "BALLOON_TALL",
-        severity: "warning",
+        severity: "error",
         path: `panel ${input.panelId} text ${p.index}`,
         message: `${t.kind} "${snippet(t.text)}" is lettered in ${lines} lines, a tall column that reads badly (at most ${MAX_BALLOON_LINES}). Shorten it, split it across panels, or give this panel more width.`,
       });
@@ -482,9 +482,11 @@ export function checkLettering(input: LetterPanelInput, placed: readonly Placed[
     for (let b = a + 1; b < placed.length; b += 1) {
       const sb = tailSegment(placed[b]);
       if (!sb || !segmentsIntersect(sa[0], sa[1], sb[0], sb[1])) continue;
+      // Two tails to the same speaker converging is not a misattribution.
+      if (input.texts[placed[a].index]?.speaker && input.texts[placed[a].index]?.speaker === input.texts[placed[b].index]?.speaker) continue;
       issues.push({
         code: "TAILS_CROSS",
-        severity: "warning",
+        severity: "error",
         path: `panel ${input.panelId}`,
         message: `the tails of texts ${placed[a].index} and ${placed[b].index} cross. Put the speakers left to right in the order they speak (first speaker "left" or "center_left"), or split the exchange across panels.`,
       });

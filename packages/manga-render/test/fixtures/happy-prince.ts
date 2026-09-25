@@ -531,12 +531,12 @@ export const PAGES: MangaPageSpec[] = [
         location: "square",
         time: "night",
         figures: [
-          fig({ character: "swallow", pose: "perch", expression: "thinking", facing: "right", slot: "left", on: { target: "prince", part: "shoulder" } }),
+          fig({ character: "swallow", pose: "perch", expression: "thinking", facing: "right", slot: "left", on: { target: "prince", part: "feet" } }),
           fig({ character: "prince", pose: "stand", expression: "gentle", facing: "left", slot: "center_right" }),
         ],
         text: [
           say("swallow", "It is curious, but I feel quite warm now.", "quote", src("u10", 5)),
-          say("prince", "That is because you have done a good action.", "quote", src("u10", 5)),
+          say("prince", "You have done a good action.", "paraphrase", src("u10", 5)),
         ],
         source: [src("u10", 5)],
       }),

@@ -624,6 +624,8 @@ export interface CastMember {
   role: string;
   description: string;
   look: CharacterLook;
+  /** Section ids this character appears in (multi-story books keep casts apart). */
+  sections?: string[];
 }
 
 export interface LocationSpec {

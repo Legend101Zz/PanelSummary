@@ -486,6 +486,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     location,
     shot,
     beat,
+    speakers,
   );
   infos.forEach((f, i) => {
     f.staging = staging[i];
@@ -995,7 +996,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const names = conflicts().map((e) => `"${e.cast.id}"`).join(", ");
       issues.push({
         code: "FACE_COVERED",
-        severity: "warning",
+        severity: "error",
         path: ipath,
         message: `"${f.cast.id}" covers the face of ${names} and there is no room to move it aside in this ${shot} panel. Use different slots (e.g. "left" and "right"), a wider shot, or fewer figures.`,
       });
@@ -1437,9 +1438,11 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const efr = framings.get(e.index);
       if (!efr) continue;
       if (covers(p, placementOf(e, efr), 0.3)) {
+        const automatic = (f.staging as { auto?: boolean }).auto === true;
         issues.push({
           code: "FACE_COVERED",
-          severity: "warning",
+          // The composer's own automatic perch is a warning; a writer-staged one is an error.
+          severity: automatic ? "warning" : "error",
           path: ipath,
           message: `"${f.cast.id}" (staged on "${(f.staging as { target: string }).target}") covers the face of "${e.cast.id}". Use another "part" (e.g. "feet" or the other shoulder) or another shot.`,
         });

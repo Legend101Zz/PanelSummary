@@ -90,7 +90,13 @@ export interface StagingInput {
  * cycles) fall back to the ground; validation reports them. `beat` (the
  * panel's one-sentence beat) may name the part a small creature perches on.
  */
-export function resolveStaging(figs: readonly StagingInput[], location: LocationSpec | undefined, shot: Shot, beat = ""): Staging[] {
+export function resolveStaging(
+  figs: readonly StagingInput[],
+  location: LocationSpec | undefined,
+  shot: Shot,
+  beat = "",
+  speakers: ReadonlySet<string> = new Set(),
+): Staging[] {
   const features = new Set<string>(location?.features ?? []);
   const byChar = new Map(figs.map((f, i) => [f.character, i]));
   const out: Staging[] = figs.map((f) => {
@@ -127,6 +133,10 @@ export function resolveStaging(figs: readonly StagingInput[], location: Location
     figs.forEach((f, i) => {
       if (i === column || out[i].type !== "ground" || f.on) return;
       if (!f.small || AIRBORNE.has(f.pose) || f.height > figs[column].height * 0.35) return;
+      // A creature that SPEAKS in a close-range panel keeps the writer's slot:
+      // the panel is already "up high", and moving it onto the statue's
+      // shoulder covers the face and crosses the conversation's tails.
+      if (speakers.has(f.character) && !named && !GROUND_SHOTS.includes(shot)) return;
       const part: PerchPart = f.pose === "lie" ? "feet" : (named ?? (GROUND_SHOTS.includes(shot) ? "feet" : "shoulder"));
       out[i] = { type: "figure", target: figs[column].character, part, auto: true };
     });
