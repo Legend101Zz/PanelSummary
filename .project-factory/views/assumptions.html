@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Assumptions | PanelSummary / Book-Reel</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/control-room.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+  <script src="assets/control-room.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><strong>PanelSummary / Book-Reel</strong><span>PROJECT FACTORY</span></div>
+      <nav aria-label="Project factory views"><a href="index.html">Control room</a><a href="architecture.html">Architecture</a><a href="program-design.html">Program design</a><a href="assumptions.html" aria-current="page">Assumptions</a><a href="proof.html">Proof</a></nav>
+    </header>
+    <div class="offline-note" role="status">Mermaid could not load. Diagram source remains visible.</div>
+    <main class="content"><h1>Assumptions and risks</h1><p>The latest event for each stable subject is shown. Prior states remain in events.jsonl.</p><section class="assumption-list"><article class="assumption"><div><span class="badge active">active</span><small class="mono">mode-to-worker-wiring-gap</small></div><div><p>No config maps a model mode to a worker URL. The S8 script hand-wires director-&gt;:8789 (M3) and page_planner-&gt;:8788 (speed); the shadow bridge builds ONE client from AGENT_WORKER_URL (default :8788) and gives it to BOTH drivers. Inference: with the default URL the shadow direction stage would fail its receipt gate. Belongs to Gap 3's wiring work.</p><small class="mono">source: backend/app/services/agentic_pipeline_bridge.py:52-66</small></div><div class="mono">confidence: medium</div></article><article class="assumption"><div><span class="badge active">active</span><small class="mono">gap5-claim-density</small></div><div><p>Highest product risk is Gap 5, not the mechanism: page-writing claim density is too low (owner rates fidelity 1/5), so the agentic chain would run but lose a side-by-side against v1 today.</p><small class="mono">source: issue #15 Gap 5</small></div><div class="mono">confidence: medium</div></article><article class="assumption"><div><span class="badge active">active</span><small class="mono">doc-drift-architecture-md</small></div><div><p>docs/ARCHITECTURE.md documents only the v1 lane and still carries the superseded 2026-05-23 renderer-is-the-blocker framing; it is NOT the agentic architecture doc issue #15 refers to. CLAUDE.md's 2026-07-05 diagnosis also predates Sessions 6-8.</p><small class="mono">source: docs/ARCHITECTURE.md:215-224</small></div><div class="mono">confidence: high</div></article></section></main>
+    <footer class="footer">Generated 2026-08-10T17:22:12Z from canonical Markdown and append-only events. This HTML is read-only.</footer>
+  </div>
+</body>
+</html>

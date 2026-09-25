@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Recovered architecture | PanelSummary / Book-Reel</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/control-room.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+  <script src="assets/control-room.js" defer></script>
+  <style>
+    .lede { margin: 0 0 22px; padding: 16px 18px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--paper); }
+    .lede p { margin: 0 0 8px; }
+    .lede p:last-child { margin-bottom: 0; }
+    .gate-box { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--gate); border-left: 3px solid var(--gate); border-radius: var(--radius); background: var(--gate-soft); color: #4b2f0b; }
+    .fail-box { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--danger); border-left: 3px solid var(--danger); border-radius: var(--radius); background: var(--danger-soft); color: #5c1f1c; }
+    .gate-box h3, .fail-box h3 { margin: 0 0 8px; font-size: 0.95rem; }
+    .gate-box p, .fail-box p { margin: 0 0 6px; }
+    .gate-box p:last-child, .fail-box p:last-child { margin-bottom: 0; }
+    .src { display: block; margin-top: 4px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; }
+    .lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 18px 0 26px; }
+    .lane { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .lane.authority { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+    .lane.dormant { border-style: dashed; }
+    .lane h3 { margin: 0 0 4px; font-size: 0.95rem; }
+    .lane ul { margin: 10px 0 0; padding-left: 18px; font-size: 0.84rem; }
+    .lane li { margin-bottom: 4px; }
+    .content h2 { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .content h2:first-of-type { border-top: 0; }
+    .stack { margin: 14px 0 0; padding-left: 18px; }
+    .stack li { margin-bottom: 8px; }
+    .chain { margin: 0; padding: 0; list-style: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; overflow-x: auto; }
+    .content code { overflow-wrap: anywhere; }
+    .content pre.mermaid { overflow-x: auto; }
+    .lede code, .gate-box code, .fail-box code { overflow-wrap: anywhere; }
+    .chain li { padding: 5px 10px; border-left: 2px solid var(--line-strong); }
+    .chain li.repeat { border-left-color: var(--accent); background: var(--accent-soft); }
+    .chain li.opt { border-left-style: dashed; color: var(--muted); }
+    @media (max-width: 700px) { .lanes { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><strong>PanelSummary / Book-Reel</strong><span>PROJECT FACTORY</span></div>
+      <nav aria-label="Project factory views">
+        <a href="index.html">Control room</a>
+        <a href="recovered-architecture.html" aria-current="page">Architecture</a>
+        <a href="recovered-program-design.html">Program design</a>
+        <a href="recovered-agentic-lane.html">Agentic lane</a>
+      </nav>
+    </header>
+    <div class="offline-note" role="status">Mermaid did not load. Diagram source stays visible below.</div>
+
+    <main class="content">
+      <h1>Recovered architecture and program design</h1>
+
+      <div class="lede">
+        <p><strong>Entry mode: recovery only.</strong> This view explains the system as it exists. Nobody implemented anything. No service started. No paid model call ran.</p>
+        <p><span class="src">Branch <code>v2-architecture</code> &middot; SHA <code>47ea74df3553e3ee7d497affa5f95fc215deab34</code> &middot; recovered 2026-08-10 &middot; canonical source: <code>.project-factory/brain/NOW.md</code></span></p>
+        <p><span class="src">The generated <code>architecture.html</code> reads from a PROGRAM.md. No program exists, because nobody asked for a direction decision. This page carries the recovered truth instead.</span></p>
+        <p><span class="src">Language: ASD-STE100 Simplified Technical English, pragmatic mode. See <code>.claude/skills/simple-english/</code>.</span></p>
+      </div>
+
+      <div class="gate-box">
+        <h3>Next human decision &mdash; issue #15, Gap 1</h3>
+        <p>Set <code>AGENT_MODEL_MODE_THUMBNAIL=quality</code>. The price is about $0.09 to $0.16 per resume. The other option is to fund schema coaching for the speed model.</p>
+        <p>This is the smallest unblock. The price is already known. Every other agentic gap waits behind it.</p>
+        <p><span class="src">backend/app/config.py:99-101 &middot; issue #15 Gap 1</span></p>
+      </div>
+
+      <h2 id="naming">1. Naming, first &mdash; the largest source of confusion in this repository</h2>
+      <p>The repository uses the name &ldquo;v2&rdquo; for three different things. Issue #15 corrects this. The table gives the canonical names of the owner. This page uses them everywhere.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>What it actually is</th><th>Where</th></tr></thead>
+          <tbody>
+            <tr><td><strong>v1 lane</strong></td><td>The classic Celery pipeline with typed stages. It <em>contains</em> the function <code>build_v2_generation_stages()</code> and the reader route <code>/manga/v2</code>. The name &ldquo;v2&rdquo; there means the second-generation stage chain of the classic pipeline.</td><td><code>backend/app/manga_pipeline/</code>, <code>services/manga/generation_service.py</code>, <code>frontend/app/books/[id]/manga/v2/</code></td></tr>
+            <tr><td><strong>agentic lane</strong></td><td>The new architecture. It has Pi-SDK agents, typed cross-language contracts, and a domain-tool broker.</td><td><code>apps/agent-worker</code>, <code>packages/*</code>, <code>services/manga_director.py</code>, <code>frontend/app/books/[id]/manga/v2lane/</code></td></tr>
+            <tr><td><strong><code>v2-architecture</code> branch</strong></td><td>The git branch that carries the port of the agentic lane (PR&nbsp;#14, open). It is not a lane.</td><td>this branch</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="authority">2. Current authority</h2>
+      <p>Authority means the lane that owns the return value that the user sees. It also means the lane that owns the canonical stored record. A path that runs in shadow cannot own the result. Therefore it is not the authority.</p>
+
+      <div class="lanes">
+        <div class="lane authority">
+          <h3>v1 lane <span class="badge verified">authority</span></h3>
+          <p>It makes every manga page that a user ever saw.</p>
+          <ul>
+            <li>26 ordered stages from <code>build_v2_generation_stages()</code></li>
+            <li>Celery and Redis. Progress goes through <code>JobStatus</code></li>
+            <li>It writes <code>MangaSliceDoc</code> and <code>MangaPageDoc.rendered_page</code></li>
+            <li>Resume from the ledger, proven live</li>
+          </ul>
+        </div>
+        <div class="lane dormant">
+          <h3>agentic lane <span class="badge proposed">dormant</span></h3>
+          <p>Fully ported and partly proven. It owns nothing.</p>
+          <ul>
+            <li>Both gate flags are <strong>OFF</strong> by default</li>
+            <li>Flag-on gives a shadow run only. It swallows failures</li>
+            <li>The whole-book chain has no route, no task, and no UI</li>
+            <li>An environment flag gates the <code>/manga/v2lane</code> reader</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>Four separate facts establish this. The code resolves all four at this SHA.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fact</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td><code>use_compiled_context: bool = False</code></td><td><code>backend/app/config.py:83</code></td></tr>
+            <tr><td><code>agentic_manga_pipeline_v1: bool = False</code></td><td><code>backend/app/config.py:111</code></td></tr>
+            <tr><td><code>/build</code> takes no <code>lane</code> parameter. It always queues <code>build_manga_project_task</code></td><td><code>backend/app/api/routes/manga_projects.py:672-757</code></td></tr>
+            <tr><td><code>WholeBookChainExecutor</code> has no caller outside tests and scripts</td><td>grep &rarr; <code>whole_book.py:493</code>, <code>tests/test_whole_book_v2.py</code>, <code>scripts/whole_book_wmc_s{7,8}.py</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>This is deliberate. It is not an oversight. ADR-011 and ADR-012 both state the rule plainly: never put v1 at risk.</p>
+
+      <h2 id="components">3. Runtime components</h2>
+      <pre class="mermaid">flowchart TB
+    subgraph client["Client — Next.js :3000"]
+        UI["app router / Manga V2 Lab"]
+        R1["/manga/v2 reader — ACTIVE"]
+        R2["/manga/v2lane reader — flag-gated, OFF"]
+    end
+
+    subgraph api["FastAPI :8000"]
+        RT["routes/manga_projects.py<br/>/upload /build /generate-slice"]
+        RV["routes/manga_v2_reader.py<br/>/v2/pages"]
+    end
+
+    subgraph v1["v1 lane — CURRENT AUTHORITY"]
+        CEL["Celery worker"]
+        GS["generation_service.py<br/>build_v2_generation_stages()"]
+        ST["manga_pipeline/stages/*<br/>26 ordered stages"]
+    end
+
+    subgraph agentic["agentic lane — NOT AUTHORITY"]
+        AB["agentic_pipeline_bridge.py"]
+        WB["whole_book.py<br/>planner + chain executor"]
+        SC["scripts/whole_book_wmc_s8.py<br/>ONLY entry point"]
+        AW["apps/agent-worker<br/>:8788 speed / :8789 quality"]
+        PI["packages/agent-runtime<br/>Pi SDK 0.80.10"]
+        BR["routes/internal_tools.py :8010<br/>domain-tool broker"]
+    end
+
+    MG[("MongoDB / Beanie")]
+    RD[("Redis broker")]
+
+    UI --> RT
+    RT --> RD --> CEL --> GS --> ST --> MG
+    MG --> R1
+    MG --> RV --> R2
+
+    GS -. "flag OFF by default<br/>shadow only, failures swallowed" .-> AB
+    AB --> AW
+    SC --> WB --> AW
+    AW --> PI
+    AW -- "tools over HTTP, bearer token" --> BR --> MG</pre>
+
+      <h2 id="v1">4. The v1 lane, in order</h2>
+      <p><code>build_v2_generation_stages()</code> builds this list at <code>generation_service.py:212</code>. The repair-and-check group repeats three times by design. The free deterministic pass runs before any paid rewrite.</p>
+      <ol class="chain">
+        <li>source_fact_extraction &rarr; adaptation_plan &rarr; character_world_bible &rarr; beat_sheet</li>
+        <li>manga_script &rarr; script_review &rarr; script_repair <span class="src">an editor pass on the SCRIPT. It runs before the storyboard spends tokens on bad dialogue</span></li>
+        <li>storyboard &rarr; dsl_validation &rarr; continuity_gate &rarr; quality_gate</li>
+        <li class="repeat">grounding_repair &rarr; dsl_validation &rarr; continuity_gate &rarr; quality_gate <span class="src">the deterministic pass costs nothing. It runs first</span></li>
+        <li class="repeat">quality_repair &rarr; grounding_repair &rarr; dsl_validation &rarr; continuity_gate &rarr; quality_gate <span class="src">when the deterministic pass already passes, the paid repair does nothing</span></li>
+        <li>quality_assert &rarr; page_composition &rarr; rtl_composition_validation</li>
+        <li>vector_scene &rarr; character_asset_plan &rarr; rendered_page_assembly</li>
+        <li class="opt">panel_rendering &rarr; panel_quality_gate <span class="src">present only when image generation is in scope</span></li>
+      </ol>
+      <p>Two design properties come out of this shape. First, the orchestrator is thin on purpose. It runs an ordered list and reports progress. The stages stay free of input and output. Persistence stays in the services.</p>
+      <p>Second, the code picks the stage list before the run. Therefore no stage asks &ldquo;is image generation on?&rdquo; inside itself. The parameter <code>with_panel_rendering</code> changes the list, not the stage bodies. <span class="src">generation_service.py:220-224</span></p>
+
+      <h2 id="agentic">5. The agentic lane, in three layers</h2>
+      <ol class="stack">
+        <li><strong>Typed contracts.</strong> There are about 35 versioned JSON Schemas in <code>packages/contracts/schema/</code>. They cover <code>manga_plan.v1</code>, <code>page_script_set.v1</code>, <code>thumbnail_set.v1</code>, <code>page_art.v1</code>, <code>compiled_layout.v1</code>, <code>context_pack.v1</code>, <code>model_receipt.v1</code>, and <code>eval_scorecard.v1</code>. A generator turns each schema into TypeScript <em>and</em> Python. The fixtures in <code>packages/fixtures/</code> hold canonical, invalid, and prompt-injection cases. The same JSON passes on both sides. This is the spine.</li>
+        <li><strong>Agent plane.</strong> <code>apps/agent-worker</code> is a Fastify service with authentication. It wraps <code>packages/agent-runtime</code>, the only package that imports the Pi SDK. ADR-003 and ADR-012 pin the SDK at <code>@earendil-works/pi-coding-agent 0.80.10</code>. Two instances run in development: speed (<code>MiniMax-M2.7-highspeed</code>, :8788) and quality (<code>MiniMax-M3</code>, :8789).</li>
+        <li><strong>Domain-tool broker.</strong> Agents never touch Mongo. They call back over HTTP into <code>POST /internal/v1/agent-tools/{tool_name}</code> on :8010. The broker uses <code>services/domain_tools.py</code> with a per-goal allowlist (ADR-004). <em>The tool list that an agent receives is the whole capability of that agent.</em> This is the trust boundary.</li>
+      </ol>
+
+      <h3>Control flow of one agentic scope</h3>
+      <pre class="mermaid">sequenceDiagram
+    participant S as scripts/whole_book_wmc_s8.py
+    participant P as ScopeChainPlanner (deterministic, no LLM)
+    participant E as WholeBookChainExecutor
+    participant W as agent-worker
+    participant B as domain-tool broker
+    participant M as MongoDB
+
+    S-&gt;&gt;P: book source units
+    P--&gt;&gt;S: ordered scopes + per-scope USD budget
+    S-&gt;&gt;E: execute(plan)
+    loop per scope, sequential
+        E-&gt;&gt;E: HARD cost preflight — refuse to start if over budget
+        E-&gt;&gt;W: direction goal (M3 quality)
+        W-&gt;&gt;B: submit_manga_plan
+        B-&gt;&gt;M: persist artifact
+        E-&gt;&gt;W: page-writing goal (speed)
+        E-&gt;&gt;W: thumbnail goal (speed)
+        Note over E,W: Session 8 died here — HTTP 422
+        E-&gt;&gt;W: page-art + compose
+        E-&gt;&gt;M: merge MemoryDelta → next scope compiles updated canon
+    end</pre>
+      <p>Resume is structural. Nobody bolted it on. Scope ids are content hashes, so <code>create_scope</code> gets or creates. Stage drivers reuse a succeeded stage by its idempotency key. The value <code>memory_version</code> guards the memory merge, so a re-run cannot merge twice. <span class="src">backend/app/services/whole_book.py:25-32</span></p>
+
+      <h2 id="guards">6. Two guards that are worth your attention</h2>
+      <p>These two guards make the deprecation plan cheap to attempt. They are also the reason that &ldquo;turn the flag on&rdquo; carries low risk.</p>
+      <div class="lanes">
+        <div class="lane">
+          <h3>Compiled context cannot diverge in silence</h3>
+          <p><code>use_compiled_context</code> builds the slice text from a <code>ContextPack</code>. Then it compares the bytes against the legacy builder. <strong>Any mismatch raises.</strong> Flag-on cannot change the output quietly. It can only stop loudly.</p>
+          <span class="src">generation_service.py:459-478 &middot; ADR-011</span>
+        </div>
+        <div class="lane">
+          <h3>The shadow lane cannot take authority</h3>
+          <p><code>maybe_run_agentic_planning</code> runs <em>after</em> a successful v1 slice. It writes rows for the agentic lane only. It logs every failure and swallows it. It adds to v1. By structure it cannot replace v1.</p>
+          <span class="src">generation_service.py:653-670 &middot; blueprint §12.3</span>
+        </div>
+      </div>
+
+      <h2 id="branch">7. What the <code>v2-architecture</code> branch actually is</h2>
+      <p><code>git diff --stat main...v2-architecture</code> reports <strong>428 files, +82,952 and &minus;279</strong>. The count of removed lines is near zero on purpose. This is a port that sits <em>beside</em> v1. It is not a rewrite of v1.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Added</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>pnpm-workspace.yaml</code>, <code>tsconfig.base.json</code></td><td>The repository becomes a Python backend <em>and</em> a pnpm TypeScript workspace</td></tr>
+            <tr><td><code>packages/contracts</code>, <code>packages/fixtures</code></td><td>Schemas become TypeScript and Python types. Fixtures pass in both languages</td></tr>
+            <tr><td><code>packages/agent-runtime</code></td><td>The only Pi-SDK boundary. It also holds model selection and candidate-fallback policy</td></tr>
+            <tr><td><code>apps/agent-worker</code></td><td>The agent host with authentication. It carries the skill files that the repository owns</td></tr>
+            <tr><td>backend agent plane</td><td><code>manga_director</code>, <code>manga_page_planner</code>, <code>manga_page_art</code>, <code>whole_book</code>, <code>context_compiler</code>, <code>memory</code>, <code>scopes</code>, <code>model_policy</code>, <code>domain_tools</code>, <code>agent_worker</code>, both bridges, <code>app/contracts/</code>, and three new route modules</td></tr>
+            <tr><td><code>docs/adr/001</code>&ndash;<code>012</code>, <code>docs/evidence/session2&hellip;8</code></td><td>Decisions and receipts</td></tr>
+            <tr><td><code>start.sh</code> / <code>check.sh</code> / <code>stop.sh</code></td><td>A development stack in one command: Redis, FastAPI, Celery, Next.js, the broker, and both agent workers</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Five rules govern the port</strong> (ADR-010, ADR-011, and ADR-012). Port the donor code word for word from ScrollStack <code>main @ 43300b5</code>, and list every boundary edit. Never put v1 at risk. Contracts are the boundary. Agents get tools, not database handles. Receipts go everywhere.</p>
+      <p><strong>Status:</strong> PR&nbsp;#14 is <strong>open</strong> and waits on the owner. This branch is the development base for the agentic lane. Read it to learn what the architecture <em>is</em>. It does not tell you what any deployment <em>does</em>.</p>
+
+      <h2 id="issue15">8. Issue #15 &mdash; what I verified again</h2>
+      <p>The owner wrote issue #15 to answer three questions with evidence. Why did the full-book manga of 2026-08-09 use v1? Is the agentic lane usable? What is the deprecation plan? I checked the load-bearing claims of that issue against the working tree.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Claim</th><th>Verification</th><th>Label</th></tr></thead>
+          <tbody>
+            <tr><td>Both gate flags are OFF by default</td><td>Confirmed at the exact lines that the issue cites</td><td><span class="badge verified">code-resolved</span></td></tr>
+            <tr><td>Flag-on gives a shadow run only. It swallows failures</td><td>Confirmed at <code>:653-670</code></td><td><span class="badge verified">code-resolved</span></td></tr>
+            <tr><td>No production entry point exists for a full agentic book</td><td>Confirmed by grep. <code>/build</code> takes no <code>lane</code> parameter</td><td><span class="badge verified">code-resolved</span></td></tr>
+            <tr><td>The golden chain never completed one full scope</td><td>The stored receipt confirms it</td><td><span class="badge failed">runtime, historical</span></td></tr>
+            <tr><td>The thumbnail stage is the wall. The speed model cannot hold the schema</td><td>Consistent. One thumbnail stage run produced more than ten <code>validate_layout_draft</code> dumps</td><td><span class="badge failed">runtime</span> plus inference on the cause</td></tr>
+            <tr><td>The database wipe of 2026-08-09, and the backup path</td><td>I had no database access in this session</td><td><span class="badge">unknown</span></td></tr>
+            <tr><td>&ldquo;817 backend and 47/22/16 TypeScript tests green&rdquo;, the per-session dollar figures, and the v1 run cost of $0.95</td><td>I did not run them again</td><td><span class="badge proposed">owner-authored</span></td></tr>
+            <tr><td>Fidelity is 1 of 5. The constraint is claim <em>density</em></td><td>I cannot assess this on my own</td><td><span class="badge proposed">owner judgment</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="fail-box">
+        <h3>The receipt that carries the load</h3>
+        <p><code>docs/evidence/session8-golden-run/chain_outcome.json</code> reports <code>status: "stopped_failure"</code>. Scope 0 reports <code>status: "failed"</code>, <code>thumbnail_artifact_id: null</code>, and <code>error: "AgentWorkerError: Agent worker returned HTTP 422"</code>.</p>
+        <p>The chain reused direction and page-writing at $0 (<code>reused_stages: ["manga_direction","manga_page_writing"]</code>). The resume machinery worked. The run spent $0.094 of a $0.90 text grant and $0 on images.</p>
+        <p>An earlier session observed this at an earlier SHA. It comes from before the wipe of 2026-08-09. I did not run it again.</p>
+      </div>
+
+      <h3>The nine gaps, grouped by what they block</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Group</th><th>Gaps</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Blocks any agentic run at all</td><td>1 (the thumbnail capability wall) then 2 (one completed golden scope, about $0.25)</td><td>The chain dies here today</td></tr>
+            <tr><td>Blocks a run from the UI</td><td>3 (wire the chain to Celery and add a <code>lane</code> option) and 4 (<code>use_compiled_context</code> plus book normalization)</td><td>These two buy the button</td></tr>
+            <tr><td>Blocks <em>promotion</em>, not execution</td><td>5 (claim density in page writing)</td><td><strong>The real product risk.</strong> The chain runs, but it loses a side-by-side against v1 today</td></tr>
+            <tr><td>Cost and robustness</td><td>6 (page art at book scale, about $1.30 for 32 pages), 7 (mid-book resume never ran live), 8 (truncated JSON from M3), 9 (reader parity)</td><td>Good to have</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The order comes out of the grouping. Gaps 1 and 2 unblock the mechanism. Gap 5 retires the quality risk for free while the lane is still in shadow. Gaps 3 and 4 buy the button.</p>
+      <p>The owner estimates the first full-book agentic run at <strong>$3 to $4</strong> after gaps 1 to 4 close. The v1 run cost about $0.95. These numbers come from receipted actuals. They are an estimate, not a measurement.</p>
+
+      <h2 id="deprecation">9. The proposed path to deprecate v1</h2>
+      <p><span class="badge proposed">proposed</span> Nobody decided this yet. No phase before Phase 5 removes code or data. Rollback at every phase is one flag flip.</p>
+      <pre class="mermaid">flowchart LR
+    P0["Phase 0<br/>decide + merge PR #14"] --&gt; P1["Phase 1<br/>use_compiled_context=true<br/>byte-compare guard"]
+    P1 --&gt; P2["Phase 2<br/>agentic_manga_pipeline_v1=true<br/>shadow every slice"]
+    P2 --&gt; P3["Phase 3<br/>close gaps 2-4, 6-7<br/>route + task + budget caps"]
+    P3 --&gt; P4["Phase 4<br/>promote to default<br/>v1 behind fallback flag"]
+    P4 --&gt; P5["Phase 5<br/>delete manga_pipeline/<br/>archive collections"]</pre>
+      <p>Phase 2 is where the work pays off best. Failures cost nothing there. Therefore gaps 1, 5, and 8 must burn down in shadow before any spend on promotion.</p>
+      <p>The gate for Phase 3 is one full book from the agentic lane alone. The gate for Phase 4 is human side-by-side judging that prefers the agentic output. The judging of 2026-08-09 named the defects of v1: speaker attribution, illegible sprite compositing, filler sub-panels, and no character introductions. The blocking gates and composed pages of the agentic lane target exactly those defects.</p>
+
+      <h2 id="drift">10. Documentation drift &mdash; flagged, not corrected</h2>
+      <ul>
+        <li><code>docs/ARCHITECTURE.md</code> describes <strong>the v1 lane only</strong>. It still carries the superseded framing of 2026-05-23, &ldquo;the renderer is the blocker&rdquo;. It never mentions the agent plane, the contracts, the broker, or the whole-book chain. Issue #15 points to an architecture document &ldquo;currently on the owner's desktop&rdquo;. That document is <em>not</em> the one in this repository. <span class="src">docs/ARCHITECTURE.md:215-224</span></li>
+        <li>The section &ldquo;Current Diagnosis (2026-07-05)&rdquo; in <code>CLAUDE.md</code> comes from before Sessions 6 to 8. Those sessions moved the constraint from sprite and binding failures to claim density in page writing.</li>
+        <li><code>NEXT_SESSION.md</code> holds 1,978 lines. It is the running log and it is current through Session 8.</li>
+        <li><strong>Drift against issue #15:</strong> HEAD carries three commits that came after the issue. They are <code>d3e0790</code> (docling provenance), <code>0fc2515</code> (informed resume for v1), and <code>47ea74d</code> (a fix to the development stack). None of them touches the gate flags. None adds an agentic entry point. The gap list still holds. Even so, issue #15 does not describe HEAD byte for byte.</li>
+      </ul>
+      <p>To correct these documents is implementation work. It sits outside the scope of recovery.</p>
+
+      <h2 id="unknowns">11. Material unknowns, ordered by decision impact</h2>
+      <ol class="stack">
+        <li><strong>The pricing decision for Gap 1.</strong> Nothing else can proceed. <em>A human must decide.</em></li>
+        <li><strong>The database state after the wipe of 2026-08-09.</strong> It decides whether the golden scope restarts from zero spend. <em>Unknown.</em></li>
+        <li><strong>Whether shadow mode can solve Gap 5.</strong> If page writing cannot reach the informational fidelity of v1, the deprecation plan stalls at Phase 2. <em>Unknown.</em></li>
+        <li><strong>The deployed runtime identity and its resolved flags</strong> for any instance that is not local. <em>Unknown.</em></li>
+        <li><strong>Mid-book kill and resume.</strong> Tests prove it per stage against stubs. No live kill ever tested it. <em>Unknown.</em></li>
+      </ol>
+
+      <p style="margin-top:34px"><a href="index.html">&larr; Back to the control room</a></p>
+    </main>
+
+    <footer class="footer">Recovery run 2026-08-10 at <code>47ea74d</code>. Canonical source: <code>.project-factory/brain/NOW.md</code>. This HTML is a read-only view. It is never an authority.</footer>
+  </div>
+</body>
+</html>

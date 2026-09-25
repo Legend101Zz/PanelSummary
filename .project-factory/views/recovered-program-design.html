@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Recovered program design | PanelSummary / Book-Reel</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/control-room.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+  <script src="assets/control-room.js" defer></script>
+  <style>
+    .lede { margin: 0 0 22px; padding: 16px 18px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--paper); }
+    .lede p { margin: 0 0 8px; } .lede p:last-child { margin-bottom: 0; }
+    .why-empty { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--line-strong); border-left: 3px solid var(--unknown); border-radius: var(--radius); background: var(--unknown-soft); }
+    .why-empty h3 { margin: 0 0 8px; font-size: 0.95rem; }
+    .why-empty p { margin: 0 0 8px; } .why-empty p:last-child { margin-bottom: 0; }
+    .gate-box { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--gate); border-left: 3px solid var(--gate); border-radius: var(--radius); background: var(--gate-soft); color: #4b2f0b; }
+    .gate-box h3 { margin: 0 0 8px; font-size: 0.95rem; }
+    .gate-box p { margin: 0 0 6px; } .gate-box p:last-child { margin-bottom: 0; }
+    .key-box { margin: 22px 0; padding: 16px 18px; border: 1px solid var(--accent); border-left: 3px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); }
+    .key-box h3 { margin: 0 0 8px; font-size: 0.95rem; color: #0b5850; }
+    .key-box p { margin: 0 0 8px; } .key-box p:last-child { margin-bottom: 0; }
+    .src { display: block; margin-top: 4px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 18px 0 26px; }
+    .cardx { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .cardx h3 { margin: 0 0 6px; font-size: 0.92rem; }
+    .cardx p { margin: 0 0 8px; font-size: 0.86rem; } .cardx p:last-child { margin-bottom: 0; }
+    .content h2 { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .content h2:first-of-type { border-top: 0; }
+    .content h3 { margin-top: 26px; }
+    .content code { overflow-wrap: anywhere; }
+    .content pre.mermaid { overflow-x: auto; }
+    ol.steps { margin: 14px 0 0; padding-left: 20px; }
+    ol.steps li { margin-bottom: 9px; }
+    .frame { margin: 0 0 8px; padding: 0; list-style: none; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; overflow-x: auto; }
+    .frame li { padding: 4px 0 4px 10px; border-left: 2px solid var(--line-strong); white-space: nowrap; }
+    .frame li.hot { border-left-color: var(--accent); background: var(--accent-soft); }
+    .frame li.stop { border-left-color: var(--danger); background: var(--danger-soft); }
+    .machine { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; }
+    @media (max-width: 700px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><strong>PanelSummary / Book-Reel</strong><span>PROJECT FACTORY</span></div>
+      <nav aria-label="Project factory views">
+        <a href="index.html">Control room</a>
+        <a href="recovered-architecture.html">Architecture</a>
+        <a href="recovered-program-design.html" aria-current="page">Program design</a>
+        <a href="recovered-agentic-lane.html">Agentic lane</a>
+      </nav>
+    </header>
+    <div class="offline-note" role="status">Mermaid did not load. Diagram source stays visible below.</div>
+
+    <main class="content">
+      <h1>Recovered program design</h1>
+
+      <div class="lede">
+        <p>Program design is the layer between architecture and code. It names <strong>the modules that take part and the contracts they exchange</strong>. It gives the exact call path and the state transitions. It also gives the failure behavior, the observability, and the test seams. It does all of this without implementation bodies.</p>
+        <p><span class="src">Branch <code>v2-architecture</code> &middot; SHA <code>47ea74df3553e3ee7d497affa5f95fc215deab34</code> &middot; the code resolves every claim below at that SHA &middot; canonical source: <code>.project-factory/brain/NOW.md</code></span></p>
+        <p><span class="src">Language: ASD-STE100 Simplified Technical English, pragmatic mode. See <code>.claude/skills/simple-english/</code>.</span></p>
+      </div>
+
+      <div class="why-empty">
+        <h3>Why the generated <code>program-design.html</code> is empty</h3>
+        <p>The renderer builds that page from <code>.project-factory/brain/programs/&lt;slug&gt;/PROGRAM.md</code>. No program directory exists. Therefore the page shows &ldquo;No active program&rdquo;. <span class="src">project_factory.py:709, :251 &middot; verified: <code>validate</code> reports 0 programs</span></p>
+        <p>This behavior is correct. One distinction explains it. <strong>A <code>PROGRAM.md</code> is the design of a <em>change</em> that you decided to make. This page is the design of the <em>system that exists</em>.</strong></p>
+        <p>A recorded human direction choice gates the first one. Nobody made that choice. The pending choice is Gap 1. The second one is recovery output. It follows below.</p>
+      </div>
+
+      <h2 id="surface">1. The eight dimensions of program design, per lane</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dimension</th><th>v1 lane (authority)</th><th>agentic lane (dormant)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Surface that takes part</strong></td>
+              <td>FastAPI route &rarr; Celery task &rarr; generation service &rarr; thin orchestrator &rarr; 26 stage functions &rarr; Beanie documents &rarr; Next.js reader</td>
+              <td>Script &rarr; deterministic planner &rarr; chain executor &rarr; 4 stage drivers &rarr; HTTP agent worker &rarr; Pi runtime &rarr; tool broker &rarr; Beanie documents</td>
+            </tr>
+            <tr>
+              <td><strong>Contracts</strong></td>
+              <td>Pydantic domain models. <code>RenderedPage</code> is <em>the</em> boundary. A hand-written mirror lives in <code>frontend/lib/types.ts</code></td>
+              <td>About 35 versioned JSON Schemas. A generator makes TypeScript <em>and</em> Python from them. <code>AgentGoal</code> and <code>ContextPack</code> go in. A validated <code>Artifact</code> comes out</td>
+            </tr>
+            <tr>
+              <td><strong>Call path</strong></td>
+              <td>An ordered stage list in one process. The context threads through memory</td>
+              <td>Across processes and across languages, with a <em>callback</em> hop. The agent calls back into the control plane to write</td>
+            </tr>
+            <tr>
+              <td><strong>State</strong></td>
+              <td>The <code>JobStatus</code> polling document, plus <code>MangaProjectDoc.continuity_ledger</code> and <code>last_failure</code></td>
+              <td><code>GenerationRunDoc</code>, <code>StageRunDoc</code>, and <code>ArtifactDoc</code>. A content hash keys all three</td>
+            </tr>
+            <tr>
+              <td><strong>Failure behavior</strong></td>
+              <td>Deterministic repair before paid repair. Resume from the ledger across builds</td>
+              <td>A budget preflight before spend. Stage reuse on resume. A transport-fallback text lane. The chain stops on the first failure</td>
+            </tr>
+            <tr>
+              <td><strong>Observability</strong></td>
+              <td><code>JobStatus</code> progress, phase, and cost. Also <code>/tmp/panelsummary-celery.log</code> and compact LLM traces</td>
+              <td>A <code>ModelReceipt</code> per call with model, mode, provenance, USD, tokens, and latency. Also <code>failure_history</code>, <code>chain_outcome.json</code>, and optional word-for-word seam dumps</td>
+            </tr>
+            <tr>
+              <td><strong>Test seams</strong></td>
+              <td>Tests for stage-list order, for gates, and for services over fixtures</td>
+              <td>Executor tests against <strong>stub runners</strong>. Cross-language fixture tests. Injection and policy tests in the runtime</td>
+            </tr>
+            <tr>
+              <td><strong>Delivery boundary</strong></td>
+              <td>It owns the result that the user sees today</td>
+              <td>It owns nothing. A flag gates every path, or a script drives it</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="stack-v1">2. Call stack &mdash; v1 lane, one build</h2>
+      <p>One click of the user produces this stack.</p>
+      <ul class="frame">
+        <li>POST /manga-projects/{id}/build &nbsp;<span class="src">routes/manga_projects.py:672</span></li>
+        <li>&nbsp; verify that the book is parsed &middot; drop duplicate active jobs &middot; store options &middot; insert JobStatus</li>
+        <li>&nbsp; build_manga_project_task.delay(...) &rarr; Redis</li>
+        <li class="hot">Celery worker takes the task &nbsp;<span class="src">celery_manga_tasks.py:44</span></li>
+        <li>&nbsp; _run(): load project and book, clear last_failure, status="generating"</li>
+        <li>&nbsp; generate_book_understanding(...) &nbsp;<span class="src">only when it is not ready</span></li>
+        <li>&nbsp; loop: generate_project_slice(...) &nbsp;<span class="src">generation_service.py:~430</span></li>
+        <li>&nbsp; &nbsp; _pick_next_slice(project, book, ledger, page_window)</li>
+        <li>&nbsp; &nbsp; build_source_text_for_slice(...)</li>
+        <li>&nbsp; &nbsp; optional: compiled_context_bridge.compile_slice_context &rarr; <strong>compare bytes or raise</strong> &nbsp;<span class="src">:459-478</span></li>
+        <li>&nbsp; &nbsp; stages = build_v2_generation_stages(with_panel_rendering=...) &nbsp;<span class="src">:212</span></li>
+        <li class="hot">&nbsp; &nbsp; run_pipeline_context(context, stages, progress_callback) &nbsp;<span class="src">orchestrator.py:33</span></li>
+        <li>&nbsp; &nbsp; &nbsp; for stage in stages: current = await stage(current), then report progress</li>
+        <li>&nbsp; &nbsp; store MangaSliceDoc, MangaPageDoc[], and MangaAssetDoc[]</li>
+        <li>&nbsp; &nbsp; update project.continuity_ledger, coverage, and status="complete"</li>
+        <li>&nbsp; &nbsp; flag path: maybe_run_agentic_planning(...) &nbsp;<span class="src">:653 — it swallows all failures</span></li>
+        <li>&nbsp; report(progress, message, phase) &rarr; update_job_status &nbsp;<span class="src">celery_worker.py:137</span></li>
+        <li>UI polls GET /status/{task_id} &rarr; progress, phase, cost, error</li>
+      </ul>
+      <p>Two design properties come out of this shape. The orchestrator is thin on purpose. It runs an ordered list and reports progress. Therefore the stages stay free of input and output, and persistence stays in the services.</p>
+      <p>The code also picks the stage list before the run. No stage asks &ldquo;is image generation on?&rdquo; inside itself. The parameter <code>with_panel_rendering</code> changes the list, not the stage bodies. <span class="src">generation_service.py:220-224</span></p>
+
+      <h2 id="stack-agentic">3. Call stack &mdash; agentic lane, one scope</h2>
+      <pre class="mermaid">sequenceDiagram
+    autonumber
+    participant SC as scripts/whole_book_wmc_s8.py
+    participant EX as WholeBookChainExecutor
+    participant DR as MangaDirectorService
+    participant AW as HttpAgentWorkerClient
+    participant WK as agent-worker (Fastify)
+    participant PI as Pi runtime
+    participant BK as domain-tool broker
+    participant DB as MongoDB
+
+    SC-&gt;&gt;EX: execute(plan)
+    EX-&gt;&gt;EX: preflight — refuse scope if over remaining budget
+    EX-&gt;&gt;DR: run_direction_goal(project_id, scope_id)
+    DR-&gt;&gt;DB: get scope, project, memory snapshot, source units
+    DR-&gt;&gt;DR: compiler.compile(...) → ContextPack
+    DR-&gt;&gt;DB: _ensure_run_and_stage (content-hash idempotency key)
+    DR-&gt;&gt;DB: _existing_accepted_plan?
+    Note over DR: if found → return reused=True, $0 spent
+    DR-&gt;&gt;AW: run(goal, pack, instructions)
+    AW-&gt;&gt;WK: POST /internal/v1/agent-runs (Bearer, x-correlation-id)
+    WK-&gt;&gt;PI: registry.start — dedupe by goal_id
+    PI-&gt;&gt;BK: POST /internal/v1/agent-tools/submit_manga_plan
+    BK-&gt;&gt;DB: validate + persist candidate artifact
+    BK--&gt;&gt;PI: 200, or bounded 422/403/404
+    PI--&gt;&gt;WK: candidate + trace
+    WK--&gt;&gt;AW: state SUCCEEDED with candidate and trace
+    AW--&gt;&gt;DR: AgentExecutionResult
+    DR-&gt;&gt;DB: re-read candidate artifact by digest and VERIFY
+    DR-&gt;&gt;DB: mint accepted artifact plus ModelReceipt, stage and run succeeded
+    DR--&gt;&gt;EX: DirectionOutcome
+    EX-&gt;&gt;EX: page-writing → thumbnail → page-art → eval
+    EX-&gt;&gt;DB: merge MemoryDelta (guarded by memory_version)</pre>
+
+      <div class="key-box">
+        <h3>The heart of it: the driver does not trust the agent</h3>
+        <p>The agent worker returns. The director now holds a finished candidate. It <strong>discards that candidate as authority</strong>. Then it runs two separate checks.</p>
+        <p><strong>Receipt check.</strong> The driver compares the provider and the model in the trace against the pair that policy requires. On any difference it raises: <code>"Manga Director must use provider=... and model=..."</code>. A run on a cheaper model cannot produce an accepted artifact. The driver also refuses a trace with no provenance or no measured latency. <span class="src">manga_director.py:585-601</span></p>
+        <p><strong>Durability check.</strong> The driver hashes the validated plan. Then it reads <code>candidate_manga_plan_&lt;digest&gt;</code> back from MongoDB. Four things must hold. The artifact must exist. Its <code>run_id</code> and <code>project_id</code> must match this run. Its <code>validation_status</code> must equal <code>"valid"</code>. Its <code>content_hash</code> must equal the digest. On any other result it raises <code>"MangaPlan submission was not durably validated by the domain-tool broker"</code>. <span class="src">manga_director.py:225-237</span></p>
+        <p>A model can invent an answer that looks perfect. Without a trip through the broker that answer gets nothing. <strong>The only path to an accepted artifact goes through the validators.</strong> The same pattern appears in <code>manga_page_planner.py:311,:472</code> and <code>manga_page_art_stage.py:1315</code>.</p>
+      </div>
+
+      <h2 id="trust">4. The tool round trip &mdash; where the trust boundary sits</h2>
+      <ol class="steps">
+        <li>The sealed agent calls a tool. It holds no database handle, no credentials, and no network exit except the broker.</li>
+        <li>The broker authenticates with a constant-time comparison: <code>hmac.compare_digest(authorization, f"Bearer {service_token}")</code>. A failure returns 401. <span class="src">internal_tools.py:56-62</span></li>
+        <li>The broker matches the tool name against a per-goal allowlist. The page lane grants exactly seven names: <code>get_book_context</code>, <code>get_manga_canon</code>, <code>submit_page_script_set</code>, <code>get_page_script_set</code>, <code>list_relevant_assets</code>, <code>validate_layout_draft</code>, and <code>submit_thumbnail_set</code>. <span class="src">page_domain_tools.py:274-283</span></li>
+        <li>Domain errors map to bounded HTTP codes. <code>AuthorizationError</code> gives 403. <code>NotFoundError</code> gives 404. Everything else gives 422. The agent sees the bounded <code>{code, message}</code> only.</li>
+        <li>The agent sees very little. Therefore the broker also logs on the operator side: <code>"agent tool %s rejected (%s) run=%s stage=%s"</code>. Without that line a rejected call stays invisible to the person who debugs the run. <span class="src">internal_tools.py:73-80</span></li>
+      </ol>
+      <p>ADR-004 states the rule that this design encodes. <strong>The tool list that an agent receives is the whole capability of that agent.</strong> Every write from an agent passes validation before it becomes durable.</p>
+
+      <h2 id="state">5. State machines</h2>
+      <div class="cards">
+        <div class="cardx">
+          <h3>JobStatus &mdash; v1, user facing</h3>
+          <p class="machine">pending &rarr; progress* &rarr; success | failure</p>
+          <p>One document per Celery task id. It carries <code>progress</code>, <code>message</code>, <code>phase</code>, and extra fields such as <code>cost_so_far</code>. The extras become top-level fields, so the UI reads them live.</p>
+          <span class="src">celery_worker.py:137-161</span>
+        </div>
+        <div class="cardx">
+          <h3>StageRun &mdash; agentic, durable</h3>
+          <p class="machine">running &rarr; succeeded | failed &nbsp;(attempt++ on re-arm)</p>
+          <p>The key is <code>content_hash({run_id, stage, attempt})</code>. On a failure, <code>failure_history</code> keeps the last ten entries as <code>[*history[-9:], new]</code>, each with attempt, error, and trace. A re-armed stage increments <code>attempt</code> instead of overwriting.</p>
+          <span class="src">manga_director.py:349-353, :384-420</span>
+        </div>
+        <div class="cardx">
+          <h3>WorkerRunState &mdash; inside the worker</h3>
+          <p class="machine">RUNNING &rarr; SUCCEEDED | FAILED | CANCELLED</p>
+          <p>The key is <code>goal.goal_id</code>. A repeat start for a run that is <code>RUNNING</code> or <code>SUCCEEDED</code> returns the existing run. No second run starts. This is dedupe at the edge of the worker. Capacity is bounded and excess throws <code>CapacityError</code>.</p>
+          <span class="src">run-registry.ts:66-76</span>
+        </div>
+        <div class="cardx">
+          <h3>Chain &mdash; across scopes</h3>
+          <p class="machine">completed | stopped_preflight | stopped_failure</p>
+          <p>Scopes run one after another by design, because the order of the canon merge is the point. The chain stops at the first scope that does not succeed. The Session 8 receipt records <code>stopped_failure</code>.</p>
+          <span class="src">whole_book.py:519-556</span>
+        </div>
+      </div>
+
+      <h2 id="failure">6. Failure behavior &mdash; four mechanisms worth your attention</h2>
+
+      <h3>A budget preflight, before any spend</h3>
+      <p>A scope with a projected text or image spend above the remaining grant <strong>never starts</strong>. The chain records <code>refused_preflight</code> with the exact arithmetic and stops. No surprise bills arrive. <span class="src">whole_book.py:521-543</span></p>
+
+      <h3>Failed attempts are charged as a delta, so a resume never bills twice</h3>
+      <p>Failed attempts cost real money and <code>failure_history</code> receipts them. The executor takes a snapshot of the failed-attempt spend of the run <em>before</em> the stages. Afterwards it charges the delta only. Therefore a resumed scope pays nothing for the failures of a previous invocation. <span class="src">whole_book.py:588-593, :640-651</span></p>
+
+      <h3>The transport-fallback text lane</h3>
+      <p>The tool-call frame of MiniMax can mangle a correct submission in transit. Arrays arrive wrapped in <code>{"item": ...}</code>. Empty lists become <code>""</code>. Whole fields disappear. A large payload truncates mid-frame. The signature is a rejection that names fields which the model knows it emitted.</p>
+      <p>The policy answers this. After <strong>one</strong> such rejection the agent stops all tool calls. It emits the corrected object as one bare JSON assistant message. The runtime recovers that object with <code>extractAssistantJsonCandidate</code>, which strips <code>&lt;think&gt;</code> blocks and code fences and takes the outermost object. Then the runtime sends it <em>through the same authenticated submit tool and the same validation gates</em>. The fallback changes the transport. It never changes the trust model. <span class="src">skills/manga-page-writing/SKILL.md:140-167 &middot; candidate-fallback.ts:29-34 &middot; pi-runtime.ts:254-272</span></p>
+
+      <h3>Free repair before paid repair, in v1</h3>
+      <p>The v1 chain runs the deterministic grounding repair at zero cost and validates again. Only then does the paid <code>quality_repair_stage</code> run. When the report already passes, that stage does nothing. Therefore a mechanical defect never costs an editor rewrite of a 13-page storyboard. <span class="src">generation_service.py:242-256</span></p>
+
+      <h2 id="idempotency">7. Why resume works without a resume subsystem</h2>
+      <p>No resume module exists. Resume is a consequence of three separate content-hash decisions.</p>
+      <ol class="steps">
+        <li><strong>Scope ids are content hashes.</strong> <code>_ensure_scope</code> hashes the payload and calls <code>create_scope</code>, which returns the existing document on replay. A second plan over the same book gives the same scope ids. <span class="src">whole_book.py:661-686</span></li>
+        <li><strong>Stage keys are content hashes.</strong> The key is <code>content_hash({run_id, stage, attempt})</code>. A succeeded stage with output artifacts returns <code>reused=True</code> before any agent call. This produced <code>reused_stages: ["manga_direction","manga_page_writing"]</code> at $0 in the Session 8 receipt.</li>
+        <li><strong>A version guards the memory merge.</strong> <code>_merge_plan_memory</code> compares the compiled <code>memory_version</code> of the plan against <code>active_memory_version</code> of the project. When the canon already moved past it, the merge is skipped. This makes a crashed and resumed chain safe. <span class="src">whole_book.py:688-706</span></li>
+      </ol>
+      <p><span class="badge proposed">unproven</span> Tests prove this against stub runners. Stage reuse also ran live in Session 8. Even so, a kill and resume <em>in the middle of a book</em> never ran. That is Gap 7.</p>
+
+      <h2 id="seams">8. Test seams, and what each one can prove</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Seam</th><th>It proves</th><th>It cannot prove</th></tr></thead>
+          <tbody>
+            <tr><td><code>backend/tests/test_whole_book_v2.py</code> (stub runners)</td><td>Planner determinism, budget preflight, stop on failure, stage-reuse arithmetic</td><td>That a real agent completes a stage</td></tr>
+            <tr><td><code>packages/contracts/test/fixtures.test.ts</code></td><td>That the same JSON passes in TypeScript and in Python</td><td>That any model emits it</td></tr>
+            <tr><td><code>packages/agent-runtime/test/{injection,policies,model-selection}</code></td><td>Resistance to prompt injection, model resolution, allowlist policy</td><td>Live provider behavior</td></tr>
+            <tr><td><code>test_manga_generation_service_v2.py</code>, <code>test_panel_quality_gate_stage_v2.py</code></td><td>The order of the v1 stage list and the placement of the gates</td><td>Output quality</td></tr>
+            <tr><td><code>docs/evidence/session*/</code></td><td>That real runs happened, with receipts</td><td>Anything at the current SHA, or in the database after the wipe</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>This is why &ldquo;817 tests green&rdquo; and &ldquo;the chain works&rdquo; are two different claims. The suite proves the <em>mechanism</em>. Only a live chain proves the <em>lane</em>.</p>
+
+      <h2 id="would-be">9. How a real <code>PROGRAM.md</code> differs from this page</h2>
+      <p>Everything above is <strong>recovery</strong>. It shows the system as built. A program is the design of a change. It adds six things that this page cannot hold, because all six depend on a decision that nobody made yet.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Section</th><th>What it holds here</th></tr></thead>
+          <tbody>
+            <tr><td>Product intent and non-goals</td><td>&ldquo;The agentic lane generates the book&rdquo;. Not the reel lane. Not a rewrite of v1</td></tr>
+            <tr><td>Current authority to desired authority</td><td>v1 owns <code>/build</code> today. The agentic lane owns it after Phase 4</td></tr>
+            <tr><td>Chosen direction and rejected options</td><td>Phases 0 to 5 of issue #15. Two alternatives lose: a rewrite of the v1 stages in place, and both lanes kept forever</td></tr>
+            <tr><td>Uncertainty analysis, one route per slice</td><td>Gap 1 &rarr; <em>defer to human</em>. Gap 2 &rarr; <em>tracer bullet</em> (one live scope). Gap 5 &rarr; <em>shadow run</em>. Gaps 3 and 4 &rarr; <em>vertical slice</em>. Gap 7 &rarr; <em>rehearsal</em></td></tr>
+            <tr><td>Proof obligations and forbidden observations</td><td>Per gap: the cheapest evidence that can falsify it, and what must <em>not</em> appear. One example: a shadow row cited as proof of the lane</td></tr>
+            <tr><td>Bounded slices, activation, rollback, retirement</td><td>One owner and one stop condition per slice. The flag-flip rollback at each phase. The deletion list of Phase 5 and its negative-reachability check</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="gate-box">
+        <h3>What creates it</h3>
+        <p>A recorded direction decision creates it. The natural first program is the promotion of the agentic lane from issue #15. Its entry gate is <strong>Gap 1</strong>. Set <code>AGENT_MODEL_MODE_THUMBNAIL=quality</code> at about $0.09 to $0.16 per resume, or fund schema coaching for the speed model.</p>
+        <p>Tell me to scaffold the program and I will. Then <code>program-design.html</code> stops being empty on its own, because the renderer finally has a program to read.</p>
+      </div>
+
+      <p style="margin-top:34px"><a href="index.html">&larr; Control room</a> &nbsp;&middot;&nbsp; <a href="recovered-architecture.html">Recovered architecture &rarr;</a></p>
+    </main>
+
+    <footer class="footer">Recovery run 2026-08-10 at <code>47ea74d</code>. Canonical source: <code>.project-factory/brain/NOW.md</code>. This HTML is a read-only view. It is never an authority.</footer>
+  </div>
+</body>
+</html>

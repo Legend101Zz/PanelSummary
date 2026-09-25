@@ -1,0 +1,108 @@
+{
+  "active_program": null,
+  "event_count": 18,
+  "generated_at": "2026-08-10T17:22:12Z",
+  "last_event": {
+    "actor": "agent",
+    "confidence": "high",
+    "config_identity": "",
+    "evidence": [
+      ".project-factory/evidence/recovery-2026-08-10/ste_prose_check.py",
+      ".project-factory/evidence/recovery-2026-08-10/pf-ste-architecture.png"
+    ],
+    "id": "evt-20260810T172133Z-7fa470a1",
+    "program": "",
+    "reason": "",
+    "repo_sha": "47ea74df3553e3ee7d497affa5f95fc215deab34",
+    "schema_version": 1,
+    "sources": [],
+    "stage": "understand",
+    "status": "complete",
+    "subject_id": "views-reworded-ste",
+    "summary": "Reworded the three hand-written views in Simplified Technical English. Prose findings dropped from 127 to 6, and all six remaining are checker false positives: restrictive clauses, arrow-chain table cells, and one quoted system prompt (Rule 8.6 counts quoted text as one word).",
+    "supersedes": "",
+    "timestamp": "2026-08-10T17:21:33Z",
+    "type": "work"
+  },
+  "latest_subjects": {
+    "doc-drift-architecture-md": {
+      "actor": "agent",
+      "confidence": "high",
+      "config_identity": "",
+      "evidence": [],
+      "id": "evt-20260810T102304Z-2aa30ac8",
+      "program": "",
+      "reason": "Flagged, not fixed — rewriting docs is implementation, outside recovery scope.",
+      "repo_sha": "47ea74df3553e3ee7d497affa5f95fc215deab34",
+      "schema_version": 1,
+      "sources": [
+        "docs/ARCHITECTURE.md:215-224",
+        "CLAUDE.md"
+      ],
+      "stage": "understand",
+      "status": "active",
+      "subject_id": "doc-drift-architecture-md",
+      "summary": "docs/ARCHITECTURE.md documents only the v1 lane and still carries the superseded 2026-05-23 renderer-is-the-blocker framing; it is NOT the agentic architecture doc issue #15 refers to. CLAUDE.md's 2026-07-05 diagnosis also predates Sessions 6-8.",
+      "supersedes": "",
+      "timestamp": "2026-08-10T10:23:04Z",
+      "type": "risk"
+    },
+    "gap5-claim-density": {
+      "actor": "agent",
+      "confidence": "medium",
+      "config_identity": "",
+      "evidence": [],
+      "id": "evt-20260810T102304Z-518f37d7",
+      "program": "",
+      "reason": "Owner judgment; not independently assessable without a run.",
+      "repo_sha": "",
+      "schema_version": 1,
+      "sources": [
+        "issue #15 Gap 5"
+      ],
+      "stage": "understand",
+      "status": "active",
+      "subject_id": "gap5-claim-density",
+      "summary": "Highest product risk is Gap 5, not the mechanism: page-writing claim density is too low (owner rates fidelity 1/5), so the agentic chain would run but lose a side-by-side against v1 today.",
+      "supersedes": "",
+      "timestamp": "2026-08-10T10:23:04Z",
+      "type": "risk"
+    },
+    "mode-to-worker-wiring-gap": {
+      "actor": "agent",
+      "confidence": "medium",
+      "config_identity": "",
+      "evidence": [],
+      "id": "evt-20260810T123057Z-e76ac89e",
+      "program": "",
+      "reason": "Inference from two code paths; not runtime-observed — the flag is off.",
+      "repo_sha": "47ea74df3553e3ee7d497affa5f95fc215deab34",
+      "schema_version": 1,
+      "sources": [
+        "backend/app/services/agentic_pipeline_bridge.py:52-66",
+        "backend/scripts/whole_book_wmc_s8.py:101-108"
+      ],
+      "stage": "understand",
+      "status": "active",
+      "subject_id": "mode-to-worker-wiring-gap",
+      "summary": "No config maps a model mode to a worker URL. The S8 script hand-wires director->:8789 (M3) and page_planner->:8788 (speed); the shadow bridge builds ONE client from AGENT_WORKER_URL (default :8788) and gives it to BOTH drivers. Inference: with the default URL the shadow direction stage would fail its receipt gate. Belongs to Gap 3's wiring work.",
+      "supersedes": "",
+      "timestamp": "2026-08-10T12:30:57Z",
+      "type": "risk"
+    }
+  },
+  "project": "PanelSummary / Book-Reel",
+  "schema_version": 1,
+  "stage_counts": {
+    "decide": 2,
+    "prove": 1,
+    "understand": 15
+  },
+  "status_counts": {
+    "active": 4,
+    "blocked": 1,
+    "complete": 5,
+    "failed": 1,
+    "verified": 7
+  }
+}

@@ -138,6 +138,34 @@ OpenRouter or OpenAI for an LLM fallback, quality lane, or live test.
 - Treat `docs/renderer-analysis/findings.md` as the evidence baseline. Amend it only when new evidence changes the diagnosis; use `NEXT_SESSION.md` for running progress notes.
 - Do not leave contradictory handoff files behind. If a future `NEXT_STEPS.md` is created, make clear whether it supersedes or points back to `NEXT_SESSION.md`.
 
+## Language
+
+Write project documentation in Simplified Technical English. The skill lives at
+`.claude/skills/simple-english/` and is vendored from
+[AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish) under MIT.
+Invoke it with `/simple-english`. See `PROVENANCE.md` in that directory.
+
+- Mode: **pragmatic**. Domain words stay. Apply the structural rules.
+- It applies to the Project Factory views under `.project-factory/views/`, to new
+  `/docs` pages, to handoff notes, and to agent skill files.
+- It does not apply to code, identifiers, quoted errors, or Mermaid diagram sources.
+  Those are untouchable.
+- Locked term choices, so that sessions do not rotate synonyms:
+
+  | Concept | Use | Do not use |
+  |---|---|---|
+  | Confirm that something holds | `verify` | check, confirm, ensure |
+  | The validators and their fields | `validate`, `validation_status` | (these are identifiers, keep them) |
+  | Stored options | `configuration` | config, settings |
+  | Start a process | `run` | execute |
+  | Take something away | `remove` | delete, erase, destroy |
+  | Put on screen | `show` | display, present |
+  | A defect | `problem`, `error` | issue (except "issue #15", a proper noun) |
+
+- Before delivering a document, run the self-check in `SKILL.md` and, for an audit,
+  `references/checklist.md`. Run pattern checks over prose only. Code and diagram
+  sources give false positives.
+
 ## Optional Sub-Agent Use
 
 - Sub-agents are useful only for bounded, parallel work with disjoint ownership. The main agent owns integration and final verification.
