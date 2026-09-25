@@ -25,6 +25,7 @@ def policy_snapshot() -> dict:
         "page_thinking": s.page_thinking,
         "page_vision": s.page_vision,
         "page_attempts": s.page_attempts,
+        "retry_thinking": s.retry_thinking,
         "harness": "apps/agent-worker (Pi sealed session) -> MiniMax",
         "image_models": "none",
     }

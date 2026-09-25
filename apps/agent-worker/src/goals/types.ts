@@ -1,6 +1,6 @@
 import type { AllowedModel, GoalLimits, GoalTool, JsonValue, ThinkingLevel } from "@scrollstack/agent-runtime";
 
-export const GOAL_TYPES = ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE"] as const;
+export const GOAL_TYPES = ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE", "PAGE_REVIEW"] as const;
 export type GoalType = (typeof GOAL_TYPES)[number];
 
 export interface GoalOptions {

@@ -510,9 +510,30 @@ export interface TextSpec {
   kind: TextKind;
   /** Cast id. Required for speech/thought/shout/whisper; forbidden otherwise. */
   speaker?: string;
+  /**
+   * Caption only: the cast id this caption names or labels. The caption is then
+   * placed next to that character (a name tag on first appearance) instead of a
+   * panel corner.
+   */
+  about?: string;
   text: string;
   fidelity: Fidelity;
   source?: SourceRef;
+}
+
+/** Parts of another figure a small figure can stand or perch on. */
+export const PERCH_PARTS = ["feet", "shoulder", "hand", "head"] as const;
+export type PerchPart = (typeof PERCH_PARTS)[number];
+
+/**
+ * Staging anchor: stand/perch ON something instead of the ground.
+ * - { target: "<cast id in the same panel>", part } — e.g. a swallow on the prince's shoulder.
+ * - { target: "<environment feature of this panel's location>" } — e.g. "statue_column",
+ *   "bed" (lie in it), "table", "fountain", "bridge".
+ */
+export interface StagingAnchor {
+  target: string;
+  part?: PerchPart;
 }
 
 export interface FigureSpec {
@@ -523,12 +544,17 @@ export interface FigureSpec {
   slot: Slot;
   depth?: Depth;
   holding?: PropId;
+  /** Tone of the held prop (e.g. a ruby "black", a sapphire "mid"). */
+  holding_tone?: Tone;
+  on?: StagingAnchor;
 }
 
 export interface PropSpec {
   prop: PropId;
   slot: Slot;
   depth?: Depth;
+  /** Tone variant so key objects stay distinct (ruby vs sapphire). */
+  tone?: Tone;
 }
 
 export interface PanelSpec {

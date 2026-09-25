@@ -18,7 +18,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   skillName: "book-understanding",
   defaults: {
     model: "MiniMax-M3",
-    thinking: "low",
+    thinking: "off",
     limits: { maxTurns: 8, maxToolCalls: 8, maxSubmits: 5, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 15 * 60_000 },
   },
   parseInput(input) {

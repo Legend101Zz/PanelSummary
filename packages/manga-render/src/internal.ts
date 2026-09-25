@@ -36,6 +36,7 @@ import type {
   Pose,
   PropId,
   Shot,
+  Tone,
 } from "./contracts.js";
 
 /** Per-page drawing context shared by every module. */
@@ -79,6 +80,14 @@ export interface FigureRequest {
   lineWidth: number;
   /** Stable per-character seed so a character looks the same on every page. */
   seed: number;
+  /**
+   * Level of detail chosen by the composer from the on-page head radius:
+   * "full" (≥30 page units), "reduced" (18-30: eyes + mouth, fewer inner lines),
+   * "silhouette" (<18: shape + thicker outline). Default "full".
+   */
+  detail?: "full" | "reduced" | "silhouette";
+  /** Draw a paper-white knockout rim under the outline (figure–ground separation). Default true. */
+  rim?: boolean;
 }
 
 export interface RigModule {
@@ -127,10 +136,18 @@ export interface PropDrawing {
   grip: Point;
 }
 
+export type SeatKind = "stool" | "chair" | "bench" | "throne";
+
 export interface PropModule {
-  draw(prop: PropId, lineWidth: number, ctx: DrawContext): PropDrawing;
+  /** `tone` recolours the prop's main body (e.g. a ruby "black", a sapphire "mid"). */
+  draw(prop: PropId, lineWidth: number, ctx: DrawContext, tone?: Tone): PropDrawing;
   /** Size in figure units (adult human = 100). */
   nominalHeight(prop: PropId): number;
+  /**
+   * A seat drawn under a sitting figure (figure space, ground y=0, centred on x=0).
+   * `seatY` is the (negative) y of the sitting surface.
+   */
+  seat(kind: SeatKind, lineWidth: number, ctx: DrawContext): PropDrawing & { seatY: number };
 }
 
 export interface FxRequest {

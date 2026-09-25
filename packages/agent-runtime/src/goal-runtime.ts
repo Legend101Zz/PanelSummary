@@ -268,7 +268,7 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     try {
       const result = await tool.execute(params, signal);
       trace.tool_calls.push({ name: tool.name, ok: true, ms: Math.round(performance.now() - started), note: result.note });
-      if (tool.name === request.submitTool && result.accepted !== undefined) {
+      if (result.accepted !== undefined) {
         accepted = result.accepted;
         // The candidate is final; stop the session instead of paying for a sign-off turn.
         setTimeout(() => abortSession?.(), 0);

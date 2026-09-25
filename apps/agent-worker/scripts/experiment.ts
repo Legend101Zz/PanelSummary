@@ -147,6 +147,33 @@ async function main() {
       }
     };
     await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
+  } else if (stage === "review") {
+    const understanding = readJson<BookUnderstanding>("understanding");
+    const planFile = readJson<{ plan: AdaptationPlan } | AdaptationPlan>("plan");
+    const plan = "plan" in planFile ? planFile.plan : planFile;
+    const from = arg("from");
+    if (!from) throw new Error("--from DIR (accepted pages to review) is required");
+    const queue = pagesArg(plan);
+    const worker = async () => {
+      for (;;) {
+        const pageNumber = queue.shift();
+        if (pageNumber === undefined) return;
+        const planned = plan.pages.find((p) => p.page_number === pageNumber)!;
+        const units = bookInput.units.filter((u) => planned.units.includes(u.id));
+        const spec = JSON.parse(readFileSync(path.join(from, `page-${pageNumber}.json`), "utf8")).spec;
+        const outcome = await run(GOALS.PAGE_REVIEW, `exp-rv${pageNumber}-${label}`, {
+          book: { title: book.title, author: book.author }, understanding, plan, page_number: pageNumber, units, spec,
+        });
+        const approved = outcome.state === "SUCCEEDED" ? Boolean((outcome.result as { approved?: boolean }).approved) : undefined;
+        record(`review ${pageNumber}`, outcome, { approved });
+        if (outcome.state === "SUCCEEDED") {
+          const result = outcome.result as unknown as { spec: unknown; render: { svg: string; issues: unknown[] } };
+          writeFileSync(path.join(out!, `page-${pageNumber}.json`), JSON.stringify({ spec: result.spec, issues: result.render.issues, approved }, null, 2));
+          writeFileSync(path.join(out!, `page-${pageNumber}.png`), svgToPng(result.render.svg, { width: 1000 }));
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
   } else if (stage === "section") {
     const understanding = readJson<BookUnderstanding>("understanding");
     const planFile = readJson<{ plan: AdaptationPlan } | AdaptationPlan>("plan");

@@ -80,7 +80,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
   skillName: "manga-page",
   defaults: {
     model: "MiniMax-M3",
-    thinking: "low",
+    thinking: "off",
     limits: { maxTurns: 12, maxToolCalls: 12, maxSubmits: 5, maxOutputTokens: 32_000, maxCostUsd: 0.6, timeoutMs: 10 * 60_000 },
   },
   parseInput(input) {

@@ -24,6 +24,11 @@ export function loadSkill(name: string): Promise<GoalSkill> {
         const refUrl = new URL(`./${name}/references/${ref}`, import.meta.url);
         parts.push(`\n<!-- reference:${ref} -->\n${await readFile(fileURLToPath(refUrl), "utf8")}`);
       }
+      const includes = /^includes:\s*\[(.*)\]\s*$/m.exec(source)?.[1]?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+      for (const included of includes) {
+        const other = await loadSkill(included);
+        parts.push(`\n<!-- included-skill:${included}@${other.version} -->\n${other.content}`);
+      }
       const content = parts.join("\n");
       return {
         name,

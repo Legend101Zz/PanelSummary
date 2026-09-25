@@ -146,7 +146,8 @@ async def _artifact_stage(
     for attempt in range(1, 3):
         run_id = f"{edition.id}-{kind}-a{attempt}"
         await ctx.event(kind, f"MiniMax is working on the {kind} (attempt {attempt})")
-        outcome = await _call(ctx, goal_type, run_id, payload, model=model, thinking=thinking)
+        attempt_thinking = thinking if attempt == 1 else edition.policy.get("retry_thinking", thinking)
+        outcome = await _call(ctx, goal_type, run_id, payload, model=model, thinking=attempt_thinking)
         receipt = receipt_from(goal_type, run_id, outcome)
         await _add_totals(str(edition.id), receipt)
         if outcome.state == "SUCCEEDED" and outcome.result:
@@ -278,7 +279,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     run_id,
                     payload,
                     model=policy["page_model"],
-                    thinking=policy["page_thinking"],
+                    thinking=policy["page_thinking"] if page.attempts == 1 else policy.get("retry_thinking", policy["page_thinking"]),
                     vision=bool(policy.get("page_vision")),
                 )
                 receipt = receipt_from("MANGA_PAGE", run_id, outcome)
