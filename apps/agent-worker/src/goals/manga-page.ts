@@ -32,9 +32,65 @@ interface Input {
   previous?: { page_number: number; beat: string; template?: string; last_panel?: string };
   next?: { page_number: number; beat: string };
   first_appearances: string[];
+  /** Set on the first page of a section: its title must be lettered in a caption. */
+  opens_section?: { id: string; title: string };
 }
 
 const MAX_PREVIEWS = 3;
+
+/** Lowercase, straight quotes, letters/digits/spaces only. */
+function normalizeWords(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u201c\u201d"'`]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * A line labelled "quote" must be the book's words: every fragment of it
+ * (split at ellipses and dashes) with 3+ words must occur in this page's
+ * source text, ignoring case and punctuation.
+ */
+export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string }[]): ValidationIssue[] {
+  const source = ` ${normalizeWords(units.map((u) => u.text).join(" "))} `;
+  const issues: ValidationIssue[] = [];
+  (spec.panels ?? []).forEach((panel) => {
+    (panel.text ?? []).forEach((text, index) => {
+      if (text.fidelity !== "quote" || typeof text.text !== "string") return;
+      const fragments = text.text
+        .split(/\.\.\.|…|--|—/)
+        .map((fragment) => normalizeWords(fragment))
+        .filter((fragment) => fragment.split(" ").length >= 3);
+      const missing = fragments.filter((fragment) => !source.includes(` ${fragment} `));
+      if (missing.length > 0) {
+        issues.push({
+          code: "QUOTE_NOT_IN_SOURCE",
+          severity: "error",
+          path: `panel ${panel.id} text ${index}`,
+          message: `this line is labelled "quote" but "${missing[0].slice(0, 80)}" is not in the source text for this page. Use the book's exact words (you may cut with "..."), or label it "paraphrase" (or "dramatized" for invented dialogue).`,
+        });
+      }
+    });
+  });
+  return issues;
+}
+
+function sectionTitleIssues(spec: MangaPageSpec, opens?: { id: string; title: string }): ValidationIssue[] {
+  if (!opens) return [];
+  const want = normalizeWords(opens.title).replace(/^(the|a|an) /, "");
+  const captions = (spec.panels ?? []).slice(0, 2).flatMap((panel) => (panel.text ?? []).filter((t) => t.kind === "caption" || t.kind === "narration"));
+  if (captions.some((t) => normalizeWords(t.text).includes(want))) return [];
+  return [
+    {
+      code: "SECTION_TITLE_MISSING",
+      severity: "error",
+      path: "panel p1",
+      message: `this page opens the section "${opens.title}"; letter its title in a caption in the first panel (for example {"kind": "caption", "text": "${opens.title}", "fidelity": "paraphrase"}) so readers know a new part begins.`,
+    },
+  ];
+}
 
 function introductionIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
@@ -110,6 +166,10 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       previous: prevPlanned ? { page_number: prevPlanned.page_number, beat: prevPlanned.beat, ...(previousRendered ?? {}) } : undefined,
       next: nextPlanned ? { page_number: nextPlanned.page_number, beat: nextPlanned.beat } : undefined,
       first_appearances: page.cast.filter((id) => !seenBefore.has(id)),
+      opens_section:
+        index === 0 || plan.pages[index - 1].section_id !== page.section_id
+          ? { id: page.section_id, title: understanding.sections.find((sec) => sec.id === page.section_id)?.title ?? page.section_id }
+          : undefined,
     };
   },
   prepare(input, options) {
@@ -123,7 +183,14 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       const spec = value as MangaPageSpec;
       const render = renderPage(spec, bookRefs, { idPrefix: `pg${input.page.page_number}-` });
       const seen = new Set<string>();
-      const issues = [...structural, ...render.issues, ...introductionIssues(spec, input), ...templateIssues(spec, input)].filter((issue) => {
+      const issues = [
+        ...structural,
+        ...render.issues,
+        ...introductionIssues(spec, input),
+        ...templateIssues(spec, input),
+        ...quoteIssues(spec, input.units),
+        ...sectionTitleIssues(spec, input.opens_section),
+      ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;
         if (seen.has(key)) return false;
         seen.add(key);
@@ -195,6 +262,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       input.previous ? `Previous page ${input.previous.page_number}: ${input.previous.beat}${input.previous.last_panel ? ` (it ended on: ${input.previous.last_panel})` : ""}${input.previous.template ? ` [template ${input.previous.template}]` : ""}` : "This is the first page of the book.",
       input.next ? `Next page ${input.next.page_number}: ${input.next.beat}` : "This is the last page of the book.",
       input.first_appearances.length ? `First appearance in the book on this page (introduce them by name): ${input.first_appearances.join(", ")}.` : "",
+      input.opens_section ? `This page OPENS the section "${input.opens_section.title}": letter that title in a caption in the first panel.` : "",
       `Use schema "manga-page.v1" with page_number ${input.page.page_number} and section_id "${input.page.section_id}".`,
       options.vision ? "You may call preview_page (up to 3 times) to see the rendered page before submit_page." : "You may call preview_page (up to 3 times) for a layout report before submit_page.",
       "</goal>",

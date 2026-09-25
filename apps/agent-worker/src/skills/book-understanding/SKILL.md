@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.1.0
+version: 1.3.0
 ---
 
 # Book understanding
@@ -49,7 +49,10 @@ A claim is one thing a reader of the adaptation must come away knowing.
   anecdotes (`event`), memorable formulations (`quote`).
 - `importance`: `core` = the story or argument does not work without it; `supporting` =
   it gives motivation, evidence or texture a good adaptation keeps; `detail` = nice to
-  have. Roughly 5-12 claims per section; more for dense nonfiction.
+  have. Aim for about one claim per 150-250 words of source (a 3,500-word tale
+  has 14-20 claims); more for dense nonfiction. Every turn of the story needs a claim,
+  including changes of state (the statue stripped of its gold, a death, winter
+  arriving), or the plan will skip it.
 - State each claim in plain words, faithful to the text, one idea per claim. Never merge
   a claim from one section into another. Never add anything the book does not say.
 
@@ -73,7 +76,12 @@ What makes a claim usable by the pages that follow:
 
 ## Cast — make every character drawable and distinct
 
-Every character who acts or speaks meaningfully (at most 24). A group that acts as one
+**Everyone who speaks or acts on the page is cast.** Page writers can only draw cast
+members; anyone missing from the cast becomes a narration box. That includes personified
+forces the story gives a voice or a will — the North Wind, Frost, Snow, Hail, Spring,
+Death, the Moon — as `spirit` members, and a group that acts together as one `crowd`.
+
+Every character who acts or speaks meaningfully (at most 40). A group that acts as one
 (the townspeople, the children) is one `crowd` member. For nonfiction, the author or
 narrator is a cast member when they speak to the reader, people in anecdotes are cast,
 and abstract forces the argument personifies may be `emblem` members (the State, the
@@ -115,6 +123,10 @@ from:
 - **how they change** over the book ("later stripped of his gold and grey");
 - **manner**, in two or three words ("proud, talkative").
 
+**Sacred figures.** Do not make God, angels or other sacred figures into emblems or
+cartoon characters. Leave them out of the cast; pages show them through light
+(`light_rays`) and an off-panel voice in a caption.
+
 **Emblems**: use at most 4, and only when the book personifies the idea or the argument
 turns on it. Their `description` starts with "Metaphor:" and names the idea they stand
 for.
@@ -137,6 +149,10 @@ giant's garden, bars for a jail).
 - **Anchor time and weather.** When the book fixes the time of day, the season or the
   weather for a place (winter, night, snow), say so in `description`, so pages stay
   consistent.
+- **Every distinct place a scene happens is a location**, including interiors (an inn,
+  a house by the fire, a professor's doorway) and the waterside where a scene opens.
+  Never reuse an unrelated location because it is close enough: a scene set by the river
+  must not be drawn in the city square.
 - **Merge, don't multiply.** Two mentions of the same place are one location. A place seen
   only in a sentence of narration does not need an entry.
 
@@ -153,5 +169,7 @@ giant's garden, bars for a jail).
 - Cast looks are complete and distinct; every non-human's `description` gives its size
   relative to people. Staging features are present on locations.
 - No invented cast other than at most one labelled adaptation device (nonfiction).
+- Every speaking or acting character in every section is in the cast, including
+  personified forces (as `spirit`). Re-read each section and check.
 - Call `submit_understanding` with the whole JSON as one string. If it is rejected, fix
   every listed error and submit the complete JSON again.

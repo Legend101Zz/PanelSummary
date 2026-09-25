@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Manga page
@@ -172,6 +172,35 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **Speaking characters need space.** Keep no more than 3 figures in a panel where
   someone speaks, so faces and balloons stay readable.
 
+## 8a. State continuity: how characters look NOW
+
+Characters change over a book. Use `variant` on a figure to show the change from this
+point on, and keep it on every later appearance:
+
+```json
+{ "character": "c_prince", "pose": "stand", "expression": "sad", "facing": "front", "slot": "center",
+  "variant": { "eyes": "blind", "material": "stone" } }
+```
+
+- `eyes`: `open`, `closed`, `blind` (a statue whose gem eyes are gone), `dead`.
+- `material`: a gilded statue stripped of its gold becomes `stone`.
+- `outfit_tone`, `hair_tone`, `tone`: a change of clothes or colour.
+Read the previous pages' beats: if a sapphire was given away, the statue has one blind
+eye from then on (use `blind` once both are gone); a character who has died is drawn with
+`eyes: "dead"` and pose `lie`.
+
+**Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
+size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
+closer panel for the line. A small creature talking to a big one belongs in a close or
+medium shot where both faces are large enough, or `on` the big one's shoulder/hand.
+
+**Do not draw a prop twice.** A prop a figure is `holding` is drawn in the hand; do not also
+list it in `props`.
+
+**Quotes are the book's words.** A text labelled `quote` must use the exact words of the
+source text you were given (you may cut with "..."). Keep the book's punctuation. If you
+change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
+
 ## 8b. Staging on things, props and name tags
 
 - **`on`** puts a figure on something instead of the ground:
@@ -196,10 +225,16 @@ right, top to bottom; `panels` must be listed in that reading order.
 - Use at most 2 `fx` per panel. `speed_lines` for movement. `focus_lines` for shock or
   realisation (a reaction panel). `impact_burst` for a hit or a sudden event. `sparkle` for
   beauty or value. `sweat_drop` and `anger_mark` for comic emotion. `light_rays` and
-  `soft_glow` for wonder and warmth.
+  `soft_glow` for wonder and warmth. `fireworks` for a firework display in the sky.
 - `dark_mood` is for dread, in one panel per page at most. `flashback` goes on every panel
   of a flashback and on no other panel. Weather FX must match `weather`.
 - A quiet page stays quiet: too many FX make every panel shout.
+
+## 9b. Opening a section
+
+When the goal says this page OPENS a section, the first panel is an `establishing` or
+`wide` shot of its first place with a caption naming the section title (fidelity
+`paraphrase`), so the reader knows a new tale or chapter begins.
 
 ## 10. Page turns
 

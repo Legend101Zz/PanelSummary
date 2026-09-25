@@ -13,9 +13,9 @@ interface Input {
 
 /** Page budget from source length: about one page per 350-550 words, bounded. */
 export function pageBudget(words: number, sections: number, coreClaims: number) {
-  const target = Math.round(words / 440);
+  const target = Math.round(words / 400);
   const min = Math.max(sections * 2, Math.ceil(coreClaims / 3), Math.round(words / 650), 3);
-  const max = Math.max(min + 2, Math.min(120, Math.round(words / 300)));
+  const max = Math.max(min + 2, Math.min(140, Math.round(words / 260)));
   return { min, max, target: Math.min(max, Math.max(min, target)) };
 }
 

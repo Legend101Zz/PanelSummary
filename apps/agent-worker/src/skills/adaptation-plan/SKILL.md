@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Adaptation plan
@@ -84,7 +84,13 @@ something to *see*.
       about 6 pages). It carries the section's concluding claim and may restate earlier
       ones in its beat without listing them.
     - Do not plan asides that entertain but do not teach.
-11. **Omitted.** Give reasons a reader could check: "restates k12", "detail with no effect
+11. **New sections.** The first page of each section opens that section (a new tale, a new
+    chapter): its beat starts with where and who, and the page writer letters the section
+    title. Never end a section's story off-page: its ending gets its own page.
+12. **No skipped middles.** Every unit of a section is adapted by some page, in order. The
+    turns that change a character's state (a gift given away, gold stripped, a death, a
+    season changing) each get a page, because later pages depend on them.
+13. **Omitted.** Give reasons a reader could check: "restates k12", "detail with no effect
     on the argument". Never write "space" or "not important" alone.
 
 Call `submit_plan` with the whole JSON as one string. On rejection, fix every error and
