@@ -100,6 +100,67 @@ export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string 
   return issues;
 }
 
+/** A planned "quote" claim is one of the book's defining lines: the page must letter it. */
+export function quoteClaimIssues(spec: MangaPageSpec, claims: readonly Claim[]): ValidationIssue[] {
+  const quotes = (spec.panels ?? []).flatMap((panel) => (panel.text ?? []).filter((t) => t.fidelity === "quote").map((t) => normalizeWords(t.text ?? "")));
+  const issues: ValidationIssue[] = [];
+  for (const claim of claims) {
+    if (claim.kind !== "quote") continue;
+    // The book's line is the quoted span inside the claim ("..." or '...'); a
+    // claim with no quoted span is not checked here.
+    const inner =
+      /["\u201c]([^"\u201d]{8,})["\u201d]/.exec(claim.text)?.[1] ??
+      /(?:^|[\s,:])['\u2018](.{8,}?)['\u2019](?=[\s.,;!?]|$)/.exec(claim.text)?.[1];
+    if (!inner) continue;
+    const want = normalizeWords(inner).split(" ").filter((w) => w.length > 2);
+    if (want.length < 3) continue;
+    // Long lines may be cut with "...": coverage is measured against at most 14 content words.
+    const needed = Math.min(want.length, 14);
+    const best = Math.max(0, ...quotes.map((q) => Math.min(1, want.filter((w) => q.includes(w)).length / needed)));
+    if (best < 0.6) {
+      issues.push({
+        code: "QUOTE_CLAIM_MISSING",
+        severity: "error",
+        path: "page.claims",
+        message: `claim ${claim.id} is one of the book's defining lines ("${inner.slice(0, 140)}"). Letter it in a balloon from its speaker with fidelity "quote" (you may cut with "...").`,
+      });
+    }
+  }
+  return issues;
+}
+
+/** A statue on its column cannot stand among people at street level in a medium/close panel. */
+export function statueStagingIssues(spec: MangaPageSpec, cast: BookUnderstanding["cast"], locations: BookUnderstanding["locations"]): ValidationIssue[] {
+  const byId = new Map(cast.map((c) => [c.id, c]));
+  const locs = new Map(locations.map((l) => [l.id, l]));
+  const issues: ValidationIssue[] = [];
+  for (const panel of spec.panels ?? []) {
+    if (!["medium", "close", "extreme_close"].includes(panel.shot)) continue;
+    if (!locs.get(panel.location)?.features?.includes("statue_column")) continue;
+    const figs = panel.figures ?? [];
+    const isStatue = (id: string) => {
+      const look = byId.get(id)?.look as { kind?: string; material?: string } | undefined;
+      return look?.kind === "human" && !!look.material && look.material !== "flesh";
+    };
+    const statue = figs.find((f) => isStatue(f.character));
+    if (!statue) continue;
+    const people = figs.filter((f) => {
+      if (f === statue || isStatue(f.character)) return false;
+      const kind = byId.get(f.character)?.look.kind;
+      return (kind === "human" || kind === "crowd") && f.on?.target !== statue.character;
+    });
+    if (people.length > 0) {
+      issues.push({
+        code: "STATUE_AMONG_PEOPLE",
+        severity: "error",
+        path: `panel ${panel.id}`,
+        message: `${statue.character} stands high on its column, so it cannot share this ${panel.shot} panel with ${people.map((f) => f.character).join(", ")} at street level. Show them looking up at the statue in a "wide" or "full" shot (low angle), or give the statue its own panel.`,
+      });
+    }
+  }
+  return issues;
+}
+
 /** Every planned claim must be mapped to real panels with a stated method. */
 export function claimMapIssues(spec: MangaPageSpec, plannedClaims: readonly string[]): ValidationIssue[] {
   if (plannedClaims.length === 0) return [];
@@ -277,6 +338,8 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...sectionTitleIssues(spec, input.opens_section),
         ...claimMapIssues(spec, input.page.claims),
         ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
+        ...quoteClaimIssues(spec, input.claims),
+        ...statueStagingIssues(spec, input.cast, input.locations),
         ...stagingIssues(spec),
       ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;

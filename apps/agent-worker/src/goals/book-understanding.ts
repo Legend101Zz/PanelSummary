@@ -56,7 +56,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   defaults: {
     model: "MiniMax-M3",
     thinking: "low",
-    limits: { maxTurns: 8, maxToolCalls: 8, maxSubmits: 5, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 15 * 60_000 },
+    limits: { maxTurns: 10, maxToolCalls: 10, maxSubmits: 3, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 18 * 60_000 },
   },
   parseInput(input) {
     const record = requireObject(input, "input");
@@ -69,6 +69,24 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   },
   prepare({ book }) {
     const unitIds = book.units.map((unit) => unit.id);
+    // The last complete candidate: revise_understanding patches it instead of
+    // making the model re-emit a 40-100k-token JSON for a few fixes.
+    let current: Record<string, unknown> | undefined;
+    const judge = (value: unknown) => {
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value)];
+      if (errorsOf(issues).length > 0) {
+        return {
+          text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,
+          note: `errors=${errorsOf(issues).length} ${[...new Set(errorsOf(issues).map((i) => i.code))].slice(0, 5).join(",")}`,
+        };
+      }
+      const warnings = warningsOf(issues);
+      return {
+        text: `ACCEPTED.${warnings.length ? `\nWarnings kept on record:\n${formatIssues(warnings, 20)}` : ""}`,
+        accepted: value as never,
+        note: `accepted warnings=${warnings.length}`,
+      };
+    };
     const submit = {
       name: "submit_understanding",
       description:
@@ -77,16 +95,37 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       async execute(args: Record<string, unknown>) {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
-        const issues = [...validateUnderstanding(parsed.value, unitIds), ...lookSenseIssues(parsed.value)];
-        if (errorsOf(issues).length > 0) {
-          return { text: rejection(issues), note: `errors=${errorsOf(issues).length}` };
+        if (parsed.value && typeof parsed.value === "object") current = parsed.value as Record<string, unknown>;
+        return judge(parsed.value);
+      },
+    };
+    const revise = {
+      name: "revise_understanding",
+      description:
+        'Fix the last submitted BookUnderstanding without resending it: a JSON string {"cast": [...], "locations": [...], "claims": [...], "sections": [...], "remove": {"cast": [ids], "locations": [ids], "claims": [ids]}, "logline": "...", "themes": [...]}. Entries are upserted by id (a full replacement of that entry). Replies ACCEPTED or lists every remaining error.',
+      parameters: candidateParameters,
+      async execute(args: Record<string, unknown>) {
+        if (!current) return { text: "REJECTED: submit the complete understanding with submit_understanding first.", note: "no_base" };
+        const parsed = parseCandidate(args);
+        if (!parsed.ok || !parsed.value || typeof parsed.value !== "object") return { text: `REJECTED: ${parsed.ok ? "the patch must be a JSON object" : parsed.message}`, note: "parse_error" };
+        const patch = parsed.value as Record<string, unknown>;
+        const merged: Record<string, unknown> = { ...current };
+        for (const key of ["cast", "locations", "claims", "sections"] as const) {
+          const base = Array.isArray(merged[key]) ? [...(merged[key] as Array<{ id?: string }>)] : [];
+          const removals = new Set(((patch.remove as Record<string, string[]> | undefined)?.[key] ?? []) as string[]);
+          const kept = base.filter((entry) => !removals.has(entry?.id ?? ""));
+          for (const entry of Array.isArray(patch[key]) ? (patch[key] as Array<{ id?: string }>) : []) {
+            const at = kept.findIndex((existing) => existing?.id === entry?.id);
+            if (at >= 0) kept[at] = entry;
+            else kept.push(entry);
+          }
+          merged[key] = kept;
         }
-        const warnings = warningsOf(issues);
-        return {
-          text: `ACCEPTED.${warnings.length ? `\nWarnings kept on record:\n${formatIssues(warnings, 20)}` : ""}`,
-          accepted: parsed.value as never,
-          note: `accepted warnings=${warnings.length}`,
-        };
+        for (const key of ["logline", "themes", "title", "author", "kind"] as const) {
+          if (patch[key] !== undefined) merged[key] = patch[key];
+        }
+        current = merged;
+        return judge(merged);
       },
     };
     const userPrompt = [
@@ -102,7 +141,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     return {
       skillName: "book-understanding",
       userPrompt,
-      tools: [submit],
+      tools: [submit, revise],
       submitTool: submit.name,
       limits: bookUnderstandingGoal.defaults.limits,
       allowImages: false,

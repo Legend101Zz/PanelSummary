@@ -300,3 +300,33 @@ describe("understanding look sense", () => {
     expect(lookSenseIssues({ sections, cast: [{ id: "c_x", description: "A girl.", look: { kind: "human" } }] }).map((i) => i.code)).toEqual(["CAST_SECTIONS"]);
   });
 });
+
+describe("quote claims and statue staging", () => {
+  it("requires a planned quote claim's line to be lettered as a quote", async () => {
+    const { quoteClaimIssues } = await import("../src/goals/manga-page.js");
+    const spec = fixturePage(1);
+    for (const panel of spec.panels) panel.text = [];
+    const claim = { id: "kq", section_id: "s1", kind: "quote" as const, importance: "core" as const, text: "The Prince says, 'Swallow, Swallow, little Swallow, will you not stay with me for one night?'", source: [] };
+    expect(quoteClaimIssues(spec, [claim]).map((i) => i.code)).toEqual(["QUOTE_CLAIM_MISSING"]);
+    spec.panels[0].text = [{ kind: "speech", speaker: "prince", text: "Swallow, little Swallow, will you not stay with me for one night?", fidelity: "quote", source: spec.panels[0].source[0] }];
+    expect(quoteClaimIssues(spec, [claim])).toEqual([]);
+  });
+});
+
+describe("revise_understanding", () => {
+  it("patches the last submission by id instead of requiring a full resend", async () => {
+    const prepared = bookUnderstandingGoal.prepare(bookUnderstandingGoal.parseInput({ book: TWO_UNIT_BOOK }), OFF);
+    const submit = prepared.tools.find((t) => t.name === "submit_understanding")!;
+    const revise = prepared.tools.find((t) => t.name === "revise_understanding")!;
+    expect((await revise.execute({ candidate_json: "{}" }, undefined)).text).toMatch(/submit the complete understanding/);
+    const bad = validUnderstanding() as unknown as { cast: Array<Record<string, unknown>> };
+    const good = bad.cast[0];
+    bad.cast = [{ ...good, sections: undefined }];
+    const first = await submit.execute({ candidate_json: JSON.stringify(bad) }, undefined);
+    expect(first.accepted).toBeUndefined();
+    expect(first.text).toMatch(/CAST_SECTIONS/);
+    const fixed = await revise.execute({ candidate_json: JSON.stringify({ cast: [good] }) }, undefined);
+    expect(fixed.text).toMatch(/^ACCEPTED/);
+    expect((fixed.accepted as unknown as { cast: unknown[] }).cast).toHaveLength(1);
+  });
+});

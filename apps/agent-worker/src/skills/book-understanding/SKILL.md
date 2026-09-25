@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Book understanding
@@ -179,5 +179,7 @@ giant's garden, bars for a jail).
 - No invented cast other than at most one labelled adaptation device (nonfiction).
 - Every speaking or acting character in every section is in the cast, including
   personified forces (as `spirit`). Re-read each section and check.
-- Call `submit_understanding` with the whole JSON as one string. If it is rejected, fix
-  every listed error and submit the complete JSON again.
+- Call `submit_understanding` with the whole JSON as one string. If it is rejected, do
+  NOT resend everything: call `revise_understanding` with only the entries you change
+  (`{"cast": [the corrected members], "claims": [...], "remove": {"claims": ["k9"]}}` —
+  entries are replaced by id) until it replies ACCEPTED.
