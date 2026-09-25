@@ -7,6 +7,11 @@ const page = await (await browser.newContext({ viewport: { width: 1440, height: 
 await page.goto(`http://localhost:3100/books/${book}`);
 await page.waitForTimeout(2500);
 await page.screenshot({ path: `${out}/06-book-before-retry.png`, fullPage: true });
+const before = await (await fetch(`http://127.0.0.1:8000/books/${book}/editions`)).json();
+const failed = (await (await fetch(`http://127.0.0.1:8000/editions/${before[0].id}`)).json()).pages
+  .filter((p) => p.status === "failed")
+  .map((p) => p.page_number);
+console.log("failed pages before retry:", failed.join(", ") || "none");
 const btn = page.getByRole("button", { name: /retry failed pages/i });
 console.log("retry buttons:", await btn.count());
 await btn.first().click();
@@ -14,9 +19,9 @@ const t0 = Date.now();
 for (;;) {
   const e = await (await fetch(`http://127.0.0.1:8000/books/${book}/editions`)).json();
   const ed = await (await fetch(`http://127.0.0.1:8000/editions/${e[0].id}`)).json();
-  const p32 = ed.pages.find((p) => p.page_number === 32);
+  const retried = ed.pages.filter((p) => failed.includes(p.page_number)).map((p) => `${p.page_number}:${p.status}`);
   if (["complete", "completed_with_failures", "failed"].includes(ed.status) && Date.now() - t0 > 5000) {
-    console.log("status", ed.status, "page32", p32.status, "after", (Date.now() - t0) / 1000, "s", JSON.stringify(ed.totals));
+    console.log("status", ed.status, "retried", retried.join(" "), "after", (Date.now() - t0) / 1000, "s", JSON.stringify(ed.totals));
     break;
   }
   await page.waitForTimeout(3000);
