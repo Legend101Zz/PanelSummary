@@ -22,3 +22,23 @@ export type {
   ScrollStackAgentRuntime,
   SupportedGoalType,
 } from "./types.js";
+export {
+  ALLOWED_MODELS,
+  BASE_SYSTEM_PROMPT,
+  extractFinalJson,
+  GoalRunError,
+  resolveModel,
+  runGoal,
+  THINKING_LEVELS,
+  VISION_MODELS,
+  type AllowedModel,
+  type GoalLimits,
+  type GoalSkill,
+  type GoalRunRequest,
+  type GoalRunResult,
+  type GoalTool,
+  type GoalToolResult,
+  type GoalTrace,
+  type ThinkingLevel,
+  type ToolImage,
+} from "./goal-runtime.js";

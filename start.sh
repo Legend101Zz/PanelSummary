@@ -1,299 +1,130 @@
 #!/usr/bin/env zsh
 # ============================================================
-# PanelSummary — local dev starter
+# PanelSummary — one-command local stack
 #
-# Starts the full local stack:
-#   v1 app surface          v2 agent plane
-#   - Redis job broker      - domain-tool broker  :8010
-#   - FastAPI backend :8000 - speed worker (M2.7-highspeed) :8788
-#   - Celery worker         - quality worker (M3) :8789
-#   - Next.js frontend :3000
+#   MongoDB (local, port 27018, data in .dev/mongo)   unless PANELSUMMARY_MONGODB_URL is set
+#   Agent worker  :8788  — the sealed Pi harness; the ONLY process that holds the MiniMax key
+#   API           :8000  — FastAPI (upload, books, editions, pages)
+#   Job runner           — parse + generate jobs (calls the agent worker)
+#   Frontend      :3100  — Next.js reader (never port 3000)
 #
-# The agent plane is free to run idle — workers only call MiniMax
-# when a chain script submits a run.
+# MiniMax key lookup (never printed): $MINIMAX_API_KEY, then backend/.env,
+# then the macOS Keychain item "minimax_api_key".
 #
-# Usage: ./start.sh
-# Check: ./check.sh
-# Stop:  ./stop.sh
-# Logs:  .dev/logs/*.log
+# Usage: ./start.sh      Check: ./check.sh      Stop: ./stop.sh      Logs: .dev/logs/
 # ============================================================
-
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-BACKEND="$ROOT/backend"
-FRONTEND="$ROOT/frontend"
-WORKER_DIR="$ROOT/apps/agent-worker"
 DEV="$ROOT/.dev"
 LOGS="$DEV/logs"
 PIDS="$DEV/pids"
 TOKENS_FILE="$DEV/agent-tokens.env"
+API_PORT="${PANELSUMMARY_API_PORT:-8000}"
+WORKER_PORT="${PANELSUMMARY_WORKER_PORT:-8788}"
+WEB_PORT="${PANELSUMMARY_WEB_PORT:-3100}"
+MONGO_PORT="${PANELSUMMARY_MONGO_PORT:-27018}"
 
-CYAN="\033[0;36m"
-GREEN="\033[0;32m"
-YELLOW="\033[1;33m"
-RED="\033[0;31m"
-BOLD="\033[1m"
-RESET="\033[0m"
+step() { print -P "%F{yellow}▶ $1%f"; }
+ok() { print -P "%F{green}✓ $1%f"; }
+fail() { print -P "%F{red}✗ $1%f"; exit 1; }
 
-step() { echo "${YELLOW}▶ $1${RESET}"; }
-ok() { echo "${GREEN}✓ $1${RESET}"; }
-warn() { echo "${YELLOW}⚠ $1${RESET}"; }
-fail() { echo "${RED}✗ $1${RESET}"; exit 1; }
+mkdir -p "$LOGS" "$PIDS"
+umask 077
 
-require_command() {
-  command -v "$1" >/dev/null 2>&1 || fail "Missing '$1'. Install it first, then rerun ./start.sh."
+[[ "$WEB_PORT" == "3000" ]] && fail "Port 3000 is reserved on this machine; choose another PANELSUMMARY_WEB_PORT."
+for cmd in node pnpm uv; do command -v "$cmd" >/dev/null || fail "Missing '$cmd'."; done
+
+port_busy() { lsof -ti:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
+
+# start <name> <marker> <command...>: run detached, remember pid + a command marker for safe stop
+start_service() {
+  local name="$1" marker="$2"; shift 2
+  if [[ -f "$PIDS/$name.pid" ]] && ps -p "$(cat "$PIDS/$name.pid")" -o command= 2>/dev/null | grep -q -- "$marker"; then
+    ok "$name already running"; return
+  fi
+  nohup "$@" >"$LOGS/$name.log" 2>&1 </dev/null &
+  echo "$!" >"$PIDS/$name.pid"
+  echo "$marker" >"$PIDS/$name.marker"
 }
 
-port_is_busy() {
-  lsof -ti:"$1" -sTCP:LISTEN >/dev/null 2>&1
-}
-
-port_holder() {
-  local pid
-  pid="$(lsof -ti:"$1" -sTCP:LISTEN 2>/dev/null | head -1)"
-  [[ -n "$pid" ]] && ps -o comm= -p "$pid" 2>/dev/null || true
-}
-
-wait_for_url() {
-  local url="$1"
-  local attempts="$2"
-  local delay="$3"
-  for _ in $(seq 1 "$attempts"); do
-    curl -fsS "$url" >/dev/null 2>&1 && return 0
-    sleep "$delay"
-  done
+wait_url() {
+  local url="$1" tries="${2:-60}"
+  for _ in $(seq 1 "$tries"); do curl -sf "$url" >/dev/null 2>&1 && return 0; sleep 1; done
   return 1
 }
 
-print_banner() {
-  echo ""
-  echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  echo "${CYAN}${BOLD}  PanelSummary — starting local dev stack${RESET}"
-  echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  echo ""
-}
+# --- secrets -----------------------------------------------------------------
+MINIMAX_KEY="${MINIMAX_API_KEY:-}"
+if [[ -z "$MINIMAX_KEY" && -f "$ROOT/backend/.env" ]]; then
+  MINIMAX_KEY="$(grep -E '^MINIMAX_API_KEY=' "$ROOT/backend/.env" | head -1 | cut -d= -f2- | tr -d '"'"'"' ')"
+fi
+if [[ -z "$MINIMAX_KEY" ]] && command -v security >/dev/null; then
+  MINIMAX_KEY="$(security find-generic-password -s minimax_api_key -w 2>/dev/null || true)"
+fi
+[[ -n "$MINIMAX_KEY" ]] || fail "No MiniMax key found (MINIMAX_API_KEY, backend/.env, or Keychain 'minimax_api_key')."
 
-# The stale donor docker stack (scrollstack-*) publishes :8000. It is not
-# this app; stop just that family when it blocks us. Never touch other
-# docker containers or non-docker processes we didn't start.
-claim_app_ports() {
-  local port
-  for port in 8000 3000 8010 8788 8789; do
-    port_is_busy "$port" || continue
-    local holder
-    holder="$(port_holder "$port")"
-    if [[ "$holder" == *docker* || "$holder" == *Docker* ]]; then
-      if docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^scrollstack-backend-1$'; then
-        warn "Port $port is held by the stale scrollstack docker containers — stopping scrollstack-backend-1 + scrollstack-celery_worker-1"
-        docker stop scrollstack-backend-1 scrollstack-celery_worker-1 >/dev/null 2>&1 || true
-        sleep 2
-        port_is_busy "$port" && fail "Port $port is still busy after stopping the scrollstack containers. Check: docker ps"
-        ok "Stopped stale scrollstack containers (undo: docker start scrollstack-backend-1 scrollstack-celery_worker-1)"
-      else
-        fail "Port $port is held by a docker container that is not the known scrollstack family. Check: docker ps"
-      fi
-    else
-      fail "Port $port is already in use by '$holder'. Run ./stop.sh first, or free the port."
-    fi
-  done
-}
+if [[ ! -f "$TOKENS_FILE" ]] || ! grep -q '^AGENT_WORKER_TOKEN=' "$TOKENS_FILE"; then
+  echo "AGENT_WORKER_TOKEN=$(openssl rand -hex 32)" >"$TOKENS_FILE"
+fi
+AGENT_WORKER_TOKEN="$(grep '^AGENT_WORKER_TOKEN=' "$TOKENS_FILE" | cut -d= -f2-)"
 
-ensure_redis() {
-  step "Checking Redis"
-  if command -v redis-cli >/dev/null 2>&1 && redis-cli ping >/dev/null 2>&1; then
-    ok "Redis is running"
-    return
-  fi
-
-  if command -v brew >/dev/null 2>&1; then
-    step "Starting Redis via Homebrew"
-    brew services start redis >/dev/null 2>&1 || fail "Redis failed to start. Try: brew install redis"
+# --- database ------------------------------------------------------------------
+if [[ -n "${PANELSUMMARY_MONGODB_URL:-}" ]]; then
+  MONGO_URL="$PANELSUMMARY_MONGODB_URL"
+  ok "Using PANELSUMMARY_MONGODB_URL"
+else
+  command -v mongod >/dev/null || fail "Missing 'mongod' (brew install mongodb-community) or set PANELSUMMARY_MONGODB_URL."
+  mkdir -p "$DEV/mongo"
+  if ! port_busy "$MONGO_PORT"; then
+    step "Starting MongoDB on :$MONGO_PORT"
+    start_service mongo "mongod --dbpath $DEV/mongo" mongod --dbpath "$DEV/mongo" --port "$MONGO_PORT" --bind_ip 127.0.0.1
     sleep 2
-    redis-cli ping >/dev/null 2>&1 && ok "Redis started" || fail "Redis still is not reachable"
-    return
   fi
+  MONGO_URL="mongodb://127.0.0.1:$MONGO_PORT"
+  ok "MongoDB at $MONGO_URL (local, never the Atlas URL in backend/.env)"
+fi
+DB_NAME="${PANELSUMMARY_DB_NAME:-panelsummary}"
 
-  fail "Redis is not running and Homebrew is unavailable. Start Redis yourself or use docker compose."
-}
+# --- dependencies --------------------------------------------------------------
+if [[ ! -d "$ROOT/node_modules/.pnpm" ]]; then step "pnpm install"; (cd "$ROOT" && pnpm install --frozen-lockfile); fi
+if [[ ! -d "$ROOT/frontend/node_modules" ]]; then step "frontend npm install"; (cd "$ROOT/frontend" && npm install); fi
+if [[ ! -x "$ROOT/backend/.venv/bin/python" ]]; then step "backend venv"; (cd "$ROOT/backend" && uv venv && uv pip install -r requirements.txt); fi
+mkdir -p "$ROOT/frontend/public/fonts"
+cp "$ROOT/packages/manga-render/fonts/"*.ttf "$ROOT/frontend/public/fonts/"
 
-ensure_python_env() {
-  require_command uv
-  step "Checking backend Python environment"
-  cd "$BACKEND"
+# --- agent worker (MiniMax harness) -------------------------------------------
+if ! port_busy "$WORKER_PORT"; then
+  step "Starting the agent worker on :$WORKER_PORT"
+  start_service worker "agent-worker/src/index.ts" env -i PATH="$PATH" HOME="$HOME" \
+    MINIMAX_API_KEY="$MINIMAX_KEY" AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" \
+    AGENT_WORKER_PORT="$WORKER_PORT" AGENT_WORKER_HOST=127.0.0.1 AGENT_MAX_CONCURRENCY="${AGENT_MAX_CONCURRENCY:-4}" \
+    "$ROOT/node_modules/.bin/tsx" "$ROOT/apps/agent-worker/src/index.ts"
+fi
+wait_url "http://127.0.0.1:$WORKER_PORT/readyz" 60 || fail "Agent worker not ready (see .dev/logs/worker.log)"
+ok "Agent worker ready"
+unset MINIMAX_KEY
 
-  if [[ ! -d ".venv" ]]; then
-    step "Creating backend/.venv and installing dependencies (first run only)"
-    uv venv .venv --python 3.12 --quiet
-    uv pip install -r requirements.txt --quiet
-    ok "Created backend/.venv"
-  else
-    ok "backend/.venv exists (delete it to force a clean reinstall)"
-  fi
-}
+BACKEND_ENV=(MONGODB_URL="$MONGO_URL" DB_NAME="$DB_NAME" AGENT_WORKER_URL="http://127.0.0.1:$WORKER_PORT"
+  AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" CORS_ORIGINS="http://localhost:$WEB_PORT,http://127.0.0.1:$WEB_PORT")
 
-ensure_node_env() {
-  step "Checking Node environment"
-  require_command node
+# --- API + runner ----------------------------------------------------------------
+if ! port_busy "$API_PORT"; then
+  step "Starting the API on :$API_PORT"
+  start_service api "uvicorn app.main:app --host 127.0.0.1 --port $API_PORT" \
+    env -C "$ROOT/backend" "${BACKEND_ENV[@]}" "$ROOT/backend/.venv/bin/uvicorn" app.main:app --host 127.0.0.1 --port "$API_PORT"
+fi
+wait_url "http://127.0.0.1:$API_PORT/health" 60 || fail "API not healthy (see .dev/logs/api.log)"
+ok "API healthy"
+step "Starting the job runner"
+start_service runner "app.runner" env -C "$ROOT/backend" "${BACKEND_ENV[@]}" "$ROOT/backend/.venv/bin/python" -m app.runner
+ok "Job runner started"
 
-  local major minor
-  major="$(node -p 'Number(process.versions.node.split(".")[0])')"
-  minor="$(node -p 'Number(process.versions.node.split(".")[1])')"
-  # agent-worker engines require >=22.19; frontend needs >=20
-  if (( major < 22 || (major == 22 && minor < 19) )); then
-    fail "Node >=22.19 is required (agent-worker engines). Current: $(node --version)."
-  fi
-  ok "Node $(node --version)"
-
-  if [[ ! -d "$FRONTEND/node_modules" ]]; then
-    step "Installing frontend packages (first run only)"
-    cd "$FRONTEND"
-    npm ci --silent
-    ok "Frontend dependencies installed"
-  fi
-
-  require_command pnpm
-  if [[ ! -d "$WORKER_DIR/node_modules" ]]; then
-    step "Installing workspace packages (first run only)"
-    cd "$ROOT"
-    pnpm install --silent
-    ok "Workspace dependencies installed"
-  fi
-}
-
-# The v2 agent plane needs two distinct >=32-char service tokens. Generate
-# once and persist so restarts (and later chain runs) reuse the same pair.
-ensure_agent_tokens() {
-  if [[ ! -f "$TOKENS_FILE" ]]; then
-    step "Generating agent-plane service tokens (first run only)"
-    umask 077
-    cat >"$TOKENS_FILE" <<EOF
-DOMAIN_TOOL_BROKER_TOKEN=$(openssl rand -hex 24)
-AGENT_WORKER_TOKEN=$(openssl rand -hex 24)
-EOF
-    ok "Tokens written to .dev/agent-tokens.env (gitignored)"
-  fi
-  set -a
-  source "$TOKENS_FILE"
-  set +a
-
-  MINIMAX_API_KEY="$(grep -E '^MINIMAX_API_KEY=' "$BACKEND/.env" | head -1 | cut -d= -f2- | tr -d '"' || true)"
-  [[ -n "${MINIMAX_API_KEY:-}" ]] || fail "MINIMAX_API_KEY not found in backend/.env — the agent workers need it."
-}
-
-start_backend() {
-  step "Starting FastAPI backend (:8000)"
-  cd "$BACKEND"
-  nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload \
-    </dev/null >"$LOGS/backend.log" 2>&1 &
-  echo $! >"$PIDS/backend.pid"
-  ok "FastAPI backend starting on http://localhost:8000 (pid $!)"
-}
-
-start_celery() {
-  step "Starting Celery worker"
-  cd "$BACKEND"
-  # --pool=solo avoids macOS fork crashes in heavier PDF/image dependencies.
-  nohup .venv/bin/celery -A app.celery_worker worker --loglevel=info --pool=solo \
-    </dev/null >"$LOGS/celery.log" 2>&1 &
-  echo $! >"$PIDS/celery.pid"
-  ok "Celery worker started (pid $!)"
-}
-
-start_frontend() {
-  step "Starting Next.js frontend (:3000)"
-  cd "$FRONTEND"
-  # next dev shuts itself down (exit 0) when stdin reaches EOF — a closed
-  # terminal OR </dev/null both kill it. Hold stdin open forever with a pipe.
-  tail -f /dev/null | nohup npm run dev >"$LOGS/frontend.log" 2>&1 &
-  echo $! >"$PIDS/frontend.pid"
-  ok "Next.js starting on http://localhost:3000 (pid $!)"
-}
-
-start_broker() {
-  step "Starting domain-tool broker (:8010)"
-  cd "$BACKEND"
-  DOMAIN_TOOL_BROKER_TOKEN="$DOMAIN_TOOL_BROKER_TOKEN" \
-    nohup .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8010 \
-    </dev/null >"$LOGS/broker.log" 2>&1 &
-  echo $! >"$PIDS/broker.pid"
-  ok "Broker starting on http://127.0.0.1:8010 (pid $!)"
-}
-
-start_worker() {
-  local mode="$1" port="$2" model="$3"
-  step "Starting $mode agent worker (:$port, $model)"
-  cd "$WORKER_DIR"
-  AGENT_WORKER_HOST=127.0.0.1 \
-    AGENT_WORKER_PORT="$port" \
-    AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" \
-    DOMAIN_TOOL_BROKER_URL="http://127.0.0.1:8010" \
-    DOMAIN_TOOL_BROKER_TOKEN="$DOMAIN_TOOL_BROKER_TOKEN" \
-    AGENT_PROVIDER=minimax \
-    AGENT_MODEL="$model" \
-    AGENT_MODEL_API_KEY_ENV=MINIMAX_API_KEY \
-    MINIMAX_API_KEY="$MINIMAX_API_KEY" \
-    nohup pnpm start </dev/null >"$LOGS/worker-$mode.log" 2>&1 &
-  echo $! >"$PIDS/worker-$mode.pid"
-  ok "$mode worker starting on http://127.0.0.1:$port (pid $!)"
-}
-
-print_summary() {
-  step "Waiting for services (Next.js first compile can take ~1 min)"
-  local backend_ok=false frontend_ok=false broker_ok=false speed_ok=false quality_ok=false
-  wait_for_url "http://localhost:8000/health" 30 2 && backend_ok=true || true
-  wait_for_url "http://127.0.0.1:8010/health" 15 2 && broker_ok=true || true
-  wait_for_url "http://127.0.0.1:8788/healthz" 30 2 && speed_ok=true || true
-  wait_for_url "http://127.0.0.1:8789/healthz" 30 2 && quality_ok=true || true
-  wait_for_url "http://localhost:3000" 45 2 && frontend_ok=true || true
-
-  echo ""
-  echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  [[ "$backend_ok" == true ]] \
-    && echo "${GREEN}  ✓ Backend        → http://localhost:8000 (docs: /docs)${RESET}" \
-    || echo "${RED}  ✗ Backend failed — tail -f .dev/logs/backend.log${RESET}"
-  [[ "$frontend_ok" == true ]] \
-    && echo "${GREEN}  ✓ Frontend       → http://localhost:3000${RESET}" \
-    || echo "${RED}  ✗ Frontend failed — tail -f .dev/logs/frontend.log${RESET}"
-  [[ "$broker_ok" == true ]] \
-    && echo "${GREEN}  ✓ Broker         → http://127.0.0.1:8010${RESET}" \
-    || echo "${RED}  ✗ Broker failed — tail -f .dev/logs/broker.log${RESET}"
-  [[ "$speed_ok" == true ]] \
-    && echo "${GREEN}  ✓ Speed worker   → http://127.0.0.1:8788 (MiniMax-M2.7-highspeed)${RESET}" \
-    || echo "${RED}  ✗ Speed worker failed — tail -f .dev/logs/worker-speed.log${RESET}"
-  [[ "$quality_ok" == true ]] \
-    && echo "${GREEN}  ✓ Quality worker → http://127.0.0.1:8789 (MiniMax-M3)${RESET}" \
-    || echo "${RED}  ✗ Quality worker failed — tail -f .dev/logs/worker-quality.log${RESET}"
-  echo "${CYAN}${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-  echo ""
-  echo "Status:   ./check.sh"
-  echo "Stop:     ./stop.sh"
-  echo "Logs:     tail -f .dev/logs/<service>.log"
-  echo "Chain runs reuse the same tokens: source .dev/agent-tokens.env"
-  echo ""
-
-  if [[ "$backend_ok" == true && "$frontend_ok" == true && "$broker_ok" == true \
-        && "$speed_ok" == true && "$quality_ok" == true ]]; then
-    ok "All services are up"
-  else
-    warn "One or more services failed readiness checks. See logs above."
-  fi
-}
-
-print_banner
-require_command curl
-require_command lsof
-require_command openssl
-mkdir -p "$LOGS" "$PIDS"
-claim_app_ports
-ensure_redis
-ensure_python_env
-ensure_node_env
-ensure_agent_tokens
-start_backend
-start_celery
-start_frontend
-start_broker
-start_worker speed 8788 "MiniMax-M2.7-highspeed"
-start_worker quality 8789 "MiniMax-M3"
-print_summary
+# --- frontend ----------------------------------------------------------------------
+if ! port_busy "$WEB_PORT"; then
+  step "Starting the frontend on :$WEB_PORT"
+  start_service web "next dev" env -C "$ROOT/frontend" NEXT_PUBLIC_API_URL="http://127.0.0.1:$API_PORT" \
+    zsh -c "tail -f /dev/null | exec npx next dev -p $WEB_PORT"
+fi
+wait_url "http://127.0.0.1:$WEB_PORT" 120 || fail "Frontend not up (see .dev/logs/web.log)"
+ok "Open http://localhost:$WEB_PORT"

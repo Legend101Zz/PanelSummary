@@ -1,36 +1,23 @@
-import { PiAgentRuntime, resolvePinnedModel } from "@scrollstack/agent-runtime";
+import { installEgressRecorder } from "./egress.js";
+import { buildServer } from "./server-v2.js";
 
-import { loadWorkerConfig } from "./config.js";
-import { buildServer } from "./server.js";
-import { loadProductionSkills } from "./skills/load.js";
-import { HttpDomainToolBroker } from "./tools/domain-tool-broker.js";
+installEgressRecorder();
 
-const config = loadWorkerConfig();
-const modelSelection =
-  config.modelProvider && config.modelId
-    ? await resolvePinnedModel(config.modelProvider, config.modelId)
-    : undefined;
-const skills = await loadProductionSkills();
-const broker = new HttpDomainToolBroker({
-  baseUrl: config.domainToolBrokerUrl,
-  token: config.domainToolBrokerToken,
-  timeoutMs: config.toolTimeoutMs,
-});
-const runtime = new PiAgentRuntime({
-  broker,
-  skills,
-  provider: config.modelProvider,
-  model: config.modelId,
-  modelSelection,
-  credentialReady: () => Boolean(process.env[config.modelApiKeyEnv]),
-});
+function positiveInteger(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
+  return value;
+}
+
+const token = process.env.AGENT_WORKER_TOKEN ?? "";
+if (token.length < 32) throw new Error("AGENT_WORKER_TOKEN must be set (at least 32 characters)");
+if (!process.env.MINIMAX_API_KEY) console.warn("MINIMAX_API_KEY is not set; /readyz will report not ready");
+
 const app = buildServer({
-  runtime,
-  internalServiceToken: config.internalServiceToken,
-  maxConcurrentRuns: config.maxConcurrentRuns,
-  maxRequestBytes: config.maxRequestBytes,
-  runTimeoutMs: config.runTimeoutMs,
-  signedTokenMaxAgeMs: config.signedTokenMaxAgeMs,
+  token,
+  maxConcurrentRuns: positiveInteger("AGENT_MAX_CONCURRENCY", 4),
   logger: true,
 });
 
@@ -42,4 +29,4 @@ const shutdown = async (signal: string) => {
 process.once("SIGINT", () => void shutdown("SIGINT"));
 process.once("SIGTERM", () => void shutdown("SIGTERM"));
 
-await app.listen({ host: config.host, port: config.port });
+await app.listen({ host: process.env.AGENT_WORKER_HOST ?? "127.0.0.1", port: positiveInteger("AGENT_WORKER_PORT", 8788) });
