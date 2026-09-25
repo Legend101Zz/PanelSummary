@@ -215,7 +215,7 @@ async function runJourney() {
   const mp = await phone.newPage();
   await mp.goto(`${WEB}/books/${bookId}/read?edition=${edition.id}&page=${readable[0] ?? 1}`);
   await mp.waitForFunction(() => Array.from(document.querySelectorAll("div")).some((d) => d.shadowRoot?.querySelector("svg")), null, { timeout: 30_000 });
-  await sleep(900);
+  await sleep(1500);
   const first = await readerMatchesStored(mp, edition.id, readable[0] ?? 1);
   const ordered = [...first.panels].sort((a, b) => a.order - b.order);
   for (let i = 0; i < Math.min(ordered.length, 5); i += 1) {
@@ -230,7 +230,7 @@ async function runJourney() {
     check(`phone panel mode frames stored panel ${i + 1}`, frames, `viewBox ${vb.map((v) => Math.round(v)).join(" ")}`);
     await shot(mp, `05-phone-panel-${i + 1}`);
     await mp.mouse.click(360, 420); // right third: next panel
-    await sleep(700);
+    await sleep(1500); // let the camera finish its move before measuring
   }
 
   // 6. Finish: wait for the whole book when asked, then audit the evidence.
