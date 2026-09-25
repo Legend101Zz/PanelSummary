@@ -173,7 +173,10 @@ function poseFor(s: Spec, pose: Pose, sp: Species): BirdPose {
     case "fall":
       return { ...base, tilt: -58, lift: s.h * 0.4, headTurn: -20, legs: "up", near: { mode: "spread", A: -150, L: 0.9 }, far: { mode: "spread", A: -40, L: 0.6 }, tailSpread: 0.6 };
     case "lie":
-      return { ...base, tilt: upright ? 8 : -2, legs: "lie", ground: true, headTurn: -8, near: { mode: "spread", A: 168, L: 0.5, open: 0.4 }, tailExtra: -s.tailDroop + 2 };
+      // collapsed on the ground (a bird never lies down to rest): tipped
+      // head-down, the head resting on the ground, the near wing spread limp
+      // over the ground and the feet curled out in front
+      return { ...base, tilt: upright ? 8 : -12, legs: "lie", ground: true, headTurn: -34, headOff: P(s.hr * 0.25, s.hr * 0.8), near: { mode: "spread", A: 174, L: 0.62, open: 0.5 }, tailExtra: -s.tailDroop + 6, fluff: 0.96 };
     case "sit":
       return { ...base, legs: "hidden", ground: true, fluff: 1.1, tilt: upright ? s.tilt : Math.min(s.tilt, 12) };
     default:
@@ -250,8 +253,16 @@ interface Built {
   shoulders: number;
 }
 
-function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expression: Expression, pen: Pen, seed: number): Built {
+/**
+ * Profile drawing. `view` "front"/"back" draws the same bird turned toward
+ * (or away from) the viewer: the body, wings, tail and legs foreshortened
+ * along the facing axis, the head kept round with a near-frontal face and a
+ * short beak — the same markings and proportions as the profile, never a
+ * penguin-like frontal shape.
+ */
+function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expression: Expression, pen: Pen, seed: number, view: "side" | "front" | "back" = "side"): Built {
   const bp = poseFor(s, pose, sp);
+  const k = view === "side" ? 1 : 0.58;
   const rand = charRand(seed, `bird-${sp}`);
   const sk = new Sketch(pen);
   const plum = fillOf(look.tone, pen);
@@ -275,7 +286,11 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
     cy = -legLen - Math.max(attach0.y, low * 0.9) - bp.lift - (bp.twig ? s.h * 0.075 * 1.1 : 0);
   }
   const B0 = P(0, cy);
-  const bpt = (x: number, y: number) => addP(B0, rotP(P(x, y), bodyDir));
+  /** Foreshorten along the facing axis (front/back views); identity in profile. */
+  const sq = (p: Point): Point => (k === 1 ? p : P(B0.x + (p.x - B0.x) * k, p.y));
+  const sqAt = (o: Point, p: Point): Point => (k === 1 ? p : P(o.x + (p.x - o.x) * k, p.y));
+  const bptRaw = (x: number, y: number) => addP(B0, rotP(P(x, y), bodyDir));
+  const bpt = (x: number, y: number) => sq(bptRaw(x, y));
 
   // head placement
   const headLevel = (bp.headTurn - (sp === "owl" ? 0 : Math.max(0, bp.tilt - 10) * 0.35 - (bp.tilt < 0 ? bp.tilt * 0.4 : 0))) * DEG;
@@ -287,17 +302,17 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   const hpt = (x: number, y: number) => addP(H0, rotP(P(x, y), headDir));
 
   // ---- far wing (spread) and legs, behind the body
-  const shoulder = bpt(0.32 * a, -0.62 * b);
   const drawSpread = (w: { A: number; L: number; open?: number }, near: boolean) => {
     const L = s.wingL * w.L;
     // gesturing wings hinge further back so they do not cover the face
     const gesture = pose !== "fly" && pose !== "fall" && pose !== "jump";
-    const base = near ? (gesture ? bpt(0.02 * a, -0.62 * b) : shoulder) : bpt(0.3 * a, -0.85 * b);
+    const base = near ? (gesture ? bptRaw(0.02 * a, -0.62 * b) : bptRaw(0.32 * a, -0.62 * b)) : bptRaw(0.3 * a, -0.85 * b);
     const A = w.A * DEG;
     // trailing edge faces rear/down: pick the mirror whose trailing normal scores higher
     const t1 = P(-Math.sin(A), Math.cos(A));
     const sy = -t1.x + t1.y >= 0 ? 1 : -1;
-    const xf = affine({ x: base.x, y: base.y, rot: A, sy });
+    const xf0 = affine({ x: base.x, y: base.y, rot: A, sy });
+    const xf = (p: Point): Point => sq(xf0(p));
     const pts = wingOutline(s.pointed, L, w.open ?? 1).map(xf);
     const wingFill = near ? plum : fillOf(darker(look.tone), pen);
     sk.shape(blobD(pts, 0.35), wingFill);
@@ -318,7 +333,9 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   // legs
   const legW = Math.max(pen.dw * 1.25, s.h * 0.022);
   const footY = 0;
-  const drawLeg = (hip: Point, foot: Point, knee: Point | null, toesDir: number, curl: boolean) => {
+  const drawLeg = (hip: Point, foot0: Point, knee0: Point | null, toesDir: number, curl: boolean) => {
+    const foot = sqAt(hip, foot0);
+    const knee = knee0 ? sqAt(hip, knee0) : null;
     const path = knee ? [hip, knee, foot] : [hip, foot];
     if (sp === "duck") {
       sk.line(lineD(path), legW * 1.6);
@@ -338,13 +355,13 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
     }
   };
   // hips sit on the underside of the body egg (whatever the tilt)
-  const under = ellipsePts(P(0, 0), a * 0.92, b * 0.92, 48).map((p) => addP(B0, rotP(p, bodyDir)));
+  const under = ellipsePts(P(0, 0), a * 0.92, b * 0.92, 48).map((p) => sq(addP(B0, rotP(p, bodyDir))));
   const bottomAt = (x: number) => {
     let best = under[0];
     let bestD = Infinity;
     for (const p of under) {
       const d = Math.abs(p.x - x) - p.y * 0.01;
-      if (Math.abs(p.x - x) < a * 0.25 && p.y > best.y - 1e-9 && d < bestD + a) {
+      if (Math.abs(p.x - x) < a * 0.25 * k && p.y > best.y - 1e-9 && d < bestD + a) {
         if (p.y > best.y || bestD === Infinity) best = p;
         bestD = Math.min(bestD, d);
       }
@@ -352,8 +369,8 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
     return best;
   };
   const cx0 = sp === "owl" ? B0.x + a * 0.15 : bpt(0.02 * a, 0.8 * b).x;
-  const hipA = bp.legs === "stand" || bp.legs === "walk" || bp.legs === "perch" ? bottomAt(cx0 + a * 0.16) : bpt(0.12 * a, 0.75 * b);
-  const hipB = bp.legs === "stand" || bp.legs === "walk" || bp.legs === "perch" ? bottomAt(cx0 - a * 0.1) : bpt(-0.05 * a, 0.78 * b);
+  const hipA = bp.legs === "stand" || bp.legs === "walk" || bp.legs === "perch" ? bottomAt(cx0 + a * 0.16 * k) : bpt(0.12 * a, 0.75 * b);
+  const hipB = bp.legs === "stand" || bp.legs === "walk" || bp.legs === "perch" ? bottomAt(cx0 - a * 0.1 * k) : bpt(-0.05 * a, 0.78 * b);
   switch (bp.legs) {
     case "stand":
       drawLeg(hipB, P(hipB.x - legLen * 0.05, footY), null, 0, false);
@@ -399,7 +416,7 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   }
 
   // ---- tail
-  const tailBase = bpt(-0.92 * a, -0.1 * b);
+  const tailBase = bptRaw(-0.92 * a, -0.1 * b);
   let tailAngle = bodyDir + Math.PI + (s.tailDroop + bp.tailExtra) * DEG * -1;
   const tailLocal = tailPts(s.tail, s.tailL, s.tailW, bp.tailSpread);
   // keep the tail off the ground (rotate it up in 4 degree steps)
@@ -409,7 +426,8 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
     if (Math.max(...tailLocal.map((p) => f(p).y)) <= floor) break;
     tailAngle += 4 * DEG * (Math.cos(tailAngle) < 0 ? 1 : -1);
   }
-  const txf = affine({ x: tailBase.x, y: tailBase.y, rot: tailAngle });
+  const txf0 = affine({ x: tailBase.x, y: tailBase.y, rot: tailAngle });
+  const txf = (p: Point): Point => sq(txf0(p));
   const tpts = tailLocal.map(txf);
   const tailFill = s.marks === "duck" ? plum : fillOf(s.marks === "nightingale" && !dark ? darker(look.tone) : look.tone, pen);
   sk.shape(s.tail === "fork" || s.tail === "notch" || s.tail === "duck" ? polyPath(tpts, true) : blobD(tpts, 0.4), tailFill);
@@ -522,7 +540,7 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   const eyeC = hpt(hr * 0.32, -hr * 0.12);
   const eyeR = s.eyeR * hr;
   if (sp === "owl") {
-    const turn = 0.35;
+    const turn = view === "side" ? 0.35 : 0;
     const fc = hpt(hr * 0.12, hr * 0.05);
     sk.shape(polyPath([hpt(-hr * 0.85, -hr * 0.55), hpt(-hr * 1.0, -hr * 1.35), hpt(-hr * 0.35, -hr * 0.85)], true), plum);
     sk.shape(polyPath([hpt(hr * 0.35, -hr * 0.85), hpt(hr * 0.8, -hr * 1.35), hpt(hr * 0.9, -hr * 0.5)], true), plum);
@@ -533,7 +551,7 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
     const x = EXPR[expression];
     const open = mouthOpen(expression, pose === "talk");
     const beakC = P(fc.x + hr * 0.18, fc.y + hr * 0.2);
-    faceSvg += drawFace({ c: P(fc.x, fc.y - hr * 0.12), gap: hr * 0.42, eyeR: hr * 0.26, turn, pen, headR: hr, brows: true }, expression);
+    if (view !== "back") faceSvg += drawFace({ c: P(fc.x, fc.y - hr * 0.12), gap: hr * 0.42, eyeR: hr * 0.26, turn, pen, headR: hr, brows: true }, expression);
     // hooked beak pointing down
     const bw = hr * 0.16;
     const upper = [P(beakC.x - bw, beakC.y - bw * 0.6), P(beakC.x + bw, beakC.y - bw * 0.6), P(beakC.x + bw * 0.2, beakC.y + bw * 2.2 - open * bw * 0.6)];
@@ -563,8 +581,8 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   // ---- beak
   const open = pose === "hold" ? 0.3 : Math.max(mouthOpen(expression, pose === "talk"), bp.beakOpen);
   const x = EXPR[expression];
-  const beakBase = hpt(hr * 0.86, hr * 0.05);
-  const bl = s.beakL;
+  const beakBase = view === "side" ? hpt(hr * 0.86, hr * 0.05) : view === "front" ? hpt(hr * 0.5, hr * 0.22) : hpt(hr * 0.9, hr * 0.02);
+  const bl = s.beakL * (view === "side" ? 1 : view === "front" ? 0.62 : 0.4);
   const bh = beak(s.beak, hr);
   const upAng = headDir - open * 16 * DEG;
   const loAng = headDir + open * 30 * DEG;
@@ -615,10 +633,14 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
 
   // face (single eye in profile)
   // three-quarter head: both eyes visible so brows can read at small size
-  faceSvg += drawFace(
-    { c: hpt(hr * 0.16, -hr * 0.14), gap: hr * 0.34, eyeR: eyeR * 0.92, turn: 0.55, pen, headR: hr, brows: true, dark, style: "round", rot: headDir * 0.4 },
-    expression,
-  );
+  if (view === "side") {
+    faceSvg += drawFace(
+      { c: hpt(hr * 0.16, -hr * 0.14), gap: hr * 0.34, eyeR: eyeR * 0.92, turn: 0.55, pen, headR: hr, brows: true, dark, style: "round", rot: headDir * 0.4 },
+      expression,
+    );
+  } else if (view === "front") {
+    faceSvg += drawFace({ c: hpt(hr * 0.02, -hr * 0.2), gap: hr * 0.4, eyeR: eyeR * 0.95, turn: 0.2, pen, headR: hr, brows: true, dark, style: "round", rot: headDir * 0.25 }, expression);
+  }
 
   // near wing spread (on top, own outline)
   if (bp.near.mode === "spread") {
@@ -783,10 +805,16 @@ export const birdRig: KindRig<BirdLook> = {
     if (!s) throw new Error(`unknown bird species ${String(look.species)}`);
     const pose: Pose = BIRD_POSES.includes(request.pose) ? request.pose : "stand";
     const pen = makePen(request.lineWidth, ctx.idPrefix, request);
+    // Front and back views are the profile turned toward / away from the
+    // viewer (same markings and proportions); only a frontal flight (wings
+    // spread symmetrically) keeps its own drawing. A lying bird is always
+    // drawn in profile.
+    const turned = request.facing === "front" || request.facing === "back";
+    const airborne = pose === "fly" || pose === "fall" || pose === "jump";
     const built =
-      request.facing === "front" || request.facing === "back"
+      turned && airborne
         ? drawFrontBack(look.species, s, look, pose, request.expression, pen, request.facing === "back")
-        : drawProfile(look.species, s, look, pose, request.expression, pen, request.seed);
+        : drawProfile(look.species, s, look, pose, request.expression, pen, request.seed, turned && pose !== "lie" ? (request.facing === "back" ? "back" : "front") : "side");
     const anchors = anchorsFrom(built.sk, {
       head: built.head,
       headRadius: built.headR,

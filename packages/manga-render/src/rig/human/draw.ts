@@ -34,7 +34,7 @@ import { humanMetrics, humanPalette, type Palette } from "./look.js";
 import { actPose, poseDef } from "./pose.js";
 import { projectDir, solveSkeleton, type ArmJ, type LegJ, type Skeleton, type ViewKind } from "./skeleton.js";
 import { armD, bootD, drawFoot, drawHand, foreD, legD, legPts, thumbPref, Torso } from "./body.js";
-import { drawEars, drawFace, drawHeadShape, faceGeo, type FaceGeo } from "./face.js";
+import { drawEars, drawFace, drawHeadShape, faceGeo, mouthMood, type FaceGeo } from "./face.js";
 import { drawFacialHair, drawHair } from "./hair.js";
 import { drawEarring, drawGlasses, drawHeadwear } from "./wear.js";
 import {
@@ -77,7 +77,9 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
   const m = humanMetrics(look, req.seed);
   const def = poseDef(req.pose, m);
   actPose(def, req.expression, req.pose, m);
-  const view: ViewKind = req.facing === "front" ? "front" : req.facing === "back" ? "back" : "side";
+  const vf = viewFor(req.pose, req.facing);
+  const view: ViewKind = vf.view;
+  if (vf.yaw !== undefined) def.yaw = vf.yaw;
   const sk = solveSkeleton(m, def, view);
   const pal = humanPalette(look, ctx.idPrefix);
   const fit = fitFor(look, pal, ctx.idPrefix);
@@ -88,6 +90,7 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
   const pen = new Pen(IDENTITY, bounds, req.lineWidth * (detail === "silhouette" ? 1.2 : detail === "reduced" ? 0.7 : 0.42));
   const lw = req.lineWidth;
   const ink: Ink = { lw, dw: lw * (STROKE.figureDetail / STROKE.figureOutline), sil: [], lite: !!opts.lite || detail !== "full", detail };
+  if (req.eyes && req.eyes !== "open") ink.eyes = req.eyes;
   const torso = new Torso(sk);
   const H = m.H;
   const dctx: DetailCtx = { pen, sk, torso, fit, pal, ink, look, idPrefix: ctx.idPrefix, seed: req.seed, behind: [] };
@@ -202,7 +205,7 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
         }
         if (fit.outfit === "royal" || fit.outfit === "uniform") {
           const cuffA = lerp(E, W, 0.82);
-          fore += uni(pen.capsule(cuffA, r.wrist * 1.35, lerp(E, W, 0.98), r.wrist * 1.3), fit.outfit === "royal" ? PAPER : pal.accent, lw * 0.8);
+          fore += uni(pen.capsule(cuffA, r.wrist * 1.35, lerp(E, W, 0.98), r.wrist * 1.3), fit.outfit === "royal" ? (pal.statue ? pal.mat : PAPER) : pal.accent, lw * 0.8);
         }
         break;
       }
@@ -336,7 +339,7 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
     L.skirt += shape(s.d, sk0.fill, lw);
     if (!ink.lite && sk0.hem > 0.2) L.skirt += skirtFolds(pen, torso, s, sk0.waist, sk0.hem > 0.9 ? 4 : 3, ink.dw);
     if (fit.outfit === "armor" && !ink.lite) L.skirt += skirtFolds(pen, torso, s, sk0.waist, 3, ink.dw);
-    if (fit.outfit === "royal") L.skirt += hemTrim(pen, s.pts, s.hemY, sk, ink);
+    if (fit.outfit === "royal") L.skirt += hemTrim(pen, s.pts, s.hemY, sk, ink, pal.statue ? pal.mat : PAPER);
     if (fit.outfit === "gown" && !ink.lite) L.skirt += hemRuffle(pen, s.pts, s.hemY, sk, ink);
   }
   if (fit.coat && view !== "back") {
@@ -375,6 +378,7 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
       L.torso += line(pen.curve(streak, false), ink.dw * 1.8, PAPER);
       L.torso += line(pen.curve([torso.surf(0.9, f + 20, -lw), torso.surf(0.96, f + 40, -lw)], false), ink.dw * 1.4, PAPER);
     }
+    if (pal.material === "stone" && !ink.lite) L.torso += weathering(pen, torso, sk, ink, req.seed);
     if (fit.apron) {
       const a = apronShapes(dctx, fit.apron);
       L.torsoOver += a.skirt + a.bib;
@@ -400,7 +404,7 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
     sil(wear.backSil);
     sil(wear.frontSil);
     let s = wear.back + ears.behind + headShape.svg + ears.over + face.under;
-    s += drawFacialHair(hp, g, look, pal, ink, req.seed);
+    s += drawFacialHair(hp, g, look, pal, ink, req.seed, mouthMood(req.expression));
     s += face.mouth;
     if (pal.statue && pal.material !== "flesh") s += statueMarks(hp, g, pal, ink, req.seed);
     s += hair.underCap + hair.cap + hair.front + face.brows;
@@ -451,6 +455,18 @@ export function drawHuman(req: HumanRequest, ctx: DrawContext, opts: HumanDrawOp
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * The view a pose is drawn from. A lying figure is always drawn from the side
+ * (three-quarter, face toward the viewer): a front view of a lying body is a
+ * standing figure turned on its side. A front-facing sit or kneel turns a
+ * little (38 degrees) so the folded legs show instead of reading as standing.
+ */
+export function viewFor(pose: FigureRequest["pose"], facing: FigureRequest["facing"]): { view: ViewKind; yaw?: number } {
+  if (pose === "lie") return { view: "side" };
+  if ((pose === "sit" || pose === "kneel") && facing === "front") return { view: "side", yaw: 38 };
+  return { view: facing === "front" ? "front" : facing === "back" ? "back" : "side" };
+}
 
 const LOD_RANK = { full: 2, reduced: 1, silhouette: 0 } as const;
 type Detail = keyof typeof LOD_RANK;
@@ -569,14 +585,14 @@ function capeFolds(pen: Pen, sk: Skeleton, torso: Torso, hemY: number, ink: Ink)
   return s;
 }
 
-function hemTrim(pen: Pen, pts: V2[], hemY: number, sk: Skeleton, ink: Ink): string {
+function hemTrim(pen: Pen, pts: V2[], hemY: number, sk: Skeleton, ink: Ink, fill: string = PAPER): string {
   const low = pts.filter((p) => p.y > hemY - 0.04 * sk.m.H).sort((a, b) => a.x - b.x);
   if (low.length < 2) return "";
   const H = sk.m.H;
   const a = low[0];
   const b = low[low.length - 1];
   const band: V2[] = [a, b, v(b.x, b.y - 0.03 * H), v(a.x, a.y - 0.03 * H)];
-  let s = shape(pen.poly(band), PAPER, ink.dw);
+  let s = shape(pen.poly(band), fill, ink.dw);
   for (let i = 1; i < 5; i += 1) {
     const p = lerp(a, b, i / 5);
     s += solid(pen.poly([v(p.x - 0.004 * H, p.y - 0.022 * H), v(p.x + 0.004 * H, p.y - 0.022 * H), v(p.x, p.y - 0.006 * H)]), INK);
@@ -604,10 +620,34 @@ function statueMarks(pen: Pen, g: FaceGeo, pal: Palette, ink: Ink, seed: number)
     return line(pen.curve([v(-0.7 * R, -0.3 * R), v(-0.62 * R, 0.2 * R)], false), ink.dw * 1.5, PAPER);
   }
   if (pal.material === "stone") {
+    // weathered stone: a crack across the brow and grime streaks running down
+    // the cheeks (rain stains), no shine
     const k = (seed % 7) / 7;
-    return line(pen.poly([v((0.3 + k * 0.2) * R, -0.6 * R), v((0.36 + k * 0.2) * R, -0.3 * R), v((0.28 + k * 0.2) * R, -0.1 * R)], false), ink.dw * 0.8);
+    let s = line(pen.poly([v((0.3 + k * 0.2) * R, -0.6 * R), v((0.36 + k * 0.2) * R, -0.3 * R), v((0.28 + k * 0.2) * R, -0.1 * R)], false), ink.dw * 0.8);
+    const eyeX = g.view === "side" ? [0.02 * R, 0.67 * R] : [-g.eyeX, g.eyeX];
+    for (const x of eyeX) s += line(pen.curve([v(x, g.eyeY + g.eyeH * 1.3), v(x - 0.02 * R, g.eyeY + 0.35 * R), v(x + 0.01 * R, g.eyeY + 0.62 * R)], false), ink.dw * 0.7, "#4a4a4a");
+    return s;
   }
   return "";
+}
+
+/** Weathered stone on the torso: two grime streaks and a hairline crack. */
+function weathering(pen: Pen, torso: Torso, sk: Skeleton, ink: Ink, seed: number): string {
+  const f = torso.frontTheta(0.6);
+  const k = ((seed >>> 3) % 5) / 5;
+  let s = "";
+  for (const [th, a, b] of [
+    [f - 25 + k * 10, 0.92, 0.55],
+    [f + 18 - k * 8, 0.8, 0.38],
+  ] as const) {
+    if (torso.facing(0.7, th) <= 0) continue;
+    const pts = [torso.surf(a, th, -ink.lw), torso.surf((a + b) / 2, th + 2, -ink.lw), torso.surf(b, th - 1, -ink.lw)];
+    s += line(pen.curve(pts, false), ink.dw * 0.8, "#4a4a4a");
+  }
+  const c0 = torso.surf(0.66, f + 30, -ink.lw);
+  const H = sk.m.H;
+  s += line(pen.poly([c0, v(c0.x - 0.012 * H, c0.y + 0.018 * H), v(c0.x + 0.004 * H, c0.y + 0.034 * H), v(c0.x - 0.01 * H, c0.y + 0.05 * H)], false), ink.dw * 0.75);
+  return s;
 }
 
 /** Body accessories that sit on the torso (before the front arms). */
@@ -735,7 +775,9 @@ export function humanSeatContact(look: HumanLook, facing: FigureRequest["facing"
   const m = humanMetrics(look, seed);
   const def = poseDef("sit", m);
   actPose(def, expression, "sit", m);
-  const view: ViewKind = facing === "front" ? "front" : facing === "back" ? "back" : "side";
+  const vf = viewFor("sit", facing);
+  const view: ViewKind = vf.view;
+  if (vf.yaw !== undefined) def.yaw = vf.yaw;
   const sk = solveSkeleton(m, def, view);
   const p = sk.P(sk.pelvis);
   const kn = sk.P(sk.near.leg.knee);

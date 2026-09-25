@@ -58,6 +58,8 @@ interface Spec {
   w: number;
   grip: Point;
   draw: (k: Pen) => string;
+  /** The drawing is authored this much larger/smaller than `h`/`w` (scaled on output). */
+  scale?: number;
 }
 
 /**
@@ -151,12 +153,13 @@ const SPECS: Record<PropId, Spec> = {
         return s + sparkle(4.6, -9.6, 3, k.dw) + sparkle(-5.6, -8.4, 1.8, k.dw);
       }
       // a coloured stone: toned body, a darker pavilion side, paper facet lines and a
-      // bright table glint so a ruby (dark) and a sapphire (mid) never read alike
+      // bright table glint so a ruby (dark) and a sapphire (mid) never read alike.
+      // A "black" stone is still a jewel, not coal: a dark body with black facets.
       const dark = darkBody(k);
-      let s = P(outline, body(k, PAPER), k.lw);
+      let s = P(outline, FLAT_OF[k.tone] === "black" ? g.dark : body(k, PAPER), k.lw);
       s += F(poly(2.4, -5.5, 5.5, -5.5, 0, 0), dark ? INK : g.dark);
       s += F(poly(-3.2, -9, 3.2, -9, 2.4, -5.5, -2.4, -5.5), dark ? g.dark : g.light);
-      if (!k.simple) s += L(facets, k.dw * 0.8, dark ? PAPER : INK);
+      s += L(facets, k.dw * (k.simple ? 1.1 : 0.8), dark ? PAPER : INK);
       s += F(poly(-4.6, -5.9, -2.9, -8.4, -1.9, -8.4, -3.1, -5.9), PAPER);
       s += F(poly(-3.3, -4.6, -1.4, -4.6, -0.5, -2.2), PAPER);
       s += P(outline, "none", k.lw);
@@ -234,24 +237,43 @@ const SPECS: Record<PropId, Spec> = {
     },
   },
   rose: {
-    h: 28,
+    // a cut rose: thorny stem, two toothed leaves, sepals and a cupped bloom
+    // of overlapping petals around a spiral centre. The tone is the bloom's
+    // colour (default dark = a red rose; "white"/"light" for white/yellow).
+    h: 24,
     w: 12,
-    grip: { x: 0.3, y: -11 },
+    grip: { x: 0.2, y: -7 },
     draw: (k) => {
       const g = G(k.p);
-      let s = L(`${M(0, 0)}${Q(-0.8, -10, 0.5, -20.5)}`, k.lw * 1.1);
-      if (!k.simple) s += L(`${M(-0.3, -5)}l-1 -0.4M-0.2 -9l1 -0.5M0.1 -14l-1 -0.4`, k.dw);
-      s += P(`${M(-0.3, -8)}${Q(-4.5, -10.5, -5.5, -7)}${Q(-2.5, -6, -0.3, -8)}Z`, g.dots, k.dw);
-      s += P(`${M(0.3, -13)}${Q(4.8, -15.8, 5.4, -12)}${Q(2.5, -11, 0.3, -13)}Z`, g.dots, k.dw);
+      const bloom = body(k, g.dark);
+      const edge = darkBody(k) || !k.tone ? PAPER : INK;
+      const cup = !k.tone || darkBody(k) ? INK : FLAT_OF[k.tone] === "mid" ? g.dark : g.mid;
+      let s = L(`${M(0, 0)}${Q(-0.9, -8, 0.3, -15.4)}`, k.lw * 1.1);
+      // thorns
+      s += F(poly(-0.35, -3.2, -1.7, -3.9, -0.3, -4.4), INK) + F(poly(0.05, -8.8, 1.5, -9.6, 0.05, -10.2), INK) + F(poly(-0.2, -12.6, -1.4, -13.2, -0.1, -13.7), INK);
+      // leaves on short stalks, with a vein and toothed edges
+      const leaf = (x: number, y: number, dir: number): string => {
+        const tx = x + dir * 5.2;
+        const ty = y - 2.4;
+        const d = `${M(x, y)}${Q(x + dir * 1.6, y - 3.3, tx, ty)}${Q(x + dir * 3.2, y + 0.4, x, y)}Z`;
+        let out = P(d, g.mid, k.dw);
+        if (!k.simple) out += L(`${M(x, y)}${Lto(tx - dir * 0.6, ty + 0.3)}`, k.dw * 0.7) + L(`${M(x + dir * 2, y - 1.8)}l${n(dir * 0.5)} -0.6${M(x + dir * 3.6, y - 2.2)}l${n(dir * 0.5)} -0.5`, k.dw * 0.6);
+        return out;
+      };
+      s += L(`${M(-0.4, -5.6)}${Lto(-1.4, -6.2)}${M(0.1, -10.6)}${Lto(1.2, -11.3)}`, k.dw);
+      s += leaf(-1.4, -6.2, -1) + leaf(1.2, -11.3, 1);
       // sepals
-      s += P(poly(0.5, -20.5, -2.5, -19.5, -0.8, -21.3, 0.5, -22, 1.8, -21.3, 3.5, -19.5), g.dark, k.dw);
-      // bloom: cupped outer petals (toned) around a paper spiral
-      s += P(smooth(true, -5, -22.6, -4.4, -27.2, 0.4, -29.4, 5, -27.4, 5.8, -22.8, 3.4, -19.8, -2.4, -19.8), g.dark, k.lw);
-      s += P(smooth(true, -3.2, -23.4, -2.2, -27, 1.2, -27.8, 3.8, -25.8, 3.4, -22.4, 0.2, -21.4), PAPER, k.dw);
-      if (!k.simple) {
-        s += L(`${M(-1.6, -24.4)}${Q(0.6, -27.6, 2.6, -24.8)}${Q(1.8, -22.4, -0.2, -23.2)}${Q(-0.9, -25.2, 0.9, -25.5)}${M(-5, -22.6)}${Q(-2, -21, 0.2, -21.4)}${M(5.8, -22.8)}${Q(4.4, -21.2, 3.4, -22.4)}`, k.dw);
-        s += L(`${M(-4.2, -25.4)}${Q(-3.6, -23.4, -3.2, -23.4)}${M(4.6, -26.2)}${Q(4.2, -24, 3.6, -23.8)}`, k.dw, PAPER);
-      }
+      s += P(poly(0.3, -15.2, -3.2, -15.8, -1.2, -16.6, 0.3, -17.6, 1.8, -16.6, 3.8, -15.9), g.dark, k.dw);
+      // bloom: the cup silhouette with scalloped petal tips
+      const cupD = `${M(-1.8, -15.9)}${Q(-5.2, -17.4, -5.1, -20.6)}${Q(-4.6, -23.2, -2.6, -23.4)}${Q(-1.4, -24.4, 0.2, -23.4)}${Q(1.8, -24.6, 3.2, -23.3)}${Q(5.4, -22.8, 5.3, -20.4)}${Q(5.1, -17.3, 2.2, -15.9)}Z`;
+      s += P(cupD, bloom, k.lw);
+      // inner cup opening (the dark heart of the rose) and the spiral
+      s += P(`${M(-3.4, -21.4)}${Q(-1, -23.4, 1.2, -22.6)}${Q(3.6, -23.2, 3.7, -21.2)}${Q(0.2, -20.2, -3.4, -21.4)}Z`, cup, k.dw * 0.8);
+      if (!k.simple) s += L(`${M(-1.4, -21.6)}${Q(0.2, -23, 1.6, -21.8)}${Q(0.8, -21, -0.1, -21.8)}`, k.dw * 0.8, edge);
+      // front petal wrapping the cup, and a side petal edge
+      s += P(`${M(-4.9, -19.6)}${Q(-0.2, -21.4, 5, -19.8)}${Q(4.4, -16.4, 0.2, -15.9)}${Q(-4.4, -16.4, -4.9, -19.6)}Z`, bloom, k.dw);
+      if (!k.simple) s += L(`${M(-3.8, -18.6)}${Q(-1.8, -17.2, 0.4, -17.4)}${M(1.6, -20.6)}${Q(3.4, -19.4, 3.6, -17.6)}`, k.dw * 0.7, edge);
+      s += P(cupD, "none", k.lw);
       return s;
     },
   },
@@ -264,13 +286,15 @@ const SPECS: Record<PropId, Spec> = {
       let s = L(`${M(0, 0)}${Q(1, -8, 0, -16)}`, k.lw);
       s += P(`${M(0.3, -5)}${Q(4, -8, 5, -5)}${Q(2.5, -3.5, 0.3, -5)}Z`, g.dots, k.dw);
       s += P(`${M(0.1, -9)}${Q(-4, -12, -4.8, -8.6)}${Q(-2.4, -7.4, 0.1, -9)}Z`, g.dots, k.dw);
+      // the tone is the bloom's colour (white / yellow = light / red = dark)
+      const petal = body(k, PAPER);
       let petals = "";
       for (let i = 0; i < 8; i += 1) {
         const deg = (i / 8) * 360;
-        petals += `<ellipse cx="0" cy="-3" rx="1.25" ry="2.6" transform="translate(0 -17) rotate(${n(deg)})" fill="${PAPER}" stroke="${INK}" stroke-width="${n(k.dw * 1.2)}"/>`;
+        petals += `<ellipse cx="0" cy="-3" rx="1.25" ry="2.6" transform="translate(0 -17) rotate(${n(deg)})" fill="${petal}" stroke="${INK}" stroke-width="${n(k.dw * 1.2)}"/>`;
       }
       s += petals;
-      s += C(0, -17, 1.6, g.dense, k.dw);
+      s += C(0, -17, 1.6, darkBody(k) ? g.light : g.dense, k.dw);
       return s;
     },
   },
@@ -349,9 +373,11 @@ const SPECS: Record<PropId, Spec> = {
     },
   },
   lamp: {
-    h: 27,
-    w: 12,
-    grip: { x: 0, y: -25.5 },
+    // a hand lantern (~40 cm): drawn at 27 units and scaled to 22 on the page
+    h: 22,
+    w: 10,
+    grip: { x: 0, y: -21 },
+    scale: 22 / 27,
     draw: (k) => {
       const g = G(k.p);
       let s = `<circle cx="0" cy="-11" r="9" fill="${PAPER}" fill-opacity="0.55"/>`;
@@ -463,8 +489,10 @@ const SPECS: Record<PropId, Spec> = {
       const g = G(k.p);
       let s = L(`${M(-9.5, -10)}${Q(-9.5, -21.8, 0, -21.3)}${Q(9.5, -21.8, 9.5, -10)}`, k.lw * 1.6);
       s += L(`${M(-9.5, -10)}${Q(-9.5, -21.8, 0, -21.3)}${Q(9.5, -21.8, 9.5, -10)}`, k.lw * 0.5, PAPER);
-      // a cloth peeking out
+      // produce heaped in it (fruit and a cloth corner)
       s += P(`${M(-7, -10.5)}${Q(-4, -14.5, 0, -12)}${Q(4, -15, 7.5, -10.5)}Z`, g.check, k.dw);
+      s += C(-4.6, -12.4, 2.6, g.mid, k.dw) + C(0.4, -13.6, 2.8, g.light, k.dw) + C(5.2, -12.2, 2.4, g.dark, k.dw);
+      if (!k.simple) s += L(`${M(0.6, -16.4)}${Q(1.2, -17.8, 2.4, -18)}`, k.dw) + F(poly(1.6, -17.1, 3.4, -18.4, 3, -16.6), g.mid);
       const body = `${M(-11, -10)}${Lto(11, -10)}${Q(10, -2, 8, 0)}${Lto(-8, 0)}${Q(-10, -2, -11, -10)}Z`;
       s += P(body, PAPER, k.lw);
       if (!k.simple) {
@@ -483,20 +511,28 @@ const SPECS: Record<PropId, Spec> = {
     },
   },
   bag: {
-    h: 21,
+    // a sack (flour, grain, a bundle): a bulging cloth body gathered and tied
+    // at the neck. Held at the neck; a figure posed "carry" hugs it against
+    // the chest (the grip sits at the sack's upper body).
+    h: 32,
     w: 24,
-    grip: { x: 0, y: -19.5 },
+    grip: { x: 0, y: -22 },
     draw: (k) => {
       const g = G(k.p);
-      let s = L(`${M(-4.5, -13.5)}${Q(-4.5, -20.5, 0, -20.3)}${Q(4.5, -20.5, 4.5, -13.5)}`, k.lw * 1.5);
-      const body = `${M(-9.5, -13)}${Lto(9.5, -13)}${Q(12, -6, 11, -1.6)}${Q(10.6, 0, 8.5, 0)}${Lto(-8.5, 0)}${Q(-10.6, 0, -11, -1.6)}${Q(-12, -6, -9.5, -13)}Z`;
-      s += P(body, bodyOf(k, g.check), k.lw);
+      const fill = bodyOf(k, PAPER);
+      const ink = darkBody(k) ? PAPER : INK;
+      const sack = `${M(-3.2, -26)}${Q(-9.8, -24.5, -11, -15)}${Q(-12.4, -3.5, -8.5, -0.6)}${Q(0, 1, 8.5, -0.6)}${Q(12.4, -3.5, 11, -15)}${Q(9.8, -24.5, 3.2, -26)}Z`;
+      let s = P(sack, fill, k.lw);
       if (!k.simple) {
-        s += F(`${M(6.5, -12.6)}${Lto(9.5, -13)}${Q(12, -6, 11, -1.6)}${Q(10.6, 0, 8.5, 0)}${Lto(6.8, 0)}Z`, g.dark);
-        s += P(body, "none", k.lw);
+        s += F(`${M(6.5, -24)}${Q(10.4, -21, 10.9, -14.5)}${Q(11.8, -4, 8.2, -1)}${Q(6.2, -0.2, 4.6, -0.4)}${Q(9.4, -8, 6.5, -24)}Z`, g.light);
+        // cloth folds from the neck and a stitched patch
+        s += L(`${M(-2.4, -25.2)}${Q(-6, -19, -5.6, -12)}${M(1.8, -25.2)}${Q(3.6, -18, 2.6, -13)}${M(-7.4, -4)}${Q(-4, -2.4, -1, -3.4)}`, k.dw * 0.8, ink);
+        s += P(poly(-6.4, -11.5, -1.8, -12, -1.4, -7.4, -6, -7), "none", k.dw * 0.7).replace(`stroke="${INK}"`, `stroke="${ink}" stroke-dasharray="0.8 0.6"`);
+        s += P(sack, "none", k.lw);
       }
-      s += P(poly(-10, -14.4, 10, -14.4, 10, -12.6, -10, -12.6), g.gold, k.lw);
-      s += C(-1.1, -15.2, 0.9, g.gold, k.dw) + C(1.1, -15.2, 0.9, g.gold, k.dw);
+      // gathered neck and tie
+      s += P(`${M(-3.2, -26)}${Q(-5.6, -28.6, -4.2, -31.4)}${Q(-2.4, -29.6, -1.2, -31.8)}${Q(0, -29.8, 1.2, -31.8)}${Q(2.4, -29.6, 4.2, -31.4)}${Q(5.6, -28.6, 3.2, -26)}Z`, fill, k.lw);
+      s += P(`${M(-3.8, -26.6)}${Q(0, -25, 3.8, -26.6)}${Lto(3.6, -25.1)}${Q(0, -23.6, -3.6, -25.1)}Z`, g.dark, k.dw);
       return s;
     },
   },
@@ -620,36 +656,39 @@ const SPECS: Record<PropId, Spec> = {
     },
   },
   wheelbarrow: {
-    h: 24,
-    w: 54,
-    grip: { x: -29, y: -14.5 },
+    // a real-size barrow (~1.4 m long) being pushed: the handles are lifted to
+    // an adult's hand height (the grip), the wheel on the ground in front
+    h: 44,
+    w: 84,
+    grip: { x: -40, y: -42 },
     draw: (k) => {
       const g = G(k.p);
       let s = "";
-      // handles + frame
-      s += L(`${M(-30, -14.5)}${Lto(-13, -11)}${Lto(18, -7)}`, k.lw * 1.4);
-      s += L(`${M(-9, -10.5)}${Lto(-10, -0.5)}${Lto(-12.5, -0.5)}`, k.lw * 1.2);
-      s += P(poly(-31.5, -15.5, -26.5, -14.2, -26.8, -13, -31.8, -14.2), g.dark, k.dw);
+      // handles + frame down to the wheel axle
+      s += L(`${M(-42, -42.5)}${Lto(-22, -33)}${Lto(31, -9)}`, k.lw * 1.6);
+      s += P(poly(-44.5, -44, -38.5, -41.4, -39.4, -39.6, -45.2, -42.2), g.dark, k.dw);
+      // back leg (lifted off the ground while pushed)
+      s += L(`${M(-15, -30)}${Lto(-17.5, -14)}${Lto(-21, -13.4)}`, k.lw * 1.4);
       // tray
-      const tray = `${M(-16, -22)}${Lto(22, -21)}${Lto(12.5, -9.6)}${Lto(-11.5, -10)}Z`;
-      s += P(tray, PAPER, k.lw);
+      const tray = `${M(-26, -40)}${Lto(30, -35.5)}${Lto(20, -16)}${Lto(-13, -19)}Z`;
+      s += P(tray, bodyOf(k, PAPER), k.lw);
       if (!k.simple) {
-        s += F(`${M(12.5, -9.6)}${Lto(22, -21)}${Lto(17, -21.1)}${Lto(8.5, -9.8)}Z`, g.dots);
+        s += F(`${M(20, -16)}${Lto(30, -35.5)}${Lto(24, -35)}${Lto(15, -16.4)}Z`, g.dots);
         s += P(tray, "none", k.lw);
-        s += L(`${M(-15, -20.2)}${Lto(20.5, -19.4)}`, k.dw);
+        s += L(`${M(-24.5, -37.8)}${Lto(28, -33.6)}${M(-10, -31)}${Lto(14, -29)}`, k.dw);
       }
-      // wheel
-      s += C(18, -6, 6, PAPER, k.lw * 1.2);
-      s += `<circle cx="18" cy="-6" r="4.6" fill="none" stroke="${INK}" stroke-width="${n(k.dw)}"/>`;
+      // wheel on the ground
+      s += C(31, -9, 9, PAPER, k.lw * 1.3);
+      s += `<circle cx="31" cy="-9" r="7" fill="none" stroke="${INK}" stroke-width="${n(k.dw)}"/>`;
       if (!k.simple) {
         let spokes = "";
         for (let i = 0; i < 6; i += 1) {
           const a = (i / 6) * Math.PI;
-          spokes += `${M(18 + Math.cos(a) * 4.6, -6 + Math.sin(a) * 4.6)}${Lto(18 - Math.cos(a) * 4.6, -6 - Math.sin(a) * 4.6)}`;
+          spokes += `${M(31 + Math.cos(a) * 7, -9 + Math.sin(a) * 7)}${Lto(31 - Math.cos(a) * 7, -9 - Math.sin(a) * 7)}`;
         }
         s += L(spokes, k.dw * 0.8);
       }
-      s += C(18, -6, 1.1, g.dark, k.dw);
+      s += C(31, -9, 1.6, g.dark, k.dw);
       return s;
     },
   },
@@ -881,8 +920,10 @@ export const props: PropModule = {
     const lw = lineWidth > 0 ? lineWidth : 1;
     // detail survives only while the prop is several line-widths across
     const simple = Math.min(spec.h, spec.w) / lw < 7;
-    const pen: Pen = { lw, dw: lw * 0.55, p: ctx.idPrefix, simple, ...(tone ? { tone } : {}) };
-    const svg = `<g stroke-linejoin="round" stroke-linecap="round">${compactSvg(spec.draw(pen), 2)}</g>`;
+    const k = spec.scale ?? 1;
+    const pen: Pen = { lw: lw / k, dw: (lw * 0.55) / k, p: ctx.idPrefix, simple, ...(tone ? { tone } : {}) };
+    const inner = compactSvg(spec.draw(pen), 2);
+    const svg = `<g stroke-linejoin="round" stroke-linecap="round"${k !== 1 ? ` transform="scale(${n(k)})"` : ""}>${inner}</g>`;
     return { svg, width: spec.w, height: spec.h, grip: { ...spec.grip } };
   },
   seat(kind: SeatKind, lineWidth: number, ctx: DrawContext): PropDrawing & { seatY: number } {

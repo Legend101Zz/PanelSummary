@@ -18,14 +18,14 @@ import {
   type SpeakerAnchor,
   type TailTarget,
 } from "./place.js";
-import { distPointSegment, segmentsIntersect } from "../layout/geometry.js";
+import { boxesOverlapArea, convexOverlap, distPointSegment, segmentHitsConvex, segmentsIntersect } from "../layout/geometry.js";
 import { KIND_STYLES, MAX_BALLOON_LINES, SPEAKING_KINDS, minFontSize } from "./styles.js";
 
 export { KIND_STYLES, minFontSize, SPEAKING_KINDS, MAX_BALLOON_LINES, TAIL_HALF_BASE, TAIL_REACH } from "./styles.js";
 export { breakBalanced, countWords } from "./breaking.js";
 export { measure, metrics } from "./fonts.js";
 export { layoutBalloon } from "./shapes.js";
-export { readsAfter, speakerTip, tailToward, tailSegment, faceHit, offPanelTip, type HeadCircle, type SpeakerAnchor } from "./place.js";
+export { readsAfter, speakerTip, tailToward, thoughtTip, voicePoint, tailSegment, faceHit, offPanelTip, type HeadCircle, type SpeakerAnchor } from "./place.js";
 
 export interface LetterPanelInput {
   panelId: string;
@@ -54,6 +54,47 @@ export interface LetterPanelInput {
    * even without `about`.
    */
   names?: Readonly<Record<string, string>>;
+  /** Key props (the beat's object, the insert's subject): no text covers them. */
+  keepOut?: readonly Box[];
+  /** Where the panel's sound comes from (SFX sit beside it, never on it). */
+  sfxSource?: { point: Point; box: Box };
+  /** The page's live area (inside the margins): SFX never leave it. */
+  page?: Box;
+  /** Panel index on the page (0-based): the first panel's opening title caption stays on one line at the top. */
+  panelIndex?: number;
+}
+
+const TITLE_SMALL_WORDS = new Set(["a", "an", "the", "and", "or", "but", "of", "in", "on", "at", "to", "for", "by", "with", "from", "as", "de", "la", "le"]);
+
+/**
+ * A title caption (the name of a tale or a part): Title Case, short, no
+ * closing period. "The Selfish Giant" and "The Nightingale and the Rose" are;
+ * "The city, at night." is not.
+ */
+export function isTitleText(text: string): boolean {
+  const t = text.trim();
+  if (!t || /[.!?,;:]$/.test(t) || /,/.test(t)) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 8) return false;
+  return words.every((w, i) => {
+    const letters = w.replace(/^[^A-Za-z]+/, "");
+    if (!letters) return true;
+    if (i > 0 && TITLE_SMALL_WORDS.has(letters.toLowerCase())) return true;
+    return /^[A-Z]/.test(letters);
+  });
+}
+
+/**
+ * Lettering typography: a doubled hyphen is an em dash, set against the word
+ * before it so a line may break after the dash but never start with one.
+ */
+export function typeset(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s*--+\s*/g, "\u2014 ")
+    .replace(/\s+\u2014/g, "\u2014")
+    .trim();
 }
 
 const words = (s: string) =>
@@ -77,9 +118,16 @@ export function inferNameTag(text: string, names: Readonly<Record<string, string
   const all = new Set(cw);
   const nameWords = Object.entries(names).map(([id, name]) => [id, words(name).filter((w) => w !== "the")] as const);
   const hits = nameWords.filter(([, nw]) => nw.length > 0 && nw.every((w) => new Set(head.slice(0, nw.length + 1)).has(w)));
+  if (hits.length === 0) return undefined;
+  // the fullest name wins ("The Miller's youngest son" names the son, not the Miller)
+  const most = Math.max(...hits.map(([, nw]) => nw.length));
+  const best = hits.filter(([, nw]) => nw.length === most);
+  if (best.length !== 1) return undefined;
+  const chosen = new Set(best[0][1]);
   // a caption that also names another character here is not a name tag
-  const mentions = nameWords.filter(([, nw]) => nw.length > 0 && nw.every((w) => all.has(w)));
-  return hits.length === 1 && mentions.length === 1 ? hits[0][0] : undefined;
+  // (names contained in the chosen one, like "Miller" in "Miller's son", do not count)
+  const mentions = nameWords.filter(([id, nw]) => id !== best[0][0] && nw.length > 0 && nw.every((w) => all.has(w)) && !nw.every((w) => chosen.has(w)));
+  return mentions.length === 0 ? best[0][0] : undefined;
 }
 
 export interface LetterPanelResult {
@@ -221,18 +269,31 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     figures: input.speakers,
     sfxBleed: input.sfxBleed === true,
     ...(input.focus ? { focus: input.focus } : {}),
+    keepOut: input.keepOut ?? [],
+    ...(input.sfxSource ? { sfxSource: input.sfxSource } : {}),
+    ...(input.page ? { page: input.page } : {}),
   };
   const issues: ValidationIssue[] = [];
   const rand = mulberry32(input.seed);
   const usable = (t: TextSpec) => typeof t.text === "string" && t.text.trim().length > 0 && KIND_STYLES[t.kind] !== undefined;
-  const clean = (t: TextSpec) => t.text.replace(/\s+/g, " ").trim();
+  const clean = (t: TextSpec) => typeset(t.text);
 
   // --- balloons and boxes: beam search in reading order -------------------
   const order = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
-  const isBox = (t: TextSpec) => t.kind === "narration" || t.kind === "caption";
+  /** The page's opening title (the first text of the first panel, a caption in Title Case). */
+  const titleIndex =
+    input.panelIndex === 0 &&
+    order[0] &&
+    order[0].t.kind === "caption" &&
+    order[0].t.about === undefined &&
+    isTitleText(order[0].t.text) &&
+    !(input.names && inferNameTag(order[0].t.text, input.names))
+      ? order[0].i
+      : -1;
   /** Name tag: a caption about a character drawn here sits by that character's head. */
   const labelOf = (t: TextSpec): HeadCircle | undefined => {
     if (t.kind !== "caption") return undefined;
+    if (titleIndex >= 0 && t === input.texts[titleIndex]) return undefined;
     const about = typeof t.about === "string" ? t.about : input.names ? inferNameTag(t.text, input.names) : undefined;
     return about ? input.heads.find((h) => h.character === about) : undefined;
   };
@@ -253,7 +314,7 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     const b = order[k].t;
     return SPEAKING_KINDS.includes(a.kind) && SPEAKING_KINDS.includes(b.kind) && typeof a.speaker === "string" && a.speaker === b.speaker && a.kind !== "thought" && b.kind !== "thought";
   };
-  const runBeam = (width: number, branch: number, flowOnly: boolean, allSizes: boolean) => {
+  const runBeam = (width: number, branch: number, flowOnly: boolean, allSizes: boolean, where: PlacementPanel = panel) => {
     let beam: BeamState[] = [{ placed: [], cost: 0, order: 0 }];
     const failures: ValidationIssue[] = [];
     order.forEach(({ t, i }, k) => {
@@ -266,9 +327,19 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
       const next: BeamState[] = [];
       for (const state of beam) {
         const prev = connect ? state.placed.find((p) => p.index === order[k - 1].i) : undefined;
-        const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor, ...(label ? { label } : {}), ...(prev ? { connect: prev } : {}) };
+        const req: PlaceRequest = {
+          index: i,
+          kind: t.kind,
+          text,
+          target,
+          order: state.order,
+          boxAnchor,
+          ...(label ? { label } : {}),
+          ...(prev ? { connect: prev } : {}),
+          ...(i === titleIndex ? { title: true } : {}),
+        };
         if (!allSizes) {
-          for (const c of placeCandidates(req, panel, state.placed, sizes, "strict", branch)) {
+          for (const c of placeCandidates(req, where, state.placed, sizes, "strict", branch)) {
             // prefer layouts where every balloon keeps the preferred size (consistent lettering)
             const step = Math.max(0, sizes.indexOf(c.layout.fontSize));
             next.push({ placed: [...state.placed, c], cost: state.cost + c.cost + 5 * step, order: state.order + 1 });
@@ -278,7 +349,7 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
         // Tight panel: let earlier texts step down in size (never below the
         // kind's minimum) so later ones fit; each step costs a little.
         sizes.forEach((size, step) => {
-          for (const c of placeCandidates(req, panel, state.placed, [size], "strict", branch)) {
+          for (const c of placeCandidates(req, where, state.placed, [size], "strict", branch)) {
             next.push({ placed: [...state.placed, c], cost: state.cost + c.cost + 6 * step, order: state.order + 1 });
           }
         });
@@ -290,9 +361,9 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
       }
       // Nothing fits in any partial layout: report it, then draw it relaxed.
       const state = beam[0];
-      const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor, ...(label ? { label } : {}) };
-      failures.push(overflowIssue(input.panelId, i, t, text, maxWordsThatFit(req, panel, state.placed)));
-      const relaxed = relaxedPlacement(req, panel, state.placed, input.bbox);
+      const req: PlaceRequest = { index: i, kind: t.kind, text, target, order: state.order, boxAnchor, ...(label ? { label } : {}), ...(i === titleIndex ? { title: true } : {}) };
+      failures.push(overflowIssue(input.panelId, i, t, text, maxWordsThatFit(req, where, state.placed)));
+      const relaxed = relaxedPlacement(req, where, state.placed, input.bbox);
       beam = [{ placed: relaxed ? [...state.placed, relaxed] : state.placed, cost: state.cost + 1e6, order: state.order + 1 }];
     });
     return { placed: beam[0].placed, failures };
@@ -302,6 +373,12 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     // A tight panel: search wider, let boxes flow and sizes step down before giving up.
     const wide = runBeam(BEAM_WIDTH * 2, BRANCH, true, true);
     if (wide.failures.length < attempt.failures.length) attempt = wide;
+  }
+  if (attempt.failures.length > 0 && (panel.keepOut?.length ?? 0) > 0) {
+    // the key prop leaves no room: letter over it rather than overflow (KEY_PROP_COVERED says so)
+    const soft = { ...panel, keepOutSoft: true };
+    const relaxed = runBeam(BEAM_WIDTH * 2, BRANCH, true, true, soft);
+    if (relaxed.failures.length < attempt.failures.length) attempt = relaxed;
   }
   issues.push(...attempt.failures);
   const placed = [...attempt.placed];
@@ -313,7 +390,7 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     const rotate = (rand() < 0.5 ? -1 : 1) * (6 + rand() * 7);
     const req: PlaceRequest = { index: i, kind: "sfx", text, target: { type: "none" }, order: 0, rotate };
     let result = placeOne(req, panel, placed, sizesFor("sfx", input.bbox), "strict");
-    if (!result && (input.obstacles?.length ?? 0) > 0) {
+    if (!result && ((input.obstacles?.length ?? 0) > 0 || (input.keepOut?.length ?? 0) > 0 || input.sfxSource)) {
       // no room beside the insert's subject: overlap it as little as possible, and say so
       result = placeOne({ ...req, softObstacles: true }, panel, placed, sizesFor("sfx", input.bbox), "strict");
       if (result) {
@@ -333,48 +410,7 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
   });
 
   // --- craft checks on the final lettering ---------------------------------
-  for (const p of placed) {
-    if (p.kind === "sfx") continue;
-    const lines = p.layout.block.lines.length;
-    if (lines > MAX_BALLOON_LINES) {
-      const t = input.texts[p.index];
-      issues.push({
-        code: "BALLOON_TALL",
-        severity: "warning",
-        path: `panel ${input.panelId} text ${p.index}`,
-        message: `${t.kind} "${snippet(t.text)}" is lettered in ${lines} lines, a tall column that reads badly (at most ${MAX_BALLOON_LINES}). Shorten it, split it across panels, or give this panel more width.`,
-      });
-    }
-  }
-  for (let a = 0; a < placed.length; a += 1) {
-    const sa = tailSegment(placed[a]);
-    if (!sa) continue;
-    for (let b = a + 1; b < placed.length; b += 1) {
-      const sb = tailSegment(placed[b]);
-      if (!sb || !segmentsIntersect(sa[0], sa[1], sb[0], sb[1])) continue;
-      issues.push({
-        code: "TAILS_CROSS",
-        severity: "warning",
-        path: `panel ${input.panelId}`,
-        message: `the tails of texts ${placed[a].index} and ${placed[b].index} cross. Put the speakers left to right in the order they speak (first speaker "left" or "center_left"), or split the exchange across panels.`,
-      });
-    }
-  }
-
-  for (const p of placed) {
-    const seg = tailSegment(p);
-    const speaker = input.texts[p.index]?.speaker;
-    if (!seg || !speaker) continue;
-    const over = input.heads.find((h) => h.character !== speaker && distPointSegment(h.center, seg[0], seg[1]) < h.radius * 0.9);
-    if (over) {
-      issues.push({
-        code: "TAIL_CROSSES_FACE",
-        severity: "warning",
-        path: `panel ${input.panelId} text ${p.index}`,
-        message: `the ${input.texts[p.index].kind} tail for "${speaker}" passes over the face of "${over.character ?? "another figure"}", so the line may read as theirs. Put the speaker on the side of the panel where their line is lettered, or split the exchange.`,
-      });
-    }
-  }
+  issues.push(...checkLettering(input, placed));
 
   const texts: RenderedText[] = placed.map((p) => {
     const t = input.texts[p.index];
@@ -416,6 +452,147 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
   }
   flush();
   return { balloons: balloons.join(""), sfx: sfx.join(""), texts, issues, placed };
+}
+
+/**
+ * Craft checks on a panel's final lettering: tall balloons, crossing tails,
+ * and the rejecting errors — a tail over another face (TAIL_CROSSES_FACE),
+ * through another text (TAIL_CROSSES_TEXT) or ending nearer someone else
+ * (TAIL_MISDIRECTED), text over a key prop (KEY_PROP_COVERED) — plus name
+ * tags that sit as near another face as their own (NAME_TAG_AMBIGUOUS).
+ */
+export function checkLettering(input: LetterPanelInput, placed: readonly Placed[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  for (const p of placed) {
+    if (p.kind === "sfx") continue;
+    const lines = p.layout.block.lines.length;
+    if (lines > MAX_BALLOON_LINES) {
+      const t = input.texts[p.index];
+      issues.push({
+        code: "BALLOON_TALL",
+        severity: "warning",
+        path: `panel ${input.panelId} text ${p.index}`,
+        message: `${t.kind} "${snippet(t.text)}" is lettered in ${lines} lines, a tall column that reads badly (at most ${MAX_BALLOON_LINES}). Shorten it, split it across panels, or give this panel more width.`,
+      });
+    }
+  }
+  for (let a = 0; a < placed.length; a += 1) {
+    const sa = tailSegment(placed[a]);
+    if (!sa) continue;
+    for (let b = a + 1; b < placed.length; b += 1) {
+      const sb = tailSegment(placed[b]);
+      if (!sb || !segmentsIntersect(sa[0], sa[1], sb[0], sb[1])) continue;
+      issues.push({
+        code: "TAILS_CROSS",
+        severity: "warning",
+        path: `panel ${input.panelId}`,
+        message: `the tails of texts ${placed[a].index} and ${placed[b].index} cross. Put the speakers left to right in the order they speak (first speaker "left" or "center_left"), or split the exchange across panels.`,
+      });
+    }
+  }
+
+  const headOf = (character: string | undefined) => input.heads.find((h) => h.character === character);
+  for (const p of placed) {
+    const seg = tailSegment(p);
+    const t = input.texts[p.index];
+    const speaker = t?.speaker;
+    if (!seg || !speaker) continue;
+    const path = `panel ${input.panelId} text ${p.index}`;
+    const over = input.heads.find((h) => h.character !== speaker && distPointSegment(h.center, seg[0], seg[1]) < h.radius * 0.9);
+    if (over) {
+      issues.push({
+        code: "TAIL_CROSSES_FACE",
+        severity: "error",
+        path,
+        message: `the ${t.kind} tail for "${speaker}" passes over the face of "${over.character ?? "another figure"}", so the line reads as theirs. Put the speaker on the side of the panel where their line is lettered (speakers left to right in speaking order), give the speaker the panel's first slot, or split the exchange into two panels.`,
+      });
+    }
+    const crossed = placed.find((q) => q !== p && q.kind !== "sfx" && q.index !== p.connectTo && segmentHitsConvex(seg[0], seg[1], q.hull));
+    if (crossed) {
+      issues.push({
+        code: "TAIL_CROSSES_TEXT",
+        severity: "error",
+        path,
+        message: `the ${t.kind} tail for "${speaker}" runs through the ${input.texts[crossed.index]?.kind ?? "text"} "${snippet(input.texts[crossed.index]?.text ?? "")}", so both read badly. Use fewer texts in this panel, move the caption to another panel, or put the speaker where the line can reach them without crossing it.`,
+      });
+    }
+    const own = headOf(speaker);
+    if (own && !p.tail?.offPanel) {
+      const tip = seg[1];
+      const dOwn = Math.hypot(tip.x - own.center.x, tip.y - own.center.y) - own.radius;
+      const nearer = input.heads.find((h) => h.character !== speaker && Math.hypot(tip.x - h.center.x, tip.y - h.center.y) - h.radius < dOwn);
+      if (nearer) {
+        issues.push({
+          code: "TAIL_MISDIRECTED",
+          severity: "error",
+          path,
+          message: `the ${t.kind === "thought" ? "thought trail" : "tail"} for "${speaker}" ends nearer "${nearer.character ?? "another figure"}" than its speaker, so the line reads as theirs. Give the speaker more room (another slot, or a closer shot of the speaker alone), or split the exchange.`,
+        });
+      }
+    }
+  }
+  // speakers left to right in the order they speak (right to left on rtl pages)
+  const spokenOrder: string[] = [];
+  for (const t of input.texts) {
+    if (SPEAKING_KINDS.includes(t.kind) && typeof t.speaker === "string" && !spokenOrder.includes(t.speaker) && input.speakers.some((sp) => sp.character === t.speaker)) spokenOrder.push(t.speaker);
+  }
+  for (let k = 1; k < spokenOrder.length; k += 1) {
+    const first = input.speakers.find((sp) => sp.character === spokenOrder[k - 1]);
+    const next = input.speakers.find((sp) => sp.character === spokenOrder[k]);
+    if (!first || !next) continue;
+    const margin = Math.max(first.headRadius, next.headRadius);
+    const wrong = input.rtl === true ? first.head.x < next.head.x - margin : first.head.x > next.head.x + margin;
+    if (wrong) {
+      issues.push({
+        code: "SPEAKER_ORDER",
+        severity: "warning",
+        path: `panel ${input.panelId}`,
+        message: `"${spokenOrder[k - 1]}" speaks first but stands ${input.rtl === true ? "left" : "right"} of "${spokenOrder[k]}", so the reply has to be lettered below the first line, between the faces. Put the first speaker in the ${input.rtl === true ? "right" : "left"} slot.`,
+      });
+      break;
+    }
+  }
+  // name tags name their own character
+  for (const p of placed) {
+    if (!p.label) continue;
+    const t = input.texts[p.index];
+    const about = typeof t.about === "string" ? t.about : input.names ? inferNameTag(t.text, input.names) : undefined;
+    const own = headOf(about);
+    if (!own) continue;
+    const gap = (h: HeadCircle) => Math.max(0, Math.hypot(Math.max(p.box.x - h.center.x, 0, h.center.x - (p.box.x + p.box.w)), Math.max(p.box.y - h.center.y, 0, h.center.y - (p.box.y + p.box.h))) - h.radius);
+    const mine = gap(own);
+    const other = input.heads.find((h) => h.character !== about && (gap(h) < mine + 6 || gap(h) < 4));
+    if (other) {
+      issues.push({
+        code: "NAME_TAG_AMBIGUOUS",
+        severity: "warning",
+        path: `panel ${input.panelId} text ${p.index}`,
+        message: `the name tag "${snippet(t.text)}" sits as close to "${other.character ?? "another figure"}" as to "${about}", so it may name the wrong character. Give "${about}" a slot apart from the others, or name them in a panel of their own.`,
+      });
+    }
+  }
+  // key props are never covered by text (a corner clipped off a big prop still reads; a fifth hidden does not)
+  for (const p of placed) {
+    const k = (input.keepOut ?? []).find(
+      (o) =>
+        boxesOverlapArea(p.box, o) > 0.2 * o.w * o.h &&
+        convexOverlap(p.hull, [
+          { x: o.x, y: o.y },
+          { x: o.x + o.w, y: o.y },
+          { x: o.x + o.w, y: o.y + o.h },
+          { x: o.x, y: o.y + o.h },
+        ]),
+    );
+    if (!k) continue;
+    const t = input.texts[p.index];
+    issues.push({
+      code: "KEY_PROP_COVERED",
+      severity: "error",
+      path: `panel ${input.panelId} text ${p.index}`,
+      message: `${t.kind} "${snippet(t.text)}" covers the prop this panel is about, and there is no free space beside it. Shorten or move the text, use a larger panel, or show the object in an insert.`,
+    });
+  }
+  return issues;
 }
 
 function roundBox(b: Box): Box {

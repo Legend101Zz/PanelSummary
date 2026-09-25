@@ -7,11 +7,13 @@
 import {
   ANGLES,
   DEPTHS,
+  EYE_STATES,
   FACINGS,
   FIDELITY,
   FX,
   ENV_FEATURES,
   EXPRESSIONS,
+  MATERIALS,
   PERCH_PARTS,
   POSES,
   PROPS,
@@ -34,6 +36,7 @@ import { blockageIssues, compileLayout, MAX_PANELS, panelAreaShares, templatesWi
 import { countWords } from "../lettering/breaking.js";
 import { MAX_FIGURES, MAX_FX, MAX_PROPS } from "../scene/compose.js";
 import { STAGING_FEATURES } from "../scene/staging.js";
+import { variantFieldsFor } from "../scene/looks.js";
 import { checkEnum, checkSourceRef, isRecord, Issues, listValues, reqArray, reqBoolean, reqPositiveInt, reqString, show, warnUnknownKeys } from "./util.js";
 
 export interface BookRefs {
@@ -54,9 +57,12 @@ export const WORD_LIMITS = {
 
 export const SPEAKER_KINDS: readonly TextKind[] = ["speech", "thought", "shout", "whisper"];
 
-const PAGE_KEYS = ["schema", "page_number", "section_id", "purpose", "layout", "panels", "claims", "page_turn_hook"];
+const PAGE_KEYS = ["schema", "page_number", "section_id", "purpose", "layout", "panels", "claims", "claim_map", "page_turn_hook"];
 const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather", "figures", "props", "fx", "text", "source"];
-const FIGURE_KEYS = ["character", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
+const FIGURE_KEYS = ["character", "variant", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
+const VARIANT_KEYS = ["eyes", "material", "outfit_tone", "hair_tone", "tone"];
+/** Props too big to hold in a hand: draw them as a prop beside the figure. */
+const TOO_BIG_TO_HOLD = new Set(["wheelbarrow", "ballot_box", "coins_pile"]);
 const PROP_KEYS = ["prop", "slot", "depth", "tone"];
 const TEXT_KEYS = ["kind", "speaker", "about", "text", "fidelity", "source"];
 const ON_KEYS = ["target", "part"];
@@ -75,6 +81,35 @@ function supported<T>(fn: () => readonly T[]): readonly T[] | undefined {
     return fn();
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * A look variant: every field from its closed vocabulary, and only the fields
+ * the character's kind has (material, outfit_tone and hair_tone are for
+ * people; tone for creatures, objects and plants; eyes for everyone).
+ */
+function checkVariant(v: unknown, cast: CastMember | undefined, issues: Issues, path: string): void {
+  if (!isRecord(v)) {
+    issues.error("FIELD_TYPE", path, `"variant" must be an object with any of: ${VARIANT_KEYS.join(", ")} (e.g. {"material": "stone", "eyes": "blind"}).`);
+    return;
+  }
+  warnUnknownKeys(v, VARIANT_KEYS, issues, path);
+  checkEnum(v, "eyes", EYE_STATES, issues, path, false);
+  checkEnum(v, "material", MATERIALS, issues, path, false);
+  checkEnum(v, "outfit_tone", TONES, issues, path, false);
+  checkEnum(v, "hair_tone", TONES, issues, path, false);
+  checkEnum(v, "tone", TONES, issues, path, false);
+  const kind = (cast?.look as { kind?: CharacterLook["kind"] } | undefined)?.kind;
+  if (!kind) return;
+  const allowed = variantFieldsFor(kind) as readonly string[];
+  for (const key of VARIANT_KEYS) {
+    if (v[key] === undefined || allowed.includes(key)) continue;
+    issues.error(
+      "VARIANT_FIELD_INVALID",
+      path,
+      `"${key}" cannot change a ${kind} look; a ${kind} variant may set: ${allowed.join(", ")}.${key === "material" ? " (material turns a person into a statue, or a statue back into flesh.)" : ""}`,
+    );
   }
 }
 
@@ -179,6 +214,14 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         const depth = checkEnum(f, "depth", DEPTHS, issues, fpath, false) ?? "mid";
         const holding = checkEnum(f, "holding", PROPS, issues, fpath, false);
         if (holding) heldProps += 1;
+        if (holding && TOO_BIG_TO_HOLD.has(holding)) {
+          issues.warn(
+            "HOLDING_TOO_LARGE",
+            fpath,
+            `"${holding}" is too big to hold in a hand${f.pose === "sit" ? " (and this figure is sitting)" : ""}; drop "holding" and put it in the panel's "props" beside the figure.`,
+          );
+        }
+        if (f.variant !== undefined) checkVariant(f.variant, cast, issues, `${fpath}.variant`);
         const holdingTone = checkEnum(f, "holding_tone", TONES, issues, fpath, false);
         if (holdingTone && !holding) {
           issues.warn("HOLDING_TONE_UNUSED", fpath, `"holding_tone" only colours a held prop; add "holding" or remove "holding_tone".`);
@@ -460,8 +503,52 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
     }
   }
 
+  // Draw the story, not a prose page: most panels must show someone or something.
+  const panelList = Array.isArray((spec as { panels?: unknown }).panels) ? ((spec as { panels: unknown[] }).panels as Array<Record<string, unknown>>) : [];
+  const drawnCast = new Set<string>();
+  let panelsWithSubject = 0;
+  let narrationWords = 0;
+  let allWords = 0;
+  for (const panel of panelList) {
+    const figs = Array.isArray(panel?.figures) ? (panel.figures as Array<Record<string, unknown>>) : [];
+    const panelProps = Array.isArray(panel?.props) ? panel.props : [];
+    for (const fig of figs) if (typeof fig?.character === "string") drawnCast.add(fig.character);
+    if (figs.length > 0 || panelProps.length > 0) panelsWithSubject += 1;
+    for (const text of Array.isArray(panel?.text) ? (panel.text as Array<Record<string, unknown>>) : []) {
+      const words = typeof text?.text === "string" ? text.text.split(/\s+/).filter(Boolean).length : 0;
+      if (text?.kind === "sfx") continue;
+      allWords += words;
+      if (text?.kind === "narration" || text?.kind === "caption") narrationWords += words;
+    }
+  }
+  if (panelList.length >= 3 && panelsWithSubject / panelList.length < 0.5) {
+    issues.error(
+      "SCENE_NOT_DRAWN",
+      "page",
+      `only ${panelsWithSubject} of ${panelList.length} panels show a character or a prop; this reads as illustrated prose. Stage the beat: put the characters (or the object that matters) in at least half of the panels and let pose and expression carry what the narration says.`,
+    );
+  }
+  if (allWords > 40 && narrationWords / allWords > 0.6) {
+    issues.warn(
+      "PROSE_WALL",
+      "page",
+      `${narrationWords} of ${allWords} words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show.`,
+    );
+  }
+
   // plan agreement
   if (planned) {
+    const plannedCast = planned.cast ?? [];
+    const missingCast = plannedCast.filter((id) => !drawnCast.has(id));
+    if (plannedCast.length > 0 && missingCast.length === plannedCast.length) {
+      issues.error(
+        "PLANNED_CAST_MISSING",
+        "page",
+        `none of this page's planned cast (${listValues(plannedCast)}) is drawn in any panel. Draw them: the page is about them.`,
+      );
+    } else if (missingCast.length > 0) {
+      issues.warn("PLANNED_CAST_MISSING", "page", `planned cast not drawn on this page: ${listValues(missingCast)}.`);
+    }
     if (pageNumber !== undefined && pageNumber !== planned.page_number) {
       issues.error("PLAN_PAGE_NUMBER", "page", `page_number is ${pageNumber} but the plan says ${planned.page_number}.`);
     }

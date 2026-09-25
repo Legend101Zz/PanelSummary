@@ -4,7 +4,7 @@
  */
 import type { CharacterLook, Expression, Facing, Point, Pose } from "../contracts.js";
 import type { DrawContext, FigureAnchors, FigureDrawing, FigureRequest, RigModule } from "../internal.js";
-import { STROKE } from "../style.js";
+import { INK, STROKE, toneFill } from "../style.js";
 import { n } from "../svg.js";
 import { compactSvg } from "../env/compact.js";
 import { humanSeatContact } from "./human/draw.js";
@@ -114,6 +114,26 @@ function actCreature(d: FigureDrawing, request: FigureRequest): FigureDrawing {
   return { svg: `<g transform="${m}">${d.svg}</g>`, anchors };
 }
 
+/**
+ * A lying figure rests ON something: a flat screentone shadow along its
+ * whole length at the ground line and a short ground stroke under it, so it
+ * never floats against a plain close-up backdrop (the composer casts no
+ * shadow for airborne poses, and lying counts as one).
+ */
+function contactShadow(a: FigureAnchors, lineWidth: number, idPrefix: string): string {
+  const w = a.right - a.left;
+  if (!(w > 0)) return "";
+  const cx = (a.left + a.right) / 2;
+  const rx = w * 0.52;
+  const ry = Math.max(lineWidth * 1.2, w * 0.045);
+  const g0 = a.left - w * 0.06;
+  const g1 = a.right + w * 0.06;
+  return (
+    `<ellipse cx="${n(cx)}" cy="${n(ry * 0.25)}" rx="${n(rx)}" ry="${n(ry)}" fill="${toneFill("dots", idPrefix)}"/>` +
+    `<path d="M${n(g0)} ${n(ry * 0.9)}L${n(g1)} ${n(ry * 0.9)}" fill="none" stroke="${INK}" stroke-width="${n(lineWidth * 0.5)}" stroke-linecap="round"/>`
+  );
+}
+
 function n4(v: number): string {
   const r = Math.round(v * 10000) / 10000;
   return Object.is(r, -0) ? "0" : String(r);
@@ -142,6 +162,7 @@ export const rig: RigModule = {
   draw: (request: FigureRequest, ctx: DrawContext): FigureDrawing => {
     const d = actCreature(rigFor(request.look).draw(request, ctx), request);
     const dec = request.lineWidth >= STROKE.figureOutline ? 1 : 2;
-    return { svg: compactSvg(d.svg, dec), anchors: d.anchors };
+    const svg = request.pose === "lie" ? contactShadow(d.anchors, request.lineWidth, ctx.idPrefix) + d.svg : d.svg;
+    return { svg: compactSvg(svg, dec), anchors: d.anchors };
   },
 };

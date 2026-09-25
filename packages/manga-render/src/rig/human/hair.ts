@@ -488,7 +488,12 @@ function fringe(view: FaceGeo["view"], spec: Spec, R: number, jit: number[]): CP
 // Facial hair
 // ---------------------------------------------------------------------------
 
-export function drawFacialHair(pen: Pen, g: FaceGeo, look: HumanLook, pal: Palette, ink: Ink, seed: number): string {
+/**
+ * `mood` curls the mustache with the mouth: +1 ends up (smile, grin), -1 ends
+ * down (frown, wail), "smirk" lifts the near end only. The mustache sits just
+ * above the mouth line so a smirk or a grin stays visible under it.
+ */
+export function drawFacialHair(pen: Pen, g: FaceGeo, look: HumanLook, pal: Palette, ink: Ink, seed: number, mood: number | "smirk" = 0): string {
   const kind = look.facial_hair;
   if (kind === "none" || g.view === "back") return "";
   const R = g.R;
@@ -521,17 +526,22 @@ export function drawFacialHair(pen: Pen, g: FaceGeo, look: HumanLook, pal: Palet
   }
   const mustache = (): string => {
     const k = side ? 0.72 : 1;
+    const up = mood === "smirk" ? 0 : mood;
+    // end lift per side: + raises the tip (curled up), - droops it
+    const near = mood === "smirk" ? 1 : up;
+    const far = mood === "smirk" ? -0.2 : up;
+    const tipY = (lift: number) => my + 0.02 - 0.1 - lift * 0.13;
     const pts: CPt[] = [
-      P(mx, my - 0.13),
-      P(mx + 0.18 * k, my - 0.13),
-      P(mx + 0.34 * k, my - 0.02),
-      { ...P(mx + 0.4 * k, my + 0.06), c: true },
-      P(mx + 0.22 * k, my - 0.04),
-      P(mx, my - 0.05),
-      P(mx - 0.22, my - 0.04),
-      { ...P(mx - 0.4, my + 0.06), c: true },
-      P(mx - 0.34, my - 0.02),
-      P(mx - 0.18, my - 0.13),
+      P(mx, my - 0.2),
+      P(mx + 0.18 * k, my - 0.2),
+      P(mx + 0.34 * k, my - 0.12 - near * 0.05),
+      { ...P(mx + 0.42 * k, tipY(near)), c: true },
+      P(mx + 0.22 * k, my - 0.1 - near * 0.02),
+      P(mx, my - 0.11),
+      P(mx - 0.22, my - 0.1 - far * 0.02),
+      { ...P(mx - 0.42, tipY(far)), c: true },
+      P(mx - 0.34, my - 0.12 - far * 0.05),
+      P(mx - 0.18, my - 0.2),
     ];
     return shape(pen.curve(pts), fill, ink.dw * 1.4);
   };

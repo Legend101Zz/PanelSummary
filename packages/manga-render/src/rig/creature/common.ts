@@ -92,16 +92,29 @@ export interface Pen {
   detail?: "full" | "reduced" | "silhouette";
   /** Paper knockout rim width under the outer outline (figure units); 0 = none. */
   rim?: number;
+  /**
+   * Eye state for this appearance (FigureRequest.eyes). Faces drawn with this
+   * pen override the expression's eyes: "closed" lids, "blind" blank eyes
+   * with no pupil, "dead" slack closed lines. Plants read it as their
+   * condition ("closed" buds, "dead" frost-bitten).
+   */
+  eyes?: "open" | "closed" | "blind" | "dead";
 }
 
 /** Page-space width of the paper knockout rim (matches the human rig). */
 export const RIM_PAGE = 3.6;
 
-export function makePen(lineWidth: number, prefix: string, req?: { detail?: "full" | "reduced" | "silhouette"; rim?: boolean }): Pen {
+export function makePen(
+  lineWidth: number,
+  prefix: string,
+  req?: { detail?: "full" | "reduced" | "silhouette"; rim?: boolean; eyes?: "open" | "closed" | "blind" | "dead" },
+): Pen {
   const lw = Math.max(lineWidth, 1e-4);
   const ratio = STROKE.figureDetail / STROKE.figureOutline;
   const rim = req?.rim === false ? 0 : (RIM_PAGE * lw) / STROKE.figureOutline;
-  return { lw, dw: lw * ratio, fw: lw * ratio * 0.62, prefix, detail: req?.detail ?? "full", rim };
+  const pen: Pen = { lw, dw: lw * ratio, fw: lw * ratio * 0.62, prefix, detail: req?.detail ?? "full", rim };
+  if (req?.eyes && req.eyes !== "open") pen.eyes = req.eyes;
+  return pen;
 }
 
 export function fillOf(tone: Tone, pen: Pen): string {

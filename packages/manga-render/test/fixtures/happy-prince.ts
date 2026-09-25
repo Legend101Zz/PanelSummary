@@ -4,9 +4,11 @@
  * exercise every shot, several templates, one authored slanted tree,
  * two-speaker dialogue, off-panel speech, every text kind and every
  * fidelity value, plus staging: the statue on its column (automatic), the
- * swallow at the statue's feet and on its shoulder (`on`), the sick boy in
- * bed, the seamstress seated, name-tag captions (`about`) and distinct
- * ruby/sapphire tones.
+ * swallow at the statue's feet and on its shoulder (`on`), a medium shot of
+ * the statue seen from up at its column top (the swallow between its feet),
+ * the stripped statue as a blind stone variant, the sick boy in bed, the
+ * seamstress seated, name-tag captions (`about`) and distinct ruby/sapphire
+ * tones.
  */
 import type {
   AdaptationPlan,
@@ -362,7 +364,7 @@ export const PAGES: MangaPageSpec[] = [
       panel({
         id: "p2",
         beat: "He settles between the feet of the Happy Prince.",
-        shot: "full",
+        shot: "medium",
         angle: "low",
         location: "square",
         time: "night",
@@ -623,13 +625,16 @@ export const PAGES: MangaPageSpec[] = [
       }),
       panel({
         id: "p6",
-        beat: "Snow over the city; the Swallow flies back into the cold.",
+        beat: "Snow over the city: the Prince, dull grey and blind now, on his column as the Swallow flies back into the cold.",
         shot: "wide",
         angle: "eye",
-        location: "night_sky",
+        location: "square",
         time: "night",
         weather: "snow",
-        figures: [fig({ character: "swallow", pose: "fly", expression: "worried", facing: "left", slot: "center" })],
+        figures: [
+          fig({ character: "prince", pose: "stand", expression: "sad", facing: "front", slot: "center_right", variant: { material: "stone", eyes: "blind" } }),
+          fig({ character: "swallow", pose: "fly", expression: "worried", facing: "left", slot: "center_left", depth: "fore" }),
+        ],
         fx: ["snow"],
         text: [{ kind: "caption", text: "Winter was coming.", fidelity: "paraphrase", source: src("u12", 6) }],
         source: [src("u12", 6)],

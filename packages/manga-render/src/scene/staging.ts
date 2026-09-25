@@ -8,8 +8,11 @@
  *   (a statue on its column, a sick boy in bed, a seat at a fountain).
  * - Automatic rules, applied only when `on` is absent:
  *   a gold/stone/bronze cast member in a location with a statue column stands
- *   on the column in establishing/wide/full shots; a lying figure in a
- *   location with a bed lies in the bed.
+ *   on the column in EVERY shot (never at street level) unless it lies or
+ *   falls; a small creature sharing the panel with that statue stands, perches
+ *   or lies on the statue (at its feet in ground shots, on its shoulder in
+ *   close-range shots, or on the part the panel's beat names); a lying figure
+ *   in a location with a bed lies in the bed.
  *
  * The composer resolves staging here, then frames and draws.
  */
@@ -23,6 +26,11 @@ export const STAGING_FEATURES = ["statue_column", "bed", "table", "fountain", "b
 export type StagingFeature = (typeof STAGING_FEATURES)[number];
 
 export const GROUND_SHOTS: readonly Shot[] = ["establishing", "wide", "full"];
+/** Shots framed around faces (the statue is then seen from up at its own height). */
+export const CLOSE_SHOTS: readonly Shot[] = ["medium", "close", "extreme_close"];
+
+/** Poses that leave the ground (never auto-staged on a surface). */
+export const AIRBORNE: ReadonlySet<Pose> = new Set(["fly", "jump", "fall"]);
 
 export type Staging =
   | { type: "ground" }
@@ -34,6 +42,32 @@ export function isStatue(cast: CastMember): boolean {
   return look.kind === "human" && (look.material === "gold" || look.material === "stone" || look.material === "bronze");
 }
 
+/**
+ * The statue that stands on a location's column (a fixed set piece): the
+ * gold/stone/bronze cast member whose description mentions a column (or a
+ * pedestal), else the only statue in the cast, else the first one.
+ */
+export function locationStatue(cast: readonly CastMember[], location: LocationSpec | undefined): CastMember | undefined {
+  if (!location || !(location.features ?? []).includes("statue_column")) return undefined;
+  const statues = cast.filter((c) => c?.look && isStatue(c));
+  if (statues.length === 0) return undefined;
+  const mentions = statues.filter((c) => /\b(column|pedestal|plinth|pillar)s?\b/i.test(`${c.description ?? ""} ${c.role ?? ""}`));
+  return mentions[0] ?? statues[0];
+}
+
+/** A beat that says the column is empty (the statue pulled down, melted, gone). */
+export function statueGone(beat: string): boolean {
+  return /\b(pull(ed|s|ing)? (him |it |the statue )?down|melt(ed|s|ing)?|empty (column|pedestal|plinth)|no longer (on|there)|taken down|removed)\b/i.test(beat);
+}
+
+/** A perch part named by a panel beat ("between the statue's feet", "on his shoulder"). */
+export function partFromBeat(beat: string): PerchPart | undefined {
+  const b = beat.toLowerCase();
+  if (/\bshoulders?\b/.test(b)) return "shoulder";
+  if (/\b(feet|foot|toes)\b/.test(b)) return "feet";
+  return undefined;
+}
+
 /** Default part when `on` names a figure without a part: small creatures perch on the shoulder. */
 export function defaultPart(dependentHeight: number, targetHeight: number): PerchPart {
   return dependentHeight <= targetHeight * 0.3 ? "shoulder" : "feet";
@@ -43,6 +77,7 @@ export interface StagingInput {
   character: string;
   pose: Pose;
   on?: { target?: unknown; part?: unknown };
+  /** The cast member as drawn in this panel (variant merged). */
   cast: CastMember;
   /** Nominal heights (figure units) for the default-part rule. */
   height: number;
@@ -51,11 +86,11 @@ export interface StagingInput {
 }
 
 /**
- * Resolve every figure's staging. `drawn` are the characters drawn in this
- * panel (in spec order). Invalid anchors (unknown target, self, cycles) fall
- * back to the ground; validation reports them.
+ * Resolve every figure's staging. Invalid anchors (unknown target, self,
+ * cycles) fall back to the ground; validation reports them. `beat` (the
+ * panel's one-sentence beat) may name the part a small creature perches on.
  */
-export function resolveStaging(figs: readonly StagingInput[], location: LocationSpec | undefined, shot: Shot): Staging[] {
+export function resolveStaging(figs: readonly StagingInput[], location: LocationSpec | undefined, shot: Shot, beat = ""): Staging[] {
   const features = new Set<string>(location?.features ?? []);
   const byChar = new Map(figs.map((f, i) => [f.character, i]));
   const out: Staging[] = figs.map((f) => {
@@ -72,21 +107,28 @@ export function resolveStaging(figs: readonly StagingInput[], location: Location
       }
       return { type: "ground" };
     }
-    if (isStatue(f.cast) && features.has("statue_column") && GROUND_SHOTS.includes(shot) && f.pose !== "lie") {
+    // a statue in its column's location is never at street level
+    if (isStatue(f.cast) && features.has("statue_column") && shot !== "insert" && f.pose !== "lie" && f.pose !== "fall") {
       return { type: "feature", feature: "statue_column", auto: true };
     }
     if (f.pose === "lie" && features.has("bed")) return { type: "feature", feature: "bed", auto: true };
+    // a small creature the beat puts on the table stands on the table top
+    if (f.small && !AIRBORNE.has(f.pose) && features.has("table") && /\b(?:on|onto|upon)\s+(?:the|a|her|his|their)\s+table\b/i.test(beat)) {
+      return { type: "feature", feature: "table", auto: true };
+    }
     return { type: "ground" };
   });
-  // a small creature perching in a shot where someone stands on the column
-  // perches at that statue's feet, not on the ground far below
+  // a small creature in a panel where someone stands on the column is up
+  // there with the statue: at its feet (ground shots, a lying bird), on its
+  // shoulder (close-range shots), or on the part the beat names
   const column = figs.findIndex((_, i) => out[i].type === "feature" && (out[i] as { feature: string }).feature === "statue_column");
-  if (column >= 0 && GROUND_SHOTS.includes(shot)) {
+  if (column >= 0 && shot !== "insert") {
+    const named = partFromBeat(beat);
     figs.forEach((f, i) => {
       if (i === column || out[i].type !== "ground" || f.on) return;
-      if (f.small && (f.pose === "perch" || f.pose === "stand") && f.height <= figs[column].height * 0.35) {
-        out[i] = { type: "figure", target: figs[column].character, part: "feet", auto: true };
-      }
+      if (!f.small || AIRBORNE.has(f.pose) || f.height > figs[column].height * 0.35) return;
+      const part: PerchPart = f.pose === "lie" ? "feet" : (named ?? (GROUND_SHOTS.includes(shot) ? "feet" : "shoulder"));
+      out[i] = { type: "figure", target: figs[column].character, part, auto: true };
     });
   }
   // break cycles among figure targets (a on b, b on a): the later one drops to the ground

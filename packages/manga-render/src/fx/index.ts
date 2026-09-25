@@ -125,35 +125,63 @@ function subject(r: FxRequest): { point: Point; radius: number } | undefined {
 
 type Drawer = (r: FxRequest, rand: () => number, id: string, p: string) => Out;
 
-const speedLines: Drawer = (r, rand) => {
+/**
+ * Speed lines: light, thin horizontal strokes in a band behind the moving
+ * subject (craft: motion reads from a few crisp lines, never a black smear).
+ * The band spans the subject's body height; lines run in from the trailing
+ * edge (the side of the panel away from the subject) and stop short of it,
+ * with a few short lines on the leading side. Never across a face.
+ */
+const speedLines: Drawer = (r, rand, id) => {
   const b = r.box;
-  const f = r.focus;
-  // horizontal motion lines; clear band around the focus
-  const clearR = Math.min(b.w, b.h) * 0.24;
-  const count = Math.round(b.h / 1.5);
+  const h = subject(r);
+  const f = h ? h.point : r.focus;
+  const hr = h ? h.radius : Math.min(b.w, b.h) * 0.08;
+  const bandH = Math.max(b.h * 0.3, Math.min(b.h * 0.72, hr * 9));
+  const top = Math.max(b.y + 4, f.y - bandH * 0.32);
+  const bottom = Math.min(b.y + b.h - 4, top + bandH);
+  // moving toward the side the subject sits on: lines trail on the other side
+  const dir = f.x >= b.x + b.w / 2 ? 1 : -1;
+  const bodyHalf = Math.max(hr * 1.6, b.w * 0.06);
+  const trailEnd = f.x - dir * bodyHalf;
   let d = "";
-  for (let i = 0; i < count; i += 1) {
-    const y = b.y + rand() * b.h;
-    const dist = Math.abs(y - f.y) / clearR;
-    // denser away from the focus band
-    if (dist < 1 && rand() > dist * dist * 0.5) continue;
-    const w = between(rand, 0.7, 3) * r.lineWidth * (dist > 1.6 ? 1.35 : 1);
-    let x0 = b.x - 10 + rand() * b.w * 0.2;
-    let x1 = b.x + b.w * between(rand, 0.6, 1.08);
-    if (dist < 1.1) {
-      // stop short of the focus on either side
-      const half = clearR * Math.sqrt(Math.max(0, 1.2 - dist * dist)) * 1.1;
-      if (rand() < 0.5) x1 = Math.min(x1, f.x - half);
-      else x0 = Math.max(x0, f.x + half);
-      if (x1 - x0 < 20) continue;
-    }
-    const y1 = y + between(rand, -0.6, 0.6);
-    const peak = between(rand, 0.3, 0.7);
-    // speed lines never cross a face
-    if (segNearHead(r, { x: x0, y }, { x: x1, y: y1 }, 1.3)) continue;
-    d += spindle({ x: x0, y }, { x: x1, y: y1 }, w, peak);
+  const rows = Math.max(10, Math.round((bottom - top) / 4.5));
+  for (let i = 0; i < rows; i += 1) {
+    if (rand() < 0.2) continue;
+    const y = top + ((i + rand() * 0.8) / rows) * (bottom - top);
+    // fade toward the band's edges
+    const edge = Math.min(y - top, bottom - y) / Math.max(1, bottom - top);
+    if (edge < 0.08 && rand() < 0.6) continue;
+    const w = between(rand, 0.5, 1.4) * r.lineWidth;
+    const from = dir > 0 ? b.x - 6 + rand() * b.w * 0.12 : b.x + b.w + 6 - rand() * b.w * 0.12;
+    const avail = Math.abs(trailEnd - from);
+    const len = avail * between(rand, 0.35, 0.95);
+    const x0 = from;
+    const x1 = from + dir * len;
+    const a = { x: Math.min(x0, x1), y };
+    const e = { x: Math.max(x0, x1), y: y + between(rand, -0.4, 0.4) };
+    if (e.x - a.x < 14) continue;
+    if (segNearHead(r, a, e, 1.3)) continue;
+    d += spindle(a, e, w, dir > 0 ? 0.75 : 0.25);
   }
-  return { under: path(d, INKF), over: "" };
+  // a few short lines on the leading side (wind of the motion)
+  for (let i = 0; i < 4; i += 1) {
+    const y = top + rand() * (bottom - top);
+    const x0 = f.x + dir * (bodyHalf + b.w * between(rand, 0.02, 0.08));
+    const x1 = x0 + dir * b.w * between(rand, 0.05, 0.12);
+    const a = { x: Math.min(x0, x1), y };
+    const e = { x: Math.max(x0, x1), y };
+    if (a.x < b.x || e.x > b.x + b.w || segNearHead(r, a, e, 1.3)) continue;
+    d += spindle(a, e, r.lineWidth * 0.5, 0.5);
+  }
+  // the background calms down inside the band (a soft paper veil that fades
+  // out at the band's edges), so the thin lines read without heavy ink
+  const veil =
+    `<defs><linearGradient id="${id}band" x1="0" y1="${n(top)}" x2="0" y2="${n(bottom)}" gradientUnits="userSpaceOnUse">` +
+    `<stop offset="0" stop-color="${PAPER}" stop-opacity="0"/><stop offset="0.25" stop-color="${PAPER}" stop-opacity="0.6"/>` +
+    `<stop offset="0.75" stop-color="${PAPER}" stop-opacity="0.6"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></linearGradient></defs>` +
+    path(`M${n(b.x - 2)} ${n(top)}h${n(b.w + 4)}v${n(bottom - top)}h${n(-b.w - 4)}z`, `fill="url(#${id}band)"`);
+  return { under: veil + path(d, `fill="#2a2a2a"`), over: "" };
 };
 
 const focusLines: Drawer = (r, rand) => {
@@ -220,9 +248,11 @@ const sparkleFx: Drawer = (r, rand) => {
   for (let i = 0; i < count; i += 1) {
     const a = (i / count) * Math.PI * 2 + between(rand, -0.3, 0.3);
     const d = S * between(rand, 0.18, 0.42);
-    const x = f.x + Math.cos(a) * d;
-    const y = f.y + Math.sin(a) * d * 0.8;
     const rr = S * (i % 3 === 0 ? between(rand, 0.05, 0.075) : between(rand, 0.022, 0.04));
+    // stars stay wholly inside the panel (a star cut by the border reads as a stray mark)
+    const pad = rr * 1.5 + 4;
+    const x = Math.max(b.x + pad, Math.min(b.x + b.w - pad, f.x + Math.cos(a) * d));
+    const y = Math.max(b.y + pad, Math.min(b.y + b.h - pad, f.y + Math.sin(a) * d * 0.8));
     if (nearHead(r, { x, y }, 1.05 + (rr * 1.2) / Math.max(1, subject(r)?.radius ?? 1e9))) continue;
     big += star4(x, y, rr, 0.16);
     if (i % 2 === 0) dots += circleD(x + rr * 1.3, y - rr * 0.9, Math.max(1.2, rr * 0.16));
@@ -245,8 +275,8 @@ const sweatDrop: Drawer = (r, rand) => {
     const R = h.radius;
     // drops sit on the temple and cheek, touching the head outline
     const drops: [number, number, number][] = [
-      [0.8, -0.28, 0.34],
-      [1.0, 0.18, 0.2],
+      [0.8, -0.28, 0.26],
+      [1.0, 0.18, 0.16],
     ];
     for (const [ox, oy, s] of drops) {
       const x = h.point.x + ox * R;
@@ -414,8 +444,8 @@ const lightRays: Drawer = (r, rand, id) => {
   const src = { x: b.x + b.w * between(rand, 0.3, 0.7), y: b.y - b.h * 0.45 };
   const y1 = b.y + b.h * 0.8;
   const defs =
-    `<defs><linearGradient id="${id}veil" x1="0" y1="${n(b.y)}" x2="0" y2="${n(b.y + b.h * 0.6)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${INK}" stop-opacity="0.16"/><stop offset="1" stop-color="${INK}" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="${id}beam" x1="0" y1="${n(b.y)}" x2="0" y2="${n(y1)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.55"/><stop offset="0.6" stop-color="${PAPER}" stop-opacity="0.22"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></linearGradient></defs>`;
+    `<defs><linearGradient id="${id}veil" x1="0" y1="${n(b.y)}" x2="0" y2="${n(b.y + b.h * 0.6)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${INK}" stop-opacity="0.1"/><stop offset="1" stop-color="${INK}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="${id}beam" x1="0" y1="${n(b.y)}" x2="0" y2="${n(y1)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.4"/><stop offset="0.6" stop-color="${PAPER}" stop-opacity="0.14"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></linearGradient></defs>`;
   let s = path(`M${n(b.x - 2)} ${n(b.y - 2)}h${n(b.w + 4)}v${n(b.h * 0.6 + 2)}h${n(-b.w - 4)}z`, `fill="url(#${id}veil)"`);
   let beams = "";
   let edges = "";
@@ -433,7 +463,7 @@ const lightRays: Drawer = (r, rand, id) => {
     }
   }
   s += path(beams, `fill="url(#${id}beam)"`);
-  s += path(edges, `fill="none" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.45)}" stroke-opacity="0.3"`);
+  s += path(edges, `fill="none" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.4)}" stroke-opacity="0.22"`);
   return { under: defs + s, over: "" };
 };
 
@@ -533,6 +563,110 @@ const flashback: Drawer = (r, rand, _id, p) => {
   return { under, over: s };
 };
 
+/**
+ * Fireworks: bursts in the sky part of the panel (over the background, under
+ * the figures) — peony bursts of radiating streaks tipped with sparks, rings
+ * of sparks, drooping willow trails and a spinning wheel — plus rising
+ * trails. Marks are paper-white with an ink edge, so they read on a black
+ * night sky and on paper alike, over a faint glow at each centre.
+ */
+const fireworks: Drawer = (r, rand, id) => {
+  const b = r.box;
+  const S = Math.min(b.w, b.h);
+  const skyBottom = b.y + b.h * 0.62;
+  const count = Math.max(2, Math.min(5, Math.round((b.w * b.h) / 70000) + 1));
+  let streaks = "";
+  let sparks = "";
+  let trails = "";
+  let glows = "";
+  const placed: { x: number; y: number; R: number }[] = [];
+  const kinds = ["peony", "ring", "willow", "wheel", "peony"] as const;
+  const start = Math.floor(rand() * kinds.length);
+  for (let i = 0; i < count; i += 1) {
+    const R = S * between(rand, 0.1, 0.19) * (i === 0 ? 1.25 : 1);
+    let c = { x: 0, y: 0 };
+    let ok = false;
+    for (let t = 0; t < 14 && !ok; t += 1) {
+      c = { x: b.x + R + 6 + rand() * Math.max(1, b.w - 2 * R - 12), y: b.y + R + 6 + rand() * Math.max(1, skyBottom - b.y - 2 * R - 12) };
+      ok = !placed.some((q) => Math.hypot(q.x - c.x, q.y - c.y) < (q.R + R) * 0.95) && !r.heads.some((h) => Math.hypot(h.point.x - c.x, h.point.y - c.y) < h.radius * 1.3 + R * 0.9);
+    }
+    if (!ok) continue;
+    placed.push({ ...c, R });
+    const kind = kinds[(start + i) % kinds.length];
+    glows += `<circle cx="${n(c.x)}" cy="${n(c.y)}" r="${n(R * 1.1)}" fill="url(#${id}glow)"/>`;
+    const lw = r.lineWidth;
+    if (kind === "peony" || kind === "willow") {
+      const rays = kind === "peony" ? 16 + Math.floor(rand() * 6) : 11;
+      for (let k = 0; k < rays; k += 1) {
+        const a = (k / rays) * Math.PI * 2 + between(rand, -0.08, 0.08);
+        const r0 = R * 0.22;
+        const r1 = R * between(rand, 0.82, 1.02);
+        const p0 = { x: c.x + Math.cos(a) * r0, y: c.y + Math.sin(a) * r0 };
+        if (kind === "peony") {
+          const p1 = { x: c.x + Math.cos(a) * r1, y: c.y + Math.sin(a) * r1 };
+          streaks += `M${n(p0.x)} ${n(p0.y)}L${n(p1.x)} ${n(p1.y)}`;
+          sparks += circleD(p1.x + Math.cos(a) * lw * 2.2, p1.y + Math.sin(a) * lw * 2.2, Math.max(1.4, lw * 1.25));
+          if (k % 2 === 0) sparks += circleD(c.x + Math.cos(a) * r1 * 0.62, c.y + Math.sin(a) * r1 * 0.62, Math.max(1, lw * 0.8));
+        } else {
+          // willow: out, then drooping down
+          const p1 = { x: c.x + Math.cos(a) * r1 * 0.7, y: c.y + Math.sin(a) * r1 * 0.55 };
+          const p2 = { x: p1.x + Math.cos(a) * R * 0.25, y: p1.y + R * 0.55 };
+          streaks += `M${n(p0.x)} ${n(p0.y)}Q${n(p1.x + Math.cos(a) * R * 0.2)} ${n(p1.y - R * 0.12)} ${n(p2.x)} ${n(p2.y)}`;
+          sparks += circleD(p2.x, p2.y + lw, Math.max(1.2, lw));
+        }
+      }
+    } else if (kind === "ring") {
+      for (const [k, m] of [
+        [18, 1],
+        [11, 0.55],
+      ] as const) {
+        for (let j = 0; j < k; j += 1) {
+          const a = (j / k) * Math.PI * 2 + i;
+          sparks += circleD(c.x + Math.cos(a) * R * m, c.y + Math.sin(a) * R * m * 0.92, Math.max(1.3, lw * (m === 1 ? 1.3 : 1)));
+        }
+      }
+      sparks += star4(c.x, c.y, R * 0.22, 0.2);
+    } else {
+      // spinning wheel: curved arms spiralling out of a hub
+      const arms = 6;
+      for (let k = 0; k < arms; k += 1) {
+        const a0 = (k / arms) * Math.PI * 2;
+        const pts: Point[] = [];
+        for (let t = 0; t <= 6; t += 1) {
+          const u = t / 6;
+          const a = a0 + u * 1.5;
+          pts.push({ x: c.x + Math.cos(a) * R * (0.15 + u * 0.85), y: c.y + Math.sin(a) * R * (0.15 + u * 0.85) });
+        }
+        streaks += smoothPath(pts, false);
+        const e = pts[pts.length - 1];
+        sparks += circleD(e.x, e.y, Math.max(1.3, lw * 1.2));
+      }
+      sparks += circleD(c.x, c.y, R * 0.12);
+    }
+    // a rising trail from below with a few sparks (every other burst)
+    if (i % 2 === 0) {
+      const from = { x: c.x + between(rand, -0.3, 0.3) * R, y: Math.min(b.y + b.h - 6, c.y + R * 2.4) };
+      const to = { x: c.x, y: c.y + R * 0.3 };
+      if (from.y - to.y > R * 0.6) {
+        trails += `M${n(from.x)} ${n(from.y)}Q${n(from.x + R * 0.25)} ${n((from.y + to.y) / 2)} ${n(to.x)} ${n(to.y)}`;
+        for (let k = 1; k <= 3; k += 1) sparks += circleD(from.x + (to.x - from.x) * (k / 4) + R * 0.08, from.y + (to.y - from.y) * (k / 4), Math.max(0.9, lw * 0.7));
+      }
+    }
+  }
+  if (!placed.length) return { under: "", over: "" };
+  const lw = r.lineWidth;
+  const defs = `<defs><radialGradient id="${id}glow"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.35"/><stop offset="0.6" stop-color="${PAPER}" stop-opacity="0.12"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></radialGradient></defs>`;
+  const under =
+    defs +
+    glows +
+    path(trails, `fill="none" stroke="${INK}" stroke-width="${n(lw * 2.4)}"`) +
+    path(trails, `fill="none" stroke="${PAPER}" stroke-width="${n(lw * 1.1)}" stroke-dasharray="${n(lw * 4)} ${n(lw * 2.5)}"`) +
+    path(streaks, `fill="none" stroke="${INK}" stroke-width="${n(lw * 2.6)}"`) +
+    path(streaks, `fill="none" stroke="${PAPER}" stroke-width="${n(lw * 1.2)}"`) +
+    path(sparks, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(lw * 0.8)}"`);
+  return { under, over: "" };
+};
+
 const DRAWERS: Record<FxId, Drawer> = {
   speed_lines: speedLines,
   focus_lines: focusLines,
@@ -545,6 +679,7 @@ const DRAWERS: Record<FxId, Drawer> = {
   snow: snowFx,
   wind: windFx,
   light_rays: lightRays,
+  fireworks,
   dark_mood: darkMood,
   soft_glow: softGlow,
   flashback,
@@ -563,6 +698,7 @@ export const FX_LAYER: Record<FxId, "under" | "over" | "both"> = {
   snow: "over",
   wind: "over",
   light_rays: "under",
+  fireworks: "under",
   dark_mood: "under",
   soft_glow: "under",
   /** Background veil under the figures + an edge-only frame over them. */

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ANGLES, ENV_FEATURES, ENVIRONMENTS, FX, PROPS, SHOTS, TIMES, WEATHERS, type Box, type Environment, type FxId } from "../src/contracts.js";
 import type { DrawContext, EnvironmentRequest, FxRequest } from "../src/internal.js";
-import { environments, PATTERN_BUDGET } from "../src/env/index.js";
+import { buildStage, environments, PATTERN_BUDGET } from "../src/env/index.js";
+import { tree } from "../src/env/nature.js";
+import { drawBuilding } from "../src/env/architecture.js";
 import { props, SEAT_KINDS, SEAT_Y } from "../src/props/index.js";
 import { compactPathD, cullOutside, pathAreaIn, pathPoints } from "../src/env/compact.js";
 import { seatContact } from "../src/rig/index.js";
@@ -483,7 +485,8 @@ describe("fx: strength caps and face clearance", () => {
     const focus = fx.draw(req("focus_lines"), ctx()).under;
     for (const p of pathPoints(/ d="([^"]*)"/.exec(focus)![1])) expect(Math.hypot(p.x - head.point.x, p.y - head.point.y)).toBeGreaterThan(head.radius * 2);
     const speed = fx.draw(req("speed_lines"), ctx()).under;
-    for (const sub of / d="([^"]*)"/.exec(speed)![1].split(/(?=M)/)) {
+    // (the first path is the band's paper veil; the lines are the ink path)
+    for (const sub of /<path d="([^"]*)" fill="#2a2a2a"/.exec(speed)![1].split(/(?=M)/)) {
       const pts = pathPoints(sub);
       const [a, , b] = pts;
       const dx = b.x - a.x;
@@ -491,5 +494,211 @@ describe("fx: strength caps and face clearance", () => {
       const t = Math.max(0, Math.min(1, ((head.point.x - a.x) * dx + (head.point.y - a.y) * dy) / (dx * dx + dy * dy || 1)));
       expect(Math.hypot(a.x + dx * t - head.point.x, a.y + dy * t - head.point.y)).toBeGreaterThan(head.radius);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pass 3 (acceptance run 1): winter, weather, set pieces, chimneys, props, fx
+// ---------------------------------------------------------------------------
+
+describe("environments: weather and set pieces (pass 3)", () => {
+  it("in snow, broad-leaved trees are bare with snow on their forks; pines stay", () => {
+    const at = (weather: EnvironmentRequest["weather"], kind?: "pine") => {
+      const st = buildStage(envReq("garden", { weather, shot: "full" }), ctx());
+      tree(st, 0, st.zmid + 3, { h: 8, ...(kind ? { kind } : {}) });
+      return st.items[st.items.length - 1]?.svg ?? "";
+    };
+    const summer = at("clear");
+    const winter = at("snow");
+    const count = (svg: string, re: RegExp) => (svg.match(re) ?? []).length;
+    // the leafy canopy (with its dotted shade) is gone...
+    expect(count(winter, /tone-dots/g)).toBeLessThan(count(summer, /tone-dots/g));
+    // ...replaced by bare limbs (one stroke per thickness) with white snow clumps
+    expect(count(winter, /fill="none" stroke="#141414"/g)).toBeGreaterThanOrEqual(count(summer, /fill="none" stroke="#141414"/g) + 2);
+    expect(winter).toMatch(/fill="#ffffff" stroke="#141414"/);
+    expect(at("snow", "pine")).not.toBe("");
+  });
+
+  it("rain and storm draw visible streaks and ground splashes; storms are heavier", () => {
+    const rain = environments.draw(envReq("street", { weather: "rain" }), ctx()).svg;
+    const storm = environments.draw(envReq("street", { weather: "storm", time: "night" }), ctx()).svg;
+    expect(rain).toContain('stroke="#3a3a3a"');
+    const streaks = (svg: string) => (svg.match(/l-?[\d.]+ [\d.]+/g) ?? []).length;
+    expect(streaks(storm)).toBeGreaterThan(streaks(rain) * 0.9);
+    checkSvg(rain);
+    checkSvg(storm);
+  });
+
+  it("outdoors, a fireplace (or a door in a town with houses) never becomes a lone hut", () => {
+    for (const env of ["cottage", "mill", "street", "city_square"] as const) {
+      const plain = environments.draw(envReq(env, { features: [] }), ctx()).svg;
+      expect(environments.draw(envReq(env, { features: ["fireplace"] }), ctx()).svg, env).toBe(plain);
+      expect(environments.draw(envReq(env, { features: ["door", "window"] }), ctx()).svg, env).toBe(plain);
+    }
+    // a garden has no house of its own: a door there is a real set piece
+    expect(environments.draw(envReq("garden", { features: ["door"] }), ctx()).svg).not.toBe(environments.draw(envReq("garden"), ctx()).svg);
+    // indoors a fireplace is on the wall
+    expect(environments.draw(envReq("room_poor", { features: ["fireplace"] }), ctx()).svg).not.toBe(environments.draw(envReq("room_poor"), ctx()).svg);
+  });
+
+  it("a walled garden keeps one gate design in every shot (no picket fence across the view)", () => {
+    const f: EnvironmentRequest["features"] = ["trees", "fence", "high_wall", "gate"];
+    for (const shot of ["establishing", "wide", "full"] as const) {
+      const walled = environments.draw(envReq("garden", { features: f, shot }), ctx()).svg;
+      const noFence = environments.draw(envReq("garden", { features: ["trees", "high_wall", "gate"], shot }), ctx()).svg;
+      expect(walled, shot).toBe(noFence);
+    }
+  });
+
+  it("chimneys rise out of the roof: seen from the street they sit behind the facade", () => {
+    const spec = { ox: -4, oz: 18, width: 8, depth: 7, height: 9, roof: "pitched" as const, chimneys: 1, sortZ: 1 };
+    const build = (angle: EnvironmentRequest["angle"], chimneys: number) => {
+      const st = buildStage(envReq("street", { angle }), ctx());
+      st.items = [];
+      drawBuilding(st, { ...spec, chimneys });
+      return st.items[0]?.svg ?? "";
+    };
+    // street level (camera below the roof): the chimney is painted before the facade and roof
+    const low = build("eye", 1);
+    const lowBare = build("eye", 0);
+    expect(low.length).toBeGreaterThan(lowBare.length);
+    expect(low.endsWith(lowBare.slice(-300))).toBe(true);
+    // from above (bird's eye) it is painted last, on top of the roof
+    const high = build("birds_eye", 1);
+    const highBare = build("birds_eye", 0);
+    expect(high.startsWith(highBare.slice(0, 300))).toBe(true);
+  });
+
+  it("the city column publishes statue_top / statue_crown whenever its top is in view", () => {
+    for (const [shot, angle] of [
+      ["establishing", "low"],
+      ["wide", "eye"],
+      ["full", "eye"],
+      ["medium", "eye"],
+      ["medium", "low"],
+    ] as const) {
+      const d = environments.draw(envReq("city_square", { features: ["statue_column", "lamp_post"], shot, angle }), ctx());
+      const top = d.anchors?.statue_top;
+      const crown = d.anchors?.statue_crown;
+      expect(top, `${shot}/${angle}`).toBeDefined();
+      expect(crown!.y, `${shot}/${angle}`).toBeLessThan(top!.y);
+    }
+  });
+
+  it("night-sky star glints and sparkles stay wholly inside the panel", () => {
+    const d = environments.draw(envReq("garden", { time: "night", shot: "wide" }), ctx()).svg;
+    checkSvg(d);
+    const sp = fx.draw({ fx: "sparkle", box: BOX, polygon: [], focus: { x: BOX.x + 20, y: BOX.y + 15 }, heads: [], lineWidth: 1.1, seed: 9 }, ctx()).over;
+    for (const m of sp.matchAll(/ d="([^"]*)"/g)) {
+      for (const p of pathPoints(m[1])) {
+        expect(p.x).toBeGreaterThanOrEqual(BOX.x - 0.5);
+        expect(p.x).toBeLessThanOrEqual(BOX.x + BOX.w + 0.5);
+        expect(p.y).toBeGreaterThanOrEqual(BOX.y - 0.5);
+        expect(p.y).toBeLessThanOrEqual(BOX.y + BOX.h + 0.5);
+      }
+    }
+  });
+});
+
+describe("props (pass 3)", () => {
+  const firstFill = (svg: string, tag = "path") => new RegExp(`<${tag}[^>]*fill="([^"]+)"`).exec(svg)?.[1];
+
+  it("a rose reads as a rose in its bloom tone and is no taller than a songbird's reach", () => {
+    const red = props.draw("rose", 0.3, ctx()).svg;
+    const white = props.draw("rose", 0.3, ctx(), "white").svg;
+    expect(red).not.toBe(white);
+    expect(red).toContain('fill="#4a4a4a"'); // a red (dark) bloom by default
+    expect(props.nominalHeight("rose")).toBeLessThanOrEqual(24);
+    // thorns, two leaves and a sepal ring: several distinct shapes, not a disc on a stick
+    expect((red.match(/<path/g) ?? []).length).toBeGreaterThan(10);
+  });
+
+  it("a gem stays a jewel in every tone: a black stone is never a flat ink blob", () => {
+    const black = props.draw("gem", 0.4, ctx(), "black").svg;
+    expect(firstFill(black)).not.toBe("#141414");
+    expect(black).toContain('stroke="#ffffff"'); // paper facet lines
+    // at a heavy line (small on the page) the facets still show
+    expect(props.draw("gem", 2, ctx(), "black").svg).toContain('stroke="#ffffff"');
+    expect(props.draw("gem", 0.4, ctx(), "black").svg).not.toBe(props.draw("gem", 0.4, ctx(), "mid").svg);
+  });
+
+  it("the wheelbarrow is real size, its handles at an adult's hand height", () => {
+    const w = props.draw("wheelbarrow", 0.5, ctx());
+    expect(w.width).toBeGreaterThanOrEqual(70);
+    expect(w.height).toBeGreaterThanOrEqual(38);
+    expect(w.grip.y).toBeLessThan(-36);
+    expect(w.grip.y).toBeGreaterThan(-50);
+    expect(w.grip.x).toBeLessThan(-30);
+  });
+
+  it("the bag is a sack gripped in its upper body; the basket carries produce; the lantern hangs from its ring", () => {
+    const bag = props.draw("bag", 0.5, ctx(), "light");
+    expect(bag.height).toBeGreaterThanOrEqual(28);
+    expect(bag.grip.y).toBeLessThan(-bag.height * 0.5);
+    expect(bag.grip.y).toBeGreaterThan(-bag.height);
+    const basket = props.draw("basket", 0.3, ctx()).svg;
+    expect((basket.match(/<circle/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    const lamp = props.draw("lamp", 0.5, ctx());
+    expect(lamp.height).toBeLessThanOrEqual(24);
+    expect(lamp.grip.y).toBeLessThan(-lamp.height * 0.85);
+    expect(lamp.svg).toMatch(/transform="scale\(/);
+  });
+
+  it("a flower prop honours its bloom tone", () => {
+    const petals = (tone?: "white" | "light" | "dark") => /<ellipse[^>]*fill="([^"]+)"/.exec(props.draw("flower", 0.3, ctx(), tone).svg)?.[1];
+    expect(petals("white")).toBe("#ffffff");
+    expect(petals("light")).toBe("#d9d9d9");
+    expect(petals("dark")).toBe("#4a4a4a");
+  });
+});
+
+describe("fx (pass 3)", () => {
+  const box: Box = { x: 100, y: 200, w: 420, h: 300 };
+  const head = { point: { x: 380, y: 400 }, radius: 30 };
+  const req = (id: FxId, heads = [head]): FxRequest => ({ fx: id, box, polygon: [], focus: head.point, heads, lineWidth: 1.1, seed: 5 });
+
+  it("fireworks burst in the sky part of the panel, under the figures, clear of faces", () => {
+    expect(FX_LAYER.fireworks).toBe("under");
+    const r = fx.draw(req("fireworks"), ctx());
+    expect(r.over).toBe("");
+    expect(r.under).toMatch(/radialGradient/);
+    checkSvg(r.under);
+    const pts = [...r.under.matchAll(/ d="([^"]*)"/g)].flatMap((m) => pathPoints(m[1]));
+    expect(pts.length).toBeGreaterThan(40);
+    for (const p of pts) {
+      expect(p.x).toBeGreaterThanOrEqual(box.x - 1);
+      expect(p.x).toBeLessThanOrEqual(box.x + box.w + 1);
+      expect(p.y).toBeGreaterThanOrEqual(box.y - 1);
+      expect(p.y).toBeLessThanOrEqual(box.y + box.h + 1);
+    }
+    // burst centres (the glows) are in the upper part and not on a face
+    for (const m of r.under.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)" fill="url/g)) {
+      const [x, y] = [Number(m[1]), Number(m[2])];
+      expect(y).toBeLessThan(box.y + box.h * 0.62);
+      expect(Math.hypot(x - head.point.x, y - head.point.y)).toBeGreaterThan(head.radius);
+    }
+    // bursts read on a black sky and on paper: paper strokes with an ink edge
+    expect(r.under).toMatch(/stroke="#ffffff"/);
+    expect(r.under).toMatch(/stroke="#141414"/);
+  });
+
+  it("speed lines are light, thin strokes in a band behind the subject, not a smear over the panel", () => {
+    const r = fx.draw(req("speed_lines"), ctx()).under;
+    expect(r).toContain('fill="#2a2a2a"');
+    // a soft paper veil calms the background inside the band only
+    expect(r).toMatch(/linearGradient/);
+    let area = 0;
+    for (const sub of /<path d="([^"]*)" fill="#2a2a2a"/.exec(r)![1].split(/(?=M)/)) {
+      const pts = pathPoints(sub);
+      if (pts.length < 4) continue;
+      const len = Math.hypot(pts[2].x - pts[0].x, pts[2].y - pts[0].y);
+      const w = Math.hypot(pts[1].x - pts[3].x, pts[1].y - pts[3].y);
+      area += (len * w) / 2;
+      // thin strokes
+      expect(w).toBeLessThanOrEqual(1.1 * 1.4 + 0.1);
+      // in the band around the subject's body
+      expect(pts[0].y).toBeGreaterThan(head.point.y - head.radius * 4);
+    }
+    expect(area).toBeLessThan(box.w * box.h * 0.05);
   });
 });

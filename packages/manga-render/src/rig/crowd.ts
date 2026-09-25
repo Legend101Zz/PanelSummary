@@ -245,6 +245,7 @@ export const crowdRig: KindRig<CrowdLook> = {
           seed: (request.seed * 31 + i * 977) >>> 0,
           // the back row sits one level of detail below the front row
           detail: p.row === 1 ? (request.detail === "silhouette" || request.detail === "reduced" ? "silhouette" : "reduced") : request.detail ?? "full",
+          ...(request.eyes ? { eyes: request.eyes } : {}),
         },
         ctx,
         // the group rim follows the front row (the back row is mostly hidden behind it)

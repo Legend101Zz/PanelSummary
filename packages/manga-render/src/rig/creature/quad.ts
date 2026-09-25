@@ -588,8 +588,10 @@ export function drawQuad(
       sk.line(quadD(w0, addP(w0, rotP(P(R * dx * 0.5, R * dy * 0.3 - R * 0.1), headDir)), addP(w0, rotP(P(R * dx, R * dy * 0.6), headDir))), pen.fw);
     }
   }
-  // near ear on top
-  ear(hp(R * 0.1, -R * 0.75), earAngNear, es, false);
+  // near ear on top: round ears (rat, mouse, bear) sit on the skull's
+  // back-top edge in three-quarter view (on the crown they read as a coin)
+  if (s.ears.kind === "round" || s.ears.kind === "bear") ear(hp(-R * 0.36, -R * 0.62), (-112 * DEG) + headDir, es * 0.95, false);
+  else ear(hp(R * 0.1, -R * 0.75), earAngNear, es, false);
   // face: three-quarter eyes on the skull
   const faceSvg = drawFace(
     { c: sp === "horse" ? addP(hp(R * 0.1, -R * 0.2), P(0, 0)) : hp(R * 0.18, -R * 0.12), gap: R * 0.36, eyeR: R * s.eye * (sp === "horse" ? 1.05 : 1), turn: 0.55, pen, headR: R, brows: true, dark, rot: sp === "horse" ? headDir * 0.25 : headDir },

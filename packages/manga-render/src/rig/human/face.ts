@@ -137,7 +137,7 @@ export function drawEars(pen: Pen, g: FaceGeo, fill: string, ink: Ink): { behind
 // Expressions
 // ---------------------------------------------------------------------------
 
-type EyeKind = "open" | "happy" | "sleep" | "squeeze" | "shut" | "heart";
+type EyeKind = "open" | "happy" | "sleep" | "squeeze" | "shut" | "heart" | "closed" | "dead" | "blind";
 type MouthKind =
   | "line"
   | "smile"
@@ -194,7 +194,7 @@ export const EXPR: Record<Expression, ExprSpec> = {
   neutral: E({ mouth: "line", mw: 0.8 }),
   happy: E({ open: 0.88, lower: 0.35, brow: [-0.06, -0.02, 0.07], mouth: "grin", mw: 1.05 }),
   laugh: E({ eye: "happy", brow: [-0.1, -0.03, 0.08], mouth: "laugh", mw: 1.25 }),
-  gentle: E({ open: 0.6, lower: 0.25, brow: [-0.04, 0.02, 0.06], mouth: "smile", mw: 0.8, blush: true }),
+  gentle: E({ open: 0.6, lower: 0.25, brow: [-0.04, 0.02, 0.06], mouth: "smile", mw: 0.8 }),
   sad: E({ open: 0.78, tilt: -14, iris: 1.05, look: [0, 0.25], brow: [-0.13, 0.07, 0.0], mouth: "frown", mw: 0.72, shine: 1.5 }),
   cry: E({ eye: "shut", brow: [-0.16, 0.08, 0.0], wobble: true, mouth: "wail", mw: 1.1, tears: true }),
   angry: E({ open: 0.84, tilt: 20, iris: 0.72, brow: [0.14, -0.08, -0.02], mouth: "grit", mw: 1.0 }),
@@ -256,6 +256,36 @@ function drawEye(pen: Pen, g: FaceGeo, f: EyeFrame, x: ExprSpec, pal: Palette, i
   }
   if (x.eye === "squeeze") {
     return line(pen.poly([L(v(w * 0.95, -h * 0.55)), L(v(-w * 0.7, h * 0.05)), L(v(w * 0.95, h * 0.6))], false), strokeW);
+  }
+  if (x.eye === "closed") {
+    // calm closed lids: a lower-bowed lid line with lashes at the outer corner
+    let s = line(pen.curve([L(v(-w * 0.95, h * 0.02)), L(v(0.02 * w, h * 0.5)), L(v(w, h * 0.05))], false), strokeW);
+    s += line(pen.curve([L(v(w * 0.82, h * 0.2)), L(v(w * 1.12, h * 0.02))], false), ink.dw * 1.2);
+    return s;
+  }
+  if (x.eye === "dead") {
+    // slack closed lids over a sunken shadow: no lash flick, no emotion
+    let s = line(pen.curve([L(v(-w * 0.9, h * 0.12)), L(v(0, h * 0.34)), L(v(w * 0.95, h * 0.4))], false), strokeW * 0.9);
+    s += line(pen.curve([L(v(-w * 0.55, h * 0.95)), L(v(w * 0.1, h * 1.12)), L(v(w * 0.75, h * 0.98))], false), ink.dw * 0.8);
+    return s;
+  }
+  if (x.eye === "blind") {
+    // no eye in the socket: a statue shows a hollow where the gem was
+    // (dark socket, deeper shadow under the brow, a lit lower rim), a living
+    // face a blank white eye with no iris under a heavy lid
+    const upper = [v(-w, h * 0.25), v(-w * 0.62, -h * 0.72), v(-w * 0.05, -h), v(w * 0.55, -h * 0.84), v(w * 1.04, h * 0.02)];
+    const lower = [v(-w * 0.82, h * 0.6), v(-w * 0.25, h * 0.95), v(w * 0.4, h * 0.92), v(w * 0.98, h * 0.35)];
+    const socket = [...upper, ...[...lower].reverse()].map(L);
+    if (pal.statue) {
+      let s = shape(pen.curve(socket), "#4a4a4a", ink.dw);
+      s += solid(pen.curve([...upper, v(w * 0.7, h * 0.05), v(0, -h * 0.25), v(-w * 0.75, h * 0.3)].map(L)), INK);
+      s += line(pen.curve(lower.slice(1).map(L), false), ink.dw * 1.2, PAPER);
+      return s;
+    }
+    let s = shape(pen.curve(socket), PAPER, ink.dw);
+    s += solid(pen.curve([...lower, v(w * 0.9, h * 0.45), v(0, h * 0.55), v(-w * 0.8, h * 0.62)].map(L)), "#d9d9d9");
+    s += line(pen.curve(upper.map(L), false), strokeW * 1.1);
+    return s;
   }
   if (x.eye === "shut") {
     return line(pen.curve([L(v(-w * 0.95, -h * 0.05)), L(v(-w * 0.3, h * 0.35)), L(v(w * 0.3, h * 0.25)), L(v(w, h * 0.35))], false), strokeW * 1.15);
@@ -459,9 +489,26 @@ export interface FaceOut {
   brows: string;
 }
 
+/** How a mustache curls with this expression's mouth (see drawFacialHair). */
+export function mouthMood(expr: Expression): number | "smirk" {
+  const m = EXPR[expr].mouth;
+  if (m === "smirk") return "smirk";
+  if (m === "smile" || m === "grin" || m === "laugh") return 1;
+  if (m === "frown" || m === "wail" || m === "grimace") return -1;
+  return 0;
+}
+
+/** The expression with an appearance's eye state applied (FigureRequest.eyes). */
+export function withEyeState(x: ExprSpec, eyes: Ink["eyes"]): ExprSpec {
+  if (!eyes || eyes === "open") return x;
+  if (eyes === "closed") return { ...x, eye: "closed", tears: false };
+  if (eyes === "blind") return { ...x, eye: "blind", shine: undefined };
+  return { ...x, eye: "dead", brow: [-0.04, 0.05, 0.01], browAsym: 0, wobble: false, tears: false, blush: false, bags: false };
+}
+
 export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, ink: Ink): FaceOut {
   if (g.view === "back") return { under: "", mouth: "", brows: "" };
-  const x = EXPR[expr];
+  const x = withEyeState(EXPR[expr], ink.eyes);
   const R = g.R;
   const side = g.view === "side";
   const look = g.look;
@@ -477,8 +524,13 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
       ];
   let under = "";
   if (ink.detail === "silhouette") {
-    // silhouette LOD: at most two eye dots
-    for (const f of frames) under += circle(pen.circle(f.c, Math.max(g.eyeH, g.eyeW) * 0.42), INK);
+    // silhouette LOD: at most two eye dots (dashes when the eyes are shut)
+    const shut = x.eye === "closed" || x.eye === "dead" || x.eye === "sleep" || x.eye === "shut" || x.eye === "squeeze";
+    for (const f of frames) {
+      if (shut) under += line(pen.poly([v(f.c.x - f.w * 0.8, f.c.y + g.eyeH * 0.2), v(f.c.x + f.w * 0.8, f.c.y + g.eyeH * 0.25)], false), Math.max(ink.dw * 1.6, g.eyeH * 0.5));
+      else if (x.eye === "blind") under += circle(pen.circle(f.c, Math.max(g.eyeH, g.eyeW) * 0.42), pal.statue ? "#4a4a4a" : PAPER, ink.dw);
+      else under += circle(pen.circle(f.c, Math.max(g.eyeH, g.eyeW) * 0.42), INK);
+    }
     return { under, mouth: "", brows: "" };
   }
   const reduced = ink.detail === "reduced";

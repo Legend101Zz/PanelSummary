@@ -11,10 +11,13 @@ import {
   ANGLES,
   DEPTHS,
   EXPRESSIONS,
+  EYE_STATES,
   FACINGS,
   FIDELITY,
   FX,
+  MATERIALS,
   PAGE_HEIGHT,
+  PAGE_MARGIN,
   PAGE_WIDTH,
   PERCH_PARTS,
   POSES,
@@ -28,6 +31,7 @@ import {
   type CastMember,
   type FigureSpec,
   type LayoutSpec,
+  type LookVariant,
   type PanelSpec,
   type PlannedPage,
   type Point,
@@ -50,7 +54,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.2.0";
+export const RENDERER_VERSION = "manga-render/0.3.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -116,6 +120,20 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
     if (isRecord(f.on) && typeof f.on.target === "string") {
       const part = pickOpt(f.on.part, PERCH_PARTS);
       fig.on = part ? { target: f.on.target, part } : { target: f.on.target };
+    }
+    if (isRecord(f.variant)) {
+      const v: LookVariant = {};
+      const eyes = pickOpt(f.variant.eyes, EYE_STATES);
+      if (eyes) v.eyes = eyes;
+      const material = pickOpt(f.variant.material, MATERIALS);
+      if (material) v.material = material;
+      const outfit = pickOpt(f.variant.outfit_tone, TONES);
+      if (outfit) v.outfit_tone = outfit;
+      const hair = pickOpt(f.variant.hair_tone, TONES);
+      if (hair) v.hair_tone = hair;
+      const tone = pickOpt(f.variant.tone, TONES);
+      if (tone) v.tone = tone;
+      if (Object.keys(v).length > 0) fig.variant = v;
     }
     return fig;
   });
@@ -206,12 +224,15 @@ export function renderPageDetailed(
   // (layout issues were already reported by validatePage)
 
   const pageSeed = hashString(`${String(page.section_id ?? "")}|${pageNumber}`);
+  // the look each character wears on this page (scenery keeps a statue's state)
+  const pageVariants: Record<string, LookVariant> = {};
+  for (const p of panels) for (const f of p.figures) if (f.variant) pageVariants[f.character] = f.variant;
   const composed: ComposedPanel[] = [];
   panels.forEach((panel, i) => {
     const geo = layout.panels[i];
     const textLoad = panel.text.filter((t) => t.kind !== "sfx").length;
     const textArea = estimateTextArea(panel.text);
-    const c = composePanel({ panel, index: i, polygon: geo.polygon, bbox: geo.bbox, book, idPrefix: prefix, textLoad, textArea, rtl });
+    const c = composePanel({ panel, index: i, polygon: geo.polygon, bbox: geo.bbox, book, idPrefix: prefix, textLoad, textArea, rtl, pageVariants });
     issues.push(...c.issues);
     composed.push(c);
   });
@@ -231,6 +252,9 @@ export function renderPageDetailed(
     const c = composed[i];
     const offPanel: Record<string, Point> = {};
     const centre = { x: geo.bbox.x + geo.bbox.w / 2, y: geo.bbox.y + geo.bbox.h / 2 };
+    // a speaker whose head is out of frame (a statue seen from its feet) talks from off-panel, toward the head
+    const inFrame = c.figures.filter((f) => !f.headCropped);
+    for (const f of c.figures) if (f.headCropped) offPanel[f.character] = f.head;
     for (const t of panel.text) {
       if (!t.speaker || c.figures.some((f) => f.character === t.speaker)) continue;
       // Aim at the nearest panel where the speaker is drawn (its closest point),
@@ -254,16 +278,20 @@ export function renderPageDetailed(
       polygon: geo.polygon,
       bbox: geo.bbox,
       texts: panel.text,
-      speakers: c.figures.map((f) => ({ character: f.character, head: f.head, headRadius: f.headRadius, mouth: f.mouth, body: f.body })),
-      heads: c.figures.map((f) => ({ character: f.character, center: f.head, radius: f.headRadius })),
+      speakers: inFrame.map((f) => ({ character: f.character, head: f.head, headRadius: f.headRadius, mouth: f.mouth, body: f.body, ...(f.pose ? { pose: f.pose } : {}) })),
+      heads: inFrame.map((f) => ({ character: f.character, center: f.head, radius: f.headRadius })),
       bodies: c.figures.map((f) => f.body),
       obstacles: c.obstacles,
+      keepOut: c.keepOut,
+      ...(c.sfxSource ? { sfxSource: c.sfxSource } : {}),
       offPanel,
       rtl,
       seed: hashString(`${pageSeed}|${panel.id}|${i}|letter`),
       sfxBleed: panel.fx.includes("impact_burst") || panel.fx.includes("speed_lines"),
+      page: { x: PAGE_MARGIN, y: PAGE_MARGIN, w: PAGE_WIDTH - 2 * PAGE_MARGIN, h: PAGE_HEIGHT - 2 * PAGE_MARGIN },
       focus: c.focus,
-      names: Object.fromEntries(c.figures.map((f) => [f.character, castById.get(f.character)?.name ?? f.character])),
+      panelIndex: i,
+      names: Object.fromEntries(inFrame.map((f) => [f.character, castById.get(f.character)?.name ?? f.character])),
     });
     issues.push(...lettered.issues);
     texts.push(...lettered.texts);

@@ -45,11 +45,14 @@ function stars(st: Stage, top: number, bottom: number, count: number): string {
   let dots = "";
   let sparks = "";
   for (let i = 0; i < count; i += 1) {
-    const x = b.x + st.rand() * b.w;
-    const y = top + Math.pow(st.rand(), 1.3) * (bottom - top) * 0.92;
+    const x0 = b.x + st.rand() * b.w;
+    const y0 = top + Math.pow(st.rand(), 1.3) * (bottom - top) * 0.92;
     const big = st.rand() < 0.14;
     if (big) {
       const r = between(st.rand, 3.5, 6);
+      // a star glint stays wholly inside the panel (never cut by the border)
+      const x = Math.max(b.x + r + 3, Math.min(b.x + b.w - r - 3, x0));
+      const y = Math.max(b.y + r + 3, Math.min(b.y + b.h - r - 3, y0));
       const q = r * 0.22;
       sparks += polyPath([
         { x, y: y - r },
@@ -63,6 +66,8 @@ function stars(st: Stage, top: number, bottom: number, count: number): string {
       ]);
     } else {
       const r = between(st.rand, 0.6, 1.5);
+      const x = x0;
+      const y = y0;
       dots += `M${n(x - r)} ${n(y)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0`;
     }
   }
@@ -222,26 +227,47 @@ export function drawWeather(st: Stage): void {
   const t = (tone: Parameters<typeof toneFill>[0]) => toneFill(tone, st.p);
   let s = "";
   if (st.weather === "rain" || st.weather === "storm") {
+    // slanting streaks over the whole scene (clearly rain, not texture), and
+    // splash ticks where the drops hit the ground
     let d = "";
-    const count = Math.round((b.w * b.h) / (st.weather === "storm" ? 1400 : 2400));
-    const slant = st.weather === "storm" ? 0.35 : 0.18;
+    const storm = st.weather === "storm";
+    const count = Math.round((b.w * b.h) / (storm ? 750 : 1300));
+    const slant = storm ? 0.38 : 0.2;
     for (let i = 0; i < count; i += 1) {
       const x = b.x + st.rand() * (b.w + b.h * slant) - b.h * slant * 0.5;
       const y = b.y + st.rand() * b.h;
-      const len = between(st.rand, 10, 26);
+      const len = between(st.rand, 12, storm ? 38 : 28);
       d += `M${n(x)} ${n(y)}l${n(-len * slant)} ${n(len)}`;
     }
-    s += pathEl(d, { stroke: st.pal.night ? PAPER : "#5a5a5a", w: 0.7, opacity: 0.8 });
+    s += pathEl(d, { stroke: st.pal.night ? PAPER : "#3a3a3a", w: storm ? 1.05 : 0.85, opacity: 0.85 });
+    const top = Math.max(b.y + 4, st.cam.horizonY + 6);
+    if (top < b.y + b.h - 4) {
+      let sp = "";
+      const splashes = Math.round((b.w * (b.y + b.h - top)) / 2600);
+      for (let i = 0; i < splashes; i += 1) {
+        const x = b.x + st.rand() * b.w;
+        const y = top + Math.pow(st.rand(), 0.7) * (b.y + b.h - top);
+        const w = 2 + ((y - top) / Math.max(1, b.y + b.h - top)) * 5;
+        sp += `M${n(x - w)} ${n(y - w * 0.8)}L${n(x - w * 0.3)} ${n(y)}M${n(x + w)} ${n(y - w * 0.8)}L${n(x + w * 0.3)} ${n(y)}`;
+      }
+      s += pathEl(sp, { stroke: st.pal.night ? PAPER : "#3a3a3a", w: 0.8, opacity: 0.8 });
+    }
   } else if (st.weather === "snow") {
+    // falling snow: plenty of flakes, a few big near ones
     let d = "";
-    const count = Math.round((b.w * b.h) / 1500);
+    let big = "";
+    const count = Math.round((b.w * b.h) / 950);
     for (let i = 0; i < count; i += 1) {
       const x = b.x + st.rand() * b.w;
       const y = b.y + st.rand() * b.h;
-      const r = between(st.rand, 0.8, 2);
-      d += `M${n(x - r)} ${n(y)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0`;
+      const near = st.rand() < 0.08;
+      const r = near ? between(st.rand, 3, 4.6) : between(st.rand, 1, 2.4);
+      const c = `M${n(x - r)} ${n(y)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0`;
+      if (near) big += c;
+      else d += c;
     }
-    s += pathEl(d, { fill: PAPER, stroke: st.pal.night ? "none" : "#8a8a8a", w: 0.4 });
+    s += pathEl(d, { fill: PAPER, stroke: st.pal.night ? "none" : "#7a7a7a", w: 0.45 });
+    s += pathEl(big, { fill: PAPER, stroke: st.pal.night ? "#bdbdbd" : "#6a6a6a", w: 0.7 });
   } else if (st.weather === "wind") {
     let d = "";
     const count = 3 + st.lod;

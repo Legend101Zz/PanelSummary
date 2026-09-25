@@ -35,6 +35,8 @@ export interface SpeakerAnchor {
   headRadius: number;
   mouth: Point;
   body: Box;
+  /** Pose drawn (for reading the figure's gesture); optional. */
+  pose?: string;
 }
 
 export interface PlacementPanel {
@@ -51,6 +53,14 @@ export interface PlacementPanel {
   sfxBleed?: boolean;
   /** Where the action is (the main figure's head or the insert's subject), for SFX. */
   focus?: Point;
+  /** Key props (the beat's object, the insert's subject): no text may cover them. */
+  keepOut?: readonly Box[];
+  /** Treat keepOut as a (very) costly overlap instead of a hard rule (after the hard rule failed). */
+  keepOutSoft?: boolean;
+  /** Where the panel's sound comes from: an SFX sits beside it, never on it. */
+  sfxSource?: { point: Point; box: Box };
+  /** The page's live area: an SFX that breaks its border never leaves it. */
+  page?: Box;
 }
 
 export interface Placed {
@@ -75,6 +85,8 @@ export type TailTarget =
   | { type: "none" };
 
 const HEAD_GAP = 6;
+/** Boxes (narration, captions, name tags) keep further off faces than balloons. */
+const BOX_HEAD_GAP = 12;
 const BALLOON_GAP = 9;
 /** Balloons may butt against the panel border; a slightly inset spot is preferred when free. */
 const BALLOON_MARGIN = 3;
@@ -108,8 +120,8 @@ function hullBox(hull: readonly Point[]): Box {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-/** Candidate layouts (different line counts) for one text at one size. */
-export function candidateLayouts(kind: TextKind, text: string, size: number, bbox: Box, rotate = 0): BalloonLayout[] {
+/** Candidate layouts (different line counts) for one text at one size. `oneLine` keeps a title on one line. */
+export function candidateLayouts(kind: TextKind, text: string, size: number, bbox: Box, rotate = 0, oneLine = false): BalloonLayout[] {
   const style = KIND_STYLES[kind];
   const m = (s: string) => measure(s, style.face, size) * 1.02;
   const natural = m(text);
@@ -121,10 +133,14 @@ export function candidateLayouts(kind: TextKind, text: string, size: number, bbo
   const seen = new Set<string>();
   const out: BalloonLayout[] = [];
   const widths: number[] = [];
-  if (kind === "narration" || kind === "caption") {
-    for (const f of [0.92, 0.75, 0.6, 0.48, 0.38]) widths.push(bbox.w * f - pad - 20);
+  if (oneLine) {
+    widths.push(natural * 1.04 + size * 0.4);
+  } else {
+    if (kind === "narration" || kind === "caption") {
+      for (const f of [0.92, 0.75, 0.6, 0.48, 0.38]) widths.push(bbox.w * f - pad - 20);
+    }
+    for (let k = 1; k <= 9; k += 1) widths.push((natural / k) * 1.08 + size * 0.4);
   }
-  for (let k = 1; k <= 9; k += 1) widths.push((natural / k) * 1.08 + size * 0.4);
   for (const w0 of widths) {
     const w = Math.min(maxAllowed, Math.max(minWidth, w0));
     const layout = layoutBalloon(kind, text, size, w, rotate);
@@ -134,6 +150,7 @@ export function candidateLayouts(kind: TextKind, text: string, size: number, bbo
     seen.add(key);
     if (layout.hw * 2 > bbox.w - 8 || layout.hh * 2 > bbox.h - 8) continue;
     if (kind === "sfx" && layout.block.lines.length > 2) continue;
+    if (oneLine && layout.block.lines.length > 1) continue;
     out.push(layout);
   }
   return out;
@@ -161,13 +178,36 @@ export interface TailGeometry {
 }
 
 /**
- * Tail for a speaker, from the balloon edge point `from` toward the mouth:
- * the tip stops TAIL_REACH (about 55%) of the way to the mouth, and never
- * inside the head (its circle plus a small gap), so a tail points at the
- * speaker from about halfway out and never runs into a hat or a face.
+ * Where a speaker's voice comes from, seen from a balloon edge point: just
+ * outside the head outline at mouth height, on the balloon's side of the face
+ * (a tail aimed at the mouth from above would otherwise end on the crown or
+ * the hat).
  */
-export function tailToward(anchor: SpeakerAnchor, from: Point): TailGeometry {
+export function voicePoint(anchor: SpeakerAnchor, from: Point, flip = false): Point {
+  const h = anchor.head;
   const m = anchor.mouth;
+  const r = anchor.headRadius;
+  const dx = from.x - h.x;
+  // a balloon straight above or below keeps the mouth's own side of the face
+  let side = Math.abs(dx) > r * 0.4 ? Math.sign(dx) : Math.sign(m.x - h.x) || Math.sign(dx) || 1;
+  if (flip) side = -side;
+  const y = clamp(m.y, h.y - r * 0.2, h.y + r * 0.95);
+  return { x: h.x + side * (r + Math.max(4, r * 0.1)), y };
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/**
+ * Tail for a speaker, from the balloon edge point `from` toward the voice
+ * point beside the mouth: the tip stops TAIL_REACH (about 55%) of the way,
+ * and never inside the head (its circle plus a small gap), so a tail points
+ * at the speaker's mouth from about halfway out and never runs into a hat or
+ * a face.
+ */
+export function tailToward(anchor: SpeakerAnchor, from: Point, target?: Point): TailGeometry {
+  const m = target ?? voicePoint(anchor, from);
   const dx = m.x - from.x;
   const dy = m.y - from.y;
   const gap = Math.hypot(dx, dy) || 1;
@@ -185,9 +225,24 @@ export function tailToward(anchor: SpeakerAnchor, from: Point): TailGeometry {
     const enter = -b - Math.sqrt(disc);
     if (enter >= 0) free = Math.min(gap, enter);
   }
-  let t = Math.min(gap * TAIL_REACH, free);
+  // about halfway, but a long tail (a tall panel) still ends near its speaker
+  const near = Math.max(70, anchor.headRadius * 2.6);
+  let t = Math.min(Math.max(gap * TAIL_REACH, gap - near), free);
   t = Math.max(t, Math.min(14, gap * 0.5));
   return { tip: { x: from.x + ux * t, y: from.y + uy * t }, free, gap };
+}
+
+/**
+ * End of a thought trail: just outside the thinker's head on the side facing
+ * the balloon, so the trail of bubbles runs all the way to its own thinker.
+ */
+export function thoughtTip(anchor: SpeakerAnchor, from: Point): Point {
+  const h = anchor.head;
+  const dx = from.x - h.x;
+  const dy = from.y - h.y;
+  const d = Math.hypot(dx, dy) || 1;
+  const reach = Math.min(d * 0.85, anchor.headRadius * 1.2 + 8);
+  return { x: h.x + (dx / d) * reach, y: h.y + (dy / d) * reach };
 }
 
 /** Tail tip for a speaker from a balloon edge point (see tailToward). */
@@ -268,6 +323,8 @@ export interface PlaceRequest {
   connect?: Placed;
   /** SFX only: allow overlapping key art (with a high cost) when nothing else fits. */
   softObstacles?: boolean;
+  /** A title caption (a section's name): one line, at the top of the panel. */
+  title?: boolean;
 }
 
 interface Scored {
@@ -333,10 +390,19 @@ export function placeCandidates(
   const checkHeads = mode === "strict" || mode === "no_order";
   const checkBalloons = mode !== "loose";
   const checkOrder = mode === "strict" && !req.label;
+  const headGap = isBox ? BOX_HEAD_GAP : HEAD_GAP;
+  const hardKeepOut = mode === "strict" && panel.keepOutSoft !== true && !(isSfx && req.softObstacles);
+  const keepOut = panel.keepOut ?? [];
+  // a bleeding SFX stays in the page's live area and mostly in its own panel
+  const pageBox = panel.page;
+  const sourceCore = isSfx && panel.sfxSource ? shrinkBox(panel.sfxSource.box, 0.12) : undefined;
 
-  for (const size of sizes) {
-    const layouts = candidateLayouts(req.kind, req.text, size, bbox, req.rotate ?? 0);
-    const found: Scored[] = [];
+  /** Candidates from larger sizes that only fit badly (a tail across a face, a misattributed balloon). */
+  let fallback: Scored[] = [];
+  for (let si = 0; si < sizes.length; si += 1) {
+    const size = sizes[si];
+    const layouts = candidateLayouts(req.kind, req.text, size, bbox, req.rotate ?? 0, req.title === true);
+    const found: Scored[] = [...fallback];
     for (const layout of layouts) {
       const xs = gridSteps(innerBox.x + layout.hw, innerBox.x + innerBox.w - layout.hw, step);
       const ys = gridSteps(innerBox.y + layout.hh, innerBox.y + innerBox.h - layout.hh, step);
@@ -346,11 +412,25 @@ export function placeCandidates(
           const hull = hullAt(layout, center);
           const hb = hullBox(hull);
           if (innerRect ? !boxInside(innerRect, hb) : !hull.every((p) => insideConvex(inner, p))) continue;
-          if (bleed && !insideConvex(panel.polygon, center)) continue;
+          if (bleed) {
+            if (!insideConvex(panel.polygon, center)) continue;
+            if (pageBox && !boxInside(pageBox, hb)) continue;
+            if (boxesOverlapArea(hb, bbox) < 0.75 * hb.w * hb.h) continue;
+          }
           let blocked = false;
           if (checkHeads) {
             for (const h of panel.heads) {
-              if (faceHit(h, hull, hb)) {
+              if (faceHit(h, hull, hb, headGap)) {
+                blocked = true;
+                break;
+              }
+            }
+            if (blocked) continue;
+          }
+          if (hardKeepOut) {
+            // key props (the object of the beat) are never covered by text
+            for (const o of keepOut) {
+              if (boxesOverlapArea(hb, { x: o.x - 3, y: o.y - 3, w: o.w + 6, h: o.h + 6 }) > 0 && convexOverlap(hull, boxCorners(o), 3)) {
                 blocked = true;
                 break;
               }
@@ -358,13 +438,14 @@ export function placeCandidates(
             if (blocked) continue;
           }
           if (isSfx && mode === "strict" && !req.softObstacles) {
-            // never over an insert's subject (or other key art)
+            // never over an insert's subject (or other key art), never on the sound's source
             for (const o of panel.obstacles ?? []) {
               if (boxesOverlapArea(hb, { x: o.x - 4, y: o.y - 4, w: o.w + 8, h: o.h + 8 }) > 0) {
                 blocked = true;
                 break;
               }
             }
+            if (!blocked && sourceCore && boxesOverlapArea(hb, sourceCore) > 0.08 * Math.min(hb.w * hb.h, sourceCore.w * sourceCore.h)) blocked = true;
             if (blocked) continue;
           }
           if (checkBalloons) {
@@ -390,12 +471,20 @@ export function placeCandidates(
           const scored = score(req, layout, center, hull, hb, panel, placed);
           // butting against the border is allowed, a free inset spot is preferred
           if (!isSfx && !(preferredRect ? boxInside(preferredRect, hb) : preferred.length >= 3 && hull.every((p) => insideConvex(preferred, p)))) scored.cost += 5;
+          // a smaller size costs a little (consistent lettering)
+          scored.cost += 6 * si;
           found.push(scored);
         }
       }
     }
     if (found.length === 0) continue;
     found.sort((a, b) => a.cost - b.cost || a.center.y - b.center.y || a.center.x - b.center.x);
+    // only bad spots at this size (a tail over a face, a line that reads as someone else's):
+    // try the next size down before settling
+    if (found[0].cost >= 350 && si < sizes.length - 1 && !isSfx) {
+      fallback = found.slice(0, 16);
+      continue;
+    }
     const picked: Scored[] = [];
     for (const f of found) {
       const distinct = picked.every(
@@ -404,6 +493,7 @@ export function placeCandidates(
       if (distinct) picked.push(f);
       if (picked.length >= limit) break;
     }
+    fallback = [];
     return picked.map((best) => {
       const out: Placed = {
         index: req.index,
@@ -420,7 +510,29 @@ export function placeCandidates(
       return out;
     });
   }
+  if (fallback.length > 0) {
+    // nothing better at any size: the least bad spot
+    return fallback.slice(0, limit).map((best) => {
+      const out: Placed = { index: req.index, kind: req.kind, center: best.center, layout: best.layout, hull: best.hull, box: hullBox(best.hull), tail: best.tail, cost: best.cost };
+      if (req.label) out.label = true;
+      if (req.connect) out.connectTo = req.connect.index;
+      return out;
+    });
+  }
   return [];
+}
+
+function shrinkBox(b: Box, k: number): Box {
+  return { x: b.x + b.w * k, y: b.y + b.h * k, w: b.w * (1 - 2 * k), h: b.h * (1 - 2 * k) };
+}
+
+function boxCorners(b: Box): Point[] {
+  return [
+    { x: b.x, y: b.y },
+    { x: b.x + b.w, y: b.y },
+    { x: b.x + b.w, y: b.y + b.h },
+    { x: b.x, y: b.y + b.h },
+  ];
 }
 
 /**
@@ -428,10 +540,10 @@ export function placeCandidates(
  * and a chin zone below it, so a burst or a big balloon never sits on the
  * lower face in a close-up.
  */
-export function faceHit(h: HeadCircle, hull: readonly Point[], hb: Box): boolean {
-  const r = h.radius + HEAD_GAP;
+export function faceHit(h: HeadCircle, hull: readonly Point[], hb: Box, gap = HEAD_GAP): boolean {
+  const r = h.radius + gap;
   const chin = { x: h.center.x, y: h.center.y + h.radius * 0.72 };
-  const rc = h.radius * 0.62 + HEAD_GAP * 0.5;
+  const rc = h.radius * 0.62 + gap * 0.5;
   const top = h.center.y - r;
   const bottom = Math.max(h.center.y + r, chin.y + rc);
   if (h.center.x + r < hb.x || h.center.x - r > hb.x + hb.w || bottom < hb.y || top > hb.y + hb.h) return false;
@@ -466,6 +578,12 @@ export function tailSegment(p: Placed): [Point, Point] | undefined {
   return [boundaryToward(p.layout, p.center, p.tail.tip), p.tail.tip];
 }
 
+/** The whole line a tail points along (balloon edge → the speaker): a box on it reads as the tail's target. */
+export function tailLine(p: Placed): [Point, Point] | undefined {
+  if (!p.tail) return undefined;
+  return [boundaryToward(p.layout, p.center, p.tail.tip), p.tail.aim ?? p.tail.tip];
+}
+
 function score(
   req: PlaceRequest,
   layout: BalloonLayout,
@@ -482,18 +600,45 @@ function score(
   const area = hb.w * hb.h;
   let cost = 0;
   let tail: TailSpec | undefined;
+  const cover = (boxes: readonly Box[] | undefined, weight: number) => {
+    let c = 0;
+    for (const b of boxes ?? []) c += (weight * boxesOverlapArea(hb, b)) / Math.max(1, area);
+    return c;
+  };
+  /** Small key things (a hat, a gesturing hand, the statue on its column): cost by how much OF THEM is covered. */
+  const hide = (boxes: readonly Box[] | undefined, weight: number) => {
+    let c = 0;
+    for (const b of boxes ?? []) c += (weight * boxesOverlapArea(hb, b)) / Math.max(1, b.w * b.h);
+    return c;
+  };
+  /** Tails already drawn that this text would sit on (or between a tail and its speaker). */
+  const onTails = () => {
+    let c = 0;
+    for (const p of placed) {
+      const seg = tailLine(p);
+      if (seg && segmentHitsConvex(seg[0], seg[1], hull)) c += 300;
+    }
+    return c;
+  };
+  // key props: a hard rule in strict mode; a heavy cost when it had to be relaxed
+  cost += cover(panel.keepOut, 400);
 
   if (req.kind === "sfx") {
-    // the largest free area near the action: clear of faces, figures and balloons
+    // the largest free area near the source of the sound: clear of faces, figures and balloons
     let clear = 160;
     for (const h of panel.heads) clear = Math.min(clear, circleBoxGap(h.center, h.radius, hb));
     for (const p of placed) clear = Math.min(clear, boxGap(hb, p.box));
     cost -= 0.22 * clear;
     const cyRel = (center.y - bbox.y) / bbox.h;
-    cost += 16 * Math.abs(cyRel - 0.58) + 8 * Math.abs(xRel - 0.5);
-    for (const b of panel.bodies) cost += (40 * boxesOverlapArea(hb, b)) / Math.max(1, area);
-    for (const b of panel.obstacles ?? []) cost += (80 * boxesOverlapArea(hb, b)) / Math.max(1, area);
-    if (panel.focus) cost += (0.05 * Math.hypot(center.x - panel.focus.x, center.y - panel.focus.y) * 400) / Math.max(200, bbox.w);
+    const posWeight = panel.sfxSource ? 0.4 : 1;
+    cost += posWeight * (16 * Math.abs(cyRel - 0.58) + 8 * Math.abs(xRel - 0.5));
+    cost += cover(panel.bodies, 200);
+    cost += cover(panel.obstacles, 80) + hide(panel.obstacles, 60);
+    cost += onTails();
+    if (panel.sfxSource) {
+      // beside what makes the sound (the flapping bird), not across the panel from it
+      cost += 0.35 * boxGap(hb, panel.sfxSource.box);
+    } else if (panel.focus) cost += (0.05 * Math.hypot(center.x - panel.focus.x, center.y - panel.focus.y) * 400) / Math.max(200, bbox.w);
     return { cost, center, layout, hull };
   }
 
@@ -508,25 +653,41 @@ function score(
     cost += 0.7 * Math.min(d(above), d(left) + 14, d(right) + 14);
     // a name tag is one short line
     cost += 30 * (layout.block.lines.length - 1);
-    for (const b of panel.bodies) cost += (20 * boxesOverlapArea(hb, b)) / Math.max(1, area);
-    for (const b of panel.obstacles ?? []) cost += (70 * boxesOverlapArea(hb, b)) / Math.max(1, area);
+    // it names ITS character: nearer that face than any other, and clear of other faces
+    const own = circleBoxGap(h.center, h.radius, hb);
+    for (const o of panel.heads) {
+      if (o === h || (o.character !== undefined && o.character === h.character)) continue;
+      const og = circleBoxGap(o.center, o.radius, hb);
+      if (og < own + 6) cost += 220;
+      if (og < 16) cost += 120;
+    }
+    // over its own character's body is fine; across someone else's it names them
+    if (panel.figures && panel.figures.length > 0) {
+      for (const f of panel.figures) cost += ((f.character === h.character ? 20 : 220) * boxesOverlapArea(hb, f.body)) / Math.max(1, area);
+    } else cost += cover(panel.bodies, 20);
+    cost += cover(panel.obstacles, 90) + hide(panel.obstacles, 90);
+    cost += onTails();
     return { cost, center, layout, hull };
   }
 
   const lines = layout.block.lines;
   if (req.kind === "narration" || req.kind === "caption") {
-    const anchor = req.boxAnchor ?? "start";
+    const anchor = req.title ? "start" : (req.boxAnchor ?? "start");
+    // corner pulls are relative to the panel, so an empty region beats covering a figure
+    const norm = 260 / Math.max(1, bbox.w + bbox.h);
     if (anchor === "start") {
       const cornerX = rtl ? bbox.x + bbox.w - (hb.x + hb.w) : hb.x - bbox.x;
-      cost += 0.9 * cornerX + 1.2 * (hb.y - bbox.y);
+      cost += norm * (0.9 * cornerX + 1.2 * (hb.y - bbox.y));
     } else if (anchor === "end") {
       const cornerX = rtl ? hb.x - bbox.x : bbox.x + bbox.w - (hb.x + hb.w);
-      cost += 0.9 * cornerX + 1.2 * (bbox.y + bbox.h - (hb.y + hb.h));
+      cost += norm * (0.9 * cornerX + 1.2 * (bbox.y + bbox.h - (hb.y + hb.h)));
     } else {
       // flow: next in reading order, as high as the order allows, against a side
       const side = Math.min(hb.x - bbox.x, bbox.x + bbox.w - (hb.x + hb.w));
       cost += 90 * topRel + 0.4 * side;
     }
+    // a title sits on the top edge
+    if (req.title) cost += 3 * (hb.y - bbox.y);
     cost += 60 * Math.max(0, hb.w / bbox.w - 0.66);
     cost += 2 * (lines.length - 1) + 3 * Math.max(0, lines.length - 3) ** 2 + 20 * Math.max(0, lines.length - MAX_BALLOON_LINES);
     // no narrow towers of one-word lines
@@ -534,13 +695,15 @@ function score(
       for (const l of lines) if (!l.includes(" ")) cost += 9;
     }
     cost += 25 * Math.max(0, 1.3 - hb.w / Math.max(1, hb.h));
-    for (const b of panel.bodies) cost += (25 * boxesOverlapArea(hb, b)) / Math.max(1, area);
-    for (const b of panel.obstacles ?? []) cost += (70 * boxesOverlapArea(hb, b)) / Math.max(1, area);
+    cost += cover(panel.bodies, 220);
+    cost += cover(panel.obstacles, 120) + hide(panel.obstacles, 90);
+    cost += onTails();
     return { cost, center, layout, hull };
   }
 
-  // speaking balloons: top band first, then short sensible tails
-  cost += 90 * topRel;
+  // speaking balloons: top band first (tall panels open at the top), then short sensible tails
+  const tall = Math.max(0, Math.min(1, (bbox.h / Math.max(1, bbox.w) - 1.3) / 0.9));
+  cost += (90 + (req.order === 0 ? 120 : 40) * tall) * topRel;
   if (req.order === 0) cost += 10 * readX;
   const aspect = hb.w / Math.max(1, hb.h);
   cost += 14 * Math.max(0, Math.abs(Math.log(aspect / 1.6)) - 0.3);
@@ -555,9 +718,13 @@ function score(
       else if (w === 2 && words >= 7) cost += 3;
     }
   }
-  cost += 3 * Math.max(0, lines.length - 3) + 25 * Math.max(0, lines.length - MAX_BALLOON_LINES);
-  for (const b of panel.bodies) cost += (22 * boxesOverlapArea(hb, b)) / Math.max(1, area);
-  for (const b of panel.obstacles ?? []) cost += (70 * boxesOverlapArea(hb, b)) / Math.max(1, area);
+  cost += 3 * Math.max(0, lines.length - 3) + 40 * Math.max(0, lines.length - MAX_BALLOON_LINES);
+  // a balloon may lean on its own speaker's body; over someone else's it reads badly
+  const speakerId = req.target.type === "speaker" ? req.target.anchor.character : undefined;
+  if (panel.figures && panel.figures.length > 0) {
+    for (const f of panel.figures) cost += ((f.character === speakerId ? 22 : 70) * boxesOverlapArea(hb, f.body)) / Math.max(1, area);
+  } else cost += cover(panel.bodies, 22);
+  cost += cover(panel.obstacles, 70) + hide(panel.obstacles, 90);
 
   const crossesTails = (base: Point, tip: Point) => {
     let c = 0;
@@ -584,29 +751,87 @@ function score(
     if (seg && segmentHitsConvex(seg[0], seg[1], hull)) cost += 300;
   } else if (req.target.type === "speaker") {
     const anchor = req.target.anchor;
-    const from = boundaryToward(layout, center, anchor.mouth);
-    const t = tailToward(anchor, from);
-    const tip = t.tip;
-    const len = t.free;
-    cost += 0.05 * len + 0.3 * Math.max(0, len - 120) + 4 * Math.max(0, 16 - len);
+    const thought = layout.shape === "cloud";
+    const allowance = 120 + 0.35 * bbox.h * tall;
+    /** One way to aim the tail: its tip, its cost (ownership, faces, hats, bodies). */
+    const aimAt = (target: Point) => {
+      const from = boundaryToward(layout, center, target);
+      const t = tailToward(anchor, from, thought ? anchor.head : target);
+      let tip = thought ? thoughtTip(anchor, from) : t.tip;
+      let c = 0;
+      if (!thought) {
+        // a tail stops short of a hat or crown in its way (it points past it at the mouth)
+        for (const o of panel.obstacles ?? []) {
+          const inside = (q: Point) => q.x >= o.x && q.x <= o.x + o.w && q.y >= o.y && q.y <= o.y + o.h;
+          if (!inside(tip) || inside(from)) continue;
+          let lo = 0;
+          let hi = 1;
+          for (let k = 0; k < 12; k += 1) {
+            const mid = (lo + hi) / 2;
+            if (inside({ x: from.x + (tip.x - from.x) * mid, y: from.y + (tip.y - from.y) * mid })) hi = mid;
+            else lo = mid;
+          }
+          const cut = { x: from.x + (tip.x - from.x) * lo, y: from.y + (tip.y - from.y) * lo };
+          if (Math.hypot(cut.x - from.x, cut.y - from.y) >= 14) tip = cut;
+        }
+      }
+      const len = t.free;
+      c += 0.05 * len + 0.3 * Math.max(0, len - allowance) + 4 * Math.max(0, 16 - len);
+      // the tip must end nearer its own speaker than anyone else
+      const tipOwn = Math.hypot(tip.x - anchor.head.x, tip.y - anchor.head.y) - anchor.headRadius;
+      const base = boundaryToward(layout, center, tip);
+      for (const h of panel.heads) {
+        if (h.character === anchor.character) continue;
+        if (Math.hypot(tip.x - h.center.x, tip.y - h.center.y) - h.radius < tipOwn) c += 600;
+        // tail must not pass through other faces
+        if (distPointSegment(h.center, base, tip) < h.radius) c += 400;
+      }
+      if (thought) {
+        // a thought trail runs clear of the other figures' bodies
+        for (const f of panel.figures ?? []) {
+          if (f.character === anchor.character) continue;
+          if (segmentHitsBox(base, tip, f.body)) c += 150;
+        }
+      }
+      for (const k of panel.keepOut ?? []) if (segmentHitsBox(base, tip, k)) c += 120;
+      // a tail that ends on a hat or a crown points at the hat, not the mouth
+      for (const o of panel.obstacles ?? []) {
+        if (tip.x >= o.x && tip.x <= o.x + o.w && tip.y >= o.y && tip.y <= o.y + o.h) c += 70;
+        else if (segmentHitsBox(base, tip, o)) c += 25;
+      }
+      c += crossesTails(base, tip);
+      // tails pointing up into a balloon read badly: prefer balloons above/beside the head
+      if (tip.y < center.y - layout.hh * 0.2 && tip.y < hb.y) c += 40;
+      return { tip, cost: c, aim: thought ? anchor.head : target };
+    };
+    // aim beside the mouth on the balloon's side; else the other side, else at the mouth itself
+    const options = thought
+      ? [aimAt(anchor.head)]
+      : [aimAt(voicePoint(anchor, center)), { ...aimAt(voicePoint(anchor, center, true)), extra: 12 }, { ...aimAt(anchor.mouth), extra: 20 }];
+    const best = options.reduce((a, b) => (b.cost + ("extra" in b ? b.extra : 0) < a.cost + ("extra" in a ? a.extra : 0) ? b : a));
+    if ("extra" in best) cost += best.extra;
+    cost += best.cost;
     cost += 0.06 * Math.abs(center.x - anchor.head.x);
-    // tail must not pass through other faces or balloons, nor cross other tails
-    const base = boundaryToward(layout, center, tip);
+    // the balloon belongs to its speaker: beside that head, not nearer another face
+    const own = circleBoxGap(anchor.head, anchor.headRadius, hb);
+    // (a tall panel opens with its first balloon at the top, however far the speaker)
+    cost += 0.12 * (req.order === 0 ? 1 - 0.85 * tall : 1) * Math.max(0, own - 70);
+    const dOwn = Math.hypot(center.x - anchor.head.x, center.y - anchor.head.y);
     for (const h of panel.heads) {
       if (h.character === anchor.character) continue;
-      if (distPointSegment(h.center, base, tip) < h.radius) cost += 400;
+      // (a balloon in the band above both heads, tail down to its speaker, is fine)
+      const aboveThem = hb.y + hb.h < h.center.y - h.radius * 0.6;
+      if (aboveThem) continue;
+      if (circleBoxGap(h.center, h.radius, hb) + 4 < own) cost += 260;
+      // halfway between two faces reads as either's: clearly nearer its own speaker
+      const dOther = Math.hypot(center.x - h.center.x, center.y - h.center.y);
+      cost += 220 * Math.max(0, dOwn / Math.max(1, dOther) - 0.78);
     }
-    if (layout.shape === "cloud") {
-      // a thought trail runs clear of the other figures' bodies
-      for (const f of panel.figures ?? []) {
-        if (f.character === anchor.character) continue;
-        if (segmentHitsBox(base, tip, f.body)) cost += 150;
-      }
+    if (center.y > anchor.head.y) {
+      // below the speaker's head, over someone else's body, reads as theirs
+      for (const f of panel.figures ?? []) if (f.character !== anchor.character) cost += (200 * boxesOverlapArea(hb, f.body)) / Math.max(1, area);
     }
-    cost += crossesTails(base, tip);
-    // tails pointing up into a balloon read badly: prefer balloons above/beside the head
-    if (tip.y < center.y - layout.hh * 0.2 && tip.y < hb.y) cost += 40;
-    tail = { tip, offPanel: false };
+    tail = { tip: best.tip, offPanel: false, aim: best.aim };
   } else if (req.target.type === "offpanel") {
     const tip = offPanelTip(panel.polygon, bbox, center, req.target.toward);
     const len = gapTo(layout, center, tip);

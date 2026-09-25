@@ -90,6 +90,54 @@ for (const spec of PAGES) {
   }
 }
 
+// Statue sheet: the Prince on his column in every shot, gold and then stripped
+// (a blind stone variant), and the Swallow between his feet in a medium shot.
+{
+  const shots = ["establishing", "wide", "full", "medium", "close", "extreme_close"] as const;
+  const variants = [undefined, { material: "stone" as const, eyes: "blind" as const }];
+  const cells: string[] = [];
+  variants.forEach((variant, row) => {
+    shots.forEach((shot, col) => {
+      const spec = {
+        schema: "manga-page.v1" as const,
+        page_number: 1,
+        section_id: "s1",
+        purpose: "Statue sheet.",
+        layout: { template: "splash" },
+        claims: ["c01"],
+        page_turn_hook: false,
+        panels: [
+          {
+            id: "p1",
+            beat: shot === "medium" ? "The Swallow settles between the statue's feet." : "The statue on its column.",
+            shot,
+            angle: "eye" as const,
+            location: "square",
+            time: "night" as const,
+            figures: [
+              { character: "prince", pose: "stand" as const, expression: "sad" as const, facing: "front" as const, slot: "center" as const, ...(variant ? { variant } : {}) },
+              ...(shot === "medium" ? [{ character: "swallow", pose: "perch" as const, expression: "gentle" as const, facing: "left" as const, slot: "center" as const }] : []),
+            ],
+            props: [],
+            fx: [],
+            text: [{ kind: "caption" as const, text: `${shot}${variant ? ", stone, blind" : ""}`, fidelity: "paraphrase" as const, source: { unit: "u01", page: 1 } }],
+            source: [{ unit: "u01", page: 1 }],
+          },
+        ],
+      };
+      const r = renderPage(spec, BOOK, { idPrefix: `st${row}${col}-`, folio: false });
+      const inner = r.svg.replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "");
+      cells.push(`<g transform="translate(${col * 1040} ${row * 1540})">${inner}</g>`);
+    });
+  });
+  const W = shots.length * 1040 - 40;
+  const H = variants.length * 1540 - 40;
+  writeFileSync(
+    path.join(OUT, "statue-sheet.png"),
+    svgToPng(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="#ddd"/>${cells.join("")}</svg>`, { width: 2400 }),
+  );
+}
+
 // One page at desktop size and phone width.
 const showcase = PAGES[2];
 const showcaseResult = renderPage(showcase, BOOK);

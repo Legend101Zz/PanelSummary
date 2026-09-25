@@ -71,6 +71,8 @@ export interface PoseDef {
   airborne?: boolean;
   /** Shoulder raise as a fraction of height (+ = hunched up, - = dropped). */
   shrug: number;
+  /** Yaw of the side view in degrees (default SIDE_YAW); a front-facing sit/kneel uses a shallower turn. */
+  yaw?: number;
 }
 
 export const HUMAN_POSES = [
@@ -148,6 +150,15 @@ const ACT: Record<Expression, { lean: number; head: number; roll: number; shrug:
 
 export function actPose(d: PoseDef, e: Expression, pose: Pose, _m: Metrics): void {
   const a = ACT[e] ?? ACT.neutral;
+  if (pose === "reach") {
+    // a reach looks up at its target whatever the mood: a dropped head would
+    // put the raised arm across the face (reach + cry)
+    d.lean += Math.min(a.lean, 2) * 0.5;
+    d.headRoll += a.roll * 0.5;
+    d.shrug += a.shrug;
+    d.headPitch = Math.min(d.headPitch + a.head * 0.3, 0);
+    return;
+  }
   // airborne and lying poses only move the head; poses that already fold the
   // body (bow, cower, cover face) take a smaller share of the lean
   const headOnly = d.airborne || pose === "lie" || pose === "fall" || pose === "jump";
@@ -191,25 +202,34 @@ export function poseDef(pose: Pose, m: Metrics): PoseDef {
       d.far = { arm: { upper: [12, 9], fore: [70, 6], hand: "relaxed" }, leg: { thigh: [86, 6], shin: [0, 4] } };
       break;
     case "kneel":
-      d.lean = 4;
+      // both knees on the ground, shins back along it, hands on the thighs,
+      // the body upright and a little bowed
+      d.lean = 6;
       d.headPitch = 10;
-      d.kneel = true;
       d.near = {
-        arm: { target: (k) => add3(k.nearKnee ?? k.pelvis, v3(0.01 * H, 0.03 * H, 0)), pole: v3(0.3, -0.2, 1), hand: "relaxed" },
-        leg: { thigh: [82, 3], shin: [3, 2] },
+        arm: { target: (k) => add3(k.nearKnee ?? k.pelvis, add3(v3(0, 0.035 * H, 0), mul3(k.F, -0.03 * H))), pole: v3(0.3, -0.2, 1), hand: "relaxed" },
+        leg: { thigh: [8, 5], shin: [-96, 2], toe: -80 },
       };
-      d.far = { arm: { upper: [2, 8], fore: [6, 5], hand: "relaxed" }, leg: { thigh: [1, 3], shin: [-100, 2], toe: -70 } };
+      d.far = {
+        arm: { target: (k) => add3(k.pelvis, add3(v3(0.07 * H, 0.03 * H, 0.06 * H), mul3(k.L, 0.04 * H))), pole: v3(0.3, -0.2, 1), hand: "relaxed" },
+        leg: { thigh: [2, 5], shin: [-100, 2], toe: -80 },
+      };
       break;
     case "lie":
+      // lying on the back: one knee raised, the near hand resting on the
+      // chest, the far arm along the ground; the head rests on the ground
+      // turned toward the viewer (always drawn in three-quarter, see viewFor)
       d.mirror = true;
       d.roll = 90;
-      d.headPitch = -6;
+      d.headPitch = -10;
+      // the head turns up toward the viewer (a face on its side is hard to read)
+      d.headRoll = 50;
       d.airborne = true;
       d.near = {
-        arm: { target: (k) => at(k, k.pelvis, m.torsoLen * 0.3, m.waistD + m.belly + 0.02 * H, 0.01 * H), pole: v3(-0.2, 0, 1), hand: "relaxed" },
-        leg: { thigh: [34, 4], shin: [-18, 2], toe: 0 },
+        arm: { target: (k) => at(k, k.pelvis, m.torsoLen * 0.55, m.chestD + m.bust + 0.025 * H, 0.03 * H), pole: v3(-0.6, -0.9, 0.5), hand: "relaxed" },
+        leg: { thigh: [48, 6], shin: [-58, 3], toe: -10 },
       };
-      d.far = { arm: { upper: [6, 12], fore: [12, 6], hand: "relaxed" }, leg: { thigh: [-2, 3], shin: [-1, 2], toe: 0 } };
+      d.far = { arm: { upper: [-6, 20], fore: [-2, 12], hand: "relaxed" }, leg: { thigh: [2, 4], shin: [0, 2], toe: 0 } };
       break;
     case "fall":
       d.roll = -34;
@@ -236,10 +256,13 @@ export function poseDef(pose: Pose, m: Metrics): PoseDef {
       d.far = { arm: relaxedFar, leg: { thigh: [-6, 3], shin: [-3, 2] } };
       break;
     case "reach":
-      d.lean = 14;
-      d.headPitch = -6;
-      d.near = { arm: { upper: [110, 6], fore: [116, 3], hand: "open" }, leg: { thigh: [30, 3], shin: [4, 2], toe: 6 } };
-      d.far = { arm: { upper: [-28, 12], fore: [-12, 6], hand: "relaxed" }, leg: { thigh: [-14, 3], shin: [-20, 2], toe: -26 } };
+      // reaching out: the near arm forward at shoulder height (offering,
+      // taking, asking), the far arm following lower; the arms run below the
+      // chin, so a speaking or crying face is never crossed by an arm
+      d.lean = 10;
+      d.headPitch = -4;
+      d.near = { arm: { upper: [90, -2], fore: [94, -4], hand: "open" }, leg: { thigh: [26, 3], shin: [4, 2], toe: 6 } };
+      d.far = { arm: { upper: [78, 8], fore: [86, 4], hand: "open" }, leg: { thigh: [-14, 3], shin: [-20, 2], toe: -26 } };
       break;
     case "wave":
       d.headRoll = 4;
@@ -318,14 +341,18 @@ export function poseDef(pose: Pose, m: Metrics): PoseDef {
       };
       break;
     case "carry":
-      d.lean = -5;
+      // a load hugged against the chest with both arms: elbows out and
+      // down, both hands at chest height in front (the grip anchor sits
+      // between them), leaning back a little under the weight
+      d.lean = -6;
+      d.headPitch = 4;
       d.grip = "both";
       d.near = {
-        arm: { target: (k, s) => at(k, k.pelvis, m.torsoLen * 0.42, 0.19 * H, s * 0.07 * H), pole: v3(-0.3, -1, 0.7), hand: "grip" },
+        arm: { target: (k, s) => at(k, k.pelvis, m.torsoLen * 0.74, m.chestD + m.bust + 0.07 * H, s * 0.05 * H), pole: v3(-0.2, -1, 0.9), hand: "grip" },
         leg: { thigh: [6, 5], shin: [0, 3] },
       };
       d.far = {
-        arm: { target: (k, s) => at(k, k.pelvis, m.torsoLen * 0.44, 0.19 * H, s * 0.07 * H), pole: v3(-0.3, -1, 0.7), hand: "grip" },
+        arm: { target: (k, s) => at(k, k.pelvis, m.torsoLen * 0.76, m.chestD + m.bust + 0.07 * H, s * 0.05 * H), pole: v3(-0.2, -1, 0.9), hand: "grip" },
         leg: { thigh: [-5, 5], shin: [-2, 3] },
       };
       break;

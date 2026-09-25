@@ -256,6 +256,10 @@ export function drawBuilding(st: Stage, spec: BuildingSpec): void {
     }
     face(pts, { x: nx, y: 0, z: 0 }, fill, flush(st, b, lw));
   }
+  // chimneys go here (behind the facade and roof) unless the camera looks
+  // down on the roof, so a chimney seen from the street rises out of the roof
+  // instead of hanging over the facade below its ridge
+  const behindAt = s.length;
   // facade
   {
     const pts = [M(0, 0, 0), M(W, 0, 0), M(W, H, 0), M(0, H, 0)];
@@ -377,19 +381,25 @@ export function drawBuilding(st: Stage, spec: BuildingSpec): void {
       }
     }
   }
-  // chimneys
+  // chimneys: on the ridge line of pitched/thatch roofs (centre of the depth),
+  // on the ridge of a gable roof (centre of the width), anywhere on a flat roof;
+  // their foot starts below the roof surface so they always grow out of it
   const chimneys = spec.chimneys ?? 0;
+  let chim = "";
+  const flatTop = spec.roof === "flat" || spec.roof === "none";
+  const roofTop = base + (flatTop ? H : H + R);
   for (let i = 0; i < chimneys; i += 1) {
-    const ca = W * (0.2 + (0.6 * (i + 0.5)) / chimneys) + between(st.rand, -0.3, 0.3);
-    const cd = spec.roof === "gable" ? D * 0.6 : D * 0.5;
-    const baseY = spec.roof === "flat" || spec.roof === "none" ? H : H + R * 0.55;
-    const topY = (spec.roof === "flat" || spec.roof === "none" ? H : H + R) + between(st.rand, 0.9, 1.6);
-    s += boxSvg(st, fr, { a0: ca - 0.35, a1: ca + 0.35, y0: baseY, y1: topY, d0: cd - 0.35, d1: cd + 0.35 }, wall, lw * 0.9);
+    const jitter = between(st.rand, -0.3, 0.3);
+    const ca = spec.roof === "gable" ? W / 2 + (chimneys > 1 ? (i === 0 ? -0.18 : 0.18) * W * 0.3 : 0) + jitter * 0.3 : W * (0.2 + (0.6 * (i + 0.5)) / chimneys) + jitter;
+    const cd = spec.roof === "gable" ? D * (0.35 + 0.3 * ((i + 1) / (chimneys + 1))) : D * 0.5;
+    const baseY = flatTop ? H : H + R * 0.55;
+    const topY = (flatTop ? H : H + R) + between(st.rand, 0.9, 1.6);
+    chim += boxSvg(st, fr, { a0: ca - 0.35, a1: ca + 0.35, y0: baseY, y1: topY, d0: cd - 0.35, d1: cd + 0.35 }, wall, lw * 0.9);
     // pots
-    const pot = boxSvg(st, fr, { a0: ca - 0.12, a1: ca + 0.02, y0: topY, y1: topY + 0.35, d0: cd - 0.1, d1: cd + 0.1 }, wall, lw * 0.7);
-    s += pot;
-    if (st.snow) s += snowLip(st, fr.M(ca - 0.4, topY, cd - 0.36), fr.M(ca + 0.4, topY, cd - 0.36), lw * 0.7);
+    chim += boxSvg(st, fr, { a0: ca - 0.12, a1: ca + 0.02, y0: topY, y1: topY + 0.35, d0: cd - 0.1, d1: cd + 0.1 }, wall, lw * 0.7);
+    if (st.snow) chim += snowLip(st, fr.M(ca - 0.4, topY, cd - 0.36), fr.M(ca + 0.4, topY, cd - 0.36), lw * 0.7);
   }
+  if (chim) s = st.cam.h > roofTop ? s + chim : s.slice(0, behindAt) + chim + s.slice(behindAt);
   add(st, LAYER.stand, spec.sortZ ?? zc, s);
 }
 

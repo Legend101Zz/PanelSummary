@@ -52,6 +52,8 @@ export interface Sites {
   span: [number, number];
   /** Features the scene already drew intrinsically (skipped here). */
   drawn?: EnvFeature[];
+  /** The scene has buildings of its own (their doors and windows serve those features outdoors). */
+  buildings?: boolean;
 }
 
 const BAND_ORDER: EnvFeature[] = [
@@ -118,7 +120,7 @@ export function drawFeatures(st: Stage, features: readonly EnvFeature[], sites: 
         if (sites.interior) {
           const slot = takeSlot("back");
           if (slot) ironGateOnWall(st, slot);
-        } else gate(st, sites.centre.x, set.has("high_wall") ? sites.backZ : sites.centre.z, 3.4, !set.has("high_wall"));
+        } else gate(st, sites.centre.x, set.has("high_wall") ? sites.backZ : set.has("fence") ? st.zmid + 3.2 : sites.centre.z, 3.4, !set.has("high_wall"));
         break;
       case "clock_tower": {
         if (sites.interior) {
@@ -139,7 +141,15 @@ export function drawFeatures(st: Stage, features: readonly EnvFeature[], sites: 
         break;
       case "fence":
         if (sites.interior) railing(st, sites.span[0] + 0.3, sites.span[1] - 0.3, st.zmid + 1.6, 0.95);
-        else picketFence(st, { x: sites.span[0], z: st.zmid + 3.2 }, { x: sites.span[1], z: st.zmid + 3.2 });
+        else if (set.has("high_wall")) {
+          // a walled garden: the wall is the enclosure (a picket fence across
+          // the foreground would read as a different gate in every shot)
+        } else if (set.has("gate")) {
+          // the fence runs up to the gate on both sides
+          const gx = sites.centre.x;
+          picketFence(st, { x: sites.span[0], z: st.zmid + 3.2 }, { x: gx - 2.4, z: st.zmid + 3.2 });
+          picketFence(st, { x: gx + 2.4, z: st.zmid + 3.2 }, { x: sites.span[1], z: st.zmid + 3.2 });
+        } else picketFence(st, { x: sites.span[0], z: st.zmid + 3.2 }, { x: sites.span[1], z: st.zmid + 3.2 });
         break;
       case "statue_column": {
         const c = takeCentre();
@@ -175,6 +185,10 @@ export function drawFeatures(st: Stage, features: readonly EnvFeature[], sites: 
       case "door":
       case "fireplace":
       case "bookshelf": {
+        // Outdoors, a scene with buildings of its own already has doors and
+        // windows, and a hearth shows as chimney smoke: never stand a lone
+        // hut with a fireplace (or a door) in the street or the garden.
+        if (!sites.interior && (f === "fireplace" || f === "bookshelf" || (sites.buildings && (f === "door" || f === "window")))) break;
         const slot = sites.interior ? takeSlot(f === "bookshelf" ? "left" : "back") : null;
         const wallSlot = slot ?? outdoorWall(st, takeSpot(), f);
         if (!wallSlot) break;

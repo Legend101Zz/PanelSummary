@@ -48,7 +48,9 @@ const ARM_TABLE: Partial<Record<Pose, [ArmAngles, ArmAngles]>> = {
   jump: [{ a1: -58, a2: -84, hand: "open" }, { a1: -118, a2: -100, hand: "open" }],
   fall: [{ a1: -30, a2: -80, hand: "open" }, { a1: -150, a2: -120, hand: "open" }],
   bow: [{ a1: 84, a2: 178, hand: "fist" }, { a1: 110, a2: 150, hand: "fist" }],
-  lie: [{ a1: 60, a2: 90, hand: "fist" }, { a1: 110, a2: 100, hand: "fist" }],
+  // lying (the body is turned on its side): the lower arm rests along the
+  // ground toward the feet, clear of the face
+  lie: [{ a1: 158, a2: 176, hand: "fist" }, { a1: 200, a2: 190, hand: "fist" }],
   sit: [{ a1: 70, a2: 20, hand: "fist" }, { a1: 100, a2: 30, hand: "fist" }],
   walk: [{ a1: 60, a2: 70, hand: "fist" }, { a1: 118, a2: 110, hand: "fist" }],
   run: [{ a1: 30, a2: -40, hand: "fist" }, { a1: 140, a2: 100, hand: "fist" }],
@@ -135,8 +137,12 @@ export function arms(o: ArmOpts): ArmResult {
       wrist = P(midX + (nearSide ? -1 : 1) * Math.abs(o.near.x - o.far.x) * 0.42, chestY - l1 * 0.12 * (nearSide ? 1 : -1));
       dir = Math.atan2(wrist.y - elbow.y, wrist.x - elbow.x);
     } else if ((o.pose === "think") && nearSide && o.chin) {
-      elbow = P(shoulder.x + l1 * 0.3, shoulder.y + l1 * 0.9);
-      wrist = P(o.chin.x - o.handR * 0.3, o.chin.y + o.handR * 1.1);
+      // hand to the side of the face at chin height, the arm staying outside
+      // the body: on a round body (a wheel) a hand reaching the real chin
+      // would draw the arm across the face disc like a stick through it
+      const out = sideways ? 1 : Math.sign(shoulder.x - o.chin.x) || 1;
+      wrist = P(shoulder.x + out * o.handR * 0.6, o.chin.y);
+      elbow = P(shoulder.x + out * l1 * 0.85, (shoulder.y + wrist.y) / 2 + l1 * 0.45);
       dir = Math.atan2(wrist.y - elbow.y, wrist.x - elbow.x);
     }
     // never let a hand sink through the ground: swing the forearm up
@@ -158,7 +164,8 @@ export function arms(o: ArmOpts): ArmResult {
       : nearA;
   const nearS = solve(o.near, nearAngles, true);
   const farS = solve(o.far, o.pose === "hands_on_hips" || o.pose === "arms_crossed" ? { a1: 100, a2: 90, hand: "fist" } : farAngles, false);
-  const farInFront = sideways || o.pose === "arms_crossed" || o.pose === "cower";
+  // a lying body's upper arm stays behind it (in front it would cross the face)
+  const farInFront = (sideways && o.pose !== "lie") || o.pose === "arms_crossed" || o.pose === "cower";
   const hand = polar(nearS.wrist, o.handR * 0.8, nearS.dir);
   return {
     far: (sk) => drawArm(sk, o.far, farS.elbow, farS.wrist, o, farAngles.hand, farS.dir),

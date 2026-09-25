@@ -40,7 +40,10 @@ export type EyeKind =
   | "arcUp"
   | "arcDown"
   | "squeeze"
-  | "heart";
+  | "heart"
+  | "closed"
+  | "dead"
+  | "blank";
 
 export type MouthKind =
   | "flat"
@@ -72,7 +75,8 @@ export interface ExprLook {
   /** Beak / muzzle: how open (0..1) and corner curve (-1 frown .. 1 smile). */
   open: number;
   curve: number;
-  tears?: boolean;
+  /** Tear streams (cry) or one small drop at the outer corner (pain). */
+  tears?: boolean | "drop";
   sweat?: boolean;
   blush?: boolean;
   /** Small pupils (fear, surprise). */
@@ -83,7 +87,7 @@ export const EXPR: Record<Expression, ExprLook> = {
   neutral: { eye: "open", look: [0.15, 0], tilt: 0, raise: 0, asym: 0, mouth: "flat", open: 0, curve: 0 },
   happy: { eye: "smile", look: [0.1, 0], tilt: -0.15, raise: 0.25, asym: 0, mouth: "smile", open: 0.15, curve: 1 },
   laugh: { eye: "arcUp", look: [0, 0], tilt: -0.25, raise: 0.4, asym: 0, mouth: "grin", open: 0.8, curve: 1 },
-  gentle: { eye: "soft", look: [0.1, 0.1], tilt: -0.3, raise: 0.1, asym: 0, mouth: "small", open: 0, curve: 0.6, blush: true },
+  gentle: { eye: "soft", look: [0.1, 0.1], tilt: -0.3, raise: 0.1, asym: 0, mouth: "small", open: 0, curve: 0.6 },
   sad: { eye: "sad", look: [0, 0.35], tilt: -0.9, raise: 0.15, asym: 0, mouth: "frown", open: 0, curve: -1 },
   cry: { eye: "arcDown", look: [0, 0], tilt: -1, raise: 0.2, asym: 0, mouth: "wail", open: 0.7, curve: -1, tears: true },
   angry: { eye: "narrow", look: [0.2, 0], tilt: 1.1, raise: -0.15, asym: 0, mouth: "grit", open: 0.3, curve: -0.8 },
@@ -96,7 +100,7 @@ export const EXPR: Record<Expression, ExprLook> = {
   smug: { eye: "half", look: [0.35, 0], tilt: 0.3, raise: 0, asym: 0.45, mouth: "smirk", open: 0, curve: 0.7 },
   tired: { eye: "half", look: [0, 0.35], tilt: -0.4, raise: -0.1, asym: 0, mouth: "flat", open: 0.1, curve: -0.3 },
   asleep: { eye: "arcDown", look: [0, 0], tilt: -0.1, raise: 0, asym: 0, mouth: "small", open: 0, curve: 0.1 },
-  pain: { eye: "squeeze", look: [0, 0], tilt: -0.9, raise: 0.1, asym: 0, mouth: "grit", open: 0.4, curve: -0.8, sweat: true },
+  pain: { eye: "squeeze", look: [0, 0], tilt: -0.9, raise: 0.1, asym: 0, mouth: "grit", open: 0.4, curve: -0.8, sweat: true, tears: "drop" },
   love: { eye: "heart", look: [0, 0], tilt: -0.3, raise: 0.3, asym: 0, mouth: "grin", open: 0.4, curve: 1, blush: true },
 };
 
@@ -193,9 +197,35 @@ function eyeMarks(
     return;
   }
   if (kind === "squeeze") {
-    const tip = ec.x - side * rx * 0.75; // points inward
-    const back = ec.x + side * rx * 0.8;
-    out.push({ d: lineD([P(back, ec.y - ry * 0.65), P(tip, ec.y), P(back, ec.y + ry * 0.65)]), stroke: heavy });
+    // squeezed shut: a heavy lid line bowed down at the outer corner plus
+    // two short creases fanning out from that corner. Never chevrons: two
+    // "><" eyes overlapping in a three-quarter face read as X (death) eyes.
+    const lidY = ec.y + ry * 0.1;
+    const inner = P(ec.x - side * rx * 0.95, lidY - ry * 0.22);
+    const outer = P(ec.x + side * rx * 0.95, lidY + ry * 0.18);
+    out.push({ d: quadD(inner, P(ec.x, lidY - ry * 0.28), outer), stroke: heavy });
+    const o = P(outer.x + side * rx * 0.12, outer.y - ry * 0.05);
+    out.push({ d: lineD([o, P(o.x + side * rx * 0.42, o.y - ry * 0.42)]), stroke: dw * 1.1 });
+    out.push({ d: lineD([P(o.x + side * rx * 0.05, o.y + ry * 0.12), P(o.x + side * rx * 0.46, o.y + ry * 0.3)]), stroke: dw * 1.1 });
+    return;
+  }
+  if (kind === "closed") {
+    // calm closed lids: a lower-bowed arc with one lash at the outer corner
+    out.push({ d: quadD(P(ec.x - rx, ec.y + ry * 0.05), P(ec.x, ec.y + ry * 0.62), P(ec.x + rx, ec.y + ry * 0.05)), stroke: heavy });
+    out.push({ d: lineD([P(ec.x + side * rx * 0.95, ec.y + ry * 0.08), P(ec.x + side * rx * 1.3, ec.y - ry * 0.05)]), stroke: dw });
+    return;
+  }
+  if (kind === "dead") {
+    // slack closed eye: a flat line that sags at the outer corner, no lash
+    out.push({ d: quadD(P(ec.x - side * rx * 0.9, ec.y + ry * 0.05), P(ec.x, ec.y + ry * 0.22), P(ec.x + side * rx * 0.95, ec.y + ry * 0.42)), stroke: heavy * 0.85 });
+    return;
+  }
+  if (kind === "blank") {
+    // sightless: the eye outline with no pupil, lid half down, a grey lower half
+    const pts = ellipsePts(ec, rx, ry, 24);
+    out.push({ d: polyPath(pts, true), fill: PAPER, stroke: dw * 1.1 });
+    out.push({ d: polyPath(clampBelow(pts, () => ec.y + ry * 0.35), true), fill: toneFill("light", o.pen.prefix), stroke: 0 });
+    out.push({ d: lineD([P(ec.x - rx * 1.05, ec.y - ry * 0.25), P(ec.x + rx * 1.05, ec.y - ry * 0.25)]), stroke: heavy });
     return;
   }
   if (kind === "heart") {
@@ -283,8 +313,10 @@ function eyeMarks(
   }
   // Lid line / lashes on top of the eye
   if (hasLid) {
-    const a = P(ec.x - erx * 1.05, lid(ec.x - erx * 1.05));
-    const b = P(ec.x + erx * 1.05, lid(ec.x + erx * 1.05));
+    // the lid line stays on its own eye: in a three-quarter face the eyes sit
+    // close, and lids running past them cross into an X
+    const a = P(ec.x - erx * 0.98, lid(ec.x - erx * 0.98));
+    const b = P(ec.x + erx * 0.98, lid(ec.x + erx * 0.98));
     const clampY = (p: Point) => P(p.x, Math.max(p.y, ec.y - ery * 1.02));
     out.push({ d: lineD([clampY(a), clampY(b)]), stroke: heavy });
   } else {
@@ -384,27 +416,55 @@ function ellipseMark2(c: Point, rx: number, ry: number): string {
 }
 
 /** Draw a face. Returns an SVG fragment (stroke attributes inline). */
+/**
+ * The expression's face with the pen's eye state applied: "closed" and "dead"
+ * replace the eyes with lid lines (dead also drops the brows' emotion and
+ * the tear/sweat extras), "blind" draws blank eyes with no pupil.
+ */
+export function withEyes(x: ExprLook, eyes: Pen["eyes"]): ExprLook {
+  if (!eyes || eyes === "open") return x;
+  if (eyes === "closed") return { ...x, eye: "closed", sweat: false };
+  if (eyes === "blind") return { ...x, eye: "blank", pin: false };
+  return { ...x, eye: "dead", tilt: -0.25, raise: -0.1, asym: 0, tears: false, sweat: false, blush: false };
+}
+
 export function drawFace(o: FaceOpts, expression: Expression): string {
-  const x = EXPR[expression];
+  const x = withEyes(EXPR[expression], o.pen.eyes);
   const marks: Mark[] = [];
   const t = Math.max(0, Math.min(1, o.turn));
   const r = o.eyeR;
-  const ry = r * (o.eyeAspect ?? 1.15);
   const c = o.c;
   const profile = t > 0.85;
   const eyes: { c: Point; rx: number; side: number }[] = [];
+  let ry = r * (o.eyeAspect ?? 1.15);
   if (profile) {
     eyes.push({ c, rx: r * 0.9, side: 1 });
   } else {
     const shift = o.gap * 0.55 * t;
-    eyes.push({ c: P(c.x - o.gap * (1 - 0.55 * t) + shift, c.y), rx: r * (1 - 0.4 * t), side: -1 });
-    eyes.push({ c: P(c.x + o.gap * (1 - 0.1 * t) + shift, c.y), rx: r, side: 1 });
+    const far = { c: P(c.x - o.gap * (1 - 0.55 * t) + shift, c.y), rx: r * (1 - 0.4 * t), side: -1 };
+    const near = { c: P(c.x + o.gap * (1 - 0.1 * t) + shift, c.y), rx: r, side: 1 };
+    // never let the two eyes overlap (their lids and lashes would cross):
+    // shrink both a little when the face is turned and the eyes are big
+    const room = (near.c.x - far.c.x) * 0.96;
+    const need = far.rx + near.rx;
+    if (need > room && room > 0) {
+      const k = room / need;
+      far.rx *= k;
+      near.rx *= k;
+      ry *= k;
+    }
+    eyes.push(far, near);
   }
   if (o.pen.detail === "silhouette") {
     // silhouette LOD: at most two eye dots
     let dots = "";
-    for (const e of eyes) dots += `<path d="${polyPath(ellipsePts(e.c, e.rx * 0.5, ry * 0.5, 10), true)}" fill="${o.dark ? PAPER : INK}"/>`;
-    return `<g>${dots}</g>`;
+    const shut = x.eye === "closed" || x.eye === "dead" || x.eye === "squeeze" || x.eye === "arcDown";
+    for (const e of eyes) {
+      if (shut) dots += `<path d="${lineD([P(e.c.x - e.rx * 0.7, e.c.y + ry * 0.15), P(e.c.x + e.rx * 0.7, e.c.y + ry * 0.2)])}" fill="none" stroke="${o.dark ? PAPER : INK}" stroke-width="${n(Math.max(o.pen.dw * 1.6, ry * 0.35))}"/>`;
+      else if (x.eye === "blank") dots += `<path d="${polyPath(ellipsePts(e.c, e.rx * 0.55, ry * 0.55, 10), true)}" fill="${PAPER}" stroke="${INK}" stroke-width="${n(o.pen.dw)}"/>`;
+      else dots += `<path d="${polyPath(ellipsePts(e.c, e.rx * 0.5, ry * 0.5, 10), true)}" fill="${o.dark ? PAPER : INK}"/>`;
+    }
+    return `<g stroke-linecap="round">${dots}</g>`;
   }
   const reduced = o.pen.detail === "reduced";
   for (const e of eyes) eyeMarks(e.c, e.rx, ry, e.side, x, o, marks);
@@ -414,7 +474,10 @@ export function drawFace(o: FaceOpts, expression: Expression): string {
     for (const e of eyes) {
       const raise = x.raise + (e.side > 0 ? x.asym : -x.asym * 0.4);
       const by = e.c.y - ry * (1.5 + raise);
-      const inner = P(e.c.x - e.side * e.rx * 0.95, by + x.tilt * ry * 0.5);
+      // three-quarter faces: the eyes nearly touch, so each brow keeps to its
+      // own eye (no joined "unibrow" arc reading as a second, stacked brow)
+      const innerK = profile || t < 0.3 ? 0.95 : e.side < 0 ? 0.3 : 0.55;
+      const inner = P(e.c.x - e.side * e.rx * innerK, by + x.tilt * ry * 0.5);
       const outer = P(e.c.x + e.side * e.rx * 1.05, by - x.tilt * ry * 0.25);
       const mid = P((inner.x + outer.x) / 2, (inner.y + outer.y) / 2 - ry * (x.tilt > 0.5 ? 0.05 : 0.28));
       marks.push({ d: quadD(inner, mid, outer), stroke: bw });
@@ -429,7 +492,10 @@ export function drawFace(o: FaceOpts, expression: Expression): string {
   }
   // extras (reduced LOD keeps tears, drops sweat and blush)
   if (!o.plain) {
-    if (x.tears) {
+    if (x.tears === "drop") {
+      const e = eyes[eyes.length - 1];
+      marks.push({ d: dropD(P(e.c.x + e.side * e.rx * 1.05, e.c.y + ry * 1.1), e.rx * 0.28, 0), fill: PAPER, stroke: o.pen.dw });
+    } else if (x.tears) {
       for (const e of eyes) {
         const s0 = P(e.c.x + e.side * e.rx * 0.55, e.c.y + ry * 0.45);
         const s1 = P(e.c.x + e.side * e.rx * 0.75, e.c.y + ry * 2.0);

@@ -47,10 +47,15 @@ function leafTicks(cx: number, cy: number, rx: number, ry: number, count: number
 export type TreeKind = "round" | "pine" | "poplar" | "bare" | "willow";
 
 export function tree(st: Stage, x: number, z: number, opts: { h?: number; kind?: TreeKind; sortZ?: number; layer?: number } = {}): void {
-  const kind: TreeKind = opts.kind ?? (st.snow && st.rand() < 0.5 ? "bare" : "round");
-  const h = opts.h ?? between(st.rand, 6, 9);
+  // winter: every broad-leaved tree is bare (snow on its branches); pines keep
+  // their needles under a white load of snow
+  const kind: TreeKind = st.snow && opts.kind !== "pine" ? "bare" : (opts.kind ?? "round");
+  const h0 = opts.h ?? between(st.rand, 6, 9);
   const pl = place(st, { x, y: 0, z });
   if (!pl) return;
+  // a background tree never swamps the panel: a canopy near the camera (tall
+  // panels, upward angles) is kept to about a third of the panel's width
+  const h = Math.min(h0, (st.box.w * 0.3) / Math.max(1e-6, 0.37 * pl.k));
   if (!placeVisible(st, pl, h * 0.5, h * 1.1)) return;
   const k = pl.k;
   const lw = wAt(st, pl.z);
@@ -84,6 +89,21 @@ export function tree(st: Stage, x: number, z: number, opts: { h?: number; kind?:
       s += pathEl(scallop(c.x + rx * k * 0.16, c.y + ry * k * 0.2, rx * k * 0.68, ry * k * 0.66, bumps - 2, st.rand), { fill: st.pal.foliageShade });
     }
     if (rx * k > 16 && st.lod >= 1) s += pathEl(leafTicks(c.x, c.y, rx * k, ry * k, Math.min(14, Math.round(rx * k * 0.25)), st.rand), { stroke: ink, w: lw * 0.55 });
+    if (rx * k > 45 && !st.snow) {
+      // a big canopy near the camera: leaf clumps inside the outline and a
+      // darker underside, so it reads as foliage, never as a cloud
+      let clumps = "";
+      for (const [dx, dy, kr] of [
+        [-0.42, -0.25, 0.42],
+        [0.38, -0.32, 0.4],
+        [-0.05, -0.55, 0.36],
+        [0.1, 0.1, 0.46],
+      ] as const) {
+        clumps += scallop(c.x + dx * rx * k, c.y + dy * ry * k, rx * k * kr, ry * k * kr * 0.85, 7, st.rand);
+      }
+      s += pathEl(clumps, { stroke: ink, w: lw * 0.6 });
+      s += pathEl(scallop(c.x, c.y + ry * k * 0.62, rx * k * 0.8, ry * k * 0.3, 8, st.rand, c.y + ry * k * 0.95), { fill: toneFill("mid", st.p), stroke: ink, w: lw * 0.6 });
+    }
     if (kind === "willow" && rx * k > 8) {
       let d = "";
       for (let i = 0; i < 9; i += 1) {
@@ -121,15 +141,18 @@ export function tree(st: Stage, x: number, z: number, opts: { h?: number; kind?:
     if (!st.snow) s += pathEl(shade, { fill: st.pal.foliageShade });
     s += pathEl(body, { stroke: ink, w: lw });
   } else {
-    // bare branching tree
+    // bare branching tree: tapering limbs (thicker near the trunk), and in
+    // snow a white load of snow sitting on the forks and limb tops
     const base = h * 0.06;
-    let d = "";
+    const byDepth: string[] = ["", "", "", ""];
+    const forks: Point[] = [];
     const branch = (x0: number, y0: number, ang: number, len: number, depth: number): void => {
       const x1 = x0 + Math.cos(ang) * len;
       const y1 = y0 + Math.sin(ang) * len;
       const a = P(x0, y0);
       const b = P(x1, y1);
-      d += `M${n(a.x)} ${n(a.y)}L${n(b.x)} ${n(b.y)}`;
+      byDepth[Math.max(0, Math.min(3, depth))] += `M${n(a.x)} ${n(a.y)}L${n(b.x)} ${n(b.y)}`;
+      if (depth >= 1) forks.push(b);
       if (depth <= 0) return;
       branch(x1, y1, ang + between(st.rand, 0.25, 0.6), len * 0.68, depth - 1);
       branch(x1, y1, ang - between(st.rand, 0.25, 0.6), len * 0.68, depth - 1);
@@ -137,7 +160,18 @@ export function tree(st: Stage, x: number, z: number, opts: { h?: number; kind?:
     s += trunk(h * 0.4, base, base * 0.6);
     branch(0, h * 0.4, Math.PI / 2 + 0.3, h * 0.28, 3);
     branch(0, h * 0.4, Math.PI / 2 - 0.35, h * 0.3, 3);
-    s += pathEl(d, { stroke: st.pal.night ? PAPER : ink, w: lw * 0.9 });
+    const limbInk = st.pal.night ? PAPER : ink;
+    byDepth.forEach((d, i) => {
+      s += pathEl(d, { stroke: limbInk, w: Math.max(lw * 0.6, Math.min(base * k * 0.9, lw * (0.8 + i * 0.9))) });
+    });
+    if (st.snow && k * h > 30) {
+      let snow = "";
+      for (const f of forks) {
+        const r = Math.max(1.4, h * k * between(st.rand, 0.018, 0.03));
+        snow += scallop(f.x, f.y - r * 0.45, r * 1.5, r * 0.7, 5, st.rand, f.y + r * 0.1);
+      }
+      s += pathEl(snow, { fill: PAPER, stroke: ink, w: lw * 0.45 });
+    }
   }
   add(st, opts.layer ?? LAYER.stand, opts.sortZ ?? pl.z, s);
 }
@@ -151,22 +185,45 @@ export function bush(st: Stage, x: number, z: number, r = 1, opts: { flowers?: b
   const base = pl.at(0, 0);
   let s = pathEl(scallop(c.x, c.y, r * 1.35 * k, r * 0.85 * k, 9, st.rand, base.y), { fill: st.snow ? PAPER : st.pal.foliage, stroke: st.pal.ink, w: lw });
   if (r * k > 8 && !st.snow) s += pathEl(scallop(c.x + r * k * 0.25, c.y + r * k * 0.25, r * k * 0.85, r * k * 0.45, 7, st.rand, base.y), { fill: st.pal.foliageShade });
-  if (opts.flowers && r * k > 6) s += blossoms(st, c, r * k, lw);
+  if (st.snow && r * k > 8) {
+    // a snow-covered shrub: twigs poking out of the white mound
+    let tw = "";
+    for (let i = 0; i < 4; i += 1) {
+      const a = -Math.PI / 2 + (i - 1.5) * 0.5;
+      const p0 = { x: c.x + Math.cos(a) * r * k * 0.9, y: c.y + Math.sin(a) * r * k * 0.55 };
+      tw += `M${n(p0.x)} ${n(p0.y)}l${n(Math.cos(a) * r * k * 0.35)} ${n(Math.sin(a) * r * k * 0.35)}`;
+    }
+    s += pathEl(tw, { stroke: st.pal.ink, w: lw * 0.6 });
+  }
+  if (opts.flowers && r * k > 6 && !st.snow) s += blossoms(st, c, r * k, lw);
   add(st, LAYER.stand, pl.z, s);
 }
 
+/**
+ * Small five-petal blossoms scattered over a bush: paper petals with no dark
+ * centre, spaced apart and never in pairs (round white dots with black
+ * pupils read as eyes in a dark bush).
+ */
 function blossoms(st: Stage, c: Point, rpx: number, lw: number): string {
   let d = "";
-  let dots = "";
-  const count = Math.min(9, Math.round(rpx / 5));
-  for (let i = 0; i < count; i += 1) {
+  const count = Math.min(st.pal.night ? 4 : 7, Math.round(rpx / 6));
+  const placed: Point[] = [];
+  const r = Math.max(1.2, rpx * 0.075);
+  for (let i = 0; i < count * 3 && placed.length < count; i += 1) {
     const x = c.x + between(st.rand, -1.1, 1.1) * rpx;
     const y = c.y + between(st.rand, -0.6, 0.2) * rpx;
-    const r = Math.max(1.2, rpx * 0.09);
-    d += `M${n(x - r)} ${n(y)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0`;
-    dots += `M${n(x - r * 0.3)} ${n(y)}a${n(r * 0.3)} ${n(r * 0.3)} 0 1 0 ${n(r * 0.6)} 0a${n(r * 0.3)} ${n(r * 0.3)} 0 1 0 ${n(-r * 0.6)} 0`;
+    if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < r * 5)) continue;
+    placed.push({ x, y });
+    const rot = st.rand() * Math.PI;
+    const pts: Point[] = [];
+    for (let k = 0; k < 10; k += 1) {
+      const a = rot + (k / 10) * Math.PI * 2;
+      const rr = k % 2 === 0 ? r : r * 0.45;
+      pts.push({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr });
+    }
+    d += smoothPath(pts, true, 0.3);
   }
-  return pathEl(d, { fill: PAPER, stroke: INK, w: lw * 0.5 }) + pathEl(dots, { fill: INK });
+  return pathEl(d, { fill: PAPER, stroke: INK, w: lw * 0.45 });
 }
 
 /** Clipped hedge block: box faces, scalloped crests on visible top edges, leaf ticks. */

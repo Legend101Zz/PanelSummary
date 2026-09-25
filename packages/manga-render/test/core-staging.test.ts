@@ -145,7 +145,8 @@ describe("staging anchors (FigureSpec.on)", () => {
     const seated = compose(panel({ shot: "full", location: "poor_room", figures: [fig({ character: "seamstress", pose: "sit" })] }));
     const standing = compose(panel({ shot: "full", location: "poor_room", figures: [fig({ character: "seamstress", pose: "stand" })] }));
     // the seat is drawn inside the figure group as its own scale() group
-    const seatGroup = /<g transform="scale\([0-9.]+\)"><g stroke-linejoin="round"/;
+    // (scale(m) or scale(mx m): a seat is stretched to show past a wide skirt or coat)
+    const seatGroup = /<g transform="scale\([0-9.]+(?: [0-9.]+)?\)"><g stroke-linejoin="round"/;
     expect(seated.content).toMatch(seatGroup);
     expect(standing.content).not.toMatch(seatGroup);
   });
@@ -559,9 +560,11 @@ describe("pages: accessibility and fixtures", () => {
   it("documents the new fields and warnings in the catalog", () => {
     const c = catalog();
     for (const k of ["figure.on", "figure.holding_tone", "prop.tone", "text.about"]) expect(c.fields[k]?.length ?? 0).toBeGreaterThan(20);
-    for (const k of ["FACE_COVERED", "SPEAKER_TOO_SMALL", "BLOCKAGE_LAYOUT", "HOOK_PANEL_LARGEST", "BALLOON_TALL", "TAILS_CROSS", "EXTREME_CLOSE_MULTI", "CLOSE_CROWDED", "FACING_BACK_CLOSE"]) {
+    for (const k of ["FACE_COVERED", "BLOCKAGE_LAYOUT", "HOOK_PANEL_LARGEST", "BALLOON_TALL", "TAILS_CROSS", "EXTREME_CLOSE_MULTI", "CLOSE_CROWDED", "FACING_BACK_CLOSE"]) {
       expect(c.warnings[k], k).toBeDefined();
     }
+    // speaker legibility is a rejecting error since 0.3.0
+    for (const k of ["SPEAKER_TOO_SMALL", "TAIL_CROSSES_FACE"]) expect(c.errors[k], k).toBeDefined();
     expect(c.vocabularies.staging_features).toEqual(["statue_column", "bed", "table", "fountain", "bridge"]);
     expect(c.vocabularies.perch_parts).toEqual(["feet", "shoulder", "hand", "head"]);
     expect(c.shots.wide).toMatch(/one short line/);

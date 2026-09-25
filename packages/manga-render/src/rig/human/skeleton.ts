@@ -176,7 +176,8 @@ export function solveSkeleton(m: Metrics, def: PoseDef, view: ViewKind): Skeleto
   keys.nearElbow = nearArm.elbow;
   const farArm = solveArm(shoulderAt(farSide), def.far.arm, farSide, m, keys);
 
-  const yaw = view === "front" ? 0 : view === "back" ? 180 : def.mirror ? -SIDE_YAW : SIDE_YAW;
+  const sideYaw = def.yaw ?? SIDE_YAW;
+  const yaw = view === "front" ? 0 : view === "back" ? 180 : def.mirror ? -sideYaw : sideYaw;
   const cam: Cam = { yaw, pitch: PITCH, roll: def.roll, ox: 0, oy: 0 };
 
   // Ground contact and centring.

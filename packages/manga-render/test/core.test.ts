@@ -47,19 +47,36 @@ const planned = (n: number) => PLAN.pages.find((p) => p.page_number === n);
  * halfway (TAIL_REACH of the gap) or earlier at the head circle, and never
  * enters the head.
  */
+/**
+ * A tail points at its speaker's mouth side: it aims at a point beside the
+ * mouth (the "voice point", just outside the head at mouth height, so a tail
+ * from above never ends on the crown) and stops about halfway — a long tail
+ * still ends within ~2.6 head radii of it — never inside the head. A thought
+ * trail runs to just outside the thinker's head.
+ */
 function expectTailToward(p: Placed, fig: { head: { x: number; y: number }; headRadius: number; mouth: { x: number; y: number } }): void {
   const tip = p.tail?.tip;
   expect(tip).toBeDefined();
   if (!tip) return;
-  const base = boundaryToward(p.layout, p.center, fig.mouth);
-  const gap = Math.hypot(fig.mouth.x - base.x, fig.mouth.y - base.y);
+  const r = fig.headRadius;
+  if (p.layout.shape === "cloud") {
+    const d = Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y);
+    expect(d).toBeGreaterThanOrEqual(r - 0.5);
+    expect(d).toBeLessThanOrEqual(r * 1.25 + 9);
+    return;
+  }
+  const aim = p.tail?.aim ?? fig.mouth;
+  // the aim is beside the mouth
+  expect(Math.hypot(aim.x - fig.mouth.x, aim.y - fig.mouth.y)).toBeLessThanOrEqual(r * 2.4 + 8);
+  const base = boundaryToward(p.layout, p.center, aim);
+  const gap = Math.hypot(aim.x - base.x, aim.y - base.y);
   const reach = Math.hypot(tip.x - base.x, tip.y - base.y);
-  // collinear with edge → mouth
-  const cross = ((fig.mouth.x - base.x) * (tip.y - base.y) - (fig.mouth.y - base.y) * (tip.x - base.x)) / Math.max(1, gap);
+  // collinear with edge → aim
+  const cross = ((aim.x - base.x) * (tip.y - base.y) - (aim.y - base.y) * (tip.x - base.x)) / Math.max(1, gap);
   expect(Math.abs(cross)).toBeLessThan(2);
-  expect(reach).toBeLessThanOrEqual(gap * 0.56 + 1);
+  expect(reach).toBeLessThanOrEqual(Math.max(gap * 0.56, gap - Math.max(70, r * 2.6)) + 1);
   expect(reach).toBeGreaterThan(Math.min(12, gap * 0.4));
-  expect(Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y)).toBeGreaterThanOrEqual(fig.headRadius - 0.5);
+  expect(Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y)).toBeGreaterThanOrEqual(r - 0.5);
 }
 
 function page(overrides: Partial<MangaPageSpec> = {}, panels?: PanelSpec[]): MangaPageSpec {
@@ -644,7 +661,10 @@ describe("renderPage", () => {
     // the gold statue is drawn inside a scale() group: its tone must be a rescaled copy
     const scaled = [...svg.matchAll(/<pattern id="(q-[^"]*-tone-[a-z_]+)"[^>]*patternTransform="scale\(([0-9.e-]+)\)/g)];
     expect(scaled.length).toBeGreaterThan(0);
-    for (const m of scaled) expect(Number(m[2])).toBeLessThan(1);
+    // enlarged figures get shrunk copies; a figure drawn below page scale (the
+    // statue as scenery on a distant column) gets an enlarged one
+    expect(scaled.some((m) => Number(m[2]) < 1)).toBe(true);
+    for (const m of scaled) expect(Number(m[2])).toBeGreaterThan(0);
     const frag = `<path fill="url(#p-tone-dots)"/><path fill="url(#p-tone-fade)"/>`;
     const out = rescaleTones(frag, "p-", "f1", 4, toneDefs("p-"));
     expect(out.body).toContain("url(#p-f1-tone-dots)");

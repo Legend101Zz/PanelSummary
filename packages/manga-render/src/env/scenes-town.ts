@@ -112,6 +112,7 @@ export function citySquare(st: Stage): Sites {
   }
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -half * 0.55, z: st.zmid + 3 },
@@ -149,6 +150,7 @@ export function street(st: Stage): Sites {
   }
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -half + 1.2, z: st.zmid + 2 },
@@ -194,6 +196,7 @@ export function rooftops(st: Stage): Sites {
   if (st.lod >= 1 && !st.snow) smoke(st, stackX + 0.05, 2.8, z0 + 0.4);
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -stackX * 0.8, z: st.zmid + 1.2 },
@@ -239,6 +242,7 @@ export function market(st: Stage): Sites {
   if (st.lod >= 2) crowdRow(st, -lane + 0.6, lane - 0.6, st.zmid + 9, 0.8);
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -lane + 1.2, z: st.zmid + 1 },
@@ -379,6 +383,7 @@ export function townHall(st: Stage): Sites {
   const [xa, xb] = span(st, zB);
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -11, z: zB - 5 },
@@ -462,6 +467,7 @@ export function church(st: Stage): Sites {
   }
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -8, z: st.zmid + 4 },
@@ -606,6 +612,7 @@ export function cottage(st: Stage): Sites {
   }
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -6, z: st.zmid + 2 },
@@ -647,6 +654,7 @@ export function mill(st: Stage): Sites {
   }
   return {
     interior: false,
+    buildings: true,
     wallSlots: [],
     spots: [
       { x: -6, z: st.zmid + 1 },

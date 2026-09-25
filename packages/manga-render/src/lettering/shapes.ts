@@ -222,6 +222,8 @@ export interface TailSpec {
   tip: Point;
   /** Off-panel tails end on the border rather than near a mouth. */
   offPanel: boolean;
+  /** Where the tail points (beside the speaker's mouth, or the thinker's head): nothing else sits on that line. */
+  aim?: Point;
 }
 
 /** Curved tapered wedge from the balloon body toward the tip. */
@@ -250,6 +252,10 @@ function wedgeTail(layout: BalloonLayout, c: Point, tip: Point, curved: boolean,
   return `M${n(b1.x)} ${n(b1.y)}Q${n(c1.x)} ${n(c1.y)} ${n(tip.x)} ${n(tip.y)}Q${n(c2.x)} ${n(c2.y)} ${n(b2.x)} ${n(b2.y)}Z`;
 }
 
+/**
+ * The trail of a thought: bubbles shrinking from the cloud toward the
+ * thinker, spread along the whole way so the last one sits by the head.
+ */
 function thoughtBubbles(layout: BalloonLayout, c: Point, tip: Point): string[] {
   const start = boundaryToward(layout, c, tip, 1);
   const bumpOut = Math.max(9, layout.fontSize * 0.42);
@@ -259,14 +265,20 @@ function thoughtBubbles(layout: BalloonLayout, c: Point, tip: Point): string[] {
   if (len < 4) return [];
   const ux = dx / len;
   const uy = dy / len;
-  const radii = [layout.fontSize * 0.36, layout.fontSize * 0.25, layout.fontSize * 0.16];
+  const big = layout.fontSize * 0.36;
+  const small = layout.fontSize * 0.14;
+  const first = Math.min(len, bumpOut + big + 3);
+  const last = Math.max(first, len - small);
+  // three bubbles for a short trail, up to six for a long one
+  const count = Math.max(3, Math.min(6, Math.round((last - first) / (layout.fontSize * 1.6)) + 2));
   const out: string[] = [];
-  let dist = bumpOut + radii[0] + 3;
-  for (const r of radii) {
-    if (dist + r > len + r * 0.5) break;
-    const p = { x: start.x + ux * dist, y: start.y + uy * dist };
+  for (let i = 0; i < count; i += 1) {
+    const t = count === 1 ? 0 : i / (count - 1);
+    const r = big + (small - big) * t;
+    const d = first + (last - first) * t;
+    if (i > 0 && d < first + r) continue;
+    const p = { x: start.x + ux * d, y: start.y + uy * d };
     out.push(ellipsePath(p, r * 1.15, r));
-    dist += r * 2 + Math.max(5, len * 0.08);
   }
   return out;
 }

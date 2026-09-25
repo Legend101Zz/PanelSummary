@@ -221,7 +221,10 @@ export function humanPalette(look: HumanLook, idPrefix: string): Palette {
     mat: PAPER,
   };
   if (look.material === "flesh") return base;
-  const matTone: Tone = look.material === "gold" ? "gold" : look.material === "stone" ? "stone" : "dark";
+  // gold: the light gilded tone (with white glints drawn by the rig); stone: a
+  // flat, dull mid grey (a statue stripped of its gold reads shabby and grey,
+  // clearly darker than gold in black-and-white); bronze: dark
+  const matTone: Tone = look.material === "gold" ? "gold" : look.material === "stone" ? "mid" : "dark";
   const mat = tf(matTone);
   const skin = look.material === "bronze" ? tf("mid") : mat;
   return {
