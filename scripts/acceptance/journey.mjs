@@ -223,7 +223,10 @@ async function runJourney() {
     const b = ordered[i].bbox;
     const cx = b.x + b.w / 2;
     const cy = b.y + b.h / 2;
-    const frames = cx >= vb[0] && cx <= vb[0] + vb[2] && cy >= vb[1] && cy <= vb[1] + vb[3] && vb[2] < 1000;
+    // The stored panel is fully inside the camera, and the camera is tight on at least one axis.
+    const inside = b.x >= vb[0] - 1 && b.y >= vb[1] - 1 && b.x + b.w <= vb[0] + vb[2] + 1 && b.y + b.h <= vb[1] + vb[3] + 1;
+    const tight = vb[2] <= b.w * 1.15 + 60 || vb[3] <= b.h * 1.15 + 60;
+    const frames = inside && tight && cx >= vb[0] && cy >= vb[1];
     check(`phone panel mode frames stored panel ${i + 1}`, frames, `viewBox ${vb.map((v) => Math.round(v)).join(" ")}`);
     await shot(mp, `05-phone-panel-${i + 1}`);
     await mp.mouse.click(360, 420); // right third: next panel
