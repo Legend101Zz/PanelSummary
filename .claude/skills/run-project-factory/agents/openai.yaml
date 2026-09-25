@@ -1,4 +1,0 @@
-interface:
-  display_name: "Run Project Factory"
-  short_description: "Understand, decide, execute, and prove changes"
-  default_prompt: "Use $run-project-factory to recover this project, route uncertainty, and create the next human-reviewable program artifact."
