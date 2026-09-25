@@ -172,25 +172,6 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **Speaking characters need space.** Keep no more than 3 figures in a panel where
   someone speaks, so faces and balloons stay readable.
 
-## 8b. Staging on things, props and name tags
-
-- **`on`** puts a figure on something instead of the ground:
-  - `{"target": "<cast id in this panel>", "part": "shoulder"}` — a small creature on a
-    character's `shoulder`, `hand`, `head`, or at their `feet`. Both must be figures in the
-    panel; the small one keeps its true size.
-  - `{"target": "statue_column"}` (or `bed`, `table`, `fountain`, `bridge`) — a feature of
-    this panel's location. A statue stands on its column (the renderer does this for gold,
-    stone or bronze characters automatically in wide/full shots); someone ill lies in the
-    `bed`.
-- **Seats are automatic**: a figure with pose `sit` gets a chair, bench or throne drawn
-  under it. Use `sit` only when sitting is true to the scene.
-- **Prop tones** keep key objects distinct across pages: `"tone": "black"` for a ruby,
-  `"mid"` for a sapphire, `"gold"` for gold. Use the same tone every time the object
-  appears (`PropSpec.tone`, or `holding_tone` when a character holds it).
-- **Name tags**: introduce a character with a `caption` whose `about` is their cast id —
-  it is placed next to them (`{"kind": "caption", "about": "c_seamstress", "text": "The
-  seamstress", "fidelity": "paraphrase"}`), not in a corner.
-
 ## 9. FX
 
 - Use at most 2 `fx` per panel. `speed_lines` for movement. `focus_lines` for shock or
@@ -249,10 +230,6 @@ gesture at it.
 - **Cut seductive details.** A joke or aside that a reader would remember instead of the
   claim hurts the page, however charming it is.
 - Keep the reasoning's steps and the book's precise claims intact.
-
-**Backgrounds for ideas.** Prefer a concrete place from the book (a street in Concord,
-the jail, a meeting-house) over the `abstract` environment. Use `abstract` for at most one
-panel per page, for a pure idea or an inner moment, and not two pages in a row.
 
 ## Process
 

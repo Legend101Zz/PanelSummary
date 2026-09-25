@@ -50,5 +50,7 @@ export function pageVocabulary() {
     weathers: C.WEATHERS,
     text_kinds: C.TEXT_KINDS,
     fidelity: C.FIDELITY,
+    perch_parts: C.PERCH_PARTS,
+    environment_features: C.ENV_FEATURES,
   };
 }
