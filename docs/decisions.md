@@ -80,10 +80,16 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: A retry must not charge twice. A cost figure without a persisted receipt is not evidence.
 - Status: accepted.
 
-### D13. Generation policy (2026-09-25, measured)
-- Statement: All three goals use M3. The first attempt runs with thinking `off`, and a retry uses `low`. A page gets two attempts.
+### D13. Generation policy (2026-09-25, measured; revised 2026-09-26)
+- Statement: All three goals use M3. Book understanding runs with thinking `low` and fixes
+  rejections with `revise_understanding` patches. Plan and pages run with thinking `off`; a
+  retry uses `low`. A page gets two attempts (4 previews, 6 submits each).
 - Statement: Four pages run in parallel. The page goal gets a PNG preview (vision). No separate review pass runs.
-- Why: See `docs/rebuild/EXPERIMENTS.md`. Thinking off was 3-5x faster at equal quality. M2.7-highspeed miscast characters. The review pass did not pay for itself.
+- Why: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was
+  3-5x faster at equal page quality. For the understanding it was fast but unreliable: acceptance
+  run 2 cast the Happy Prince statue as a gold "rocket", and a later run reworded a description to
+  evade the guard. Low was correct in every run; the patch tool cut its time from 11 to ~4.5 min.
+  M2.7-highspeed miscast characters. The review pass did not pay for itself.
 - Status: accepted. The configuration is in `backend/app/settings.py` and is recorded on each edition.
 
 ### D14. PDF parsing with PyMuPDF only (2026-09-25)

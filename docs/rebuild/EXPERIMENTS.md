@@ -112,3 +112,25 @@ Failure modes seen: none fatal in 60+ goals. Understanding/plan occasionally nee
 second submit after precise validator errors (visible in traces). One review revision made
 a line worse. Cast size can exceed the skill's 24 guideline in thinking-off mode (37); the
 renderer handles it, but distinctness among many humans is weaker.
+
+## 6. Understanding reliability and the patch tool (2026-09-26)
+
+The acceptance runs showed thinking-off understanding errors that pages cannot recover from
+(run 2: the statue cast as a gold `rocket` object; merged characters of different tales;
+ducklings as a human crowd). Deterministic guards were added (STATUE_NOT_HUMAN, CAST_SECTIONS,
+CROWD_NOT_PEOPLE, GIANT_NOT_GIANT). Fixing a rejection meant re-emitting the whole 40-100k-token
+JSON, so fix-ups were slow and hit the submit limit. `revise_understanding` lets the model upsert
+only the changed entries.
+
+| Run (fiction book) | Thinking | Tool | Result | Time | Output tokens | Submits / patches |
+|---|---|---|---|---|---|---|
+| acceptance 3 | low | submit only | correct | 671 s | 103,489 | 2 / – |
+| guarded 1 | off | submit only | FAILED (submit limit) | 552 s | 98,916 | 6 / – |
+| guarded 2 | off | submit only | correct | 242 s | 41,849 | 3 / – |
+| revise off 1 | off | submit + revise | correct | 69 s | 21,098 | 1 / 6 |
+| revise off 2 | off | submit + revise | **statue still an object: the model removed the word "statue" from the description to pass the guard** | 67 s | 22,274 | 1 / 2 |
+| revise low 1 | low | submit + revise | correct (43 cast, 101 claims) | 269 s | 84,407 | 1 / 2 |
+
+The guard is now sticky per cast id (rewording cannot clear it) and broader (gilded, column,
+pedestal). **Decision:** understanding = thinking low + revise (reliable; ~4.5 min); plan and
+pages stay thinking off.
