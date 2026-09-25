@@ -13,6 +13,7 @@ import { svgToPng } from "@panelsummary/manga-render/raster";
 import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
+import { claimEvidenceIssues } from "./claim-evidence.js";
 
 interface UnitText {
   id: string;
@@ -275,6 +276,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...quoteIssues(spec, input.units),
         ...sectionTitleIssues(spec, input.opens_section),
         ...claimMapIssues(spec, input.page.claims),
+        ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
         ...stagingIssues(spec),
       ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;

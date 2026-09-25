@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Book understanding
@@ -20,7 +20,7 @@ recoverable from your descriptions.
   "title": "…", "author": "…", "kind": "fiction | nonfiction | mixed",
   "logline": "one or two sentences: what the book is and why it matters",
   "sections": [{ "id": "s1", "title": "…", "summary": "2-4 sentences", "units": ["s1u1", "s1u2"] }],
-  "cast": [{ "id": "c_swallow", "name": "The Swallow", "role": "…", "description": "…", "look": { "kind": "bird", "species": "swallow", "tone": "dark" } }],
+  "cast": [{ "id": "c_swallow", "name": "The Swallow", "role": "…", "description": "…", "look": { "kind": "bird", "species": "swallow", "tone": "dark" }, "sections": ["s1"] }],
   "locations": [{ "id": "l_square", "name": "…", "environment": "city_square", "features": ["statue_column"], "description": "…" }],
   "claims": [{ "id": "k1", "section_id": "s1", "kind": "event", "importance": "core", "text": "…", "source": [{ "unit": "s1u1", "page": 3 }] }],
   "themes": ["…"]
@@ -75,6 +75,14 @@ What makes a claim usable by the pages that follow:
   unit. Add a second source when the claim draws on two passages.
 
 ## Cast — make every character drawable and distinct
+
+**`sections`** lists the section ids each character appears in. In a book of several
+stories, two different people with the same role (a student in one tale, another student
+in the next) are two cast members with different ids and sections; the plan may only use a
+character on pages of its own sections.
+
+**Groups.** `crowd` draws people only. A group of animals or plants (ducklings, sheep, the
+rose-trees) is one `bird`/`animal`/`plant` member. A giant has `"height": "giant"`.
 
 **Everyone who speaks or acts on the page is cast.** Page writers can only draw cast
 members; anyone missing from the cast becomes a narration box. That includes personified

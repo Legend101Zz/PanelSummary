@@ -77,7 +77,7 @@ function validUnderstanding(): BookUnderstanding {
     kind: "fiction",
     logline: "A crow finds a lamp and carries it home.",
     sections: [{ id: "s1", title: "One", summary: "The crow finds the lamp and takes it home.", units: ["s1u1", "s1u2"] }],
-    cast: [{ id: "crow", name: "The Crow", role: "protagonist", description: "A black crow.", look: { kind: "bird", species: "crow", tone: "dark" } }],
+    cast: [{ id: "crow", name: "The Crow", role: "protagonist", description: "A black crow.", look: { kind: "bird", species: "crow", tone: "dark" }, sections: ["s1"] }],
     locations: [{ id: "square", name: "The Square", environment: "city_square", features: [], description: "A town square." }],
     claims: [
       { id: "c1", section_id: "s1", kind: "event", importance: "core", text: "A crow finds a lamp.", source: [{ unit: "s1u1", page: 1 }] },
@@ -289,9 +289,14 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
 describe("understanding look sense", () => {
   it("rejects a statue of a person cast as an object, accepts it as a gilded human", async () => {
     const { lookSenseIssues } = await import("../src/goals/book-understanding.js");
-    const statue = { id: "c_prince", description: "A life-sized statue of a prince on a tall column.", role: "hero" };
-    expect(lookSenseIssues({ cast: [{ ...statue, look: { kind: "object", shape: "rocket", tone: "gold", face: true } }] }).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
-    expect(lookSenseIssues({ cast: [{ ...statue, look: { kind: "human", material: "gold" } }] })).toEqual([]);
-    expect(lookSenseIssues({ cast: [{ id: "c_rocket", description: "A proud firework rocket.", look: { kind: "object" } }] })).toEqual([]);
+    const sections = [{ id: "s1" }, { id: "s2" }];
+    const statue = { id: "c_prince", description: "A life-sized statue of a prince on a tall column.", role: "hero", sections: ["s1"] };
+    expect(lookSenseIssues({ sections, cast: [{ ...statue, look: { kind: "object", shape: "rocket", tone: "gold", face: true } }] }).map((i) => i.code)).toEqual(["STATUE_NOT_HUMAN"]);
+    expect(lookSenseIssues({ sections, cast: [{ ...statue, look: { kind: "human", material: "gold" } }] })).toEqual([]);
+    expect(lookSenseIssues({ sections, cast: [{ id: "c_rocket", description: "A proud firework rocket.", look: { kind: "object" }, sections: ["s2"] }] })).toEqual([]);
+    // groups of animals are not a human crowd; giants are giant-sized; sections are required and known
+    expect(lookSenseIssues({ sections, cast: [{ id: "c_ducklings", description: "The Duck's little ducklings.", look: { kind: "crowd" }, sections: ["s2"] }] }).map((i) => i.code)).toEqual(["CROWD_NOT_PEOPLE"]);
+    expect(lookSenseIssues({ sections, cast: [{ id: "c_giant", description: "A selfish giant.", look: { kind: "human", height: "tall" }, sections: ["s2"] }] }).map((i) => i.code)).toEqual(["GIANT_NOT_GIANT"]);
+    expect(lookSenseIssues({ sections, cast: [{ id: "c_x", description: "A girl.", look: { kind: "human" } }] }).map((i) => i.code)).toEqual(["CAST_SECTIONS"]);
   });
 });

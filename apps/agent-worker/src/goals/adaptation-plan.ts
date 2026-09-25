@@ -57,6 +57,15 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
             message: `plan has ${count} pages; it must have between ${pages.min} and ${pages.max} (target about ${pages.target}).`,
           });
         }
+        const sectionsOf = new Map(understanding.cast.map((c) => [c.id, c.sections]));
+        ((parsed.value as AdaptationPlan)?.pages ?? []).forEach((page) => {
+          for (const id of page?.cast ?? []) {
+            const allowed = sectionsOf.get(id);
+            if (Array.isArray(allowed) && allowed.length > 0 && !allowed.includes(page.section_id)) {
+              issues.push({ code: "CAST_WRONG_SECTION", severity: "error", path: `page ${page.page_number}`, message: `${id} does not appear in section ${page.section_id} (only in ${allowed.join(", ")}). Use the cast member who belongs to this story.` });
+            }
+          }
+        });
         if (errorsOf(issues).length > 0) return { text: rejection(issues), note: `errors=${errorsOf(issues).length}` };
         const warnings = warningsOf(issues);
         return {

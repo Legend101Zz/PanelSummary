@@ -15,9 +15,21 @@ export function lookSenseIssues(value: unknown): ValidationIssue[] {
   const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
   if (!Array.isArray(cast)) return [];
   const issues: ValidationIssue[] = [];
+  const sectionIds = new Set(((value as { sections?: Array<{ id?: string }> })?.sections ?? []).map((sec) => sec?.id));
   for (const member of cast) {
     const text = `${member?.description ?? ""} ${member?.role ?? ""}`.toLowerCase();
+    const memberSections = (member as { sections?: unknown }).sections;
+    if (!Array.isArray(memberSections) || memberSections.length === 0 || memberSections.some((id) => !sectionIds.has(id as string))) {
+      issues.push({ code: "CAST_SECTIONS", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} needs "sections": the ids of the sections it appears in (from: ${[...sectionIds].join(", ")}). Two different people with the same role in different stories must be two cast members.` });
+    }
     const personStatue = /\b(statue|effigy|carving|carved figure|monument)\b/.test(text) && /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel)\b/.test(text);
+    const look = member?.look as { kind?: string; height?: string } | undefined;
+    if (look?.kind === "crowd" && /\b(duckling|ducks?|birds?|sheep|cattle|cows?|geese|goose|hens?|chickens?|dogs?|cats?|mice|rats?|frogs?|fish|insects?|bees?|flowers?|trees?)\b/.test(text)) {
+      issues.push({ code: "CROWD_NOT_PEOPLE", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} is a group of animals or plants, but "crowd" draws people. Use one "bird"/"animal"/"plant" cast member for the group instead.` });
+    }
+    if (look?.kind === "human" && /\bgiant\b/.test(text) && look.height !== "giant") {
+      issues.push({ code: "GIANT_NOT_GIANT", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} is described as a giant: set "height": "giant" so pages show it.` });
+    }
     if (!personStatue) continue;
     if (member?.look?.kind !== "human" || !["gold", "stone", "bronze"].includes(member.look.material ?? "")) {
       issues.push({
