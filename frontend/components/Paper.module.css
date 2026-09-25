@@ -1,0 +1,156 @@
+.guides {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--pencil);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.guides path,
+.guides rect {
+  vector-effect: non-scaling-stroke;
+}
+.innerFrame {
+  stroke-dasharray: none;
+}
+.guidesRedpen {
+  stroke: var(--redpen);
+  opacity: 0.8;
+}
+
+/* A manuscript sheet (pages not inked yet) */
+.sheet {
+  position: relative;
+  aspect-ratio: var(--page-ratio);
+  background: var(--sheet);
+  box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.06);
+}
+.sheetRedpen {
+  background: #fdf7f5;
+}
+.sheetContent {
+  position: absolute;
+  inset: 14% 16%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pencil-ink);
+}
+.sheetRedpen .sheetContent {
+  color: var(--redpen);
+}
+
+/* Drawing: the inner frame is being pencilled in */
+.busy .innerFrame {
+  stroke-dasharray: 12 8;
+  animation: pencil 1.4s linear infinite;
+}
+@keyframes pencil {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+/* ------------------------------------------------------------------ cover */
+
+.cover {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: var(--page-ratio);
+  overflow: hidden;
+  background: var(--sheet);
+  border-radius: 1px 3px 3px 1px;
+  box-shadow:
+    inset 3px 0 0 rgba(20, 20, 20, 0.07),
+    0 1px 1px rgba(20, 20, 20, 0.12),
+    0 10px 22px -14px rgba(20, 20, 20, 0.55);
+}
+.cover > :first-child {
+  position: absolute;
+  inset: 0;
+}
+
+.blank {
+  background: var(--sheet);
+}
+.blankTitle {
+  position: absolute;
+  left: 17%;
+  right: 17%;
+  top: 16%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.blankTitleText {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: min(9.2cqw, 28px);
+  line-height: 1.2;
+  color: var(--ink);
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.blankAuthor {
+  font-size: max(11px, min(6.2cqw, 16px));
+  color: var(--ink-2);
+}
+
+/* ------------------------------------------------------------------ obi */
+
+.obi {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 21%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 10% 10px;
+  box-shadow: 0 -1px 0 rgba(20, 20, 20, 0.12);
+}
+.obiText {
+  font-weight: 700;
+  font-size: max(12px, min(7cqw, 17px));
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+}
+.obiTrack {
+  display: block;
+  height: 3px;
+  background: rgba(27, 101, 144, 0.18);
+}
+.obiFill {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  transition: width 500ms var(--ease);
+}
+
+.obi_pencil {
+  background: var(--pencil-wash);
+  color: var(--pencil-ink);
+}
+.obi_ink {
+  background: var(--ink);
+  color: var(--sheet);
+}
+.obi_redpen {
+  background: var(--redpen);
+  color: #fff;
+}
+.obi_quiet {
+  background: var(--sheet);
+  color: var(--ink-2);
+  box-shadow: 0 -1px 0 var(--rule);
+}

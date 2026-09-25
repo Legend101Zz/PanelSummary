@@ -1,0 +1,87 @@
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 32px 0 44px;
+}
+.lede {
+  max-width: 34em;
+  color: var(--ink-2);
+  font-size: 17px;
+}
+
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 52px 44px;
+  align-items: start;
+}
+@media (max-width: 520px) {
+  .shelf {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px 16px;
+  }
+}
+
+.book {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 240px;
+}
+.bookLink {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.bookLink:focus-visible {
+  outline-offset: 6px;
+}
+.bookTitle {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bookLink:hover .bookTitle {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.bookAuthor {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.placeholder {
+  max-width: 230px;
+  opacity: 0.6;
+}
+
+.empty {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) minmax(0, 30em);
+  gap: 40px;
+  align-items: center;
+}
+.emptyText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .empty {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .emptySheet {
+    max-width: 160px;
+  }
+}

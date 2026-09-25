@@ -1,204 +1,412 @@
 "use client";
 
-/**
- * Book detail page — v2 manga only.
- *
- * Shows book metadata + chapter list on the right, and the v2 manga
- * project panel on the left. The legacy "summary + reels + video reels"
- * flow has been removed; the only generation entry point is the v2
- * MangaProject pipeline (which will eventually replace summaries entirely).
- */
-
-import { useEffect, useState, use, useCallback } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BookOpen, Loader2, AlertCircle, FileText,
-} from "lucide-react";
-import { getBook, getImageUrl } from "@/lib/api";
-import { StatusBadge, TitleEditor } from "@/components/BookWidgets";
-import { MangaV2ProjectPanel } from "@/components/MangaV2ProjectPanel";
-import type { Book } from "@/lib/types";
+  ApiError,
+  cancelEdition,
+  generateEdition,
+  getBook,
+  getEdition,
+  isActive,
+  listEditions,
+  loadPage,
+  resumeEdition,
+  type BookDetail,
+  type ClaimDetail,
+  type EditionDetail,
+} from "@/lib/api";
+import { usePoll } from "@/lib/hooks";
+import { readPosition } from "@/lib/position";
+import { bookFacts, editionSummary, formatTokens, plural, shelfStatus, stageLine } from "@/lib/words";
+import { SiteHeader } from "@/components/SiteHeader";
+import { Cover, Obi } from "@/components/Paper";
+import { CoverSvg } from "@/components/CoverArt";
+import { PageThumb } from "@/components/PageThumb";
+import { ArrowLeft } from "@/components/Icons";
+import styles from "./book.module.css";
 
-function displayBookTitle(book: Book): string {
-  const title = book.title?.trim();
-  if (title) return title;
-  const filename = book.original_filename?.replace(/\.pdf$/i, "").trim();
-  return filename || "Untitled book";
-}
+export default function BookPage() {
+  const { id: bookId } = useParams<{ id: string }>();
+  const [book, setBook] = useState<BookDetail | null>(null);
+  const [edition, setEdition] = useState<EditionDetail | null>(null);
+  const [editionsLoaded, setEditionsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [pending, setPending] = useState<"generate" | "cancel" | "resume" | null>(null);
+  const [coverSvg, setCoverSvg] = useState<string | null>(null);
+  const [lastRead, setLastRead] = useState<number | null>(null);
+  // The API does not expose cancel_requested yet, so "stopping" is remembered here.
+  const [stopRequested, setStopRequested] = useState(false);
 
-export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const [book, setBook]       = useState<Book | null>(null);
-  const [title, setTitle]     = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-
-  const load = useCallback(async () => {
+  const loadBook = useCallback(async () => {
     try {
-      const b = await getBook(id);
-      setBook(b);
-      setTitle(b.title);
-    } catch {
-      setError("Book not found");
-    } finally {
-      setLoading(false);
+      setBook(await getBook(bookId));
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(e instanceof ApiError && e.status === 404 ? "This book is not on your shelf." : e instanceof Error ? e.message : "The book could not be loaded.");
     }
-  }, [id]);
+  }, [bookId]);
 
-  useEffect(() => { load(); }, [load]);
+  const loadEdition = useCallback(async (editionId?: string) => {
+    const id = editionId ?? (await listEditions(bookId))[0]?.id;
+    setEditionsLoaded(true);
+    if (!id) return;
+    setEdition(await getEdition(id));
+  }, [bookId]);
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg)" }}>
-      <Loader2 size={28} className="animate-spin" style={{ color: "var(--amber)" }} />
-    </div>
-  );
+  useEffect(() => {
+    loadBook();
+    loadEdition().catch(() => setEditionsLoaded(true));
+  }, [loadBook, loadEdition]);
 
-  if (error || !book) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4" style={{ background: "var(--bg)" }}>
-      <AlertCircle size={40} style={{ color: "var(--red)" }} />
-      <p className="font-display text-2xl" style={{ fontFamily: "var(--font-display)" }}>{error}</p>
-      <Link href="/" className="text-label" style={{ color: "var(--amber)" }}>← Back</Link>
-    </div>
-  );
+  const parsing = book !== null && (book.status === "uploaded" || book.status === "parsing");
+  usePoll(loadBook, 2000, parsing);
 
-  const coverUrl = getImageUrl(book.cover_image_id);
-  const isParsed = book.status === "parsed";
-  const safeTitle = displayBookTitle(book);
+  const active = isActive(edition?.status);
+  usePoll(() => (edition ? loadEdition(edition.id) : undefined), 2000, !!edition && active);
+  const stopping = active && (stopRequested || pending === "cancel");
+  useEffect(() => {
+    if (!active) setStopRequested(false);
+  }, [active]);
+
+  const page1 = edition?.pages.find((p) => p.page_number === 1);
+  useEffect(() => {
+    if (!edition || page1?.status !== "accepted" || coverSvg) return;
+    loadPage(edition.id, 1)
+      .then((p) => p.svg && setCoverSvg(p.svg))
+      .catch(() => undefined);
+  }, [edition, page1?.status, coverSvg]);
+
+  useEffect(() => {
+    if (edition) setLastRead(readPosition(edition.id));
+  }, [edition?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const act = async (kind: "generate" | "cancel" | "resume") => {
+    setPending(kind);
+    setActionError(null);
+    try {
+      if (kind === "generate") {
+        const result = await generateEdition(bookId);
+        await loadEdition(result.edition.id);
+      } else if (edition) {
+        if (kind === "cancel") {
+          await cancelEdition(edition.id);
+          setStopRequested(true);
+        } else await resumeEdition(edition.id);
+        await loadEdition(edition.id);
+      }
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "That did not work.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  if (loadError && !book) {
+    return (
+      <>
+        <SiteHeader />
+        <main id="main" className="page-main">
+          <BackLink />
+          <div className="notice" role="alert">
+            {loadError}
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  const acceptedCount = edition?.pages.filter((p) => p.status === "accepted").length ?? 0;
+  const failedPages = edition?.pages.filter((p) => p.status === "failed") ?? [];
+  const canRead = !!edition && (page1?.status === "accepted" || (!isActive(edition.status) && acceptedCount > 0));
+  const readHref = edition ? `/books/${bookId}/read?edition=${edition.id}&page=${lastRead ?? 1}` : "#";
+  // edition.pages_accepted is only written when a run finishes; count the pages instead
+  const status = book
+    ? shelfStatus({
+        ...book,
+        latest_edition: edition
+          ? { id: edition.id, status: edition.status, page_total: edition.page_total || edition.pages.length, pages_accepted: acceptedCount }
+          : null,
+      })
+    : null;
+  const progress = edition && edition.page_total > 0 && isActive(edition.status) ? acceptedCount / edition.page_total : undefined;
 
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <div
-        className="fixed inset-0 opacity-25 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+    <>
+      <SiteHeader />
+      <main id="main" className="page-main">
+        <BackLink />
 
-      <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-8 py-10">
-
-        {/* ── BOOK HEADER ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex gap-6 mb-10"
-        >
-          <div className="flex-shrink-0">
-            {coverUrl
-              ? <img src={coverUrl} alt={safeTitle} className="w-28 h-40 object-cover border-2" style={{ borderColor: "var(--border)" }} />
-              : (
-                <div className="w-28 h-40 border-2 flex items-center justify-center"
-                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                  <BookOpen size={28} style={{ color: "var(--text-3)" }} />
-                </div>
-              )
-            }
+        <section className={styles.hero} aria-labelledby="book-title">
+          <div className={styles.cover}>
+            {book ? (
+              <Cover
+                size="hero"
+                title={book.title}
+                author={book.author}
+                art={coverSvg ? <CoverSvg svg={coverSvg} /> : undefined}
+                obi={
+                  status && editionsLoaded ? (
+                    <Obi tone={status.tone} progress={progress}>
+                      {status.text}
+                    </Obi>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <div className={styles.coverPlaceholder} />
+            )}
           </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="chapter-badge">CH.02 — BOOK DETAIL</span>
-              <StatusBadge status={book.status} />
-            </div>
+          <div className={styles.heroText}>
+            <h1 id="book-title" className="page-title">
+              {book?.title ?? " "}
+            </h1>
+            {book?.author ? <p className={styles.author}>{book.author}</p> : null}
+            {book ? <p className={styles.facts}>{book.status === "parsed" ? bookFacts(book) : "Reading the PDF"}</p> : null}
+            {edition?.book?.logline ? <p className={styles.logline}>{edition.book.logline}</p> : null}
 
-            <TitleEditor bookId={id} initial={title.trim() ? title : safeTitle} onSaved={t => setTitle(t)} />
-
-            {book.author && (
-              <p className="mt-1 mb-2"
-                style={{ color: "var(--text-3)", fontFamily: "var(--font-body)", fontSize: "0.9rem" }}>
-                by {book.author}
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-4 mb-4 font-label"
-              style={{ color: "var(--text-3)", fontSize: "10px" }}>
-              <span>{book.total_pages} pages</span>
-              <span>·</span>
-              <span>{book.total_chapters} chapters</span>
-              {book.total_words > 0 && (
-                <>
-                  <span>·</span>
-                  <span>~{Math.ceil(book.total_words / 200)} min read</span>
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Link href={`/books/${id}/read`}>
-                <motion.div
-                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  className="flex items-center gap-2 py-2.5 px-5 border text-sm font-label transition-colors"
-                  style={{
-                    borderColor: "var(--border-2)", color: "var(--text-2)",
-                    background: "var(--surface)", fontSize: "11px",
-                  }}>
-                  <FileText size={14} /> Read PDF
-                </motion.div>
-              </Link>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ── MAIN GRID ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-start">
-
-          {/* Left: v2 manga project panel */}
-          <div className="flex flex-col gap-4">
-            {isParsed && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
-                <MangaV2ProjectPanel book={book} />
-              </motion.div>
-            )}
-
-            {!isParsed && (
-              <div className="panel p-5 flex items-center gap-3">
-                <Loader2 size={16} className="animate-spin flex-shrink-0" style={{ color: "var(--amber)" }} />
-                <p className="font-label" style={{ color: "var(--text-3)", fontSize: "10px" }}>
-                  {book.status === "parsing" ? "Parsing in progress…" : `Status: ${book.status}`}
-                </p>
+            {book?.status === "failed" ? (
+              <div className="notice" role="alert">
+                This PDF could not be read. {book.error}
               </div>
-            )}
-          </div>
+            ) : null}
 
-          {/* Right: chapters */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-label">SECTIONS DETECTED ({book.total_chapters})</span>
-              <div className="h-px flex-1" style={{ background: "var(--border)" }} />
-            </div>
-            <p className="font-label mb-3"
-              style={{ color: "var(--text-3)", fontSize: "8px", lineHeight: 1.5 }}>
-              Each heading/section in your PDF is treated as a chapter.
-              Docling detected {book.total_chapters} sections across {book.total_pages} pages.
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {book.chapters.map((ch, i) => (
-                <motion.div key={ch.index}
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="panel flex items-center gap-3 px-3 py-2.5">
-                  <span className="font-label w-6 text-right flex-shrink-0"
-                    style={{ color: "var(--text-3)", fontSize: "10px" }}>
-                    {String(ch.index + 1).padStart(2, "0")}
-                  </span>
-                  <p className="flex-1 truncate text-sm"
-                    style={{ fontFamily: "var(--font-body)", color: "var(--text-2)" }}>
-                    {ch.title}
+            {book && editionsLoaded ? (
+              <div className={styles.console}>
+                {edition ? <EditionStatus edition={edition} stopping={stopping} /> : null}
+
+                <div className={styles.actions}>
+                  {!edition ? (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-ink"
+                        onClick={() => act("generate")}
+                        disabled={book.status !== "parsed" || pending !== null}
+                      >
+                        {pending === "generate" ? "Starting" : "Generate manga"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {canRead ? (
+                        <Link href={readHref} className="btn btn-ink">
+                          {lastRead && lastRead > 1 ? `Continue from page ${lastRead}` : "Start reading"}
+                        </Link>
+                      ) : isActive(edition.status) ? (
+                        <button type="button" className="btn btn-ink" disabled title="Available when page 1 is drawn">
+                          Start reading
+                        </button>
+                      ) : null}
+                      {isActive(edition.status) ? (
+                        <button type="button" className="btn" onClick={() => act("cancel")} disabled={pending !== null || stopping}>
+                          {stopping ? "Stopping" : "Stop drawing"}
+                        </button>
+                      ) : null}
+                      {edition.status === "cancelled" || edition.status === "failed" ? (
+                        <button type="button" className="btn" onClick={() => act("resume")} disabled={pending !== null}>
+                          {pending === "resume" ? "Resuming" : "Resume drawing"}
+                        </button>
+                      ) : null}
+                      {edition.status === "completed_with_failures" ? (
+                        <button type="button" className="btn btn-redpen" onClick={() => act("resume")} disabled={pending !== null}>
+                          {pending === "resume" ? "Retrying" : "Retry failed pages"}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+                {!edition && book.status === "parsed" ? (
+                  <p className={styles.note}>
+                    MiniMax reads the book&apos;s text and plans the pages; PanelSummary draws them. Pages appear here as they are
+                    drawn, and you can start reading as soon as the first one is ready.
                   </p>
-                  <div className="flex gap-3 flex-shrink-0 font-label"
-                    style={{ color: "var(--text-3)", fontSize: "9px" }}>
-                    <span>pp.{ch.page_start}–{ch.page_end}</span>
-                    {ch.image_count > 0 && <span>📷{ch.image_count}</span>}
-                  </div>
-                </motion.div>
-              ))}
+                ) : null}
+                {actionError ? (
+                  <p className={styles.actionError} role="alert">
+                    {actionError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        {edition && edition.pages.length > 0 ? (
+          <section className={styles.block} aria-labelledby="pages-title">
+            <div className={styles.blockHead}>
+              <h2 id="pages-title" className="section-title">
+                Pages
+              </h2>
+              <p className={styles.blockMeta}>{editionSummary(edition)}</p>
             </div>
-          </motion.div>
+            {failedPages.length > 0 ? (
+              <div className={styles.failures}>
+                <p className={styles.failuresTitle}>
+                  {failedPages.length === 1 ? `Page ${failedPages[0].page_number} could not be drawn` : `${plural(failedPages.length, "page")} could not be drawn`}
+                </p>
+                <ul className={styles.failureList}>
+                  {failedPages.map((p) => (
+                    <li key={p.page_number}>
+                      {failedPages.length > 1 ? <span className={styles.failureNum}>Page {p.page_number}. </span> : null}
+                      {p.error || "No reason was recorded."}
+                    </li>
+                  ))}
+                </ul>
+                {isActive(edition.status) ? (
+                  <p className={styles.failuresNote}>
+                    {edition.status === "drawing"
+                      ? "You can retry failed pages when the rest are drawn."
+                      : "Drawing is starting again, and these pages will be tried again."}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            <ol className={styles.grid}>
+              {edition.pages.map((p) => (
+                <PageThumb key={p.page_number} bookId={bookId} editionId={edition.id} page={p} />
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        {book && book.sections.length > 0 ? (
+          <section className={styles.block} aria-labelledby="contents-title">
+            <div className={styles.blockHead}>
+              <h2 id="contents-title" className="section-title">
+                Contents
+              </h2>
+              <p className={styles.blockMeta}>As found in the PDF</p>
+            </div>
+            <ol className={styles.contents}>
+              {book.sections.map((s, i) => (
+                <li key={s.id}>
+                  <span className={styles.contentsNum}>{i + 1}</span>
+                  <span className={styles.contentsTitle}>{s.title}</span>
+                  <Link className={`text-link ${styles.contentsPages}`} href={`/books/${bookId}/source?page=${s.page_start}`}>
+                    {s.page_start === s.page_end ? `page ${s.page_start}` : `pages ${s.page_start}–${s.page_end}`}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        {edition && !isActive(edition.status) && edition.pages_accepted > 0 ? <About edition={edition} /> : null}
+      </main>
+    </>
+  );
+}
+
+function BackLink() {
+  return (
+    <Link href="/" className={`text-link ${styles.back}`}>
+      <ArrowLeft width={18} height={18} /> Your shelf
+    </Link>
+  );
+}
+
+function EditionStatus({ edition, stopping }: { edition: EditionDetail; stopping: boolean }) {
+  const total = edition.page_total || edition.pages.length;
+  const line = stopping ? "Stopping after the pages in progress" : stageLine(edition.status, edition.pages, total);
+  const active = isActive(edition.status);
+  return (
+    <div className={styles.status}>
+      <p className={`${styles.stage} ${active ? styles.stageActive : ""}`} aria-live="polite">
+        {line}
+      </p>
+      {edition.status === "failed" && edition.error ? <p className={styles.stageError}>{edition.error}</p> : null}
+      {total > 0 ? (
+        <ol className={styles.segments} aria-label={`${edition.pages.filter((p) => p.status === "accepted").length} of ${total} pages drawn`}>
+          {Array.from({ length: total }, (_, i) => {
+            const p = edition.pages.find((x) => x.page_number === i + 1);
+            return <li key={i} className={styles[`seg_${p?.status ?? "pending"}`]} />;
+          })}
+        </ol>
+      ) : active ? (
+        <div className={styles.indeterminate} aria-hidden="true">
+          <span />
         </div>
-      </div>
+      ) : null}
     </div>
+  );
+}
+
+function About({ edition }: { edition: EditionDetail }) {
+  const coverage = edition.coverage ?? {};
+  const [lost, setLost] = useState<ClaimDetail[] | null>(null);
+  const [open, setOpen] = useState(false);
+  const failed = useMemo(() => edition.pages.filter((p) => p.status !== "accepted").map((p) => p.page_number), [edition.pages]);
+
+  useEffect(() => {
+    if (!open || lost !== null) return;
+    Promise.all(failed.map((n) => loadPage(edition.id, n).catch(() => null)))
+      .then((pages) => setLost(pages.flatMap((p) => p?.claim_details ?? [])))
+      .catch(() => setLost([]));
+  }, [open, lost, failed, edition.id]);
+
+  const policy = edition.policy as Record<string, string | boolean | number | undefined>;
+  const models = [...new Set([policy.understanding_model, policy.plan_model, policy.page_model].filter(Boolean))].join(", ");
+  const harness = typeof policy.harness === "string" ? policy.harness.replace(/->/g, "→") : null;
+  const tokens = edition.totals.input_tokens + edition.totals.output_tokens;
+  const conveyed = coverage.conveyed?.length ?? 0;
+  const total = coverage.claims_total ?? 0;
+  const lostIds = new Set(coverage.lost_to_failed_pages ?? []);
+  const lostTexts = (lost ?? []).filter((c) => lostIds.has(c.id));
+
+  return (
+    <section className={styles.block}>
+      <details className={styles.about} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+        <summary className={styles.aboutSummary}>
+          <span className="section-title">About this adaptation</span>
+        </summary>
+        <div className={styles.aboutBody}>
+          {total > 0 ? (
+            <>
+              <p className={styles.aboutLead}>
+                The pages convey {conveyed} of the {plural(total, "key point")} PanelSummary found in the book.
+              </p>
+              <dl className={styles.coverage}>
+                {coverage.omitted_by_plan && coverage.omitted_by_plan.length > 0 ? (
+                  <div>
+                    <dt>Left out on purpose</dt>
+                    {coverage.omitted_by_plan.map((o) => (
+                      <dd key={o.claim}>{o.reason || "No reason was given."}</dd>
+                    ))}
+                  </div>
+                ) : null}
+                {lostIds.size > 0 ? (
+                  <div>
+                    <dt>Lost with the {failed.length === 1 ? "page" : "pages"} that could not be drawn</dt>
+                    {lost === null ? (
+                      <dd>{plural(lostIds.size, "key point")}</dd>
+                    ) : lostTexts.length > 0 ? (
+                      lostTexts.map((c) => <dd key={c.id}>{c.text}</dd>)
+                    ) : (
+                      <dd>{plural(lostIds.size, "key point")}</dd>
+                    )}
+                  </div>
+                ) : null}
+                {coverage.not_planned && coverage.not_planned.length > 0 ? (
+                  <div>
+                    <dt>Not planned into any page</dt>
+                    <dd>{plural(coverage.not_planned.length, "key point")}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </>
+          ) : (
+            <p className={styles.aboutLead}>Coverage is reported when every page has been attempted.</p>
+          )}
+          <p className={styles.made}>
+            How it was made: {models ? `written and planned by ${models}` : "written by the generator"}
+            {harness ? ` through ${harness}` : ""}, drawn by the PanelSummary renderer. Image models: none. {formatTokens(tokens)} tokens.
+          </p>
+        </div>
+      </details>
+    </section>
   );
 }

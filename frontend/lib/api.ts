@@ -1,371 +1,336 @@
 /**
- * api.ts — All API call functions
- * =================================
- * Every function that talks to the backend lives here.
- * Components stay clean — they just call functions, they don't know
- * about URLs or HTTP methods.
+ * Typed client for the PanelSummary API (backend/app/api/library.py and
+ * backend/app/api/editions.py). No keys, no provider settings: the browser
+ * only uploads, asks for generation, and reads.
  */
 
-import axios from "axios";
-import type {
-  Book,
-  BookListItem,
-  JobStatusResponse,
-  UploadResponse,
-  SummaryStyle,
-  LLMProvider,
-  StartMangaSliceGenerationResponse,
-  StartMangaProjectBuildResponse,
-  StartBookUnderstandingResponse,
-  ImageModelOption,
-  MangaProjectAssetsResponse,
-  MangaProjectPagesResponse,
-  MangaProjectResponse,
-  MangaProjectSlicesResponse,
-  MangaProjectsResponse,
-  NextSourceSliceResponse,
-  AssetMutationResponse,
-  TextModelOption,
-  MangaBuildMode,
-} from "./types";
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// ---------------------------------------------------------------------------
+// Shapes
+// ---------------------------------------------------------------------------
 
-const api = axios.create({
-  baseURL: API_URL,
-  timeout: 30000,
-  headers: { "Content-Type": "application/json" },
-});
+export type BookStatus = "uploaded" | "parsing" | "parsed" | "failed";
+export type JobStatus = "queued" | "running" | "succeeded" | "completed_with_failures" | "failed" | "cancelled";
+export type EditionStatus =
+  | "queued"
+  | "understanding"
+  | "planning"
+  | "drawing"
+  | "complete"
+  | "completed_with_failures"
+  | "failed"
+  | "cancelled";
+export type PageStatus = "pending" | "drawing" | "accepted" | "failed";
+export type Fidelity = "quote" | "paraphrase" | "dramatized" | "metaphor";
+export type TextKind = "speech" | "thought" | "shout" | "whisper" | "narration" | "caption" | "sfx" | (string & {});
 
-// ============================================================
-// ERROR HANDLING
-// ============================================================
+export interface EditionSummary {
+  id: string;
+  status: EditionStatus;
+  page_total: number;
+  pages_accepted: number;
+}
 
-function getErrorMessage(error: unknown): string {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
-    if (typeof data === "object" && data?.detail) {
-      return typeof data.detail === "string"
-        ? data.detail
-        : JSON.stringify(data.detail);
-    }
-    if (error.response?.status === 413) return "PDF file is too large (max 50MB)";
-    if (error.response?.status === 404) return "Not found";
-    if (error.response?.status === 500) return "Server error — check backend logs";
-    if (error.code === "ECONNREFUSED") return "Cannot connect to backend — is it running?";
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  status: BookStatus;
+  error: string | null;
+  page_count: number;
+  word_count: number;
+  section_count: number;
+  parser: string;
+  parse_job_id: string | null;
+  created_at: string;
+}
+
+export interface LibraryBook extends Book {
+  latest_edition: EditionSummary | null;
+}
+
+export interface BookSection {
+  id: string;
+  title: string;
+  page_start: number;
+  page_end: number;
+  word_count: number;
+}
+
+export interface BookDetail extends Book {
+  sections: BookSection[];
+}
+
+export interface JobEvent {
+  at: string;
+  stage: string;
+  message: string;
+}
+
+export interface Job {
+  id: string;
+  kind: "parse" | "generate";
+  status: JobStatus;
+  stage: string;
+  done: number;
+  total: number;
+  message: string;
+  error: string | null;
+  events: JobEvent[];
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface Totals {
+  calls: number;
+  failed_calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  cost_usd: number;
+  model_ms: number;
+}
+
+/** Written by the generator when an edition finishes (empty before). */
+export interface Coverage {
+  claims_total?: number;
+  conveyed?: string[];
+  lost_to_failed_pages?: string[];
+  omitted_by_plan?: { claim: string; reason: string }[];
+  not_planned?: string[];
+  core_not_conveyed?: string[];
+}
+
+export interface Edition {
+  id: string;
+  book_id: string;
+  status: EditionStatus;
+  page_total: number;
+  pages_accepted: number;
+  pages_failed: number;
+  coverage: Coverage;
+  totals: Totals;
+  policy: Record<string, unknown>;
+  error: string | null;
+  job_id: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface EditionPageSummary {
+  page_number: number;
+  section_id: string;
+  status: PageStatus;
+  attempts: number;
+  beat: string;
+  /** Failure reason, only for failed pages. */
+  error: string | null;
+}
+
+export interface EditionBook {
+  title: string | null;
+  author: string | null;
+  logline: string | null;
+  kind: string | null;
+  sections: { id: string; title: string }[];
+  cast: { id: string; name: string; role: string }[];
+}
+
+export interface EditionDetail extends Edition {
+  job: Job | null;
+  pages: EditionPageSummary[];
+  book?: EditionBook;
+  has_plan: boolean;
+}
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface SourceRef {
+  unit: string;
+  page: number;
+}
+
+export interface PagePanel {
+  id: string;
+  polygon: Point[];
+  bbox: Box;
+  /** Reading order, 0-based. */
+  order: number;
+}
+
+export interface PageText {
+  panel: string;
+  index: number;
+  kind: TextKind;
+  speaker?: string;
+  text: string;
+  fidelity: Fidelity;
+  source?: SourceRef;
+  bbox: Box;
+  font_px: number;
+  lines: string[];
+}
+
+export interface ClaimDetail {
+  id: string;
+  text: string;
+  kind: string | null;
+  importance: string | null;
+  source: SourceRef[];
+}
+
+export interface EditionPage {
+  page_number: number;
+  section_id: string;
+  status: PageStatus;
+  beat: string;
+  /** The complete accepted page (viewBox 0 0 1000 1500); null until accepted. */
+  svg: string | null;
+  svg_hash: string | null;
+  renderer_version: string | null;
+  panels: PagePanel[];
+  texts: PageText[];
+  claims: string[];
+  claim_details: ClaimDetail[];
+  /** Cast id -> display name. */
+  speakers: Record<string, string>;
+  sources: { panel: string; source: SourceRef[] }[];
+  error: { code?: string; message?: string } | null;
+}
+
+export interface PdfInfo {
+  book_id: string;
+  title: string;
+  total_pages: number;
+}
+
+export interface UploadResult {
+  book: Book;
+  job_id: string | null;
+  cached: boolean;
+}
+
+export interface GenerateResult {
+  edition: Edition;
+  job: Job | null;
+  already_running: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Transport
+// ---------------------------------------------------------------------------
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
   }
-  return error instanceof Error ? error.message : "Unknown error";
 }
 
-// ============================================================
-// BOOK ENDPOINTS
-// ============================================================
-
-export async function uploadPdf(file: File): Promise<UploadResponse> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const response = await api.post<UploadResponse>("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    timeout: 60000,
-  });
-  return response.data;
+async function readError(response: Response): Promise<string> {
+  try {
+    const body = await response.json();
+    if (typeof body?.detail === "string") return body.detail;
+  } catch {
+    // not JSON
+  }
+  return `The server answered ${response.status}`;
 }
 
-export async function listBooks(): Promise<BookListItem[]> {
-  const response = await api.get<BookListItem[]>("/books");
-  return response.data;
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, { cache: "no-store", ...init });
+  } catch {
+    throw new ApiError("Can't reach the PanelSummary server. Check that the backend is running.", 0);
+  }
+  if (!response.ok) throw new ApiError(await readError(response), response.status);
+  return (await response.json()) as T;
 }
 
-export async function getBook(bookId: string): Promise<Book> {
-  const response = await api.get<Book>(`/books/${bookId}`);
-  return response.data;
-}
+const post = <T>(path: string) => request<T>(path, { method: "POST" });
 
-export async function updateBookTitle(bookId: string, title: string): Promise<void> {
-  await api.patch(`/books/${bookId}`, { title });
-}
+// ---------------------------------------------------------------------------
+// Books
+// ---------------------------------------------------------------------------
 
-export async function fetchOpenRouterModels(apiKey: string) {
-  const response = await api.get(`/openrouter/models?api_key=${encodeURIComponent(apiKey)}`);
-  return response.data;
-}
+export const listBooks = () => request<LibraryBook[]>("/books");
+export const getBook = (bookId: string) => request<BookDetail>(`/books/${bookId}`);
+export const getPdfInfo = (bookId: string) => request<PdfInfo>(`/books/${bookId}/pdf/info`);
+export const pdfPageUrl = (bookId: string, page: number, scale = 2) => `${API_URL}/books/${bookId}/pdf/page/${page}?scale=${scale}`;
 
-export async function fetchOpenAIModels(): Promise<{ models: TextModelOption[]; total: number }> {
-  const response = await api.get("/openai/models");
-  return response.data;
-}
-
-export async function getImageModels(): Promise<{
-  models: ImageModelOption[];
-  default: string;
-}> {
-  const response = await api.get("/image-models");
-  return response.data;
-}
-
-// ============================================================
-// MANGA PROJECT ENDPOINTS — the only generation control plane
-// ============================================================
-
-export async function createMangaProject(
-  bookId: string,
-  options: {
-    style?: SummaryStyle | string;
-    engine?: "v4" | string;
-    title?: string;
-    projectOptions?: Record<string, unknown>;
-  } = {},
-): Promise<MangaProjectResponse> {
-  const response = await api.post<MangaProjectResponse>(`/books/${bookId}/manga-projects`, {
-    style: options.style ?? "manga",
-    engine: options.engine ?? "v4",
-    title: options.title ?? "",
-    project_options: options.projectOptions ?? {},
-  });
-  return response.data;
-}
-
-export async function listBookMangaProjects(bookId: string): Promise<MangaProjectsResponse> {
-  const response = await api.get<MangaProjectsResponse>(`/books/${bookId}/manga-projects`);
-  return response.data;
-}
-
-export async function getMangaProject(projectId: string): Promise<MangaProjectResponse> {
-  const response = await api.get<MangaProjectResponse>(`/manga-projects/${projectId}`);
-  return response.data;
-}
-
-export async function listMangaProjectSlices(projectId: string): Promise<MangaProjectSlicesResponse> {
-  const response = await api.get<MangaProjectSlicesResponse>(`/manga-projects/${projectId}/slices`);
-  return response.data;
-}
-
-export async function listMangaProjectPages(projectId: string): Promise<MangaProjectPagesResponse> {
-  const response = await api.get<MangaProjectPagesResponse>(`/manga-projects/${projectId}/pages`);
-  return response.data;
-}
-
-export async function listMangaProjectAssets(projectId: string): Promise<MangaProjectAssetsResponse> {
-  const response = await api.get<MangaProjectAssetsResponse>(`/manga-projects/${projectId}/assets`);
-  return response.data;
-}
-
-// Re-trigger the project-level character library materialization.
-// Idempotent at the planner level (won't replace existing assets).
-export async function materializeCharacterSheets(
-  projectId: string,
-  imageApiKey: string | null,
-): Promise<{ assets: import("./types").MangaAssetDoc[]; generated_count: number }> {
-  const response = await api.post(`/manga-projects/${projectId}/character-sheets`, {
-    image_api_key: imageApiKey,
-  });
-  return response.data;
-}
-
-// Per-asset regenerate.
-export async function regenerateMangaAsset(
-  projectId: string,
-  assetId: string,
-  imageApiKey: string,
-): Promise<AssetMutationResponse> {
-  const response = await api.post<AssetMutationResponse>(
-    `/manga-projects/${projectId}/assets/${assetId}/regenerate`,
-    { image_api_key: imageApiKey },
-  );
-  return response.data;
-}
-
-// Toggle the user's pin on an asset.
-export async function setMangaAssetPin(
-  projectId: string,
-  assetId: string,
-  pinned: boolean,
-): Promise<AssetMutationResponse> {
-  const response = await api.post<AssetMutationResponse>(
-    `/manga-projects/${projectId}/assets/${assetId}/pin`,
-    { pinned },
-  );
-  return response.data;
-}
-
-export async function previewNextSourceSlice(
-  projectId: string,
-  pageWindow = 10,
-): Promise<NextSourceSliceResponse> {
-  const response = await api.post<NextSourceSliceResponse>(
-    `/manga-projects/${projectId}/next-source-slice`,
-    { page_window: pageWindow },
-  );
-  return response.data;
-}
-
-// Kick off (or re-run with force=true) the run-once book understanding
-// pipeline for a project. The backend response is the source of truth for
-// whether a job was newly queued (already_ready === false) or short-circuited
-// because the spine already exists. Caller decides whether to poll the task.
-export async function startBookUnderstanding(
-  projectId: string,
-  options: {
-    apiKey: string;
-    provider: LLMProvider;
-    model?: string;
-    extraOptions?: Record<string, unknown>;
-    force?: boolean;
-  },
-): Promise<StartBookUnderstandingResponse> {
-  const response = await api.post<StartBookUnderstandingResponse>(
-    `/manga-projects/${projectId}/book-understanding`,
-    {
-      api_key: options.apiKey,
-      provider: options.provider,
-      model: options.model,
-      options: options.extraOptions ?? {},
-      force: options.force ?? false,
-    },
-    { timeout: 30000 },
-  );
-  return response.data;
-}
-
-export async function generateMangaProjectSlice(
-  projectId: string,
-  options: {
-    apiKey: string;
-    provider: LLMProvider;
-    model?: string;
-    pageWindow?: number;
-    generateImages?: boolean;
-    imageModel?: string;
-    imageMode?: "none" | "sprites_only" | "budgeted" | "full_panel_art";
-    spriteBudgetTotal?: number;
-    keyPanelBudgetPerSlice?: number;
-    keyPanelBudgetFullBook?: number;
-    extraOptions?: Record<string, unknown>;
-  },
-): Promise<StartMangaSliceGenerationResponse> {
-  const response = await api.post<StartMangaSliceGenerationResponse>(
-    `/manga-projects/${projectId}/generate-slice`,
-    {
-      api_key: options.apiKey,
-      provider: options.provider,
-      model: options.model,
-      page_window: options.pageWindow ?? 10,
-      generate_images: options.generateImages ?? false,
-      image_model: options.imageModel ?? null,
-      image_mode: options.imageMode ?? (options.generateImages ? "budgeted" : "none"),
-      sprite_budget_total: options.spriteBudgetTotal ?? 8,
-      key_panel_budget_per_slice: options.keyPanelBudgetPerSlice ?? 3,
-      key_panel_budget_full_book: options.keyPanelBudgetFullBook ?? 8,
-      options: options.extraOptions ?? {},
-    },
-    { timeout: 30000 },
-  );
-  return response.data;
-}
-
-export async function startMangaProjectBuild(
-  projectId: string,
-  options: {
-    apiKey: string;
-    provider: LLMProvider;
-    model?: string;
-    mode: MangaBuildMode;
-    pageWindow?: number;
-    generateImages?: boolean;
-    imageModel?: string;
-    imageMode?: "none" | "sprites_only" | "budgeted" | "full_panel_art";
-    spriteBudgetTotal?: number;
-    keyPanelBudgetPerSlice?: number;
-    keyPanelBudgetFullBook?: number;
-    extraOptions?: Record<string, unknown>;
-  },
-): Promise<StartMangaProjectBuildResponse> {
-  const response = await api.post<StartMangaProjectBuildResponse>(
-    `/manga-projects/${projectId}/build`,
-    {
-      api_key: options.apiKey,
-      provider: options.provider,
-      model: options.model,
-      mode: options.mode,
-      page_window: options.pageWindow ?? 10,
-      generate_images: options.generateImages ?? true,
-      image_model: options.imageModel ?? null,
-      image_mode: options.imageMode ?? (options.generateImages === false ? "none" : "budgeted"),
-      sprite_budget_total: options.spriteBudgetTotal ?? 8,
-      key_panel_budget_per_slice: options.keyPanelBudgetPerSlice ?? 3,
-      key_panel_budget_full_book: options.keyPanelBudgetFullBook ?? 8,
-      options: options.extraOptions ?? {},
-    },
-    { timeout: 30000 },
-  );
-  return response.data;
-}
-
-// ============================================================
-// JOB STATUS POLLING
-// ============================================================
-
-export async function getJobStatus(taskId: string): Promise<JobStatusResponse> {
-  const response = await api.get<JobStatusResponse>(`/status/${taskId}`);
-  return response.data;
-}
-
-export async function pollUntilComplete(
-  taskId: string,
-  onProgress?: (status: JobStatusResponse) => void,
-  intervalMs: number = 2000,
-  timeoutMs: number = 10 * 60 * 1000,
-): Promise<JobStatusResponse> {
-  const startTime = Date.now();
+/** Upload with byte progress (fetch cannot report upload progress). */
+export function uploadPdf(file: File, onProgress?: (fraction: number) => void, signal?: AbortSignal): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
-    const poll = async () => {
-      try {
-        const status = await getJobStatus(taskId);
-        onProgress?.(status);
-        if (status.status === "success") return resolve(status);
-        if (status.status === "failure") return reject(new Error(status.error || "Job failed"));
-        if (Date.now() - startTime > timeoutMs) return reject(new Error("Job timed out after 10 minutes"));
-        setTimeout(poll, intervalMs);
-      } catch (error) {
-        reject(new Error(getErrorMessage(error)));
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_URL}/upload`);
+    xhr.responseType = "json";
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(event.loaded / event.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response as UploadResult);
+      else {
+        const detail = (xhr.response as { detail?: unknown } | null)?.detail;
+        reject(new ApiError(typeof detail === "string" ? detail : `The server answered ${xhr.status}`, xhr.status));
       }
     };
-    poll();
+    xhr.onerror = () => reject(new ApiError("Can't reach the PanelSummary server. Check that the backend is running.", 0));
+    xhr.onabort = () => reject(new ApiError("Upload cancelled", 0));
+    signal?.addEventListener("abort", () => xhr.abort());
+    const form = new FormData();
+    form.append("file", file);
+    xhr.send(form);
   });
 }
 
-// ============================================================
-// IMAGE HELPERS
-// ============================================================
+export const getJob = (jobId: string) => request<Job>(`/jobs/${jobId}`);
 
-export function getImageUrl(imageId: string | null | undefined): string | null {
-  if (!imageId) return null;
-  return `${API_URL}/images/${imageId}`;
+// ---------------------------------------------------------------------------
+// Editions
+// ---------------------------------------------------------------------------
+
+export const generateEdition = (bookId: string) => post<GenerateResult>(`/books/${bookId}/editions`);
+export const listEditions = (bookId: string) => request<Edition[]>(`/books/${bookId}/editions`);
+export const getEdition = (editionId: string) => request<EditionDetail>(`/editions/${editionId}`);
+export const getEditionPage = (editionId: string, page: number) => request<EditionPage>(`/editions/${editionId}/pages/${page}`);
+export const cancelEdition = (editionId: string) => post<Edition>(`/editions/${editionId}/cancel`);
+export const resumeEdition = (editionId: string) => post<{ edition: Edition; job: Job | null }>(`/editions/${editionId}/resume`);
+
+// ---------------------------------------------------------------------------
+// Page cache: accepted pages never change, so each is fetched once per tab.
+// ---------------------------------------------------------------------------
+
+const pageCache = new Map<string, Promise<EditionPage>>();
+
+export function loadPage(editionId: string, page: number, { fresh = false } = {}): Promise<EditionPage> {
+  const key = `${editionId}:${page}`;
+  const cached = pageCache.get(key);
+  if (cached && !fresh) return cached;
+  const promise = getEditionPage(editionId, page).then((result) => {
+    // only an accepted page is final; anything else is fetched again next time
+    if (result.status !== "accepted") pageCache.delete(key);
+    return result;
+  });
+  promise.catch(() => pageCache.delete(key));
+  pageCache.set(key, promise);
+  return promise;
 }
 
-export async function checkCredits(apiKey: string): Promise<{
-  total_credits: number;
-  used_credits: number;
-  remaining_credits: number;
-  error?: string;
-}> {
-  const response = await api.get(`/credits?api_key=${encodeURIComponent(apiKey)}`);
-  return response.data;
-}
-
-export async function cancelJob(taskId: string): Promise<{ message: string; cancelled: boolean }> {
-  const response = await api.post(`/jobs/${taskId}/cancel`);
-  return response.data;
-}
-
-export async function checkHealth(): Promise<boolean> {
-  try {
-    await api.get("/health", { timeout: 3000 });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export { getErrorMessage };
-export default api;
+export const ACTIVE_EDITION: readonly EditionStatus[] = ["queued", "understanding", "planning", "drawing"];
+export const isActive = (status: EditionStatus | undefined | null) => !!status && ACTIVE_EDITION.includes(status);

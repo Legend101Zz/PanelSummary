@@ -1,8 +1,0 @@
-{
-  "schema_version": "invalid-fixture.v1",
-  "base_fixture": "canonical/manga_page_plan.v1.json",
-  "operation": "replace",
-  "path": "/page_script/text_elements/0/panel_id",
-  "value": "missing_panel",
-  "expected_code": "TEXT_UNKNOWN_PANEL"
-}

@@ -1,155 +1,135 @@
-import { randomUUID } from "node:crypto";
+/**
+ * Agent worker HTTP surface (v2). The backend runner calls it; nothing else
+ * should. Runs are idempotent by run_id: a repeated request for a running or
+ * finished run returns that run instead of starting (and paying for) another.
+ */
+import { timingSafeEqual } from "node:crypto";
 
-import type { ScrollStackAgentRuntime } from "@scrollstack/agent-runtime";
-import { isAgentGoal, isContextPack } from "@scrollstack/contracts";
-import { Type, type Static } from "@sinclair/typebox";
 import Fastify, { type FastifyInstance } from "fastify";
 
-import { CapacityError, RunRegistry } from "./run-registry.js";
-import { createServiceAuthHook } from "./security/auth.js";
+import { egressSnapshot } from "./egress.js";
+import { GOAL_TYPES } from "./goals/index.js";
+import { executeGoal, type GoalOutcome, type GoalRequest } from "./run-goal.js";
 
-const RunRequestSchema = Type.Object(
-  {
-    goal: Type.Record(Type.String(), Type.Unknown()),
-    context: Type.Record(Type.String(), Type.Unknown()),
-    instructions: Type.Optional(Type.String({ maxLength: 20_000 })),
-  },
-  { additionalProperties: false },
-);
-type RunRequest = Static<typeof RunRequestSchema>;
-
-const RunParamsSchema = Type.Object({ id: Type.String({ minLength: 1, maxLength: 160 }) });
-type RunParams = Static<typeof RunParamsSchema>;
-
-export interface ContractValidators {
-  isAgentGoal(value: unknown): value is import("@scrollstack/contracts").AgentGoal;
-  isContextPack(value: unknown): value is import("@scrollstack/contracts").ContextPack;
+interface RunRecord {
+  run_id: string;
+  goal_type: string;
+  state: "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  started_at: string;
+  finished_at?: string;
+  outcome?: GoalOutcome;
+  controller: AbortController;
+  completion: Promise<void>;
 }
 
-export interface BuildServerOptions {
-  runtime: ScrollStackAgentRuntime;
-  internalServiceToken: string;
+export interface ServerOptions {
+  token: string;
   maxConcurrentRuns: number;
-  maxRequestBytes: number;
-  runTimeoutMs: number;
-  signedTokenMaxAgeMs: number;
-  validators?: ContractValidators;
+  retainMs?: number;
   logger?: boolean;
+  execute?: typeof executeGoal;
 }
 
-function correlationId(value: string | string[] | undefined): string {
-  const raw = Array.isArray(value) ? value[0] : value;
-  return raw && /^[A-Za-z0-9._:-]{1,128}$/.test(raw) ? raw : randomUUID();
+function sameToken(given: string, expected: string): boolean {
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export function buildServer(options: BuildServerOptions): FastifyInstance {
-  const app = Fastify({
-    logger: options.logger ?? false,
-    bodyLimit: options.maxRequestBytes,
-    requestIdHeader: false,
-    genReqId: (request) => correlationId(request.headers["x-correlation-id"]),
-    disableRequestLogging: options.logger === false,
-  });
-  const validators = options.validators ?? { isAgentGoal, isContextPack };
-  const registry = new RunRegistry({
-    runtime: options.runtime,
-    maxConcurrentRuns: options.maxConcurrentRuns,
-    runTimeoutMs: options.runTimeoutMs,
-  });
+function view(record: RunRecord) {
+  return {
+    run_id: record.run_id,
+    goal_type: record.goal_type,
+    started_at: record.started_at,
+    finished_at: record.finished_at,
+    ...(record.outcome ?? {}),
+    state: record.state,
+  };
+}
+
+export function buildServer(options: ServerOptions): FastifyInstance {
+  const execute = options.execute ?? executeGoal;
+  const retainMs = options.retainMs ?? 30 * 60_000;
+  const runs = new Map<string, RunRecord>();
+  let active = 0;
+
+  const app = Fastify({ logger: options.logger ?? false, bodyLimit: 16 * 1024 * 1024 });
 
   app.addHook("onRequest", async (request, reply) => {
-    reply.header("x-correlation-id", request.id);
+    if (!request.url.startsWith("/internal/")) return;
+    const header = request.headers.authorization ?? "";
+    if (!header.startsWith("Bearer ") || !sameToken(header.slice(7), options.token)) {
+      await reply.code(401).send({ error: { code: "UNAUTHORIZED", message: "service token required" } });
+    }
   });
-  app.addHook(
-    "preHandler",
-    createServiceAuthHook({
-      secret: options.internalServiceToken,
-      maxAgeMs: options.signedTokenMaxAgeMs,
-    }),
-  );
 
-  app.get("/healthz", async () => ({ status: "ok" }));
+  app.get("/healthz", async () => ({ ok: true }));
   app.get("/readyz", async (_request, reply) => {
-    const ready = options.runtime.isReady();
-    return reply.code(ready ? 200 : 503).send({ status: ready ? "ready" : "not_ready" });
+    const ready = Boolean(process.env.MINIMAX_API_KEY);
+    return reply.code(ready ? 200 : 503).send({ ready, active_runs: active });
   });
 
-  app.post<{ Body: RunRequest }>(
-    "/internal/v1/agent-runs",
-    { schema: { body: RunRequestSchema } },
-    async (request, reply) => {
-      if (!validators.isAgentGoal(request.body.goal)) {
-        return reply.code(400).send({
-          error: { code: "INVALID_AGENT_GOAL", message: "goal does not match AgentGoal v1" },
-        });
-      }
-      if (!validators.isContextPack(request.body.context)) {
-        return reply.code(400).send({
-          error: { code: "INVALID_CONTEXT_PACK", message: "context does not match ContextPack v1" },
-        });
-      }
-
-      try {
-        const run = registry.start({
-          goal: request.body.goal,
-          context: request.body.context,
-          instructions: request.body.instructions,
-          correlationId: request.id,
-        });
-        const prefer = Array.isArray(request.headers.prefer)
-          ? request.headers.prefer.join(",")
-          : request.headers.prefer;
-        if (prefer?.toLowerCase().includes("respond-async")) {
-          return reply.code(202).send(registry.get(run.run_id));
-        }
-        const completed = await registry.wait(run.run_id);
-        return reply.code(completed?.state === "SUCCEEDED" ? 200 : 422).send(completed);
-      } catch (error) {
-        if (error instanceof CapacityError) {
-          reply.header("retry-after", "1");
-          return reply.code(429).send({
-            error: { code: "WORKER_CAPACITY_EXCEEDED", message: error.message, limit: error.limit },
-          });
-        }
-        throw error;
-      }
-    },
-  );
-
-  app.get<{ Params: RunParams }>(
-    "/internal/v1/agent-runs/:id",
-    { schema: { params: RunParamsSchema } },
-    async (request, reply) => {
-      const run = registry.get(request.params.id);
-      return run
-        ? reply.send(run)
-        : reply.code(404).send({ error: { code: "RUN_NOT_FOUND", message: "Agent run not found" } });
-    },
-  );
-
-  app.post<{ Params: RunParams }>(
-    "/internal/v1/agent-runs/:id/cancel",
-    { schema: { params: RunParamsSchema } },
-    async (request, reply) => {
-      const run = await registry.cancel(request.params.id);
-      return run
-        ? reply.send(run)
-        : reply.code(404).send({ error: { code: "RUN_NOT_FOUND", message: "Agent run not found" } });
-    },
-  );
-
-  app.setErrorHandler((error, request, reply) => {
-    const appError = error as Error & { statusCode?: number };
-    request.log.error({ err: appError, correlation_id: request.id }, "agent worker request failed");
-    const status = appError.statusCode && appError.statusCode >= 400 ? appError.statusCode : 500;
-    void reply.code(status).send({
-      error: {
-        code: status === 413 ? "REQUEST_TOO_LARGE" : status < 500 ? "INVALID_REQUEST" : "INTERNAL_ERROR",
-        message: status < 500 ? appError.message : "Internal agent worker error",
-        correlation_id: request.id,
-      },
-    });
+  app.post("/internal/v2/runs", async (request, reply) => {
+    const body = request.body as Partial<GoalRequest> | undefined;
+    if (!body || typeof body.run_id !== "string" || !body.run_id || !GOAL_TYPES.includes(body.goal_type as never)) {
+      return reply.code(400).send({ error: { code: "BAD_REQUEST", message: "run_id and a known goal_type are required" } });
+    }
+    const existing = runs.get(body.run_id);
+    if (existing && existing.state !== "FAILED" && existing.state !== "CANCELLED") {
+      await existing.completion;
+      return reply.send(view(existing));
+    }
+    if (active >= options.maxConcurrentRuns) {
+      return reply.code(429).send({ error: { code: "AT_CAPACITY", message: `worker is running ${active} goals` } });
+    }
+    const controller = new AbortController();
+    const record: RunRecord = {
+      run_id: body.run_id,
+      goal_type: String(body.goal_type),
+      state: "RUNNING",
+      started_at: new Date().toISOString(),
+      controller,
+      completion: Promise.resolve(),
+    };
+    runs.set(record.run_id, record);
+    active += 1;
+    record.completion = execute(body as GoalRequest, controller.signal)
+      .then((outcome) => {
+        record.outcome = outcome;
+        record.state = outcome.state;
+      })
+      .catch((error: unknown) => {
+        record.state = "FAILED";
+        record.outcome = { state: "FAILED", error: { code: "WORKER_ERROR", message: error instanceof Error ? error.message : String(error) } };
+      })
+      .finally(() => {
+        active -= 1;
+        record.finished_at = new Date().toISOString();
+        setTimeout(() => {
+          if (runs.get(record.run_id) === record) runs.delete(record.run_id);
+        }, retainMs).unref();
+      });
+    await record.completion;
+    return reply.send(view(record));
   });
+
+  app.get("/internal/v2/runs/:id", async (request, reply) => {
+    const record = runs.get((request.params as { id: string }).id);
+    if (!record) return reply.code(404).send({ error: { code: "NOT_FOUND", message: "unknown run" } });
+    return reply.send(view(record));
+  });
+
+  app.post("/internal/v2/runs/:id/cancel", async (request, reply) => {
+    const record = runs.get((request.params as { id: string }).id);
+    if (!record) return reply.code(404).send({ error: { code: "NOT_FOUND", message: "unknown run" } });
+    if (record.state === "RUNNING") {
+      record.controller.abort("cancelled by backend");
+      await record.completion;
+    }
+    return reply.send(view(record));
+  });
+
+  app.get("/internal/v2/egress", async () => ({ hosts: egressSnapshot() }));
 
   return app;
 }
