@@ -95,6 +95,7 @@ export const ERROR_GUIDE: Record<string, string> = {
   TAIL_MISDIRECTED: "a tail or thought trail ends nearer another character than its speaker: give the speaker room (another slot or a closer shot).",
   KEY_PROP_COVERED: "text had to cover the prop the beat is about: shorten the text, give the panel more room, or show the object in an insert.",
   VARIANT_FIELD_INVALID: "a look variant sets a field the character's kind does not have (material only for people; tone only for creatures, objects and plants).",
+  TEXT_GLYPH_MISSING: "the lettering font has no glyph for a character (it would print as an empty box): write it with plain letters and punctuation.",
   TEXT_DOES_NOT_FIT: "the text does not fit at the minimum size without covering a face or another text: shorten it or give the panel more room.",
 };
 

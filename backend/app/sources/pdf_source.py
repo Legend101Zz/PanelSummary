@@ -15,13 +15,14 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import fitz  # PyMuPDF
 
-PARSER_NAME = "pymupdf-sections.v1"
+PARSER_NAME = "pymupdf-sections.v2"
 UNIT_TARGET_WORDS = 450
 UNIT_MAX_WORDS = 700
 UNIT_MIN_WORDS = 120
@@ -74,11 +75,15 @@ class ParsedSource:
 
 _WS = re.compile(r"\s+")
 _HYPHEN_BREAK = re.compile(r"(\w)-\n(\w)")
+# Typeset PDFs carry Latin ligatures (U+FB00-FB06: ff, fi, fl, ffi, ffl, long st, st).
+# They must become plain letters: the lettering fonts have no glyphs for them, and
+# verbatim quote checks compare page text against this source text.
+_LIGATURES = re.compile("[\ufb00-\ufb06]")
 
 
 def _clean(text: str) -> str:
     text = _HYPHEN_BREAK.sub(r"\1\2", text)
-    text = text.replace("ﬁ", "fi").replace("ﬂ", "fl")
+    text = _LIGATURES.sub(lambda m: unicodedata.normalize("NFKC", m.group()), text)
     return _WS.sub(" ", text).strip()
 
 

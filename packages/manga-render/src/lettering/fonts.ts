@@ -20,6 +20,21 @@ function load(face: FontFace): opentype.Font {
   return font;
 }
 
+/**
+ * Characters of `text` the face has no glyph for (they would draw as the
+ * font's empty box). opentype's hasChar() cannot be used: it reports true
+ * for characters that map to .notdef.
+ */
+export function missingChars(text: string, face: FontFace): string[] {
+  const font = load(face);
+  const out: string[] = [];
+  for (const ch of text) {
+    if (/\s/.test(ch) || out.includes(ch)) continue;
+    if (font.charToGlyphIndex(ch) === 0) out.push(ch);
+  }
+  return out;
+}
+
 export interface FontMetrics {
   ascent: number;
   descent: number;

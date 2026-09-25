@@ -6,7 +6,7 @@ import type { Box, Point, RenderedText, TextSpec, ValidationIssue } from "../con
 import { mulberry32 } from "../prng.js";
 import { countWords } from "./breaking.js";
 import { drawBalloonChain, layoutBalloon, type BalloonDraw } from "./shapes.js";
-import { measure } from "./fonts.js";
+import { measure, missingChars } from "./fonts.js";
 import {
   placeCandidates,
   placeOne,
@@ -87,9 +87,12 @@ export function isTitleText(text: string): boolean {
 /**
  * Lettering typography: a doubled hyphen is an em dash, set against the word
  * before it so a line may break after the dash but never start with one.
+ * Latin ligatures from PDF text (U+FB00-FB06) become plain letters: the
+ * lettering fonts have no glyphs for them.
  */
 export function typeset(text: string): string {
   return text
+    .replace(/[\uFB00-\uFB06]/g, (m) => m.normalize("NFKC"))
     .replace(/\s+/g, " ")
     .trim()
     .replace(/\s*--+\s*/g, "\u2014 ")
@@ -411,6 +414,17 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
 
   // --- craft checks on the final lettering ---------------------------------
   issues.push(...checkLettering(input, placed));
+  input.texts.forEach((t, i) => {
+    if (!usable(t)) return;
+    const missing = missingChars(clean(t), KIND_STYLES[t.kind].face);
+    if (missing.length === 0) return;
+    issues.push({
+      code: "TEXT_GLYPH_MISSING",
+      severity: "error",
+      path: `panel ${input.panelId} text ${i}`,
+      message: `the lettering font cannot draw ${missing.map((c) => `"${c}" (U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0")})`).join(", ")} in "${snippet(clean(t))}": it would print as an empty box. Write it with plain letters and punctuation.`,
+    });
+  });
 
   const texts: RenderedText[] = placed.map((p) => {
     const t = input.texts[p.index];

@@ -10,7 +10,7 @@ from pathlib import Path
 import fitz
 import pytest
 
-from app.sources.pdf_source import PARSER_NAME, NoTextError, parse_pdf
+from app.sources.pdf_source import PARSER_NAME, NoTextError, _clean, parse_pdf
 
 BODY = 11
 HEADING = 20
@@ -127,3 +127,9 @@ def test_blank_pdf_raises_no_text_error(tmp_path: Path):
     doc.close()
     with pytest.raises(NoTextError):
         parse_pdf(path)
+
+
+def test_ligatures_become_plain_letters():
+    # Typeset PDFs extract "off" as "o\ufb00"; the lettering fonts have no glyph for it
+    # (acceptance run 4 drew a missing-glyph box inside a quote).
+    assert _clean("take it o\ufb00 \ufb03ce \ufb04 \ufb01ne \ufb02y") == "take it off ffice ffl fine fly"

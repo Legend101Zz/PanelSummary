@@ -505,6 +505,18 @@ describe("sfx by their source; titles, dashes and name tags", () => {
     expect(r.texts[0].text).toBe("My heart is lead -- yet I weep.");
   });
 
+  it("folds PDF ligatures into plain letters and rejects characters the font cannot draw", () => {
+    // acceptance run 4, page 12: "take it o\uFB00" drew the font's empty box inside a quote
+    expect(typeset("take it o\uFB00, lea\uFB02et, e\uFB03cacy")).toBe("take it off, leaflet, efficacy");
+    const lig = renderPage(onePage(panel({ figures: [fig({ character: "mayor" })], text: [{ kind: "speech", speaker: "mayor", text: "Take it o\uFB00.", fidelity: "dramatized" }] })), BOOK);
+    expect(lig.texts[0].lines.join(" ")).toContain("off");
+    expect(lig.issues.map((i) => i.code)).not.toContain("TEXT_GLYPH_MISSING");
+    const cjk = renderPage(onePage(panel({ figures: [fig({ character: "mayor" })], text: [{ kind: "speech", speaker: "mayor", text: "Look: \u6F22.", fidelity: "dramatized" }] })), BOOK);
+    const issue = cjk.issues.find((i) => i.code === "TEXT_GLYPH_MISSING");
+    expect(issue?.severity).toBe("error");
+    expect(issue?.message).toContain("U+6F22");
+  });
+
   it("treats a caption with the fullest matching name as that character's tag", () => {
     const names = { miller: "The Miller", son: "The Miller's Youngest Son" };
     expect(inferNameTag("The Miller's youngest son", names)).toBe("son");
