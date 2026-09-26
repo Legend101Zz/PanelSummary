@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import type { BookUnderstanding, MangaPageSpec } from "@panelsummary/manga-render";
 
 import { PAGES, PLAN, UNDERSTANDING } from "../../../packages/manga-render/test/fixtures/happy-prince.js";
-import { bookUnderstandingGoal } from "../src/goals/book-understanding.js";
+import { bookUnderstandingGoal, sectionCoverageIssues } from "../src/goals/book-understanding.js";
 import { CANDIDATE_ARG, parseCandidate } from "../src/goals/common.js";
 import { GOAL_TYPES, GOALS } from "../src/goals/index.js";
 import { mangaPageGoal, quoteIssues } from "../src/goals/manga-page.js";
@@ -231,6 +231,31 @@ describe("speaker attribution", () => {
     expect(issues[0].message).toContain("2 lines to the Frog");
     const withFrog = [...cast, { ...cast[2], id: "frog", name: "The Frog", sections: ["s5"] }];
     expect(speakerCastIssues({ cast: withFrog }, units)).toEqual([]);
+    // a major speaker (5+ lines) missing from the cast is an error (run 6 dropped the Miller, 42 lines)
+    const major = [{ section_id: "s4", text: Array.from({ length: 5 }, (_, i) => `\u201cLine ${i} here.\u201d said the Miller.`).join(" ") }];
+    expect(speakerCastIssues({ cast }, major).map((i) => [i.code, i.severity])).toEqual([["SPEAKER_NOT_IN_CAST", "error"]]);
+  });
+
+  it("requires every book section, with claims in proportion to its length", () => {
+    const book = {
+      title: "t", author: "a", page_count: 2,
+      sections: [
+        { id: "s1", title: "One", page_start: 1, page_end: 1, unit_ids: ["u1"] },
+        { id: "s2", title: "Two", page_start: 2, page_end: 2, unit_ids: ["u2"] },
+      ],
+      units: [
+        { id: "u1", section_id: "s1", page_start: 1, page_end: 1, text: "word ".repeat(1500) },
+        { id: "u2", section_id: "s2", page_start: 2, page_end: 2, text: "word ".repeat(300) },
+      ],
+    };
+    const claim = (id: string, section: string) => ({ id, section_id: section });
+    const thin = sectionCoverageIssues({ sections: [{ id: "s1" }, { id: "s2" }], claims: [claim("k1", "s1"), claim("k2", "s2"), claim("k3", "s2")] }, book);
+    expect(thin.map((i) => i.code)).toEqual(["SECTION_CLAIMS_THIN"]); // s1: 1500 words need 3
+    expect(thin[0].message).toContain("s1");
+    const missing = sectionCoverageIssues({ sections: [{ id: "s1" }], claims: [claim("k1", "s1"), claim("k2", "s1"), claim("k3", "s1")] }, book);
+    expect(missing.map((i) => i.code)).toEqual(["SECTION_MISSING"]);
+    const ok = sectionCoverageIssues({ sections: [{ id: "s1" }, { id: "s2" }], claims: ["s1", "s1", "s1", "s2", "s2"].map((s, i) => claim(`k${i}`, s)) }, book);
+    expect(ok).toEqual([]);
   });
 });
 

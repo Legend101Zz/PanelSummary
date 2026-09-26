@@ -256,6 +256,8 @@ async function runJourney() {
     check("edition status is honest", state.status === "complete" ? failed === 0 && cov.lost_to_failed_pages.length === 0 : failed > 0 || cov.core_not_conveyed.length > 0, `${state.status}, ${accepted} accepted, ${failed} failed`);
     check("no required claim silently lost (every core/supporting claim planned or omitted with a reason)", Array.isArray(cov.required_not_planned) && cov.required_not_planned.length === 0 && cov.omitted_by_plan.every((o) => (o.reason ?? "").trim().length > 0), `conveyed ${cov.conveyed.length}/${cov.claims_total}, omitted ${cov.omitted_by_plan.length}, lost ${cov.lost_to_failed_pages.length}, required not planned ${cov.required_not_planned?.length}`);
     check("every core claim conveyed or accounted for", cov.core_not_conveyed.every((c) => cov.lost_to_failed_pages.includes(c)), `core not conveyed: ${cov.core_not_conveyed.join(",") || "none"}`);
+    // Claims that were never extracted cannot show up as lost: every part of the book must have claims.
+    check("every section of the book has claims (nothing adapted with nothing to convey)", Array.isArray(cov.sections_without_claims) && cov.sections_without_claims.length === 0, `sections without claims: ${(cov.sections_without_claims ?? ["(not reported)"]).join(",") || "none"}`);
   }
   report.edition = { status: state.status, page_total: state.page_total, accepted, failed, totals: state.totals, coverage: state.coverage, policy: state.policy };
   report.receipts_summary = {

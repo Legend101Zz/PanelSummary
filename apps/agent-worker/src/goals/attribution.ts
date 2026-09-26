@@ -242,8 +242,15 @@ export function quoteSpeakerIssues(
   return issues;
 }
 
-/** Characters the book gives at least this many attributed lines (in one section) must be in the cast. */
+/** Characters the book gives at least this many attributed lines (in one section) should be in the cast. */
 export const SPEAKER_MIN_LINES = 2;
+/**
+ * From this many lines a missing speaker is an error: a major character of that part of
+ * the book (acceptance run 6's understanding left out the Miller, Hans and the Rocket, with
+ * 42, 32 and 50 lines). Minor speakers stay warnings: demanding every two-line speaker made
+ * run 5's understanding time out.
+ */
+export const SPEAKER_MAJOR_LINES = 5;
 
 /**
  * A character the book gives several lines to must be in the cast (for that
@@ -294,12 +301,12 @@ export function speakerCastIssues(value: unknown, units: readonly { section_id: 
     if (members.some((member) => inSection(member, entry.section) && names(entry.head, member))) continue;
     issues.push({
       code: "SPEAKER_NOT_IN_CAST",
-      // A warning: the list is in the prompt, and page goals already refuse to
-      // hand such a speaker's quotes to someone else (QUOTE_WRONG_SPEAKER).
-      severity: "warning",
+      // Minor speakers warn (the list is in the prompt, and page goals refuse to hand
+      // their quotes to someone else); major speakers must be cast.
+      severity: entry.n >= SPEAKER_MAJOR_LINES ? "error" : "warning",
       path: "understanding.cast",
       message: `in ${entry.section} the book gives ${entry.n} lines to ${entry.phrase} (for example “${entry.quote.slice(0, 70)}”), but no cast member of ${entry.section} is named "${entry.head}" by name or role. Add them to the cast (with sections ["${entry.section}"]), or, if they are an existing character, put "${entry.head}" in that character's role.`,
     });
   }
-  return issues.slice(0, 10);
+  return issues.sort((a, b) => Number(b.severity === "error") - Number(a.severity === "error")).slice(0, 12);
 }

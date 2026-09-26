@@ -358,10 +358,12 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
             raise result
 
     # 4. Coverage + final status.
-    return await finalize(edition, understanding, plan)
+    return await finalize(edition, understanding, plan, [str(section["id"]) for section in source.sections])
 
 
-async def finalize(edition: Edition, understanding: dict[str, Any], plan: dict[str, Any]) -> tuple[str, str]:
+async def finalize(
+    edition: Edition, understanding: dict[str, Any], plan: dict[str, Any], book_sections: list[str] | None = None
+) -> tuple[str, str]:
     pages = await EditionPage.find(EditionPage.edition_id == str(edition.id)).sort("+page_number").to_list()
     accepted = [p for p in pages if p.status == "accepted"]
     failed = [p for p in pages if p.status != "accepted"]
@@ -385,10 +387,18 @@ async def finalize(edition: Edition, understanding: dict[str, Any], plan: dict[s
         "core_not_conveyed": sorted(
             c["id"] for c in claims if c.get("importance") == "core" and c["id"] not in conveyed and c["id"] not in omitted
         ),
+        # A part of the book with no claims was adapted with nothing to convey
+        # (acceptance run 6: the understanding had no claims for its last tale).
+        "sections_without_claims": [
+            section for section in (book_sections or []) if not any(c.get("section_id") == section for c in claims)
+        ],
     }
     status = (
         "complete"
-        if not failed and not report["core_not_conveyed"] and not report["required_not_planned"]
+        if not failed
+        and not report["core_not_conveyed"]
+        and not report["required_not_planned"]
+        and not report["sections_without_claims"]
         else "completed_with_failures"
     )
     await _set_edition(

@@ -12,6 +12,39 @@ import { lookVocabulary } from "./vocabulary.js";
  * effigy) of a person must be drawn as that person in stone/gold/bronze, never
  * as an object — seen live: the Happy Prince cast as a gold "rocket".
  */
+/** At least one claim per this many words of a section (healthy runs: one per 118-313). */
+export const WORDS_PER_REQUIRED_CLAIM = 700;
+
+/**
+ * Every part of the book must be understood: each book section appears, with claims in
+ * proportion to its length. Acceptance run 6's understanding had no claims (and no cast)
+ * for its last tale, and nine pages were drawn with nothing to convey.
+ */
+export function sectionCoverageIssues(value: unknown, book: BookInput): ValidationIssue[] {
+  const u = value as { sections?: Array<{ id?: unknown }>; claims?: Array<{ section_id?: unknown }> };
+  if (!Array.isArray(u?.claims) || !Array.isArray(u?.sections)) return [];
+  const issues: ValidationIssue[] = [];
+  const present = new Set(u.sections.map((section) => section?.id));
+  for (const section of book.sections) {
+    const words = book.units.filter((unit) => unit.section_id === section.id).reduce((n, unit) => n + unit.text.split(/\s+/).length, 0);
+    if (!present.has(section.id)) {
+      issues.push({ code: "SECTION_MISSING", severity: "error", path: "understanding.sections", message: `section ${section.id} "${section.title}" (${words} words) is missing: list every section of the book, in order.` });
+      continue;
+    }
+    const need = Math.max(2, Math.ceil(words / WORDS_PER_REQUIRED_CLAIM));
+    const have = u.claims.filter((claim) => claim?.section_id === section.id).length;
+    if (have < need) {
+      issues.push({
+        code: "SECTION_CLAIMS_THIN",
+        severity: "error",
+        path: "understanding.claims",
+        message: `section ${section.id} "${section.title}" (${words} words) has ${have} claims; it needs at least ${need}: its central events, ideas, relationships and defining quotes. Add them with revise_understanding.`,
+      });
+    }
+  }
+  return issues;
+}
+
 export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new Set()): ValidationIssue[] {
   const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
   if (!Array.isArray(cast)) return [];
@@ -81,7 +114,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     let current: Record<string, unknown> | undefined;
     const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units)];
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...sectionCoverageIssues(value, book)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

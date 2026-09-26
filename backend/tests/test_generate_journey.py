@@ -205,6 +205,7 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 assert edition["pages_accepted"] == 1 and edition["pages_failed"] == 1
                 assert edition["coverage"]["lost_to_failed_pages"] == ["k2"]
                 assert edition["coverage"]["core_not_conveyed"] == ["k2"]
+                assert edition["coverage"]["sections_without_claims"] == []
                 assert [p["status"] for p in edition["pages"]] == ["accepted", "failed"]
                 assert (await GenerationJob.get(job.id)).status == "completed_with_failures"
 
@@ -257,3 +258,48 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
         get_settings.cache_clear()
         db_module._client = None
     assert set(hosts) == {f"127.0.0.1:{port}"}, f"backend contacted other hosts: {sorted(set(hosts))}"
+
+
+def test_a_book_section_without_claims_is_never_complete(monkeypatch):
+    """Acceptance run 6: the understanding had no claims for the last tale, so its pages
+    were drawn with nothing to convey. Coverage must name the section and the edition
+    must not be complete, even when every page was accepted."""
+    db_name = f"ps_cov_{uuid.uuid4().hex[:8]}"
+    monkeypatch.setenv("MONGODB_URL", MONGO_URL)
+    monkeypatch.setenv("DB_NAME", db_name)
+
+    from app import db as db_module
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+    db_module._client = None
+
+    async def scenario():
+        from app.db import init_db
+        from app.documents import Edition, EditionPage
+        from app.jobs.generate import finalize
+
+        client_db = await init_db()
+        try:
+            edition = Edition(book_id="b1", status="drawing")
+            await edition.insert()
+            await EditionPage(edition_id=str(edition.id), page_number=1, section_id="s1", claims=["k1"], status="accepted", spec={"claims": ["k1"]}).insert()
+            await EditionPage(edition_id=str(edition.id), page_number=2, section_id="s2", claims=[], status="accepted", spec={"claims": []}).insert()
+            understanding = {"claims": [{"id": "k1", "section_id": "s1", "importance": "core"}]}
+            plan = {"pages": [], "omitted": []}
+            status, _ = await finalize(edition, understanding, plan, ["s1", "s2"])
+            saved = await Edition.get(edition.id)
+            assert status == "completed_with_failures" and saved.status == "completed_with_failures"
+            assert saved.coverage["sections_without_claims"] == ["s2"]
+            # the same pages with claims for both sections are complete
+            understanding["claims"].append({"id": "k2", "section_id": "s2", "importance": "detail"})
+            status, _ = await finalize(edition, understanding, plan, ["s1", "s2"])
+            assert status == "succeeded"
+        finally:
+            await client_db.drop_database(db_name)
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        get_settings.cache_clear()
+        db_module._client = None
