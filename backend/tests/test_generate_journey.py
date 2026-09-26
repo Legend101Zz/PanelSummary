@@ -64,9 +64,10 @@ def _svg(page: int) -> str:
 class FakeWorker:
     """Stands in for apps/agent-worker. Records every call it receives."""
 
-    def __init__(self, fail_pages: set[int]):
+    def __init__(self, fail_pages: set[int], fail_understanding_once: bool = False):
         self.calls: list[dict] = []
         self.fail_pages = fail_pages
+        self.fail_understanding_once = fail_understanding_once
         self.app = FastAPI()
         self.app.post("/internal/v2/runs")(self.runs)
         self.app.post("/internal/v2/runs/{run_id}/cancel")(self.cancel)
@@ -81,6 +82,9 @@ class FakeWorker:
         trace = {"provider": "minimax", "model": body["model"], "thinking": body["thinking"], "tokens": {"input": 10, "output": 5, "cache_read": 0, "cache_write": 0}, "cost_usd": 0.001, "latency_ms": 3, "turns": 1, "submits": 1, "tool_calls": [], "stop_reason": "accepted"}
         goal = body["goal_type"]
         data = body["input"]
+        if goal == "BOOK_UNDERSTANDING" and self.fail_understanding_once:
+            self.fail_understanding_once = False
+            return {"run_id": body["run_id"], "state": "FAILED", "error": {"code": "TIMEOUT", "message": "timeout"}, "trace": trace}
         if goal == "BOOK_UNDERSTANDING":
             sections = data["book"]["sections"]
             units = data["book"]["units"]
@@ -141,7 +145,8 @@ def _make_pdf(path: Path) -> None:
 
 
 def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, monkeypatch):
-    worker = FakeWorker(fail_pages={2})
+    # The first understanding attempt times out: its tokens were spent and must stay counted.
+    worker = FakeWorker(fail_pages={2}, fail_understanding_once=True)
     port = _free_port()
     server = _serve(worker.app, port)
     db_name = f"ps_journey_{uuid.uuid4().hex[:8]}"
@@ -205,7 +210,7 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
 
                 # Every model call went through the worker, with the recorded policy.
                 goals = [c["goal_type"] for c in worker.calls]
-                assert goals.count("BOOK_UNDERSTANDING") == 1 and goals.count("ADAPTATION_PLAN") == 1
+                assert goals.count("BOOK_UNDERSTANDING") == 2 and goals.count("ADAPTATION_PLAN") == 1
                 page_calls = [c for c in worker.calls if c["goal_type"] == "MANGA_PAGE"]
                 assert sorted(c["page"] for c in page_calls) == [1, 2, 2]
                 assert all(c["model"] == "MiniMax-M3" for c in worker.calls)
@@ -222,12 +227,14 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 failed = (await api.get(f"/editions/{edition_id}/pages/2")).json()
                 assert failed["svg"] is None and failed["error"]["message"] == "fake failure"
 
-                # Totals are exact sums of the receipts (5 calls x 10/5 tokens, $0.001 each).
-                assert edition["totals"]["calls"] == 5 and edition["totals"]["failed_calls"] == 2
-                assert edition["totals"]["input_tokens"] == 50 and edition["totals"]["output_tokens"] == 25
+                # Totals are exact sums of the receipts (6 calls x 10/5 tokens, $0.001 each),
+                # including the understanding attempt that timed out.
+                assert edition["totals"]["calls"] == 6 and edition["totals"]["failed_calls"] == 3
+                assert edition["totals"]["input_tokens"] == 60 and edition["totals"]["output_tokens"] == 30
                 receipts = (await api.get(f"/editions/{edition_id}/receipts")).json()
                 assert all(call["provider"] == "minimax" for call in receipts["calls"])
-                assert len(receipts["calls"]) == 5
+                assert len(receipts["calls"]) == 6
+                assert [c["artifact"] for c in receipts["calls"] if c.get("state") != "SUCCEEDED" and "artifact" in c] == ["understanding"]
 
                 # Resume: only the failed page is redone; nothing accepted is paid for again.
                 worker.fail_pages.clear()

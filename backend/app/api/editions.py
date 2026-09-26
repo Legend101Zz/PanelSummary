@@ -234,7 +234,7 @@ async def receipts(edition_id: str) -> dict:
     edition = await get_edition_or_404(edition_id)
     artifacts = await EditionArtifact.find(EditionArtifact.edition_id == edition_id).to_list()
     pages = await EditionPage.find(EditionPage.edition_id == edition_id).sort("+page_number").to_list()
-    calls = [a.receipt | {"artifact": a.kind} for a in artifacts]
+    calls = [a.receipt | {"artifact": a.kind} for a in artifacts] + list(edition.stage_failures)
     for page in pages:
         calls.extend(r | {"page_number": page.page_number} for r in page.receipts)
     try:

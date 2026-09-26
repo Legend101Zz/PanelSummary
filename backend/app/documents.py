@@ -99,6 +99,9 @@ class Edition(Document):
     pages_failed: int = 0
     coverage: dict[str, Any] = Field(default_factory=dict)
     totals: Totals = Field(default_factory=Totals)
+    # Receipts of understanding/plan attempts that did not produce an artifact
+    # (failed, timed out or cancelled): their tokens were spent, so they count.
+    stage_failures: list[dict[str, Any]] = Field(default_factory=list)
     error: Optional[str] = None
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)

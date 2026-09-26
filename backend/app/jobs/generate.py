@@ -134,9 +134,12 @@ async def _set_edition(edition: Edition, **fields: Any) -> None:
 
 
 async def _recompute_totals(edition_id: str) -> dict[str, Any]:
-    """Exact totals from every stored receipt (artifacts and every page attempt)."""
+    """Exact totals from every stored receipt (artifacts, failed stage attempts, every page attempt)."""
     totals = {"calls": 0, "failed_calls": 0, "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "model_ms": 0}
     receipts = [a.receipt for a in await EditionArtifact.find(EditionArtifact.edition_id == edition_id).to_list()]
+    edition = await Edition.get(_oid(edition_id))
+    if edition is not None:
+        receipts.extend(edition.stage_failures)
     for page in await EditionPage.find(EditionPage.edition_id == edition_id).to_list():
         receipts.extend(page.receipts)
     for receipt in receipts:
@@ -176,6 +179,10 @@ async def _artifact_stage(
         outcome = await _call(ctx, goal_type, run_id, payload, model=model, thinking=attempt_thinking)
         receipt = receipt_from(goal_type, run_id, outcome)
         await _add_totals(str(edition.id), receipt)
+        if not (outcome.state == "SUCCEEDED" and outcome.result):
+            await Edition.get_motor_collection().update_one(
+                {"_id": _oid(str(edition.id))}, {"$push": {"stage_failures": receipt | {"artifact": kind}}}
+            )
         if outcome.state == "SUCCEEDED" and outcome.result:
             content = extract(outcome.result)
             artifact = EditionArtifact(

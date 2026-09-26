@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # --- agent worker (the MiniMax harness) ---
     agent_worker_url: str = "http://127.0.0.1:8788"
     agent_worker_token: str = ""
-    agent_call_timeout_seconds: float = 1500.0
+    agent_call_timeout_seconds: float = 1800.0  # above the longest goal timeout (understanding: 25 min)
 
     # --- generation policy (recorded on every edition) ---
     understanding_model: str = "MiniMax-M3"
