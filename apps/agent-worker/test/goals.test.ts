@@ -11,7 +11,7 @@ import { bookUnderstandingGoal } from "../src/goals/book-understanding.js";
 import { CANDIDATE_ARG, parseCandidate } from "../src/goals/common.js";
 import { GOAL_TYPES, GOALS } from "../src/goals/index.js";
 import { mangaPageGoal, quoteIssues } from "../src/goals/manga-page.js";
-import { attributions, quoteSpeakerIssues, speakerCastIssues } from "../src/goals/attribution.js";
+import { attributions, quoteSpeakerIssues, speakerCastIssues, speakerList } from "../src/goals/attribution.js";
 import type { GoalOptions, PreparedGoal } from "../src/goals/types.js";
 
 const OFF: GoalOptions = { model: "MiniMax-M3", thinking: "off", vision: false };
@@ -221,12 +221,13 @@ describe("speaker attribution", () => {
     expect(pass("councillors", "He looks just like an angel!", "dramatized")).toEqual([]);
   });
 
-  it("asks the understanding to cast anyone the book gives two or more lines to", () => {
+  it("lists the book's speakers for the understanding and warns when one is not cast", () => {
     const units = [
       { section_id: "s5", text: "\u201cA new arrival, I see!\u201d said the Frog. \u201cWell, well,\u201d said the Frog. \u201cHallo!\u201d cried a Goose." },
     ];
     const issues = speakerCastIssues({ cast }, units);
-    expect(issues.map((i) => i.code)).toEqual(["SPEAKER_NOT_IN_CAST"]);
+    expect(issues.map((i) => [i.code, i.severity])).toEqual([["SPEAKER_NOT_IN_CAST", "warning"]]);
+    expect(speakerList(units)).toBe("s5: the Frog (2 lines)");
     expect(issues[0].message).toContain("2 lines to the Frog");
     const withFrog = [...cast, { ...cast[2], id: "frog", name: "The Frog", sections: ["s5"] }];
     expect(speakerCastIssues({ cast: withFrog }, units)).toEqual([]);

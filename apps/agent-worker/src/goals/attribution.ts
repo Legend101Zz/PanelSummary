@@ -8,9 +8,10 @@
  *   five pages that put a real quote in the wrong mouth (the Charity
  *   Children's "just like an angel" given to the Town Councillors, the Duck's
  *   line given to the Water-rat, the Goose's to the White Duck).
- * - SPEAKER_NOT_IN_CAST (understanding): a character the book gives several
- *   lines to must be in the cast, or the writer has to borrow someone else's
- *   figure for them (run 4: the little Squib, the Christ child).
+ * - SPEAKER_NOT_IN_CAST (understanding, warning): a character the book gives
+ *   several lines to should be in the cast, or the writer has to borrow someone
+ *   else's figure for them (run 4: the little Squib, the Christ child). The
+ *   same list is given to the understanding goal in its prompt.
  *
  * Only an attribution whose head noun names a cast member is trusted;
  * pronouns ("said he") and generic words ("said the other") are ignored.
@@ -24,7 +25,7 @@ const VERBS =
   "grumbled|complained|protested|declared|announced|urged|pleaded|begged|agreed|objected|insisted|admitted|shrieked|" +
   "yelled|hissed|squeaked|croaked|quacked|piped|thundered|stammered|faltered|mused|went on|struck in|chimed in";
 
-const LEAD = /^(?:(?:one|some|two|three|all|each|several|most|many) of (?:the|his|her|their) |the |a |an |his |her |their |its |our |my |your |little |old |poor )+/i;
+const LEAD = /^(?:(?:one|some|two|three|all|each|several|most|many) of (?:the|his|her|their) |out |up |forth |aloud |back |the |a |an |his |her |their |its |our |my |your |little |old |poor )+/i;
 const PRONOUNS = new Set(["he", "she", "they", "it", "i", "we", "you", "him", "her", "them", "who", "which", "that"]);
 const GENERIC = new Set([
   "one", "other", "others", "voice", "all", "both", "first", "second", "third", "rest", "another", "some", "none",
@@ -60,20 +61,22 @@ function stem(word: string): string {
 function headOf(raw: string): { phrase: string; head: string } | undefined {
   const phrase = raw.replace(/\s+/g, " ").trim().replace(LEAD, "");
   const tokens: string[] = [];
+  const printed: string[] = [];
   for (const token of phrase.split(" ")) {
     const word = token.replace(/[^A-Za-z-]/g, "");
     if (!word) break;
     if (PHRASE_END.has(word.toLowerCase())) break;
     if (/ly$/.test(word) && word === word.toLowerCase() && tokens.length > 0) break; // "said the Swallow sadly"
     tokens.push(word);
+    printed.push(token.replace(/[,.;:!?]+$/, ""));
     if (token !== word && /[,.;:!?]$/.test(token)) break;
     if (tokens.length === 4) break;
   }
   if (tokens.length === 0) return undefined;
   const head = tokens[tokens.length - 1].toLowerCase();
   if (PRONOUNS.has(head) || GENERIC.has(head) || ARTICLES.has(head) || PRONOUNS.has(tokens[0].toLowerCase())) return undefined;
-  const lead = /^(?:the|a|an)\s/i.exec(raw.trim())?.[0] ?? "";
-  return { phrase: `${lead}${tokens.join(" ")}`, head };
+  const lead = /^(?:(?:out|up|forth|aloud|back)\s+)?((?:the|a|an)\s)/i.exec(raw.trim())?.[1] ?? "";
+  return { phrase: `${lead}${printed.join(" ")}`, head };
 }
 
 const AFTER_VERB = new RegExp(`^[\\s,]*(?:${VERBS})\\s+(.{1,90})`, "i");
@@ -246,11 +249,17 @@ export const SPEAKER_MIN_LINES = 2;
  * A character the book gives several lines to must be in the cast (for that
  * section), or pages have to borrow another character's figure for them.
  */
-export function speakerCastIssues(value: unknown, units: readonly { section_id: string; text: string }[]): ValidationIssue[] {
-  const cast = (value as { cast?: unknown })?.cast;
-  if (!Array.isArray(cast)) return [];
-  const members = cast.filter((c): c is CastMember => Boolean(c) && typeof (c as CastMember).name === "string");
-  const counts = new Map<string, { section: string; head: string; phrase: string; quote: string; n: number }>();
+export interface BookSpeaker {
+  section: string;
+  head: string;
+  phrase: string;
+  quote: string;
+  n: number;
+}
+
+/** Speakers the book names in its attributions, per section, with how many lines each has. */
+export function bookSpeakers(units: readonly { section_id: string; text: string }[]): BookSpeaker[] {
+  const counts = new Map<string, BookSpeaker>();
   for (const unit of units) {
     for (const a of attributions(unit.text)) {
       const key = `${unit.section_id}|${stem(a.head.replace(/-/g, ""))}`;
@@ -259,13 +268,35 @@ export function speakerCastIssues(value: unknown, units: readonly { section_id: 
       counts.set(key, entry);
     }
   }
+  return [...counts.values()].sort((a, b) => a.section.localeCompare(b.section) || b.n - a.n);
+}
+
+/**
+ * The speaker list the understanding goal sees before it writes the cast
+ * (derived from the book's text, so it is data, not instructions). Giving it
+ * up front costs nothing; demanding it only as a rejection made acceptance
+ * run 5's first understanding attempt re-emit the whole cast and time out.
+ */
+export function speakerList(units: readonly { section_id: string; text: string }[]): string {
+  return bookSpeakers(units)
+    .filter((s) => s.n >= SPEAKER_MIN_LINES)
+    .map((s) => `${s.section}: ${s.phrase} (${s.n} lines)`)
+    .join("\n");
+}
+
+export function speakerCastIssues(value: unknown, units: readonly { section_id: string; text: string }[]): ValidationIssue[] {
+  const cast = (value as { cast?: unknown })?.cast;
+  if (!Array.isArray(cast)) return [];
+  const members = cast.filter((c): c is CastMember => Boolean(c) && typeof (c as CastMember).name === "string");
   const issues: ValidationIssue[] = [];
-  for (const entry of counts.values()) {
+  for (const entry of bookSpeakers(units)) {
     if (entry.n < SPEAKER_MIN_LINES) continue;
     if (members.some((member) => inSection(member, entry.section) && names(entry.head, member))) continue;
     issues.push({
       code: "SPEAKER_NOT_IN_CAST",
-      severity: "error",
+      // A warning: the list is in the prompt, and page goals already refuse to
+      // hand such a speaker's quotes to someone else (QUOTE_WRONG_SPEAKER).
+      severity: "warning",
       path: "understanding.cast",
       message: `in ${entry.section} the book gives ${entry.n} lines to ${entry.phrase} (for example “${entry.quote.slice(0, 70)}”), but no cast member of ${entry.section} is named "${entry.head}" by name or role. Add them to the cast (with sections ["${entry.section}"]), or, if they are an existing character, put "${entry.head}" in that character's role.`,
     });
