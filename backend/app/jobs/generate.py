@@ -89,6 +89,10 @@ def _oid(value: str):
     return ObjectId(value)
 
 
+# How long a cancelled call may take to come back with its trace.
+CANCEL_TRACE_WAIT_SECONDS = 20
+
+
 async def _call(ctx: JobContext, goal_type: str, run_id: str, payload: dict[str, Any], *, model: str, thinking: str, vision: bool = False) -> WorkerOutcome:
     """Call the worker; retry only when the worker itself is unavailable."""
     for delay in [*WORKER_RETRY_DELAYS, None]:
@@ -98,6 +102,11 @@ async def _call(ctx: JobContext, goal_type: str, run_id: str, payload: dict[str,
         done, _ = await asyncio.wait({call, cancel_wait}, return_when=asyncio.FIRST_COMPLETED)
         if cancel_wait in done and call not in done:
             await cancel_run(run_id)
+            # The worker answers a cancelled run with its trace (tokens already spent):
+            # return it so the caller records the receipt before stopping.
+            finished, _ = await asyncio.wait({call}, timeout=CANCEL_TRACE_WAIT_SECONDS)
+            if call in finished and call.exception() is None:
+                return call.result()
             call.cancel()
             raise JobCancelled()
         cancel_wait.cancel()

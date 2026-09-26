@@ -303,3 +303,54 @@ def test_a_book_section_without_claims_is_never_complete(monkeypatch):
     finally:
         get_settings.cache_clear()
         db_module._client = None
+
+
+def test_a_cancelled_call_keeps_its_receipt(monkeypatch):
+    """Acceptance run 7 was cancelled during the understanding and recorded 0 calls and $0,
+    although tokens were spent. A cancelled call must come back with its trace."""
+    import threading
+
+    app = FastAPI()
+    # The fake worker runs in its own thread and loop: use thread-safe events.
+    received = threading.Event()
+    cancelled = threading.Event()
+
+    @app.post("/internal/v2/runs")
+    async def runs(request: Request):
+        body = await request.json()
+        received.set()
+        await asyncio.to_thread(cancelled.wait, 30)
+        trace = {"provider": "minimax", "model": body["model"], "tokens": {"input": 700, "output": 300, "cache_read": 0, "cache_write": 0}, "cost_usd": 0.02, "latency_ms": 50, "turns": 1, "tool_calls": [], "stop_reason": "aborted"}
+        return {"run_id": body["run_id"], "state": "CANCELLED", "error": {"code": "CANCELLED", "message": "cancelled"}, "trace": trace}
+
+    @app.post("/internal/v2/runs/{run_id}/cancel")
+    async def cancel(run_id: str):
+        cancelled.set()
+        return {"run_id": run_id, "state": "CANCELLED"}
+
+    port = _free_port()
+    server = _serve(app, port)
+    monkeypatch.setenv("AGENT_WORKER_URL", f"http://127.0.0.1:{port}")
+    monkeypatch.setenv("AGENT_WORKER_TOKEN", TOKEN)
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+
+    async def scenario():
+        from app.documents import GenerationJob
+        from app.jobs.generate import _call
+        from app.jobs.runner import JobContext
+
+        ctx = JobContext(GenerationJob(kind="generate", book_id="b1"))
+        task = asyncio.create_task(_call(ctx, "BOOK_UNDERSTANDING", "e1-understanding-a1", {}, model="MiniMax-M3", thinking="low"))
+        assert await asyncio.to_thread(received.wait, 10)
+        ctx.cancelled.set()
+        outcome = await asyncio.wait_for(task, 30)
+        assert outcome.state == "CANCELLED"
+        assert outcome.trace["tokens"]["output"] == 300
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        server.should_exit = True
+        get_settings.cache_clear()
