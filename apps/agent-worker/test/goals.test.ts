@@ -431,6 +431,15 @@ describe("quote claims and statue staging", () => {
     spec.panels[0].text = [{ kind: "speech", speaker: "prince", text: "Swallow, little Swallow, will you not stay with me for one night?", fidelity: "quote", source: spec.panels[0].source[0] }];
     expect(quoteClaimIssues(spec, [claim])).toEqual([]);
   });
+
+  it("does not demand an editor's [bracketed] insertion in a quote claim (acceptance run 8, page 36)", async () => {
+    const { quoteClaimIssues } = await import("../src/goals/manga-page.js");
+    const spec = fixturePage(1);
+    for (const panel of spec.panels) panel.text = [];
+    const claim = { id: "k61", section_id: "s1", kind: "quote" as const, importance: "supporting" as const, text: "The Duck warns the Linnet: 'Ah! that [telling a story with a moral] is always a very dangerous thing to do,' and the narrator agrees with her.", source: [] };
+    spec.panels[0].text = [{ kind: "speech", speaker: "prince", text: "Ah! that is always a very dangerous thing to do.", fidelity: "quote", source: spec.panels[0].source[0] }];
+    expect(quoteClaimIssues(spec, [claim])).toEqual([]);
+  });
 });
 
 describe("revise_understanding", () => {

@@ -114,7 +114,9 @@ export function quoteClaimIssues(spec: MangaPageSpec, claims: readonly Claim[]):
       /["\u201c]([^"\u201d]{8,})["\u201d]/.exec(claim.text)?.[1] ??
       /(?:^|[\s,:])['\u2018](.{8,}?)['\u2019](?=[\s.,;!?]|$)/.exec(claim.text)?.[1];
     if (!inner) continue;
-    const want = normalizeWords(inner).split(" ").filter((w) => w.length > 2);
+    // "[telling a story with a moral]" is an editor's insertion, not the book's words:
+    // demanding it would contradict QUOTE_NOT_IN_SOURCE (acceptance run 8, page 36).
+    const want = normalizeWords(inner.replace(/\[[^\]]*\]/g, " ")).split(" ").filter((w) => w.length > 2);
     if (want.length < 3) continue;
     // Long lines may be cut with "...": coverage is measured against at most 14 content words.
     const needed = Math.min(want.length, 14);
