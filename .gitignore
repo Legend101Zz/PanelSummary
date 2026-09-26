@@ -27,7 +27,6 @@ uploads/
 *.log
 log.md
 log.txt
-.github/instructions/wmt-copilot.instructions.md
 
 # Storage / uploads
 storage/
@@ -35,5 +34,5 @@ storage/
 # TypeScript build cache
 *.tsbuildinfo
 
-#docs
-docs
+# Local dev runtime (pids, logs, service tokens)
+.dev/

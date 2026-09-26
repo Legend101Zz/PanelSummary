@@ -1,0 +1,722 @@
+/**
+ * Manga effects in page space. Each effect returns an `under` fragment
+ * (between the background and the figures) and an `over` fragment (on top of
+ * the figures). Effects that attach to characters use `request.heads`.
+ */
+import type { Box, FxId, Point } from "../contracts.js";
+import type { DrawContext, FxModule, FxRequest } from "../internal.js";
+import { INK, PAPER, toneFill } from "../style.js";
+import { n, smoothPath } from "../svg.js";
+import { between, hashString, seeded } from "../prng.js";
+import { compactSvg } from "../env/compact.js";
+
+interface Out {
+  under: string;
+  over: string;
+}
+
+const r2 = (v: number): number => Math.round(v * 100) / 100;
+
+/** Compact closed polygon path data. */
+function pd(pts: readonly Point[]): string {
+  let px = r2(pts[0].x);
+  let py = r2(pts[0].y);
+  let d = `M${n(px)} ${n(py)}l`;
+  for (let i = 1; i < pts.length; i += 1) {
+    const x = r2(pts[i].x);
+    const y = r2(pts[i].y);
+    d += `${i > 1 ? " " : ""}${n(x - px)} ${n(y - py)}`;
+    px = x;
+    py = y;
+  }
+  return `${d}z`;
+}
+
+function path(d: string, attrs: string): string {
+  return d ? `<path d="${d}" ${attrs}/>` : "";
+}
+
+/** Thin spindle: tapered at both ends, widest at `peak` (0..1). */
+function spindle(a: Point, b: Point, w: number, peak = 0.5): string {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = (-dy / len) * (w / 2);
+  const ny = (dx / len) * (w / 2);
+  const m = { x: a.x + dx * peak, y: a.y + dy * peak };
+  return pd([a, { x: m.x + nx, y: m.y + ny }, b, { x: m.x - nx, y: m.y - ny }]);
+}
+
+/** Wedge: wide at `a`, point at `b`. */
+function wedge(a: Point, b: Point, w: number): string {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = (-dy / len) * (w / 2);
+  const ny = (dx / len) * (w / 2);
+  return pd([{ x: a.x + nx, y: a.y + ny }, b, { x: a.x - nx, y: a.y - ny }]);
+}
+
+function star4(x: number, y: number, r: number, thin = 0.2): string {
+  const q = r * thin;
+  return pd([
+    { x, y: y - r },
+    { x: x + q, y: y - q },
+    { x: x + r, y },
+    { x: x + q, y: y + q },
+    { x, y: y + r },
+    { x: x - q, y: y + q },
+    { x: x - r, y },
+    { x: x - q, y: y - q },
+  ]);
+}
+
+function circleD(x: number, y: number, r: number): string {
+  return `M${n(x - r)} ${n(y)}a${n(r)} ${n(r)} 0 1 0 ${n(r * 2)} 0a${n(r)} ${n(r)} 0 1 0 ${n(-r * 2)} 0z`;
+}
+
+function rectD(b: Box, pad = 0): string {
+  return `M${n(b.x - pad)} ${n(b.y - pad)}h${n(b.w + pad * 2)}v${n(b.h + pad * 2)}h${n(-b.w - pad * 2)}z`;
+}
+
+/** Ray from p toward angle a, clipped to the box edge (plus margin). */
+function toEdge(p: Point, a: number, b: Box, margin = 4): Point {
+  const dx = Math.cos(a);
+  const dy = Math.sin(a);
+  const tx = dx > 0 ? (b.x + b.w + margin - p.x) / dx : dx < 0 ? (b.x - margin - p.x) / dx : Infinity;
+  const ty = dy > 0 ? (b.y + b.h + margin - p.y) / dy : dy < 0 ? (b.y - margin - p.y) / dy : Infinity;
+  const t = Math.max(0, Math.min(tx, ty));
+  return { x: p.x + dx * t, y: p.y + dy * t };
+}
+
+const INKF = `fill="${INK}"`;
+
+/** True when p lies within `k` head radii of any head (keeps marks off faces). */
+function nearHead(r: FxRequest, p: Point, k = 1.15): boolean {
+  for (const h of r.heads) if (Math.hypot(p.x - h.point.x, p.y - h.point.y) < h.radius * k) return true;
+  return false;
+}
+
+/** True when the segment a-b passes within `k` head radii of any head. */
+function segNearHead(r: FxRequest, a: Point, b: Point, k = 1.25): boolean {
+  for (const h of r.heads) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const l2 = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((h.point.x - a.x) * dx + (h.point.y - a.y) * dy) / l2));
+    if (Math.hypot(a.x + dx * t - h.point.x, a.y + dy * t - h.point.y) < h.radius * k) return true;
+  }
+  return false;
+}
+
+/** The head nearest the focus point (the subject), if any. */
+function subject(r: FxRequest): { point: Point; radius: number } | undefined {
+  let best: { point: Point; radius: number } | undefined;
+  let bd = Infinity;
+  for (const h of r.heads) {
+    const d = Math.hypot(h.point.x - r.focus.x, h.point.y - r.focus.y);
+    if (d < bd) {
+      bd = d;
+      best = h;
+    }
+  }
+  return best;
+}
+
+type Drawer = (r: FxRequest, rand: () => number, id: string, p: string) => Out;
+
+/**
+ * Speed lines: light, thin horizontal strokes in a band behind the moving
+ * subject (craft: motion reads from a few crisp lines, never a black smear).
+ * The band spans the subject's body height; lines run in from the trailing
+ * edge (the side of the panel away from the subject) and stop short of it,
+ * with a few short lines on the leading side. Never across a face.
+ */
+const speedLines: Drawer = (r, rand, id) => {
+  const b = r.box;
+  const h = subject(r);
+  const f = h ? h.point : r.focus;
+  const hr = h ? h.radius : Math.min(b.w, b.h) * 0.08;
+  const bandH = Math.max(b.h * 0.3, Math.min(b.h * 0.72, hr * 9));
+  const top = Math.max(b.y + 4, f.y - bandH * 0.32);
+  const bottom = Math.min(b.y + b.h - 4, top + bandH);
+  // moving toward the side the subject sits on: lines trail on the other side
+  const dir = f.x >= b.x + b.w / 2 ? 1 : -1;
+  const bodyHalf = Math.max(hr * 1.6, b.w * 0.06);
+  const trailEnd = f.x - dir * bodyHalf;
+  let d = "";
+  const rows = Math.max(10, Math.round((bottom - top) / 4.5));
+  for (let i = 0; i < rows; i += 1) {
+    if (rand() < 0.2) continue;
+    const y = top + ((i + rand() * 0.8) / rows) * (bottom - top);
+    // fade toward the band's edges
+    const edge = Math.min(y - top, bottom - y) / Math.max(1, bottom - top);
+    if (edge < 0.08 && rand() < 0.6) continue;
+    const w = between(rand, 0.5, 1.4) * r.lineWidth;
+    const from = dir > 0 ? b.x - 6 + rand() * b.w * 0.12 : b.x + b.w + 6 - rand() * b.w * 0.12;
+    const avail = Math.abs(trailEnd - from);
+    const len = avail * between(rand, 0.35, 0.95);
+    const x0 = from;
+    const x1 = from + dir * len;
+    const a = { x: Math.min(x0, x1), y };
+    const e = { x: Math.max(x0, x1), y: y + between(rand, -0.4, 0.4) };
+    if (e.x - a.x < 14) continue;
+    if (segNearHead(r, a, e, 1.3)) continue;
+    d += spindle(a, e, w, dir > 0 ? 0.75 : 0.25);
+  }
+  // a few short lines on the leading side (wind of the motion)
+  for (let i = 0; i < 4; i += 1) {
+    const y = top + rand() * (bottom - top);
+    const x0 = f.x + dir * (bodyHalf + b.w * between(rand, 0.02, 0.08));
+    const x1 = x0 + dir * b.w * between(rand, 0.05, 0.12);
+    const a = { x: Math.min(x0, x1), y };
+    const e = { x: Math.max(x0, x1), y };
+    if (a.x < b.x || e.x > b.x + b.w || segNearHead(r, a, e, 1.3)) continue;
+    d += spindle(a, e, r.lineWidth * 0.5, 0.5);
+  }
+  // the background calms down inside the band (a soft paper veil that fades
+  // out at the band's edges), so the thin lines read without heavy ink
+  const veil =
+    `<defs><linearGradient id="${id}band" x1="0" y1="${n(top)}" x2="0" y2="${n(bottom)}" gradientUnits="userSpaceOnUse">` +
+    `<stop offset="0" stop-color="${PAPER}" stop-opacity="0"/><stop offset="0.25" stop-color="${PAPER}" stop-opacity="0.6"/>` +
+    `<stop offset="0.75" stop-color="${PAPER}" stop-opacity="0.6"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></linearGradient></defs>` +
+    path(`M${n(b.x - 2)} ${n(top)}h${n(b.w + 4)}v${n(bottom - top)}h${n(-b.w - 4)}z`, `fill="url(#${id}band)"`);
+  return { under: veil + path(d, `fill="#2a2a2a"`), over: "" };
+};
+
+const focusLines: Drawer = (r, rand) => {
+  const b = r.box;
+  const f = r.focus;
+  // the clear centre covers the subject's head and upper body (a figure is
+  // several head radii tall), never less than a calm fraction of the panel
+  const h = subject(r);
+  const hr = h ? h.radius : Math.min(b.w, b.h) * 0.08;
+  const c = h ? { x: h.point.x, y: h.point.y + hr * 1.1 } : f;
+  const rx = Math.min(b.w * 0.44, Math.max(b.w * 0.24, hr * 2.8));
+  const ry = Math.min(b.h * 0.44, Math.max(b.h * 0.26, hr * 3.4));
+  const count = Math.round((b.w + b.h) / 8);
+  let d = "";
+  for (let i = 0; i < count; i += 1) {
+    const a = (i / count) * Math.PI * 2 + between(rand, -0.5, 0.5) * ((Math.PI * 2) / count);
+    const outer = toEdge(c, a, b, 8);
+    const k = between(rand, 1, 1.35);
+    const tip = { x: c.x + Math.cos(a) * rx * k, y: c.y + Math.sin(a) * ry * k };
+    const reach = Math.hypot(outer.x - c.x, outer.y - c.y);
+    const inner = Math.hypot(tip.x - c.x, tip.y - c.y);
+    if (reach <= inner + 10) continue;
+    const w = between(rand, 0.9, 3) * r.lineWidth * (reach / 300 + 0.55);
+    d += wedge(outer, tip, w);
+  }
+  return { under: path(d, INKF), over: "" };
+};
+
+const impactBurst: Drawer = (r, rand) => {
+  const b = r.box;
+  const f = r.focus;
+  const R = Math.min(b.w, b.h) * 0.46;
+  const spikes = 18;
+  const outer: Point[] = [];
+  const inner: Point[] = [];
+  for (let i = 0; i < spikes * 2; i += 1) {
+    const a = (i / (spikes * 2)) * Math.PI * 2 + between(rand, -0.04, 0.04);
+    const long = i % 2 === 0;
+    const ro = long ? R * between(rand, 0.85, 1.25) : R * between(rand, 0.45, 0.58);
+    outer.push({ x: f.x + Math.cos(a) * ro, y: f.y + Math.sin(a) * ro * 0.85 });
+    const ri = long ? ro * 0.68 : ro * 0.72;
+    inner.push({ x: f.x + Math.cos(a) * ri, y: f.y + Math.sin(a) * ri * 0.85 });
+  }
+  const under =
+    path(pd(outer), `fill="${INK}" stroke="${INK}" stroke-width="${n(r.lineWidth * 1.5)}" stroke-linejoin="miter"`) +
+    path(pd(inner), `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth)}" stroke-linejoin="miter"`);
+  // a few debris flecks
+  let flecks = "";
+  for (let i = 0; i < 8; i += 1) {
+    const a = rand() * Math.PI * 2;
+    const d = R * between(rand, 1.1, 1.5);
+    flecks += star4(f.x + Math.cos(a) * d, f.y + Math.sin(a) * d * 0.85, between(rand, 3, 7), 0.3);
+  }
+  return { under: under + path(flecks, INKF), over: "" };
+};
+
+const sparkleFx: Drawer = (r, rand) => {
+  const b = r.box;
+  const f = r.focus;
+  const S = Math.min(b.w, b.h);
+  let big = "";
+  let dots = "";
+  const count = 7;
+  for (let i = 0; i < count; i += 1) {
+    const a = (i / count) * Math.PI * 2 + between(rand, -0.3, 0.3);
+    const d = S * between(rand, 0.18, 0.42);
+    const rr = S * (i % 3 === 0 ? between(rand, 0.05, 0.075) : between(rand, 0.022, 0.04));
+    // stars stay wholly inside the panel (a star cut by the border reads as a stray mark)
+    const pad = rr * 1.5 + 4;
+    const x = Math.max(b.x + pad, Math.min(b.x + b.w - pad, f.x + Math.cos(a) * d));
+    const y = Math.max(b.y + pad, Math.min(b.y + b.h - pad, f.y + Math.sin(a) * d * 0.8));
+    if (nearHead(r, { x, y }, 1.05 + (rr * 1.2) / Math.max(1, subject(r)?.radius ?? 1e9))) continue;
+    big += star4(x, y, rr, 0.16);
+    if (i % 2 === 0) dots += circleD(x + rr * 1.3, y - rr * 0.9, Math.max(1.2, rr * 0.16));
+  }
+  return {
+    under: "",
+    over: path(big, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth)}" stroke-linejoin="round"`) + path(dots, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.7)}"`),
+  };
+};
+
+function headsOrFocus(r: FxRequest): { point: Point; radius: number }[] {
+  if (r.heads.length) return r.heads;
+  return [{ point: r.focus, radius: Math.min(r.box.w, r.box.h) * 0.08 }];
+}
+
+const sweatDrop: Drawer = (r, rand) => {
+  let d = "";
+  let shine = "";
+  for (const h of headsOrFocus(r)) {
+    const R = h.radius;
+    // drops sit on the temple and cheek, touching the head outline
+    const drops: [number, number, number][] = [
+      [0.8, -0.28, 0.26],
+      [1.0, 0.18, 0.16],
+    ];
+    for (const [ox, oy, s] of drops) {
+      const x = h.point.x + ox * R;
+      const y = h.point.y + oy * R;
+      const hgt = R * s * 1.5;
+      const w = hgt * 0.42;
+      d += `M${n(x)} ${n(y - hgt)}C${n(x + w * 0.35)} ${n(y - hgt * 0.55)} ${n(x + w)} ${n(y - hgt * 0.25)} ${n(x + w)} ${n(y)}A${n(w)} ${n(w)} 0 0 1 ${n(x - w)} ${n(y)}C${n(x - w)} ${n(y - hgt * 0.25)} ${n(x - w * 0.35)} ${n(y - hgt * 0.55)} ${n(x)} ${n(y - hgt)}z`;
+      shine += `M${n(x - w * 0.45)} ${n(y - w * 0.1)}q${n(-w * 0.05)} ${n(w * 0.45)} ${n(w * 0.3)} ${n(w * 0.65)}`;
+    }
+    void rand;
+  }
+  return {
+    under: "",
+    over:
+      path(d, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth * 1.6)}" stroke-linejoin="round"`) +
+      path(shine, `fill="none" stroke="${INK}" stroke-width="${n(r.lineWidth)}" stroke-linecap="round"`),
+  };
+};
+
+const angerMark: Drawer = (r) => {
+  let d = "";
+  for (const h of headsOrFocus(r)) {
+    const R = h.radius;
+    const cx = h.point.x + R * 0.72;
+    const cy = h.point.y - R * 0.78;
+    const s = R * 0.5;
+    // four corner brackets around a cross-shaped gap (the popping vein):
+    // each bracket's corner points at the centre, its arms run outward
+    for (const [sx, sy] of [
+      [1, 1],
+      [-1, 1],
+      [-1, -1],
+      [1, -1],
+    ]) {
+      const c = { x: cx + sx * s * 0.3, y: cy + sy * s * 0.3 };
+      const p1 = { x: cx + sx * s * 1.0, y: cy + sy * s * 0.26 };
+      const p2 = { x: cx + sx * s * 0.26, y: cy + sy * s * 1.0 };
+      d += `M${n(p1.x)} ${n(p1.y)}Q${n(c.x)} ${n(c.y)} ${n(p2.x)} ${n(p2.y)}`;
+    }
+  }
+  const w = r.lineWidth * 2.4;
+  return {
+    under: "",
+    over: path(d, `fill="none" stroke="${PAPER}" stroke-width="${n(w * 2.2)}" stroke-linecap="round"`) + path(d, `fill="none" stroke="${INK}" stroke-width="${n(w)}" stroke-linecap="round"`),
+  };
+};
+
+const shockLines: Drawer = (r, rand) => {
+  let lines = "";
+  let marks = "";
+  for (const h of headsOrFocus(r)) {
+    const R = h.radius;
+    const top = h.point.y - R * 1.05;
+    const count = 9;
+    for (let i = 0; i < count; i += 1) {
+      const t = i / (count - 1);
+      const x = h.point.x - R * 0.72 + t * R * 1.44;
+      const edge = Math.sqrt(Math.max(0, 1 - Math.pow((x - h.point.x) / R, 2)));
+      const y0 = h.point.y - R * edge * 0.98;
+      const len = R * between(rand, 0.35, 0.75);
+      lines += spindle({ x, y: y0 + 1 }, { x, y: y0 + len }, r.lineWidth * 1.4, 0.2);
+      void top;
+    }
+    // jolt marks outside the head
+    for (const side of [-1, 1]) {
+      for (let j = 0; j < 3; j += 1) {
+        const a = -Math.PI / 2 + side * (0.55 + j * 0.28);
+        const r0 = R * 1.25;
+        const r1 = R * (1.55 + (j === 1 ? 0.2 : 0));
+        marks += wedge({ x: h.point.x + Math.cos(a) * r1, y: h.point.y + Math.sin(a) * r1 }, { x: h.point.x + Math.cos(a) * r0, y: h.point.y + Math.sin(a) * r0 }, r.lineWidth * 3.2);
+      }
+    }
+  }
+  return { under: "", over: path(lines, INKF) + path(marks, INKF) };
+};
+
+const rainFx: Drawer = (r, rand) => {
+  const b = r.box;
+  const count = Math.round((b.w * b.h) / 1400);
+  const slant = 0.22;
+  let d = "";
+  let hi = "";
+  for (let i = 0; i < count; i += 1) {
+    const x = b.x + rand() * (b.w + b.h * slant);
+    const y = b.y + rand() * b.h;
+    const len = between(rand, 14, 42);
+    const a = { x, y };
+    const e = { x: x - len * slant, y: y + len };
+    const wgt = between(rand, 0.8, 1.6) * r.lineWidth;
+    if (segNearHead(r, a, e, 1.05)) continue;
+    d += spindle(a, e, wgt, 0.7);
+    if (i % 5 === 0) hi += `M${n(a.x + 1.4)} ${n(a.y)}l${n(-len * slant * 0.6)} ${n(len * 0.6)}`;
+  }
+  return { under: "", over: path(hi, `fill="none" stroke="${PAPER}" stroke-width="${n(r.lineWidth * 1.2)}"`) + path(d, INKF) };
+};
+
+const snowFx: Drawer = (r, rand) => {
+  const b = r.box;
+  const count = Math.round((b.w * b.h) / 2200);
+  let small = "";
+  let big = "";
+  for (let i = 0; i < count; i += 1) {
+    const x = b.x + rand() * b.w;
+    const y = b.y + rand() * b.h;
+    const fore = rand() < 0.12;
+    const rr = fore ? between(rand, 4, 7.5) : between(rand, 1.2, 3.2);
+    if (nearHead(r, { x, y }, 1.05)) continue;
+    if (fore) big += circleD(x, y, rr);
+    else small += circleD(x, y, rr);
+  }
+  return {
+    under: "",
+    over: path(small, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.55)}"`) + path(big, `fill="${PAPER}" stroke="#8a8a8a" stroke-width="${n(r.lineWidth * 0.8)}"`),
+  };
+};
+
+const windFx: Drawer = (r, rand) => {
+  const b = r.box;
+  const f = r.focus;
+  let d = "";
+  let leaves = "";
+  const count = 6;
+  for (let i = 0; i < count; i += 1) {
+    // keep the swooshes off the focus
+    let y = b.y + b.h * ((i + 0.5) / count) + between(rand, -0.05, 0.05) * b.h;
+    if (Math.abs(y - f.y) < b.h * 0.12) y += (y < f.y ? -1 : 1) * b.h * 0.12;
+    const x0 = b.x + b.w * between(rand, -0.05, 0.35);
+    const len = b.w * between(rand, 0.35, 0.6);
+    const amp = b.h * between(rand, 0.03, 0.07);
+    // swooshes pass above or below faces, never across them
+    for (const h of r.heads) {
+      const clear = h.radius * 1.3 + amp;
+      if (Math.abs(y - h.point.y) < clear && x0 < h.point.x + h.radius && x0 + len > h.point.x - h.radius) {
+        y = y < h.point.y ? h.point.y - clear : h.point.y + clear;
+      }
+    }
+    d += `M${n(x0)} ${n(y)}c${n(len * 0.3)} ${n(-amp)} ${n(len * 0.65)} ${n(amp)} ${n(len)} ${n(-amp * 0.3)}`;
+    d += `c${n(len * 0.12)} ${n(-amp * 0.2)} ${n(len * 0.1)} ${n(-amp * 1.4)} ${n(-len * 0.04)} ${n(-amp * 1.3)}c${n(-len * 0.06)} ${n(amp * 0.05)} ${n(-len * 0.05)} ${n(amp * 0.5)} 0 ${n(amp * 0.55)}`;
+    if (i % 2 === 0) {
+      const lx = x0 + len * between(rand, 0.3, 0.9);
+      const ly = y + between(rand, -1.5, 1.5) * amp;
+      const s = Math.min(b.w, b.h) * 0.022;
+      const a = rand() * Math.PI;
+      const ux = Math.cos(a) * s;
+      const uy = Math.sin(a) * s;
+      leaves += `M${n(lx - ux)} ${n(ly - uy)}Q${n(lx + uy)} ${n(ly - ux)} ${n(lx + ux)} ${n(ly + uy)}Q${n(lx - uy)} ${n(ly + ux)} ${n(lx - ux)} ${n(ly - uy)}z`;
+    }
+  }
+  return {
+    under: "",
+    over:
+      path(d, `fill="none" stroke="${PAPER}" stroke-width="${n(r.lineWidth * 3.4)}" stroke-linecap="round"`) +
+      path(d, `fill="none" stroke="${INK}" stroke-width="${n(r.lineWidth * 1.2)}" stroke-linecap="round"`) +
+      path(leaves, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth)}"`),
+  };
+};
+
+/**
+ * Light rays: a few soft beams from above that fade out down the panel over a
+ * faint top veil. Capped so they never wash out the scene: beams cover about
+ * a third of the width, peak at 55% paper, and are gone by 80% of the height.
+ */
+const lightRays: Drawer = (r, rand, id) => {
+  const b = r.box;
+  const src = { x: b.x + b.w * between(rand, 0.3, 0.7), y: b.y - b.h * 0.45 };
+  const y1 = b.y + b.h * 0.8;
+  const defs =
+    `<defs><linearGradient id="${id}veil" x1="0" y1="${n(b.y)}" x2="0" y2="${n(b.y + b.h * 0.6)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${INK}" stop-opacity="0.1"/><stop offset="1" stop-color="${INK}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="${id}beam" x1="0" y1="${n(b.y)}" x2="0" y2="${n(y1)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.4"/><stop offset="0.6" stop-color="${PAPER}" stop-opacity="0.14"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></linearGradient></defs>`;
+  let s = path(`M${n(b.x - 2)} ${n(b.y - 2)}h${n(b.w + 4)}v${n(b.h * 0.6 + 2)}h${n(-b.w - 4)}z`, `fill="url(#${id}veil)"`);
+  let beams = "";
+  let edges = "";
+  const count = 4;
+  const bottom: Box = { x: b.x - b.w, y: b.y - b.h, w: b.w * 3, h: y1 - b.y + b.h };
+  for (let i = 0; i < count; i += 1) {
+    const a0 = Math.PI / 2 + ((i - (count - 1) / 2) / count) * 1.1 + between(rand, -0.05, 0.05);
+    const spread = between(rand, 0.035, 0.07);
+    const e0 = toEdge(src, a0 - spread, bottom, 0);
+    const e1 = toEdge(src, a0 + spread, bottom, 0);
+    beams += pd([src, e0, e1]);
+    if (i % 2 === 0) {
+      const t = Math.min(1, (b.y + b.h * 0.45 - src.y) / Math.max(1, e0.y - src.y));
+      edges += `M${n(src.x + (e0.x - src.x) * 0.3)} ${n(src.y + (e0.y - src.y) * 0.3)}L${n(src.x + (e0.x - src.x) * t)} ${n(src.y + (e0.y - src.y) * t)}`;
+    }
+  }
+  s += path(beams, `fill="url(#${id}beam)"`);
+  s += path(edges, `fill="none" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.4)}" stroke-opacity="0.22"`);
+  return { under: defs + s, over: "" };
+};
+
+/** Donut path: box minus an ellipse (evenodd). */
+function vignetteD(b: Box, c: Point, rx: number, ry: number, wobble: number, rand: () => number): string {
+  const N = 40;
+  const pts: Point[] = [];
+  for (let i = 0; i < N; i += 1) {
+    const a = (i / N) * Math.PI * 2;
+    const k = 1 + (rand() - 0.5) * wobble;
+    pts.push({ x: c.x + Math.cos(a) * rx * k, y: c.y + Math.sin(a) * ry * k });
+  }
+  return rectD(b, 4) + smoothPath(pts, true);
+}
+
+/**
+ * Dark mood: darkens the BACKGROUND (an "under" layer, so figures stay clean)
+ * with a flat grey veil and a soft vignette at the panel edges. Flat greys
+ * only (no dot patterns) and the dark ring stays in the outer band.
+ */
+const darkMood: Drawer = (r, rand, _id, p) => {
+  const b = r.box;
+  // centred on the panel, pulled a little toward the focus
+  const c = { x: b.x + b.w / 2 + (r.focus.x - b.x - b.w / 2) * 0.3, y: b.y + b.h / 2 + (r.focus.y - b.y - b.h / 2) * 0.3 };
+  const rx = b.w * 0.5;
+  const ry = b.h * 0.48;
+  let s = path(rectD(b, 2), `fill="${INK}" fill-opacity="0.16"`);
+  s += path(vignetteD(b, c, rx, ry, 0.06, rand), `fill="${toneFill("dark", p)}" fill-opacity="0.4" fill-rule="evenodd"`);
+  s += path(vignetteD(b, c, rx * 1.22, ry * 1.22, 0.08, rand), `fill="${INK}" fill-opacity="0.75" fill-rule="evenodd"`);
+  return { under: s, over: "" };
+};
+
+/**
+ * Soft glow: a gentle light around the subject. Capped at 45% paper so the
+ * background still reads through it, and sized to the subject (not the panel).
+ */
+const softGlow: Drawer = (r, rand, id) => {
+  const b = r.box;
+  const f = r.focus;
+  const h = subject(r);
+  const R = Math.min(Math.min(b.w, b.h) * 0.4, Math.max(Math.min(b.w, b.h) * 0.22, (h?.radius ?? 0) * 3.2));
+  const grad = `<defs><radialGradient id="${id}glow" cx="${n(f.x)}" cy="${n(f.y)}" r="${n(R)}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.45"/><stop offset="0.5" stop-color="${PAPER}" stop-opacity="0.25"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></radialGradient></defs>`;
+  let dots = "";
+  for (let i = 0; i < 7; i += 1) {
+    const a = rand() * Math.PI * 2;
+    const d = R * between(rand, 0.6, 0.95);
+    const q = { x: f.x + Math.cos(a) * d, y: f.y + Math.sin(a) * d };
+    const rr = between(rand, 1.5, 3.2);
+    if (nearHead(r, q, 1.1)) continue;
+    dots += circleD(q.x, q.y, rr);
+  }
+  return {
+    under: grad + `<circle cx="${n(f.x)}" cy="${n(f.y)}" r="${n(R)}" fill="url(#${id}glow)"/>` + path(dots, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(r.lineWidth * 0.4)}"`),
+    over: "",
+  };
+};
+
+const flashback: Drawer = (r, rand, _id, p) => {
+  const b = r.box;
+  const c = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  // a faded-memory veil on the BACKGROUND only (under the figures), then a
+  // black frame with a wavy inner edge that stays in the outer band
+  const under = path(rectD(b, 2), `fill="${toneFill("light", p)}" fill-opacity="0.5"`);
+  let s = "";
+  const N = 44;
+  const pts: Point[] = [];
+  const inset = Math.min(b.w, b.h) * 0.07;
+  for (let i = 0; i < N; i += 1) {
+    const t = i / N;
+    let x: number;
+    let y: number;
+    const per = 2 * (b.w + b.h);
+    const along = t * per;
+    if (along < b.w) {
+      x = b.x + along;
+      y = b.y;
+    } else if (along < b.w + b.h) {
+      x = b.x + b.w;
+      y = b.y + (along - b.w);
+    } else if (along < 2 * b.w + b.h) {
+      x = b.x + b.w - (along - b.w - b.h);
+      y = b.y + b.h;
+    } else {
+      x = b.x;
+      y = b.y + b.h - (along - 2 * b.w - b.h);
+    }
+    const dx = c.x - x;
+    const dy = c.y - y;
+    const len = Math.hypot(dx, dy) || 1;
+    const k = inset * between(rand, 0.75, 1.35);
+    pts.push({ x: x + (dx / len) * k, y: y + (dy / len) * k });
+  }
+  s += path(rectD(b, 4) + smoothPath(pts, true), `fill="${INK}" fill-rule="evenodd"`);
+  // second softer ring
+  const pts2 = pts.map((q) => ({ x: q.x + (c.x - q.x) * 0.07, y: q.y + (c.y - q.y) * 0.07 }));
+  s += path(smoothPath(pts, true) + smoothPath(pts2, true), `fill="${toneFill("dark", p)}" fill-opacity="0.6" fill-rule="evenodd"`);
+  return { under, over: s };
+};
+
+/**
+ * Fireworks: bursts in the sky part of the panel (over the background, under
+ * the figures) — peony bursts of radiating streaks tipped with sparks, rings
+ * of sparks, drooping willow trails and a spinning wheel — plus rising
+ * trails. Marks are paper-white with an ink edge, so they read on a black
+ * night sky and on paper alike, over a faint glow at each centre.
+ */
+const fireworks: Drawer = (r, rand, id) => {
+  const b = r.box;
+  const S = Math.min(b.w, b.h);
+  const skyBottom = b.y + b.h * 0.62;
+  const count = Math.max(2, Math.min(5, Math.round((b.w * b.h) / 70000) + 1));
+  let streaks = "";
+  let sparks = "";
+  let trails = "";
+  let glows = "";
+  const placed: { x: number; y: number; R: number }[] = [];
+  const kinds = ["peony", "ring", "willow", "wheel", "peony"] as const;
+  const start = Math.floor(rand() * kinds.length);
+  for (let i = 0; i < count; i += 1) {
+    const R = S * between(rand, 0.1, 0.19) * (i === 0 ? 1.25 : 1);
+    let c = { x: 0, y: 0 };
+    let ok = false;
+    for (let t = 0; t < 14 && !ok; t += 1) {
+      c = { x: b.x + R + 6 + rand() * Math.max(1, b.w - 2 * R - 12), y: b.y + R + 6 + rand() * Math.max(1, skyBottom - b.y - 2 * R - 12) };
+      ok = !placed.some((q) => Math.hypot(q.x - c.x, q.y - c.y) < (q.R + R) * 0.95) && !r.heads.some((h) => Math.hypot(h.point.x - c.x, h.point.y - c.y) < h.radius * 1.3 + R * 0.9);
+    }
+    if (!ok) continue;
+    placed.push({ ...c, R });
+    const kind = kinds[(start + i) % kinds.length];
+    glows += `<circle cx="${n(c.x)}" cy="${n(c.y)}" r="${n(R * 1.1)}" fill="url(#${id}glow)"/>`;
+    const lw = r.lineWidth;
+    if (kind === "peony" || kind === "willow") {
+      const rays = kind === "peony" ? 16 + Math.floor(rand() * 6) : 11;
+      for (let k = 0; k < rays; k += 1) {
+        const a = (k / rays) * Math.PI * 2 + between(rand, -0.08, 0.08);
+        const r0 = R * 0.22;
+        const r1 = R * between(rand, 0.82, 1.02);
+        const p0 = { x: c.x + Math.cos(a) * r0, y: c.y + Math.sin(a) * r0 };
+        if (kind === "peony") {
+          const p1 = { x: c.x + Math.cos(a) * r1, y: c.y + Math.sin(a) * r1 };
+          streaks += `M${n(p0.x)} ${n(p0.y)}L${n(p1.x)} ${n(p1.y)}`;
+          sparks += circleD(p1.x + Math.cos(a) * lw * 2.2, p1.y + Math.sin(a) * lw * 2.2, Math.max(1.4, lw * 1.25));
+          if (k % 2 === 0) sparks += circleD(c.x + Math.cos(a) * r1 * 0.62, c.y + Math.sin(a) * r1 * 0.62, Math.max(1, lw * 0.8));
+        } else {
+          // willow: out, then drooping down
+          const p1 = { x: c.x + Math.cos(a) * r1 * 0.7, y: c.y + Math.sin(a) * r1 * 0.55 };
+          const p2 = { x: p1.x + Math.cos(a) * R * 0.25, y: p1.y + R * 0.55 };
+          streaks += `M${n(p0.x)} ${n(p0.y)}Q${n(p1.x + Math.cos(a) * R * 0.2)} ${n(p1.y - R * 0.12)} ${n(p2.x)} ${n(p2.y)}`;
+          sparks += circleD(p2.x, p2.y + lw, Math.max(1.2, lw));
+        }
+      }
+    } else if (kind === "ring") {
+      for (const [k, m] of [
+        [18, 1],
+        [11, 0.55],
+      ] as const) {
+        for (let j = 0; j < k; j += 1) {
+          const a = (j / k) * Math.PI * 2 + i;
+          sparks += circleD(c.x + Math.cos(a) * R * m, c.y + Math.sin(a) * R * m * 0.92, Math.max(1.3, lw * (m === 1 ? 1.3 : 1)));
+        }
+      }
+      sparks += star4(c.x, c.y, R * 0.22, 0.2);
+    } else {
+      // spinning wheel: curved arms spiralling out of a hub
+      const arms = 6;
+      for (let k = 0; k < arms; k += 1) {
+        const a0 = (k / arms) * Math.PI * 2;
+        const pts: Point[] = [];
+        for (let t = 0; t <= 6; t += 1) {
+          const u = t / 6;
+          const a = a0 + u * 1.5;
+          pts.push({ x: c.x + Math.cos(a) * R * (0.15 + u * 0.85), y: c.y + Math.sin(a) * R * (0.15 + u * 0.85) });
+        }
+        streaks += smoothPath(pts, false);
+        const e = pts[pts.length - 1];
+        sparks += circleD(e.x, e.y, Math.max(1.3, lw * 1.2));
+      }
+      sparks += circleD(c.x, c.y, R * 0.12);
+    }
+    // a rising trail from below with a few sparks (every other burst)
+    if (i % 2 === 0) {
+      const from = { x: c.x + between(rand, -0.3, 0.3) * R, y: Math.min(b.y + b.h - 6, c.y + R * 2.4) };
+      const to = { x: c.x, y: c.y + R * 0.3 };
+      if (from.y - to.y > R * 0.6) {
+        trails += `M${n(from.x)} ${n(from.y)}Q${n(from.x + R * 0.25)} ${n((from.y + to.y) / 2)} ${n(to.x)} ${n(to.y)}`;
+        for (let k = 1; k <= 3; k += 1) sparks += circleD(from.x + (to.x - from.x) * (k / 4) + R * 0.08, from.y + (to.y - from.y) * (k / 4), Math.max(0.9, lw * 0.7));
+      }
+    }
+  }
+  if (!placed.length) return { under: "", over: "" };
+  const lw = r.lineWidth;
+  const defs = `<defs><radialGradient id="${id}glow"><stop offset="0" stop-color="${PAPER}" stop-opacity="0.35"/><stop offset="0.6" stop-color="${PAPER}" stop-opacity="0.12"/><stop offset="1" stop-color="${PAPER}" stop-opacity="0"/></radialGradient></defs>`;
+  const under =
+    defs +
+    glows +
+    path(trails, `fill="none" stroke="${INK}" stroke-width="${n(lw * 2.4)}"`) +
+    path(trails, `fill="none" stroke="${PAPER}" stroke-width="${n(lw * 1.1)}" stroke-dasharray="${n(lw * 4)} ${n(lw * 2.5)}"`) +
+    path(streaks, `fill="none" stroke="${INK}" stroke-width="${n(lw * 2.6)}"`) +
+    path(streaks, `fill="none" stroke="${PAPER}" stroke-width="${n(lw * 1.2)}"`) +
+    path(sparks, `fill="${PAPER}" stroke="${INK}" stroke-width="${n(lw * 0.8)}"`);
+  return { under, over: "" };
+};
+
+const DRAWERS: Record<FxId, Drawer> = {
+  speed_lines: speedLines,
+  focus_lines: focusLines,
+  impact_burst: impactBurst,
+  sparkle: sparkleFx,
+  sweat_drop: sweatDrop,
+  anger_mark: angerMark,
+  shock_lines: shockLines,
+  rain: rainFx,
+  snow: snowFx,
+  wind: windFx,
+  light_rays: lightRays,
+  fireworks,
+  dark_mood: darkMood,
+  soft_glow: softGlow,
+  flashback,
+};
+
+/** Which layer each effect paints into (for callers that want to know up front). */
+export const FX_LAYER: Record<FxId, "under" | "over" | "both"> = {
+  speed_lines: "under",
+  focus_lines: "under",
+  impact_burst: "under",
+  sparkle: "over",
+  sweat_drop: "over",
+  anger_mark: "over",
+  shock_lines: "over",
+  rain: "over",
+  snow: "over",
+  wind: "over",
+  light_rays: "under",
+  fireworks: "under",
+  dark_mood: "under",
+  soft_glow: "under",
+  /** Background veil under the figures + an edge-only frame over them. */
+  flashback: "both",
+};
+
+export const fx: FxModule = {
+  draw(request: FxRequest, ctx: DrawContext): { under: string; over: string } {
+    const drawer = DRAWERS[request.fx];
+    if (!drawer) throw new Error(`unknown fx ${String(request.fx)}`);
+    const b = request.box;
+    const key = [request.fx, request.seed, n(b.x), n(b.y), n(b.w), n(b.h)].join("|");
+    const rand = seeded("fx", key);
+    const id = `${ctx.idPrefix}fx${hashString(key).toString(36)}`;
+    const lw = request.lineWidth > 0 ? request.lineWidth : 1.1;
+    const out = drawer({ ...request, lineWidth: lw }, rand, id, ctx.idPrefix);
+    // page-space path data on a 0.1-unit grid, relative commands
+    const wrap = (s: string): string => (s ? `<g stroke-linejoin="round" stroke-linecap="round">${compactSvg(s, 1)}</g>` : "");
+    return { under: wrap(out.under), over: wrap(out.over) };
+  },
+};

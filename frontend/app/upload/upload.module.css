@@ -1,0 +1,161 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  margin: 8px 0 28px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  gap: clamp(32px, 6vw, 88px);
+  align-items: start;
+}
+@media (max-width: 820px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 32em;
+  padding-top: 8px;
+}
+.lede {
+  font-size: 18px;
+  line-height: 1.55;
+}
+
+/* The drop target is a sheet of manuscript paper */
+.drop {
+  position: relative;
+  aspect-ratio: var(--page-ratio);
+  width: 100%;
+  background: var(--sheet);
+  box-shadow:
+    0 1px 1px rgba(20, 20, 20, 0.1),
+    0 16px 30px -22px rgba(20, 20, 20, 0.6);
+  transition: background-color 120ms var(--ease);
+}
+@media (max-width: 820px) {
+  .drop {
+    aspect-ratio: auto;
+    min-height: 420px;
+  }
+}
+.dragging {
+  background: var(--pencil-wash);
+}
+.dropInner {
+  position: absolute;
+  inset: 13% 15%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+}
+.dropIcon {
+  color: var(--pencil-ink);
+}
+.dropTitle {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
+}
+.error {
+  color: var(--redpen);
+  font-size: 15px;
+  max-width: 24em;
+}
+
+.progress {
+  width: 100%;
+}
+.fileName {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.fileSize {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.steps li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 12px;
+  align-items: start;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.steps li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stepMark {
+  width: 14px;
+  height: 14px;
+  margin-top: 3px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+.stepDone {
+  color: var(--ink);
+}
+.stepDone .stepMark {
+  background: var(--ink);
+}
+.stepNow {
+  color: var(--pencil-ink);
+  font-weight: 700;
+}
+.stepNow .stepMark {
+  border-style: dashed;
+  animation: turn 2.4s linear infinite;
+}
+.stepLater {
+  color: var(--ink-3);
+}
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.bar {
+  display: block;
+  height: 3px;
+  background: var(--pencil-wash);
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--pencil-ink);
+  transition: width 200ms linear;
+}
+
+.hint {
+  font-weight: 400;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.dropBusy {
+  cursor: default;
+}

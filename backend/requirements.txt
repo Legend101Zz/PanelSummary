@@ -1,38 +1,23 @@
-# ============================================================
-# PYTHON PACKAGES — everything the backend needs
-# Install with: pip install -r requirements.txt
-# (Docker does this automatically)
-# ============================================================
+# PanelSummary backend (API + job runner). Only what app/ and tests/ import.
+# Install: uv pip install -r requirements.txt   (start.sh does this for a new venv)
 
-# --- Web Framework ---
-fastapi==0.115.5           # Our API framework — fast and modern
-uvicorn[standard]==0.32.1  # Runs FastAPI (like a waiter serving HTTP requests)
-python-multipart==0.0.12   # Lets FastAPI accept file uploads
+# --- HTTP API ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12   # UploadFile / File form parsing
+httpx==0.28.0              # agent worker client
 
-# --- Database ---
-beanie==1.27.0             # MongoDB ODM — lets us write Python classes for DB docs
-motor==3.7.0               # Async MongoDB driver (Beanie uses this under the hood)
-pymongo==4.10.1            # MongoDB client (includes GridFS for images)
+# --- MongoDB ---
+beanie==1.27.0
+motor==3.7.0
+pymongo==4.10.1
 
-# --- Background Jobs ---
-celery==5.4.0              # Task queue — runs slow jobs in background
-redis==5.2.0               # Redis client (Celery uses Redis as its message broker)
-flower==2.0.1              # Optional: web UI to see Celery job status
+# --- PDF parsing and page images ---
+PyMuPDF==1.24.14
 
-# --- PDF Parsing ---
-docling==2.12.0            # IBM's structured PDF parser — extracts chapters/sections
-PyMuPDF==1.24.14           # High-quality PDF image extraction (fitz library)
-pdfplumber==0.11.4         # Fallback PDF text extractor
+# --- Configuration and models ---
+pydantic==2.10.3
+pydantic-settings==2.6.1
 
-# --- LLM ---
-openai==1.57.0             # OpenAI + OpenRouter compatible client
-httpx==0.28.0              # Async HTTP client for LLM proxy calls
-tiktoken==0.8.0            # Counts tokens so we don't exceed context limits
-
-# --- Utils ---
-python-dotenv==1.0.1       # Loads .env files
-pydantic==2.10.3           # Data validation (FastAPI uses this heavily)
-pydantic-settings==2.6.1   # Settings from environment variables
-python-jose==3.3.0         # JWT tokens if we add auth later
-Pillow==11.0.0             # Image processing for panel layouts
-aiofiles==24.1.0           # Async file I/O
+# --- Tests ---
+pytest==9.1.1

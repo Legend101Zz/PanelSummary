@@ -1,149 +1,91 @@
-# Book-Reel Agent Guide
+# PanelSummary agent guide
 
-## Current Product
-
-Book-Reel, also called PanelSummary in code and UI, turns a parsed PDF into a
-source-grounded manga adaptation. The active product path is:
+PanelSummary adapts a born-digital PDF book into a source-grounded manga. There is one product path:
 
 ```text
-upload PDF
-  -> parse book
-  -> create manga project
-  -> run book understanding
-  -> generate source slice
-  -> persist RenderedPage docs
-  -> read in frontend manga reader
+upload PDF  → parse job: sections + page-true source units (PyMuPDF)     backend/app/jobs/parse.py
+Generate    → BOOK_UNDERSTANDING → ADAPTATION_PLAN → MANGA_PAGE per page  backend/app/jobs/generate.py
+              (MiniMax in sealed Pi sessions)                             apps/agent-worker
+            → validate + render the page to SVG                           packages/manga-render
+            → persist spec + SVG + geometry + receipts (MongoDB)          backend/app/documents.py
+read        → the reader shows the persisted SVG                          frontend/
 ```
 
-Legacy summary, living-panel, and reel surfaces are not active product surfaces.
+Read `docs/decisions.md` before you change the architecture. The rebuild evidence is in `docs/rebuild/`.
 
-## Current Diagnosis (2026-07-05)
+## Where things live
 
-Read this first:
+| Path | What it is |
+|---|---|
+| `backend/app/main.py`, `api/library.py`, `api/editions.py` | FastAPI: upload, books, PDF pages, editions, pages, receipts, cancel, resume, redraw. |
+| `backend/app/runner.py`, `jobs/runner.py` | The job runner (`python -m app.runner`): Mongo leases, heartbeat, resume, cancel. |
+| `backend/app/jobs/generate.py`, `worker_client.py` | The Generate job. It calls the worker and stores pages and receipts. |
+| `backend/app/sources/pdf_source.py` | The PDF parser. |
+| `backend/app/settings.py` | Configuration, including the generation policy recorded on each edition. |
+| `apps/agent-worker/src/goals/` | The three production goals and their local tools. `experimental/` is for `scripts/experiment.ts` only. |
+| `apps/agent-worker/src/skills/<name>/SKILL.md` | The trusted skill of each goal. The receipt records its version and hash. |
+| `packages/agent-runtime/src/goal-runtime.ts` | The only Pi SDK import: sealed session, limits, allowed models. |
+| `packages/manga-render/` | The deterministic renderer: contracts, validators, layout, rig, lettering, SVG, PNG. |
+| `frontend/` | The Next.js reader. It is an npm project, outside the pnpm workspace. |
 
-- `docs/analysis/SHORTCOMINGS_AND_VISUAL_UPGRADE.md` — current baseline:
-  shortcoming catalog (A: text density/formatting, B: visual/sprites,
-  C: orchestration/providers), manga-craft benchmarks, phased upgrade plan.
-- `docs/renderer-analysis/findings.md` — 2026-05-23 renderer evidence (history).
-- `docs/renderer-analysis/sample-dsl.json`
+## Run the stack
 
-Verdict (supersedes the 2026-05-23 "renderer is the blocker" framing): the
-skeleton (contracts, budgets, image modes) is sound, but the rendered page
-still reads as text cards, not manga. Three compounding failures: (1) 2-3x too
-much text and the renderer demotes dialogue to `speaker: text` caption strips,
-(2) the sprite bank rarely reaches the page (reference sheets excluded, white
-backgrounds, compositor never sees the asset manifest), (3) no synthetic/vector
-art layer for unpainted panels. Manga craft targets: <=25 words/panel (ideal
-<=12), ~60 words/page, narration sparse, SFX as drawn lettering.
+- Run `./start.sh`. It starts MongoDB on `127.0.0.1:27018` (data in `.dev/mongo`), the worker on `:8788`, the API on `:8000`, the job runner, and the frontend on `:3100`.
+- Run `./check.sh` for status. Run `./stop.sh` to stop. It stops only the processes that `start.sh` started.
+- Logs are in `.dev/logs/`. The worker service token is in `.dev/agent-tokens.env`.
+- `start.sh` finds the MiniMax key in `$MINIMAX_API_KEY`, then `backend/.env`, then the Keychain item `minimax_api_key`. It never prints the key.
 
-The 2026-05-23 renderer pass expanded the contract and frontend so explicit
-panel boxes, row heights, gutters, sprite layers, and bubble placements are
-honored when present; old stored pages still need heuristic sprite/bubble
-fallback until pages are regenerated with the new fields.
+## Tests (no model calls, no spend)
 
-## Render Path
+```sh
+cd backend && .venv/bin/python -m pytest tests -q        # needs mongod on 127.0.0.1:27018
+cd apps/agent-worker && npx tsc --noEmit && npx vitest run
+cd packages/agent-runtime && npx tsc --noEmit && npx vitest run
+cd packages/manga-render && npx tsc --noEmit && npx vitest run
+```
 
-Backend:
+- `backend/tests/test_generate_journey.py` is the offline journey guard. It runs upload → parse → Generate → page API against a fake worker. It must stay green.
+- `backend/tests/test_static_guards.py` fails on an image-generation surface or a Celery, Redis or LLM SDK import in the backend.
+- `apps/agent-worker/scripts/experiment.ts` calls MiniMax and spends money. Run it only when the owner asks for a live experiment.
 
-- `backend/app/manga_pipeline/stages/storyboard_stage.py`
-  - LLM-authored `StoryboardPage` and `StoryboardPanel`.
-- `backend/app/manga_pipeline/stages/page_composition_stage.py`
-  - LLM-authored `PageComposition`.
-- `backend/app/domain/manga/page_composition.py`
-  - Composition contract: `gutter_grid`, `panel_order`,
-    `page_turn_panel_id`, `panel_emphasis_overrides`, `composition_notes`.
-- `backend/app/domain/manga/render_view.py`
-  - Wire contract: `RenderedPage`.
-- `backend/app/manga_pipeline/stages/rendered_page_assembly_stage.py`
-  - Zips storyboard plus composition into `RenderedPage`.
-- `backend/app/services/manga/generation_service.py`
-  - Persists `MangaSliceDoc`, `MangaPageDoc.rendered_page`, and assets.
-- `backend/app/api/routes/manga_projects.py`
-  - Serves pages and assets to the frontend.
+## Hard rules
 
-Frontend:
+- Never use port 3000. It belongs to the owner's Hermes bridge. Never stop, kill or probe the process on it.
+- Never use the Atlas URL in `backend/.env`. The stack uses the local MongoDB unless `PANELSUMMARY_MONGODB_URL` is set. Never read or print the values in `backend/.env`.
+- No image-generation models. Do not add an image API, key, route or model. The art is deterministic SVG from `packages/manga-render`.
+- The MiniMax key lives only in the worker process. The backend and the frontend never receive it.
+- Every model call goes through `apps/agent-worker` and `packages/agent-runtime`. Do not add a second path to a model.
+- The reader shows the persisted SVG of an accepted page. It does not lay out or draw pages again.
+- A change to renderer output needs a new `RENDERER_VERSION`.
+- Failure stays visible. A failed page is stored as `failed` with its reasons. Never fake a pass.
+- Book text is untrusted data. Keep it inside `<untrusted_source_text>` with `<` and `>` escaped.
+- Only `packages/agent-runtime` imports the Pi SDK, at the pinned version. An upgrade is a separate reviewed change.
+- Update `docs/decisions.md` in the same change as the code that changes a decision.
 
-- `frontend/app/books/[id]/manga/v2/page.tsx`
-  - Loads project/pages/slices/assets and renders `MangaPageRenderer`.
-- `frontend/lib/types.ts`
-  - TypeScript mirror of the backend `RenderedPage` contract.
-- `frontend/components/MangaReader/page_layout.ts`
-  - Maps `PageComposition` to explicit panel boxes when present, otherwise
-    composition rows/cells, otherwise legacy fallback.
-- `frontend/components/MangaReader/MangaPageRenderer.tsx`
-  - Builds page rows/panel wrappers and passes sprite/bubble layer data down.
-- `frontend/components/MangaReader/MangaPanelRenderer.tsx`
-  - Chooses panel subrenderer, preserves `panel_artifacts.image_path` as backdrop,
-    and renders scene sprite layers.
-- `frontend/components/MangaReader/panels/DialoguePanel.tsx`
-  - Renders placed speech bubbles; generated sprites are no longer dialogue-avatar
-    chrome in the main reader path.
+## Language
 
-## Gotchas
+Write project documentation in Simplified Technical English. The skill lives at
+`.claude/skills/simple-english/` and is vendored from
+[AminBlg/SimpleEnglish](https://github.com/AminBlg/SimpleEnglish) under MIT.
+Invoke it with `/simple-english`. See `PROVENANCE.md` in that directory.
 
-- `image_mode: "sprites_only"` creates reusable character assets. It does not
-  populate `panel_artifacts.*.image_path`.
-- Experiment screenshots under `docs/renderer-analysis/experiments/` prove the
-  old frontend ignored `sprite_layers`, `bubble_placement`, `row_heights_pct`,
-  `gutter_px`, `bleed`, and panel placement fields. Current code consumes the
-  expanded `PageComposition` fields, but old stored DB rows still lack them.
-- `page_layout.ts` uses `row_heights_pct`/`gutter_px` when present and falls back
-  to equal rows for legacy `gutter_grid` pages.
-- `derived_visuals.ts` now varies palette keys by panel purpose; do not assume the
-  old single `dramatic-dark` behavior.
-- Some stored composition pages already have QA warnings for narrow page-turn
-  cells. Do not confuse that upstream defect with the sprite placement bug.
-- `SceneSprites.tsx` returns `null` for `asset_type === "reference_sheet"`, so
-  characters whose only asset is a reference sheet never appear on the page.
-- `page_composition_stage` authors `sprite_layers`/`bubble_placements` but its
-  prompt payload contains no asset manifest — it references expressions blind,
-  and the renderer silently omits missing ones. Its `max_tokens` (4000) is also
-  tight for 5-8 pages of geometry; truncation falls back to legacy layout.
-- For Book-Reel backend debugging, start with `/tmp/panelsummary-celery.log`.
+- Mode: **pragmatic**. Domain words stay. Apply the structural rules.
+- It applies to the Project Factory views under `.project-factory/views/`, to new
+  `/docs` pages, to handoff notes, and to agent skill files.
+- It does not apply to code, identifiers, quoted errors, or Mermaid diagram sources.
+  Those are untouchable.
+- Locked term choices, so that sessions do not rotate synonyms:
 
-## Providers
+  | Concept | Use | Do not use |
+  |---|---|---|
+  | Confirm that something holds | `verify` | check, confirm, ensure |
+  | The validators and their fields | `validate`, `validation_status` | (these are identifiers, keep them) |
+  | Stored options | `configuration` | config, settings |
+  | Start a process | `run` | execute |
+  | Take something away | `remove` | delete, erase, destroy |
+  | Put on screen | `show` | display, present |
+  | A defect | `problem`, `error` | issue (except "issue #15", a proper noun) |
 
-**Hard cost rule — no exceptions:** Every text, structured-output, review,
-repair, and vision LLM call must use the server-owned `MINIMAX_API_KEY` through
-`backend/app/llm_client.py` (`MiniMax-M3` by default). Do not use
-OpenRouter or OpenAI for an LLM fallback, quality lane, or live test.
-
-- Images: OpenRouter is allowed only for actual image generation in
-  `backend/app/image_generator.py`. Keep `google/gemini-2.5-flash-image` as the
-  default low-cost model, preserve the existing image budgets, and never fall
-  back automatically to a more expensive image model.
-- `OPENROUTER_API_KEY` is therefore an image-only credential; do not pass it to
-  text generation stages or treat OpenRouter credit as text-generation budget.
-- Image budgets (`none | sprites_only | budgeted | full_panel_art`, default
-  budgeted: 8 sprites + <=3 key panels/slice) are product policy. Do not add
-  per-panel paid rendering to default paths.
-
-## Implementation Conventions
-
-- Keep content generation out of renderer fixes.
-- Treat `RenderedPage` as the contract boundary.
-- Update backend Pydantic models and frontend TypeScript mirrors together.
-- Keep legacy fallback behavior for existing pages that only have `gutter_grid`.
-- Every visual renderer change needs before/after screenshots.
-
-## Documentation And Note Tracking
-
-- Use `docs/next-prompt.md` as the paste-ready prompt for the next implementation agent
-  (recreated 2026-07-05 for the visual-upgrade phase).
-- Use `NEXT_SESSION.md` as the living implementation log and handoff. It was deleted
-  during a past cleanup — the next implementation session should recreate it. Update it
-  while work is happening, not only at the end.
-- After each meaningful phase, record in `NEXT_SESSION.md`: files changed, screenshots captured, commands/tests run, current blockers, open risks, and the next concrete step.
-- Keep `/docs` synchronized with implementation reality. If renderer behavior, DSL fields, or architecture changes, update the relevant docs in the same session.
-- Treat `docs/renderer-analysis/findings.md` as the evidence baseline. Amend it only when new evidence changes the diagnosis; use `NEXT_SESSION.md` for running progress notes.
-- Do not leave contradictory handoff files behind. If a future `NEXT_STEPS.md` is created, make clear whether it supersedes or points back to `NEXT_SESSION.md`.
-
-## Optional Sub-Agent Use
-
-- Sub-agents are useful only for bounded, parallel work with disjoint ownership. The main agent owns integration and final verification.
-- Suggested split if the environment supports sub-agents:
-  - Backend contract agent: owns `backend/app/domain/manga/*`, DSL schema/prompt contract, persistence compatibility, and backend tests.
-  - Frontend renderer agent: owns `frontend/lib/types.ts` and `frontend/components/MangaReader/*`, including layout, typography, bubbles, sprites, and z-order behavior.
-  - Verification/docs agent: owns browser screenshots, experiment evidence, `NEXT_SESSION.md`, and docs updates under `/docs`.
-- Each sub-agent must report changed file paths, commands/tests run, screenshots/evidence produced, and unresolved risks.
-- Avoid overlapping writes between agents unless the main agent coordinates the merge explicitly.
+- Before delivering a document, run the self-check in `SKILL.md` and, for an audit,
+  `references/checklist.md`. Run pattern checks over prose only. Code and diagram
+  sources give false positives.

@@ -1,0 +1,118 @@
+/** Plain-language wording for statuses, shared by the shelf, book page and reader. */
+import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, TextKind } from "./api";
+
+export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
+
+export type Tone = "pencil" | "ink" | "redpen" | "quiet";
+
+/** Short status for the obi band on a cover. */
+export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
+  if (book.status === "failed") return { text: "Couldn't read this PDF", tone: "redpen" };
+  if (book.status !== "parsed") return { text: "Reading the PDF", tone: "pencil" };
+  const e = book.latest_edition;
+  if (!e) return { text: "Not drawn yet", tone: "quiet" };
+  switch (e.status) {
+    case "queued":
+      return { text: "Starting", tone: "pencil" };
+    case "understanding":
+      return { text: "Reading the book", tone: "pencil" };
+    case "planning":
+      return { text: "Planning pages", tone: "pencil" };
+    case "drawing":
+      return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "pencil" };
+    case "complete":
+      return { text: `${plural(e.page_total, "page")}`, tone: "ink" };
+    case "completed_with_failures":
+      return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "ink" };
+    case "cancelled":
+      return { text: e.page_total ? `Stopped at ${e.pages_accepted} of ${e.page_total} pages` : "Stopped before drawing", tone: "quiet" };
+    case "failed":
+      return { text: "Drawing stopped", tone: "redpen" };
+  }
+}
+
+export function stageLine(status: EditionStatus, pages: EditionPageSummary[], total: number): string {
+  switch (status) {
+    case "queued":
+      return "Waiting to start";
+    case "understanding":
+      return "Reading the book";
+    case "planning":
+      return "Planning the pages";
+    case "drawing": {
+      const drawing = pages.filter((p) => p.status === "drawing").map((p) => p.page_number);
+      const next = drawing[0] ?? pages.find((p) => p.status === "pending")?.page_number;
+      if (drawing.length > 1) return `Drawing pages ${listNumbers(drawing)} of ${total}`;
+      return next ? `Drawing page ${next} of ${total}` : `Finishing ${plural(total, "page")}`;
+    }
+    case "complete":
+      return `All ${plural(total, "page")} are drawn`;
+    case "completed_with_failures":
+      return "Finished, with pages missing";
+    case "cancelled":
+      return "Drawing stopped";
+    case "failed":
+      return "Drawing stopped with an error";
+  }
+}
+
+export function listNumbers(ns: number[]): string {
+  if (ns.length <= 1) return ns.join("");
+  return `${ns.slice(0, -1).join(", ")} and ${ns[ns.length - 1]}`;
+}
+
+export function editionSummary(edition: EditionDetail): string {
+  const failed = edition.pages.filter((p) => p.status === "failed").length;
+  const ready = edition.pages.filter((p) => p.status === "accepted").length;
+  const total = edition.page_total || edition.pages.length;
+  if (!total) return "";
+  const parts = [`${ready} of ${plural(total, "page")} ready`];
+  if (failed) parts.push(`${plural(failed, "page")} could not be drawn`);
+  return `${parts.join(". ")}.`;
+}
+
+export function bookFacts(book: Book): string {
+  const bits = [plural(book.page_count, "page")];
+  if (book.section_count) bits.push(plural(book.section_count, "section"));
+  if (book.word_count) bits.push(plural(book.word_count, "word"));
+  return bits.join(", ");
+}
+
+export const FIDELITY_LABEL: Record<Fidelity, string> = {
+  quote: "Quoted",
+  paraphrase: "Paraphrased",
+  dramatized: "Dramatized",
+  metaphor: "Illustrative metaphor",
+};
+
+export const FIDELITY_HINT: Record<Fidelity, string> = {
+  quote: "The book's own words.",
+  paraphrase: "The book's meaning, reworded.",
+  dramatized: "Invented for the scene; the book implies it.",
+  metaphor: "An image the adaptation added to explain an idea.",
+};
+
+export function voiceLabel(kind: TextKind, speaker: string | undefined, names: Record<string, string>): string {
+  const name = speaker ? names[speaker] || "Someone" : undefined;
+  switch (kind) {
+    case "narration":
+      return "Narration";
+    case "caption":
+      return "Caption";
+    case "sfx":
+      return "Sound";
+    case "thought":
+      return name ? `${name}, thinking` : "Thought";
+    case "whisper":
+      return name ? `${name}, whispering` : "Whisper";
+    case "shout":
+      return name ? `${name}, shouting` : "Shout";
+    default:
+      return name ?? "Speech";
+  }
+}
+
+export function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)} million`;
+  return n.toLocaleString();
+}
