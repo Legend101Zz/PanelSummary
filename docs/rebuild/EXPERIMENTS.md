@@ -134,3 +134,17 @@ only the changed entries.
 The guard is now sticky per cast id (rewording cannot clear it) and broader (gilded, column,
 pedestal). **Decision:** understanding = thinking low + revise (reliable; ~4.5 min); plan and
 pages stay thinking off.
+
+## 7. Speakers in the understanding prompt (2026-09-26)
+
+The book's own attributions ("said the Frog") are extracted deterministically
+(`apps/agent-worker/src/goals/attribution.ts`: 340 of 499 quoted spans in the fiction book;
+1 of 33 in the nonfiction book). As a rejection (error) they made acceptance run 5's
+understanding time out. Given up front as a list:
+
+| Run (fiction book, M3 low) | Result | Time | Output tokens | Submits / patches | Cast |
+|---|---|---|---|---|---|
+| speakers-u1 | accepted | 746 s | 93,649 | 1 / 2 | 43, now including the Frog, the Fire-balloon, the Doctor, the boys, the Professor's daughter; still missing (warnings): God, the Charity Children, the Squib, the Cracker, the Dragon-fly, the Goose |
+
+The Prince stayed a gold statue. Throughput was 126 tokens/s (run 4: 324), so time to first
+page depends on MiniMax's speed that hour more than on the prompt.

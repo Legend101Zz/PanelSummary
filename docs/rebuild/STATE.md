@@ -24,11 +24,32 @@ persisted pages → main reader.
   - `civil-disobedience.pdf` — 34 pages, 3 parts (nonfiction, argument, one
     narrative episode).
 
-## Phases
+## Phases (all done; evidence in this folder)
 
-1. Truth audit — reports in `docs/rebuild/phase1/`.
-2. Architecture decision.
-3. MiniMax experiments.
-4. Manga craft + visual system.
-5. Clean + implement.
-6. Product proof.
+1. Truth audit: `phase1/` (routes, services, defects rechecked, hygiene, harness audit).
+2. Architecture decision: `DECISION-architecture.md` and `../decisions.md` (D13).
+3. MiniMax experiments: `EXPERIMENTS.md` (M3 over M2.7-highspeed; per-page goal over
+   one-pass sections and a review pass; thinking off for plan/pages, low + patch tool
+   for understanding; vision preview on).
+4. Manga craft + visual system: `research/craft.md` (rubric in section (g)) and
+   `packages/manga-render` (renderer 0.3.0).
+5. Clean + implement: one harness path, Mongo-leased job runner, rebuilt reader; about
+   142k lines of v1/reel/image/Celery code and stale docs removed.
+6. Product proof: `ACCEPTANCE.md` (eight live runs of upload → Generate → reader, two of
+   them cancelled on purpose, one nonfiction run, judge-panel scores per run).
+
+## Where quality stands
+
+The product path works end to end and fails visibly. Page quality is still below the strict
+ship bar on most pages (final run 8: 5 of 46 pages; mean 3.37 of 5; speaker attribution 3.83
+and fidelity 2.93 are the best of all runs). Continuity of a character's state across pages
+(2.43) and claims only partly shown are the weakest; the remaining blockers are listed at the
+end of `ACCEPTANCE.md`. Deterministic checks in
+the page goal (`apps/agent-worker/src/goals/`) are the main lever; each one is calibrated on
+judged pages before it becomes an error.
+
+## Open (owner decisions)
+
+- Branch `product/harness-manga` is not pushed or merged.
+- Owner-only files kept: `CLAUDE.md` language section, `.claude/skills/simple-english/`.
+- Backups outside the repo: `/Volumes/Mrigesh SSD/Book-Reel-backups/`.

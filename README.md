@@ -80,8 +80,9 @@ edition.
 1. **Upload** a born-digital PDF on the shelf page. Parsing takes seconds; a scanned PDF with
    no text layer is rejected with a clear message.
 2. **Generate manga** on the book page. You see the stage (reading the book, planning pages,
-   drawing page N of M) and pages appear as they are drawn. Page 1 is usually readable a few
-   minutes after pressing Generate.
+   drawing page N of M) and pages appear as they are drawn. The first page appears once the
+   whole book has been read and planned: in the acceptance runs (a 16,000-word book) that took
+   4 to 30 minutes, depending on MiniMax's output speed at the time.
 3. **Read.** Page mode on wide screens, panel mode (the camera steps panel by panel) on
    phones. Arrow keys, swipe, tap zones, zoom, and reduced motion are supported. The page
    number is in the URL.
@@ -130,3 +131,7 @@ docs/               decisions.md and the rebuild evidence in docs/rebuild/
 - The drawn vocabulary is closed: characters, places, props and effects must map to what the
   renderer can draw; the model is told the vocabulary and validation rejects anything else.
 - English, left-to-right pages by default (the layout compiler also supports right-to-left).
+- Page quality is uneven. In the acceptance runs a panel of editor agents rated a minority of
+  pages at the strict ship bar; the common faults are claims only partly shown, continuity of
+  a character's state across pages, and props the closed vocabulary draws loosely. See
+  [`docs/rebuild/ACCEPTANCE.md`](docs/rebuild/ACCEPTANCE.md).
