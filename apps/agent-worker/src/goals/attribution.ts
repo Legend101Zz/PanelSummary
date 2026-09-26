@@ -160,6 +160,18 @@ export function names(head: string, member: CastMember): boolean {
   return parts.length > 1 && words.has(stem(parts[parts.length - 1]));
 }
 
+/** The head word is literally a word of the member's name, same number ("child" does not name "The Garden Children"). */
+function namesExactly(head: string, member: CastMember): boolean {
+  const words = new Set<string>();
+  for (const token of member.name.toLowerCase().split(/[^a-z-]+/)) {
+    if (!token) continue;
+    words.add(token);
+    words.add(token.replace(/-/g, ""));
+  }
+  const h = head.toLowerCase();
+  return words.has(h) || words.has(h.replace(/-/g, ""));
+}
+
 /** Cast members an attribution names by their NAME (roles are too loose to accuse a line of the wrong speaker). */
 export function namedBy(head: string, cast: readonly CastMember[]): CastMember[] {
   return cast.filter((member) => {
@@ -225,9 +237,14 @@ export function quoteSpeakerIssues(
       const top = best > 0 ? shared.filter((x) => x.n === best).map((x) => x.a) : [];
       if (top.length === 0 || top.some((a) => !a.head)) return;
       const matched = top as Array<Attribution & { runs: string[] }>;
-      if (matched.some((a) => names(a.head, member))) return;
+      // The speaker's NAME settles it; a role mention only counts when the book's word
+      // names nobody else here (the Swallow's role "the Prince's messenger" must not
+      // make "said the Prince" his; "said the statue" may still be the Happy Prince's).
+      const othersNamed = (a: Attribution) =>
+        cast.filter((c) => c.id !== member.id && inSection(c, sectionId) && namesExactly(a.head, c));
+      if (matched.some((a) => namedBy(a.head, [member]).length > 0 || (othersNamed(a).length === 0 && names(a.head, member)))) return;
       const book = matched[0];
-      const others = cast.filter((c) => c.id !== member.id && inSection(c, sectionId) && namedBy(book.head, [c]).length > 0);
+      const others = othersNamed(book);
       const who = others.length
         ? `Give it to ${others.map((c) => `${c.name} (${c.id})`).join(" or ")} and draw them in this panel`
         : `${book.phrase} is not in the cast, so letter it as narration that names the speaker (for example: “${text.text.slice(0, 40)}...” said ${book.phrase})`;

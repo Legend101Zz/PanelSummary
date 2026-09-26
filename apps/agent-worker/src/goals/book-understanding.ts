@@ -45,6 +45,10 @@ export function sectionCoverageIssues(value: unknown, book: BookInput): Validati
   return issues;
 }
 
+/** A statue mentioned as something looked at, stood near or melted (not what the member is). */
+export const ABOUT_A_STATUE =
+  /\b(?:at|to|of|near|under|beneath|below|around|beside|about|before|from|with|for|admires?|admired|admiring|praises?|praised|praising|melts?|melted|melting|pulls? down|pulled down|removes?|removed|mocks?|mocked|visits?|visited|guards?|guarded|finds?|found|sees?|saw|watch(?:es|ed)?|loves?|loved)\s+(?:the|a|an|this|that|his|her|their)\s+(?:[\w'\u2019-]+\s+){0,2}?(?:statue|effigy|monument|column|pedestal|carving)s?\b/g;
+
 export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new Set()): ValidationIssue[] {
   const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
   if (!Array.isArray(cast)) return [];
@@ -56,7 +60,10 @@ export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new
     if (!Array.isArray(memberSections) || memberSections.length === 0 || memberSections.some((id) => !sectionIds.has(id as string))) {
       issues.push({ code: "CAST_SECTIONS", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} needs "sections": the ids of the sections it appears in (from: ${[...sectionIds].join(", ")}). Two different people with the same role in different stories must be two cast members.` });
     }
-    const nameText = `${(member as { name?: string }).name ?? ""} ${text}`.toLowerCase();
+    // Only words that describe this member itself: "officials who admire the statue"
+    // mentions a statue without being one (acceptance run 6 turned the Town Councillors,
+    // the Charity Children and the match-girl to stone because of such mentions).
+    const nameText = `${(member as { name?: string }).name ?? ""} ${text}`.toLowerCase().replace(ABOUT_A_STATUE, " ");
     const statueWords = /\b(statue|effigy|carving|carved figure|monument|gilded|pedestal|on a (tall )?column|on its column|bronze figure|stone figure)\b/.test(nameText);
     const personWords = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/.test(nameText);
     // Once flagged in this session, the rule sticks to the id: rewording the

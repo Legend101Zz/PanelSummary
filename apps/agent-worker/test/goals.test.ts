@@ -391,6 +391,34 @@ describe("understanding look sense", () => {
     expect(lookSenseIssues({ sections, cast: [{ id: "c_giant", description: "A selfish giant.", look: { kind: "human", height: "tall" }, sections: ["s2"] }] }).map((i) => i.code)).toEqual(["GIANT_NOT_GIANT"]);
     expect(lookSenseIssues({ sections, cast: [{ id: "c_x", description: "A girl.", look: { kind: "human" } }] }).map((i) => i.code)).toEqual(["CAST_SECTIONS"]);
   });
+
+  it("does not turn people who only look at or melt the statue into statues (acceptance run 6)", async () => {
+    const { lookSenseIssues } = await import("../src/goals/book-understanding.js");
+    const sections = [{ id: "s1" }];
+    const living = [
+      { id: "c_councillors", name: "The Town Councillors", description: "Officials in dark coats who admire the statue and follow the Mayor.", role: "officials" },
+      { id: "c_children", name: "The Charity Children", description: "Children in scarlet cloaks who gaze up at the statue on its column.", role: "choir" },
+      { id: "c_overseer", name: "The Overseer", description: "The man at the foundry who melts the Prince's statue.", role: "workman" },
+    ].map((m) => ({ ...m, look: { kind: "human", material: "flesh" }, sections: ["s1"] }));
+    const sticky = new Set<string>();
+    expect(lookSenseIssues({ sections, cast: living }, sticky)).toEqual([]);
+    expect([...sticky]).toEqual([]);
+  });
+});
+
+describe("quote speaker precedence", () => {
+  it("does not let a role mention (the Prince's messenger) take the Prince's line", () => {
+    const text = "\u201cThere is no Mystery so great as Misery,\u201d said the Prince.";
+    const prince = { ...UNDERSTANDING.cast.find((c) => c.id === "prince")!, sections: ["s1"] };
+    const swallow = { ...UNDERSTANDING.cast.find((c) => c.id === "swallow")!, role: "the Prince's messenger", sections: ["s1"] };
+    const spec = fixturePage(1);
+    for (const other of spec.panels) other.text = [];
+    spec.panels[0].text = [{ kind: "speech", speaker: "swallow", text: "No Mystery so great as Misery.", fidelity: "paraphrase" }];
+    const issues = quoteSpeakerIssues(spec, [{ text }], [prince, swallow], "s1");
+    expect(issues.map((i) => i.code)).toEqual(["QUOTE_WRONG_SPEAKER"]);
+    spec.panels[0].text[0].speaker = "prince";
+    expect(quoteSpeakerIssues(spec, [{ text }], [prince, swallow], "s1")).toEqual([]);
+  });
 });
 
 describe("quote claims and statue staging", () => {
