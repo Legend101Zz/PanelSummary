@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { moneyRange, plainReason, shelfStatus } from "./words";
+import { moneyRange, plainReason, providerStopHeadline, shelfStatus } from "./words";
 
 describe("words", () => {
   it("shows completed_with_failures in the red tone", () => {
@@ -8,6 +8,21 @@ describe("words", () => {
     const s = shelfStatus(b);
     expect(s.tone).toBe("redpen");
     expect(s.text).toContain("1 missing");
+  });
+  it("says on the shelf that MiniMax stopped the drawing", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "failed", page_total: 22, pages_accepted: 5, provider_stop: { code: "PROVIDER_LIMIT" } } };
+    expect(shelfStatus(b).text).toBe("MiniMax limit reached, 5 of 22 drawn");
+    b.latest_edition.provider_stop = null;
+    expect(shelfStatus(b).text).toBe("Drawing stopped");
+  });
+  it("drops the page count when no page is planned", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "failed", page_total: 0, pages_accepted: 0, provider_stop: { code: "PROVIDER_LIMIT" } } };
+    expect(shelfStatus(b).text).toBe("MiniMax limit reached");
+  });
+  it("words the book-page headline for each stop code", () => {
+    expect(providerStopHeadline("PROVIDER_LIMIT")).toBe("Drawing stopped: MiniMax usage limit reached");
+    expect(providerStopHeadline("PROVIDER_AUTH")).toBe("Drawing stopped: MiniMax refused the key");
+    expect(providerStopHeadline("PROVIDER_UNAVAILABLE")).toBe("Drawing stopped: MiniMax not answering");
   });
   it("maps a token limit to a plain sentence", () => {
     expect(plainReason("token limit hit").plain).toMatch(/ran out of room/);

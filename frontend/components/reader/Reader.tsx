@@ -648,8 +648,7 @@ function PageState({
       <p>It will appear here as soon as it is ready. This view refreshes on its own.</p>
     ) : stopLines ? (
       <>
-        <p>MiniMax stopped the drawing before this page. Nothing was sent for it.</p>
-        <p className={styles.reason}>{stopLines.title}.</p>
+        <p className={styles.reason}>{stopLines.title}. Nothing was sent for this page.</p>
         <p>{stopLines.next}</p>
         {stopLines.detail ? <p className={styles.detail}>Technical detail: {stopLines.detail}</p> : null}
       </>

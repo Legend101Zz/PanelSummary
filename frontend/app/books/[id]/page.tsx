@@ -21,7 +21,7 @@ import {
 } from "@/lib/api";
 import { useNow, usePoll } from "@/lib/hooks";
 import { readPosition } from "@/lib/position";
-import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, providerStopLines, type ProviderStopLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
+import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, providerStopLines, providerStopHeadline, type ProviderStopLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Cover, Obi } from "@/components/Paper";
 import { CoverSvg } from "@/components/CoverArt";
@@ -148,7 +148,7 @@ export default function BookPage() {
     ? shelfStatus({
         ...book,
         latest_edition: edition
-          ? { id: edition.id, status: edition.status, page_total: edition.page_total || edition.pages.length, pages_accepted: acceptedCount }
+          ? { id: edition.id, status: edition.status, page_total: edition.page_total || edition.pages.length, pages_accepted: acceptedCount, provider_stop: edition.provider_stop ? { code: edition.provider_stop.code } : null }
           : null,
       })
     : null;
@@ -367,7 +367,12 @@ function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; 
   const active = isActive(edition.status);
   const drawn = edition.pages.filter((p) => p.status === "accepted").length;
   const failed = edition.pages.filter((p) => p.status === "failed").length;
-  const line = stopping ? "Stopping after the pages in progress" : stageLine(edition.status, edition.pages, total);
+  const providerStopped = edition.status === "failed" && edition.provider_stop;
+  const line = stopping
+    ? "Stopping after the pages in progress"
+    : providerStopped
+      ? providerStopHeadline(edition.provider_stop?.code)
+      : stageLine(edition.status, edition.pages, total);
   const now = useNow(1000, active);
   const started = Date.parse(edition.job?.created_at ?? edition.created_at);
   const ended = active ? now : Date.parse(edition.finished_at ?? edition.job?.finished_at ?? "") || now;

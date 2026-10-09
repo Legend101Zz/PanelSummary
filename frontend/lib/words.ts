@@ -29,7 +29,33 @@ export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
     case "cancelled":
       return { text: e.page_total ? `Stopped at ${e.pages_accepted} of ${e.page_total} pages` : "Stopped before drawing", tone: "quiet" };
     case "failed":
+      if (e.provider_stop) {
+        const why = providerStopShort(e.provider_stop.code);
+        return { text: e.page_total ? `${why}, ${e.pages_accepted} of ${e.page_total} drawn` : why, tone: "redpen" };
+      }
       return { text: "Drawing stopped", tone: "redpen" };
+  }
+}
+
+/** A short plain reason for a provider stop, for the shelf band and the status line. */
+export function providerStopShort(code: string | null | undefined): string {
+  switch (code) {
+    case "PROVIDER_LIMIT":
+      return "MiniMax limit reached";
+    case "PROVIDER_AUTH":
+      return "MiniMax refused the key";
+    default:
+      return "MiniMax not answering";
+  }
+}
+
+/** The book-page headline for a provider stop. */
+export function providerStopHeadline(code: string | null | undefined): string {
+  switch (code) {
+    case "PROVIDER_LIMIT":
+      return "Drawing stopped: MiniMax usage limit reached";
+    default:
+      return `Drawing stopped: ${providerStopShort(code)}`;
   }
 }
 
