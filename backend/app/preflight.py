@@ -171,7 +171,7 @@ def cost_basis(settings: Settings) -> str:
     n_mixed = len(FIT_RUNS) - n_all_m3 - n_all_flash
     text = (
         f"Pi catalog estimate, not a bill. The range comes from {len(FIT_RUNS)} measured runs: "
-        f"{n_all_m3} with MiniMax-M3 on every goal, {n_mixed} with Flash on the plan or the pages only, "
+        f"{n_all_m3} with MiniMax-M3 on every goal, {n_mixed} with Flash on the plan, the pages, or both, "
         f"and {n_all_flash} with Flash on every goal. The Flash runs are one book of 26 PDF pages, so the "
         "Flash part of the range is thinner. MiniMax speed varies, so time is the weakest figure."
     )
