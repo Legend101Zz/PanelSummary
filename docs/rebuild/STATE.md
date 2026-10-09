@@ -54,12 +54,21 @@ The renderer version is the constant `RENDERER_VERSION` in `packages/manga-rende
 
 ## Where quality stands
 
-The product path works end to end and fails visibly. Run 8 is the measured baseline in
-`docs/rebuild/baselines/run8.json`: 5 of 46 pages met the strict ship bar, and the mean was 3.37 of
-5. State continuity (2.43) and claims only partly shown were the weakest scores. The launch
-tracks changed code against these faults. They were verified with unit tests and with offline
-replays of saved runs. No judge panel has scored a run of the changed code yet. So the quality
-of release/v0.1 is not measured. Do not report the run-8 numbers as the numbers of v0.1.
+Measured on 2026-10-09 with a panel of 3 Sonnet judges for each page (the run-8 rubric and prompt; see
+`docs/launch/EVAL.md`). The panel is a different instrument from the single judge of runs 1-8, so the
+run-8 pages were judged again by the same panel (`docs/rebuild/baselines/run8-panel.md`).
+
+| Run | Pages | Ship bar | Mean | Continuity | Fidelity |
+|---|---|---|---|---|---|
+| Run 8 (68-page book), single judge | 46 | 5 | 3.37 | 2.43 | 2.93 |
+| Run 8, the same panel | 46 | 7 | 3.47 | 2.88 | 3.34 |
+| Gate 2: 68-page book, release/v0.1, all Flash | 60 | 12 | 3.54 | 3.02 | 3.51 |
+| Final journey: untuned Andersen book (22 PDF pages), fresh database | 18 | 3 | 3.53 | 2.76 | 3.48 |
+
+The product path works end to end on a book that no track used for tuning, and it fails visibly.
+The weakest criteria are continuity and pages that tell the beat in captions. The worst pages miss
+something the renderer cannot draw (an undressed Emperor, a kitchen pot, a stove). Details:
+`docs/rebuild/ACCEPTANCE.md` (section "v0.1 launch runs") and `docs/launch/MODEL-AB.md`.
 
 ## Known limits
 
@@ -68,10 +77,12 @@ of release/v0.1 is not measured. Do not report the run-8 numbers as the numbers 
 | A book over 75 PDF pages or 17,500 words is refused. Chapter-scoped generation moves to v0.2. A slow provider hour can still time out the understanding. | `docs/launch/T3-scope.md`, D19 |
 | Time and cost estimates are ranges. Output speed varied from 31 to 324 tokens per second. | `docs/launch/T3-scope.md` |
 | A page that fails twice is shown as failed. Page 12 of the two-tale book failed in two live runs. The repair hints are verified. A better success rate is not proven. | `docs/launch/F1-dense-page.md` |
-| The retry thinking level for the M3 model needs an owner decision and a measurement. | `docs/launch/F1-dense-page.md`, D13 |
+| The renderer cannot draw some states and props that a story needs: an undressed person, a kitchen pot, a stove, a roast goose, a heart, an angel. Pages then tell them in captions. | `docs/launch/W2-renderer.md`, `docs/launch/MODEL-AB.md` |
+| MiniMax-M3.1-Flash-Preview has no published price. Its cost is an estimate on MiniMax-M3 rates. | `docs/launch/T0-model.md` |
+| A provider refusal (for example the MiniMax plan limit) stops the job. Untried pages stay pending, and Resume continues them. | `docs/launch/F4-provider-errors.md`, D11 |
 | The renderer cannot draw some states (for example one jewel eye). Some checks are warnings, because too few judged pages exist to make them errors. | `docs/launch/T1-continuity.md`, `docs/launch/W2-renderer.md` |
 | The checks were calibrated on one book (five tales). Their precision on other books is unknown. | `docs/launch/T1-continuity.md` |
-| The writer does not yet read some renderer warnings as retry hints. | `docs/launch/W2-renderer.md` |
+| The writer gets one repair round for nine checks (repair_once); other warnings are only recorded. | `docs/launch/W2-writer.md` |
 | The page picker of the reader is narrow for 40 or more pages. The upload page does not show the limits. | `docs/launch/T5-product.md` |
 | Born-digital PDFs only. A closed drawing vocabulary. English, left to right. | `README.md` |
 | The live lane runs from `live/**` branches, from the `run-live` label, or from a manual run once the file is on `main`. | `docs/launch/CI.md` |
@@ -80,5 +91,5 @@ of release/v0.1 is not measured. Do not report the run-8 numbers as the numbers 
 
 - Owner-only files: the `CLAUDE.md` Language section and `.claude/skills/simple-english/`.
 - Backups outside the repository: `/Volumes/Mrigesh SSD/Book-Reel-backups/`.
-- The model policy for each goal (D13) and the retry thinking level.
-- Where to deploy v0.1.
+- Decided on 2026-10-09: the model policy (D13: Flash on every goal, M3 as the fallback) and the
+  deploy target (a GitHub release and the local `./start.sh`, no server).
