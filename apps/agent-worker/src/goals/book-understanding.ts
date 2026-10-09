@@ -47,9 +47,53 @@ export function sectionCoverageIssues(value: unknown, book: BookInput): Validati
   return issues;
 }
 
-/** A statue mentioned as something looked at, stood near or melted (not what the member is). */
-export const ABOUT_A_STATUE =
-  /\b(?:at|to|of|near|under|beneath|below|around|beside|about|before|from|with|for|admires?|admired|admiring|praises?|praised|praising|melts?|melted|melting|pulls? down|pulled down|removes?|removed|mocks?|mocked|visits?|visited|guards?|guarded|finds?|found|sees?|saw|watch(?:es|ed)?|loves?|loved)\s+(?:the|a|an|this|that|his|her|their)\s+(?:[\w'\u2019-]+\s+){0,2}?(?:statue|effigy|monument|column|pedestal|carving)s?\b/g;
+/**
+ * A statue mentioned as something looked at, stood near, judged or replaced (not what the
+ * member is). Live (F3, 2026-10-09): "is the first to call the stripped statue shabby" and
+ * "proposes another statue, of himself" were read as "this member is a statue", and the
+ * sticky flag then forced the Mayor and the Art Professor to stone.
+ */
+export const ABOUT_A_STATUE = new RegExp(
+  "\\b(?:at|to|of|near|under|beneath|below|around|beside|about|before|from|with|for|against|" +
+    "admires?|admired|admiring|praises?|praised|praising|melts?|melted|melting|pulls? down|pulled down|removes?|removed|" +
+    "mocks?|mocked|visits?|visited|guards?|guarded|finds?|found|sees?|saw|watch(?:es|ed)?|loves?|loved|" +
+    "calls?|called|judg(?:es|ed|ing)|propos(?:es|ed|ing)|orders?|ordered|wants?|wanted|builds?|built|erects?|erected|" +
+    "puts? up|put up|raises?|raised|replac(?:es|ed|ing)|topples?|toppled|names?|named|damns?|scorns?|scorned|" +
+    "mentions?|mentioned|notices?|noticed|looks? like|resembles?|likes?|liked|hates?|hated|sets? up|set up|asks? for)" +
+    "\\s+(?:the|a|an|this|that|his|her|their|its|another|some|any|one|two|new|old|second|same|other)\\s+(?:[\\w'\\u2019-]+\\s+){0,3}?" +
+    "(?:statues?|effigy|effigies|monuments?|columns?|pedestals?|carvings?)\\b",
+  "g",
+);
+
+/** The part of a text that says what the member IS: up to the first clause break or relative word. */
+export function headOf(text: string): string {
+  return text.split(/[,;.:()\u2014]|\s(?:who|whom|whose|which|that|while|when|where|and|but|as|because|after|before|until|says?|said|then|so)\s/i)[0] ?? text;
+}
+
+const STATUE_WORDS = /\b(statue|effigy|carving|carved figure|monument|gilded|pedestal|on a (tall )?column|on its column|bronze figure|stone figure)\b/;
+const PERSON_WORDS = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/;
+
+/**
+ * Why a member counts as a statue of a person, or undefined if it does not. A statue word
+ * counts when it is in the name or in the head of the role or description (what the member
+ * is), or anywhere in the text when the look is not a human (an object look is the live
+ * "rocket" failure). A statue merely mentioned later in a human's description does not.
+ */
+export function statueReason(member: { name?: string; role?: string; description?: string; look?: { kind?: string } } | undefined): string | undefined {
+  // A bird, animal, plant, insect, crowd or spirit is never a statue of a person (live, Flash:
+  // "sleeps between the statue's feet" made the Swallow a statue).
+  if (member?.look?.kind && !["human", "object"].includes(member.look.kind)) return undefined;
+  const strip = (text: string) => text.toLowerCase().replace(ABOUT_A_STATUE, " ").replace(/\b(?:statue|effigy|monument|column|figure)['\u2019]s\b/g, " ");
+  const name = strip(member?.name ?? "");
+  const role = strip(member?.role ?? "");
+  const description = strip(member?.description ?? "");
+  const whole = `${name} ${role} ${description}`;
+  const wholeHead = `${name} ${headOf(role)} ${headOf(description)}`;
+  const word = (re: RegExp, text: string) => text.match(re)?.[0];
+  if (STATUE_WORDS.test(wholeHead) && PERSON_WORDS.test(whole)) return `"${word(STATUE_WORDS, wholeHead)}" in its name, role or description`;
+  if ((member?.look?.kind === "object" || member?.look?.kind === undefined) && STATUE_WORDS.test(whole) && PERSON_WORDS.test(whole)) return `"${word(STATUE_WORDS, whole)}" in its text while its look is "${member?.look?.kind}"`;
+  return undefined;
+}
 
 export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new Set()): ValidationIssue[] {
   const cast = (value as { cast?: Array<{ id?: string; description?: string; role?: string; look?: { kind?: string; material?: string } }> })?.cast;
@@ -65,12 +109,10 @@ export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new
     // Only words that describe this member itself: "officials who admire the statue"
     // mentions a statue without being one (acceptance run 6 turned the Town Councillors,
     // the Charity Children and the match-girl to stone because of such mentions).
-    const nameText = `${(member as { name?: string }).name ?? ""} ${text}`.toLowerCase().replace(ABOUT_A_STATUE, " ");
-    const statueWords = /\b(statue|effigy|carving|carved figure|monument|gilded|pedestal|on a (tall )?column|on its column|bronze figure|stone figure)\b/.test(nameText);
-    const personWords = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/.test(nameText);
-    // Once flagged in this session, the rule sticks to the id: rewording the
+    const reason = statueReason(member as never);
+    // Once flagged for a real reason, the rule sticks to the id: rewording the
     // description does not make a statue of a person into an object.
-    const personStatue = (statueWords && personWords) || stickyStatues.has(member?.id ?? "");
+    const personStatue = reason !== undefined || stickyStatues.has(member?.id ?? "");
     const look = member?.look as { kind?: string; height?: string } | undefined;
     if (look?.kind === "crowd" && /\b(duckling|ducks?|birds?|sheep|cattle|cows?|geese|goose|hens?|chickens?|dogs?|cats?|mice|rats?|frogs?|fish|insects?|bees?|flowers?|trees?)\b/.test(text)) {
       issues.push({ code: "CROWD_NOT_PEOPLE", severity: "error", path: `cast ${member?.id ?? "?"}`, message: `${member?.id} is a group of animals or plants, but "crowd" draws people. Use one "bird"/"animal"/"plant" cast member for the group instead.` });
@@ -85,11 +127,29 @@ export function lookSenseIssues(value: unknown, stickyStatues: Set<string> = new
         code: "STATUE_NOT_HUMAN",
         severity: "error",
         path: `cast ${member?.id ?? "?"}`,
-        message: `${member?.id} is described as a statue of a person: give it a "human" look (age, build, outfit, headwear as the statue shows them) with "material": "gold", "stone" or "bronze" — not an object. Rewording its description does not change this.`,
+        message: `${member?.id} is read as a statue of a person${reason ? ` (${reason})` : " (flagged earlier in this session)"}: give it a "human" look (age, build, outfit, headwear as the statue shows them) with "material": "gold", "stone" or "bronze" — not an object. If ${member?.id} is NOT a statue (a living person who only looks at, judges or orders a statue), the statue words belong in a claim, not in its name, role or description head: write what ${member?.id} is first ("the city's Mayor"), keep "flesh", and call revise_understanding with this one cast entry.`,
       });
     }
   }
   return issues;
+}
+
+/**
+ * Opt-in capture of every candidate and validator reply. Only scripts/experiment.ts sets
+ * the hook (flag --capture); production never does, so nothing is written there.
+ */
+export const understandingCapture: { hook?: (event: { tool: string; candidate: unknown; patch?: unknown; reply: string; note: string }) => void } = {};
+
+/** "CODE(path,path)" for each distinct error code, paths shortened to the cast/section id. */
+export function issueNote(issues: readonly ValidationIssue[]): string {
+  const byCode = new Map<string, string[]>();
+  for (const issue of issues) {
+    const where = (issue.path ?? "").replace(/^understanding\./, "").replace(/^cast /, "");
+    const list = byCode.get(issue.code) ?? [];
+    if (!list.includes(where)) list.push(where);
+    byCode.set(issue.code, list);
+  }
+  return [...byCode.entries()].slice(0, 5).map(([code, paths]) => `${code}(${paths.slice(0, 3).join("|")}${paths.length > 3 ? `+${paths.length - 3}` : ""})`).join(",");
 }
 
 /** Books above this size need a chunked understanding pass (not implemented: fail visibly). */
@@ -128,7 +188,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,
-          note: `errors=${errorsOf(issues).length} ${[...new Set(errorsOf(issues).map((i) => i.code))].slice(0, 5).join(",")}`,
+          note: `errors=${errorsOf(issues).length} ${issueNote(errorsOf(issues))}`,
         };
       }
       const warnings = warningsOf(issues);
@@ -137,6 +197,14 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
         accepted: value as never,
         note: `accepted warnings=${warnings.length}`,
       };
+    };
+    const captured = <T extends { text: string; note: string }>(tool: string, candidate: unknown, patch: unknown, result: T): T => {
+      try {
+        understandingCapture.hook?.({ tool, candidate, patch, reply: result.text, note: result.note });
+      } catch {
+        // capture is best effort and never changes the session
+      }
+      return result;
     };
     const submit = {
       name: "submit_understanding",
@@ -147,7 +215,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
         if (parsed.value && typeof parsed.value === "object") current = parsed.value as Record<string, unknown>;
-        return judge(parsed.value);
+        return captured("submit_understanding", parsed.value, undefined, judge(parsed.value));
       },
     };
     const revise = {
@@ -176,7 +244,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
           if (patch[key] !== undefined) merged[key] = patch[key];
         }
         current = merged;
-        return judge(merged);
+        return captured("revise_understanding", merged, patch, judge(merged));
       },
     };
     const userPrompt = [
