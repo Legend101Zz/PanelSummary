@@ -7,10 +7,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { CastMember, CharacterLook, FigureSpec, MangaPageSpec, PanelSpec, PlannedPage, ValidationIssue } from "../src/contracts.js";
-import { renderPage, renderPageDetailed, validatePage, type PanelDetail } from "../src/index.js";
+import { RENDERER_VERSION, renderPage, renderPageDetailed, validatePage } from "../src/index.js";
 import { Resvg } from "@resvg/resvg-js";
 import { environments } from "../src/env/index.js";
-import { ENVIRONMENTS } from "../src/contracts.js";
+import { ENVIRONMENTS, EYE_STATES, OBJECT_SHAPES, PROPS } from "../src/contracts.js";
+import { props } from "../src/props/index.js";
+import { beatMentions } from "../src/scene/index.js";
 import { rig } from "../src/rig/index.js";
 
 interface Run8Page {
@@ -251,4 +253,155 @@ describe("D5 blocker: a caption never sits on the subject (run 8 pages 4, 5, 10,
     }
     expect(bad).toEqual([]);
   }, 120_000);
+});
+
+describe("D6 blocker: a Roman Candle is a firework, not a wax candle (run 8 pages 38 to 41)", () => {
+  const object = (shape: string, face = true): CharacterLook => ({ kind: "object", shape, tone: "mid", face }) as CharacterLook;
+  const drawShape = (shape: string) => rig.draw({ look: object(shape), pose: "stand", expression: "neutral", facing: "front", lineWidth: 0.4, seed: 5 }, ctx());
+
+  it("the firework shapes exist and are drawn: roman_candle, squib and bengal_light", () => {
+    for (const shape of ["roman_candle", "squib", "bengal_light"]) {
+      expect(OBJECT_SHAPES as readonly string[]).toContain(shape);
+      expect(drawShape(shape).svg.length).toBeGreaterThan(500);
+    }
+  });
+  it("every firework has its own silhouette (different drawings and different heights)", () => {
+    const shapes = ["candle", "firecracker", "roman_candle", "squib", "bengal_light", "rocket"];
+    const draws = shapes.map((s) => drawShape(s));
+    expect(new Set(draws.map((d) => d.svg)).size).toBe(shapes.length);
+    const tops = draws.map((d) => Math.round(d.anchors.top));
+    expect(new Set(tops).size).toBeGreaterThanOrEqual(5);
+    // the big Roman Candle stands taller than the little Squib
+    expect(-draws[2].anchors.top).toBeGreaterThan(-draws[3].anchors.top * 1.8);
+  });
+  it("a Roman Candle draws no wax: no dish, no drips, no flame (its svg shares no candle detail)", () => {
+    const wax = drawShape("candle").svg;
+    const roman = drawShape("roman_candle").svg;
+    expect(roman).not.toBe(wax);
+    expect(drawShape("roman_candle").anchors.top).toBeLessThan(drawShape("candle").anchors.top);
+  });
+  it("run 8 cast the Roman Candle, the Squib and the Bengal Light on a candle and a firecracker: they are now drawn by name", () => {
+    const withShape = (id: string, shape: string) => {
+      const book = clone(BOOK);
+      (book.cast.find((c) => c.id === id)!.look as any).shape = shape;
+      return book;
+    };
+    // page 38 panel 2: c_roman_candle (shape candle, name "The Roman Candle") equals the explicit roman_candle drawing
+    const p38 = pageOf(38);
+    const viaName = renderPage(p38.spec, BOOK, { planned: p38.planned! }).svg;
+    const explicit = renderPage(p38.spec, withShape("c_roman_candle", "roman_candle"), { planned: p38.planned! }).svg;
+    expect(viaName).toBe(explicit);
+    // ...and it differs from what a plainly named candle looks like
+    const plain = clone(BOOK);
+    plain.cast.find((c) => c.id === "c_roman_candle")!.name = "The Wax Candle";
+    plain.cast.find((c) => c.id === "c_roman_candle")!.description = "A wax candle.";
+    expect(renderPage(p38.spec, plain, { planned: p38.planned! }).svg).not.toBe(viaName);
+    // page 39 panel 5: the Squib and the Bengal Light no longer share a design
+    const p39 = pageOf(39);
+    const viaNames = renderPage(p39.spec, BOOK, { planned: p39.planned! }).svg;
+    const both = withShape("c_squib", "squib");
+    (both.cast.find((c) => c.id === "c_bengal_light")!.look as any).shape = "bengal_light";
+    expect(viaNames).toBe(renderPage(p39.spec, both, { planned: p39.planned! }).svg);
+    // the Squib, the Cracker and the Bengal Light are three different drawings
+    const same = clone(BOOK);
+    for (const id of ["c_squib", "c_bengal_light", "c_cracker"]) same.cast.find((c) => c.id === id)!.name = "A firecracker";
+    expect(renderPage(p39.spec, same, { planned: p39.planned! }).svg).not.toBe(viaNames);
+  });
+  it("a look that is not a stand-in is never renamed (a rocket named 'Roman Candle' stays a rocket)", () => {
+    const b = clone(BOOK);
+    const rocket = b.cast.find((c) => c.id === "c_rocket")!;
+    rocket.name = "The Roman Candle's cousin";
+    const p = pageOf(41);
+    expect(renderPage(p.spec, b, { planned: p.planned! }).svg.length).toBeGreaterThan(1000);
+    expect((rocket.look as any).shape).toBe("rocket");
+  });
+});
+
+describe("backward compatibility: every run-8 page still validates and renders", () => {
+  it("the compact copy holds all 46 judged pages", () => {
+    expect(PAGES.map((p) => p.page)).toEqual(Array.from({ length: 46 }, (_, i) => i + 1));
+  });
+  it("all 46 specs render with no error, a clean SVG and the current renderer version", () => {
+    const bad: string[] = [];
+    const hooks = new Map(PAGES.map((p) => [p.page, p.spec.page_turn_hook === true] as const));
+    for (const p of PAGES) {
+      const r = renderPage(clone(p.spec), BOOK, { ...(p.planned ? { planned: p.planned } : {}), previousPageHook: hooks.get(p.page - 1) === true });
+      for (const i of r.issues) if (i.severity === "error") bad.push(`p${p.page} ${i.code} ${i.path}`);
+      if (!r.svg.startsWith("<svg") || r.svg.includes("NaN") || r.svg.includes("undefined")) bad.push(`p${p.page} bad svg`);
+      if (r.renderer_version !== RENDERER_VERSION) bad.push(`p${p.page} version`);
+    }
+    expect(bad).toEqual([]);
+  }, 120_000);
+  it("rendering is deterministic", () => {
+    const p = pageOf(38);
+    const a = renderPage(clone(p.spec), BOOK, { planned: p.planned! }).svg_hash;
+    const b = renderPage(clone(p.spec), BOOK, { planned: p.planned! }).svg_hash;
+    expect(a).toBe(b);
+  });
+  it("the new fields are optional: an old cast and old variants validate unchanged", () => {
+    const p = pageOf(15);
+    expect(validatePage(p.spec, BOOK, p.planned).filter((i) => i.severity === "error")).toEqual([]);
+    expect(RENDERER_VERSION).not.toBe("manga-render/0.3.0");
+  });
+});
+
+describe("D7 story-state looks the continuity track needs (Happy Prince eyes and gold, Rose-tree bloom, gold leaf)", () => {
+  const prince = (): CharacterLook => castOf("c_prince").look;
+  const faceOf = (look: CharacterLook, eyes?: string, facing: "front" | "right" = "front") =>
+    rig.draw({ look, pose: "stand", expression: "neutral", facing, lineWidth: 0.2, seed: 3, ...(eyes ? { eyes: eyes as any } : {}) }, ctx()).svg;
+
+  it("a gilded statue with jewel eyes, one eye given away, both given away: three different faces", () => {
+    const gilded = { ...(prince() as any), material: "gold" } as CharacterLook;
+    const both = faceOf(gilded, "open");
+    const one = faceOf(gilded, "one_blind");
+    const none = faceOf(gilded, "blind");
+    expect(new Set([both, one, none]).size).toBe(3);
+  });
+  it("one_blind is in the closed vocabulary, validates on a page and renders with no error", () => {
+    expect(EYE_STATES as readonly string[]).toContain("one_blind");
+    const { result } = renderRun8(8, (s) => {
+      const f = s.panels[0].figures.find((x) => x.character === "c_prince");
+      if (f) f.variant = { material: "gold", eyes: "one_blind" } as FigureSpec["variant"];
+    });
+    expect(errorsOf(result.issues)).toEqual([]);
+  });
+  it("gilded and stripped statues differ (material gold vs stone), and the stripped one has no gold tone", () => {
+    const gilded = faceOf({ ...(prince() as any), material: "gold" } as CharacterLook, "open");
+    const stripped = faceOf({ ...(prince() as any), material: "stone" } as CharacterLook, "blind");
+    expect(gilded).not.toBe(stripped);
+  });
+  it("the new props exist, draw, and are named by their words in a beat", () => {
+    for (const prop of ["gold_leaf", "thorn", "axe", "firework", "sign"]) {
+      expect(PROPS as readonly string[]).toContain(prop);
+      expect(props.draw(prop as any, 0.4, ctx()).svg.length, prop).toBeGreaterThan(200);
+    }
+    expect(beatMentions("The swallow peels a leaf of gold from the statue.", "gold_leaf" as any)).toBe(true);
+    expect(beatMentions("The Giant swings a great axe.", "axe" as any)).toBe(true);
+    expect(beatMentions("Her breast against a thorn.", "thorn" as any)).toBe(true);
+  });
+  it("a gold leaf in a panel is drawn as a prop of its own (run 8 page 10 drew a diamond on a ledge)", () => {
+    const { details } = renderRun8(10, (s) => {
+      s.panels[0].props = [{ prop: "gold_leaf", slot: "center_right", depth: "fore" } as any];
+    });
+    expect(details[0].props.some((p) => p.prop === ("gold_leaf" as any))).toBe(true);
+  });
+  it("a figure can hold the new props, and an axe in a giant's hand stays inside its panel", () => {
+    const { details, result } = renderRun8(23, (s) => {
+      const f = s.panels[3].figures.find((x) => x.character === "c_giant");
+      if (f) f.holding = "axe" as any;
+    });
+    expect(errorsOf(result.issues)).toEqual([]);
+    const axe = details[3].props.find((p) => p.prop === ("axe" as any));
+    expect(axe).toBeDefined();
+    expect(inter(axe!.box, details[3].bbox) / Math.max(1, axe!.box.w * axe!.box.h)).toBeGreaterThanOrEqual(0.85);
+  });
+  it("the page vocabulary the model sees names the story-state fields", async () => {
+    const mod = await import("../../../apps/agent-worker/src/goals/vocabulary.js");
+    const page = mod.pageVocabulary() as Record<string, readonly string[]>;
+    expect(page.eye_states).toContain("one_blind");
+    expect(page.plant_blooms).toEqual(["full", "buds", "single", "bare"]);
+    const look = mod.lookVocabulary() as { look_kinds: { plant: Record<string, unknown> } };
+    expect(Object.keys(look.look_kinds.plant)).toContain("bloom");
+    expect((mod.lookVocabulary() as any).environments).toEqual(expect.arrayContaining(["moor", "ditch", "forge"]));
+  });
 });

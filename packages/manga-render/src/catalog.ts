@@ -70,8 +70,8 @@ export const FIELD_GUIDE: Record<string, string> = {
   "figure.on":
     '{"target": "<cast id in this panel>", "part": "feet" | "shoulder" | "hand" | "head"} stands or perches the figure ON another figure at the target\'s scale (a swallow on the prince\'s shoulder). {"target": "<feature of this location>"} stages it on a feature: statue_column (stand on top), bed (lie in it), table (sit or stand at it), fountain (on the rim), bridge (on the deck). Without "on", a statue stands on its location\'s column in EVERY shot (never at street level; lying or falling statues excepted), a lying figure lies in the location\'s bed, and a small creature sharing a panel with a statue on its column is up there with it: at its feet in establishing/wide/full shots, on its shoulder in medium/close shots, or on the part the panel\'s beat names ("between his feet", "on his shoulder"). {"target": "<statue id>", "part": "feet"} sits at the statue\'s feet ON the column top in any shot.',
   "figure.variant":
-    '{"eyes"?: "open" | "closed" | "blind" | "dead", "material"?: flesh|stone|gold|bronze, "outfit_tone"?: <tone>, "hair_tone"?: <tone>, "tone"?: <tone>} changes how this character looks in THIS panel when the story has changed them (the Happy Prince stripped of his gold: {"material": "stone", "eyes": "blind"}; a bird that has died: {"eyes": "dead"}). Unset fields keep the cast look. People take eyes, material, outfit_tone, hair_tone; creatures, objects and plants take eyes and tone; spirits, crowds and emblems take eyes only. Repeat the variant in every later panel where the change holds.',
-  "figure.variant.eyes": 'eye state for this appearance: "open" (default), "closed" (asleep, eyes shut), "blind" (empty sockets, no iris: a statue whose gem eyes are gone), "dead" (closed-line or crossed eyes). Use "dead" only for death; pain and sleep are expressions.',
+    '{"eyes"?: "open" | "closed" | "blind" | "one_blind" | "dead", "bloom"?: "full" | "buds" | "single" | "bare", "material"?: flesh|stone|gold|bronze, "outfit_tone"?: <tone>, "hair_tone"?: <tone>, "tone"?: <tone>} changes how this character looks in THIS panel when the story has changed them (the Happy Prince stripped of his gold: {"material": "stone", "eyes": "blind"}; a bird that has died: {"eyes": "dead"}). Unset fields keep the cast look. People take eyes, material, outfit_tone, hair_tone; creatures and objects take eyes and tone; plants take eyes, tone and bloom (a rose-tree that bears no roses this year: {"bloom": "bare"}; the one marvellous rose: {"bloom": "single"}; shut buds: {"bloom": "buds"}); spirits, crowds and emblems take eyes only. Repeat the variant in every later panel where the change holds.',
+  "figure.variant.eyes": 'eye state for this appearance: "open" (default), "closed" (asleep, eyes shut), "blind" (empty sockets, no iris: a statue whose gem eyes are gone), "one_blind" (ONE socket empty and one eye still there: a statue after the first of two gems is given away), "dead" (closed-line or crossed eyes). Use "dead" only for death; pain and sleep are expressions.',
   "figure.holding": "a prop in the figure's hand (or beak). Do not also list it in the panel's props: it is drawn once, in the hand. A figure posed \"carry\" (or \"hold\") with no holding takes the panel's first carriable prop into its arms, and the beat's subject takes a prop the beat says it goes \"with\". Wheelbarrows and other big things are props beside a figure, not held.",
   "figure.holding_tone": "tone of the held prop, so key objects stay distinct across pages (a ruby \"black\", a sapphire \"mid\").",
   "prop.tone": "tone variant of a prop on the ground or in an insert (ruby vs sapphire).",
@@ -173,7 +173,7 @@ export function catalog(): Catalog {
     animal: { species: C.ANIMAL_SPECIES, tone: C.TONES },
     insect: { species: C.INSECT_SPECIES, tone: C.TONES },
     object: { shape: C.OBJECT_SHAPES, tone: C.TONES, face: "boolean" },
-    plant: { species: C.PLANT_SPECIES, tone: C.TONES, face: "boolean" },
+    plant: { species: C.PLANT_SPECIES, tone: C.TONES, face: "boolean", bloom: C.PLANT_BLOOMS },
     spirit: { element: C.SPIRIT_TYPES },
     crowd: { crowd: C.CROWD_TYPES, size: ["few", "many"] },
     emblem: { emblem: C.EMBLEMS },
@@ -235,6 +235,7 @@ export function catalog(): Catalog {
       perch_parts: C.PERCH_PARTS,
       staging_features: STAGING_FEATURES,
       eye_states: C.EYE_STATES,
+      plant_blooms: C.PLANT_BLOOMS,
       materials: C.MATERIALS,
     },
     looks,

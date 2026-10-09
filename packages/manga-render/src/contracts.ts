@@ -277,6 +277,9 @@ export const OBJECT_SHAPES = [
   "candle",
   "lamp",
   "firecracker",
+  "roman_candle",
+  "squib",
+  "bengal_light",
   "coin",
   "book",
   "clock",
@@ -464,6 +467,11 @@ export const PROPS = [
   "feather",
   "bell",
   "flag",
+  "gold_leaf",
+  "thorn",
+  "axe",
+  "firework",
+  "sign",
 ] as const;
 export type PropId = (typeof PROPS)[number];
 
@@ -551,8 +559,11 @@ export interface StagingAnchor {
   part?: PerchPart;
 }
 
-/** Eye state for one appearance (a statue that has given its sapphires is "blind"). */
-export const EYE_STATES = ["open", "closed", "blind", "dead"] as const;
+/**
+ * Eye state for one appearance (a statue that has given its sapphires is "blind";
+ * "one_blind" is the half-way state: one eye given, the other still there).
+ */
+export const EYE_STATES = ["open", "closed", "blind", "dead", "one_blind"] as const;
 export type EyeState = (typeof EYE_STATES)[number];
 
 /**

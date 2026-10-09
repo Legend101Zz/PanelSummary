@@ -23,7 +23,7 @@ export function lookVocabulary() {
       animal: { species: C.ANIMAL_SPECIES, tone: C.TONES },
       insect: { species: C.INSECT_SPECIES, tone: C.TONES },
       object: { shape: C.OBJECT_SHAPES, tone: C.TONES, face: "boolean" },
-      plant: { species: C.PLANT_SPECIES, tone: C.TONES, face: "boolean" },
+      plant: { species: C.PLANT_SPECIES, tone: C.TONES, face: "boolean", bloom: `${C.PLANT_BLOOMS.join(" | ")} (optional: how much bloom the plant usually carries)` },
       spirit: { element: C.SPIRIT_TYPES },
       crowd: { crowd: C.CROWD_TYPES, size: ["few", "many"] },
       emblem: { emblem: C.EMBLEMS },
@@ -52,5 +52,9 @@ export function pageVocabulary() {
     fidelity: C.FIDELITY,
     perch_parts: C.PERCH_PARTS,
     environment_features: C.ENV_FEATURES,
+    // story-state looks for figure.variant (see the catalog field "figure.variant")
+    eye_states: C.EYE_STATES,
+    plant_blooms: C.PLANT_BLOOMS,
+    materials: C.MATERIALS,
   };
 }

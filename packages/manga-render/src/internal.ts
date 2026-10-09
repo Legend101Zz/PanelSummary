@@ -95,7 +95,7 @@ export interface FigureRequest {
    * (a statue without its gem eyes), "dead" = closed-line or X eyes, no pupils.
    * Material/tone variants arrive already merged into `look` by the composer.
    */
-  eyes?: "open" | "closed" | "blind" | "dead";
+  eyes?: "open" | "closed" | "blind" | "dead" | "one_blind";
 }
 
 export interface RigModule {

@@ -63,7 +63,7 @@ const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather"
 const FIGURE_KEYS = ["character", "variant", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
 const VARIANT_KEYS = ["eyes", "bloom", "material", "outfit_tone", "hair_tone", "tone"];
 /** Props too big to hold in a hand: draw them as a prop beside the figure. */
-const TOO_BIG_TO_HOLD = new Set(["wheelbarrow", "ballot_box", "coins_pile"]);
+const TOO_BIG_TO_HOLD = new Set(["wheelbarrow", "ballot_box", "coins_pile", "sign"]);
 const PROP_KEYS = ["prop", "slot", "depth", "tone"];
 const TEXT_KEYS = ["kind", "speaker", "about", "text", "fidelity", "source"];
 const ON_KEYS = ["target", "part"];

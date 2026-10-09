@@ -503,6 +503,8 @@ export function withEyeState(x: ExprSpec, eyes: Ink["eyes"]): ExprSpec {
   if (!eyes || eyes === "open") return x;
   if (eyes === "closed") return { ...x, eye: "closed", tears: false };
   if (eyes === "blind") return { ...x, eye: "blind", shine: undefined };
+  // one eye given away: the other eye keeps its look (drawFace blanks the first one)
+  if (eyes === "one_blind") return x;
   return { ...x, eye: "dead", brow: [-0.04, 0.05, 0.01], browAsym: 0, wobble: false, tears: false, blush: false, bags: false };
 }
 
@@ -560,7 +562,10 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
     const cx = side ? 0.2 * R : 0;
     under += line(pen.curve([v(cx - 0.3 * R, 1.22 * R), v(cx, 1.3 * R), v(cx + 0.3 * R, 1.22 * R)], false), ink.dw * 0.8);
   }
-  for (const f of frames) under += drawEye(pen, g, f, x, pal, ink, gem);
+  frames.forEach((f, i) => {
+    const xi: ExprSpec = ink.eyes === "one_blind" && i === 0 ? { ...x, eye: "blind", shine: undefined } : x;
+    under += drawEye(pen, g, f, xi, pal, ink, gem);
+  });
   if (x.blush && !reduced) {
     for (const f of frames) {
       const bc = v(f.c.x + f.out * f.w * 0.3, f.c.y + g.eyeH + 0.2 * R);

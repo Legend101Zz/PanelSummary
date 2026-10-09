@@ -424,7 +424,7 @@ function ellipseMark2(c: Point, rx: number, ry: number): string {
 export function withEyes(x: ExprLook, eyes: Pen["eyes"]): ExprLook {
   if (!eyes || eyes === "open") return x;
   if (eyes === "closed") return { ...x, eye: "closed", sweat: false };
-  if (eyes === "blind") return { ...x, eye: "blank", pin: false };
+  if (eyes === "blind" || eyes === "one_blind") return { ...x, eye: "blank", pin: false };
   return { ...x, eye: "dead", tilt: -0.25, raise: -0.1, asym: 0, tears: false, sweat: false, blush: false };
 }
 
