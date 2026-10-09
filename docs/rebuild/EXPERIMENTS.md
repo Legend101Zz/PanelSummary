@@ -163,7 +163,7 @@ page as 0.
 | M3 / M3, CI | 14 | 1 | 3 | 3.20 | 3.45 | 3.46 | 2.95 | 3.36 | 940 s / 1,747 s | $0.60 |
 | M3 / Flash, local | 16 | 0 | 2 | 3.40 | 3.40 | 3.31 | 3.04 | 3.08 | 954 s / 1,363 s | $0.53 |
 | Flash / Flash, CI | 21 | 0 | 0 | 3.40 | 3.40 | 3.29 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
-| Flash / Flash, CI, new code | 22 | 0 | judging pending | | | | | | 1,361 s / 2,094 s | $0.87 |
+| Flash / Flash, CI, new code | 22 | 0 | 2 | 3.42 | 3.42 | 3.33 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
 
 Findings: Flash plans in 34 to 69 s (M3: 16 to 235 s). Flash pages: median 61 s per page, 18 of
 21 accepted at the first submit. Per-page legibility is about 0.2 lower with Flash pages in both

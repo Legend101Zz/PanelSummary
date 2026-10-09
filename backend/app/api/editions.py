@@ -16,17 +16,9 @@ ACTIVE = ("queued", "understanding", "planning", "drawing")
 
 
 def policy_snapshot() -> dict:
-    s = get_settings()
+    """The generation policy recorded on a new edition: per-goal model, thinking and retry thinking (D13)."""
     return {
-        "understanding_model": s.understanding_model,
-        "understanding_thinking": s.understanding_thinking,
-        "plan_model": s.plan_model,
-        "plan_thinking": s.plan_thinking,
-        "page_model": s.page_model,
-        "page_thinking": s.page_thinking,
-        "page_vision": s.page_vision,
-        "page_attempts": s.page_attempts,
-        "retry_thinking": s.retry_thinking,
+        **get_settings().policy_fields(),
         "harness": "apps/agent-worker (Pi sealed session) -> MiniMax",
         "image_models": "none",
     }

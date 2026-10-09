@@ -37,10 +37,10 @@ at least as good as M3 on judged quality and on validation. M3 stays where Flash
 | M3 / M3, CI | 14 | 1 | 3 | 3.20 | 3.45 | 3.46 | 3.44 | 2.95 | 3.36 | 940 s / 1,747 s | $0.60 |
 | M3 / Flash, local | 16 | 0 | 2 | 3.40 | 3.40 | 3.31 | 3.38 | 3.04 | 3.08 | 954 s / 1,363 s | $0.53 |
 | Flash / Flash, CI | 21 | 0 | 0 | 3.40 | 3.40 | 3.29 | 3.29 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
-| Flash / Flash, CI, new code | 22 | 0 (1 page needed its retry) | judging pending | | | | | | | 1,361 s / 2,094 s | $0.87 |
+| Flash / Flash, CI, new code | 22 | 0 (1 page needed its retry) | 2 | 3.42 | 3.42 | 3.33 | 3.35 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
 
-Judge reports: `launch/<dir>/aggregate.md` for each directory above. The last arm had no judge
-report when this file was written. Timings: the journey's observed seconds from Generate. The
+Judge reports: `launch/<dir>/aggregate.md` for each directory above. The last arm was judged after this file was first written;
+its row shows that report (continuity rose from 2.87 to 3.11 with the T1 state checks). Timings: the journey's observed seconds from Generate. The
 edition's own clock gave 1,358 s and 2,066 s for the last arm. The load average of the CI runs is not available to this track. The local M3 / Flash run started at load 11.65 (a shared and
 busy Mac), so its times are the weakest numbers here.
 
