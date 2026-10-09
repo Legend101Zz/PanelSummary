@@ -11,12 +11,13 @@ import type {
 } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
-import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { candidateParameters, dataBlock, FIX_BEFORE_SUBMIT, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
 import { quoteSpeakerIssues } from "./attribution.js";
 import { claimEventIssues, claimOrderIssues } from "./claim-shown.js";
+import { applyRepairOnce, isRepairOnce, repairOnceIssues } from "./repair-once.js";
 import { crowdingAdvice, explainAspect, RepairTracker } from "./repair-hints.js";
 import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, unitOrder, type ExpectedLook } from "./continuity.js";
 
@@ -232,17 +233,12 @@ export function claimMapIssues(spec: MangaPageSpec, plannedClaims: readonly stri
   return issues;
 }
 
-/** Spoken words belong in balloons; conversation keeps its sides (the 180-degree rule). */
+/** Conversation keeps its sides (the 180-degree rule). Spoken words in narration: see repair-once.ts. */
 export function stagingIssues(spec: MangaPageSpec): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const slotIndex: Record<string, number> = { left: 0, center_left: 1, center: 2, center_right: 3, right: 4 };
   let lastOrder: Map<string, number> | undefined;
   (spec.panels ?? []).forEach((panel) => {
-    (panel.text ?? []).forEach((text, index) => {
-      if ((text.kind === "narration" || text.kind === "caption") && /["\u201c][^"\u201d]{12,}["\u201d]/.test(text.text ?? "")) {
-        issues.push({ code: "SPEECH_IN_NARRATION", severity: "warning", path: `panel ${panel.id} text ${index}`, message: "this box quotes someone speaking; put spoken words in a speech balloon from the drawn speaker so readers see who says them." });
-      }
-    });
     const figs = (panel.figures ?? []).filter((f) => f && typeof f.character === "string" && f.slot in slotIndex);
     const order = new Map(figs.map((f) => [f.character, slotIndex[f.slot]] as [string, number]));
     if (lastOrder) {
@@ -373,6 +369,8 @@ export const mangaPageGoal: GoalDefinition<Input> = {
     let lastRender: { spec: MangaPageSpec; render: RenderResult } | undefined;
     let previews = 0;
     const tracker = new RepairTracker();
+    // repair_once (repair-once.ts): the chance to fix these issues is used by the first submit that reaches the full check.
+    let repairChance = true;
 
     const check = (value: unknown): { issues: ValidationIssue[]; render?: RenderResult } => {
       const structural = validatePage(value, bookRefs, input.page);
@@ -400,6 +398,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
         ...claimOrderIssues(spec, input.claims, input.order),
         ...claimEventIssues(spec, input.claims),
+        ...repairOnceIssues(spec, input),
       ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;
         if (seen.has(key)) return false;
@@ -433,9 +432,13 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         if (previews > MAX_PREVIEWS) return { text: `Preview limit (${MAX_PREVIEWS}) reached. Fix the known issues and submit.`, note: "preview_limit" };
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `PREVIEW FAILED: ${parsed.message}`, note: "parse_error" };
-        const { issues, render } = check(parsed.value);
+        const checked = check(parsed.value);
+        const render = checked.render;
+        // Until the chance is used, repair_once issues would reject the first submit: show them so.
+        const issues = applyRepairOnce(checked.issues, repairChance);
+        const fixFirst = issues.filter((issue) => issue.severity === "error" && issue.message.startsWith(FIX_BEFORE_SUBMIT)).length;
         const parts = [
-          errorsOf(issues).length ? `${errorsOf(issues).length} error(s) would block submission:` : "No blocking errors.",
+          errorsOf(issues).length ? `${errorsOf(issues).length} error(s) would block submission${fixFirst ? ` (${fixFirst} of them marked FIX BEFORE SUBMIT: the first submit is rejected for these, once)` : ""}:` : "No blocking errors.",
           formatIssues(issues),
         ];
         if (errorsOf(issues).length) parts.push(TERSE_REPAIR);
@@ -453,8 +456,15 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       async execute(args: Record<string, unknown>) {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
-        const { issues, render } = check(parsed.value);
-        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
+        const checked = check(parsed.value);
+        const render = checked.render;
+        // The first submit that passes the structural gate spends the repair_once chance, rejected or not.
+        const chance = repairChance && Boolean(render);
+        const issues = applyRepairOnce(checked.issues, chance);
+        if (render) repairChance = false;
+        const once = chance ? checked.issues.filter(isRepairOnce).map((issue) => issue.code) : [];
+        const onceNote = once.length ? ` repair_once=${[...new Set(once)].join(",")}` : "";
+        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${onceNote}` };
         const spec = parsed.value as MangaPageSpec;
         lastRender = { spec, render: { ...render, issues } };
         const warnings = warningsOf(issues);

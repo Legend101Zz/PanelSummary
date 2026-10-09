@@ -311,10 +311,15 @@ describe("MANGA_PAGE tools", { timeout: 60_000 }, () => {
   it("accepts a valid spec and finalizes with the exact spec and its SVG", async () => {
     const prepared = prepare();
     const preview = await call(prepared, "preview_page", valid());
-    expect(preview.text).toMatch(/^No blocking errors\./);
+    // The fixture page has one repair_once issue (CLAIM_TEXT_THIN): the preview says so, the first submit is its one chance.
+    expect(preview.text).toMatch(/^1 error\(s\) would block submission \(1 of them marked FIX BEFORE SUBMIT/);
     expect(preview.text).toContain("Layout:");
+    const once = await call(prepared, "submit_page", valid());
+    expect(once.accepted).toBeUndefined();
+    expect(once.text).toContain("[FIX BEFORE SUBMIT CLAIM_TEXT_THIN]");
     const submit = await call(prepared, "submit_page", valid());
     expect(submit.text).toMatch(/^ACCEPTED/);
+    expect(submit.text).toContain("[WARNING CLAIM_TEXT_THIN]");
     expect(submit.accepted).toEqual(valid());
     const result = prepared.finalize(submit.accepted!) as unknown as { spec: MangaPageSpec; render: { svg: string; panels: unknown[] } };
     expect(result.spec).toEqual(valid());

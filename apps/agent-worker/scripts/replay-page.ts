@@ -4,6 +4,7 @@
  *   MINIMAX_API_KEY=... tsx scripts/replay-page.ts --export DIR --page 12 --out DIR2 \
  *     --model MiniMax-M3 --thinking off --label before-m3-off
  *   tsx scripts/replay-page.ts --export DIR --stage plan --out DIR2 ...
+ *   tsx scripts/replay-page.ts --export DIR --page 12 --check FILE.page.json   (no model: list the repair_once codes of a saved page)
  *
  * DIR holds understanding.json, plan.json and units.json (the book export). Writes
  * <label>.trace.json (receipt fields), <label>.calls.jsonl (every tool call: a summary of the
@@ -14,9 +15,13 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path";
 
 import { ALLOWED_MODELS, type AllowedModel, type ThinkingLevel } from "@panelsummary/agent-runtime";
+import { renderPage } from "@panelsummary/manga-render";
+import type { MangaPageSpec } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
 import { GOALS } from "../src/goals/index.js";
+import { mangaPageGoal } from "../src/goals/manga-page.js";
+import { isRepairOnce, repairOnceIssues } from "../src/goals/repair-once.js";
 import type { GoalDefinition } from "../src/goals/types.js";
 import { executeDefinition } from "../src/run-goal.js";
 
@@ -28,7 +33,7 @@ function arg(name: string, fallback?: string): string | undefined {
 }
 
 const dir = arg("export");
-const out = arg("out");
+const out = arg("out") ?? (arg("check") ? "." : undefined);
 if (!dir || !out) {
   console.error("usage: --export DIR --out DIR2 [--stage page|plan] [--page N] [--model M] [--thinking T] [--label L]");
   process.exit(2);
@@ -76,7 +81,22 @@ function logged(goal: GoalDefinition<unknown>): GoalDefinition<unknown> {
   } as GoalDefinition<unknown>;
 }
 
+/** repair_once codes that a saved page would raise (the checks of the page goal, no model). */
+function repairOnceCodes(spec: MangaPageSpec): string[] {
+  const planned = plan.pages.find((p) => p.page_number === pageNumber)!;
+  const byId = new Map(units.map((u) => [u.id, u]));
+  const input = mangaPageGoal.parseInput({ book: { title: understanding.title, author: understanding.author }, understanding, plan, page_number: pageNumber, units: planned.units.map((id) => byId.get(id)).filter(Boolean) });
+  const render = renderPage(spec, { cast: input.cast, locations: input.locations }, { idPrefix: `pg${pageNumber}-` });
+  return [...new Set([...repairOnceIssues(spec, input), ...render.issues].filter(isRepairOnce).map((i) => i.code))];
+}
+
 async function main() {
+  const checkFile = arg("check");
+  if (checkFile) {
+    const saved = JSON.parse(readFileSync(checkFile, "utf8")) as { spec: MangaPageSpec };
+    console.log(JSON.stringify({ check: checkFile, page: pageNumber, repair_once_codes: repairOnceCodes(saved.spec) }));
+    return;
+  }
   const common = { model, thinking, vision: false };
   let outcome;
   if (stage === "plan") {
@@ -107,6 +127,8 @@ async function main() {
   writeFileSync(path.join(out, `${label}.trace.json`), JSON.stringify(summary, null, 2));
   if (outcome.state === "SUCCEEDED" && stage === "page") {
     const result = outcome.result as unknown as { spec: unknown; render: { svg: string; issues: unknown[] } };
+    (summary as Record<string, unknown>).repair_once_on_final = repairOnceCodes(result.spec as MangaPageSpec);
+    writeFileSync(path.join(out, `${label}.trace.json`), JSON.stringify(summary, null, 2));
     writeFileSync(path.join(out, `${label}.page.json`), JSON.stringify({ spec: result.spec, issues: result.render.issues }, null, 2));
     writeFileSync(path.join(out, `${label}.svg`), result.render.svg);
     writeFileSync(path.join(out, `${label}.png`), svgToPng(result.render.svg, { width: 1000 }));
