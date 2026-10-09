@@ -60,6 +60,10 @@ async def job_view(job_id: str | None) -> dict | None:
     }
 
 
+def _iso(value) -> str:
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
 def edition_view(edition: Edition) -> dict:
     return {
         "id": str(edition.id),
@@ -75,6 +79,8 @@ def edition_view(edition: Edition) -> dict:
         "job_id": edition.job_id,
         "created_at": edition.created_at.isoformat(),
         "finished_at": edition.finished_at.isoformat() if edition.finished_at else None,
+        # Milestones from the job runner (ISO strings; a key is absent until it happened).
+        "timings": {key: _iso(value) for key, value in (edition.timings or {}).items()},
     }
 
 

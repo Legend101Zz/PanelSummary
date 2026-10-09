@@ -103,6 +103,8 @@ class Edition(Document):
     # (failed, timed out or cancelled): their tokens were spent, so they count.
     stage_failures: list[dict[str, Any]] = Field(default_factory=list)
     error: Optional[str] = None
+    # Milestones the job runner stamps (generate_started_at, drawing_started_at, first_page_at).
+    timings: dict[str, datetime] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
     finished_at: Optional[datetime] = None
