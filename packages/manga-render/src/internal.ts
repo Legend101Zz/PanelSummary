@@ -120,6 +120,8 @@ export interface EnvironmentRequest {
   weather: "clear" | "rain" | "snow" | "wind" | "storm" | "fog";
   lineWidth: number;
   seed: number;
+  /** Tree height factor (1 = normal): a giant in the panel makes the trees shorter than he is. */
+  treeScale?: number;
 }
 
 export interface EnvironmentDrawing {

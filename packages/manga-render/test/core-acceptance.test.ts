@@ -67,8 +67,8 @@ const compose = (p: PanelSpec, box = W, book = BIG, pageVariants?: Record<string
   });
 
 describe("renderer version", () => {
-  it("is 0.4.0", () => {
-    expect(RENDERER_VERSION).toBe("manga-render/0.4.0");
+  it("is 0.5.0", () => {
+    expect(RENDERER_VERSION).toBe("manga-render/0.5.0");
   });
 });
 
@@ -564,7 +564,7 @@ describe("sfx by their source; titles, dashes and name tags", () => {
 describe("catalog for pass 3", () => {
   it("documents variants, eye states, fireworks and the new errors", () => {
     const c = catalog();
-    expect(c.renderer_version).toBe("manga-render/0.4.0");
+    expect(c.renderer_version).toBe("manga-render/0.5.0");
     expect(c.vocabularies.eye_states).toEqual(["open", "closed", "blind", "dead", "one_blind"]);
     expect(c.vocabularies.plant_blooms).toEqual(["full", "buds", "single", "bare"]);
     expect(c.vocabularies.fx).toContain("fireworks");

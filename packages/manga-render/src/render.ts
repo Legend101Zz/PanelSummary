@@ -57,7 +57,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.4.0";
+export const RENDERER_VERSION = "manga-render/0.5.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -296,6 +296,7 @@ export function renderPageDetailed(
       bodies: c.figures.map((f) => f.body),
       obstacles: c.obstacles,
       keepOut: c.keepOut,
+      props: c.props.map((pr) => ({ prop: pr.prop, box: pr.box, ...(pr.heldBy ? { heldBy: pr.heldBy } : {}) })),
       ...(c.sfxSource ? { sfxSource: c.sfxSource } : {}),
       offPanel,
       rtl,
