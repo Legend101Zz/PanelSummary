@@ -108,6 +108,26 @@ describe("D2 blocker: a held prop is never drawn outside its panel (run 8 pages 
   }, 120_000);
 });
 
+describe("review: held-prop warning and giant share in ground shots", () => {
+  it("a held prop drawn in front of the figure is reported with HELD_PROP_OFF_FRAME (pages 10, 19, 33)", () => {
+    const want: Record<number, string[]> = { 10: ["panel p2"], 19: ["panel p1"], 33: ["panel p2", "panel p4"] };
+    for (const [n, paths] of Object.entries(want)) {
+      const { result } = renderRun8(Number(n));
+      const got = result.issues.filter((i: ValidationIssue) => i.code === "HELD_PROP_OFF_FRAME");
+      expect(got.map((i: ValidationIssue) => i.path), `page ${n}`).toEqual(paths);
+      expect(got.every((i: ValidationIssue) => i.severity === "warning")).toBe(true);
+    }
+  });
+  it("in an establishing shot the giant counts at 68% of his height, so he is drawn taller than the shot band (pages 21 and 23, panel p1)", () => {
+    // with a share of 1.0 these figures are about 92 and 107 units high
+    for (const [n, min] of [[21, 120], [23, 140]] as const) {
+      const { details } = renderRun8(n);
+      const g = details.find((x) => x.id === "p1")!.figures.find((f) => f.character === "c_giant")!;
+      expect(g.body.h, `page ${n}`).toBeGreaterThanOrEqual(min);
+    }
+  });
+});
+
 describe("D3 blocker: height giant is a giant, in every panel (run 8 pages 21 to 25)", () => {
   const humanLook = (height: string): CharacterLook => ({ ...(castOf("c_giant").look as any), height });
   const nominal = (height: string) => rig.nominalHeight(humanLook(height));
