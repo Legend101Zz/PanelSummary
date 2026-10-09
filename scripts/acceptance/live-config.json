@@ -1,10 +1,1 @@
-{
-  "book": "happy-prince-two-tales",
-  "understanding_model": "MiniMax-M3",
-  "understanding_thinking": "low",
-  "plan_model": "MiniMax-M3",
-  "plan_thinking": "off",
-  "page_model": "MiniMax-M3",
-  "page_thinking": "off",
-  "retry_thinking": "low"
-}
+{"book": "happy-prince-two-tales", "understanding_model": "MiniMax-M3", "understanding_thinking": "low", "plan_model": "MiniMax-M3.1-Flash-Preview", "plan_thinking": "off", "page_model": "MiniMax-M3.1-Flash-Preview", "page_thinking": "off", "retry_thinking": "medium"}
