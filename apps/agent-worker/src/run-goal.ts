@@ -1,5 +1,5 @@
 /** Run one production goal through the sealed Pi harness. Used by the HTTP server and the experiment CLI. */
-import { runGoal, GoalRunError, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@panelsummary/agent-runtime";
+import { runGoal, GoalRunError, VISION_MODELS, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@panelsummary/agent-runtime";
 
 import { GOALS, InputError, type ExperimentalGoalType, type GoalType } from "./goals/index.js";
 import type { GoalDefinition } from "./goals/types.js";
@@ -16,7 +16,19 @@ export interface GoalRequest<T extends string = GoalType> {
 
 export type GoalOutcome =
   | { state: "SUCCEEDED"; result: JsonValue; trace: GoalTrace }
-  | { state: "FAILED" | "CANCELLED"; error: { code: string; message: string }; trace?: GoalTrace };
+  | { state: "FAILED" | "CANCELLED"; error: GoalError; trace?: GoalTrace };
+
+/**
+ * code is PROVIDER_LIMIT, PROVIDER_UNAVAILABLE or PROVIDER_AUTH when the provider refused the call;
+ * the provider_* fields then carry its error type, HTTP status and message (no key, no headers).
+ */
+export interface GoalError {
+  code: string;
+  message: string;
+  provider_type?: string;
+  provider_message?: string;
+  http_status?: number;
+}
 
 export async function executeGoal(request: GoalRequest, signal?: AbortSignal): Promise<GoalOutcome> {
   const goal = GOALS[request.goal_type];
@@ -38,7 +50,7 @@ export async function executeDefinition(
   }
   const model = request.model ?? goal.defaults.model;
   const thinking = request.thinking ?? goal.defaults.thinking;
-  const vision = Boolean(request.vision) && model === "MiniMax-M3";
+  const vision = Boolean(request.vision) && VISION_MODELS.includes(model);
   const prepared = goal.prepare(input, { model, thinking, vision });
   const skill = await loadSkill(prepared.skillName);
   try {
@@ -61,6 +73,14 @@ export async function executeDefinition(
     const trace = error instanceof GoalRunError ? error.trace : undefined;
     const message = error instanceof Error ? error.message : String(error);
     const cancelled = signal?.aborted || trace?.stop_reason === "cancelled";
+    const provider = !cancelled && trace?.stop_reason === "provider_error" ? trace.provider_error : undefined;
+    if (provider) {
+      return {
+        state: "FAILED",
+        error: { code: provider.code, message, provider_type: provider.type, provider_message: provider.message, ...(provider.http_status !== undefined ? { http_status: provider.http_status } : {}) },
+        trace,
+      };
+    }
     return { state: cancelled ? "CANCELLED" : "FAILED", error: { code: trace?.stop_reason?.toUpperCase() ?? "RUNTIME_ERROR", message }, trace };
   }
 }

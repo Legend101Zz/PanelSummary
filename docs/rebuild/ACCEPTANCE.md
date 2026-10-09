@@ -281,3 +281,42 @@ Remaining blockers, by kind (not fixed in this rebuild):
 
 Nonfiction (*Civil Disobedience*, run alongside run 3): 29/29 pages, 31 calls, $0.73, not
 judged. Acceptance spend recorded in total: $10.46 (Pi catalog estimates, not a bill).
+
+## v0.1 launch runs (2026-10-09)
+
+The launch session (tracker #17) judged every run with a panel of 3 Sonnet judges for each page (same
+rubric and prompt as runs 1-8; `scripts/acceptance/judge/`). The panel is a different instrument, so
+run 8 was judged again by it. "Mean" counts a failed page as 0; "accepted" is the mean over accepted
+pages. "Pages" counts every planned page, failed ones included. Times are the journey's observed seconds from
+Generate (final journey: the walk log). Costs are Pi catalog estimates, not a bill (Flash has no published price: M3 rates are used).
+Reports: `Book-Reel-scratch/launch/<run>/aggregate.md`.
+
+| Run | Code | Book | Models (understanding / plan / pages) | Pages | Failed | Ship bar | Mean | Accepted | Continuity | Fidelity | Page 1 / done | Cost |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Run 8, panel re-judge | 7c315cf (Sept.) | 68 pp | M3 / M3 / M3 | 46 | 0 | 7 | 3.47 | 3.47 | 2.88 | 3.34 | 1,823 s / 2,910 s | $1.65 |
+| Phase 0 baseline | main fd5a326 | 26 pp | M3 / M3 / M3 | 16 | 1 | 2 | 3.31 | 3.53 | 3.04 | 3.29 | 795 s / 2,115 s | $0.81 |
+| CI live check | 7312d4a | 26 pp | M3 / M3 / M3 | 14 | 1 | 3 | 3.20 | 3.45 | 2.95 | 3.36 | 940 s / 1,747 s | $0.60 |
+| A/B | 217d4e6 | 26 pp | M3 / M3 / Flash | 16 | 0 | 2 | 3.40 | 3.40 | 3.04 | 3.08 | 954 s / 1,363 s | $0.53 |
+| A/B | 217d4e6 | 26 pp | M3 / Flash / Flash | 21 | 0 | 0 | 3.40 | 3.40 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
+| Gate 1 | a53378e | 26 pp | M3 / Flash / Flash | 22 | 0 | 2 | 3.42 | 3.42 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
+| Understanding A/B | release + #33 | 26 pp | M3 / Flash / Flash | 22 | 0 | 6 | 3.53 | 3.53 | 3.05 | 3.33 | 945 s / 1,337 s | $0.65 |
+| Understanding A/B | release + #33 | 26 pp | Flash / Flash / Flash | 22 | 0 | 4 | 3.49 | 3.49 | 2.94 | 3.38 | 427 s / 795 s | $0.59 |
+| Gate 2 (cut by the account limit) | d1a2286 | 68 pp | Flash / Flash / Flash | 46 of 56 drawn | 10 | 7 | 3.52 (drawn) | 3.52 | 2.94 | 3.57 | 382 s / 1,231 s | $1.39 |
+| Gate 2, complete rerun | d19dca9 | 68 pp | Flash / Flash / Flash | 60 | 0 | 12 | 3.54 | 3.54 | 3.02 | 3.51 | 333 s / 986 s | $1.72 |
+| Final journey (untuned PDF, fresh database, headed browser) | 0fa10d7 | Andersen, 22 pp | Flash / Flash / Flash | 18 | 0 | 3 | 3.53 | 3.53 | 2.76 | 3.48 | 250 s / 439 s | $0.46 |
+
+What the launch changed, and what the runs showed:
+
+- The statue guard was wrong since the rebuild: it flagged anyone whose text mentions a statue, and
+  the model then drew the Mayor, the Councillors, the Charity Children or the match-girl in stone
+  (run 6 included). Fixed in #33. It was also the reason Flash first failed the understanding.
+- Page 12 of the two-tale book failed in both M3 runs: the writer looped between layout and fit
+  errors, and the M3 retry at thinking `low` ran out of output tokens (6 of 7 runs). F1 (#29) added
+  repair hints and two more submits; the retry level is per goal now (D13).
+- Run 8's named blockers: the Christ child is cast and speaks, and the Giant's death is stated (Gate 2,
+  pages 29-33); the Prince's eyes follow the story (`one_blind`, `blind`); the Rose-tree can be bare.
+- On the newest code, key props, unstated claims and wrong settings fell by a quarter to 40 percent
+  per judged page. Tiny heroes, balloon tails, caption walls and repeated panels did not improve.
+- At about 08:50 UTC the MiniMax account reached its token-plan limit (error 2056). Both Gate-2 runs
+  stopped drawing. The old harness reported this as "no submission" and kept trying every page; F4
+  (#36) now stops the job, keeps untried pages pending and shows the reason. The limit reset at 10:06.

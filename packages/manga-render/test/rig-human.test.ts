@@ -94,7 +94,7 @@ describe("human rig: vocabulary", () => {
 
   it("nominal height follows age and height", () => {
     expect(humanRig.nominalHeight(base)).toBe(100);
-    expect(humanRig.nominalHeight(L({ height: "giant" }))).toBeCloseTo(180);
+    expect(humanRig.nominalHeight(L({ height: "giant" }))).toBeCloseTo(260);
     expect(humanRig.nominalHeight(L({ height: "short" }))).toBeCloseTo(90);
     expect(humanRig.nominalHeight(L({ age: "child" }))).toBeLessThan(70);
     expect(rig.nominalHeight(base)).toBe(100);

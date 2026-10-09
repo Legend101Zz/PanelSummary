@@ -20,6 +20,7 @@ import {
   PAGE_MARGIN,
   PAGE_WIDTH,
   PERCH_PARTS,
+  PLANT_BLOOMS,
   POSES,
   PROPS,
   SHOTS,
@@ -28,6 +29,8 @@ import {
   TIMES,
   TONES,
   WEATHERS,
+  type Box,
+  type Environment,
   type CastMember,
   type FigureSpec,
   type LayoutSpec,
@@ -43,7 +46,7 @@ import {
   type ValidationIssue,
 } from "./contracts.js";
 import { compileLayout } from "./layout/index.js";
-import { composePanel, type ComposedPanel, type FigurePlacement } from "./scene/index.js";
+import { composePanel, type ComposedPanel, type FigurePlacement, type PropPlacement } from "./scene/index.js";
 import type { Placed } from "./lettering/place.js";
 import { estimateTextArea, letterPanel } from "./lettering/index.js";
 import { countWords } from "./lettering/breaking.js";
@@ -54,7 +57,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.3.0";
+export const RENDERER_VERSION = "manga-render/0.5.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -125,6 +128,8 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
       const v: LookVariant = {};
       const eyes = pickOpt(f.variant.eyes, EYE_STATES);
       if (eyes) v.eyes = eyes;
+      const bloom = pickOpt(f.variant.bloom, PLANT_BLOOMS);
+      if (bloom) v.bloom = bloom;
       const material = pickOpt(f.variant.material, MATERIALS);
       if (material) v.material = material;
       const outfit = pickOpt(f.variant.outfit_tone, TONES);
@@ -189,6 +194,14 @@ export interface PanelDetail {
   id: string;
   figures: FigurePlacement[];
   placed: Placed[];
+  /** Every prop drawn in the panel (held and on the ground) with its page box. */
+  props: PropPlacement[];
+  /** Page-space bounding box of the panel. */
+  bbox: Box;
+  /** Hats, gesturing hands and scenery figures that lettering keeps off. */
+  obstacles: Box[];
+  /** The environment actually drawn (a location's lazy "abstract" may resolve to a real place). */
+  environment: Environment;
   /** Indices of texts that did not fit (drawn relaxed for the preview). */
   overflow: number[];
 }
@@ -283,6 +296,7 @@ export function renderPageDetailed(
       bodies: c.figures.map((f) => f.body),
       obstacles: c.obstacles,
       keepOut: c.keepOut,
+      props: c.props.map((pr) => ({ prop: pr.prop, box: pr.box, ...(pr.heldBy ? { heldBy: pr.heldBy } : {}) })),
       ...(c.sfxSource ? { sfxSource: c.sfxSource } : {}),
       offPanel,
       rtl,
@@ -299,6 +313,10 @@ export function renderPageDetailed(
       id: panel.id,
       figures: c.figures,
       placed: lettered.placed,
+      props: c.props,
+      bbox: geo.bbox,
+      obstacles: c.obstacles,
+      environment: c.environment,
       overflow: lettered.issues.filter((x) => x.code === "TEXT_DOES_NOT_FIT").map((x) => Number(/text (\d+)$/.exec(x.path)?.[1] ?? -1)),
     });
     balloonLayers.push(lettered.balloons);

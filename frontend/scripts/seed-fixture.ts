@@ -59,7 +59,7 @@ function python(args: string[], input?: string): string {
     input,
     encoding: "utf8",
     maxBuffer: 256 * 1024 * 1024,
-    env: { ...process.env, MONGODB_URL: "mongodb://127.0.0.1:27018", DB_NAME: "ps_frontend_fixture" },
+    env: { ...process.env, MONGODB_URL: process.env.SEED_MONGODB_URL ?? "mongodb://127.0.0.1:27018", DB_NAME: process.env.SEED_DB_NAME ?? "ps_frontend_fixture" },
   });
   if (run.status !== 0) throw new Error(`seed_fixture_db.py ${args[0]} failed:\n${run.stderr}`);
   return run.stdout;

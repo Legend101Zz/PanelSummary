@@ -7,7 +7,7 @@ import { INK, PAPER, toneFill } from "../../style.js";
 import { seeded, between } from "../../prng.js";
 
 export const AGE_HEIGHT: Record<HumanLook["age"], number> = { child: 64, teen: 90, adult: 100, elder: 95 };
-export const HEIGHT_FACTOR: Record<HumanLook["height"], number> = { short: 0.9, average: 1, tall: 1.1, giant: 1.8 };
+export const HEIGHT_FACTOR: Record<HumanLook["height"], number> = { short: 0.9, average: 1, tall: 1.1, giant: 2.6 };
 
 export function nominalHumanHeight(look: HumanLook): number {
   return AGE_HEIGHT[look.age] * HEIGHT_FACTOR[look.height];

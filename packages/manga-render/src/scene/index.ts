@@ -6,6 +6,10 @@ export {
   SHOT_HEIGHT,
   SPEAKER_MIN_HEAD_RADIUS,
   DEPENDENT_MIN_HEAD_RADIUS,
+  HERO_MIN_HEAD_RADIUS,
+  HERO_SMALL_MIN_HEAD_RADIUS,
+  KEY_PROP_MIN_HEIGHT,
+  KEY_PROP_MIN_HEIGHT_ESTABLISHING,
   LOD_FULL_RADIUS,
   LOD_REDUCED_RADIUS,
   type ComposeInput,
@@ -19,3 +23,4 @@ export { planProps, beatMentions, PROP_WORDS, type PropPlan, type HeldProp } fro
 export { scopeIds, hoistDefs, sanitizeFragment, adoptFragment } from "./ids.js";
 export { STAGING_FEATURES, resolveStaging, isStatue, locationStatue, partFromBeat, statueGone, seatKindFor, type Staging, type StagingFeature } from "./staging.js";
 export { circleCoverage, covers } from "./safety.js";
+export { resolveEnvironment, resolveLocation } from "./places.js";

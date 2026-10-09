@@ -45,8 +45,14 @@ export function warningsOf(issues: readonly ValidationIssue[]): ValidationIssue[
   return issues.filter((issue) => issue.severity === "warning");
 }
 
+/** Start of the message of a repair_once issue that rejects the first submit (see repair-once.ts). */
+export const FIX_BEFORE_SUBMIT = "FIX BEFORE SUBMIT: ";
+
 export function formatIssues(issues: readonly ValidationIssue[], limit = 40): string {
-  const shown = issues.slice(0, limit).map((issue, i) => `${i + 1}. [${issue.severity.toUpperCase()} ${issue.code}] ${issue.path}: ${issue.message}`);
+  const shown = issues.slice(0, limit).map((issue, i) => {
+    const once = issue.severity === "error" && issue.message.startsWith(FIX_BEFORE_SUBMIT);
+    return `${i + 1}. [${once ? "FIX BEFORE SUBMIT" : issue.severity.toUpperCase()} ${issue.code}] ${issue.path}: ${once ? issue.message.slice(FIX_BEFORE_SUBMIT.length) : issue.message}`;
+  });
   if (issues.length > limit) shown.push(`… and ${issues.length - limit} more.`);
   return shown.join("\n");
 }
@@ -54,9 +60,11 @@ export function formatIssues(issues: readonly ValidationIssue[], limit = 40): st
 export function rejection(issues: readonly ValidationIssue[]): string {
   const errors = errorsOf(issues);
   const warnings = warningsOf(issues);
+  const once = errors.filter((issue) => issue.message.startsWith(FIX_BEFORE_SUBMIT)).length;
   return [
     `REJECTED: ${errors.length} error(s) must be fixed before this can be accepted.`,
     formatIssues(errors),
+    once ? `${once} of these are marked FIX BEFORE SUBMIT: they reject only this first submit. If you cannot fix one, submit again and it stays as a warning.` : "",
     warnings.length ? `Also consider these ${warnings.length} warning(s):\n${formatIssues(warnings, 15)}` : "",
     "Fix every error and call the submit tool again with the complete corrected JSON.",
   ]

@@ -148,3 +148,36 @@ understanding time out. Given up front as a list:
 
 The Prince stayed a gold statue. Throughput was 126 tokens/s (run 4: 324), so time to first
 page depends on MiniMax's speed that hour more than on the prompt.
+
+## Model A/B, 2026-10-09
+
+Question: can `MiniMax-M3.1-Flash-Preview` replace `MiniMax-M3` on a goal without a loss in
+judged quality? The book is `happy-prince-two-tales.pdf` (26 PDF pages, 5,794 words, 2 tales).
+Understanding is M3 at thinking low in every arm. Three independent Sonnet judges score every
+page with the run 8 prompt. "Accepted" is the mean over accepted pages; "all" counts a failed
+page as 0.
+
+| Arm (plan / pages) | Pages | Failed | Ship bar | Mean all | Mean accepted | Legibility | Continuity | Fidelity | Generate to page 1 / finished | Cost (Pi est.) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| M3 / M3, local | 16 | 1 | 2 | 3.31 | 3.53 | 3.60 | 3.04 | 3.29 | 795 s / 2,115 s | $0.81 |
+| M3 / M3, CI | 14 | 1 | 3 | 3.20 | 3.45 | 3.46 | 2.95 | 3.36 | 940 s / 1,747 s | $0.60 |
+| M3 / Flash, local | 16 | 0 | 2 | 3.40 | 3.40 | 3.31 | 3.04 | 3.08 | 954 s / 1,363 s | $0.53 |
+| Flash / Flash, CI | 21 | 0 | 0 | 3.40 | 3.40 | 3.29 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
+| Flash / Flash, CI, new code | 22 | 0 | 2 | 3.42 | 3.42 | 3.33 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
+
+Findings: Flash plans in 34 to 69 s in these runs (later Flash runs: up to 198 s; M3: 16 to 235 s). Flash pages: median 61 s per page, 18 of
+21 accepted at the first submit. Per-page legibility is about 0.2 lower with Flash pages in both
+Flash runs. The Flash book-level mean is higher because no page failed. Flash failed the
+understanding goal 3 of 3 (the statue guard never cleared). **Decision (D13):** understanding on
+M3; plan and pages on Flash; retries at `medium`; M3 is the fallback. Evidence, configs and
+commits: `docs/launch/MODEL-AB.md`. Limit: one or two runs per arm; Gate 2 checks it again.
+
+
+## Understanding A/B, 2026-10-09 (after the statue-guard fix)
+
+The understanding moved from MiniMax-M3 to MiniMax-M3.1-Flash-Preview. On the same code and the 26-page
+book, M3 gave 6 of 22 pages at the ship bar and a mean of 3.53, Flash 4 of 22 and 3.49: a little lower,
+inside the spread of two panel-judged M3 runs (3.31 and 3.20). Flash was 2.5 to 6 times faster (132 s
+against 801 s; 221 s against 545 s) and passed in its first goal attempt in 3 of 3 runs. The earlier
+3 of 3 Flash failures came from a wrong statue guard (#33). By the owner's rule (M3 only where Flash
+measurably loses) the understanding moved to Flash. Details: `docs/launch/MODEL-AB.md`, D13.

@@ -61,6 +61,7 @@ import { INK, PAPER, STROKE, toneDefs, toneFill } from "../style.js";
 import { n, polyPath } from "../svg.js";
 import { adoptFragment, rescaleTones } from "./ids.js";
 import { castWithVariant } from "./looks.js";
+import { resolveLocation } from "./places.js";
 import { planProps, type HeldProp } from "./props.js";
 import { clearShift, covers, shifted, type Placement } from "./safety.js";
 import {
@@ -162,6 +163,31 @@ export interface ComposedPanel {
   issues: ValidationIssue[];
 }
 
+/** A small creature that speaks beside a big figure may be drawn up to this much larger than true scale. */
+export const SMALL_SPEAKER_BOOST = 2.6;
+
+/**
+ * How much larger than true scale a small SPEAKER is drawn so that the camera need not zoom a
+ * much bigger figure out of the panel to read her. `smallR` and `hostR` are on-page head radii
+ * at true scale. 1 (no boost) unless the zoom the speaker floor needs would make the host's head
+ * wider than 55% of the panel.
+ */
+function speakBoostFor(smallR: number, hostR: number, boxW: number): number {
+  const need = (SPEAKER_MIN_HEAD_RADIUS + 0.5) / Math.max(0.5, smallR);
+  if (need <= 1) return 1;
+  const hostWidth = 2 * hostR * Math.min(3.5, need);
+  return clamp(hostWidth / (0.55 * boxW), 1, SMALL_SPEAKER_BOOST);
+}
+
+/** A giant counts at this share of his height when a ground shot picks its figure height. */
+export const GIANT_BAND_SHARE = 0.68;
+
+/** A held prop must have at least this share of its box inside the panel (else it is moved or drawn on the ground). */
+export const HELD_PROP_MIN_INSIDE = 0.9;
+
+/** Tree height factor beside a giant (trees of 6 to 11 m become 2.4 to 4.4 m; a giant is 1.8 to 2.6 times a man). */
+export const GIANT_TREE_SCALE = 0.4;
+
 export const MAX_FIGURES = 4;
 export const MAX_PROPS = 4;
 export const MAX_FX = 3;
@@ -172,6 +198,20 @@ export const LOD_FULL_RADIUS = 30;
 export const LOD_REDUCED_RADIUS = 18;
 /** A figure staged on another's hand, shoulder or head must read at least this big (page units). */
 export const DEPENDENT_MIN_HEAD_RADIUS = 12;
+/**
+ * The hero of a panel (named in the beat, or the only figure) is drawn with at least this head
+ * radius in a wide shot, and a small creature that is the hero with at least the second value.
+ * An establishing shot is exempt: a figure that is small there is small on purpose.
+ */
+export const HERO_MIN_HEAD_RADIUS = 16;
+export const HERO_SMALL_MIN_HEAD_RADIUS = 12;
+/** Below this head radius a hero that the floors could not enlarge is flagged (HERO_TOO_SMALL, a warning). */
+export const HERO_WARN_HEAD_RADIUS = 8;
+/** A figure this short (figure units; an adult is about 100) counts as a small creature for the hero floor (a daisy). */
+const TINY_NOMINAL = 45;
+/** The key prop of a beat is drawn at least this share of the panel height (establishing: the second value). */
+export const KEY_PROP_MIN_HEIGHT = 0.12;
+export const KEY_PROP_MIN_HEIGHT_ESTABLISHING = 0.06;
 
 /** Figure height targets for ground shots (fraction of the panel height, ±25%). */
 export const SHOT_HEIGHT: Partial<Record<Shot, number>> = { establishing: 0.22, wide: 0.4, full: 0.74 };
@@ -198,6 +238,54 @@ const SMALL_KINDS = new Set(["bird", "insect", "animal"]);
 function tallHat(cast: CastMember): boolean {
   const look = cast.look as { kind: string; headwear?: string };
   return look.kind === "human" && look.headwear !== undefined && TALL_HEADWEAR.has(look.headwear);
+}
+
+/** Does the beat name this character (by its cast name, without a leading "the")? */
+function beatNames(beat: string, cast: CastMember): boolean {
+  const name = cast.name.toLowerCase().replace(/^(?:the|a|an)\s+/, "").trim();
+  if (name.length < 3) return false;
+  const forms = new Set([name]);
+  const last = name.split(/\s+/).pop() ?? "";
+  if (last.length >= 4) forms.add(last);
+  for (const form of forms) {
+    const esc = form.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${esc}(?:s|es)?\\b`, "i").test(beat)) return true;
+  }
+  return false;
+}
+
+/**
+ * Indexes of the panel's hero figures: those the beat names, else the only figure.
+ * (A speaker is covered by its own, larger floor.)
+ */
+function heroIndexes(infos: readonly { index: number; cast: CastMember; staging: { type: string } }[], beat: string): Set<number> {
+  const named = infos.filter((f) => beatNames(beat, f.cast)).map((f) => f.index);
+  if (named.length > 0) return new Set(named);
+  return infos.length === 1 ? new Set([infos[0].index]) : new Set();
+}
+
+/**
+ * The place to draw instead when the panel shows a statue figure in a place with no statue column:
+ * the first book location that has one. Undefined when nothing needs to change (the statue lies or
+ * falls, is staged "on" something, the beat says the column is empty, the shot is not establishing or wide
+ * (full and close views of the swapped place drew a bare grey slab on r8 page 7), or the book has
+ * no column place).
+ */
+function statueColumnFallback(panel: PanelSpec, declared: LocationSpec | undefined, book: SceneBook, shot: Shot, beat: string): LocationSpec | undefined {
+  if ((shot !== "establishing" && shot !== "wide") || (declared?.features ?? []).includes("statue_column") || statueGone(beat)) return undefined;
+  const shown = panel.figures.slice(0, MAX_FIGURES).some((spec) => {
+    const base = book.cast.find((c) => c.id === spec.character);
+    if (!base || spec.on || spec.pose === "lie" || spec.pose === "fall") return false;
+    return isStatue(castWithVariant(base, spec.variant));
+  });
+  if (!shown) return undefined;
+  const place = book.locations.find((l) => (l.features ?? []).includes("statue_column"));
+  return place ? resolveLocation(place) : undefined;
+}
+
+function isGiant(f: { cast: CastMember }): boolean {
+  const look = f.cast.look as { kind: string; height?: string };
+  return look.kind === "human" && look.height === "giant";
 }
 
 function depthOf(f: { depth?: Depth }): Depth {
@@ -421,10 +509,14 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     const t = rescaleTones(f.body, idPrefix, scope(tag), scale, tones);
     return { body: t.body, defs: f.defs + t.defs };
   };
-  const location = book.locations.find((l) => l.id === panel.location);
   const shot: Shot = panel.shot;
   const angle: Angle = panel.angle;
   const beat = typeof panel.beat === "string" ? panel.beat : "";
+  const declaredLocation = resolveLocation(book.locations.find((l) => l.id === panel.location));
+  // A statue-material figure (gold, stone, bronze) stands on its column, never at street level or
+  // in a room: when the panel's place has no column but the book has a place that does, draw that one.
+  const columnPlace = statueColumnFallback(panel, declaredLocation, book, shot, beat);
+  const location = columnPlace ?? declaredLocation;
   const groundShot = GROUND_SHOTS.includes(shot);
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
@@ -445,6 +537,14 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   if (shot === "extreme_close" && figureSpecs.length > 1) figureSpecs = figureSpecs.slice(0, 1);
   const propPlan = planProps(panel, figureSpecs, MAX_PROPS);
   issues.push(...propPlan.issues);
+  if (columnPlace) {
+    issues.push({
+      code: "STATUE_LOCATION_SWAPPED",
+      severity: "warning",
+      path: ipath,
+      message: `the statue is drawn on its column in "${columnPlace.id}" because "${panel.location}" has no statue_column; a statue is never shown at street level or in a room. Use "${columnPlace.id}" for panels that show the statue, and put other scenes in their own panels.`,
+    });
+  }
   const infos: FigureInfo[] = [];
   figureSpecs.forEach((spec, i) => {
     const base = book.cast.find((c) => c.id === spec.character);
@@ -492,6 +592,8 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     f.staging = staging[i];
   });
   const byChar = new Map(infos.map((f) => [f.cast.id, f]));
+  /** The hero(es) of the panel: the figure the beat names, else the only figure. */
+  const heroes = heroIndexes(infos, beat);
   const onColumnSpec = (f: FigureInfo) => f.staging.type === "feature" && f.staging.feature === "statue_column";
 
   // Close-range: a small creature with nothing to stand on, beside a much
@@ -560,6 +662,8 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   const envKind: Environment = upHigh ? "rooftops" : (location?.environment ?? "void");
   /** Features drawn by the environment (the composer may draw the statue's column itself). */
   let envFeatures: readonly EnvFeature[] = upHigh ? [] : (location?.features ?? []);
+  /** A giant stands in a ground shot: the environment's trees are drawn shorter than he is. */
+  const giantTrees = groundShot && infos.some((f) => isGiant(f) && !isDependent(f));
   const drawEnv = (b: Box): EnvironmentDrawing =>
     environments.draw(
       {
@@ -572,6 +676,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         weather: panel.weather ?? "clear",
         lineWidth: STROKE.environment,
         seed: envSeed,
+        ...(giantTrees ? { treeScale: GIANT_TREE_SCALE } : {}),
       },
       ctxFor(idPrefix, hashString(`loc:${location?.id ?? panel.location}|${panel.id}`)),
     );
@@ -590,13 +695,17 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   const dependentFloor = (f: FigureInfo): number => {
     if (f.staging.type !== "figure") return 0;
     if (speakers.has(f.cast.id)) return SPEAKER_MIN_HEAD_RADIUS + 0.5;
-    return f.staging.part === "feet" ? 0 : DEPENDENT_MIN_HEAD_RADIUS;
+    // a hero at the feet of another reads too (the swallow at the Prince's feet), but not in an establishing shot
+    if (f.staging.part === "feet") return heroes.has(f.index) && shot !== "establishing" ? HERO_SMALL_MIN_HEAD_RADIUS : 0;
+    return DEPENDENT_MIN_HEAD_RADIUS;
   };
 
   if (independents.length > 0 && groundShot) {
     const frac = SHOT_HEIGHT[shot] ?? 0.4;
     const ground = independents.filter((f) => !wantsColumn(f));
-    const refH = Math.max(1, ...independents.map((f) => f.height));
+    // a giant counts at two thirds of his height: he may stand a third taller than the
+    // shot's band, so the people beside him are not specks (see GIANT_BAND_SHARE)
+    const refH = Math.max(1, ...independents.map((f) => f.height * (isGiant(f) ? GIANT_BAND_SHARE : 1)));
     const depthMul = (f: FigureInfo) => (depthOf(f.spec) === "fore" ? 1.2 : depthOf(f.spec) === "back" ? 0.62 : 1);
     const maxMul = Math.max(0.62, ...ground.map(depthMul));
     let world = ((frac * box.h) / refH) * groundAngleScale(angle);
@@ -608,8 +717,9 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     // a wide-shot speaker may take the top of the shot's ±25% band to reach the readable floor
     if (shot === "wide") {
       for (const f of ground) {
-        if (!speakers.has(f.cast.id) || f.small) continue;
-        const need = scaleForHead(f, SPEAKER_MIN_HEAD_RADIUS + 0.5) * (maxMul / depthMul(f));
+        const speaks = speakers.has(f.cast.id);
+        if ((!speaks && !heroes.has(f.index)) || f.small) continue;
+        const need = scaleForHead(f, (speaks ? SPEAKER_MIN_HEAD_RADIUS : HERO_MIN_HEAD_RADIUS) + 0.5) * (maxMul / depthMul(f));
         world = Math.max(world, Math.min(need, (1.22 * frac * box.h) / refH));
       }
     }
@@ -622,6 +732,8 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const need = scaleForHead(d, floor);
       if (need > cur) world = Math.min(world * (need / cur), ((0.9 * box.h) / Math.max(1, root.height)) * (maxMul / depthMul(root)));
     }
+    // a giant never rises past the top of the panel
+    for (const g of ground.filter(isGiant)) world = Math.min(world, (0.92 * (feetPrimary - box.y) * maxMul) / (depthMul(g) * Math.max(1, g.height)));
     worldScale = world;
     const bigOnes = independents.filter((f) => !f.small);
     const scaleOf = (f: FigureInfo) => {
@@ -630,6 +742,10 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       if (f.small && depthOf(f.spec) === "fore" && bigOnes.length > 0) {
         const want = scaleForHead(f, speakers.has(f.cast.id) ? SPEAKER_MIN_HEAD_RADIUS + 0.5 : LOD_REDUCED_RADIUS);
         s = Math.max(s, Math.min(want, s * 8, (0.62 * box.h) / Math.max(1, f.height)));
+      } else if ((f.small || f.nominal <= TINY_NOMINAL) && heroes.has(f.index) && shot !== "establishing") {
+        // the hero is a small creature at any depth (the dead bird, the swallow): big enough to read
+        const want = scaleForHead(f, HERO_SMALL_MIN_HEAD_RADIUS + 0.5);
+        s = Math.max(s, Math.min(want, s * 8, (0.5 * box.h) / Math.max(1, f.height)));
       }
       const widthUnits = Math.max(1, f.probe.right - f.probe.left);
       s = Math.min(s, (0.95 * box.w) / widthUnits);
@@ -651,6 +767,8 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         const floor = dependentFloor(d) || (d.staging.type === "figure" ? 9 : 0);
         if (floor) depNeed = Math.max(depNeed, scaleForHead(d, floor) * statue.height);
       }
+      // the statue is the hero of the panel when the beat names it: its head reads in any shot but an establishing one
+      if (heroes.has(statue.index) && shot !== "establishing") depNeed = Math.max(depNeed, scaleForHead(statue, HERO_MIN_HEAD_RADIUS + 0.5) * statue.height);
       const baseDesired = (shot === "establishing" ? 0.2 : shot === "wide" ? 0.3 : 0.5) * box.h;
       const desired = Math.min(Math.max(baseDesired, depNeed), 0.62 * box.h);
       if (env.anchors?.statue_top) {
@@ -892,7 +1010,13 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           // two creatures on the ground: feet on one line, not eye to eye
           base = { scale: refFrame.scale, originX: x, originY: refFrame.originY };
         }
-        const scale = base.scale * mul * aScale;
+        // a small speaker beside a much bigger figure is drawn larger than true scale (a manga
+        // convention), so the camera need not zoom the big one out of the panel to read her
+        const speakBoost =
+          i !== ref && f.small && !refInfo.small && speakers.has(f.cast.id)
+            ? speakBoostFor(f.probe.headRadius * base.scale * mul * aScale, refInfo.probe.headRadius * refFrame.scale, box.w)
+            : 1;
+        const scale = base.scale * mul * aScale * speakBoost;
         const headY = base.originY + f.probe.head.y * base.scale;
         const originY = f.small && refInfo.small && i !== ref && !AIRBORNE.has(f.spec.pose) ? base.originY : headY - f.probe.head.y * scale;
         const hr = f.probe.headRadius * scale;
@@ -1076,19 +1200,30 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       pending.splice(k, 1);
       if (!tfr) continue;
       const s = tfr.scale; // scale continuity: the target's world scale
+      // a small creature that speaks, perched on something much bigger, is drawn larger than
+      // true scale (see SMALL_SPEAKER_BOOST) so the camera need not push the host out of frame
+      let sd =
+        f.small && !target.small && speakers.has(f.cast.id) && !groundShot
+          ? s * speakBoostFor(f.probe.headRadius * s, target.probe.headRadius * s, box.w)
+          : s;
+      // a small hero that is not speaking (the swallow at the Prince's feet) gets the same convention,
+      // up to the same limit, so the beat's subject is not a speck beside a figure ten times its size
+      if (sd === s && f.small && !target.small && heroes.has(f.index) && !speakers.has(f.cast.id) && shot !== "establishing") {
+        sd = s * clamp((HERO_SMALL_MIN_HEAD_RADIUS + 0.5) / Math.max(0.5, f.probe.headRadius * s), 1, SMALL_SPEAKER_BOOST);
+      }
       const tp = placementOf(target, tfr);
       const ta = target.probe;
       const toPageT = (p: Point): Point => ({ x: tfr.originX + (target.mirror ? -p.x : p.x) * s, y: tfr.originY + p.y * s });
       const a = f.probe;
-      const myLeft = (f.mirror ? -a.right : a.left) * s; // negative extent
-      const myRight = (f.mirror ? -a.left : a.right) * s;
+      const myLeft = (f.mirror ? -a.right : a.left) * sd; // negative extent
+      const myRight = (f.mirror ? -a.left : a.right) * sd;
       const fx = slotFrac(f.spec.slot, rtl);
       const tx = slotFrac(target.spec.slot, rtl);
       const facingSide = target.spec.facing === "front" || target.spec.facing === "back" ? 0 : target.mirror ? -1 : 1;
       // a profile's face points one way: perch on the far (back) shoulder, never in front of the face
       const bySlot: 1 | -1 = fx < tx ? -1 : fx > tx ? 1 : 1;
       let side: 1 | -1 = f.staging.part === "shoulder" && facingSide !== 0 ? (-facingSide as 1 | -1) : bySlot;
-      const myHeadX = (f.mirror ? -a.head.x : a.head.x) * s;
+      const myHeadX = (f.mirror ? -a.head.x : a.head.x) * sd;
       // feet ON the shoulder (not beyond it): the shoulder line is about 1.3-1.6
       // head radii out; the perched body may overlap the back of the head a little
       const shoulderHalf = Math.max(tp.r * 1.15, Math.min(tp.r * 1.55, ((ta.right - ta.left) / 2) * s * 0.9));
@@ -1103,7 +1238,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         return tfr.originX + sd * (tHalf * 0.8 + (sd > 0 ? -myLeft : myRight));
       };
       // the far side is out of frame: use the near side
-      const inFrame = (x: number) => x + myHeadX > box.x + a.headRadius * s && x + myHeadX < box.x + box.w - a.headRadius * s;
+      const inFrame = (x: number) => x + myHeadX > box.x + a.headRadius * sd && x + myHeadX < box.x + box.w - a.headRadius * sd;
       // (a profile keeps the bird on its back shoulder: the camera shifts to show it instead)
       if (f.staging.part === "shoulder" && facingSide === 0 && !inFrame(shoulderX(side)) && inFrame(shoulderX(-side as 1 | -1))) side = -side as 1 | -1;
       if ((f.staging.part === "feet" || f.staging.part === undefined) && !inFrame(feetX(side)) && inFrame(feetX(-side as 1 | -1))) side = -side as 1 | -1;
@@ -1131,7 +1266,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           origin = { x, y: tfr.originY };
         }
       }
-      framings.set(f.index, { scale: s, originX: origin.x, originY: origin.y });
+      framings.set(f.index, { scale: sd, originX: origin.x, originY: origin.y });
       resolved.add(f.index);
     }
   }
@@ -1244,18 +1379,61 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   drawOrder(independents).forEach(visit);
   for (const f of infos) if (!sequence.includes(f)) sequence.push(f);
 
-  // a carried prop whose hand is out of frame (a medium shot cuts at the waist)
-  // goes back on the ground, where it is seen
-  for (const f of sequence) {
-    const fr = framings.get(f.index);
+  /** Page-space box of the prop a figure holds, at this framing (same maths as the drawing below). */
+  const heldPropBox = (f: FigureInfo, held: HeldProp, at: Framing): Box | undefined => {
     const hand = f.probe.hand;
-    if (!fr || !f.held?.adopted || !f.held.source || !hand) continue;
-    const hx = fr.originX + (f.mirror ? -hand.x : hand.x) * fr.scale;
-    const hy = fr.originY + hand.y * fr.scale;
-    if (hx < box.x || hx > box.x + box.w || hy < box.y || hy > box.y + box.h * 0.9) {
-      propPlan.ground.push(f.held.source);
-      delete f.held;
+    if (!hand) return undefined;
+    const prop = safeProp(held.prop, STROKE.figureOutline / at.scale, hashString(`${panel.id}|held|${f.index}`), idPrefix, held.tone);
+    if (!prop) return undefined;
+    const ox = hand.x - prop.grip.x;
+    const oy = hand.y - prop.grip.y;
+    const toPage = (pt: Point): Point => ({ x: at.originX + (f.mirror ? -pt.x : pt.x) * at.scale, y: at.originY + pt.y * at.scale });
+    const c1 = toPage({ x: ox - prop.width / 2, y: oy - prop.height });
+    const c2 = toPage({ x: ox + prop.width / 2, y: oy });
+    return { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), w: Math.abs(c2.x - c1.x), h: Math.abs(c2.y - c1.y) };
+  };
+
+  // a held prop whose hand is out of frame (a medium shot cuts at the waist, a
+  // slot at the panel edge): first slide the figure sideways so the prop is in
+  // frame; if that cannot work, put the prop on the ground in frame, where it is seen
+  // (a prop the story depends on is never drawn off the panel)
+  for (const f of sequence) {
+    let fr = framings.get(f.index);
+    if (!fr || !f.held || !f.probe.hand) continue;
+    const held = f.held;
+    const inFrame = (at: Framing): number | undefined => {
+      const pb = heldPropBox(f, held, at);
+      return pb ? overlapArea(pb, box) / Math.max(1, boxArea(pb)) : undefined;
+    };
+    const frac = inFrame(fr);
+    if (frac === undefined || frac >= HELD_PROP_MIN_INSIDE) continue;
+    if (!isDependent(f)) {
+      const pb = heldPropBox(f, held, fr)!;
+      const room = 6;
+      const dx = pb.x < box.x + room ? box.x + room - pb.x : pb.x + pb.w > box.x + box.w - room ? box.x + box.w - room - (pb.x + pb.w) : 0;
+      if (dx !== 0) {
+        const moved: Framing = { ...fr, originX: fr.originX + dx };
+        const mp = placementOf(f, moved);
+        const headIn = mp.head.x - mp.r > box.x - mp.r * 0.3 && mp.head.x + mp.r < box.x + box.w + mp.r * 0.3;
+        const after = inFrame(moved);
+        if (headIn && after !== undefined && after >= HELD_PROP_MIN_INSIDE) {
+          framings.set(f.index, moved);
+          fr = moved;
+          continue;
+        }
+      }
     }
+    const fx = fr.originX;
+    const slot: Slot = fx < box.x + box.w * 0.28 ? "left" : fx < box.x + box.w * 0.44 ? "center_left" : fx < box.x + box.w * 0.56 ? "center" : fx < box.x + box.w * 0.72 ? "center_right" : "right";
+    if (f.held.adopted && f.held.source) propPlan.ground.push(f.held.source);
+    else propPlan.ground.push({ spec: { prop: held.prop, slot, depth: "fore", ...(held.tone ? { tone: held.tone } : {}) }, index: panel.props.length + f.index });
+    issues.push({
+      code: "HELD_PROP_OFF_FRAME",
+      severity: "warning",
+      path: ipath,
+      message: `the ${held.prop} held by "${f.cast.id}" would be outside the frame of this ${shot} panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a "reach" pose to show it in the hand.`,
+    });
+    delete f.held;
   }
 
   for (const f of sequence) {
@@ -1478,6 +1656,20 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       issues.push({ code: "FIGURE_CLIPPED", severity: "warning", path: ipath, message: `${Math.round((1 - inside) * 100)}% of "${fp.character}" falls outside the frame of this ${shot} panel. Use a slot nearer the centre or a wider shot.` });
     }
   }
+  // the hero of the panel is still a speck after the floors (a warning: calibrated on 74 judged pages, see docs/launch/W2-renderer.md)
+  if (shot !== "establishing") {
+    for (const fp of figures) {
+      if (fp.headCropped || !heroes.has(fp.figureIndex) || speakers.has(fp.character)) continue;
+      if (fp.headRadius < HERO_WARN_HEAD_RADIUS) {
+        issues.push({
+          code: "HERO_TOO_SMALL",
+          severity: "warning",
+          path: ipath,
+          message: `"${fp.character}", the subject of this beat, is drawn with a head radius of ${Math.round(fp.headRadius)} units in this ${shot} shot and will not read. Use a medium or close shot for the subject, or a panel of its own.`,
+        });
+      }
+    }
+  }
   // a figure held on another must read (an establishing shot cannot show a hand-off)
   if (groundShot) {
     for (const fp of figures) {
@@ -1538,6 +1730,11 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const d = depthOf(p);
       const nominal = safePropNominal(p.prop);
       let scale = worldScale * (d === "fore" ? 1.2 : d === "back" ? 0.62 : 1);
+      // the object of the beat is never a speck: a floor on its height (and a cap on its width)
+      const keyFloor = propPlan.key.has(p.prop)
+        ? Math.min(((shot === "establishing" ? KEY_PROP_MIN_HEIGHT_ESTABLISHING : KEY_PROP_MIN_HEIGHT) * box.h) / Math.max(1, nominal), (0.4 * box.w) / Math.max(1, safeProp(p.prop, 1, 1, idPrefix, p.tone)?.width ?? nominal))
+        : 0;
+      scale = Math.max(scale, keyFloor);
       let base: number;
       if (groundShot && groundModel) {
         // props share the figures' ground plane and depth normalisation
@@ -1553,6 +1750,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         base = box.y + box.h * 0.995;
       }
       if (tallest > 0) scale = Math.min(scale, (tallest * 1.05) / Math.max(1, nominal));
+      scale = Math.max(scale, keyFloor);
       // the beat lays it on the table: on the table top
       let onTable: Point | undefined;
       if (groundShot && env.anchors?.table && propPlan.key.has(p.prop) && /\b(?:on|onto|upon)\s+(?:the|a|her|his|their)\s+table\b/i.test(beat)) {

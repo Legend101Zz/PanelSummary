@@ -71,6 +71,10 @@ const VISUAL_WORDS: Record<string, string[]> = {
   stone: ["grey", "shabby", "stripped", "dull"], gold: ["gold", "gilded", "golden"],
 };
 
+export function stemWord(word: string): string {
+  return stem(word);
+}
+
 function stem(word: string): string {
   let w = word;
   for (const suffix of ["ingly", "edly", "ing", "ed", "es", "s", "ly"]) {

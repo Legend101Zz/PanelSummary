@@ -44,6 +44,9 @@ const HEIGHT: Record<Shape, number> = {
   candle: 36,
   lamp: 35,
   firecracker: 31,
+  roman_candle: 66,
+  squib: 26,
+  bengal_light: 31,
   coin: 15,
   book: 20,
   clock: 40,
@@ -332,6 +335,117 @@ function firecracker(): ShapeDef {
   };
 }
 
+/** A little burst of firework sparks at a point (short rays round a centre). */
+function sparks(ink: Ink, v: View, at: Point, r0: number, r1: number, n: number, from = -Math.PI, to = 0): void {
+  for (let i = 0; i < n; i += 1) {
+    const a = from + ((to - from) * (i + 0.5)) / n;
+    ink.line([polar(at, r0, a), polar(at, r1, a)], v.pen.fw * 1.3);
+  }
+}
+
+/**
+ * Roman candle: a tall paper tube wound with spiral bands, a clay plug and a
+ * twist of fuse at the top, a paper label for the face. It is a firework, not
+ * a wax candle: no dish, no wax, no flame, only a fuse with a few sparks.
+ */
+function romanCandle(): ShapeDef {
+  const rx = 5.2;
+  const ry = 1.7;
+  return {
+    hull: [P(-rx, 0), P(rx, 0), P(-rx, -58), P(rx, -58), P(1, -66)],
+    face: { c: P(0, -36), gap: 2.1, eyeR: 1.25, mouthDy: 4.2, mouthW: 2 },
+    shoulderN: P(rx * 0.95, -44),
+    shoulderF: P(-rx * 0.95, -44),
+    hipN: P(rx, -26),
+    hipF: P(-rx, -26),
+    armLen: 12,
+    armW: 0.85,
+    handR: 1.2,
+    waist: -28,
+    draw(ink, v) {
+      const pen = v.pen;
+      cylinder(ink, v, 0, -58, -1.7, rx, ry, v.fill, { topFill: fillOf("dark", pen) });
+      // spiral-wound paper: slanted bands up the tube
+      for (let y = -54; y < -4; y += 8) {
+        if (y > -47 && y < -25) continue;
+        ink.poly([P(-rx, y), P(rx, y - 2.4), P(rx, y - 4.6), P(-rx, y - 2.2)], fillOf(darker(v.tone), pen), { outline: false, edge: pen.dw });
+      }
+      // paper label for the face
+      band(ink, v, 0, -47, -25, rx, ry, fillOf("white", pen));
+      // clay plug and paper collar at the top
+      band(ink, v, 0, -58.4, -55.4, rx + 0.6, ry, fillOf("light", pen));
+      ink.ell(P(0, -58.6), rx * 0.8, ry * 0.9, fillOf("dark", pen), { outline: false });
+      // base wrap
+      band(ink, v, 0, -5, -1.9, rx, ry, fillOf("white", pen));
+      // the fuse: a twist that ends in a spark
+      ink.curve([P(0.2, -59), P(1.6, -61.4), P(0.6, -63.2), P(2.2, -64.6)], pen.dw * 1.5);
+      sparks(ink, v, P(2.3, -65), 0.9, 2.4, 5);
+    },
+  };
+}
+
+/** Squib: a thin twisted paper tube, pinched at the top, with a long curling fuse. */
+function squib(): ShapeDef {
+  const rx = 3.4;
+  const ry = 1.2;
+  return {
+    hull: [P(-rx, 0), P(rx, 0), P(-rx, -21), P(rx, -21), P(0, -26)],
+    face: { c: P(0, -12.5), gap: 1.8, eyeR: 1.1, mouthDy: 3.4, mouthW: 1.7 },
+    shoulderN: P(rx * 0.95, -10),
+    shoulderF: P(-rx * 0.95, -10),
+    hipN: P(rx, -5),
+    hipF: P(-rx, -5),
+    armLen: 7,
+    armW: 0.65,
+    handR: 0.95,
+    waist: -6,
+    draw(ink, v) {
+      const pen = v.pen;
+      cylinder(ink, v, 0, -21, -1.4, rx, ry, v.fill, { topFill: fillOf("dark", pen) });
+      band(ink, v, 0, -17.4, -8, rx, ry, fillOf("white", pen));
+      // pinched, twisted top
+      ink.poly([P(-rx, -21), P(rx, -21), P(1, -24.8), P(-1, -24.8)], v.fill);
+      ink.line([P(-2.4, -22.2), P(2.2, -23.4)], pen.fw * 1.2);
+      // a long curling fuse
+      ink.curve([P(0, -24.8), P(2.2, -27.6), P(-0.8, -29.6), P(2.4, -31.6), P(0.8, -33.4)], pen.dw * 1.4);
+      sparks(ink, v, P(0.8, -33.8), 0.8, 2.2, 5);
+      // twist rings
+      for (const y of [-19.6, -2.8]) ink.line([P(-rx, y), P(rx, y - 0.7)], pen.fw * 1.3);
+    },
+  };
+}
+
+/** Bengal light: a stocky canister with a flared rim, a striped label and a flame sprig on top. */
+function bengalLight(): ShapeDef {
+  const rx = 5.8;
+  const ry = 2;
+  return {
+    hull: [P(-rx, 0), P(rx, 0), P(-rx - 0.8, -24), P(rx + 0.8, -24), P(0, -31)],
+    face: { c: P(0, -13), gap: 2.1, eyeR: 1.25, mouthDy: 4.2, mouthW: 2 },
+    shoulderN: P(rx * 0.95, -11),
+    shoulderF: P(-rx * 0.95, -11),
+    hipN: P(rx, -5),
+    hipF: P(-rx, -5),
+    armLen: 9,
+    armW: 0.85,
+    handR: 1.2,
+    waist: -7,
+    draw(ink, v) {
+      const pen = v.pen;
+      cylinder(ink, v, 0, -23, -1.8, rx, ry, v.fill, { topFill: fillOf("dark", pen) });
+      // flared rim and base ring
+      band(ink, v, 0, -25, -22.6, rx + 1.2, ry, fillOf("mid", pen));
+      band(ink, v, 0, -3.6, -1.9, rx + 0.6, ry, fillOf("mid", pen));
+      // striped label
+      band(ink, v, 0, -20.6, -5.4, rx, ry, fillOf("white", pen));
+      for (const y of [-19.2, -6.8]) band(ink, v, 0, y - 0.8, y + 0.8, rx, ry, fillOf("dark", pen));
+      // sprig of cold flame on top: a spray of rays round a core
+      ink.blob([P(0, -31), P(2.2, -27.4), P(1.4, -25.4), P(0, -24.8), P(-1.4, -25.4), P(-2.2, -27.4)], fillOf("white", pen), { weight: 0.8 }, 0.55);
+      sparks(ink, v, P(0, -27.2), 3.4, 4.8, 7, -Math.PI * 0.9, -Math.PI * 0.1);
+    },
+  };
+}
+
 function coin(): ShapeDef {
   const r = 7.4;
   const C = P(0, -r);
@@ -535,7 +649,7 @@ function box(): ShapeDef {
   };
 }
 
-const SHAPES: Record<Shape, () => ShapeDef> = { rocket, wheel, candle, lamp, firecracker, coin, book, clock, cup, kettle, box };
+const SHAPES: Record<Shape, () => ShapeDef> = { rocket, wheel, candle, lamp, firecracker, roman_candle: romanCandle, squib, bengal_light: bengalLight, coin, book, clock, cup, kettle, box };
 
 // ---------------------------------------------------------------------------
 

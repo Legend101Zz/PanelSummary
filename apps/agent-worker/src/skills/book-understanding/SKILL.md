@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.6.0
+version: 1.7.0
 ---
 
 # Book understanding
@@ -100,6 +100,9 @@ Law, Money, Conscience) — those are explanatory metaphors, say so in `descript
 1. What the text says (a gilded statue → `material: "gold"`; a giant → `height: "giant"`;
    a bird → `bird` with its species; a talking firework → `object` `rocket`/`wheel`/`firecracker`;
    a talking tree or reed → `plant` with `face: true`; the North Wind → `spirit` `wind`).
+   Only the statue itself is cast with a statue material. A living person who looks at, judges,
+   orders or replaces a statue (the Mayor, a professor) keeps `material: "flesh"`: start their
+   `role` and `description` with what they ARE ("the city's Mayor"), and put the statue in a claim.
 2. Then make the cast **distinct at a glance**: no two humans should share the same
    combination of height, build, hair silhouette and outfit. Vary hair style and tone,
    headwear, outfit shape and tone, age and build. A reader must tell characters apart by
@@ -130,6 +133,13 @@ from:
   sword-hilt");
 - **how they change** over the book ("later stripped of his gold and grey");
 - **manner**, in two or three words ("proud, talkative").
+
+**`states`: how a character changes.** When the story changes how someone looks (an eye or
+jewel given away, gold stripped, a death, new clothes), add `states` to that cast member, in
+source order: `{"at": "<unit where it happens>", "claim": "<claim that tells it>", "set": {<look
+patch>}}`, with fields and values from `trusted_state_fields`. The Prince: `[{"at":"s1u6","claim":"k16",
+"set":{"eyes":"blind"}},{"at":"s1u7","claim":"k19","set":{"material":"stone"}}]`; a death is
+`{"eyes":"dead"}`. Code then tells every page how the character looks at that point.
 
 **Sacred figures.** Do not make God, angels or other sacred figures into emblems or
 cartoon characters. Leave them out of the cast; pages show them through light
@@ -180,7 +190,8 @@ giant's garden, bars for a jail).
 - Every speaking or acting character in every section is in the cast, including
   personified forces (as `spirit`). Re-read each section and check. Anyone the book gives
   two or more lines to ("said the Frog", "said a little Squib") must be a cast member of
-  that section; a plain word the book uses for an existing character ("said the girl" for
+  that section, and so must one person who speaks or acts alone out of a group ("answered
+  the child", "one of the workmen cried"): a crowd cannot stand for them; a plain word the book uses for an existing character ("said the girl" for
   the Professor's daughter) goes in that character's `role`.
 - Call `submit_understanding` with the whole JSON as one string. If it is rejected, do
   NOT resend everything: call `revise_understanding` with only the entries you change

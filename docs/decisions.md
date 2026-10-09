@@ -13,7 +13,8 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Status: accepted, built.
 
 ### D2. MiniMax only, through the worker harness (2026-08-08, confirmed 2026-09-25)
-- Statement: Every model call goes through `apps/agent-worker` to `api.minimax.io`. The allowed models are `MiniMax-M3`, `MiniMax-M2.7-highspeed` and `MiniMax-M2.7`. Only M3 gets images.
+- Statement: Every model call goes through `apps/agent-worker` to `api.minimax.io`. The allowed models are `MiniMax-M3`, `MiniMax-M3.1-Flash-Preview`, `MiniMax-M2.7-highspeed` and `MiniMax-M2.7`. Only M3 and Flash get images.
+- Statement: Flash is not in the pinned Pi 0.80.10 catalog. The harness registers it as a custom model through the SDK (`ModelRuntime.registerProvider`, no network). Flash cannot turn thinking off (the API refuses `disabled`), so the harness sends adaptive thinking with an explicit effort. See `docs/launch/T0-model.md`.
 - Statement: `MINIMAX_API_KEY` is a server credential. Only the worker process holds it. The backend and the browser never see it.
 - Why: One provider keeps cost and receipts clear. A key in one process limits the blast radius.
 - Status: accepted. `packages/agent-runtime` refuses other models.
@@ -71,26 +72,33 @@ To change a decision, edit its entry in the same change as the code, and give th
 ### D11. Failure is visible (2026-08-07 principle, 2026-09-25 rule)
 - Statement: A page that fails after its attempts is stored as `failed` with the reasons, and the reader shows it as failed.
 - Statement: An edition with a failed page ends `completed_with_failures`, never complete. The plan lists omitted claims with a reason.
-- Why: A loud failure is better than a quiet wrong result in a paid pipeline. The old path faked passing quality.
+- Statement (2026-10-09, provider refusals): When the model provider refuses a call, the job shows that fact and stops. The worker returns `PROVIDER_LIMIT` (HTTP 429, `rate_limit_error`, usage limit, credits), `PROVIDER_AUTH` (401, 403) or `PROVIDER_UNAVAILABLE` (5xx, overloaded, no connection). The trace has `stop_reason: provider_error` and the provider's error type and message (no key, no headers). A refusal is never reported as `NO_SUBMISSION`.
+- Statement: The backend has a circuit breaker. `PROVIDER_LIMIT` and `PROVIDER_AUTH` stop the job at once. `PROVIDER_UNAVAILABLE` stops it when the normal attempts are used up. After the stop, no new call is sent. Accepted pages stay accepted. Pages never tried stay `pending`, not `failed`. The page that met the refusal goes back to `pending` and its attempt is given back, because the model did not fail. The same rule holds for the understanding and the plan: no second attempt against a dead quota.
+- Statement: The edition ends with status `failed`, not a new `paused` status. Reason: `failed` already means "stopped with an error, can be resumed" in the API, the job runner and the screens, and every poller already treats it as final. A new status would be unknown to the old pollers. The edition has `error` (the plain sentence) and `provider_stop` (code, type, HTTP status, message, stage, page). `error` reads for example: "MiniMax refused the request: Token Plan usage limit reached ... Nothing more was sent. Resume when the limit resets or after you add credits."
+- Statement: Resume continues the pending pages and skips accepted ones. It clears `error` and `provider_stop`.
+- Why: A loud failure is better than a quiet wrong result in a paid pipeline. The old path faked passing quality. On 2026-10-09 a plan limit made 32 of 50 pages fail (count from the track brief) as "no submission", each after about 20 to 25 s, and those pages could not be told from model failures.
 - Status: accepted.
 
 ### D12. Idempotency and receipts (2026-09-25)
 - Statement: The worker is idempotent by `run_id`. A repeated request returns the first result and does not run the model again.
 - Statement: Resume and redraw skip accepted pages. Every goal stores a receipt: model, thinking level, tokens, cost estimate, latency, skill version and hash.
+- Statement (2026-10-09): A refused call keeps its receipt like every other call: `error.code` is the `PROVIDER_*` code, `stop_reason` is `provider_error`, and `provider_error` holds the type, HTTP status and message. A call that is sent again after a refusal (resume) gets a new run id with the suffix `-r<n>`, so no two receipts share an id.
 - Why: A retry must not charge twice. A cost figure without a persisted receipt is not evidence.
 - Status: accepted.
 
-### D13. Generation policy (2026-09-25, measured; revised 2026-09-26)
-- Statement: All three goals use M3. Book understanding runs with thinking `low` and fixes
-  rejections with `revise_understanding` patches. Plan and pages run with thinking `off`; a
-  retry uses `low`. A page gets two attempts (4 previews, 6 submits each).
-- Statement: Four pages run in parallel. The page goal gets a PNG preview (vision). No separate review pass runs.
-- Why: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was
-  3-5x faster at equal page quality. For the understanding it was fast but unreliable: acceptance
-  run 2 cast the Happy Prince statue as a gold "rocket", and a later run reworded a description to
-  evade the guard. Low was correct in every run; the patch tool cut its time from 11 to ~4.5 min.
-  M2.7-highspeed miscast characters. The review pass did not pay for itself.
-- Status: accepted. The configuration is in `backend/app/settings.py` and is recorded on each edition.
+### D13. Generation policy (2026-09-25, measured; revised 2026-09-26; revised 2026-10-09 twice)
+- Statement: The policy is set per goal. All three goals use `MiniMax-M3.1-Flash-Preview` (Flash). Book understanding runs with thinking `low`; plan and pages with thinking `off`. A retry uses `medium` for every goal. Flash cannot turn thinking off, so the harness sends adaptive effort `low` for "off" and "low" (see D2). Pages get a PNG preview (vision).
+- Statement: The owner direction of 2026-10-09 is: prefer Flash where it holds quality, use M3 less, and measure and record every switch. The rule used: Flash becomes the default for a goal where it is at least as good as M3 on judged quality and on validation. M3 stays where Flash measurably loses.
+- Statement: The settings are `UNDERSTANDING_MODEL`, `UNDERSTANDING_THINKING`, `UNDERSTANDING_RETRY_THINKING`, `PLAN_MODEL`, `PLAN_THINKING`, `PLAN_RETRY_THINKING`, `PAGE_MODEL`, `PAGE_THINKING` and `PAGE_RETRY_THINKING`. The old `RETRY_THINKING` is a fallback for the plan and page retries only. Every edition records all of them (`policy`). Every receipt records the model, the thinking level asked for, the thinking sent and the cost basis.
+- Statement: `MiniMax-M3` is the fallback for every goal. To put a goal back on M3, set its model variable to `MiniMax-M3`. For M3 pages also set `PAGE_RETRY_THINKING=off`: a retry at `low` on M3 pages was cut off by runaway thinking in 6 of 7 recorded runs (F1). For an M3 understanding, set `UNDERSTANDING_RETRY_THINKING=low`.
+- Statement: A page gets two attempts (4 previews and 8 submits each, F1). Four pages run in parallel. No separate review pass runs.
+- Why, plan and pages (first A/B, 26-page book): Flash planned in 34 to 198 s where M3 took 79 to 235 s, at the same judged quality. Flash pages had no failed page in 3 runs (59 pages); each M3 run had one failed page. See `docs/launch/MODEL-AB.md`.
+- Why, understanding (second A/B, after the statue-guard fix #33): T0's 3 of 3 Flash failures were caused by the guard, not by Flash: it flagged the Swallow as a statue. After #33, Flash passed the understanding in its first goal attempt in 3 of 3 runs (the F3 replay, the understanding A/B and Gate 2). On the same code (26-page book, Flash plan and pages), the M3 understanding gave 6 of 22 pages at the ship bar and a mean of 3.53; the Flash understanding gave 4 of 22 and 3.49, and Flash was a little lower on every headline criterion (continuity 2.94 against 3.05, beat 3.35 against 3.55). These differences are inside the run-to-run spread: two M3 runs of one configuration, judged by the same panel, gave 3.31 and 3.20. On the 68-page book (Gate 2) the Flash understanding gave tale 1 a mean of 3.53 (15 pages) and the M3 understanding 3.40 (11 pages), but these are not matched page sets (the M3 run drew only 18 of 50 pages before the plan limit). Flash was much faster: page 1 at 427 s against 945 s, and the understanding in 132 s against 801 s (26 pages), 221 s against 545 s (68 pages). Rule result: Flash does not measurably lose, and the owner's rule keeps M3 only where Flash measurably loses, so the understanding moves to Flash.
+- Gate 2 (68-page book, all Flash, `release/v0.1` `d1a2286`): 46 of 56 pages drawn before the MiniMax plan limit stopped the run (tales 1 to 4 and 2 pages of tale 5). On those pages, 7 of 46 at the ship bar, mean 3.52, continuity 2.94, fidelity 3.57. Run 8 judged by the same panel: 7 of 46, 3.47, 2.88, 3.34 (tales 1 to 4 only: 4 of 36, 3.44).
+- Caveat: One or two runs per arm. Per-page legibility with Flash pages was about 0.2 lower in the first A/B; in Gate 2 it was 3.43 against 3.48 for run 8 on the same panel. If a later judged run shows Flash below M3 on a goal, that goal goes back to M3 by the settings above.
+- Judge panel: The older single-judge scores are not comparable with the panel. The run 8 pages, judged again by the same 3-judge panel, scored 7 of 46 at the ship bar and a mean of 3.47, against 5 of 46 and 3.38 from the single judge. The panel report is `docs/rebuild/baselines/run8-panel.md` (data in `run8-panel.json`).
+- Earlier reasons that still hold: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was 3-5x faster than low at equal page quality. For the understanding, thinking off was fast but unreliable: acceptance run 2 cast the Happy Prince statue as a gold "rocket". The patch tool cut the understanding time. M2.7-highspeed miscast characters. The review pass did not pay for itself.
+- Status: accepted. The configuration is in `backend/app/settings.py` and is recorded on each edition. The cost and time preflight (D19) is fitted to the runs of all three policies (`backend/app/preflight.py`).
 
 ### D14. PDF parsing with PyMuPDF only (2026-09-25)
 - Statement: `backend/app/sources/pdf_source.py` makes sections and bounded source units with real PDF page numbers.
@@ -114,6 +122,20 @@ To change a decision, edit its entry in the same change as the code, and give th
 ### D18. Acceptance gates (2026-08-10, from issue #15 and the journeys)
 - Statement: A release needs these proofs. The old path is not reachable. A browser journey (upload → Generate → read) passes on the harness path. Every cost figure has a receipt. A human judges the pages side by side.
 - Status: accepted. The offline guard is `backend/tests/test_generate_journey.py`.
+
+### D19. v0.1 scope for large books (2026-10-09, issues #4 and #13)
+- Statement: v0.1 has a size limit and a cost and time preflight. The limits are `max_pdf_pages` 75 and `max_source_words` 17,500. Both are configuration (`MAX_PDF_PAGES`, `MAX_SOURCE_WORDS`).
+- Statement: Upload accepts any parsed PDF, and the reader shows the source. `POST /books/{id}/editions` refuses a book over a limit with HTTP 422 and a plain reason. It creates no edition and no job, and it spends nothing.
+- Statement: `GET /books/{id}/preflight` shows the size, the limits, and low and high estimates of pages, cost and time. It answers 409 for a book that is not parsed.
+- Statement: Chapter-scoped generation, resumable project memory and chunked continuation are not in v0.1. They move to v0.2.
+- Why: The whole book goes into one understanding call. That call wrote 36,000 to 78,700 output tokens and took 259 to 1,166 s on the measured runs, at 31 to 167 output tokens/s. The goal times out at 25 minutes. The largest book that finished end to end has 68 PDF pages and 16,159 words, so each limit is that figure plus 8 % (words) or 10 % (pages). A scope cannot be chosen safely without a table of contents the user can pick from, a persisted understanding per scope and a rule for characters that cross scopes. None of these exists, and a wrong cut would break the source grounding. See `docs/launch/T3-scope.md`.
+- Status: accepted. The limits are not a promise that every book under them finishes. A slow provider hour can still time out the understanding, and the edition then fails with a visible reason.
+
+### D20. Honest latency (2026-10-09)
+- Statement: The edition stores `timings.generate_started_at`, `timings.drawing_started_at` and `timings.first_page_at` in the database. The first value stays after a resume.
+- Statement: Pages start in reading order. No scheduling change is made in v0.1.
+- Why: The measured critical path is understanding, then plan, then the first page. The plan waits for the whole understanding, and a page waits for the plan. No step can start earlier without a quality or honesty cost. The long tail of a run is a page that fails twice, not an idle gap. See `docs/launch/T3-scope.md`.
+- Status: accepted. Estimates are ranges fitted to measured runs, and the basis text says so.
 
 ## Superseded (history only)
 

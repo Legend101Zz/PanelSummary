@@ -11,6 +11,7 @@ import {
   placeCandidates,
   placeOne,
   tailSegment,
+  tailLine,
   type HeadCircle,
   type Placed,
   type PlacementPanel,
@@ -56,6 +57,8 @@ export interface LetterPanelInput {
   names?: Readonly<Record<string, string>>;
   /** Key props (the beat's object, the insert's subject): no text covers them. */
   keepOut?: readonly Box[];
+  /** Every prop drawn in the panel (a tail that runs over one is flagged; the speaker's own held prop is skipped). */
+  props?: readonly { prop: string; box: Box; heldBy?: string }[];
   /** Where the panel's sound comes from (SFX sit beside it, never on it). */
   sfxSource?: { point: Point; box: Box };
   /** The page's live area (inside the margins): SFX never leave it. */
@@ -256,6 +259,21 @@ function overflowIssue(panelId: string, index: number, t: TextSpec, text: string
   };
 }
 
+/** A caption of at most this many words, with nobody named, is a scene caption (place or time). */
+export const SCENE_CAPTION_MAX_WORDS = 8;
+
+/**
+ * Spoken words only: a balloon never prints the quotation marks the source put round the
+ * line. Only a text that is ONE quotation from its first to its last character is changed
+ * (a dangling comma or semicolon before the closing mark goes with it). A line with a
+ * speech tag in it ("..." he said; "...") is left alone: the writer must split it.
+ */
+export function unquoteSpoken(text: string): string {
+  const t = text.trim();
+  const m = /^["\u201C\u00AB]\s*([^"\u201C\u201D\u00AB\u00BB]*?)\s*[,;]?\s*["\u201D\u00BB]$/.exec(t);
+  return m && m[1].length > 0 ? m[1] : text;
+}
+
 /**
  * Letter one panel. Balloons and boxes are placed in reading order with a
  * small beam search (so an early balloon does not grab the space a later one
@@ -279,19 +297,19 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
   const issues: ValidationIssue[] = [];
   const rand = mulberry32(input.seed);
   const usable = (t: TextSpec) => typeof t.text === "string" && t.text.trim().length > 0 && KIND_STYLES[t.kind] !== undefined;
-  const clean = (t: TextSpec) => typeset(t.text);
+  const clean = (t: TextSpec) => typeset(SPEAKING_KINDS.includes(t.kind) ? unquoteSpoken(t.text) : t.text);
 
   // --- balloons and boxes: beam search in reading order -------------------
-  const order = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
+  const order0 = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
   /** The page's opening title (the first text of the first panel, a caption in Title Case). */
   const titleIndex =
     input.panelIndex === 0 &&
-    order[0] &&
-    order[0].t.kind === "caption" &&
-    order[0].t.about === undefined &&
-    isTitleText(order[0].t.text) &&
-    !(input.names && inferNameTag(order[0].t.text, input.names))
-      ? order[0].i
+    order0[0] &&
+    order0[0].t.kind === "caption" &&
+    order0[0].t.about === undefined &&
+    isTitleText(order0[0].t.text) &&
+    !(input.names && inferNameTag(order0[0].t.text, input.names))
+      ? order0[0].i
       : -1;
   /** Name tag: a caption about a character drawn here sits by that character's head. */
   const labelOf = (t: TextSpec): HeadCircle | undefined => {
@@ -300,6 +318,11 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     const about = typeof t.about === "string" ? t.about : input.names ? inferNameTag(t.text, input.names) : undefined;
     return about ? input.heads.find((h) => h.character === about) : undefined;
   };
+  // A scene caption (place or time: "The city square, in frost.") is read first, whatever
+  // its place in the list: it sets the scene for the lines that follow (top-left, ahead of them).
+  const isSceneCaption = (t: TextSpec): boolean =>
+    t.kind === "caption" && t.about === undefined && !labelOf(t) && countWords(t.text) <= SCENE_CAPTION_MAX_WORDS && !(input.names && inferNameTag(t.text, input.names));
+  const order = [...order0.filter(({ t }) => isSceneCaption(t)), ...order0.filter(({ t }) => !isSceneCaption(t))];
   const flowing = order.filter(({ t }) => !labelOf(t));
   /** Box anchoring: open the panel from the start corner, close it from the end corner, otherwise flow. */
   const anchorFor = (k: number, flowOnly: boolean): PlaceRequest["boxAnchor"] => {
@@ -522,6 +545,23 @@ export function checkLettering(input: LetterPanelInput, placed: readonly Placed[
         path,
         message: `the ${t.kind} tail for "${speaker}" passes over the face of "${over.character ?? "another figure"}", so the line reads as theirs. Put the speaker on the side of the panel where their line is lettered (speakers left to right in speaking order), give the speaker the panel's first slot, or split the exchange into two panels.`,
       });
+    }
+    if (input.props && !p.tail?.offPanel) {
+      const line = tailLine(p) ?? seg;
+      const hitProp = input.props.find((pr) => {
+        if (pr.heldBy === speaker) return false;
+        // a slightly shrunk box: a tail that only grazes a prop's edge is not flagged
+        const b = { x: pr.box.x + pr.box.w * 0.1, y: pr.box.y + pr.box.h * 0.1, w: pr.box.w * 0.8, h: pr.box.h * 0.8 };
+        return segmentHitsConvex(line[0], line[1], [{ x: b.x, y: b.y }, { x: b.x + b.w, y: b.y }, { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }]);
+      });
+      if (hitProp) {
+        issues.push({
+          code: "TAIL_CROSSES_PROP",
+          severity: "warning",
+          path,
+          message: `the ${t.kind} tail for "${speaker}" runs over the prop "${hitProp.prop}", so the line may read as the prop's. Move the speaker or the prop to another slot or depth, or use a closer shot of the speaker.`,
+        });
+      }
     }
     const crossed = placed.find((q) => q !== p && q.kind !== "sfx" && q.index !== p.connectTo && segmentHitsConvex(seg[0], seg[1], q.hull));
     if (crossed) {

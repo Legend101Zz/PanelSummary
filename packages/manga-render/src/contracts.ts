@@ -277,6 +277,9 @@ export const OBJECT_SHAPES = [
   "candle",
   "lamp",
   "firecracker",
+  "roman_candle",
+  "squib",
+  "bengal_light",
   "coin",
   "book",
   "clock",
@@ -292,11 +295,22 @@ export interface ObjectLook {
 }
 
 export const PLANT_SPECIES = ["oak", "tree", "rose_bush", "flower", "reed", "daisy"] as const;
+/**
+ * How much bloom a plant carries (story state). "full" draws the blooms,
+ * "buds" shut buds only, "single" a bare crown with ONE open bloom (the
+ * marvellous rose), "bare" no bloom and no leaves (frost-bitten, winter).
+ * Unset keeps the old behaviour: full, unless the appearance's eyes are
+ * "dead" (bare) or "closed" (buds).
+ */
+export const PLANT_BLOOMS = ["full", "buds", "single", "bare"] as const;
+export type PlantBloom = (typeof PLANT_BLOOMS)[number];
 export interface PlantLook {
   kind: "plant";
   species: (typeof PLANT_SPECIES)[number];
   tone: Tone;
   face: boolean;
+  /** Optional: the plant's usual bloom (a rose-tree that bears no roses this year is "bare"). */
+  bloom?: PlantBloom;
 }
 
 /** Personified forces of nature (the North Wind, Frost, Snow). */
@@ -312,6 +326,11 @@ export interface CrowdLook {
   kind: "crowd";
   crowd: (typeof CROWD_TYPES)[number];
   size: "few" | "many";
+  /**
+   * Optional exact head count, 1 to 8 ("two little boys" is `count: 2`). Unset keeps the
+   * old behaviour: "few" is 3 people, "many" is 6 to 8.
+   */
+  count?: number;
 }
 
 /**
@@ -384,6 +403,9 @@ export const ENVIRONMENTS = [
   "classroom",
   "country_road",
   "town_hall",
+  "moor",
+  "ditch",
+  "forge",
   "abstract",
   "void",
 ] as const;
@@ -450,6 +472,11 @@ export const PROPS = [
   "feather",
   "bell",
   "flag",
+  "gold_leaf",
+  "thorn",
+  "axe",
+  "firework",
+  "sign",
 ] as const;
 export type PropId = (typeof PROPS)[number];
 
@@ -537,8 +564,11 @@ export interface StagingAnchor {
   part?: PerchPart;
 }
 
-/** Eye state for one appearance (a statue that has given its sapphires is "blind"). */
-export const EYE_STATES = ["open", "closed", "blind", "dead"] as const;
+/**
+ * Eye state for one appearance (a statue that has given its sapphires is "blind";
+ * "one_blind" is the half-way state: one eye given, the other still there).
+ */
+export const EYE_STATES = ["open", "closed", "blind", "dead", "one_blind"] as const;
 export type EyeState = (typeof EYE_STATES)[number];
 
 /**
@@ -549,6 +579,8 @@ export type EyeState = (typeof EYE_STATES)[number];
  */
 export interface LookVariant {
   eyes?: EyeState;
+  /** Plants only: how much bloom this appearance carries (see PLANT_BLOOMS). */
+  bloom?: PlantBloom;
   material?: (typeof MATERIALS)[number];
   outfit_tone?: Tone;
   hair_tone?: Tone;

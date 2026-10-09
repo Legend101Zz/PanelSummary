@@ -30,6 +30,8 @@ export interface EditionSummary {
   status: EditionStatus;
   page_total: number;
   pages_accepted: number;
+  /** Set when the model provider refused the work (D11). Only the code is on the shelf. */
+  provider_stop?: { code: string } | null;
 }
 
 export interface Book {
@@ -103,6 +105,20 @@ export interface Coverage {
   core_not_conveyed?: string[];
 }
 
+/** Set when the model provider refused the work and the edition stopped (D11). */
+export interface ProviderStop {
+  code: "PROVIDER_LIMIT" | "PROVIDER_UNAVAILABLE" | "PROVIDER_AUTH" | string;
+  /** The provider's error type, for example "rate_limit_error". */
+  type?: string | null;
+  http_status?: number | null;
+  /** The provider's own message. No key, no headers. */
+  message?: string | null;
+  stage?: "understanding" | "plan" | "drawing" | string;
+  /** The page that met the refusal, when it happened while drawing. */
+  page?: number | null;
+  at?: string;
+}
+
 export interface Edition {
   id: string;
   book_id: string;
@@ -114,6 +130,8 @@ export interface Edition {
   totals: Totals;
   policy: Record<string, unknown>;
   error: string | null;
+  /** Present (not null) when MiniMax refused the work: a limit, a bad key, or no service. */
+  provider_stop?: ProviderStop | null;
   job_id: string | null;
   created_at: string;
   finished_at: string | null;
@@ -242,10 +260,28 @@ export class ApiError extends Error {
   }
 }
 
+/** FastAPI "detail" can be a string, a list of validation errors, or an object with reasons. */
+export function detailText(detail: unknown): string | null {
+  if (typeof detail === "string") return detail.trim() || null;
+  if (Array.isArray(detail)) {
+    const parts = detail.map((d) => detailText(d)).filter((x): x is string => !!x);
+    return parts.length ? parts.join(" ") : null;
+  }
+  if (detail && typeof detail === "object") {
+    const o = detail as Record<string, unknown>;
+    const reasons = detailText(o.blocking_reasons) ?? detailText(o.reasons);
+    const message = detailText(o.message) ?? detailText(o.msg) ?? detailText(o.error);
+    const end = (t: string) => (/[.!?]$/.test(t) ? t : `${t}.`);
+    return [message, reasons].filter((x): x is string => !!x).map(end).join(" ") || null;
+  }
+  return null;
+}
+
 async function readError(response: Response): Promise<string> {
   try {
     const body = await response.json();
-    if (typeof body?.detail === "string") return body.detail;
+    const text = detailText(body?.detail);
+    if (text) return text;
   } catch {
     // not JSON
   }
@@ -304,6 +340,35 @@ export const getJob = (jobId: string) => request<Job>(`/jobs/${jobId}`);
 // ---------------------------------------------------------------------------
 // Editions
 // ---------------------------------------------------------------------------
+
+/** What Generate will cost, before it starts. Shape: GET /books/{id}/preflight (backend track T3). */
+export interface Range {
+  low: number;
+  high: number;
+}
+export interface Preflight {
+  book_id: string;
+  pdf_pages: number;
+  source_words: number;
+  sections: number;
+  estimated_manga_pages: Range;
+  estimated_cost_usd: Range & { basis?: string };
+  estimated_minutes: { first_page: Range; total: Range };
+  limits: { max_pdf_pages: number; max_source_words: number };
+  within_limits: boolean;
+  blocking_reasons: string[];
+}
+
+/** Null when the backend has no such endpoint (404), or it fails: the panel is then hidden and Generate still works. */
+export async function getPreflight(bookId: string): Promise<Preflight | null> {
+  try {
+    const p = await request<Preflight>(`/books/${bookId}/preflight`);
+    if (!p || typeof p !== "object" || !p.estimated_manga_pages || !p.estimated_minutes || !p.estimated_cost_usd) return null;
+    return p;
+  } catch {
+    return null;
+  }
+}
 
 export const generateEdition = (bookId: string) => post<GenerateResult>(`/books/${bookId}/editions`);
 export const listEditions = (bookId: string) => request<Edition[]>(`/books/${bookId}/editions`);

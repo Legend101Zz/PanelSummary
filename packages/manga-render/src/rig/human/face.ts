@@ -201,7 +201,7 @@ export const EXPR: Record<Expression, ExprSpec> = {
   shout: E({ open: 1.15, tilt: 14, iris: 0.55, brow: [0.14, -0.11, -0.01], mouth: "shout", mw: 1.3 }),
   surprised: E({ open: 1.32, iris: 0.5, brow: [-0.22, -0.2, 0.08], mouth: "o", mw: 0.5 }),
   afraid: E({ open: 1.28, tilt: -10, iris: 0.36, brow: [-0.22, 0.02, 0.0], wobble: true, mouth: "wavyOpen", mw: 1.0 }),
-  determined: E({ open: 0.8, tilt: 12, iris: 0.92, brow: [0.09, -0.07, 0.0], mouth: "firm", mw: 0.72 }),
+  determined: E({ open: 0.84, tilt: 8, iris: 0.92, brow: [0.07, -0.05, 0.0], mouth: "firm", mw: 0.72 }),
   thinking: E({ open: 0.82, look: [0.45, -0.45], brow: [-0.02, 0.0, 0.03], browAsym: -0.12, mouth: "pout", mw: 0.8 }),
   worried: E({ open: 1.0, tilt: -10, iris: 0.88, brow: [-0.16, 0.05, 0.0], wobble: true, mouth: "wavy", mw: 0.62 }),
   smug: E({ open: 0.55, look: [0.35, 0], tilt: 4, brow: [0.04, -0.03, 0.02], browAsym: -0.11, mouth: "smirk", mw: 0.8 }),
@@ -503,6 +503,8 @@ export function withEyeState(x: ExprSpec, eyes: Ink["eyes"]): ExprSpec {
   if (!eyes || eyes === "open") return x;
   if (eyes === "closed") return { ...x, eye: "closed", tears: false };
   if (eyes === "blind") return { ...x, eye: "blind", shine: undefined };
+  // one eye given away: the other eye keeps its look (drawFace blanks the first one)
+  if (eyes === "one_blind") return x;
   return { ...x, eye: "dead", brow: [-0.04, 0.05, 0.01], browAsym: 0, wobble: false, tears: false, blush: false, bags: false };
 }
 
@@ -560,7 +562,10 @@ export function drawFace(pen: Pen, g: FaceGeo, expr: Expression, pal: Palette, i
     const cx = side ? 0.2 * R : 0;
     under += line(pen.curve([v(cx - 0.3 * R, 1.22 * R), v(cx, 1.3 * R), v(cx + 0.3 * R, 1.22 * R)], false), ink.dw * 0.8);
   }
-  for (const f of frames) under += drawEye(pen, g, f, x, pal, ink, gem);
+  frames.forEach((f, i) => {
+    const xi: ExprSpec = ink.eyes === "one_blind" && i === 0 ? { ...x, eye: "blind", shine: undefined } : x;
+    under += drawEye(pen, g, f, xi, pal, ink, gem);
+  });
   if (x.blush && !reduced) {
     for (const f of frames) {
       const bc = v(f.c.x + f.out * f.w * 0.3, f.c.y + g.eyeH + 0.2 * R);

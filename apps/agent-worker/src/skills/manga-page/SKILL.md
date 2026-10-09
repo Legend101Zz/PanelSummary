@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.5.0
+version: 1.8.0
 ---
 
 # Manga page
@@ -68,6 +68,11 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **3-5 panels is normal.** Use 1-2 for a big moment (a revelation, a death, a
   transformation) and 6-7 only for a rapid exchange or a montage, with 15 words per panel
   or fewer.
+- **Count the lines before you pick the template.** Plan 1-2 balloons and about 12 words per
+  panel. More than 8 lines or 90 words in the source means a 6-panel or 7-panel template, a panel
+  for each long line, and cuts with "..." (a quote may be cut). A 4-panel page with 9 balloons
+  never fits. A refrain the book repeats (the same ask three times) is lettered in full once;
+  cut it short for the repeats. Each new place still gets its own panel.
 - **One moment per panel.** A panel is a frozen instant showing one action or one
   reaction. "He pulls out the ruby and flies away" is two panels. Each panel's `beat` names
   one moment.
@@ -129,6 +134,16 @@ right, top to bottom; `panels` must be listed in that reading order.
   the book's argument, a narrator's voice worth keeping. Use at most one narration box per
   panel, 20 words or fewer, and normally at most two per page.
 - **Captions** (`caption`) label place and time in 6 words or fewer ("The city, at night").
+- **Say the key event.** A death, a marriage, an arrival or a gift the claim names is SAID in a
+  caption or line, in the panel that shows it. A closed-eyed face reads as sleep.
+- **State every core claim's facts in lettering** (a caption or a balloon). A name tag or a
+  picture does not state them: "gilded, sapphire eyes, a ruby on his sword-hilt" needs those
+  words. (CLAIM_TEXT_THIN.)
+- **Draw the key object or action of the beat**: put it in `props`, in a figure's `holding`, or
+  in an `insert` panel. A claim that names a rose, a thorn or a sack needs it drawn.
+  (KEY_PROP_NOT_DRAWN.)
+- **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
+  crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the
   panel that shows it, not in the panel after.
 
@@ -145,6 +160,9 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **Punctuation**: "..." (exactly three dots) for a pause or a trailing voice; "--" for an
   interruption. No semicolons. "?!" for a shouted question. Write in normal sentence case;
   the renderer styles the letters.
+- **Never splice** two source spans in one balloon, and never trim a quote's punchline
+  ("as beautiful as a weathercock... only not quite so useful"): split a long quote over two
+  balloons.
 - Every word must earn its place. When in doubt, cut.
 
 ## 7. Speakers and text kinds
@@ -155,6 +173,12 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **Speaking order is reading order.** The first speaker stands left (`left` or
   `center_left`) and the responder right. List `text` entries in the order they are spoken,
   so a reply is never listed before its question.
+- **A line the book gives to a character is `speech` from that character**, never a narration
+  or caption box (SPEECH_IN_NARRATION). Narration is the narrator's voice only.
+- **Ask before answer**: letter the book's lines in the book's order across the panels.
+- **Never give a line to a character who is absent, asleep or dead** in this page's source
+  units. Draw only the planned cast, and set panels only in the planned locations (a
+  flashback is the exception). (LOCATION_OFF_PLAN.)
 - `speech` for normal lines. `thought` for inner voice. `whisper` for secrets. `shout` for
   raised voices: 8 words or fewer, and rare. `sfx` for sounds: 1-3 punchy words ("FLAP",
   "CRACK", "DRIP"), only for sounds the scene makes, in panels where something happens.
@@ -180,20 +204,20 @@ right, top to bottom; `panels` must be listed in that reading order.
 
 ## 8a. State continuity: how characters look NOW
 
-Characters change over a book. Use `variant` on a figure to show the change from this
-point on, and keep it on every later appearance:
+Characters change over a book. When the goal gives `expected_looks`, it is computed from the
+story so far: put its `variant_on_every_panel` on EVERY figure of that character, in every
+panel (a character who lost an eye, was stripped of gold or died keeps it until the book says
+otherwise). A `changes_on_this_page` entry means draw the old look until the panel where the
+text shows the change, and the new look from then on, never going back. Do not copy a look
+from an earlier page's picture.
 
 ```json
 { "character": "c_prince", "pose": "stand", "expression": "sad", "facing": "front", "slot": "center",
   "variant": { "eyes": "blind", "material": "stone" } }
 ```
 
-- `eyes`: `open`, `closed`, `blind` (a statue whose gem eyes are gone), `dead`.
-- `material`: a gilded statue stripped of its gold becomes `stone`.
-- `outfit_tone`, `hair_tone`, `tone`: a change of clothes or colour.
-Read the previous pages' beats: if a sapphire was given away, the statue has one blind
-eye from then on (use `blind` once both are gone); a character who has died is drawn with
-`eyes: "dead"` and pose `lie`.
+Variant fields: `eyes` (`open`, `closed`, `blind`, `dead`), `material` (a gilded statue stripped of
+its gold is `stone`), `outfit_tone`, `hair_tone`, `tone`. FIGURE_STATE_MISMATCH is an error.
 
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
@@ -224,7 +248,11 @@ change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
   appears (`PropSpec.tone`, or `holding_tone` when a character holds it).
 - **Name tags**: introduce a character with a `caption` whose `about` is their cast id —
   it is placed next to them (`{"kind": "caption", "about": "c_seamstress", "text": "The
-  seamstress", "fidelity": "paraphrase"}`), not in a corner.
+  seamstress", "fidelity": "paraphrase"}`), not in a corner. Only on the character's FIRST
+  appearance in the book, and once; never repeat a caption (REPEAT_NAME_TAG,
+  DUPLICATE_CAPTION).
+- **The statue is always on its column**: use a location with `statue_column`, never a street
+  or a room (STATUE_LOCATION_SWAPPED).
 
 ## 9. FX
 
@@ -252,6 +280,7 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 - **When `page_turn_hook` is true**, the last panel holds a question, a threat, a decision,
   or a face reacting to something not yet shown. Make that panel small or medium, never
   the page's big panel, and do not show the answer on this page.
+- **Last page of a section:** end on one large panel, then one small reaction panel.
 - **When the previous page ended on a hook**, open with the answer: the first panel is
   large (about 40% of the page or more).
 
@@ -306,7 +335,7 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
 ## Process
 
 1. Read the source text and the claims for this page.
-2. Plan before writing JSON: `purpose` → one moment per panel → the dominant panel → a
+2. Plan before writing JSON, in 5 lines at most (a long plan in prose uses up the output limit): `purpose` → one moment per panel → the dominant panel → a
    shot for each panel → the words (count them).
 3. Draft the page JSON. Use `preview_page` to check it (it lists every issue; with vision
    you also see the rendered page — check reading order, who is speaking, whether faces are
@@ -321,5 +350,13 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    - the beat reads from the pictures alone;
    - the fidelity labels are correct;
    - the hook rules in section 10 are met.
-5. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
+5. **Repair the page, not the panel.** Room errors (TEXT_DOES_NOT_FIT, BALLOON_TALL,
+   TAIL_CROSSES_TEXT) in two or more panels, or a new error on each try, mean the page asks
+   too much of its panels: fix every named code in one edit and change the structure (more
+   panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
+6. **FIX BEFORE SUBMIT** items (CLAIM_TEXT_THIN, KEY_PROP_NOT_DRAWN, SPEECH_IN_NARRATION,
+   DUPLICATE_CAPTION, REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL,
+   SPEAKER_OFF_PANEL_LIMIT, STATUE_LOCATION_SWAPPED) reject your FIRST submit only. Fix them
+   in the same edit; if one cannot be fixed, submit again and it stays a warning.
+7. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
    every error and submit the complete JSON again.

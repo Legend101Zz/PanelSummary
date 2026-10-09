@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.2.0
+version: 1.4.0
 ---
 
 # Adaptation plan
@@ -29,7 +29,9 @@ something to *see*.
 1. **One page, one beat.** The `beat` is one sentence naming the change on the page: who
    does, learns, decides or feels what. "The Swallow agrees to take the ruby to the
    seamstress" is a beat. "The Swallow and the Prince" is not. You may end the sentence
-   with the key image after a semicolon ("…; the ruby glinting in his beak"). Pages are the
+   with the key image after a semicolon ("…; the ruby glinting in his beak"). When a claim
+   turns on an object (a rose, a thorn, a sack), the beat names that object, so the page
+   writer draws it. Pages are the
    unit of pacing.
 2. **Density.** Put at most 3 claims on a page (4 only on a recap or summary page). A page
    of fast dialogue carries 1-2 claims. A page may carry no claims when it establishes a
@@ -43,7 +45,10 @@ something to *see*.
    redundant for understanding; prefer omitting `detail` claims. Never omit a claim to
    save effort.
 4. **Order.** Follow the book. Sections appear in order; each section starts on a new page.
-   Claims appear on or after the page whose units contain their source.
+   Claims appear on or after the page whose units contain their source,
+   and pages keep the book's order inside a section: the set-up page comes before the
+   climax page. Write "flashback" in the beat when an earlier moment is shown on purpose. A question and its
+   answer go on the same page, in that order, or the answer opens the next page.
 5. **Units.** Each page lists the units it adapts (the page writer receives exactly that
    text). Every unit of the book should be adapted by at least one page, except front or
    back matter.
@@ -66,7 +71,8 @@ something to *see*.
      answer.
    - Give big moments (a revelation, a death, a transformation, the climax) a page of
      their own. It may be a 1-2 panel page, so plan fewer claims there.
-   - The book's last page ends on a strong image and a closing reaction, not a summary.
+   - The book's last page, and the last page of each section, end on one strong image and a
+     small closing reaction, not a summary.
 9. **Fiction.** Keep the book's defining lines (the `quote` claims) on the page where they
    happen in the story. Budget about 6-10 exchanged lines for a dialogue page, at most.
    Plan anything the pictures must show so the page writer can stage it: a statue high on

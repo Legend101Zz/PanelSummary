@@ -82,6 +82,80 @@ export function roomPoor(st: Stage): Sites {
   );
 }
 
+/**
+ * A foundry or forge: a rough stone workshop with a great lit furnace in the
+ * back wall, an anvil, a work table with a crucible and mould, barrels and a
+ * heap of ingots. The glow is the furnace mouth, drawn paper-white on black.
+ */
+export function forge(st: Stage): Sites {
+  const W = 7.4;
+  const room: Room = { x0: -W / 2, x1: W / 2, zb: st.zmid + 3.6, zf: -1.5, h: 4.4 };
+  const walls = roomShell(st, room, { floor: "flags", wall: toneFill("stone", st.p), sideWall: toneFill("dots", st.p), ceiling: toneFill("dark", st.p), beams: true });
+  const [back, left, right] = walls;
+  stoneBlocks(st, back, 0.5);
+  stoneBlocks(st, left, 0.5);
+  stoneBlocks(st, right, 0.5);
+  // the furnace: a wide lit hearth in the middle of the back wall
+  wallFireplace(st, back, W / 2 - 0.9, true);
+  // a hood and flue above it
+  {
+    const m = back.map;
+    wallDecal(
+      st,
+      pathEl(polyD(st, [m(W / 2 - 1.3, 2.3), m(W / 2 + 1.3, 2.3), m(W / 2 + 0.5, 3.6), m(W / 2 - 0.5, 3.6)]), { fill: st.pal.shade, stroke: st.pal.ink, w: wAt(st, room.zb) }) +
+        pathEl(polyD(st, [m(W / 2 - 0.5, 3.6), m(W / 2 + 0.5, 3.6), m(W / 2 + 0.5, room.h), m(W / 2 - 0.5, room.h)]), { fill: st.pal.shade, stroke: st.pal.ink, w: wAt(st, room.zb) }),
+      back,
+    );
+  }
+  // the anvil on its block
+  const ax = room.x1 - 1.6;
+  const az = st.zmid + 1.2;
+  furniture(st, [
+    { b: { a0: ax - 0.25, a1: ax + 0.25, y0: 0, y1: 0.62, d0: az - 0.2, d1: az + 0.2 }, fill: st.pal.wood },
+    { b: { a0: ax - 0.5, a1: ax + 0.5, y0: 0.62, y1: 0.82, d0: az - 0.17, d1: az + 0.17 }, fill: toneFill("dark", st.p), top: toneFill("mid", st.p) },
+  ]);
+  // work table with a crucible and an ingot mould
+  table(st, room.x0 + 1.4, room.zb - 1.5, 1.4, 0.7, 0.8);
+  furniture(st, [
+    { b: { a0: room.x0 + 0.95, a1: room.x0 + 1.25, y0: 0.8, y1: 1.1, d0: room.zb - 1.7, d1: room.zb - 1.4 }, fill: toneFill("black", st.p), top: toneFill("dark", st.p) },
+    { b: { a0: room.x0 + 1.55, a1: room.x0 + 2.1, y0: 0.8, y1: 0.9, d0: room.zb - 1.75, d1: room.zb - 1.35 }, fill: toneFill("mid", st.p), top: PAPER },
+  ]);
+  // barrels and a heap of ingots by the right wall
+  furniture(st, [
+    { b: { a0: room.x1 - 0.9, a1: room.x1 - 0.2, y0: 0, y1: 0.95, d0: room.zb - 1.0, d1: room.zb - 0.3 }, fill: st.pal.wood, top: toneFill("dark", st.p) },
+    { b: { a0: room.x1 - 0.95, a1: room.x1 - 0.35, y0: 0, y1: 0.3, d0: room.zb - 2.2, d1: room.zb - 1.6 }, fill: toneFill("mid", st.p), top: PAPER },
+    { b: { a0: room.x1 - 0.85, a1: room.x1 - 0.45, y0: 0.3, y1: 0.55, d0: room.zb - 2.1, d1: room.zb - 1.7 }, fill: toneFill("mid", st.p), top: PAPER },
+  ]);
+  if (st.lod >= 1) {
+    // sparks above the anvil: short rays
+    const p = project(st.cam, { x: ax, y: 1.05, z: az });
+    const k = scaleAt(st.cam, { x: ax, y: 1.05, z: az });
+    if (p && k > 12) {
+      let rays = "";
+      for (let i = 0; i < 7; i += 1) {
+        const a = -Math.PI / 2 + (i - 3) * 0.32;
+        rays += `M${n(p.x + Math.cos(a) * 0.1 * k)} ${n(p.y + Math.sin(a) * 0.1 * k)}L${n(p.x + Math.cos(a) * 0.32 * k)} ${n(p.y + Math.sin(a) * 0.32 * k)}`;
+      }
+      add(st, LAYER.stand, toCam(st.cam, { x: ax, y: 1, z: az }).z - 0.01, pathEl(rays, { stroke: st.pal.ink, w: st.lw * 0.8 }));
+    }
+  }
+  void left;
+  void right;
+  return sitesFor(
+    room,
+    walls,
+    [
+      ["left", 1.2, 1.4],
+      ["right", 1.2, 1.4],
+    ],
+    [
+      { x: 0, z: room.zb - 2.4 },
+      { x: room.x0 + 1, z: st.zmid - 0.4 },
+    ],
+    ["fireplace"],
+  );
+}
+
 export function roomRich(st: Stage): Sites {
   const W = 8.4;
   const room: Room = { x0: -W / 2, x1: W / 2, zb: st.zmid + 4, zf: -1.5, h: 3.6 };

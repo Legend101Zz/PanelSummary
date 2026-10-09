@@ -1,5 +1,13 @@
 export {
   ALLOWED_MODELS,
+  applyThinkingToPayload,
+  CATALOG_COST_BASIS,
+  costBasisFor,
+  DEFAULT_GOAL_MODEL,
+  describeThinkingSent,
+  FLASH_COST_BASIS,
+  FLASH_MODEL,
+  flashThinkingWire,
   BASE_SYSTEM_PROMPT,
   extractFinalJson,
   GoalRunError,
@@ -20,3 +28,10 @@ export {
   type ThinkingLevel,
   type ToolImage,
 } from "./goal-runtime.js";
+export {
+  classifyProviderError,
+  PROVIDER_ERROR_CODES,
+  scrubProviderText,
+  type ProviderError,
+  type ProviderErrorCode,
+} from "./provider-error.js";

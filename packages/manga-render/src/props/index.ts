@@ -814,6 +814,104 @@ const SPECS: Record<PropId, Spec> = {
       return s;
     },
   },
+  gold_leaf: {
+    h: 16,
+    w: 16,
+    grip: { x: 0, y: -7 },
+    draw: (k) => {
+      const g = G(k.p);
+      // one thin leaf of gold, curled at a corner, with a vein and a glint
+      const leaf = `${M(-6.8, -5.4)}${Q(-1, -11.4, 5.6, -11.2)}${Q(7.2, -5, 3.8, -0.8)}${Q(-2.4, -1.2, -6.8, -5.4)}Z`;
+      let s = P(leaf, bodyOf(k, g.gold), k.lw);
+      if (!k.simple) {
+        s += F(`${M(3.8, -0.8)}${Q(7.2, -5, 5.6, -11.2)}${Q(4.6, -6.6, 1.8, -3.6)}Z`, g.dark);
+        s += L(`${M(-5.4, -5.2)}${Q(-0.4, -6.4, 4.6, -9.8)}`, k.dw * 0.8);
+        s += L(`${M(-2.6, -5.9)}${Lto(-1.2, -3.2)}${M(0.6, -7)}${Lto(1.8, -4.6)}`, k.dw * 0.7);
+        s += sparkle(-4.6, -10.4, 2.6, k.dw);
+      }
+      return s;
+    },
+  },
+  thorn: {
+    h: 30,
+    w: 16,
+    grip: { x: 0, y: -4 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a woody rose cane with one long thorn (the one she presses her breast against) and small ones
+      let s = P(`${M(-1.6, 0)}${Q(-2.6, -12, -1, -22)}${Q(-0.6, -27, 1.4, -30)}${Lto(2.6, -29)}${Q(1.6, -26, 1.8, -21.6)}${Q(3.2, -12, 1.8, 0)}Z`, g.dark, k.lw);
+      s += P(`${M(1.8, -10)}${Q(7.4, -11.6, 14, -15)}${Q(8.4, -8.4, 2.4, -6.6)}Z`, PAPER, k.lw);
+      if (!k.simple) {
+        s += L(`${M(2.2, -9.2)}${Q(7, -10.4, 12, -13.4)}`, k.dw * 0.7);
+        s += P(`${M(-1.5, -17)}${Q(-5, -17.8, -8, -20.4)}${Q(-4.4, -14.4, -1.7, -14)}Z`, PAPER, k.lw * 0.8);
+        s += P(`${M(1.4, -24)}${Q(4, -25, 6, -27.4)}${Q(3, -22, 1.6, -21.4)}Z`, PAPER, k.lw * 0.8);
+        s += P(`${M(0.2, -29)}${Q(-3.4, -27, -5.6, -29)}${Q(-3, -31, 0.4, -30.6)}Z`, g.light, k.lw * 0.8);
+      }
+      return s;
+    },
+  },
+  axe: {
+    h: 46,
+    w: 24,
+    grip: { x: 0, y: -10 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a long wooden haft and a broad steel head with a curved cutting edge
+      let s = P(poly(-1.2, 0, 1.2, 0, 1.0, -40, -1.0, -40), bodyOf(k, g.light), k.lw);
+      const head = `${M(0.9, -42.5)}${Lto(10.8, -45.6)}${Q(13.2, -37, 10.8, -29.4)}${Lto(0.9, -33)}Z`;
+      s += P(head, g.mid, k.lw);
+      if (!k.simple) {
+        s += L(`${M(9.6, -44.4)}${Q(11.8, -37, 9.6, -30.6)}`, k.dw * 0.9, PAPER);
+        s += L(`${M(0.9, -39)}${Lto(6.8, -40.6)}`, k.dw * 0.7);
+        s += P(poly(-2.2, -41.8, 1.2, -41.8, 1.2, -33.4, -2.2, -33.4), g.dark, k.lw * 0.9);
+        s += L(`${M(-1, -6)}${Lto(1, -7.2)}${M(-1, -9)}${Lto(1, -10.2)}`, k.dw * 0.6);
+      }
+      return s;
+    },
+  },
+  firework: {
+    h: 34,
+    w: 9,
+    grip: { x: 0, y: -8 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a paper firework tube: bands, a plug and a twist of fuse with sparks (never a wax candle)
+      let s = P(poly(-3.4, 0, 3.4, 0, 3.4, -29, -3.4, -29), bodyOf(k, g.mid), k.lw);
+      s += P(poly(-3.4, -4, 3.4, -4, 3.4, -1, -3.4, -1), PAPER, k.dw);
+      s += P(poly(-3.4, -27.4, 3.4, -27.4, 3.4, -29, -3.4, -29), g.dark, k.dw);
+      if (!k.simple) {
+        s += P(poly(-3.4, -20, 3.4, -17.6, 3.4, -13.2, -3.4, -15.6), PAPER, k.dw);
+        s += L(`${M(-3.4, -9.2)}${Lto(3.4, -7.4)}${M(-3.4, -24)}${Lto(3.4, -22.4)}`, k.dw);
+      }
+      s += L(`${M(0.2, -29)}${Q(2.2, -31, 0.8, -32.6)}${Q(0, -33.4, 1.6, -34.4)}`, k.lw * 1.1);
+      if (!k.simple) {
+        let rays = "";
+        for (let i = 0; i < 5; i += 1) {
+          const a = -Math.PI / 2 + (i - 2) * 0.55;
+          rays += `${M(1.6 + Math.cos(a) * 0.6, -34.4 + Math.sin(a) * 0.6)}${Lto(1.6 + Math.cos(a) * 1.9, -34.4 + Math.sin(a) * 1.9)}`;
+        }
+        s += L(rays, k.dw);
+      }
+      return s;
+    },
+  },
+  sign: {
+    h: 48,
+    w: 36,
+    grip: { x: 0, y: -4 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a notice-board on a post: a plank with lines of lettering
+      let s = P(poly(-1.2, 0, 1.2, 0, 1.2, -36, -1.2, -36), g.dark, k.lw);
+      s += P(poly(-16, -47, 16, -47, 16, -26, -16, -26), bodyOf(k, PAPER), k.lw);
+      if (!k.simple) {
+        s += L(`${M(-12.4, -42)}${Lto(12.4, -42)}${M(-12.4, -38)}${Lto(12.4, -38)}${M(-12.4, -34)}${Lto(12.4, -34)}${M(-12.4, -30)}${Lto(6, -30)}`, k.dw * 1.2);
+        s += C(-13.4, -45, 0.8, INK, k.dw);
+        s += C(13.4, -45, 0.8, INK, k.dw);
+      }
+      return s;
+    },
+  },
 };
 
 export function propSpec(prop: PropId): { h: number; w: number; grip: Point } {

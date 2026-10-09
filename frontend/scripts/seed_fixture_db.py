@@ -8,8 +8,8 @@ Run with the backend venv, never directly against a real database:
     backend/.venv/bin/python frontend/scripts/seed_fixture_db.py insert < docs.json
         -> wipes and fills the disposable fixture database
 
-The target is hard-wired to the disposable MongoDB on 127.0.0.1:27018 and the
-database "ps_frontend_fixture". Any other MONGODB_URL / DB_NAME is refused.
+The target is the disposable MongoDB on 127.0.0.1:27018 / "ps_frontend_fixture", or
+a private "launch_t5*" database on another local port. Anything else is refused.
 """
 
 from __future__ import annotations
@@ -67,8 +67,11 @@ def insert(payload: dict) -> None:
 
     url = os.environ.get("MONGODB_URL", FIXTURE_URL)
     name = os.environ.get("DB_NAME", FIXTURE_DB)
-    if url.rstrip("/") != FIXTURE_URL or name != FIXTURE_DB:
-        raise SystemExit(f"refusing to seed {url}/{name}: only {FIXTURE_URL}/{FIXTURE_DB} is allowed")
+    allowed = (url.rstrip("/") == FIXTURE_URL and name == FIXTURE_DB) or (
+        url.startswith("mongodb://127.0.0.1:") and url.rstrip("/") != FIXTURE_URL and name.startswith("launch_t5")
+    )
+    if not allowed:
+        raise SystemExit(f"refusing to seed {url}/{name}: only {FIXTURE_URL}/{FIXTURE_DB} or a private launch_t5* database is allowed")
 
     storage = Path(payload["storage_dir"]).resolve()
     pdf_dir = storage / "pdfs"

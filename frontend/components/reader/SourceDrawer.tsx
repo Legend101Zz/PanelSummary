@@ -37,12 +37,11 @@ export const SourceDrawer = forwardRef<HTMLHeadingElement, Props>(function Sourc
     if (!pages.length) return null;
     return (
       <span className={styles.srcLinks}>
-        {pages.length === 1 ? "PDF page " : "PDF pages "}
         {pages.map((p, i) => (
-          <span key={p}>
-            {i > 0 ? (i === pages.length - 1 ? " and " : ", ") : null}
+          <span key={p} className={styles.srcItem}>
+            {i > 0 ? (i === pages.length - 1 ? "and " : ", ") : null}
             <Link href={sourceHref(p)} className={styles.srcLink}>
-              {p}
+              PDF page {p}
             </Link>
           </span>
         ))}

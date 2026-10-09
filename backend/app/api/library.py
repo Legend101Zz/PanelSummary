@@ -10,6 +10,7 @@ import fitz
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 
+from app.preflight import build_preflight
 from app.documents import BookSource, Edition, GenerationJob, LibraryBook, utcnow
 from app.settings import get_settings
 
@@ -94,7 +95,14 @@ async def list_books() -> list[dict]:
         view = book_view(book)
         latest = await Edition.find(Edition.book_id == str(book.id)).sort("-created_at").first_or_none()
         view["latest_edition"] = (
-            {"id": str(latest.id), "status": latest.status, "page_total": latest.page_total, "pages_accepted": latest.pages_accepted}
+            {
+                "id": str(latest.id),
+                "status": latest.status,
+                "page_total": latest.page_total,
+                "pages_accepted": latest.pages_accepted,
+                # Only the code: the shelf band says why the drawing stopped (D11).
+                "provider_stop": {"code": latest.provider_stop.get("code")} if latest.provider_stop else None,
+            }
             if latest
             else None
         )
@@ -116,6 +124,15 @@ async def get_book(book_id: str) -> dict:
         else []
     )
     return view
+
+
+@router.get("/books/{book_id}/preflight")
+async def preflight(book_id: str) -> dict:
+    """Size, limits and a cost/time range, shown before Generate. No model call, no spend."""
+    book = await get_book_or_404(book_id)
+    if book.status != "parsed":
+        raise HTTPException(status_code=409, detail="The book is not parsed yet, so it cannot be measured")
+    return build_preflight(str(book.id), book.page_count, book.word_count, book.section_count, get_settings())
 
 
 def _pdf_path(book: LibraryBook) -> Path:

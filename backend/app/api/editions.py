@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.library import _check_id, get_book_or_404
 from app.documents import Edition, EditionArtifact, EditionPage, GenerationJob, utcnow
+from app.preflight import check_limits
 from app.settings import get_settings
 from app import worker_client
 
@@ -15,17 +16,9 @@ ACTIVE = ("queued", "understanding", "planning", "drawing")
 
 
 def policy_snapshot() -> dict:
-    s = get_settings()
+    """The generation policy recorded on a new edition: per-goal model, thinking and retry thinking (D13)."""
     return {
-        "understanding_model": s.understanding_model,
-        "understanding_thinking": s.understanding_thinking,
-        "plan_model": s.plan_model,
-        "plan_thinking": s.plan_thinking,
-        "page_model": s.page_model,
-        "page_thinking": s.page_thinking,
-        "page_vision": s.page_vision,
-        "page_attempts": s.page_attempts,
-        "retry_thinking": s.retry_thinking,
+        **get_settings().policy_fields(),
         "harness": "apps/agent-worker (Pi sealed session) -> MiniMax",
         "image_models": "none",
     }
@@ -59,6 +52,10 @@ async def job_view(job_id: str | None) -> dict | None:
     }
 
 
+def _iso(value) -> str:
+    return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+
 def edition_view(edition: Edition) -> dict:
     return {
         "id": str(edition.id),
@@ -71,9 +68,12 @@ def edition_view(edition: Edition) -> dict:
         "totals": edition.totals.model_dump(),
         "policy": edition.policy,
         "error": edition.error,
+        "provider_stop": edition.provider_stop,
         "job_id": edition.job_id,
         "created_at": edition.created_at.isoformat(),
         "finished_at": edition.finished_at.isoformat() if edition.finished_at else None,
+        # Milestones from the job runner (ISO strings; a key is absent until it happened).
+        "timings": {key: _iso(value) for key, value in (edition.timings or {}).items()},
     }
 
 
@@ -86,6 +86,11 @@ async def generate(book_id: str) -> dict:
     running = await Edition.find(Edition.book_id == book_id, {"status": {"$in": list(ACTIVE)}}).first_or_none()
     if running is not None:
         return {"edition": edition_view(running), "job": await job_view(running.job_id), "already_running": True}
+    # v0.1 size limits (D19): refuse before any edition, job or spend exists.
+    settings = get_settings()
+    reasons = check_limits(book.page_count, book.word_count, settings.max_pdf_pages, settings.max_source_words)
+    if reasons:
+        raise HTTPException(status_code=422, detail=" ".join(reasons))
     edition = Edition(book_id=book_id, policy=policy_snapshot())
     await edition.insert()
     job = GenerationJob(kind="generate", book_id=book_id, edition_id=str(edition.id), message="Waiting for the generator")
@@ -196,6 +201,7 @@ async def resume(edition_id: str) -> dict:
     edition.job_id = str(job.id)
     edition.status = "queued"
     edition.error = None
+    edition.provider_stop = None
     await edition.save()
     return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
 
