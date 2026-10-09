@@ -141,6 +141,13 @@ interface Slot {
 }
 
 function slots(count: number, rand: Rand): Slot[] {
+  if (count === 1) return [{ x: 0, y: 0, s: 1, row: 0 }];
+  if (count === 2) {
+    return [
+      { x: -13, y: 0, s: 1, row: 0 },
+      { x: 14, y: -1, s: 0.96, row: 0 },
+    ];
+  }
   if (count === 3) {
     return [
       { x: 0, y: 0, s: 1, row: 0 },
@@ -202,7 +209,11 @@ function backRowSilhouette(a: FigureAnchors, look: HumanLook, lw: number, crowd:
   return (
     `<path d="${body}" fill="${fill}" stroke="${INK}" stroke-width="${n(lw * 2)}" paint-order="stroke" stroke-linejoin="round"/>` +
     `<path d="${head}" fill="#ffffff" stroke="${INK}" stroke-width="${n(lw * 2)}" paint-order="stroke"/>` +
-    `<path d="${hat}" fill="${hatFill}" stroke="${INK}" stroke-width="${n(lw)}" stroke-linejoin="round"/>`
+    `<path d="${hat}" fill="${hatFill}" stroke="${INK}" stroke-width="${n(lw)}" stroke-linejoin="round"/>` +
+    // a simplified face: two eye dots and a short mouth, so a back-row head is never blank
+    `<circle cx="${n(cx - r * 0.36)}" cy="${n(hy + r * 0.08)}" r="${n(Math.max(r * 0.1, lw * 0.9))}" fill="${INK}"/>` +
+    `<circle cx="${n(cx + r * 0.36)}" cy="${n(hy + r * 0.08)}" r="${n(Math.max(r * 0.1, lw * 0.9))}" fill="${INK}"/>` +
+    `<path d="M${n(cx - r * 0.24)} ${n(hy + r * 0.5)}q${n(r * 0.24)} ${n(r * 0.14)} ${n(r * 0.48)} 0" fill="none" stroke="${INK}" stroke-width="${n(Math.max(lw * 0.8, r * 0.06))}" stroke-linecap="round"/>`
   );
 }
 
@@ -213,7 +224,8 @@ export const crowdRig: KindRig<CrowdLook> = {
   draw(request, ctx: DrawContext): FigureDrawing {
     const look = request.look;
     const rand = seeded(request.seed, "crowd", look.crowd, look.size);
-    const count = look.size === "few" ? 3 : 6 + Math.floor(rand() * 3);
+    const asked = typeof look.count === "number" && Number.isInteger(look.count) && look.count >= 1 && look.count <= 8 ? look.count : undefined;
+    const count = asked ?? (look.size === "few" ? 3 : 6 + Math.floor(rand() * 3));
     const places = slots(count, rand);
     // Paint back row first, front-centre last.
     const order = places.map((p, i) => ({ p, i })).sort((a, b) => b.p.row - a.p.row || Math.abs(b.p.x) - Math.abs(a.p.x));
@@ -280,6 +292,6 @@ export const crowdRig: KindRig<CrowdLook> = {
     }
     if (!lead) throw new Error("crowd without members");
     const rimG = rim ? `<g fill="${PAPER}" stroke="${PAPER}" stroke-linejoin="round">${rim}</g>` : "";
-    return { svg: rimG + svg, anchors: { ...lead, top, left, right } };
+    return { svg: rimG + svg, anchors: { ...lead, top, left, right }, members: count };
   },
 };

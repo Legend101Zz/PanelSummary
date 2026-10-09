@@ -163,6 +163,22 @@ export interface ComposedPanel {
   issues: ValidationIssue[];
 }
 
+/** A small creature that speaks beside a big figure may be drawn up to this much larger than true scale. */
+export const SMALL_SPEAKER_BOOST = 2.6;
+
+/**
+ * How much larger than true scale a small SPEAKER is drawn so that the camera need not zoom a
+ * much bigger figure out of the panel to read her. `smallR` and `hostR` are on-page head radii
+ * at true scale. 1 (no boost) unless the zoom the speaker floor needs would make the host's head
+ * wider than 55% of the panel.
+ */
+function speakBoostFor(smallR: number, hostR: number, boxW: number): number {
+  const need = (SPEAKER_MIN_HEAD_RADIUS + 0.5) / Math.max(0.5, smallR);
+  if (need <= 1) return 1;
+  const hostWidth = 2 * hostR * Math.min(3.5, need);
+  return clamp(hostWidth / (0.55 * boxW), 1, SMALL_SPEAKER_BOOST);
+}
+
 /** A giant counts at this share of his height when a ground shot picks its figure height. */
 export const GIANT_BAND_SHARE = 0.68;
 
@@ -908,7 +924,13 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           // two creatures on the ground: feet on one line, not eye to eye
           base = { scale: refFrame.scale, originX: x, originY: refFrame.originY };
         }
-        const scale = base.scale * mul * aScale;
+        // a small speaker beside a much bigger figure is drawn larger than true scale (a manga
+        // convention), so the camera need not zoom the big one out of the panel to read her
+        const speakBoost =
+          i !== ref && f.small && !refInfo.small && speakers.has(f.cast.id)
+            ? speakBoostFor(f.probe.headRadius * base.scale * mul * aScale, refInfo.probe.headRadius * refFrame.scale, box.w)
+            : 1;
+        const scale = base.scale * mul * aScale * speakBoost;
         const headY = base.originY + f.probe.head.y * base.scale;
         const originY = f.small && refInfo.small && i !== ref && !AIRBORNE.has(f.spec.pose) ? base.originY : headY - f.probe.head.y * scale;
         const hr = f.probe.headRadius * scale;
@@ -1092,19 +1114,25 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       pending.splice(k, 1);
       if (!tfr) continue;
       const s = tfr.scale; // scale continuity: the target's world scale
+      // a small creature that speaks, perched on something much bigger, is drawn larger than
+      // true scale (see SMALL_SPEAKER_BOOST) so the camera need not push the host out of frame
+      const sd =
+        f.small && !target.small && speakers.has(f.cast.id) && !groundShot
+          ? s * speakBoostFor(f.probe.headRadius * s, target.probe.headRadius * s, box.w)
+          : s;
       const tp = placementOf(target, tfr);
       const ta = target.probe;
       const toPageT = (p: Point): Point => ({ x: tfr.originX + (target.mirror ? -p.x : p.x) * s, y: tfr.originY + p.y * s });
       const a = f.probe;
-      const myLeft = (f.mirror ? -a.right : a.left) * s; // negative extent
-      const myRight = (f.mirror ? -a.left : a.right) * s;
+      const myLeft = (f.mirror ? -a.right : a.left) * sd; // negative extent
+      const myRight = (f.mirror ? -a.left : a.right) * sd;
       const fx = slotFrac(f.spec.slot, rtl);
       const tx = slotFrac(target.spec.slot, rtl);
       const facingSide = target.spec.facing === "front" || target.spec.facing === "back" ? 0 : target.mirror ? -1 : 1;
       // a profile's face points one way: perch on the far (back) shoulder, never in front of the face
       const bySlot: 1 | -1 = fx < tx ? -1 : fx > tx ? 1 : 1;
       let side: 1 | -1 = f.staging.part === "shoulder" && facingSide !== 0 ? (-facingSide as 1 | -1) : bySlot;
-      const myHeadX = (f.mirror ? -a.head.x : a.head.x) * s;
+      const myHeadX = (f.mirror ? -a.head.x : a.head.x) * sd;
       // feet ON the shoulder (not beyond it): the shoulder line is about 1.3-1.6
       // head radii out; the perched body may overlap the back of the head a little
       const shoulderHalf = Math.max(tp.r * 1.15, Math.min(tp.r * 1.55, ((ta.right - ta.left) / 2) * s * 0.9));
@@ -1119,7 +1147,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         return tfr.originX + sd * (tHalf * 0.8 + (sd > 0 ? -myLeft : myRight));
       };
       // the far side is out of frame: use the near side
-      const inFrame = (x: number) => x + myHeadX > box.x + a.headRadius * s && x + myHeadX < box.x + box.w - a.headRadius * s;
+      const inFrame = (x: number) => x + myHeadX > box.x + a.headRadius * sd && x + myHeadX < box.x + box.w - a.headRadius * sd;
       // (a profile keeps the bird on its back shoulder: the camera shifts to show it instead)
       if (f.staging.part === "shoulder" && facingSide === 0 && !inFrame(shoulderX(side)) && inFrame(shoulderX(-side as 1 | -1))) side = -side as 1 | -1;
       if ((f.staging.part === "feet" || f.staging.part === undefined) && !inFrame(feetX(side)) && inFrame(feetX(-side as 1 | -1))) side = -side as 1 | -1;
@@ -1147,7 +1175,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           origin = { x, y: tfr.originY };
         }
       }
-      framings.set(f.index, { scale: s, originX: origin.x, originY: origin.y });
+      framings.set(f.index, { scale: sd, originX: origin.x, originY: origin.y });
       resolved.add(f.index);
     }
   }

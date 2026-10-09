@@ -256,6 +256,21 @@ function overflowIssue(panelId: string, index: number, t: TextSpec, text: string
   };
 }
 
+/** A caption of at most this many words, with nobody named, is a scene caption (place or time). */
+export const SCENE_CAPTION_MAX_WORDS = 8;
+
+/**
+ * Spoken words only: a balloon never prints the quotation marks the source put round the
+ * line. Only a text that is ONE quotation from its first to its last character is changed
+ * (a dangling comma or semicolon before the closing mark goes with it). A line with a
+ * speech tag in it ("..." he said; "...") is left alone: the writer must split it.
+ */
+export function unquoteSpoken(text: string): string {
+  const t = text.trim();
+  const m = /^["\u201C\u00AB]\s*([^"\u201C\u201D\u00AB\u00BB]*?)\s*[,;]?\s*["\u201D\u00BB]$/.exec(t);
+  return m && m[1].length > 0 ? m[1] : text;
+}
+
 /**
  * Letter one panel. Balloons and boxes are placed in reading order with a
  * small beam search (so an early balloon does not grab the space a later one
@@ -279,19 +294,19 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
   const issues: ValidationIssue[] = [];
   const rand = mulberry32(input.seed);
   const usable = (t: TextSpec) => typeof t.text === "string" && t.text.trim().length > 0 && KIND_STYLES[t.kind] !== undefined;
-  const clean = (t: TextSpec) => typeset(t.text);
+  const clean = (t: TextSpec) => typeset(SPEAKING_KINDS.includes(t.kind) ? unquoteSpoken(t.text) : t.text);
 
   // --- balloons and boxes: beam search in reading order -------------------
-  const order = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
+  const order0 = input.texts.map((t, i) => ({ t, i })).filter(({ t }) => t.kind !== "sfx" && usable(t));
   /** The page's opening title (the first text of the first panel, a caption in Title Case). */
   const titleIndex =
     input.panelIndex === 0 &&
-    order[0] &&
-    order[0].t.kind === "caption" &&
-    order[0].t.about === undefined &&
-    isTitleText(order[0].t.text) &&
-    !(input.names && inferNameTag(order[0].t.text, input.names))
-      ? order[0].i
+    order0[0] &&
+    order0[0].t.kind === "caption" &&
+    order0[0].t.about === undefined &&
+    isTitleText(order0[0].t.text) &&
+    !(input.names && inferNameTag(order0[0].t.text, input.names))
+      ? order0[0].i
       : -1;
   /** Name tag: a caption about a character drawn here sits by that character's head. */
   const labelOf = (t: TextSpec): HeadCircle | undefined => {
@@ -300,6 +315,11 @@ export function letterPanel(input: LetterPanelInput): LetterPanelResult {
     const about = typeof t.about === "string" ? t.about : input.names ? inferNameTag(t.text, input.names) : undefined;
     return about ? input.heads.find((h) => h.character === about) : undefined;
   };
+  // A scene caption (place or time: "The city square, in frost.") is read first, whatever
+  // its place in the list: it sets the scene for the lines that follow (top-left, ahead of them).
+  const isSceneCaption = (t: TextSpec): boolean =>
+    t.kind === "caption" && t.about === undefined && !labelOf(t) && countWords(t.text) <= SCENE_CAPTION_MAX_WORDS && !(input.names && inferNameTag(t.text, input.names));
+  const order = [...order0.filter(({ t }) => isSceneCaption(t)), ...order0.filter(({ t }) => !isSceneCaption(t))];
   const flowing = order.filter(({ t }) => !labelOf(t));
   /** Box anchoring: open the panel from the start corner, close it from the end corner, otherwise flow. */
   const anchorFor = (k: number, flowOnly: boolean): PlaceRequest["boxAnchor"] => {

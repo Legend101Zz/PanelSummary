@@ -163,6 +163,6 @@ export const rig: RigModule = {
     const d = actCreature(rigFor(request.look).draw(request, ctx), request);
     const dec = request.lineWidth >= STROKE.figureOutline ? 1 : 2;
     const svg = request.pose === "lie" ? contactShadow(d.anchors, request.lineWidth, ctx.idPrefix) + d.svg : d.svg;
-    return { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}) };
+    return { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
   },
 };

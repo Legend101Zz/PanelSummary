@@ -326,6 +326,11 @@ export interface CrowdLook {
   kind: "crowd";
   crowd: (typeof CROWD_TYPES)[number];
   size: "few" | "many";
+  /**
+   * Optional exact head count, 1 to 8 ("two little boys" is `count: 2`). Unset keeps the
+   * old behaviour: "few" is 3 people, "many" is 6 to 8.
+   */
+  count?: number;
 }
 
 /**

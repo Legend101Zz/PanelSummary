@@ -87,7 +87,10 @@ export function validateLook(look: unknown, issues: Issues, path: string): look 
     }
   }
   if (kind === "plant") checkEnum(look, "bloom", PLANT_BLOOMS, issues, path, false);
-  warnUnknownKeys(look, ["kind", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : [])], issues, path);
+  if (kind === "crowd" && look.count !== undefined && !(typeof look.count === "number" && Number.isInteger(look.count) && look.count >= 1 && look.count <= 8)) {
+    issues.error("FIELD_TYPE", path, `crowd look "count" must be a whole number from 1 to 8 (an exact head count), got ${show(look.count)}. Leave it out to let "size" decide.`);
+  }
+  warnUnknownKeys(look, ["kind", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : []), ...(kind === "crowd" ? ["count"] : [])], issues, path);
   const after = issues.list.filter((i) => i.severity === "error").length;
   return after === before;
 }

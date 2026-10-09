@@ -7,7 +7,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { CastMember, CharacterLook, FigureSpec, MangaPageSpec, PanelSpec, PlannedPage, ValidationIssue } from "../src/contracts.js";
-import { RENDERER_VERSION, renderPage, renderPageDetailed, validatePage } from "../src/index.js";
+import { RENDERER_VERSION, renderPage, renderPageDetailed, validatePage, validateUnderstanding } from "../src/index.js";
+import { unquoteSpoken } from "../src/lettering/index.js";
 import { Resvg } from "@resvg/resvg-js";
 import { environments } from "../src/env/index.js";
 import { ENVIRONMENTS, EYE_STATES, OBJECT_SHAPES, PROPS } from "../src/contracts.js";
@@ -403,5 +404,86 @@ describe("D7 story-state looks the continuity track needs (Happy Prince eyes and
     const look = mod.lookVocabulary() as { look_kinds: { plant: Record<string, unknown> } };
     expect(Object.keys(look.look_kinds.plant)).toContain("bloom");
     expect((mod.lookVocabulary() as any).environments).toEqual(expect.arrayContaining(["moor", "ditch", "forge"]));
+  });
+});
+
+describe("D8 legibility kinds: heads in frame, scene captions first, spoken words only, crowd counts and faces", () => {
+  it("over all 46 run-8 pages: no figure's head is more than 30% outside its panel (the Reed and the Swallow of page 2)", () => {
+    const bad: string[] = [];
+    for (const p of PAGES) {
+      const { details } = renderPageDetailed(clone(p.spec), BOOK, p.planned ? { planned: p.planned } : {});
+      details.forEach((d) =>
+        d.figures.forEach((f) => {
+          if (f.headCropped) return;
+          const head = { x: f.head.x - f.headRadius, y: f.head.y - f.headRadius, w: 2 * f.headRadius, h: 2 * f.headRadius };
+          if (inter(head, d.bbox) / (head.w * head.h) < 0.7) bad.push(`p${p.page} ${d.id} ${f.character}`);
+        }),
+      );
+    }
+    expect(bad).toEqual([]);
+  }, 120_000);
+  it("page 2 panels 2 and 3: the Reed's head is inside the panel and the Swallow still reads as the speaker", () => {
+    const { details } = renderRun8(2);
+    for (const i of [1, 2]) {
+      const reed = details[i].figures.find((f) => f.character === "c_reed")!;
+      const swallow = details[i].figures.find((f) => f.character === "c_swallow")!;
+      const head = { x: reed.head.x - reed.headRadius, y: reed.head.y - reed.headRadius, w: 2 * reed.headRadius, h: 2 * reed.headRadius };
+      expect(inter(head, details[i].bbox) / (head.w * head.h), `panel ${i + 1}`).toBeGreaterThanOrEqual(0.7);
+      expect(swallow.headRadius, `panel ${i + 1}`).toBeGreaterThanOrEqual(22);
+    }
+  });
+
+  it("a scene caption is read first, at the top, even when the writer listed it last (run 8 pages 11 and 40)", () => {
+    for (const [n, panelIndex] of [[11, 0], [40, 0]] as const) {
+      const { details, spec } = renderRun8(n);
+      const d = details[panelIndex];
+      const texts = spec.panels[panelIndex].text;
+      const cap = d.placed.find((p) => texts[p.index].kind === "caption" && !texts[p.index].about)!;
+      for (const other of d.placed) {
+        if (other === cap || texts[other.index].kind === "sfx") continue;
+        const readsFirst = cap.box.y <= other.box.y + 12 || cap.box.x + cap.box.w <= other.box.x + 2;
+        expect(readsFirst, `page ${n}: caption before ${texts[other.index].kind}`).toBe(true);
+      }
+    }
+  });
+  it("unquoteSpoken strips one wrapping quotation and a dangling comma, and leaves speech tags alone (run 8 pages 17 and 23)", () => {
+    expect(unquoteSpoken('"Press closer, little Nightingale,"')).toBe("Press closer, little Nightingale");
+    expect(unquoteSpoken("“Give me a red rose.”")).toBe("Give me a red rose.");
+    expect(unquoteSpoken("Plain words.")).toBe("Plain words.");
+    const tagged = '"I have many beautiful flowers," he said; "but the children are the most beautiful."';
+    expect(unquoteSpoken(tagged)).toBe(tagged);
+  });
+  it("a balloon prints no quotation marks round its line", () => {
+    const { result } = renderRun8(17, (s) => {
+      s.panels[1].text = [{ kind: "speech", speaker: "c_nightingale", text: '"Press closer, little Nightingale,"', fidelity: "quote", source: s.panels[1].text[0]?.source }] as any;
+    });
+    const balloon = result.svg;
+    expect(balloon.includes("&quot;Press")).toBe(false);
+    expect(/>\s*"Press/.test(balloon)).toBe(false);
+  });
+
+  it("crowd count: 'two little boys' draws two people (run 8 page 45 drew three)", () => {
+    const look = (count?: number): CharacterLook => ({ kind: "crowd", crowd: "children", size: "few", ...(count ? { count } : {}) }) as CharacterLook;
+    const draw = (l: CharacterLook) => rig.draw({ look: l, pose: "stand", expression: "neutral", facing: "front", lineWidth: 0.4, seed: 7 }, ctx());
+    expect(draw(look(2)).members).toBe(2);
+    expect(draw(look(1)).members).toBe(1);
+    expect(draw(look()).members).toBe(3);
+    expect(draw(look(5)).members).toBe(5);
+    expect(draw(look(2)).svg).not.toBe(draw(look()).svg);
+  });
+  it("crowd count validates: a whole number from 1 to 8", () => {
+    const p = pageOf(45);
+    const book = clone(BOOK);
+    const boys = book.cast.find((c) => c.id === "c_boys_s5")!;
+    (boys.look as any).count = 2;
+    expect(validateUnderstanding({ schema: "book-understanding.v1", title: "t", author: "a", kind: "fiction", logline: "l", sections: [], cast: [boys], locations: [], claims: [], themes: [] } as any, []).some((i) => i.path.includes("c_boys_s5") && i.code === "FIELD_TYPE")).toBe(false);
+    (boys.look as any).count = 12;
+    expect(validateUnderstanding({ schema: "book-understanding.v1", title: "t", author: "a", kind: "fiction", logline: "l", sections: [], cast: [boys], locations: [], claims: [], themes: [] } as any, []).some((i) => i.code === "FIELD_TYPE" && /count/.test(i.message))).toBe(true);
+    expect(errorsOf(renderPage(p.spec, book, { planned: p.planned! }).issues)).toEqual([]);
+  });
+  it("a back-row crowd member's head is never blank: the silhouette carries eyes and a mouth", () => {
+    const look: CharacterLook = { kind: "crowd", crowd: "townsfolk", size: "many" } as CharacterLook;
+    const svg = rig.draw({ look, pose: "stand", expression: "neutral", facing: "front", lineWidth: 1.2, seed: 7, detail: "silhouette" }, ctx()).svg;
+    expect((svg.match(/<circle/g) ?? []).length).toBeGreaterThanOrEqual(6);
   });
 });

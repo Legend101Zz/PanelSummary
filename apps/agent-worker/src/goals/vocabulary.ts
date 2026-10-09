@@ -25,7 +25,7 @@ export function lookVocabulary() {
       object: { shape: C.OBJECT_SHAPES, tone: C.TONES, face: "boolean" },
       plant: { species: C.PLANT_SPECIES, tone: C.TONES, face: "boolean", bloom: `${C.PLANT_BLOOMS.join(" | ")} (optional: how much bloom the plant usually carries)` },
       spirit: { element: C.SPIRIT_TYPES },
-      crowd: { crowd: C.CROWD_TYPES, size: ["few", "many"] },
+      crowd: { crowd: C.CROWD_TYPES, size: ["few", "many"], count: "optional whole number 1-8: an exact head count (two little boys = 2); leave it out and size decides" },
       emblem: { emblem: C.EMBLEMS },
     },
     environments: C.ENVIRONMENTS,

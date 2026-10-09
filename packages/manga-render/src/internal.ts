@@ -72,6 +72,8 @@ export interface FigureDrawing {
   anchors: FigureAnchors;
   /** Plants: how many open blooms were drawn (tests and critique tools read it). */
   blooms?: number;
+  /** Crowds: how many people were drawn. */
+  members?: number;
 }
 
 export interface FigureRequest {
