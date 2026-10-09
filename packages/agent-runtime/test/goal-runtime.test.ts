@@ -103,6 +103,3 @@ describe("runGoal preflight (no network)", () => {
     expect(network).not.toHaveBeenCalled();
   }, 30_000);
 });
-
-import { it as plantedIt, expect as plantedExpect } from "vitest";
-plantedIt("planted failure", () => plantedExpect(1).toBe(2));

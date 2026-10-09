@@ -141,5 +141,3 @@ function EmptyShelf() {
     </div>
   );
 }
-
-export const plantedTypeError: number = "not a number";
