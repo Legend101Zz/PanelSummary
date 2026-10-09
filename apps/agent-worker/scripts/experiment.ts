@@ -5,6 +5,7 @@
  * artifact, trace and rendered page to --out.
  *
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage understanding
+ *   (add --capture to the understanding stage to write each candidate and reply to DIR/capture/)
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage plan --understanding DIR/understanding.json
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage pages --understanding U --plan P --pages 1-4 --model MiniMax-M3 --vision
  *   tsx scripts/experiment.ts --book X.units.json --out DIR --stage review --understanding U --plan P --from DIR_OF_ACCEPTED_PAGES
@@ -23,6 +24,7 @@ import { svgToPng } from "@panelsummary/manga-render/raster";
 
 import { egressSnapshot, installEgressRecorder } from "../src/egress.js";
 import { GOALS } from "../src/goals/index.js";
+import { understandingCapture } from "../src/goals/book-understanding.js";
 import { mangaSectionGoal } from "../src/goals/experimental/manga-section.js";
 import { pageReviewGoal } from "../src/goals/experimental/page-review.js";
 import type { GoalDefinition } from "../src/goals/types.js";
@@ -122,6 +124,19 @@ function pagesArg(plan: AdaptationPlan): number[] {
 
 async function main() {
   if (stage === "understanding") {
+    if (arg("capture") === "true") {
+      // --capture: every submitted candidate and validator reply of the session goes to OUT/capture/.
+      const dir = path.join(out!, "capture");
+      mkdirSync(dir, { recursive: true });
+      let n = 0;
+      understandingCapture.hook = (event) => {
+        n += 1;
+        const stem = path.join(dir, `${String(n).padStart(2, "0")}-${event.tool}`);
+        writeFileSync(`${stem}.candidate.json`, JSON.stringify(event.candidate, null, 2));
+        if (event.patch !== undefined) writeFileSync(`${stem}.patch.json`, JSON.stringify(event.patch, null, 2));
+        writeFileSync(`${stem}.reply.txt`, `${event.note}\n\n${event.reply}\n`);
+      };
+    }
     const outcome = await run(GOALS.BOOK_UNDERSTANDING, `exp-u-${label}`, { book: bookInput });
     record("understanding", outcome);
     if (outcome.state === "SUCCEEDED") writeFileSync(path.join(out!, "understanding.json"), JSON.stringify((outcome.result as { understanding: unknown }).understanding, null, 2));
