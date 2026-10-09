@@ -55,6 +55,8 @@ export interface Stage {
   time: EnvironmentRequest["time"];
   weather: EnvironmentRequest["weather"];
   snow: boolean;
+  /** Tree height factor from the request (1 = normal). */
+  treeScale: number;
   lw: number;
   /** Depth (metres) where mid-depth figures stand. */
   zmid: number;

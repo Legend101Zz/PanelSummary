@@ -11,6 +11,7 @@ import {
   placeCandidates,
   placeOne,
   tailSegment,
+  tailLine,
   type HeadCircle,
   type Placed,
   type PlacementPanel,
@@ -56,6 +57,8 @@ export interface LetterPanelInput {
   names?: Readonly<Record<string, string>>;
   /** Key props (the beat's object, the insert's subject): no text covers them. */
   keepOut?: readonly Box[];
+  /** Every prop drawn in the panel (a tail that runs over one is flagged; the speaker's own held prop is skipped). */
+  props?: readonly { prop: string; box: Box; heldBy?: string }[];
   /** Where the panel's sound comes from (SFX sit beside it, never on it). */
   sfxSource?: { point: Point; box: Box };
   /** The page's live area (inside the margins): SFX never leave it. */
@@ -542,6 +545,23 @@ export function checkLettering(input: LetterPanelInput, placed: readonly Placed[
         path,
         message: `the ${t.kind} tail for "${speaker}" passes over the face of "${over.character ?? "another figure"}", so the line reads as theirs. Put the speaker on the side of the panel where their line is lettered (speakers left to right in speaking order), give the speaker the panel's first slot, or split the exchange into two panels.`,
       });
+    }
+    if (input.props && !p.tail?.offPanel) {
+      const line = tailLine(p) ?? seg;
+      const hitProp = input.props.find((pr) => {
+        if (pr.heldBy === speaker) return false;
+        // a slightly shrunk box: a tail that only grazes a prop's edge is not flagged
+        const b = { x: pr.box.x + pr.box.w * 0.1, y: pr.box.y + pr.box.h * 0.1, w: pr.box.w * 0.8, h: pr.box.h * 0.8 };
+        return segmentHitsConvex(line[0], line[1], [{ x: b.x, y: b.y }, { x: b.x + b.w, y: b.y }, { x: b.x + b.w, y: b.y + b.h }, { x: b.x, y: b.y + b.h }]);
+      });
+      if (hitProp) {
+        issues.push({
+          code: "TAIL_CROSSES_PROP",
+          severity: "warning",
+          path,
+          message: `the ${t.kind} tail for "${speaker}" runs over the prop "${hitProp.prop}", so the line may read as the prop's. Move the speaker or the prop to another slot or depth, or use a closer shot of the speaker.`,
+        });
+      }
     }
     const crossed = placed.find((q) => q !== p && q.kind !== "sfx" && q.index !== p.connectTo && segmentHitsConvex(seg[0], seg[1], q.hull));
     if (crossed) {

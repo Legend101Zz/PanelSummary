@@ -50,7 +50,7 @@ export function tree(st: Stage, x: number, z: number, opts: { h?: number; kind?:
   // winter: every broad-leaved tree is bare (snow on its branches); pines keep
   // their needles under a white load of snow
   const kind: TreeKind = st.snow && opts.kind !== "pine" ? "bare" : (opts.kind ?? "round");
-  const h0 = opts.h ?? between(st.rand, 6, 9);
+  const h0 = (opts.h ?? between(st.rand, 6, 9)) * st.treeScale;
   const pl = place(st, { x, y: 0, z });
   if (!pl) return;
   // a background tree never swamps the panel: a canopy near the camera (tall

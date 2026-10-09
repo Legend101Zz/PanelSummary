@@ -719,7 +719,23 @@ export function abstractField(st: Stage): Sites {
 }
 
 export function voidScene(st: Stage): Sites {
-  add(st, LAYER.sky, 0, boxRect(st, PAPER));
+  // never a blank white sheet (a place the book did not describe): paper with a light wash at the
+  // top, a horizon line and a ground band with a few grass ticks, so figures stand somewhere
+  const b = st.box;
+  const r = seeded(st.seed, st.env, "void", st.shot, n(b.w), n(b.h));
+  const night = st.pal.night;
+  add(st, LAYER.sky, 0, boxRect(st, night ? toneFill("dark", st.p) : PAPER));
+  for (let i = 0; i < 4; i += 1) {
+    add(st, LAYER.sky, 0, pathEl(rectD(b.x - 2, b.y - 2, b.w + 4, b.h * (0.34 - i * 0.07)), { fill: night ? INK : toneFill("light", st.p), opacity: 0.2 }));
+  }
+  const hy = Math.min(b.y + b.h * 0.9, Math.max(b.y + b.h * 0.3, Number.isFinite(st.cam.horizonY) ? st.cam.horizonY : b.y + b.h * 0.62));
+  add(st, LAYER.sky, 0, pathEl(rectD(b.x - 2, hy, b.w + 4, b.y + b.h - hy + 2), { fill: night ? INK : toneFill("light", st.p), opacity: 0.32 }));
+  add(st, LAYER.sky, 0, pathEl(`M${n(b.x - 2)} ${n(hy)}L${n(b.x + b.w + 2)} ${n(hy)}`, { stroke: night ? "#bdbdbd" : "#8c8c8c", w: st.lw * 0.8 }));
+  for (let i = 0; i < 9; i += 1) {
+    const x = b.x + b.w * (0.05 + r() * 0.9);
+    const y = hy + (b.y + b.h - hy) * (0.15 + r() * 0.8);
+    add(st, LAYER.sky, 0, pathEl(`M${n(x)} ${n(y)}l${n(-3)} ${n(-5)}M${n(x)} ${n(y)}l${n(3)} ${n(-5)}`, { stroke: night ? "#bdbdbd" : "#8c8c8c", w: st.lw * 0.7 }));
+  }
   return { interior: false, wallSlots: [], spots: [], centre: { x: 0, z: st.zmid + 4 }, backZ: st.zmid + 8, span: [-5, 5] };
 }
 
