@@ -64,6 +64,10 @@ interface Ctx {
    * bitten, leafless, no blooms), "buds" (eyes "closed": blooms still shut).
    */
   state: "full" | "buds" | "bare";
+  /** One open bloom on a bare crown (the marvellous rose). */
+  single: boolean;
+  /** Open blooms drawn so far. */
+  blooms: number;
   face: boolean;
   turn: number;
   back: boolean;
@@ -326,7 +330,10 @@ function roseBush(c: Ctx): Built {
     if (!bare) sk.shape(leafD(lerpP(base, tip, 0.5), a - side * 0.9, 6, 2.2), leaf);
     if (bare) bud(sk, pen, tip, 2.4, a, c.tone);
     else if (c.state === "buds") bud(sk, pen, tip, 3.2, a, c.tone);
-    else rose(sk, pen, tip, 5.6, c.rand, c.tone);
+    else {
+      rose(sk, pen, tip, 5.6, c.rand, c.tone);
+      c.blooms += 1;
+    }
     return tip;
   };
   branch(-1, la.far);
@@ -363,8 +370,17 @@ function roseBush(c: Ctx): Built {
     ] as const) {
       const at = addP(C, P(x, y * sq));
       if (c.state === "buds") bud(sk, pen, at, r * 0.55, -Math.PI / 2, c.tone);
-      else rose(sk, pen, at, r, c.rand, c.tone);
+      else {
+        rose(sk, pen, at, r, c.rand, c.tone);
+        c.blooms += 1;
+      }
     }
+  }
+  if (bare && c.single) {
+    // the one marvellous rose: open on the topmost spray of the bare crown
+    const top = canes.map((pts) => pts[2]).reduce((a, b) => (b.y < a.y ? b : a));
+    rose(sk, pen, addP(top, P(0, -5)), 6.4, c.rand, c.tone);
+    c.blooms += 1;
   }
   sk.layer();
   const hand = branch(1, la.near);
@@ -596,7 +612,9 @@ export const plantRig: KindRig<PlantLook> = {
     const c: Ctx = {
       pen,
       tone: look.tone,
-      state: request.eyes === "dead" ? "bare" : request.eyes === "closed" ? "buds" : "full",
+      state: bloomState(look.bloom, request.eyes),
+      single: look.bloom === "single" && look.species === "rose_bush",
+      blooms: 0,
       face: look.face,
       turn: facing === "right" ? 0.4 : 0,
       back: facing === "back",
@@ -621,6 +639,14 @@ export const plantRig: KindRig<PlantLook> = {
     const anchors = anchorsFrom(b.sk, { head: b.head, headRadius: b.headR, mouth: b.mouth, hand: b.hand, waist: b.waist, shoulders: b.shoulders });
     void spline;
     void PAPER;
-    return finishFigure(b.sk, anchors);
+    return { ...finishFigure(b.sk, anchors), blooms: c.blooms };
   },
 };
+
+/** The drawn state: an explicit bloom wins; otherwise the appearance's eyes say it ("dead" bare, "closed" buds). */
+function bloomState(bloom: PlantLook["bloom"], eyes: FigureRequest["eyes"]): Ctx["state"] {
+  if (bloom === "bare" || bloom === "single") return "bare";
+  if (bloom === "buds") return "buds";
+  if (bloom === "full") return "full";
+  return eyes === "dead" ? "bare" : eyes === "closed" ? "buds" : "full";
+}

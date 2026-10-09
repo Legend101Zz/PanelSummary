@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { useMedia, usePoll, useReducedMotion } from "@/lib/hooks";
 import { readPreference, savePosition, savePreference } from "@/lib/position";
-import { stageLine, voiceLabel } from "@/lib/words";
+import { plainReason, plural, stageLine, voiceLabel } from "@/lib/words";
 import { SvgPage } from "@/components/SvgPage";
 import { Sheet } from "@/components/Paper";
 import { ArrowLeft, ChevronLeft, ChevronRight, PageIcon, PanelsIcon, SourceIcon, ZoomReset } from "@/components/Icons";
@@ -462,6 +462,7 @@ export function Reader({ bookId }: { bookId: string }) {
             </>
           ) : (
             <PageState
+              bookId={bookId}
               pageNumber={pos.page}
               total={total}
               edition={edition}
@@ -569,6 +570,7 @@ function Transcript({ page }: { page: EditionPage }) {
 }
 
 function PageState({
+  bookId,
   pageNumber,
   total,
   edition,
@@ -584,6 +586,7 @@ function PageState({
   edition: EditionDetail;
   page: EditionPage | null;
   missing: boolean;
+  bookId: string;
   error?: string;
   retrying: boolean;
   retryError: string | null;
@@ -591,6 +594,7 @@ function PageState({
 }) {
   const active = isActive(edition.status);
   const canResume = !active && edition.status !== "complete";
+  const failedCount = edition.pages.filter((p) => p.status === "failed").length;
   let tone: "pencil" | "redpen" = "pencil";
   let title: string;
   let body: React.ReactNode = null;
@@ -599,7 +603,17 @@ function PageState({
   if (error) {
     tone = "redpen";
     title = "This page could not be loaded";
-    body = <p>{error}</p>;
+    body = (
+      <>
+        <p>{error}</p>
+        <p>Check that the server is running, then reload this page.</p>
+      </>
+    );
+    action = (
+      <button type="button" className="btn" onClick={() => window.location.reload()}>
+        Reload
+      </button>
+    );
   } else if (missing || !page) {
     title = total ? `Page ${pageNumber} is not planned` : "The pages are still being planned";
     body = <p>{active ? `${stageLine(edition.status, edition.pages, total)}. This view refreshes on its own.` : "This edition has no such page."}</p>;
@@ -608,7 +622,9 @@ function PageState({
     title = "This page could not be drawn";
     body = (
       <>
-        {page.error?.message ? <p className={styles.reason}>{page.error.message}</p> : null}
+        <p className={styles.reason}>{plainReason(page.error?.message).plain}</p>
+        {plainReason(page.error?.message).detail ? <p className={styles.detail}>Technical detail: {plainReason(page.error?.message).detail}</p> : null}
+        {failedCount > 1 ? <p>{plural(failedCount, "page")} in this book could not be drawn.</p> : null}
         {active ? (
           <p>
             {edition.status === "drawing"
@@ -649,7 +665,10 @@ function PageState({
             <p className={styles.stateTitle}>{title}</p>
             {body}
             {action}
-            {retryError ? <p className={styles.reason}>{retryError}</p> : null}
+            {retryError ? <p className={styles.reason} role="alert">{`Could not start again. ${retryError}`}</p> : null}
+            <Link href={`/books/${bookId}`} className={styles.stateBack}>
+              Back to the book
+            </Link>
           </div>
         </Sheet>
       </div>

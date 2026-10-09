@@ -600,3 +600,19 @@
   font-size: 11px;
   pointer-events: none;
 }
+
+.detail {
+  font-size: 13px;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+.stateSheet .stateBack {
+  margin-top: 6px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: #26272b;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

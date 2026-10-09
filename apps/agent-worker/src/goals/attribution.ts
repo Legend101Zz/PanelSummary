@@ -327,3 +327,113 @@ export function speakerCastIssues(value: unknown, units: readonly { section_id: 
   }
   return issues.sort((a, b) => Number(b.severity === "error") - Number(a.severity === "error")).slice(0, 12);
 }
+
+// ---------------------------------------------------------------------------
+// One-line characters: individuals the cast hides inside a group or never names
+// ---------------------------------------------------------------------------
+
+/**
+ * Acceptance run 8 left two key one-line characters out of the cast, and both slipped
+ * past SPEAKER_NOT_IN_CAST:
+ * - the little boy of "The Selfish Giant" (the Christ child) answers once as "the
+ *   child"; the crowd "The Children" matched that word, so nobody was missing;
+ * - a workman of "The Remarkable Rocket" cries "what a bad rocket!" as "one of them"
+ *   (the workmen are named a sentence earlier).
+ * Both are one line, far below the 5-line error threshold, so pages drew a crowd or
+ * left them out.
+ */
+export interface LoneSpeaker {
+  section: string;
+  /** Head noun of the individual ("child", "workman"). */
+  head: string;
+  phrase: string;
+  quote: string;
+  kind: "crowd_member" | "one_of_group";
+  /** The crowd cast member that hides it, if any. */
+  crowd?: CastMember;
+}
+
+const PLURAL_NOUN = /\bthe ((?:[a-z]+(?:men|folk))|(?:[a-z]{4,}s))\b/gi;
+const ONE_OF = /\b[Oo]ne of (?:them|the ([a-z]+))\b[^\u201c"\u2018.]{0,80}[.,]?\s*$/;
+
+function singular(word: string): string {
+  const w = word.toLowerCase();
+  if (w.endsWith("men")) return `${w.slice(0, -3)}man`;
+  return stem(w);
+}
+
+/** Plural form of a head noun? ("children", "workmen", "councillors") */
+function isPlural(head: string): boolean {
+  const w = head.toLowerCase();
+  return w in IRREGULAR || w.endsWith("men") || (w.length > 3 && w.endsWith("s") && !w.endsWith("ss"));
+}
+
+/**
+ * Speakers the book gives a single line that the cast cannot draw as one person:
+ * - "crowd_member": the attribution is singular ("answered the child") and the only
+ *   cast members it names are crowds;
+ * - "one_of_group": a line from "one of them" / "one of the workmen" whose group the
+ *   cast does not name.
+ */
+export function loneSpeakers(
+  units: readonly { section_id: string; text: string }[],
+  cast: readonly CastMember[],
+): LoneSpeaker[] {
+  const out = new Map<string, LoneSpeaker>();
+  for (const unit of units) {
+    const members = cast.filter((m) => inSection(m, unit.section_id));
+    // 1. A singular attribution that only a crowd in this section can answer to.
+    for (const a of attributions(unit.text)) {
+      if (isPlural(a.head) || /^the other\b/i.test(a.phrase)) continue;
+      const hits = members.filter((m) => names(a.head, m));
+      if (hits.length === 0 || hits.some((m) => (m.look as { kind?: string }).kind !== "crowd")) continue;
+      const key = `${unit.section_id}|${stem(a.head)}`;
+      if (!out.has(key)) out.set(key, { section: unit.section_id, head: a.head, phrase: a.phrase, quote: a.quote, kind: "crowd_member", crowd: hits[0] });
+    }
+    // 2. "one of them" / "one of the Xs" before a line, with no cast member for the group.
+    for (const re of QUOTED) {
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(unit.text))) {
+        const before = unit.text.slice(Math.max(0, m.index - 160), m.index);
+        const one = ONE_OF.exec(before);
+        if (!one) continue;
+        let group = one[1];
+        if (!group) {
+          const back = unit.text.slice(Math.max(0, m.index - 700), m.index - (one[0]?.length ?? 0));
+          for (const found of back.matchAll(PLURAL_NOUN)) group = found[1];
+        }
+        if (!group || GENERIC.has(group.toLowerCase())) continue;
+        const head = singular(group);
+        if (members.some((c) => names(head, c) || names(group!, c))) continue;
+        const key = `${unit.section_id}|${head}`;
+        if (!out.has(key)) out.set(key, { section: unit.section_id, head, phrase: `one of the ${group}`, quote: m[1], kind: "one_of_group" });
+      }
+    }
+  }
+  return [...out.values()].sort((a, b) => Number(b.kind === "crowd_member") - Number(a.kind === "crowd_member"));
+}
+
+/**
+ * Issues for lone speakers. `maxErrors` of them are errors (a few cheap cast additions
+ * through revise_understanding); the rest are warnings, so a book with many bit
+ * players cannot force a long repair loop (acceptance run 5).
+ */
+export function loneSpeakerIssues(
+  value: unknown,
+  units: readonly { section_id: string; text: string }[],
+  maxErrors = 3,
+): ValidationIssue[] {
+  const cast = (value as { cast?: unknown })?.cast;
+  if (!Array.isArray(cast)) return [];
+  const members = cast.filter((c): c is CastMember => Boolean(c) && typeof (c as CastMember).name === "string");
+  return loneSpeakers(units, members).map((s, i) => ({
+    code: s.kind === "crowd_member" ? "SPEAKER_HIDDEN_IN_CROWD" : "SPEAKER_ONE_OF_GROUP",
+    severity: i < maxErrors ? ("error" as const) : ("warning" as const),
+    path: "understanding.cast",
+    message:
+      s.kind === "crowd_member"
+        ? `in ${s.section} "${s.phrase}" speaks alone (“${s.quote.slice(0, 60)}”), but the only cast member that fits is the group ${s.crowd?.name} (${s.crowd?.id}). Add that one person as their own cast member (sections ["${s.section}"], a one-line description of who they are) so pages can draw them.`
+        : `in ${s.section} ${s.phrase} speaks alone (“${s.quote.slice(0, 60)}”), but no cast member is a ${s.head}. Add one ${s.head} to the cast (sections ["${s.section}"]) so pages can draw who speaks.`,
+  }));
+}

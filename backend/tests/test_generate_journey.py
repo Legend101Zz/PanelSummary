@@ -79,7 +79,7 @@ class FakeWorker:
         assert request.headers.get("authorization") == f"Bearer {TOKEN}"
         body = await request.json()
         self.calls.append({k: body.get(k) for k in ("goal_type", "run_id", "model", "thinking", "vision")} | {"page": body["input"].get("page_number")})
-        trace = {"provider": "minimax", "model": body["model"], "thinking": body["thinking"], "tokens": {"input": 10, "output": 5, "cache_read": 0, "cache_write": 0}, "cost_usd": 0.001, "latency_ms": 3, "turns": 1, "submits": 1, "tool_calls": [], "stop_reason": "accepted"}
+        trace = {"provider": "minimax", "model": body["model"], "thinking": body["thinking"], "thinking_sent": f"enabled:fake-{body['thinking']}", "cost_basis": "Pi catalog rates", "tokens": {"input": 10, "output": 5, "cache_read": 0, "cache_write": 0}, "cost_usd": 0.001, "latency_ms": 3, "turns": 1, "submits": 1, "tool_calls": [], "stop_reason": "accepted"}
         goal = body["goal_type"]
         data = body["input"]
         if goal == "BOOK_UNDERSTANDING" and self.fail_understanding_once:
@@ -234,6 +234,9 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 assert edition["totals"]["input_tokens"] == 60 and edition["totals"]["output_tokens"] == 30
                 receipts = (await api.get(f"/editions/{edition_id}/receipts")).json()
                 assert all(call["provider"] == "minimax" for call in receipts["calls"])
+                # Every receipt records the model, the requested thinking level and what was sent.
+                assert all(call["model"] == "MiniMax-M3" and call["cost_basis"] == "Pi catalog rates" for call in receipts["calls"])
+                assert all(call["thinking_sent"] == f"enabled:fake-{call['thinking']}" for call in receipts["calls"])
                 assert len(receipts["calls"]) == 6
                 assert [c["artifact"] for c in receipts["calls"] if c.get("state") != "SUCCEEDED" and "artifact" in c] == ["understanding"]
 

@@ -9,9 +9,14 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# Models the worker accepts (D2). MiniMax-M3.1-Flash-Preview is registered and selectable per
+# goal; the defaults below stay MiniMax-M3 until the measured A/B decides (D13).
+ALLOWED_MODELS = ("MiniMax-M3", "MiniMax-M3.1-Flash-Preview", "MiniMax-M2.7-highspeed", "MiniMax-M2.7")
 
 
 class Settings(BaseSettings):
@@ -22,6 +27,13 @@ class Settings(BaseSettings):
     db_name: str = "panelsummary"
     storage_dir: str = str(REPO_ROOT / "storage")
     max_pdf_size_mb: int = 60
+
+    # --- v0.1 size limits (D19). Generate refuses a book above either limit; upload stays open.
+    # Evidence: the largest book run end to end has 68 PDF pages and 16,159 words.
+    # Each limit is that figure plus 8 % (words) or 10 % (pages). See docs/launch/T3-scope.md.
+    # Override with MAX_PDF_PAGES and MAX_SOURCE_WORDS.
+    max_pdf_pages: int = 75
+    max_source_words: int = 17500
 
     # --- HTTP ---
     cors_origins: str = "http://localhost:3100"
@@ -48,6 +60,13 @@ class Settings(BaseSettings):
     # --- job runner ---
     job_lease_seconds: int = 90
     job_poll_seconds: float = 1.5
+
+    @field_validator("understanding_model", "plan_model", "page_model")
+    @classmethod
+    def _model_is_allowed(cls, value: str) -> str:
+        if value not in ALLOWED_MODELS:
+            raise ValueError(f"model {value!r} is not allowed; use one of {', '.join(ALLOWED_MODELS)}")
+        return value
 
     @property
     def pdf_dir(self) -> Path:

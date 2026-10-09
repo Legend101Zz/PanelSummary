@@ -287,3 +287,151 @@
   color: var(--ink-2);
   line-height: 1.6;
 }
+
+/* ------------------------------------------------------- progress + preflight */
+
+.stageBad {
+  color: var(--redpen);
+}
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 15px;
+  list-style: none;
+  padding: 0;
+}
+.steps li::before {
+  display: inline-block;
+  width: 1.2em;
+}
+.stepDone {
+  color: var(--ink-2);
+}
+.stepDone::before {
+  content: "\2713";
+}
+.stepNow {
+  color: var(--pencil-ink);
+  font-weight: 700;
+}
+.stepNow::before {
+  content: "\25B6";
+  font-size: 0.7em;
+}
+.stepNext {
+  color: var(--ink-2);
+  opacity: 0.75;
+}
+.stepNext::before {
+  content: "\00B7";
+}
+.counts,
+.elapsed {
+  font-size: 15px;
+  color: var(--ink-2);
+  max-width: 34em;
+}
+.clock {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 700;
+}
+.ready {
+  font-size: 16px;
+  font-weight: 700;
+}
+.failureDetail {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.preflight {
+  max-width: 34em;
+  padding: 16px 18px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--pencil);
+}
+.preflightTitle {
+  font-family: var(--font-title);
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+.preflightList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.preflightList > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--pencil);
+}
+.preflightList dt {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.preflightList dd {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.preflightBasis {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.preflightBlocked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--redpen);
+}
+.preflightBlocked ul {
+  padding-left: 1.2em;
+}
+.preflightBlockedTitle {
+  font-weight: 700;
+}
+@media (max-width: 720px) {
+  .stage {
+    font-size: 19px;
+  }
+  .steps {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .steps li {
+    min-height: 24px;
+  }
+}
+
+/* tap targets: at least 44 px high on a phone */
+@media (max-width: 720px) {
+  .back,
+  .contentsPages,
+  .failureNum {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .back {
+    margin-bottom: 8px;
+  }
+  .aboutSummary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+.ready a {
+  display: inline-block;
+  padding: 10px 0;
+}

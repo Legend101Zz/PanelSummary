@@ -17,7 +17,7 @@
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
 import path from "node:path";
 
-import type { AllowedModel, ThinkingLevel } from "@panelsummary/agent-runtime";
+import { ALLOWED_MODELS, DEFAULT_GOAL_MODEL, type AllowedModel, type ThinkingLevel } from "@panelsummary/agent-runtime";
 import type { AdaptationPlan, BookUnderstanding } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
@@ -54,7 +54,11 @@ if (!bookPath || !out || !stage) {
 }
 mkdirSync(out, { recursive: true });
 const book = JSON.parse(readFileSync(bookPath, "utf8")) as ParsedBook;
-const model = (arg("model") ?? "MiniMax-M3") as AllowedModel;
+const model = (arg("model") ?? DEFAULT_GOAL_MODEL) as AllowedModel;
+if (!ALLOWED_MODELS.includes(model)) {
+  console.error(`model ${model} is not allowed; use one of ${ALLOWED_MODELS.join(", ")}`);
+  process.exit(2);
+}
 const thinking = (arg("thinking") ?? "low") as ThinkingLevel;
 const vision = arg("vision") === "true";
 const label = arg("label") ?? `${stage}-${model}-${thinking}${vision ? "-vision" : ""}`;
@@ -77,6 +81,9 @@ function record(kind: string, outcome: GoalOutcome, extra: Record<string, unknow
     error: "error" in outcome ? outcome.error : undefined,
     model: trace?.model,
     thinking: trace?.thinking,
+    thinking_sent: trace?.thinking_sent,
+    cost_basis: trace?.cost_basis,
+    nudges: trace?.nudges,
     tokens: trace?.tokens,
     cost_usd: trace?.cost_usd,
     latency_ms: trace?.latency_ms,
@@ -88,7 +95,7 @@ function record(kind: string, outcome: GoalOutcome, extra: Record<string, unknow
     ...extra,
   };
   appendFileSync(path.join(out!, "traces.jsonl"), `${JSON.stringify(line)}\n`);
-  const summary = `${kind} ${outcome.state} ${trace ? `${trace.latency_ms}ms in=${trace.tokens.input} out=${trace.tokens.output} cache=${trace.tokens.cache_read}/${trace.tokens.cache_write} $${trace.cost_usd} turns=${trace.turns} submits=${trace.submits}` : ""} ${"error" in outcome ? outcome.error.message.slice(0, 300) : ""}`;
+  const summary = `${kind} ${outcome.state} ${trace ? `${trace.latency_ms}ms in=${trace.tokens.input} out=${trace.tokens.output} cache=${trace.tokens.cache_read}/${trace.tokens.cache_write} $${trace.cost_usd} turns=${trace.turns} submits=${trace.submits} nudges=${trace.nudges} fallback=${trace.text_fallback_used} thinking=${trace.thinking}/${trace.thinking_sent}` : ""} ${"error" in outcome ? outcome.error.message.slice(0, 300) : ""}`;
   console.log(summary);
 }
 

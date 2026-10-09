@@ -374,6 +374,29 @@ export function placeCandidates(
   mode: PlaceMode = "strict",
   limit = 4,
 ): Placed[] {
+  // a caption, narration box or name tag keeps off the subjects (figures, hats, hands, the statue
+  // on its column) when any spot allows it; only when none does is it allowed on them
+  if (mode === "strict" && (req.kind === "caption" || req.kind === "narration")) {
+    const clear = placeCandidatesIn(req, panel, placed, sizes, mode, limit, true);
+    if (clear.length > 0) return clear;
+  }
+  return placeCandidatesIn(req, panel, placed, sizes, mode, limit, false);
+}
+
+/** A box may cover at most this share of any one figure (its body box). */
+export const BOX_MAX_FIGURE_COVER = 0.1;
+/** ...and at most this share of any hat, hand or scenery box. */
+export const BOX_MAX_OBSTACLE_COVER = 0.25;
+
+function placeCandidatesIn(
+  req: PlaceRequest,
+  panel: PlacementPanel,
+  placed: readonly Placed[],
+  sizes: readonly number[],
+  mode: PlaceMode,
+  limit: number,
+  clearSubjects: boolean,
+): Placed[] {
   const { bbox } = panel;
   const isSfx = req.kind === "sfx";
   const isBox = req.kind === "narration" || req.kind === "caption";
@@ -433,6 +456,23 @@ export function placeCandidates(
               if (boxesOverlapArea(hb, { x: o.x - 3, y: o.y - 3, w: o.w + 6, h: o.h + 6 }) > 0 && convexOverlap(hull, boxCorners(o), 3)) {
                 blocked = true;
                 break;
+              }
+            }
+            if (blocked) continue;
+          }
+          if (clearSubjects) {
+            for (const f of panel.bodies) {
+              if (boxesOverlapArea(hb, f) > BOX_MAX_FIGURE_COVER * Math.max(1, f.w * f.h)) {
+                blocked = true;
+                break;
+              }
+            }
+            if (!blocked) {
+              for (const o of panel.obstacles ?? []) {
+                if (boxesOverlapArea(hb, o) > BOX_MAX_OBSTACLE_COVER * Math.max(1, o.w * o.h)) {
+                  blocked = true;
+                  break;
+                }
               }
             }
             if (blocked) continue;

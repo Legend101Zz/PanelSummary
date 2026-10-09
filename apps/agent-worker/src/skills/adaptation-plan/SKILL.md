@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Adaptation plan
@@ -43,7 +43,9 @@ something to *see*.
    redundant for understanding; prefer omitting `detail` claims. Never omit a claim to
    save effort.
 4. **Order.** Follow the book. Sections appear in order; each section starts on a new page.
-   Claims appear on or after the page whose units contain their source.
+   Claims appear on or after the page whose units contain their source,
+   and pages keep the book's order inside a section: the set-up page comes before the
+   climax page. Write "flashback" in the beat when an earlier moment is shown on purpose.
 5. **Units.** Each page lists the units it adapts (the page writer receives exactly that
    text). Every unit of the book should be adapted by at least one page, except front or
    back matter.
@@ -66,7 +68,8 @@ something to *see*.
      answer.
    - Give big moments (a revelation, a death, a transformation, the climax) a page of
      their own. It may be a 1-2 panel page, so plan fewer claims there.
-   - The book's last page ends on a strong image and a closing reaction, not a summary.
+   - The book's last page, and the last page of each section, end on one strong image and a
+     small closing reaction, not a summary.
 9. **Fiction.** Keep the book's defining lines (the `quote` claims) on the page where they
    happen in the story. Budget about 6-10 exchanged lines for a dialogue page, at most.
    Plan anything the pictures must show so the page writer can stage it: a statue high on

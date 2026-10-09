@@ -1,8 +1,11 @@
+import { DEFAULT_GOAL_MODEL } from "@panelsummary/agent-runtime";
 import { validatePlan } from "@panelsummary/manga-render";
 import type { AdaptationPlan, BookUnderstanding } from "@panelsummary/manga-render";
 
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { planOrderIssues } from "./claim-shown.js";
+import { unitOrder } from "./continuity.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 
 interface Input {
@@ -23,7 +26,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
   type: "ADAPTATION_PLAN",
   skillName: "adaptation-plan",
   defaults: {
-    model: "MiniMax-M3",
+    model: DEFAULT_GOAL_MODEL,
     thinking: "off",
     limits: { maxTurns: 8, maxToolCalls: 8, maxSubmits: 5, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 15 * 60_000 },
   },
@@ -57,6 +60,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
             message: `plan has ${count} pages; it must have between ${pages.min} and ${pages.max} (target about ${pages.target}).`,
           });
         }
+        issues.push(...planOrderIssues(parsed.value as AdaptationPlan, understanding.claims, unitOrder(understanding.sections ?? [])));
         const sectionsOf = new Map(understanding.cast.map((c) => [c.id, c.sections]));
         ((parsed.value as AdaptationPlan)?.pages ?? []).forEach((page) => {
           for (const id of page?.cast ?? []) {

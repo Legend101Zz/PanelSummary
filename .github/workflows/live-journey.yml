@@ -1,0 +1,298 @@
+name: live-journey
+
+# REAL MiniMax spend (about 1 USD for the 26-page book). Three triggers:
+#  1. workflow_dispatch (only works once this file is on the default branch);
+#  2. push to a branch live/**  (configuration: scripts/acceptance/live-config.json in the commit);
+#  3. pull_request labelled "run-live" (configuration: the same file in the PR head).
+# Dispatch inputs override the JSON file.
+on:
+  workflow_dispatch:
+    inputs:
+      book:
+        description: Test book
+        type: choice
+        default: happy-prince-two-tales
+        options:
+          - happy-prince-two-tales
+          - happy-prince-and-other-tales
+          - civil-disobedience
+          - other (use book_path)
+      book_path:
+        description: Path of a PDF in the repo (used only when book is "other")
+        type: string
+        default: ""
+      understanding_model:
+        type: string
+        default: ""
+      understanding_thinking:
+        type: string
+        default: ""
+      plan_model:
+        type: string
+        default: ""
+      plan_thinking:
+        type: string
+        default: ""
+      page_model:
+        type: string
+        default: ""
+      page_thinking:
+        type: string
+        default: ""
+      retry_thinking:
+        type: string
+        default: ""
+  push:
+    branches: ["live/**"]
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    name: live journey
+    # One live run at a time. Set on the job (not the workflow) so that a skipped
+    # pull_request run never replaces a queued live run.
+    concurrency:
+      group: live-journey
+      cancel-in-progress: false
+    if: >-
+      github.event_name != 'pull_request' ||
+      (contains(github.event.pull_request.labels.*.name, 'run-live') &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DB_NAME: live_ci
+    steps:
+      - name: Set the work directory
+        run: echo "LIVE_DIR=$RUNNER_TEMP/live-run" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Resolve configuration
+        env:
+          IN_BOOK: ${{ inputs.book }}
+          IN_BOOK_PATH: ${{ inputs.book_path }}
+          IN_UNDERSTANDING_MODEL: ${{ inputs.understanding_model }}
+          IN_UNDERSTANDING_THINKING: ${{ inputs.understanding_thinking }}
+          IN_PLAN_MODEL: ${{ inputs.plan_model }}
+          IN_PLAN_THINKING: ${{ inputs.plan_thinking }}
+          IN_PAGE_MODEL: ${{ inputs.page_model }}
+          IN_PAGE_THINKING: ${{ inputs.page_thinking }}
+          IN_RETRY_THINKING: ${{ inputs.retry_thinking }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re
+          cfg = json.load(open("scripts/acceptance/live-config.json"))
+          keys = ["understanding_model", "understanding_thinking", "plan_model", "plan_thinking",
+                  "page_model", "page_thinking", "retry_thinking"]
+          for k in keys:
+              v = os.environ.get("IN_" + k.upper(), "").strip()
+              if v:
+                  cfg[k] = v
+          book = os.environ.get("IN_BOOK", "").strip()
+          if book.startswith("other"):
+              book = os.environ.get("IN_BOOK_PATH", "").strip()
+          elif book:
+              pass
+          else:
+              book = cfg["book"]
+          ok = re.compile(r"^[A-Za-z0-9._/-]+$")
+          for k, v in list(cfg.items()) + [("book", book)]:
+              if not isinstance(v, str) or not ok.match(v) or ".." in v:
+                  raise SystemExit(f"bad value for {k}")
+          pdf = book if book.endswith(".pdf") else f"scripts/acceptance/books/{book}.pdf"
+          if not os.path.isfile(pdf):
+              raise SystemExit(f"book not found: {pdf}")
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              env.write(f"BOOK_PDF={pdf}\n")
+              env.write(f"BOOK_NAME={book}\n")
+              for k in keys:
+                  env.write(f"{k.upper()}={cfg[k]}\n")
+          print("book:", book)
+          for k in keys:
+              print(f"{k}: {cfg[k]}")
+          PY
+
+      - name: Require the MiniMax key
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          if [ -z "$MINIMAX_API_KEY" ]; then
+            echo "::error::secret MINIMAX_API_KEY is not available to this run"
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19.0"
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/requirements.txt
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          (cd frontend && npm ci)
+          (cd backend && uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt)
+
+      - name: Build the frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          mkdir -p public/fonts
+          cp ../packages/manga-render/fonts/*.ttf public/fonts/
+          npm run build
+
+      - name: Generate the service token
+        run: |
+          tok="$(openssl rand -hex 32)"
+          echo "::add-mask::$tok"
+          echo "AGENT_WORKER_TOKEN=$tok" >> "$GITHUB_ENV"
+          mkdir -p "$LIVE_DIR/logs" "$LIVE_DIR/run" "$LIVE_DIR/pids"
+
+      # Only this step sees the MiniMax key, and only the worker process gets it.
+      - name: Start the agent worker
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          setsid nohup env -i PATH="$PATH" HOME="$HOME" \
+            MINIMAX_API_KEY="$MINIMAX_API_KEY" AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" \
+            AGENT_WORKER_PORT=8788 AGENT_WORKER_HOST=127.0.0.1 AGENT_MAX_CONCURRENCY=4 \
+            "$PWD/apps/agent-worker/node_modules/.bin/tsx" "$PWD/apps/agent-worker/src/index.ts" \
+            >"$LIVE_DIR/logs/worker.log" 2>&1 </dev/null &
+          echo $! > "$LIVE_DIR/pids/worker.pid"
+          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:8788/readyz >/dev/null && exit 0; sleep 1; done
+          echo "::error::agent worker not ready"; exit 1
+
+      - name: Start the API, the job runner and the frontend
+        run: |
+          bk=(MONGODB_URL=mongodb://127.0.0.1:27017 DB_NAME="$DB_NAME"
+              AGENT_WORKER_URL=http://127.0.0.1:8788 AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN"
+              CORS_ORIGINS=http://127.0.0.1:3100,http://localhost:3100
+              UNDERSTANDING_MODEL="$UNDERSTANDING_MODEL" UNDERSTANDING_THINKING="$UNDERSTANDING_THINKING"
+              PLAN_MODEL="$PLAN_MODEL" PLAN_THINKING="$PLAN_THINKING"
+              PAGE_MODEL="$PAGE_MODEL" PAGE_THINKING="$PAGE_THINKING" RETRY_THINKING="$RETRY_THINKING"
+              STORAGE_DIR="$LIVE_DIR/storage")
+          setsid nohup env -C backend "${bk[@]}" .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+            >"$LIVE_DIR/logs/api.log" 2>&1 </dev/null &
+          echo $! > "$LIVE_DIR/pids/api.pid"
+          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:8000/health >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:8000/health >/dev/null || { echo "::error::API not healthy"; exit 1; }
+          setsid nohup env -C backend "${bk[@]}" .venv/bin/python -m app.runner \
+            >"$LIVE_DIR/logs/runner.log" 2>&1 </dev/null &
+          echo $! > "$LIVE_DIR/pids/runner.pid"
+          setsid nohup env -C frontend NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 NEXT_TELEMETRY_DISABLED=1 \
+            npx next start -p 3100 -H 127.0.0.1 >"$LIVE_DIR/logs/web.log" 2>&1 </dev/null &
+          echo $! > "$LIVE_DIR/pids/web.pid"
+          for _ in $(seq 1 60); do curl -sf http://127.0.0.1:3100/ >/dev/null && exit 0; sleep 1; done
+          echo "::error::frontend not up"; exit 1
+
+      - name: Run the live journey
+        id: journey
+        run: |
+          node scripts/acceptance/journey.mjs --pdf "$BOOK_PDF" --out "$LIVE_DIR/run" --full \
+            --web http://127.0.0.1:3100 --api http://127.0.0.1:8000 --timeout-min 100
+
+      - name: Export the run
+        if: always()
+        run: |
+          cd backend
+          .venv/bin/python ../scripts/acceptance/export_run.py --mongo mongodb://127.0.0.1:27017 \
+            --db "$DB_NAME" --api http://127.0.0.1:8000 --out "$LIVE_DIR/run/export" || echo "::warning::export failed (no edition?)"
+          cd ../packages/manga-render
+          if [ -d "$LIVE_DIR/run/export/judge" ]; then npx tsx scripts/svg-dir-to-png.ts "$LIVE_DIR/run/export/judge" 1000; fi
+
+      - name: Job summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          d = os.environ["LIVE_DIR"] + "/run"
+          def load(p):
+              try:
+                  return json.load(open(p))
+              except Exception:
+                  return None
+          ed = load(d + "/export/edition.json") or {}
+          rep = load(d + "/journey-report.json") or {}
+          rc = load(d + "/export/receipts.json") or {}
+          eg = load(d + "/export/egress.json") or {}
+          pol = ed.get("policy") or {}
+          t = ed.get("totals") or {}
+          tm = rep.get("timings") or {}
+          print("## Live journey")
+          print(f"- commit: `{os.environ['GITHUB_SHA'][:10]}`  book: `{os.environ['BOOK_NAME']}`")
+          print(f"- journey: {'PASSED' if rep.get('passed') else 'FAILED or incomplete'}; edition status: `{ed.get('status')}`")
+          print(f"- pages: {ed.get('pages_accepted')} accepted, {ed.get('pages_failed')} failed, of {ed.get('page_total')}")
+          print("- policy (per goal):")
+          for k in sorted(pol):
+              print(f"  - {k}: `{pol[k]}`")
+          print(f"- model calls: {t.get('calls')} ({t.get('failed_calls')} failed); tokens in/out: {t.get('input_tokens')}/{t.get('output_tokens')}")
+          print(f"- cost estimate: {t.get('cost_usd')} USD")
+          print(f"- time: Generate to first page {tm.get('generate_to_first_page_s')} s; Generate to finished {tm.get('generate_to_finished_s')} s")
+          print(f"- egress hosts: `{json.dumps(eg.get('worker_egress'))}`")
+          failed = [c for c in rep.get("checks", []) if not c.get("ok")]
+          for c in failed:
+              print(f"- FAILED check: {c['name']}")
+          PY
+
+      - name: Stop the services
+        if: always()
+        run: |
+          for f in "$LIVE_DIR"/pids/*.pid; do
+            [ -f "$f" ] && kill "$(cat "$f")" 2>/dev/null || true
+          done
+
+      - name: Guard (the key must not be in any artifact)
+        id: guard
+        if: always()
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        run: |
+          [ -n "$MINIMAX_API_KEY" ] || { echo "::error::no key to check against"; exit 1; }
+          if grep -rqF -- "$MINIMAX_API_KEY" "$LIVE_DIR/run" "$LIVE_DIR/logs" 2>/dev/null; then
+            echo "::error::the MiniMax key appears in the artifact files; nothing is uploaded"
+            exit 1
+          fi
+          echo "guard passed: key not found in artifacts"
+
+      - name: Upload the run
+        if: always() && steps.guard.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-run
+          path: ${{ env.LIVE_DIR }}/run
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload the logs
+        if: always() && steps.guard.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-logs
+          path: ${{ env.LIVE_DIR }}/logs
+          if-no-files-found: warn
+          retention-days: 30

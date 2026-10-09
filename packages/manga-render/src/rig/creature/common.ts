@@ -98,7 +98,7 @@ export interface Pen {
    * with no pupil, "dead" slack closed lines. Plants read it as their
    * condition ("closed" buds, "dead" frost-bitten).
    */
-  eyes?: "open" | "closed" | "blind" | "dead";
+  eyes?: "open" | "closed" | "blind" | "dead" | "one_blind";
 }
 
 /** Page-space width of the paper knockout rim (matches the human rig). */
@@ -107,7 +107,7 @@ export const RIM_PAGE = 3.6;
 export function makePen(
   lineWidth: number,
   prefix: string,
-  req?: { detail?: "full" | "reduced" | "silhouette"; rim?: boolean; eyes?: "open" | "closed" | "blind" | "dead" },
+  req?: { detail?: "full" | "reduced" | "silhouette"; rim?: boolean; eyes?: "open" | "closed" | "blind" | "dead" | "one_blind" },
 ): Pen {
   const lw = Math.max(lineWidth, 1e-4);
   const ratio = STROKE.figureDetail / STROKE.figureOutline;

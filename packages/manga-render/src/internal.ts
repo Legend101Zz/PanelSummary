@@ -70,6 +70,10 @@ export interface FigureDrawing {
   /** SVG fragment in figure space. No outer transform. */
   svg: string;
   anchors: FigureAnchors;
+  /** Plants: how many open blooms were drawn (tests and critique tools read it). */
+  blooms?: number;
+  /** Crowds: how many people were drawn. */
+  members?: number;
 }
 
 export interface FigureRequest {
@@ -93,7 +97,7 @@ export interface FigureRequest {
    * (a statue without its gem eyes), "dead" = closed-line or X eyes, no pupils.
    * Material/tone variants arrive already merged into `look` by the composer.
    */
-  eyes?: "open" | "closed" | "blind" | "dead";
+  eyes?: "open" | "closed" | "blind" | "dead" | "one_blind";
 }
 
 export interface RigModule {

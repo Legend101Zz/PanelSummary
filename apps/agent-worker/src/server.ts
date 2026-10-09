@@ -5,6 +5,7 @@
  */
 import { timingSafeEqual } from "node:crypto";
 
+import { ALLOWED_MODELS, THINKING_LEVELS } from "@panelsummary/agent-runtime";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { egressSnapshot } from "./egress.js";
@@ -73,6 +74,12 @@ export function buildServer(options: ServerOptions): FastifyInstance {
     const body = request.body as Partial<GoalRequest> | undefined;
     if (!body || typeof body.run_id !== "string" || !body.run_id || !GOAL_TYPES.includes(body.goal_type as never)) {
       return reply.code(400).send({ error: { code: "BAD_REQUEST", message: "run_id and a known goal_type are required" } });
+    }
+    if (body.model !== undefined && !ALLOWED_MODELS.includes(body.model)) {
+      return reply.code(400).send({ error: { code: "BAD_REQUEST", message: `model must be one of ${ALLOWED_MODELS.join(", ")}` } });
+    }
+    if (body.thinking !== undefined && !THINKING_LEVELS.includes(body.thinking)) {
+      return reply.code(400).send({ error: { code: "BAD_REQUEST", message: `thinking must be one of ${THINKING_LEVELS.join(", ")}` } });
     }
     const existing = runs.get(body.run_id);
     if (existing && existing.state !== "FAILED" && existing.state !== "CANCELLED") {
