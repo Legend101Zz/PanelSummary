@@ -86,19 +86,21 @@ Generate refuses a book that is not within the limits, with a reason the reader 
 
 Judging note: run 8 had one judge for each page. The launch uses three Sonnet judges for each page. To compare like with like, the orchestrator also judges the run-8 pages again with the same panel and reports both numbers.
 
-## Status (09:40 UTC)
+## Status (11:15 UTC)
 
-- `release/v0.1` = `9e9d135`. Merged with green CI and an independent review: #20 CI, #23 Flash wiring,
-  #21 eval harness, #22 continuity, #26 and #28 renderer, #24 preflight, #25 product surface, #27 integration,
-  #29 dense-page loop, #30 model policy, #31 docs, #32 start.sh, #33 statue guard, #34 writer repair-once,
-  #36 provider errors and circuit breaker, #37 understanding on Flash. Draft #35 (`release/v0.1` -> `main`)
-  waits for the launch gate.
-- Model policy (D13): Flash on all three goals; M3 is the fallback. Evidence: `docs/launch/MODEL-AB.md`.
-- Gate 1 (26 pp): passed on the newest code: 22/22 pages, ship bar 4-6/22, mean 3.49-3.53 (run 8 panel 3.47).
-- Gate 2 (68 pp, all Flash): PARTIAL. 46/56 pages drawn before the plan limit (tales 1-4). On them: 7/46 ship
-  bar, mean 3.52, continuity 2.94, fidelity 3.57 (run 8 panel: 7/46, 3.47, 2.88, 3.34). Tale 5 not drawn.
-- Blocked: MiniMax plan limit since 08:50 UTC. The final journey (untuned Andersen PDF, fresh database, headed
-  browser) is ready to run at `9e9d135` as soon as the limit resets.
+- `release/v0.1` holds 19 merged PRs (#20-#34, #36-#39), each with green CI and an independent review.
+  Draft #35 (`release/v0.1` -> `main`) is the launch merge.
+- Model policy (D13): `MiniMax-M3.1-Flash-Preview` on every goal; M3 is the fallback (`docs/launch/MODEL-AB.md`).
+- Gate 0: CI failed on a planted error in all three jobs, then passed; the live job passed.
+- Gate 1 (26-page book, newest code): 22/22 pages, ship bar 4-6/22, mean 3.49-3.53.
+- Gate 2 (68-page book, complete rerun, `d19dca9`): 60/60 pages, ship bar 12/60, mean 3.54, continuity 3.02,
+  fidelity 3.51, done in 16.4 min (run 8: 48.5 min). Against run 8 judged by the same panel: PASS on every
+  condition. Against run 8's single-judge numbers: reading flow and speaker attribution are lower (an
+  instrument effect: the panel scores run 8 itself lower on these two).
+- Launch gate final journey (`0fa10d7`, fresh database, untuned Andersen PDF, headed Chrome): upload, preflight,
+  Generate, 18/18 pages `complete` in 7.3 min, reader = stored SVG on 18/18, receipts for 20 calls, egress
+  `api.minimax.io` only; panel: 3/18 at the ship bar, mean 3.53. Journey check 54/54.
+- v0.2 issues: #40-#50.
 
 ## Cut list (in this order if the session is late)
 
@@ -130,7 +132,9 @@ Costs are Pi catalog estimates from the edition receipts, not a bill.
 | 08:08 | Understanding A/B, release + F3 | local | two tales | M3 / Flash / Flash | $0.65 |
 | 08:35 | Gate 2, `d1a2286` (cut by the plan limit: 46/56 pages) | CI | 68 pp | Flash / Flash / Flash | $1.39 |
 | 08:41 | Gate 2, `d1a2286` (cut by the plan limit: 18/50 pages) | local | 68 pp | M3 / Flash / Flash | $0.84 |
-| | **Total (Pi catalog estimates, not a bill)** | | | | **$10.43** |
+| 10:07 | Final journey, `0fa10d7`, fresh database, headed browser | local | Andersen (22 pp, untuned) | Flash / Flash / Flash | $0.46 |
+| 10:23 | Gate 2 complete rerun, `d19dca9` | CI | 68 pp | Flash / Flash / Flash | $1.72 |
+| | **Total (Pi catalog estimates, not a bill)** | | | | **$12.61** |
 
-Since about 08:50 UTC the MiniMax account answers every call with "Token Plan usage limit reached" (2056).
-The real constraint is the account's token plan, not the $25 estimate cap. Live work waits for the reset.
+From about 08:50 to 10:06 UTC the MiniMax account answered every call with "Token Plan usage limit
+reached" (2056). The real constraint was the account's token plan, not the $25 estimate cap.
