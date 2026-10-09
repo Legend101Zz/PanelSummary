@@ -95,7 +95,14 @@ async def list_books() -> list[dict]:
         view = book_view(book)
         latest = await Edition.find(Edition.book_id == str(book.id)).sort("-created_at").first_or_none()
         view["latest_edition"] = (
-            {"id": str(latest.id), "status": latest.status, "page_total": latest.page_total, "pages_accepted": latest.pages_accepted}
+            {
+                "id": str(latest.id),
+                "status": latest.status,
+                "page_total": latest.page_total,
+                "pages_accepted": latest.pages_accepted,
+                # Only the code: the shelf band says why the drawing stopped (D11).
+                "provider_stop": {"code": latest.provider_stop.get("code")} if latest.provider_stop else None,
+            }
             if latest
             else None
         )

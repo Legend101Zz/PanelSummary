@@ -30,6 +30,8 @@ export interface EditionSummary {
   status: EditionStatus;
   page_total: number;
   pages_accepted: number;
+  /** Set when the model provider refused the work (D11). Only the code is on the shelf. */
+  provider_stop?: { code: string } | null;
 }
 
 export interface Book {
