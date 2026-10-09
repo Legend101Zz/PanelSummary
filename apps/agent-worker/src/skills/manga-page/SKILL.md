@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.6.0
+version: 1.7.0
 ---
 
 # Manga page
@@ -68,6 +68,11 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **3-5 panels is normal.** Use 1-2 for a big moment (a revelation, a death, a
   transformation) and 6-7 only for a rapid exchange or a montage, with 15 words per panel
   or fewer.
+- **Count the lines before you pick the template.** Plan 1-2 balloons and about 12 words per
+  panel. More than 8 lines or 90 words in the source means a 6-panel or 7-panel template, a panel
+  for each long line, and cuts with "..." (a quote may be cut). A 4-panel page with 9 balloons
+  never fits. A refrain the book repeats (the same ask three times) is lettered in full once;
+  cut it short for the repeats. Each new place still gets its own panel.
 - **One moment per panel.** A panel is a frozen instant showing one action or one
   reaction. "He pulls out the ruby and flies away" is two panels. Each panel's `beat` names
   one moment.
@@ -311,7 +316,7 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
 ## Process
 
 1. Read the source text and the claims for this page.
-2. Plan before writing JSON: `purpose` → one moment per panel → the dominant panel → a
+2. Plan before writing JSON, in 5 lines at most (a long plan in prose uses up the output limit): `purpose` → one moment per panel → the dominant panel → a
    shot for each panel → the words (count them).
 3. Draft the page JSON. Use `preview_page` to check it (it lists every issue; with vision
    you also see the rendered page — check reading order, who is speaking, whether faces are
@@ -326,5 +331,9 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    - the beat reads from the pictures alone;
    - the fidelity labels are correct;
    - the hook rules in section 10 are met.
-5. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
+5. **Repair the page, not the panel.** Room errors (TEXT_DOES_NOT_FIT, BALLOON_TALL,
+   TAIL_CROSSES_TEXT) in two or more panels, or a new error on each try, mean the page asks
+   too much of its panels: fix every named code in one edit and change the structure (more
+   panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
+6. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
    every error and submit the complete JSON again.
