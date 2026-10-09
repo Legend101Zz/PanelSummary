@@ -152,7 +152,7 @@ export function providerStopLines(stop: ProviderStop, pendingPages = 0): Provide
     case "PROVIDER_LIMIT":
       return {
         title: "MiniMax stopped the drawing: usage limit reached",
-        plain: "Your MiniMax plan has no more usage right now. Nothing more was sent, so nothing more was spent." + kept,
+        plain: "MiniMax says the usage limit is reached (the plan limit or a short rate limit). Nothing more was sent, so nothing more was spent." + kept,
         next: "Wait for the limit to reset, or add credits to the plan. Then press Resume drawing.",
         detail,
       };

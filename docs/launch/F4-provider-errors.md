@@ -67,7 +67,7 @@ Every poller already treats it as final. A new `paused` status would be unknown 
 For a plan limit:
 
 - Title: "MiniMax stopped the drawing: usage limit reached".
-- "Your MiniMax plan has no more usage right now. Nothing more was sent, so nothing more was spent. The pages
+- "MiniMax says the usage limit is reached (the plan limit or a short rate limit). Nothing more was sent, so nothing more was spent. The pages
   already drawn stay as they are, and N pages were not tried yet."
 - "Wait for the limit to reset, or add credits to the plan. Then press Resume drawing."
 - Technical detail: the provider's type and message.
