@@ -75,9 +75,11 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      LIVE_DIR: ${{ runner.temp }}/live-run
       DB_NAME: live_ci
     steps:
+      - name: Set the work directory
+        run: echo "LIVE_DIR=$RUNNER_TEMP/live-run" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
