@@ -33,12 +33,12 @@
 .back svg {
   flex: none;
 }
-.back span {
+.back .backText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.back:hover span {
+.back:hover .backText {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -121,6 +121,14 @@
 }
 
 @media (max-width: 599px) {
+  /* arrow only on phones; the aria-label on the link names it */
+  .backText {
+    display: none;
+  }
+  .back {
+    min-width: 44px;
+    justify-content: center;
+  }
   .stage {
     padding: 10px 8px;
   }
