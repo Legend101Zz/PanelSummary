@@ -165,7 +165,7 @@ page as 0.
 | Flash / Flash, CI | 21 | 0 | 0 | 3.40 | 3.40 | 3.29 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
 | Flash / Flash, CI, new code | 22 | 0 | 2 | 3.42 | 3.42 | 3.33 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
 
-Findings: Flash plans in 34 to 69 s (M3: 16 to 235 s). Flash pages: median 61 s per page, 18 of
+Findings: Flash plans in 34 to 69 s in these runs (later Flash runs: up to 198 s; M3: 16 to 235 s). Flash pages: median 61 s per page, 18 of
 21 accepted at the first submit. Per-page legibility is about 0.2 lower with Flash pages in both
 Flash runs. The Flash book-level mean is higher because no page failed. Flash failed the
 understanding goal 3 of 3 (the statue guard never cleared). **Decision (D13):** understanding on
@@ -176,7 +176,8 @@ commits: `docs/launch/MODEL-AB.md`. Limit: one or two runs per arm; Gate 2 check
 ## Understanding A/B, 2026-10-09 (after the statue-guard fix)
 
 The understanding moved from MiniMax-M3 to MiniMax-M3.1-Flash-Preview. On the same code and the 26-page
-book, M3 gave 6 of 22 pages at the ship bar and a mean of 3.53, Flash 4 of 22 and 3.49; on tale 1 of
-the 68-page book Flash gave 3.53 against 3.40. Flash was 2.5 to 6 times faster (132 s against 801 s;
-221 s against 545 s) and passed on the first attempt in 4 of 4 runs. The earlier 3 of 3 Flash failures
-came from a wrong statue guard (#33). Details: `docs/launch/MODEL-AB.md`, D13.
+book, M3 gave 6 of 22 pages at the ship bar and a mean of 3.53, Flash 4 of 22 and 3.49: a little lower,
+inside the spread of two panel-judged M3 runs (3.31 and 3.20). Flash was 2.5 to 6 times faster (132 s
+against 801 s; 221 s against 545 s) and passed in its first goal attempt in 3 of 3 runs. The earlier
+3 of 3 Flash failures came from a wrong statue guard (#33). By the owner's rule (M3 only where Flash
+measurably loses) the understanding moved to Flash. Details: `docs/launch/MODEL-AB.md`, D13.
