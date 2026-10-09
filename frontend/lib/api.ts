@@ -103,6 +103,20 @@ export interface Coverage {
   core_not_conveyed?: string[];
 }
 
+/** Set when the model provider refused the work and the edition stopped (D11). */
+export interface ProviderStop {
+  code: "PROVIDER_LIMIT" | "PROVIDER_UNAVAILABLE" | "PROVIDER_AUTH" | string;
+  /** The provider's error type, for example "rate_limit_error". */
+  type?: string | null;
+  http_status?: number | null;
+  /** The provider's own message. No key, no headers. */
+  message?: string | null;
+  stage?: "understanding" | "plan" | "drawing" | string;
+  /** The page that met the refusal, when it happened while drawing. */
+  page?: number | null;
+  at?: string;
+}
+
 export interface Edition {
   id: string;
   book_id: string;
@@ -114,6 +128,8 @@ export interface Edition {
   totals: Totals;
   policy: Record<string, unknown>;
   error: string | null;
+  /** Present (not null) when MiniMax refused the work: a limit, a bad key, or no service. */
+  provider_stop?: ProviderStop | null;
   job_id: string | null;
   created_at: string;
   finished_at: string | null;

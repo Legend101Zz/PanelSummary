@@ -16,7 +16,19 @@ export interface GoalRequest<T extends string = GoalType> {
 
 export type GoalOutcome =
   | { state: "SUCCEEDED"; result: JsonValue; trace: GoalTrace }
-  | { state: "FAILED" | "CANCELLED"; error: { code: string; message: string }; trace?: GoalTrace };
+  | { state: "FAILED" | "CANCELLED"; error: GoalError; trace?: GoalTrace };
+
+/**
+ * code is PROVIDER_LIMIT, PROVIDER_UNAVAILABLE or PROVIDER_AUTH when the provider refused the call;
+ * the provider_* fields then carry its error type, HTTP status and message (no key, no headers).
+ */
+export interface GoalError {
+  code: string;
+  message: string;
+  provider_type?: string;
+  provider_message?: string;
+  http_status?: number;
+}
 
 export async function executeGoal(request: GoalRequest, signal?: AbortSignal): Promise<GoalOutcome> {
   const goal = GOALS[request.goal_type];
@@ -61,6 +73,14 @@ export async function executeDefinition(
     const trace = error instanceof GoalRunError ? error.trace : undefined;
     const message = error instanceof Error ? error.message : String(error);
     const cancelled = signal?.aborted || trace?.stop_reason === "cancelled";
+    const provider = !cancelled && trace?.stop_reason === "provider_error" ? trace.provider_error : undefined;
+    if (provider) {
+      return {
+        state: "FAILED",
+        error: { code: provider.code, message, provider_type: provider.type, provider_message: provider.message, ...(provider.http_status !== undefined ? { http_status: provider.http_status } : {}) },
+        trace,
+      };
+    }
     return { state: cancelled ? "CANCELLED" : "FAILED", error: { code: trace?.stop_reason?.toUpperCase() ?? "RUNTIME_ERROR", message }, trace };
   }
 }

@@ -29,13 +29,52 @@ from app.documents import (
     LibraryBook,
     utcnow,
 )
-from app.jobs.runner import JobCancelled, JobContext
+from app.jobs.runner import JobCancelled, JobContext, ProviderStop
 from app.settings import get_settings
 from app.worker_client import WorkerOutcome, WorkerUnavailable, cancel_run, run_goal
 
 logger = logging.getLogger("panelsummary.generate")
 
 WORKER_RETRY_DELAYS = [5, 15, 30, 60]
+
+# Machine codes the worker returns when the model provider refused a call (D11).
+# LIMIT and AUTH stop the job at once; UNAVAILABLE stops it when the normal retries are used up.
+PROVIDER_STOP_NOW = {"PROVIDER_LIMIT", "PROVIDER_AUTH"}
+PROVIDER_CODES = PROVIDER_STOP_NOW | {"PROVIDER_UNAVAILABLE"}
+
+
+def provider_code(outcome: WorkerOutcome) -> str | None:
+    code = (outcome.error or {}).get("code")
+    return code if outcome.state == "FAILED" and code in PROVIDER_CODES else None
+
+
+def provider_stop_message(outcome: WorkerOutcome) -> str:
+    """The visible reason, in plain words. It carries the provider's own text and no key."""
+    error = outcome.error or {}
+    code = error.get("code")
+    detail = str(error.get("provider_message") or error.get("message") or "no detail").strip().rstrip(".")[:300]
+    if code == "PROVIDER_LIMIT":
+        return f"MiniMax refused the request: {detail}. Nothing more was sent. Resume when the limit resets or after you add credits."
+    if code == "PROVIDER_AUTH":
+        return f"MiniMax did not accept the key or the plan: {detail}. Nothing more was sent. Fix the key or the plan, then resume."
+    return f"MiniMax was not available: {detail}. Nothing more was sent. Resume when the service is back."
+
+
+def provider_stop_detail(outcome: WorkerOutcome, **where: Any) -> dict[str, Any]:
+    error = outcome.error or {}
+    return {
+        "code": error.get("code"),
+        "type": error.get("provider_type"),
+        "http_status": error.get("http_status"),
+        "message": error.get("provider_message") or error.get("message"),
+        "at": utcnow().isoformat(),
+        **where,
+    }
+
+
+def refusals_in(receipts: list[dict[str, Any]]) -> int:
+    """How many earlier calls were refused by the provider (their run ids must not be reused)."""
+    return sum(1 for r in receipts if ((r.get("error") or {}).get("code")) in PROVIDER_CODES)
 
 
 def _hash(value: Any) -> str:
@@ -62,6 +101,7 @@ def receipt_from(goal_type: str, run_id: str, outcome: WorkerOutcome) -> dict[st
         "tool_calls": trace.get("tool_calls"),
         "text_fallback_used": trace.get("text_fallback_used"),
         "stop_reason": trace.get("stop_reason"),
+        "provider_error": trace.get("provider_error"),
         "truncated_turns": trace.get("truncated_turns"),
         "nudges": trace.get("nudges"),
         "last_output_excerpt": trace.get("last_output_excerpt") if outcome.state != "SUCCEEDED" else None,
@@ -195,8 +235,11 @@ async def _artifact_stage(
         await ctx.event(kind, f"Reusing the accepted {kind}")
         return existing
     last_error = "unknown error"
+    previous = await Edition.get(_oid(str(edition.id)))
+    refused_before = refusals_in([r for r in (previous.stage_failures if previous else []) if r.get("artifact") == kind])
     for attempt in range(1, 3):
-        run_id = f"{edition.id}-{kind}-a{attempt}"
+        # a stage refused by the provider before is called again under a new run id (resume)
+        run_id = f"{edition.id}-{kind}-a{attempt}" + (f"-r{refused_before}" if refused_before else "")
         await ctx.event(kind, f"MiniMax is working on the {kind} (attempt {attempt})")
         attempt_thinking = thinking if attempt == 1 else retry_thinking
         outcome = await _call(ctx, goal_type, run_id, payload, model=model, thinking=attempt_thinking)
@@ -221,6 +264,12 @@ async def _artifact_stage(
         if outcome.state == "CANCELLED":
             raise JobCancelled()
         last_error = (outcome.error or {}).get("message", "failed")
+        code = provider_code(outcome)
+        if code in PROVIDER_STOP_NOW or (code == "PROVIDER_UNAVAILABLE" and attempt == 2):
+            # No second attempt against a dead quota or a bad key.
+            reason = provider_stop_message(outcome)
+            await ctx.event(kind, reason)
+            raise ProviderStop(code, reason, provider_stop_detail(outcome, stage=kind))
         await ctx.event(kind, f"The {kind} attempt {attempt} failed: {last_error[:300]}")
     raise RuntimeError(f"{kind} failed after 2 attempts: {last_error}")
 
@@ -330,10 +379,16 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     progress = {"done": await EditionPage.find(EditionPage.edition_id == str(edition.id), EditionPage.status == "accepted").count()}
     await ctx.event("drawing", f"{progress['done']} of {len(planned_pages)} pages ready", done=progress["done"], total=len(planned_pages))
 
+    # Circuit breaker (D11): the first provider refusal that must stop the job lands here. After that no
+    # page starts a new call. Accepted pages stay accepted; pages never tried stay pending.
+    breaker: dict[str, Any] = {"stop": None}
+
     async def draw(planned: dict[str, Any]) -> None:
         number = planned["page_number"]
         async with semaphore:
             ctx.check_cancel()
+            if breaker["stop"] is not None:
+                return
             page = await EditionPage.find_one(EditionPage.edition_id == str(edition.id), EditionPage.page_number == number)
             if page is None or page.status == "accepted":
                 return
@@ -352,11 +407,20 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
             }
             while page.attempts < settings.page_attempts:
                 ctx.check_cancel()
+                if breaker["stop"] is not None:
+                    # Another page met a provider refusal. Send nothing more; this page can be drawn on resume.
+                    if page.status == "drawing":
+                        page.status = "pending"
+                        page.updated_at = utcnow()
+                        await page.save()
+                    return
                 page.attempts += 1
                 page.status = "drawing"
                 page.updated_at = utcnow()
                 await page.save()
-                run_id = f"{edition.id}-page{number}-a{page.attempts}"
+                # A page refused by the provider before is called again under a new run id (resume).
+                refused_before = refusals_in(page.receipts)
+                run_id = f"{edition.id}-page{number}-a{page.attempts}" + (f"-r{refused_before}" if refused_before else "")
                 outcome = await _call(
                     ctx,
                     "MANGA_PAGE",
@@ -394,6 +458,20 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     page.status = "pending"
                     await page.save()
                     raise JobCancelled()
+                code = provider_code(outcome)
+                if code in PROVIDER_STOP_NOW or (code == "PROVIDER_UNAVAILABLE" and page.attempts >= settings.page_attempts):
+                    # The provider refused, not the model: this is no model failure. The receipt is kept (D12),
+                    # the page goes back to pending with its attempt given back, and the job stops.
+                    page.status = "pending"
+                    page.attempts = max(0, page.attempts - 1)
+                    page.error = None
+                    page.updated_at = utcnow()
+                    await page.save()
+                    reason = provider_stop_message(outcome)
+                    if breaker["stop"] is None:
+                        breaker["stop"] = ProviderStop(code, reason, provider_stop_detail(outcome, stage="drawing", page=number))
+                        await ctx.event("drawing", f"Page {number}: {reason}")
+                    return
                 page.error = outcome.error or {"message": "failed"}
                 page.updated_at = utcnow()
                 await page.save()
@@ -409,6 +487,8 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
             raise result
         if isinstance(result, BaseException):
             raise result
+    if breaker["stop"] is not None:
+        raise breaker["stop"]
 
     # 4. Coverage + final status.
     return await finalize(edition, understanding, plan, [str(section["id"]) for section in source.sections])
@@ -478,10 +558,24 @@ async def mark_cancelled(job: GenerationJob) -> None:
         await _set_edition(edition, status="cancelled")
 
 
-async def mark_failed(job: GenerationJob, message: str) -> None:
+async def mark_failed(job: GenerationJob, message: str, provider_stop: dict[str, Any] | None = None) -> None:
     edition = await Edition.get(job.edition_id) if job.edition_id else None
     if edition is not None:
         await EditionPage.get_motor_collection().update_many(
             {"edition_id": str(edition.id), "status": "drawing"}, {"$set": {"status": "pending"}}
         )
-        await _set_edition(edition, status="failed", error=message)
+        if provider_stop is None:
+            await _set_edition(edition, status="failed", error=message)
+            return
+        # The provider refused: show it as itself, with exact counters. Pages never tried stay pending.
+        pages = await EditionPage.find(EditionPage.edition_id == str(edition.id)).to_list()
+        await _set_edition(
+            edition,
+            status="failed",
+            error=message,
+            provider_stop=provider_stop,
+            totals=Totals(**await _recompute_totals(str(edition.id))),
+            pages_accepted=sum(1 for p in pages if p.status == "accepted"),
+            pages_failed=sum(1 for p in pages if p.status == "failed"),
+            finished_at=utcnow(),
+        )

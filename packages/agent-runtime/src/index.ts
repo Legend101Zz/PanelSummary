@@ -28,3 +28,10 @@ export {
   type ThinkingLevel,
   type ToolImage,
 } from "./goal-runtime.js";
+export {
+  classifyProviderError,
+  PROVIDER_ERROR_CODES,
+  scrubProviderText,
+  type ProviderError,
+  type ProviderErrorCode,
+} from "./provider-error.js";
