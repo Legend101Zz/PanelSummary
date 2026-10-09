@@ -133,3 +133,7 @@ def test_ligatures_become_plain_letters():
     # Typeset PDFs extract "off" as "o\ufb00"; the lettering fonts have no glyph for it
     # (acceptance run 4 drew a missing-glyph box inside a quote).
     assert _clean("take it o\ufb00 \ufb03ce \ufb04 \ufb01ne \ufb02y") == "take it off ffice ffl fine fly"
+
+
+def test_planted_failure():
+    assert 1 == 2
