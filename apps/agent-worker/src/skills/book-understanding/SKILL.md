@@ -100,6 +100,9 @@ Law, Money, Conscience) — those are explanatory metaphors, say so in `descript
 1. What the text says (a gilded statue → `material: "gold"`; a giant → `height: "giant"`;
    a bird → `bird` with its species; a talking firework → `object` `rocket`/`wheel`/`firecracker`;
    a talking tree or reed → `plant` with `face: true`; the North Wind → `spirit` `wind`).
+   Only the statue itself is cast with a statue material. A living person who looks at, judges,
+   orders or replaces a statue (the Mayor, a professor) keeps `material: "flesh"`: start their
+   `role` and `description` with what they ARE ("the city's Mayor"), and put the statue in a claim.
 2. Then make the cast **distinct at a glance**: no two humans should share the same
    combination of height, build, hair silhouette and outfit. Vary hair style and tone,
    headwear, outfit shape and tone, age and build. A reader must tell characters apart by

@@ -123,9 +123,21 @@ def test_build_preflight_shape_and_basis():
     assert out["within_limits"] is True and out["blocking_reasons"] == []
     assert "not a bill" in out["estimated_cost_usd"]["basis"]
     assert "not measured again" not in out["estimated_cost_usd"]["basis"]
-    # A policy on another model must say that the numbers were measured on M3.
-    other = Settings(_env_file=None, page_model="MiniMax-M3.1-Flash-Preview")
+    # The basis says what the range rests on, and names the Flash policy runs.
+    basis = out["estimated_cost_usd"]["basis"]
+    assert f"{len(FIT_RUNS)} measured runs" in basis and "Flash" in basis
+    # The measured policies need no warning: all M3, and M3 understanding with Flash on plan and pages.
+    for models in (("MiniMax-M3",) * 3, ("MiniMax-M3", "MiniMax-M3", "MiniMax-M3.1-Flash-Preview")):
+        s2 = Settings(_env_file=None, understanding_model=models[0], plan_model=models[1], page_model=models[2])
+        assert "not measured again" not in build_preflight("b1", 26, 5794, 2, s2)["estimated_cost_usd"]["basis"]
+    # A policy nobody measured (Flash for the understanding) must say so.
+    other = Settings(_env_file=None, understanding_model="MiniMax-M3.1-Flash-Preview")
     assert "not measured again" in build_preflight("b1", 26, 5794, 2, other)["estimated_cost_usd"]["basis"]
+
+
+def test_the_fit_includes_the_flash_policy_runs():
+    flash = [run for run in FIT_RUNS if "MiniMax-M3.1-Flash-Preview" in run.policy]
+    assert len(flash) == 3 and all(run.policy[0] == "MiniMax-M3" for run in flash)
 
 
 # --- API ---
