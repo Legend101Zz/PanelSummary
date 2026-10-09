@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.api.library import _check_id, get_book_or_404
 from app.documents import Edition, EditionArtifact, EditionPage, GenerationJob, utcnow
+from app.preflight import check_limits
 from app.settings import get_settings
 from app import worker_client
 
@@ -86,6 +87,11 @@ async def generate(book_id: str) -> dict:
     running = await Edition.find(Edition.book_id == book_id, {"status": {"$in": list(ACTIVE)}}).first_or_none()
     if running is not None:
         return {"edition": edition_view(running), "job": await job_view(running.job_id), "already_running": True}
+    # v0.1 size limits (D19): refuse before any edition, job or spend exists.
+    settings = get_settings()
+    reasons = check_limits(book.page_count, book.word_count, settings.max_pdf_pages, settings.max_source_words)
+    if reasons:
+        raise HTTPException(status_code=422, detail=" ".join(reasons))
     edition = Edition(book_id=book_id, policy=policy_snapshot())
     await edition.insert()
     job = GenerationJob(kind="generate", book_id=book_id, edition_id=str(edition.id), message="Waiting for the generator")

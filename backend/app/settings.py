@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     storage_dir: str = str(REPO_ROOT / "storage")
     max_pdf_size_mb: int = 60
 
+    # --- v0.1 size limits (D19). Generate refuses a book above either limit; upload stays open.
+    # Evidence: the largest book run end to end has 68 PDF pages and 16,159 words.
+    # Each limit is that figure plus 8 % (words) or 10 % (pages). See docs/launch/T3-scope.md.
+    # Override with MAX_PDF_PAGES and MAX_SOURCE_WORDS.
+    max_pdf_pages: int = 75
+    max_source_words: int = 17500
+
     # --- HTTP ---
     cors_origins: str = "http://localhost:3100"
 

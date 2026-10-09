@@ -144,6 +144,17 @@ async def _set_edition(edition: Edition, **fields: Any) -> None:
     await Edition.get_motor_collection().update_one({"_id": edition.id}, {"$set": payload})
 
 
+async def _mark_timing(edition_id: str, key: str) -> None:
+    """Record when a milestone first happened (``timings.<key>``). The first value stays.
+
+    A resumed job keeps the first value, so the timings describe the edition's first
+    pass. The milestones are read from the database; they do not change any receipt.
+    """
+    await Edition.get_motor_collection().update_one(
+        {"_id": _oid(edition_id), f"timings.{key}": {"$exists": False}}, {"$set": {f"timings.{key}": utcnow()}}
+    )
+
+
 async def _recompute_totals(edition_id: str) -> dict[str, Any]:
     """Exact totals from every stored receipt (artifacts, failed stage attempts, every page attempt)."""
     totals = {"calls": 0, "failed_calls": 0, "input_tokens": 0, "output_tokens": 0, "cache_read_tokens": 0, "cache_write_tokens": 0, "cost_usd": 0.0, "model_ms": 0}
@@ -222,6 +233,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     if edition is None or book is None or source is None:
         raise RuntimeError("edition, book or parsed source is missing")
     policy = edition.policy
+    await _mark_timing(str(edition.id), "generate_started_at")
 
     # 1. Book understanding (whole text, one MiniMax session).
     await _set_edition(edition, status="understanding", error=None)
@@ -254,6 +266,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     plan = plan_artifact.content
     planned_pages: list[dict[str, Any]] = plan["pages"]
     await _set_edition(edition, plan_id=str(plan_artifact.id), page_total=len(planned_pages), status="drawing", pages_failed=0)
+    await _mark_timing(str(edition.id), "drawing_started_at")
 
     # 3. Page rows (unique per edition + page number).
     collection = EditionPage.get_motor_collection()
@@ -343,6 +356,8 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     page.updated_at = utcnow()
                     await page.save()
                     progress["done"] += 1
+                    # The moment a page first becomes readable in the reader (the stored page is final).
+                    await _mark_timing(str(edition.id), "first_page_at")
                     await Edition.get_motor_collection().update_one(
                         {"_id": edition.id}, {"$set": {"pages_accepted": progress["done"], "updated_at": utcnow()}}
                     )
