@@ -42,6 +42,25 @@ function page(panels: Record<string, unknown>[]): MangaPageSpec {
 const panel = (id: string, extra: Record<string, unknown> = {}) => ({ id, beat: "b", shot: "medium", angle: "eye", location: "square", figures: [], props: [], fx: [], text: [], source: [], ...extra });
 const text = (kind: string, body: string, extra: Record<string, unknown> = {}) => ({ kind, text: body, fidelity: "paraphrase", ...extra });
 
+describe("REPAIR_ONCE_CODES", () => {
+  it("pins the calibrated set (change it only with new calibration)", () => {
+    expect([...REPAIR_ONCE_CODES].sort()).toEqual(
+      [
+        "CLAIM_TEXT_THIN",
+        "DUPLICATE_CAPTION",
+        "HERO_TOO_SMALL",
+        "KEY_PROP_NOT_DRAWN",
+        "LOCATION_OFF_PLAN",
+        "REPEAT_NAME_TAG",
+        "SPEAKER_OFF_PANEL_LIMIT",
+        "SPEECH_IN_NARRATION",
+        "STATUE_LOCATION_SWAPPED",
+      ].sort(),
+    );
+    expect(REPAIR_ONCE_CODES.has("DIALOGUE_ORDER")).toBe(false);
+  });
+});
+
 describe("applyRepairOnce", () => {
   const thin: ValidationIssue = { code: "CLAIM_TEXT_THIN", severity: "warning", path: "page.claims", message: "m" };
   const plain: ValidationIssue = { code: "SIDES_SWAPPED", severity: "warning", path: "panel p2", message: "m" };

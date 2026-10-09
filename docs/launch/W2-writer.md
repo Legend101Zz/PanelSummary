@@ -3,7 +3,7 @@
 Branch `w2/writer-truth`, from `release/v0.1` at c6a1a64. Skill `manga-page` 1.8.0 (was 1.7.0), skill `adaptation-plan` 1.4.0 (was 1.3.0). The renderer is not changed (0.5.0).
 Status: PARTIAL. All offline tests pass. The live check is small (6 pages, 2 samples per arm, Flash). It does not prove that the defects are gone.
 
-All calibration numbers come from offline replays of saved judged pages (no model call). All live numbers come from this task (spend: USD 0.4647 of the USD 1.00 cap, Pi catalog estimate from the receipts; Flash has no published price, so the estimate uses M3 rates).
+All calibration numbers come from offline replays of saved judged pages (no model call). All live numbers come from this task (spend: USD 0.4869 of the USD 1.00 cap over 25 trace files (24 runs plus one extra before-p1 trace; an earlier count of USD 0.4647 left the extra trace out), Pi catalog estimate from the receipts; Flash has no published price, so the estimate uses M3 rates).
 
 ## 1. The mechanism: repair_once
 
