@@ -21,7 +21,7 @@ export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
     case "drawing":
       return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "pencil" };
     case "complete":
-      return { text: `${plural(e.page_total, "page")}`, tone: "ink" };
+      return { text: plural(e.page_total, "manga page"), tone: "ink" };
     case "completed_with_failures": {
       const missing = Math.max(0, e.page_total - e.pages_accepted);
       return { text: `${e.pages_accepted} of ${e.page_total} drawn, ${missing} missing`, tone: "redpen" };
@@ -102,7 +102,7 @@ export function editionSummary(edition: EditionDetail): string {
 }
 
 export function bookFacts(book: Book): string {
-  const bits = [plural(book.page_count, "page")];
+  const bits = [`PDF: ${plural(book.page_count, "page")}`];
   if (book.section_count) bits.push(plural(book.section_count, "section"));
   if (book.word_count) bits.push(plural(book.word_count, "word"));
   return bits.join(", ");

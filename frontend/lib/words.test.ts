@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { moneyRange, plainReason, providerStopHeadline, shelfStatus } from "./words";
+import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus } from "./words";
 
 describe("words", () => {
   it("shows completed_with_failures in the red tone", () => {
@@ -30,6 +30,14 @@ describe("words", () => {
   it("does not match 429 inside a longer number", () => {
     expect(plainReason("page 14290 broke").plain).not.toMatch(/busy/);
     expect(plainReason("HTTP 429").plain).toMatch(/busy/);
+  });
+  it("says manga pages on the cover band for a complete edition", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "complete", page_total: 18, pages_accepted: 18 } };
+    expect(shelfStatus(b).text).toBe("18 manga pages");
+  });
+  it("marks the PDF page count in the meta line", () => {
+    const b: any = { page_count: 22, section_count: 4, word_count: 4775 };
+    expect(bookFacts(b)).toBe("PDF: 22 pages, 4 sections, 4,775 words");
   });
   it("formats money", () => {
     expect(moneyRange({ low: 0.6, high: 1.1 })).toBe("$0.60 to $1.10");

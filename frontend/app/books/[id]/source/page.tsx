@@ -73,12 +73,13 @@ function SourceViewer() {
   }, [go, page, total]);
 
   const back = from ?? `/books/${bookId}`;
+  const backLabel = from ? "Back to the manga" : info?.title ? `Back to ${info.title}` : "Back to the book";
   return (
     <div className={styles.viewer}>
       <header className={styles.topbar}>
-        <Link href={back} className={styles.back}>
+        <Link href={back} className={styles.back} aria-label={backLabel}>
           <ArrowLeft />
-          <span>{from ? "Back to the manga" : info?.title ?? "Back to the book"}</span>
+          <span className={styles.backText}>{from ? backLabel : info?.title ?? backLabel}</span>
         </Link>
         <p className={styles.counter}>
           {total ? (
