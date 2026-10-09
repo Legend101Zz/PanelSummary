@@ -1,7 +1,8 @@
-import { validateUnderstanding } from "@panelsummary/manga-render";
+import { catalog, validateUnderstanding } from "@panelsummary/manga-render";
 import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-render";
 
-import { speakerCastIssues, speakerList } from "./attribution.js";
+import { loneSpeakerIssues, loneSpeakers, speakerCastIssues, speakerList } from "./attribution.js";
+import { stateIssues, unitOrder } from "./continuity.js";
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
@@ -119,9 +120,10 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     // The last complete candidate: revise_understanding patches it instead of
     // making the model re-emit a 40-100k-token JSON for a few fixes.
     let current: Record<string, unknown> | undefined;
+    const order = unitOrder(book.sections.map((section) => ({ units: section.unit_ids })));
     const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...sectionCoverageIssues(value, book)];
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...sectionCoverageIssues(value, book)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,
@@ -184,6 +186,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       unitIndex(book),
       "</goal>",
       dataBlock("trusted_vocabulary", lookVocabulary()),
+      dataBlock("trusted_state_fields", { fields_per_look_kind: catalog().variants.fields, eyes: catalog().variants.eyes }),
       ...(() => {
         const speakers = speakerList(book.units);
         return speakers
@@ -192,6 +195,10 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
               dataBlock("speakers_in_source", speakers),
             ]
           : [];
+      })(),
+      ...(() => {
+        const lone = loneSpeakers(book.units, []).map((s) => `${s.section}: ${s.phrase} speaks alone (“${s.quote.slice(0, 40)}”)`).join("\n");
+        return lone ? ["Single lines spoken by one person of a group the book names. Each needs its own cast member (one person), or pages must leave the speaker out:", dataBlock("lone_speakers_in_source", lone)] : [];
       })(),
       sourceBlock(book.units),
     ].join("\n");
