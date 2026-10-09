@@ -89,7 +89,12 @@ DB_NAME="${PANELSUMMARY_DB_NAME:-panelsummary}"
 # --- dependencies --------------------------------------------------------------
 if [[ ! -d "$ROOT/node_modules/.pnpm" ]]; then step "pnpm install"; (cd "$ROOT" && pnpm install --frozen-lockfile); fi
 if [[ ! -d "$ROOT/frontend/node_modules" ]]; then step "frontend npm install"; (cd "$ROOT/frontend" && npm install); fi
-if [[ ! -x "$ROOT/backend/.venv/bin/python" ]]; then step "backend venv"; (cd "$ROOT/backend" && uv venv && uv pip install -r requirements.txt); fi
+# Python 3.12 (pydantic-core has no wheel for newer Pythons yet). A venv without uvicorn is
+# a half-made one from a failed install: make it again instead of skipping it.
+if [[ ! -x "$ROOT/backend/.venv/bin/uvicorn" ]]; then
+  step "backend venv (Python 3.12)"
+  (cd "$ROOT/backend" && uv venv --clear -p 3.12 && uv pip install -r requirements.txt) || fail "backend venv failed (needs Python 3.12 through uv)"
+fi
 mkdir -p "$ROOT/frontend/public/fonts"
 cp "$ROOT/packages/manga-render/fonts/"*.ttf "$ROOT/frontend/public/fonts/"
 

@@ -117,6 +117,8 @@ function checkVariant(v: unknown, cast: CastMember | undefined, issues: Issues, 
 
 export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPage, options: PageCheckOptions = {}): ValidationIssue[] {
   const issues = new Issues();
+  /** Spoken lines whose speaker is not drawn in their panel (the tail points off-panel). */
+  const offPanelLines: { path: string; speaker: string }[] = [];
   if (!isRecord(spec)) {
     issues.error("PAGE_NOT_OBJECT", "page", `the page must be a JSON object with fields: ${PAGE_KEYS.join(", ")}.`);
     return issues.list;
@@ -381,6 +383,7 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
             issues.error("SPEAKER_UNKNOWN", tpath, `speaker ${show(speaker)} is not a cast id; use one of: ${listValues([...castById.keys()])}.`);
           } else {
             if (!figureChars.has(speaker)) {
+              offPanelLines.push({ path: tpath, speaker });
               issues.warn(
                 "SPEAKER_OFF_PANEL",
                 tpath,
@@ -528,6 +531,16 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
       "SCENE_NOT_DRAWN",
       "page",
       `only ${panelsWithSubject} of ${panelList.length} panels show a character or a prop; this reads as illustrated prose. Stage the beat: put the characters (or the object that matters) in at least half of the panels and let pose and expression carry what the narration says.`,
+    );
+  }
+  // one off-panel voice per page at most, and never a speaker the page does not draw anywhere
+  // (calibrated on judged pages in docs/launch/W2-renderer.md: a warning until more pages back an error)
+  const undrawnVoices = [...new Set(offPanelLines.map((l) => l.speaker))].filter((id) => !drawnCast.has(id));
+  if (offPanelLines.length > 1 || undrawnVoices.length > 0) {
+    issues.warn(
+      "SPEAKER_OFF_PANEL_LIMIT",
+      "page",
+      `${offPanelLines.length} spoken line${offPanelLines.length === 1 ? "" : "s"} on this page ha${offPanelLines.length === 1 ? "s" : "ve"} a speaker who is not drawn in its panel${undrawnVoices.length > 0 ? ` (${listValues(undrawnVoices)} is not drawn on the page at all)` : ""}; readers cannot tell who speaks. Draw the speaker in the panel, or make the line a caption.`,
     );
   }
   if (allWords > 40 && narrationWords / allWords > 0.6) {

@@ -81,18 +81,17 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: A retry must not charge twice. A cost figure without a persisted receipt is not evidence.
 - Status: accepted.
 
-### D13. Generation policy (2026-09-25, measured; revised 2026-09-26)
-- Statement: All three goals use M3. Book understanding runs with thinking `low` and fixes
-  rejections with `revise_understanding` patches. Plan and pages run with thinking `off`; a
-  retry uses `low`. A page gets two attempts (4 previews, 6 submits each).
-- Statement: Four pages run in parallel. The page goal gets a PNG preview (vision). No separate review pass runs.
-- Statement: `MiniMax-M3.1-Flash-Preview` is registered and selectable per goal. The defaults stay M3 until the A/B (orchestrator) decides. Every receipt records the model, the thinking level asked for, the thinking sent and the cost basis.
-- Why: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was
-  3-5x faster at equal page quality. For the understanding it was fast but unreliable: acceptance
-  run 2 cast the Happy Prince statue as a gold "rocket", and a later run reworded a description to
-  evade the guard. Low was correct in every run; the patch tool cut its time from 11 to ~4.5 min.
-  M2.7-highspeed miscast characters. The review pass did not pay for itself.
-- Status: accepted. The configuration is in `backend/app/settings.py` and is recorded on each edition.
+### D13. Generation policy (2026-09-25, measured; revised 2026-09-26; revised 2026-10-09)
+- Statement: The policy is set per goal. Book understanding uses `MiniMax-M3` with thinking `low`; a retry uses `low`. Plan and pages use `MiniMax-M3.1-Flash-Preview` with thinking `off`; a retry uses `medium`. Flash cannot turn thinking off, so the harness sends adaptive effort `low` for "off" (see D2). Pages get a PNG preview (vision).
+- Statement: The owner direction of 2026-10-09 is: prefer Flash where it holds quality, use M3 less, and measure and record every switch. The rule used: Flash becomes the default for a goal where it is at least as good as M3 on judged quality and on validation. M3 stays where Flash measurably loses.
+- Statement: The settings are `UNDERSTANDING_MODEL`, `UNDERSTANDING_THINKING`, `UNDERSTANDING_RETRY_THINKING`, `PLAN_MODEL`, `PLAN_THINKING`, `PLAN_RETRY_THINKING`, `PAGE_MODEL`, `PAGE_THINKING` and `PAGE_RETRY_THINKING`. The old `RETRY_THINKING` is a fallback for the plan and page retries only. Every edition records all of them (`policy`). Every receipt records the model, the thinking level asked for, the thinking sent and the cost basis.
+- Statement: M3 is the fallback for every goal. To put the pages back on M3, set `PAGE_MODEL=MiniMax-M3` and `PAGE_RETRY_THINKING=off`. A retry at `low` on M3 pages was cut off by runaway thinking in 6 of 7 recorded runs (F1). To put the plan back on M3, set `PLAN_MODEL=MiniMax-M3`.
+- Statement: A page gets two attempts (4 previews, 6 submits each). Four pages run in parallel. No separate review pass runs.
+- Why, by goal: Understanding stays on M3. Flash failed this goal 3 of 3 in the T0 smoke test: the statue guard (`STATUE_NOT_HUMAN`) never cleared at low, medium or high thinking. Plan: Flash took 34 to 69 s where M3 took 16 to 235 s (79 s and 235 s in the two local M3 runs), and the plan quality did not measurably differ. Pages: Flash had no failed page in 3 runs (59 pages); the two M3 runs each had one failed page. Judged on the 3-judge panel, the book-level mean was 3.40 for Flash pages against 3.20 and 3.31 for M3 pages, but only because Flash had no page counted as 0. See `docs/launch/MODEL-AB.md` for the table.
+- Caveat: One or two runs per arm, on one book of 26 PDF pages. Per-page legibility with Flash pages is about 0.2 lower in the Flash runs (3.29, 3.31 and 3.33 against 3.46 and 3.60). Flash had 0 of 21, 2 of 16 and 2 of 22 (new code) pages at the ship bar; M3 had 2 of 16 and 3 of 14. Gate 2 (the 68-page book) checks this again. If Gate 2 shows Flash pages below M3 pages on accepted-page quality, the pages go back to M3 by the settings above.
+- Judge panel: The older single-judge scores are not comparable with the panel. The run 8 pages, judged again by the same 3-judge panel, scored 7 of 46 at the ship bar and a mean of 3.47, against 5 of 46 and 3.38 from the single judge. The panel report is `docs/rebuild/baselines/run8-panel.md` (data in `run8-panel.json`).
+- Earlier reasons that still hold: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was 3-5x faster than low at equal page quality. For the understanding it was fast but unreliable: acceptance run 2 cast the Happy Prince statue as a gold "rocket", and a later run reworded a description to evade the guard. Low was correct in every run; the patch tool cut its time from 11 to ~4.5 min. M2.7-highspeed miscast characters. The review pass did not pay for itself.
+- Status: accepted. The configuration is in `backend/app/settings.py` and is recorded on each edition. The cost and time preflight (D19) is fitted to the runs of both policies (`backend/app/preflight.py`).
 
 ### D14. PDF parsing with PyMuPDF only (2026-09-25)
 - Statement: `backend/app/sources/pdf_source.py` makes sections and bounded source units with real PDF page numbers.

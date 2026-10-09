@@ -274,7 +274,7 @@ describe("craft grammar in the skills (#6)", () => {
     it(`${name} keeps its key rules and a bumped version`, async () => {
       const skill = await loadSkill(name);
       for (const p of patterns) expect(skill.content, `${name} lacks ${p}`).toMatch(p);
-      const versions: Record<string, string> = { "manga-page": "1.6.0", "book-understanding": "1.7.0", "adaptation-plan": "1.3.0" };
+      const versions: Record<string, string> = { "manga-page": "1.7.0", "book-understanding": "1.7.0", "adaptation-plan": "1.3.0" };
       expect(skill.version).toBe(versions[name]);
     });
   }

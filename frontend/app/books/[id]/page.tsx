@@ -21,7 +21,7 @@ import {
 } from "@/lib/api";
 import { useNow, usePoll } from "@/lib/hooks";
 import { readPosition } from "@/lib/position";
-import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, shelfStatus, stageLine } from "@/lib/words";
+import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Cover, Obi } from "@/components/Paper";
 import { CoverSvg } from "@/components/CoverArt";
@@ -208,6 +208,7 @@ export default function BookPage() {
                         className="btn btn-ink"
                         onClick={() => act("generate")}
                         disabled={book.status !== "parsed" || pending !== null || blocked}
+                        aria-describedby={blocked ? "preflight-blocked" : undefined}
                       >
                         {pending === "generate" ? "Starting" : "Generate manga"}
                       </button>
@@ -421,6 +422,7 @@ function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; 
 
 function PreflightPanel({ preflight }: { preflight: Preflight }) {
   const l = preflightLines(preflight);
+  const basis = splitCostBasis(preflight.estimated_cost_usd.basis);
   return (
     <section className={styles.preflight} aria-labelledby="preflight-title">
       <h2 id="preflight-title" className={styles.preflightTitle}>
@@ -447,11 +449,19 @@ function PreflightPanel({ preflight }: { preflight: Preflight }) {
             </div>
           </dl>
           <p className={styles.preflightBasis}>
-            These are estimates. {preflight.estimated_cost_usd.basis ? `Cost basis: ${preflight.estimated_cost_usd.basis}. ` : ""}Real times change with how busy the model is.
+            This version adapts books up to {preflight.limits.max_pdf_pages.toLocaleString()} PDF pages and {preflight.limits.max_source_words.toLocaleString()} words. This book is inside the limit.
           </p>
+          <p className={styles.preflightBasis}>
+            These are estimates. {basis.basis ? `Cost basis: ${basis.basis}. ` : ""}Real times change with how busy the model is.
+          </p>
+          {basis.modelNote ? (
+            <p className={styles.preflightBasis} data-testid="preflight-model-note">
+              <strong>Note on the models.</strong> {basis.modelNote}
+            </p>
+          ) : null}
         </>
       ) : (
-        <div className={styles.preflightBlocked} role="alert">
+        <div className={styles.preflightBlocked} role="alert" id="preflight-blocked">
           <p className={styles.preflightBlockedTitle}>This book is too large to draw</p>
           {preflight.blocking_reasons.length > 0 ? (
             <ul>
