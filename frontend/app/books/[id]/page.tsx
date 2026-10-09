@@ -9,6 +9,7 @@ import {
   generateEdition,
   getBook,
   getEdition,
+  getPreflight,
   isActive,
   listEditions,
   loadPage,
@@ -16,10 +17,11 @@ import {
   type BookDetail,
   type ClaimDetail,
   type EditionDetail,
+  type Preflight,
 } from "@/lib/api";
-import { usePoll } from "@/lib/hooks";
+import { useNow, usePoll } from "@/lib/hooks";
 import { readPosition } from "@/lib/position";
-import { bookFacts, editionSummary, formatTokens, plural, shelfStatus, stageLine } from "@/lib/words";
+import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, shelfStatus, stageLine } from "@/lib/words";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Cover, Obi } from "@/components/Paper";
 import { CoverSvg } from "@/components/CoverArt";
@@ -35,6 +37,8 @@ export default function BookPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<"generate" | "cancel" | "resume" | null>(null);
+  // undefined = not asked yet, null = no preflight (older backend or an error): the panel is hidden
+  const [preflight, setPreflight] = useState<Preflight | null | undefined>(undefined);
   const [coverSvg, setCoverSvg] = useState<string | null>(null);
   const [lastRead, setLastRead] = useState<number | null>(null);
   // The API does not expose cancel_requested yet, so "stopping" is remembered here.
@@ -60,6 +64,17 @@ export default function BookPage() {
     loadBook();
     loadEdition().catch(() => setEditionsLoaded(true));
   }, [loadBook, loadEdition]);
+
+  const needsPreflight = book?.status === "parsed" && editionsLoaded && !edition;
+  useEffect(() => {
+    if (!needsPreflight || preflight !== undefined) return;
+    let live = true;
+    getPreflight(bookId).then((p) => live && setPreflight(p));
+    return () => {
+      live = false;
+    };
+  }, [needsPreflight, preflight, bookId]);
+  const blocked = !!preflight && !preflight.within_limits;
 
   const parsing = book !== null && (book.status === "uploaded" || book.status === "parsing");
   usePoll(loadBook, 2000, parsing);
@@ -98,7 +113,10 @@ export default function BookPage() {
         await loadEdition(edition.id);
       }
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "That did not work.");
+      const reason = e instanceof Error ? e.message : "";
+      const what = kind === "generate" ? "Generate did not start." : kind === "cancel" ? "Drawing could not be stopped." : "Drawing could not be resumed.";
+      const next = e instanceof ApiError && e.status === 0 ? " Check that the server is running, then try again." : kind === "generate" && e instanceof ApiError && e.status >= 400 && e.status < 500 ? " Nothing was started and nothing was spent. Choose a different book, or change the book and try again." : " Try again in a moment.";
+      setActionError(`${what} ${reason ? `${reason.replace(/\.?$/, ".")}` : ""}${next}`.replace(/\s+/g, " "));
     } finally {
       setPending(null);
     }
@@ -176,7 +194,8 @@ export default function BookPage() {
 
             {book && editionsLoaded ? (
               <div className={styles.console}>
-                {edition ? <EditionStatus edition={edition} stopping={stopping} /> : null}
+                {edition ? <EditionStatus edition={edition} stopping={stopping} bookId={bookId} /> : null}
+                {!edition && book.status === "parsed" && preflight ? <PreflightPanel preflight={preflight} /> : null}
 
                 <div className={styles.actions}>
                   {!edition ? (
@@ -185,7 +204,7 @@ export default function BookPage() {
                         type="button"
                         className="btn btn-ink"
                         onClick={() => act("generate")}
-                        disabled={book.status !== "parsed" || pending !== null}
+                        disabled={book.status !== "parsed" || pending !== null || blocked}
                       >
                         {pending === "generate" ? "Starting" : "Generate manga"}
                       </button>
@@ -219,7 +238,7 @@ export default function BookPage() {
                     </>
                   )}
                 </div>
-                {!edition && book.status === "parsed" ? (
+                {!edition && book.status === "parsed" && !blocked ? (
                   <p className={styles.note}>
                     MiniMax reads the book&apos;s text and plans the pages; PanelSummary draws them. Pages appear here as they are
                     drawn, and you can start reading as soon as the first one is ready.
@@ -244,17 +263,24 @@ export default function BookPage() {
               <p className={styles.blockMeta}>{editionSummary(edition)}</p>
             </div>
             {failedPages.length > 0 ? (
-              <div className={styles.failures}>
+              <div className={styles.failures} role="alert">
                 <p className={styles.failuresTitle}>
                   {failedPages.length === 1 ? `Page ${failedPages[0].page_number} could not be drawn` : `${plural(failedPages.length, "page")} could not be drawn`}
                 </p>
                 <ul className={styles.failureList}>
-                  {failedPages.map((p) => (
-                    <li key={p.page_number}>
-                      {failedPages.length > 1 ? <span className={styles.failureNum}>Page {p.page_number}. </span> : null}
-                      {p.error || "No reason was recorded."}
-                    </li>
-                  ))}
+                  {failedPages.map((p) => {
+                    const reason = plainReason(p.error);
+                    return (
+                      <li key={p.page_number}>
+                        <Link className={`text-link ${styles.failureNum}`} href={`/books/${bookId}/read?edition=${edition.id}&page=${p.page_number}`}>
+                          Page {p.page_number}
+                        </Link>
+                        {": "}
+                        {reason.plain}
+                        {reason.detail ? <span className={styles.failureDetail}> Technical detail: {reason.detail}</span> : null}
+                      </li>
+                    );
+                  })}
                 </ul>
                 {isActive(edition.status) ? (
                   <p className={styles.failuresNote}>
@@ -262,7 +288,11 @@ export default function BookPage() {
                       ? "You can retry failed pages when the rest are drawn."
                       : "Drawing is starting again, and these pages will be tried again."}
                   </p>
-                ) : null}
+                ) : (
+                  <p className={styles.failuresNote}>
+                    {edition.status === "complete" ? "" : "Choose Retry failed pages above to try them again. The pages that are drawn stay as they are."}
+                  </p>
+                )}
               </div>
             ) : null}
             <ol className={styles.grid}>
@@ -309,18 +339,44 @@ function BackLink() {
   );
 }
 
-function EditionStatus({ edition, stopping }: { edition: EditionDetail; stopping: boolean }) {
+const STEPS: { key: "understanding" | "planning" | "drawing"; label: string }[] = [
+  { key: "understanding", label: "Reading the book" },
+  { key: "planning", label: "Planning the pages" },
+  { key: "drawing", label: "Drawing the pages" },
+];
+
+function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; stopping: boolean; bookId: string }) {
   const total = edition.page_total || edition.pages.length;
-  const line = stopping ? "Stopping after the pages in progress" : stageLine(edition.status, edition.pages, total);
   const active = isActive(edition.status);
+  const drawn = edition.pages.filter((p) => p.status === "accepted").length;
+  const failed = edition.pages.filter((p) => p.status === "failed").length;
+  const line = stopping ? "Stopping after the pages in progress" : stageLine(edition.status, edition.pages, total);
+  const now = useNow(1000, active);
+  const started = Date.parse(edition.job?.created_at ?? edition.created_at);
+  const ended = active ? now : Date.parse(edition.finished_at ?? edition.job?.finished_at ?? "") || now;
+  const seconds = Number.isFinite(started) ? (ended - started) / 1000 : null;
+  const stepIndex = STEPS.findIndex((x) => x.key === edition.status);
+  const page1 = edition.pages.find((p) => p.page_number === 1);
+  const finishedBad = edition.status === "completed_with_failures" || edition.status === "failed";
   return (
     <div className={styles.status}>
-      <p className={`${styles.stage} ${active ? styles.stageActive : ""}`} aria-live="polite">
+      <p className={`${styles.stage} ${active ? styles.stageActive : ""} ${finishedBad ? styles.stageBad : ""}`} aria-live="polite">
         {line}
       </p>
-      {edition.status === "failed" && edition.error ? <p className={styles.stageError}>{edition.error}</p> : null}
+      {active ? (
+        <ol className={styles.steps} aria-label="Steps">
+          {STEPS.map((x, i) => (
+            <li key={x.key} className={i < stepIndex ? styles.stepDone : i === stepIndex ? styles.stepNow : styles.stepNext} aria-current={i === stepIndex ? "step" : undefined}>
+              {x.label}
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {edition.status === "failed" && edition.error ? (
+        <p className={styles.stageError}>{plainReason(edition.error).plain}</p>
+      ) : null}
       {total > 0 ? (
-        <ol className={styles.segments} aria-label={`${edition.pages.filter((p) => p.status === "accepted").length} of ${total} pages drawn`}>
+        <ol className={styles.segments} aria-label={`${drawn} of ${total} pages drawn`}>
           {Array.from({ length: total }, (_, i) => {
             const p = edition.pages.find((x) => x.page_number === i + 1);
             return <li key={i} className={styles[`seg_${p?.status ?? "pending"}`]} />;
@@ -331,7 +387,87 @@ function EditionStatus({ edition, stopping }: { edition: EditionDetail; stopping
           <span />
         </div>
       ) : null}
+      {total > 0 ? (
+        <p className={styles.counts}>
+          {plural(drawn, "page")} drawn of {total}
+          {failed ? `, ${failed} could not be drawn` : ""}
+        </p>
+      ) : null}
+      {seconds !== null ? (
+        <p className={styles.elapsed}>
+          {active ? "Running for " : "Took "}
+          <span className={styles.clock}>{formatElapsed(seconds)}</span>
+          {active && (edition.status === "understanding" || edition.status === "planning")
+            ? ". Reading and planning a long book can take 10 minutes or more. This page updates itself, so you can leave it open."
+            : active && !(page1?.status === "accepted")
+              ? ". Page 1 comes first. This page updates itself."
+              : ""}
+        </p>
+      ) : null}
+      {active && page1?.status === "accepted" ? (
+        <p className={styles.ready}>
+          <Link className="text-link" href={`/books/${bookId}/read?edition=${edition.id}&page=1`}>
+            Page 1 is ready. Read it now
+          </Link>{" "}
+          while the rest is drawn.
+        </p>
+      ) : null}
     </div>
+  );
+}
+
+function PreflightPanel({ preflight }: { preflight: Preflight }) {
+  const l = preflightLines(preflight);
+  return (
+    <section className={styles.preflight} aria-labelledby="preflight-title">
+      <h2 id="preflight-title" className={styles.preflightTitle}>
+        Before you start
+      </h2>
+      {preflight.within_limits ? (
+        <>
+          <dl className={styles.preflightList}>
+            <div>
+              <dt>Manga pages</dt>
+              <dd>{l.pages}</dd>
+            </div>
+            <div>
+              <dt>Page 1 is ready in</dt>
+              <dd>{l.firstPage}</dd>
+            </div>
+            <div>
+              <dt>The whole book is ready in</dt>
+              <dd>{l.total}</dd>
+            </div>
+            <div>
+              <dt>Cost (estimate)</dt>
+              <dd>{l.cost}</dd>
+            </div>
+          </dl>
+          <p className={styles.preflightBasis}>
+            These are estimates. {preflight.estimated_cost_usd.basis ? `Cost basis: ${preflight.estimated_cost_usd.basis}. ` : ""}Real times change with how busy the model is.
+          </p>
+        </>
+      ) : (
+        <div className={styles.preflightBlocked} role="alert">
+          <p className={styles.preflightBlockedTitle}>This book is too large to draw</p>
+          {preflight.blocking_reasons.length > 0 ? (
+            <ul>
+              {preflight.blocking_reasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>
+              The limit is {preflight.limits.max_pdf_pages.toLocaleString()} PDF pages and {preflight.limits.max_source_words.toLocaleString()} words. This book has{" "}
+              {preflight.pdf_pages.toLocaleString()} pages and {preflight.source_words.toLocaleString()} words.
+            </p>
+          )}
+          <p>
+            Generate is off. <Link className="text-link" href="/upload">Add a shorter book</Link> or go back to your shelf.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
 

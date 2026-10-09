@@ -1,5 +1,5 @@
 /** Plain-language wording for statuses, shared by the shelf, book page and reader. */
-import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, TextKind } from "./api";
+import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, Range, TextKind } from "./api";
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
@@ -22,8 +22,10 @@ export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
       return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "pencil" };
     case "complete":
       return { text: `${plural(e.page_total, "page")}`, tone: "ink" };
-    case "completed_with_failures":
-      return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "ink" };
+    case "completed_with_failures": {
+      const missing = Math.max(0, e.page_total - e.pages_accepted);
+      return { text: `${e.pages_accepted} of ${e.page_total} drawn, ${missing} missing`, tone: "redpen" };
+    }
     case "cancelled":
       return { text: e.page_total ? `Stopped at ${e.pages_accepted} of ${e.page_total} pages` : "Stopped before drawing", tone: "quiet" };
     case "failed":
@@ -47,8 +49,10 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
     }
     case "complete":
       return `All ${plural(total, "page")} are drawn`;
-    case "completed_with_failures":
-      return "Finished, with pages missing";
+    case "completed_with_failures": {
+      const missing = pages.filter((p) => p.status !== "accepted").length;
+      return missing > 0 ? `Finished, but ${plural(missing, "page")} ${missing === 1 ? "is" : "are"} missing` : "Finished, with pages missing";
+    }
     case "cancelled":
       return "Drawing stopped";
     case "failed":
@@ -115,4 +119,68 @@ export function voiceLabel(kind: TextKind, speaker: string | undefined, names: R
 export function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)} million`;
   return n.toLocaleString();
+}
+
+// ---------------------------------------------------------------------------
+// Time, failure reasons and the preflight, in plain words
+// ---------------------------------------------------------------------------
+
+/** "45 seconds", "7 min 05 s", "1 h 12 min". */
+export function formatElapsed(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  if (s < 60) return `${s} s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ${String(s % 60).padStart(2, "0")} s`;
+  return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
+}
+
+const FAILURE_REASONS: [RegExp, string][] = [
+  [/token limit|cut off|max_tokens/i, "The model ran out of room before it finished this page."],
+  [/max_submits|rejected on every|every submit/i, "The model's drawings for this page were rejected every time they were checked."],
+  [/did not fit|overflow|balloon|lettering/i, "The text did not fit on the page."],
+  [/timed? ?out|timeout|deadline/i, "The model took too long to answer."],
+  [/stopped answering|unreachable|connect|ECONN|worker/i, "The drawing service stopped answering."],
+  [/rate.?limit|429|quota|overloaded|529/i, "The model service was too busy or over its limit."],
+  [/schema|invalid|validation|not valid/i, "The model's answer did not follow the page format."],
+  [/cancel/i, "Drawing was stopped before this page."],
+];
+
+/** A short reason a reader can act on. The raw text stays available as `detail`. */
+export function plainReason(raw: string | null | undefined): { plain: string; detail: string | null } {
+  const text = (raw ?? "").trim();
+  if (!text) return { plain: "No reason was recorded for this failure.", detail: null };
+  // already a full sentence that a person can read: keep it
+  if (text.length > 25 && /^[A-Z].*[.!?]$/.test(text)) return { plain: text, detail: null };
+  for (const [re, plain] of FAILURE_REASONS) if (re.test(text)) return { plain, detail: text };
+  // already a sentence a person wrote: keep it as the reason
+  return { plain: /[.!?]$/.test(text) ? text : `${text}.`, detail: null };
+}
+
+const roundRange = (r: Range, unit: string, one = unit) => {
+  const lo = Math.round(r.low);
+  const hi = Math.round(r.high);
+  return lo === hi ? plural(lo, one, unit) : `${lo.toLocaleString()} to ${hi.toLocaleString()} ${unit}`;
+};
+
+export function minutesRange(r: Range): string {
+  const lo = Math.max(1, Math.round(r.low));
+  const hi = Math.max(lo, Math.round(r.high));
+  return lo === hi ? `about ${lo} min` : `${lo} to ${hi} min`;
+}
+
+export const moneyRange = (r: Range) => {
+  const f = (n: number) => `$${n < 10 ? n.toFixed(2) : n.toFixed(0)}`;
+  return r.low === r.high ? `about ${f(r.low)}` : `${f(r.low)} to ${f(r.high)}`;
+};
+
+export const pagesRange = (r: Range) => roundRange(r, "pages", "page");
+
+/** Plain-words lines for the preflight panel. */
+export function preflightLines(p: Preflight) {
+  return {
+    pages: pagesRange(p.estimated_manga_pages),
+    firstPage: minutesRange(p.estimated_minutes.first_page),
+    total: minutesRange(p.estimated_minutes.total),
+    cost: moneyRange(p.estimated_cost_usd),
+  };
 }
