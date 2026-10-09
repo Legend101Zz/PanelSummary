@@ -39,7 +39,12 @@ class FitRun:
     first_page_s: int | None
     finish_s: int | None
     understanding_s: int | None
+    # Model per goal (understanding, plan, pages). The first six runs are all MiniMax-M3.
+    policy: tuple[str, str, str] = ("MiniMax-M3", "MiniMax-M3", "MiniMax-M3")
 
+
+_M3 = "MiniMax-M3"
+_FLASH = "MiniMax-M3.1-Flash-Preview"
 
 FIT_RUNS: tuple[FitRun, ...] = (
     FitRun("phase0 two tales", 26, 5794, 2, 16, 0.81, 795, 2115, 472),
@@ -48,25 +53,39 @@ FIT_RUNS: tuple[FitRun, ...] = (
     FitRun("acceptance run 4", 68, 16159, 5, 58, 2.02, 397, 1578, 259),
     FitRun("acceptance run 6", 68, 16159, 5, 56, 1.66, 813, 1716, 625),
     FitRun("acceptance run 8", 68, 16159, 5, 46, 1.65, 1823, 2910, 1166),
+    # Measured 2026-10-09 on the 26-page two-tale book (docs/launch/MODEL-AB.md). Times are the
+    # journey's observed Generate-to-page and Generate-to-finished seconds; cost is the receipts' sum.
+    FitRun("ci live, all M3", 26, 5794, 2, 14, 0.60, 940, 1747, 793),
+    FitRun("A/B M3 plan, Flash pages", 26, 5794, 2, 16, 0.53, 954, 1363, 826, (_M3, _M3, _FLASH)),
+    FitRun("A/B Flash plan and pages", 26, 5794, 2, 21, 0.59, 744, 1087, 633, (_M3, _FLASH, _FLASH)),
+    FitRun("gate 1, Flash plan and pages", 26, 5794, 2, 22, 0.87, 1361, 2094, 1259, (_M3, _FLASH, _FLASH)),
 )
 
 # Manga pages per 1,000 words. Measured 2.76 to 3.71. Widened outward to 2.5 and 4.0.
 PAGES_PER_KWORD_LOW = 2.5
 PAGES_PER_KWORD_HIGH = 4.0
 
-# Cost model (least squares on FIT_RUNS): usd = a * kwords + b * pages.
+# Cost model: usd = a * kwords + b * pages. The two coefficients were fitted (least squares) on the
+# six all-M3 runs; the Flash-policy runs were added after, only as checks on the range (tests).
 COST_PER_KWORD = 0.0125
 COST_PER_PAGE = 0.0302
 # The fit is off by -26 % to +46 % on single runs, so the range is widened.
+# The high factor grew from 1.15 to 1.25 when the Flash-policy runs were added: the gate 1 run
+# cost $0.87 for 22 pages (a slow understanding hour with 348,000 output tokens in all).
 COST_LOW_FACTOR = 0.85
-COST_HIGH_FACTOR = 1.15
+COST_HIGH_FACTOR = 1.25
 
 # Understanding seconds per source word. Measured 0.016 (fast hour) to 0.082 (slow hour
 # with many revision turns). The goal times out at 25 minutes (1,500 s).
 UNDERSTANDING_S_PER_WORD_LOW = 0.016
 UNDERSTANDING_S_PER_WORD_HIGH = 0.082
 UNDERSTANDING_TIMEOUT_S = 25 * 60
-# Plan seconds, observed 72 to 235; the slow-hour run needed up to about 450 for plan + page 1.
+# A slow understanding hour is flat extra time, not a rate per word: the 5,794-word book needed
+# 1,259 s once (633 to 826 s in three other runs), which is 0.22 s per word. Added to the high
+# bound of the time to the first page (and so to the total).
+UNDERSTANDING_SLOW_HOUR_EXTRA_S = 800
+# Plan seconds, observed 16 to 235 (Flash: 34 and 69; M3: 16 to 235); the slow-hour run needed
+# up to about 450 for plan + page 1.
 PLAN_S_LOW = 60
 PLAN_S_HIGH = 450
 # Time from plan to the first accepted page. Fastest page seen 34 s.
@@ -78,7 +97,9 @@ PAGE_S_HIGH = 30
 # One page that fails twice held a slot for about 1,100 s in the phase 0 run.
 FAILED_PAGE_TAIL_S_HIGH = 1100
 
-BASIS_MEASURED_MODEL = "MiniMax-M3"
+BASIS_MEASURED_MODEL = _M3  # kept for older readers
+# Policies the fit has measured runs for: (understanding, plan, pages).
+MEASURED_POLICIES = frozenset(run.policy for run in FIT_RUNS)
 
 
 def _budget(words: int, sections: int) -> tuple[int, int]:
@@ -121,7 +142,7 @@ def estimate(source_words: int, sections: int) -> dict[str, Any]:
     cost_high = cost(pages_high) * COST_HIGH_FACTOR
 
     first_low = UNDERSTANDING_S_PER_WORD_LOW * source_words + PLAN_S_LOW + FIRST_PAGE_S_LOW
-    first_high = UNDERSTANDING_S_PER_WORD_HIGH * source_words + PLAN_S_HIGH + FIRST_PAGE_S_HIGH
+    first_high = UNDERSTANDING_S_PER_WORD_HIGH * source_words + UNDERSTANDING_SLOW_HOUR_EXTRA_S + PLAN_S_HIGH + FIRST_PAGE_S_HIGH
     total_low = first_low + max(pages_low - 1, 0) * PAGE_S_LOW
     total_high = first_high + max(pages_high - 1, 0) * PAGE_S_HIGH + FAILED_PAGE_TAIL_S_HIGH
 
@@ -143,12 +164,19 @@ def estimate(source_words: int, sections: int) -> dict[str, Any]:
 
 
 def cost_basis(settings: Settings) -> str:
-    text = "Pi catalog estimate on MiniMax-M3 rates from measured runs; not a bill. MiniMax speed varies, so time is the weakest figure."
-    models = {settings.understanding_model, settings.plan_model, settings.page_model}
-    if models != {BASIS_MEASURED_MODEL}:
+    n_all_m3 = sum(1 for run in FIT_RUNS if run.policy == (_M3, _M3, _M3))
+    n_flash = len(FIT_RUNS) - n_all_m3
+    text = (
+        f"Pi catalog estimate, not a bill. The range comes from {len(FIT_RUNS)} measured runs: "
+        f"{n_all_m3} with MiniMax-M3 on every goal and {n_flash} with Flash on the plan or the pages "
+        "(M3 on the book understanding in all). The Flash runs are one book of 26 PDF pages, so the "
+        "Flash part of the range is thinner. MiniMax speed varies, so time is the weakest figure."
+    )
+    policy = (settings.understanding_model, settings.plan_model, settings.page_model)
+    if policy not in MEASURED_POLICIES:
         text += (
-            f" The current policy uses {', '.join(sorted(models))}. The numbers were measured on "
-            f"{BASIS_MEASURED_MODEL} and are not measured again for this policy."
+            f" The current policy (understanding {policy[0]}, plan {policy[1]}, pages {policy[2]}) "
+            "was not measured; the numbers are not measured again for it."
         )
     return text
 
