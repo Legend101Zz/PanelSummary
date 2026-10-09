@@ -1,5 +1,13 @@
 export {
   ALLOWED_MODELS,
+  applyThinkingToPayload,
+  CATALOG_COST_BASIS,
+  costBasisFor,
+  DEFAULT_GOAL_MODEL,
+  describeThinkingSent,
+  FLASH_COST_BASIS,
+  FLASH_MODEL,
+  flashThinkingWire,
   BASE_SYSTEM_PROMPT,
   extractFinalJson,
   GoalRunError,

@@ -75,9 +75,9 @@ describe("runGoal preflight (no network)", () => {
     network.mockClear();
   });
 
-  it("allows only the MiniMax models and only M3 for vision", () => {
-    expect([...ALLOWED_MODELS]).toEqual(["MiniMax-M3", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"]);
-    expect([...VISION_MODELS]).toEqual(["MiniMax-M3"]);
+  it("allows only the MiniMax models and only M3 and Flash for vision", () => {
+    expect([...ALLOWED_MODELS]).toEqual(["MiniMax-M3", "MiniMax-M3.1-Flash-Preview", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"]);
+    expect([...VISION_MODELS]).toEqual(["MiniMax-M3", "MiniMax-M3.1-Flash-Preview"]);
   });
 
   it("rejects a model that is not allowed", async () => {
