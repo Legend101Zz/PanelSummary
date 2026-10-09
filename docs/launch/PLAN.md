@@ -86,6 +86,16 @@ Generate refuses a book that is not within the limits, with a reason the reader 
 
 Judging note: run 8 had one judge for each page. The launch uses three Sonnet judges for each page. To compare like with like, the orchestrator also judges the run-8 pages again with the same panel and reports both numbers.
 
+## Status
+
+- 06:50 UTC: CI (#20), T0 (#23), T4 (#21), T1 (#22), T2 (#26), T3 (#24) and T5 (#25) are merged into `release/v0.1` (`a53378e`).
+  Each had green CI and an approved independent review.
+- Gate 0 holds: CI failed on a planted error in all three jobs (run 37890664538), then passed. The live job passed on the 26-page book (run 37891706723).
+- Phase 0 baseline (all M3): 16 pages, 15 accepted, 1 failed (page 12), $0.81, page 1 at 795 s, done at 2,115 s. The CI live check repeats it: 14 pages, 13 accepted, page 12 failed, $0.60.
+- T0 found that Flash cannot turn thinking off (HTTP 400). The harness sends adaptive thinking with effort low for off, minimal and low.
+  Flash failed the book understanding 3 of 3 times (the statue guard). The A/B arm keeps M3 for the understanding.
+- Fix wave 1 runs: F1 (the page-12 failure loop) and F2 (timings, journey, preflight and refusal integration).
+
 ## Cut list (in this order if the session is late)
 
 1. T5 polish beyond correctness.
@@ -102,5 +112,8 @@ Costs are Pi catalog estimates from the edition receipts, not a bill.
 
 | When (UTC) | Run | Where | Book | Models | Cost |
 |---|---|---|---|---|---|
-| 05:38 | Phase 0 baseline, `main` `fd5a326` | local | two tales (26 pp) | all M3 | running |
-| | **Total** | | | | **$0.00 so far** |
+| 05:38 | Phase 0 baseline, `main` `fd5a326` | local | two tales (26 pp) | all M3 | $0.81 |
+| 06:05 | CI live check, `ci/github-actions` `7312d4a` | CI | two tales | all M3 | $0.60 |
+| 06:00 | T0 smoke: Flash on each goal, one M3 page | local | two tales; run-8 input | Flash, M3 | $0.39 |
+| 06:47 | A/B arm `live/ab-flash-plan-pages` | CI | two tales | M3 understanding, Flash plan and pages | running |
+| | **Total** | | | | **$1.80 so far** |
