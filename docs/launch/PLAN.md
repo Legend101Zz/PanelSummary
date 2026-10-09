@@ -88,13 +88,17 @@ Judging note: run 8 had one judge for each page. The launch uses three Sonnet ju
 
 ## Status
 
-- 06:50 UTC: CI (#20), T0 (#23), T4 (#21), T1 (#22), T2 (#26), T3 (#24) and T5 (#25) are merged into `release/v0.1` (`a53378e`).
-  Each had green CI and an approved independent review.
-- Gate 0 holds: CI failed on a planted error in all three jobs (run 37890664538), then passed. The live job passed on the 26-page book (run 37891706723).
-- Phase 0 baseline (all M3): 16 pages, 15 accepted, 1 failed (page 12), $0.81, page 1 at 795 s, done at 2,115 s. The CI live check repeats it: 14 pages, 13 accepted, page 12 failed, $0.60.
-- T0 found that Flash cannot turn thinking off (HTTP 400). The harness sends adaptive thinking with effort low for off, minimal and low.
-  Flash failed the book understanding 3 of 3 times (the statue guard). The A/B arm keeps M3 for the understanding.
-- Fix wave 1 runs: F1 (the page-12 failure loop) and F2 (timings, journey, preflight and refusal integration).
+- Merged into `release/v0.1` with green CI and an independent review: CI #20, T0 #23, T4 #21, T1 #22, T2 #26, T3 #24, T5 #25,
+  W2-renderer #28 (renderer 0.5.0), F2 #27, F1 #29, model policy #30 (D13), docs #31, start.sh #32, F3 #33.
+- Gate 0 holds: CI failed on a planted error in all three jobs, then passed; the live job passed.
+- Judge panel: 3 Sonnet judges for each page. Run 8 judged again by the same panel: 7/46 at the ship bar, mean 3.47,
+  continuity 2.88 (`docs/rebuild/baselines/run8-panel.json`). The launch compares like with like.
+- Model A/B and decision: `docs/launch/MODEL-AB.md`, D13. Plan and pages use Flash; the understanding uses M3 until
+  the understanding A/B on the fixed statue guard (F3) is judged.
+- Gate 1 (26-page book, T0-T5 merged, Flash plan and pages): 22/22 pages accepted, 2/22 at the ship bar, mean 3.42,
+  continuity 3.11. Short of the run-8 panel on mean, reading flow and speaker attribution. Fixes: W2-renderer, F1, F3, W2-writer.
+- F3 found that the old statue guard turned living people to stone when they only mentioned the statue (the Mayor, the
+  Councillors, the Charity Children, the match-girl in saved runs, run 6 included). Fixed in #33.
 
 ## Cut list (in this order if the session is late)
 
@@ -110,10 +114,16 @@ The final journey and honest reporting are never cut.
 
 Costs are Pi catalog estimates from the edition receipts, not a bill.
 
-| When (UTC) | Run | Where | Book | Models | Cost |
+| When (UTC) | Run | Where | Book | Models (understanding / plan / pages) | Cost |
 |---|---|---|---|---|---|
-| 05:38 | Phase 0 baseline, `main` `fd5a326` | local | two tales (26 pp) | all M3 | $0.81 |
-| 06:05 | CI live check, `ci/github-actions` `7312d4a` | CI | two tales | all M3 | $0.60 |
-| 06:00 | T0 smoke: Flash on each goal, one M3 page | local | two tales; run-8 input | Flash, M3 | $0.39 |
-| 06:47 | A/B arm `live/ab-flash-plan-pages` | CI | two tales | M3 understanding, Flash plan and pages | running |
-| | **Total** | | | | **$1.80 so far** |
+| 05:38 | Phase 0 baseline, `main` `fd5a326` | local | two tales (26 pp) | M3 / M3 / M3 | $0.81 |
+| 06:05 | CI live check, `7312d4a` | CI | two tales | M3 / M3 / M3 | $0.60 |
+| 06:00 | T0 smoke: Flash on each goal, one M3 page | local | two tales; run-8 input | mixed | $0.39 |
+| 06:47 | A/B arm, `217d4e6` | CI | two tales | M3 / Flash / Flash | $0.59 |
+| 06:53 | New code `a53378e`, failed in the understanding (statue guard) | local | two tales | M3 / M3 / M3 | $0.31 |
+| 06:52 | Gate-1 arm, new code `a53378e` | CI | two tales | M3 / Flash / Flash | $0.87 |
+| 07:23 | A/B arm, `217d4e6` | local | two tales | M3 / M3 / Flash | $0.53 |
+| 07:00 | F1 page-12 replays (17) | local | two tales | M3, Flash | $0.91 |
+| 07:30 | F3 understanding replays | local | two tales | M3, Flash | $0.46 |
+| 08:20 | Understanding A/B, release + F3 | CI and local | two tales | Flash or M3 / Flash / Flash | running |
+| | **Total** | | | | **$5.47 so far** |
