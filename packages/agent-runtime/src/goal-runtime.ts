@@ -20,6 +20,8 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { TSchema } from "typebox";
 
+import { classifyProviderError, scrubProviderText, type ProviderError } from "./provider-error.js";
+
 /** MiniMax-M3.1-Flash-Preview: not in the pinned Pi catalog; registered as a custom model (see registerFlash). */
 export const FLASH_MODEL = "MiniMax-M3.1-Flash-Preview" as const;
 export const ALLOWED_MODELS = ["MiniMax-M3", FLASH_MODEL, "MiniMax-M2.7-highspeed", "MiniMax-M2.7"] as const;
@@ -131,8 +133,10 @@ export interface GoalTrace {
   truncated_turns: number;
   /** Nudges sent after a turn ended without the submit tool. */
   nudges: number;
-  stop_reason: "accepted" | "no_submission" | "limit" | "cancelled" | "timeout" | "error";
+  stop_reason: "accepted" | "no_submission" | "limit" | "cancelled" | "timeout" | "error" | "provider_error";
   error?: string;
+  /** Set when stop_reason is "provider_error": the provider refused the call (limit, unavailable, auth). */
+  provider_error?: ProviderError;
   /** Head and tail of the last assistant text when the run failed without a submission. */
   last_output_excerpt?: string;
 }
@@ -501,6 +505,15 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     const text = (lastAssistant()?.content ?? []).filter((c) => c?.type === "text").map((c) => c.text ?? "").join("\n");
     return text.length > 1600 ? `${text.slice(0, 1000)} … ${text.slice(-500)}` : text;
   };
+  /** The provider refused the last call (Pi keeps the error on the last assistant message after its own retries). */
+  const lastProviderFailure = (): { raw: string; classified?: ProviderError } | undefined => {
+    const last = session.messages
+      .slice()
+      .reverse()
+      .find((m) => (m as { role?: string }).role === "assistant") as { stopReason?: string; errorMessage?: string } | undefined;
+    if (last?.stopReason !== "error" || !last.errorMessage) return undefined;
+    return { raw: last.errorMessage, classified: classifyProviderError(last.errorMessage) };
+  };
   const stillOpen = () => accepted === undefined && !limitHit && !timedOut && !request.signal?.aborted;
 
   try {
@@ -510,7 +523,10 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
       // A turn that ends without the submit tool gets ONE nudge in the same
       // session: a runaway reply (cut off at the output limit) or a plain-text
       // answer would otherwise waste the whole attempt.
-      if (stillOpen()) {
+      // A provider refusal is not a missing submission: stop at once, send nothing more.
+      if (stillOpen() && lastProviderFailure()) {
+        // handled after the try block
+      } else if (stillOpen()) {
         const last = lastAssistant();
         if (last?.stopReason === "length") trace.truncated_turns += 1;
         const fallbackReady = request.textFallbackArgument !== undefined && extractFinalJson(session.messages as unknown[]) !== undefined;
@@ -523,10 +539,26 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
           );
           await session.waitForIdle();
           if (lastAssistant()?.stopReason === "length") trace.truncated_turns += 1;
+          // The nudge itself may meet the refusal.
         }
       }
     } catch (error) {
       if (accepted === undefined) throw error;
+    }
+
+    const refusal = accepted === undefined && !request.signal?.aborted ? lastProviderFailure() : undefined;
+    if (refusal) {
+      snapshot();
+      if (refusal.classified) {
+        trace.stop_reason = "provider_error";
+        trace.provider_error = refusal.classified;
+        trace.error = `${refusal.classified.type}: ${refusal.classified.message}`;
+      } else {
+        trace.stop_reason = "error";
+        trace.error = scrubProviderText(refusal.raw);
+      }
+      trace.last_output_excerpt = excerpt();
+      throw new GoalRunError(trace.error, trace);
     }
 
     if (accepted === undefined && !limitHit && !timedOut && !request.signal?.aborted && request.textFallbackArgument) {
@@ -561,6 +593,14 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     if (error instanceof GoalRunError) throw error;
     trace.stop_reason = request.signal?.aborted ? "cancelled" : timedOut ? "timeout" : "error";
     trace.error = error instanceof Error ? error.message : String(error);
+    const thrown = trace.stop_reason === "error" ? classifyProviderError(trace.error) : undefined;
+    if (thrown) {
+      trace.stop_reason = "provider_error";
+      trace.provider_error = thrown;
+      trace.error = `${thrown.type}: ${thrown.message}`;
+    } else if (trace.stop_reason === "error") {
+      trace.error = scrubProviderText(trace.error);
+    }
     throw new GoalRunError(trace.error, trace);
   } finally {
     clearTimeout(timer);

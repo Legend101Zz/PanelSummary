@@ -68,6 +68,7 @@ def edition_view(edition: Edition) -> dict:
         "totals": edition.totals.model_dump(),
         "policy": edition.policy,
         "error": edition.error,
+        "provider_stop": edition.provider_stop,
         "job_id": edition.job_id,
         "created_at": edition.created_at.isoformat(),
         "finished_at": edition.finished_at.isoformat() if edition.finished_at else None,
@@ -200,6 +201,7 @@ async def resume(edition_id: str) -> dict:
     edition.job_id = str(job.id)
     edition.status = "queued"
     edition.error = None
+    edition.provider_stop = None
     await edition.save()
     return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
 

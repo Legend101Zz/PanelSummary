@@ -21,7 +21,7 @@ import {
 } from "@/lib/api";
 import { useNow, usePoll } from "@/lib/hooks";
 import { readPosition } from "@/lib/position";
-import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
+import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, providerStopLines, type ProviderStopLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Cover, Obi } from "@/components/Paper";
 import { CoverSvg } from "@/components/CoverArt";
@@ -349,6 +349,19 @@ const STEPS: { key: "understanding" | "planning" | "drawing"; label: string }[] 
   { key: "drawing", label: "Drawing the pages" },
 ];
 
+function ProviderStopNote({ lines }: { lines: ProviderStopLines }) {
+  return (
+    <div className={styles.stageError} role="alert">
+      <p>
+        <strong>{lines.title}</strong>
+      </p>
+      <p>{lines.plain}</p>
+      <p>{lines.next}</p>
+      {lines.detail ? <p className={styles.failureDetail}>Technical detail: {lines.detail}</p> : null}
+    </div>
+  );
+}
+
 function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; stopping: boolean; bookId: string }) {
   const total = edition.page_total || edition.pages.length;
   const active = isActive(edition.status);
@@ -376,7 +389,9 @@ function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; 
           ))}
         </ol>
       ) : null}
-      {edition.status === "failed" && edition.error ? (
+      {edition.status === "failed" && edition.provider_stop ? (
+        <ProviderStopNote lines={providerStopLines(edition.provider_stop, edition.pages.filter((p) => p.status === "pending").length)} />
+      ) : edition.status === "failed" && edition.error ? (
         <p className={styles.stageError}>{plainReason(edition.error).plain}</p>
       ) : null}
       {total > 0 ? (

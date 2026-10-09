@@ -31,6 +31,18 @@ class JobCancelled(Exception):
     pass
 
 
+class ProviderStop(Exception):
+    """The model provider refused the work (limit, auth, or unavailable after retries).
+
+    The job stops at once and sends nothing more. ``str(error)`` is the visible reason.
+    """
+
+    def __init__(self, code: str, message: str, detail: dict | None = None):
+        super().__init__(message)
+        self.code = code
+        self.detail = detail or {}
+
+
 class JobContext:
     """Handle a job implementation uses to report progress and observe cancel."""
 
@@ -140,6 +152,12 @@ async def execute(job: GenerationJob) -> None:
         outcome = ("cancelled", "Cancelled", None)
         if job.kind == "generate":
             await mark_cancelled(job)
+    except ProviderStop as refused:
+        # Not a crash: the provider said no. The reason is the message; resume continues later.
+        logger.warning("job %s stopped by the provider (%s)", job.id, refused.code)
+        outcome = ("failed", "Stopped: the model provider refused the request", str(refused))
+        if job.kind == "generate":
+            await mark_failed(job, str(refused), refused.detail | {"code": refused.code})
     except Exception as error:  # noqa: BLE001 — a job failure must be recorded, not lost
         logger.exception("job %s failed", job.id)
         detail = f"{error.__class__.__name__}: {error}"[:2000]

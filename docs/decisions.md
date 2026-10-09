@@ -72,12 +72,17 @@ To change a decision, edit its entry in the same change as the code, and give th
 ### D11. Failure is visible (2026-08-07 principle, 2026-09-25 rule)
 - Statement: A page that fails after its attempts is stored as `failed` with the reasons, and the reader shows it as failed.
 - Statement: An edition with a failed page ends `completed_with_failures`, never complete. The plan lists omitted claims with a reason.
-- Why: A loud failure is better than a quiet wrong result in a paid pipeline. The old path faked passing quality.
+- Statement (2026-10-09, provider refusals): When the model provider refuses a call, the job shows that fact and stops. The worker returns `PROVIDER_LIMIT` (HTTP 429, `rate_limit_error`, usage limit, credits), `PROVIDER_AUTH` (401, 403) or `PROVIDER_UNAVAILABLE` (5xx, overloaded, no connection). The trace has `stop_reason: provider_error` and the provider's error type and message (no key, no headers). A refusal is never reported as `NO_SUBMISSION`.
+- Statement: The backend has a circuit breaker. `PROVIDER_LIMIT` and `PROVIDER_AUTH` stop the job at once. `PROVIDER_UNAVAILABLE` stops it when the normal attempts are used up. After the stop, no new call is sent. Accepted pages stay accepted. Pages never tried stay `pending`, not `failed`. The page that met the refusal goes back to `pending` and its attempt is given back, because the model did not fail. The same rule holds for the understanding and the plan: no second attempt against a dead quota.
+- Statement: The edition ends with status `failed`, not a new `paused` status. Reason: `failed` already means "stopped with an error, can be resumed" in the API, the job runner and the screens, and every poller already treats it as final. A new status would be unknown to the old pollers. The edition has `error` (the plain sentence) and `provider_stop` (code, type, HTTP status, message, stage, page). `error` reads for example: "MiniMax refused the request: Token Plan usage limit reached ... Nothing more was sent. Resume when the limit resets or after you add credits."
+- Statement: Resume continues the pending pages and skips accepted ones. It clears `error` and `provider_stop`.
+- Why: A loud failure is better than a quiet wrong result in a paid pipeline. The old path faked passing quality. On 2026-10-09 a plan limit made 32 of 50 pages fail (count from the track brief) as "no submission", each after about 20 to 25 s, and those pages could not be told from model failures.
 - Status: accepted.
 
 ### D12. Idempotency and receipts (2026-09-25)
 - Statement: The worker is idempotent by `run_id`. A repeated request returns the first result and does not run the model again.
 - Statement: Resume and redraw skip accepted pages. Every goal stores a receipt: model, thinking level, tokens, cost estimate, latency, skill version and hash.
+- Statement (2026-10-09): A refused call keeps its receipt like every other call: `error.code` is the `PROVIDER_*` code, `stop_reason` is `provider_error`, and `provider_error` holds the type, HTTP status and message. A call that is sent again after a refusal (resume) gets a new run id with the suffix `-r<n>`, so no two receipts share an id.
 - Why: A retry must not charge twice. A cost figure without a persisted receipt is not evidence.
 - Status: accepted.
 
