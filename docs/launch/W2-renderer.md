@@ -64,7 +64,7 @@ Tails (220 tails with a speaker): undrawn speaker 2, off-panel tail 3, `TAIL_CRO
 
 Statue fallback: `STATUE_LOCATION_SWAPPED` fires on ci page 7 panel p5 and ci page 8 panel p3 (both judged statue defects, both wide shots). With the first version it also fired on r8 page 7 panels p1 and p2 (judged "Prince inside a garret"); the final version does not. It fires on no judged-good page.
 
-Limits of the join: the judges' findings are free text per page, not per panel. The join is by page, with keywords (tiny, speck, blob, cropped, ...) on renderer-owned findings. It is a screen, not a score. The numbers above are measured by `scripts/legibility-calibration.ts` and a join script in the scratch dir (`launch/w2r-impl/join.py`, `an1.py`).
+Limits of the join: the judges' findings are free text per page, not per panel. The join is by page, with keywords (tiny, speck, blob, cropped, ...) on renderer-owned findings. It is a screen, not a score. The numbers above are measured by `scripts/legibility-calibration.ts` and two join scripts kept in the repo (`scripts/legibility-join.py`, `scripts/legibility-an1.py`; they read the scratch paths of this launch).
 
 ## 4. Before and after images (looked at with the Read tool)
 
@@ -101,7 +101,9 @@ Side by side, old (left) and new (right). Set a: `/Volumes/Mrigesh SSD/Book-Reel
 
 ## 6. Offline checks
 
-`packages/manga-render`: `npx tsc --noEmit` and `npx vitest run`: 11 files, 709 tests pass (698 before; 11 new). `apps/agent-worker`: `npx tsc --noEmit` clean, 68 tests pass.
+`packages/manga-render`: `npx tsc --noEmit` and `npx vitest run`: 11 files, 709 tests pass (698 before; 11 new).
+
+Review follow-up: the new tests were checked by mutation. With the hero floors set to 1, the key-prop floor removed, the 0.4.0 void backdrop restored, or the TAIL_CROSSES_PROP check disabled, a test now fails for each. Two changes in the code are still not covered by a test: the hero floor for the statue's own head, and the exact value of `KEY_PROP_MIN_HEIGHT` (the test needs the floor to act, not its exact size). `SPEAKER_OFF_PANEL_LIMIT` stays a warning until a judged run backs a stricter rule. `apps/agent-worker`: `npx tsc --noEmit` clean, 68 tests pass.
 
 ## 7. What remains
 
