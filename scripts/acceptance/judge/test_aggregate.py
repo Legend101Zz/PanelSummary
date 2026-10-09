@@ -94,6 +94,15 @@ class AggregateTest(unittest.TestCase):
         same = ag.compare(base, base)  # not above baseline: fails
         self.assertFalse(same["gate2_pass"])
 
+    def test_instrument_warning(self):
+        base = ag.aggregate(FIX)
+        self.assertEqual(ag.compare(base, base)["warnings"], [])
+        panel = json.loads(json.dumps(base))
+        panel["judges"] = 3
+        w = ag.compare(panel, base)["warnings"]
+        self.assertEqual(len(w), 1)
+        self.assertIn("3 judge(s) now", w[0])
+
     def test_single_judge_without_judge_key(self):
         raw = [{"page": 1, "scores": sc(4, 4, 4, 4, 4, 4, 4, 4), "ships": True, "what_works": "", "defects": []}]
         r = ag.aggregate(ag.load_judgments(raw))

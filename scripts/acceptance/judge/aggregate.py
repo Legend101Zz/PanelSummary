@@ -158,7 +158,11 @@ def compare(cur, base):
             "failing": [c for c, d in deltas.items() if d < -GATE_MAX_CRITERION_DROP],
             "pass": all(d >= -GATE_MAX_CRITERION_DROP for d in deltas.values())},
     }
-    return {"baseline_label": base.get("label"), "deltas": deltas,
+    warnings = []
+    if cur["judges"] != base["judges"]:
+        warnings.append(f"Different instrument: {cur['judges']} judge(s) now, {base['judges']} in the baseline. "
+                        "A score change can come from the panel, not from the code.")
+    return {"baseline_label": base.get("label"), "warnings": warnings, "deltas": deltas,
             "overall_delta": round(cur["overall"] - base["overall"], 4),
             "ships_strict_delta": cur["ships_strict"] - base["ships_strict"],
             "defects_delta": cur["defects"]["total"] - base["defects"]["total"],
@@ -201,6 +205,8 @@ def markdown(res):
         for name, chk in cmp_["checks"].items():
             w(f"- {'PASS' if chk['pass'] else 'FAIL'}: {name} ({ {k: v for k, v in chk.items() if k != 'pass'} })")
         w(f"\n**Gate 2: {'PASS' if cmp_['gate2_pass'] else 'FAIL'}**")
+        for msg in cmp_.get("warnings", []):
+            w(f"\n**Warning:** {msg}")
     w("\n## Pages\n\n| Page | Section | Status | Mean | Strict | Majority | Weakest criterion |\n|---|---|---|---|---|---|---|")
     for p in res["page_rows"]:
         weak = min(p["panel"], key=lambda c: p["panel"][c])
