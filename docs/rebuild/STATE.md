@@ -50,6 +50,7 @@ judged pages before it becomes an error.
 
 ## Open (owner decisions)
 
-- Branch `product/harness-manga` is not pushed or merged.
+- Branch `product/harness-manga` was merged into `main` as PR #16 (`7c14501`) on 2026-09-26.
+  The v0.1 launch work is tracked in issue #17. The launch plan is in `docs/launch/`.
 - Owner-only files kept: `CLAUDE.md` language section, `.claude/skills/simple-english/`.
 - Backups outside the repo: `/Volumes/Mrigesh SSD/Book-Reel-backups/`.
