@@ -82,3 +82,15 @@ export function useNearViewport<T extends Element>(margin = "300px") {
   }, [margin, near]);
   return [ref, near] as const;
 }
+
+/** Date.now() as state, refreshed every `ms` while `active`. */
+export function useNow(ms: number, active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(id);
+  }, [ms, active]);
+  return now;
+}
