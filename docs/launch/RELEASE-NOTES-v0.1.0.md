@@ -41,17 +41,20 @@ by the same panel.
 
 | Run | Pages | Ship bar | Mean | Continuity | Fidelity | Page 1 / done | Cost (estimate) |
 |---|---|---|---|---|---|---|---|
-| Run 8 (Sept.), single judge | 46 | 5 | 3.38 | 2.43 | 2.93 | 30 min / 48.5 min | $1.65 |
+| Run 8 (Sept.), single judge | 46 | 5 | 3.37 | 2.43 | 2.93 | 30 min / 48.5 min | $1.65 |
 | Run 8, same panel | 46 | 7 | 3.47 | 2.88 | 3.34 | | |
 | Gate 2: the same 68-page book on v0.1 | 60 | 12 | 3.54 | 3.02 | 3.51 | 5.6 min / 16.4 min | $1.72 |
-| Final journey: an untuned book (four Andersen tales, 22 PDF pages), fresh database, real browser | 18 | 3 | 3.53 | 2.76 | 3.48 | 4.2 min / 7.3 min | $0.46 |
+| Final journey: an untuned book (four Andersen tales, 22 PDF pages), fresh database, real browser | 18 | 3 | 3.53 | 2.76 | 3.48 | 4.2 min / 7.3 min (walk log) | $0.46 |
 
-Gate 2 (the same 68-page book as run 8, all 60 pages accepted): against run 8 judged by the same panel,
-every condition holds: 12 pages at the ship bar against 7, mean 3.54 against 3.47, continuity 3.02 against
-2.88, and no criterion more than 0.2 lower (the worst is speaker attribution, -0.11). Against the original
-single-judge numbers of run 8, the ship bar (12 against 5), the mean and continuity pass, but reading flow
-(3.97 against 4.41) and speaker attribution (3.53 against 3.83) are lower. The same panel scored run 8
-itself at 3.97 and 3.64 on these two criteria, so that gap comes from the instrument, not from the product.
+Gate 2 (the same 68-page book as run 8, all 60 pages accepted):
+
+- Against run 8 judged by the same panel, every condition holds. Ship bar 12 against 7. Mean 3.54 against
+  3.47. Continuity 3.02 against 2.88. No criterion is more than 0.2 lower (the worst is speaker
+  attribution, -0.11).
+- Against the single-judge numbers of run 8, the bar is not met on one condition. The ship bar (12 against
+  5), the mean and continuity pass. Reading flow is 3.97 against 4.41 (-0.44), and speaker attribution is
+  3.53 against 3.83 (-0.30). The same panel gives run 8 itself 3.97 and 3.64 on these two criteria, so
+  most of the gap comes from the instrument. The page sets are not the same (60 pages against 46).
 
 On the final journey, all 18 pages were accepted, 51 of 54 claims were shown (3 were left out with a
 reason), the reader showed the stored SVG on every page, and the worker talked only to

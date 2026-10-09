@@ -287,7 +287,8 @@ judged. Acceptance spend recorded in total: $10.46 (Pi catalog estimates, not a 
 The launch session (tracker #17) judged every run with a panel of 3 Sonnet judges for each page (same
 rubric and prompt as runs 1-8; `scripts/acceptance/judge/`). The panel is a different instrument, so
 run 8 was judged again by it. "Mean" counts a failed page as 0; "accepted" is the mean over accepted
-pages. Costs are Pi catalog estimates, not a bill (Flash has no published price: M3 rates are used).
+pages. "Pages" counts every planned page, failed ones included. Times are the journey's observed seconds from
+Generate (final journey: the walk log). Costs are Pi catalog estimates, not a bill (Flash has no published price: M3 rates are used).
 Reports: `Book-Reel-scratch/launch/<run>/aggregate.md`.
 
 | Run | Code | Book | Models (understanding / plan / pages) | Pages | Failed | Ship bar | Mean | Accepted | Continuity | Fidelity | Page 1 / done | Cost |
@@ -297,10 +298,10 @@ Reports: `Book-Reel-scratch/launch/<run>/aggregate.md`.
 | CI live check | 7312d4a | 26 pp | M3 / M3 / M3 | 14 | 1 | 3 | 3.20 | 3.45 | 2.95 | 3.36 | 940 s / 1,747 s | $0.60 |
 | A/B | 217d4e6 | 26 pp | M3 / M3 / Flash | 16 | 0 | 2 | 3.40 | 3.40 | 3.04 | 3.08 | 954 s / 1,363 s | $0.53 |
 | A/B | 217d4e6 | 26 pp | M3 / Flash / Flash | 21 | 0 | 0 | 3.40 | 3.40 | 2.87 | 3.38 | 744 s / 1,087 s | $0.59 |
-| Gate 1 | a53378e | 26 pp | M3 / Flash / Flash | 22 | 0 | 2 | 3.42 | 3.42 | 3.11 | 3.26 | 1,358 s / 2,066 s | $0.87 |
+| Gate 1 | a53378e | 26 pp | M3 / Flash / Flash | 22 | 0 | 2 | 3.42 | 3.42 | 3.11 | 3.26 | 1,361 s / 2,094 s | $0.87 |
 | Understanding A/B | release + #33 | 26 pp | M3 / Flash / Flash | 22 | 0 | 6 | 3.53 | 3.53 | 3.05 | 3.33 | 945 s / 1,337 s | $0.65 |
 | Understanding A/B | release + #33 | 26 pp | Flash / Flash / Flash | 22 | 0 | 4 | 3.49 | 3.49 | 2.94 | 3.38 | 427 s / 795 s | $0.59 |
-| Gate 2 (cut by the plan limit) | d1a2286 | 68 pp | Flash / Flash / Flash | 46 of 56 drawn | 10 | 7 | 3.52 (drawn) | 3.52 | 2.94 | 3.57 | 382 s / 1,231 s | $1.39 |
+| Gate 2 (cut by the account limit) | d1a2286 | 68 pp | Flash / Flash / Flash | 46 of 56 drawn | 10 | 7 | 3.52 (drawn) | 3.52 | 2.94 | 3.57 | 382 s / 1,231 s | $1.39 |
 | Gate 2, complete rerun | d19dca9 | 68 pp | Flash / Flash / Flash | 60 | 0 | 12 | 3.54 | 3.54 | 3.02 | 3.51 | 333 s / 986 s | $1.72 |
 | Final journey (untuned PDF, fresh database, headed browser) | 0fa10d7 | Andersen, 22 pp | Flash / Flash / Flash | 18 | 0 | 3 | 3.53 | 3.53 | 2.76 | 3.48 | 250 s / 439 s | $0.46 |
 

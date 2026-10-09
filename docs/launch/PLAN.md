@@ -94,12 +94,15 @@ Judging note: run 8 had one judge for each page. The launch uses three Sonnet ju
 - Gate 0: CI failed on a planted error in all three jobs, then passed; the live job passed.
 - Gate 1 (26-page book, newest code): 22/22 pages, ship bar 4-6/22, mean 3.49-3.53.
 - Gate 2 (68-page book, complete rerun, `d19dca9`): 60/60 pages, ship bar 12/60, mean 3.54, continuity 3.02,
-  fidelity 3.51, done in 16.4 min (run 8: 48.5 min). Against run 8 judged by the same panel: PASS on every
-  condition. Against run 8's single-judge numbers: reading flow and speaker attribution are lower (an
-  instrument effect: the panel scores run 8 itself lower on these two).
+  fidelity 3.51, done in 16.4 min (run 8: 48.5 min).
+- Gate 2 against run 8 judged by the same panel: PASS on every condition (worst criterion -0.11).
+- Gate 2 against the single-judge numbers of run 8: NOT MET on one condition. Reading flow is 3.97 against
+  4.41 (-0.44). Speaker attribution is 3.53 against 3.83 (-0.30). The panel gives run 8 itself 3.97 and
+  3.64 on these two criteria, so most of the gap comes from the instrument. The owner approved the release
+  with this result.
 - Launch gate final journey (`0fa10d7`, fresh database, untuned Andersen PDF, headed Chrome): upload, preflight,
-  Generate, 18/18 pages `complete` in 7.3 min, reader = stored SVG on 18/18, receipts for 20 calls, egress
-  `api.minimax.io` only; panel: 3/18 at the ship bar, mean 3.53. Journey check 54/54.
+  Generate, 18/18 pages `complete` after 439 s (walk log), reader = stored SVG on 18/18, receipts for 20 calls,
+  egress `api.minimax.io` only; panel: 3/18 at the ship bar, mean 3.53. Journey checks: 53 of 53 passed.
 - v0.2 issues: #40-#50.
 
 ## Cut list (in this order if the session is late)
@@ -134,7 +137,7 @@ Costs are Pi catalog estimates from the edition receipts, not a bill.
 | 08:41 | Gate 2, `d1a2286` (cut by the plan limit: 18/50 pages) | local | 68 pp | M3 / Flash / Flash | $0.84 |
 | 10:07 | Final journey, `0fa10d7`, fresh database, headed browser | local | Andersen (22 pp, untuned) | Flash / Flash / Flash | $0.46 |
 | 10:23 | Gate 2 complete rerun, `d19dca9` | CI | 68 pp | Flash / Flash / Flash | $1.72 |
-| | **Total (Pi catalog estimates, not a bill)** | | | | **$12.61** |
+| | **Total (Pi catalog estimates, not a bill)** | | | | **$11.61** |
 
 From about 08:50 to 10:06 UTC the MiniMax account answered every call with "Token Plan usage limit
 reached" (2056). The real constraint was the account's token plan, not the $25 estimate cap.

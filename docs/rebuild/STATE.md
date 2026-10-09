@@ -60,7 +60,7 @@ run-8 pages were judged again by the same panel (`docs/rebuild/baselines/run8-pa
 
 | Run | Pages | Ship bar | Mean | Continuity | Fidelity |
 |---|---|---|---|---|---|
-| Run 8 (68-page book), single judge | 46 | 5 | 3.38 | 2.43 | 2.93 |
+| Run 8 (68-page book), single judge | 46 | 5 | 3.37 | 2.43 | 2.93 |
 | Run 8, the same panel | 46 | 7 | 3.47 | 2.88 | 3.34 |
 | Gate 2: 68-page book, release/v0.1, all Flash | 60 | 12 | 3.54 | 3.02 | 3.51 |
 | Final journey: untuned Andersen book (22 PDF pages), fresh database | 18 | 3 | 3.53 | 2.76 | 3.48 |
