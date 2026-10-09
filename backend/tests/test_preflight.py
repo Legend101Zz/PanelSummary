@@ -234,3 +234,14 @@ def test_preflight_endpoint_and_generate_refusal(tmp_path, monkeypatch):
         server.should_exit = True
         get_settings.cache_clear()
         db_module._client = None
+
+
+def test_the_basis_counts_each_policy_and_names_no_stale_claim():
+    from app.preflight import cost_basis
+    from app.settings import Settings
+    text = cost_basis(Settings(_env_file=None))
+    flash = "MiniMax-M3.1-Flash-Preview"
+    n_all_flash = sum(1 for run in FIT_RUNS if run.policy == (flash,) * 3)
+    assert n_all_flash >= 1
+    assert f"and {n_all_flash} with Flash on every goal" in text
+    assert "M3 on the book understanding in all" not in text
