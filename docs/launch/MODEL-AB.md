@@ -54,7 +54,7 @@ Other measurements:
 
 | Goal | Model | Thinking | Retry thinking | Why |
 |---|---|---|---|---|
-| BOOK_UNDERSTANDING | MiniMax-M3.1-Flash-Preview (since the second A/B below; first decision: MiniMax-M3) | low | medium | First decision: Flash failed 3 of 3 in the T0 smoke on the statue guard. The guard was wrong (#33). After the fix, Flash passed 4 of 4 and was as good as M3 within noise, and 2.5 to 6 times faster. See "Second A/B: the understanding". |
+| BOOK_UNDERSTANDING | MiniMax-M3.1-Flash-Preview (since the second A/B below; first decision: MiniMax-M3) | low | medium | First decision: Flash failed 3 of 3 in the T0 smoke on the statue guard. The guard was wrong (#33). After the fix, Flash passed in its first goal attempt in 3 of 3 runs, did not measurably lose to M3 (a little lower, inside the run-to-run spread), and was 2.5 to 6 times faster. See "Second A/B: the understanding". |
 | ADAPTATION_PLAN | MiniMax-M3.1-Flash-Preview | off (adaptive low is sent) | medium | Flash plans in 34 to 198 s against 79 to 235 s. No plan failure in 3 Flash runs. Page quality with a Flash plan is the same as with an M3 plan on continuity (2.87 to 3.04) and fidelity. |
 | MANGA_PAGE | MiniMax-M3.1-Flash-Preview | off (adaptive low is sent) | medium | No failed page in 3 Flash runs (59 pages). Book-level mean 3.40 against 3.20 and 3.31. Cost: $0.53, $0.59 and $0.87 for Flash pages against $0.81 and $0.60 for M3 (the $0.87 run had a 1,259 s understanding). See the caveat. |
 
