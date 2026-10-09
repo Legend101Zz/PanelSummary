@@ -86,19 +86,19 @@ Generate refuses a book that is not within the limits, with a reason the reader 
 
 Judging note: run 8 had one judge for each page. The launch uses three Sonnet judges for each page. To compare like with like, the orchestrator also judges the run-8 pages again with the same panel and reports both numbers.
 
-## Status
+## Status (09:40 UTC)
 
-- Merged into `release/v0.1` with green CI and an independent review: CI #20, T0 #23, T4 #21, T1 #22, T2 #26, T3 #24, T5 #25,
-  W2-renderer #28 (renderer 0.5.0), F2 #27, F1 #29, model policy #30 (D13), docs #31, start.sh #32, F3 #33.
-- Gate 0 holds: CI failed on a planted error in all three jobs, then passed; the live job passed.
-- Judge panel: 3 Sonnet judges for each page. Run 8 judged again by the same panel: 7/46 at the ship bar, mean 3.47,
-  continuity 2.88 (`docs/rebuild/baselines/run8-panel.json`). The launch compares like with like.
-- Model A/B and decision: `docs/launch/MODEL-AB.md`, D13. Plan and pages use Flash; the understanding uses M3 until
-  the understanding A/B on the fixed statue guard (F3) is judged.
-- Gate 1 (26-page book, T0-T5 merged, Flash plan and pages): 22/22 pages accepted, 2/22 at the ship bar, mean 3.42,
-  continuity 3.11. Short of the run-8 panel on mean, reading flow and speaker attribution. Fixes: W2-renderer, F1, F3, W2-writer.
-- F3 found that the old statue guard turned living people to stone when they only mentioned the statue (the Mayor, the
-  Councillors, the Charity Children, the match-girl in saved runs, run 6 included). Fixed in #33.
+- `release/v0.1` = `9e9d135`. Merged with green CI and an independent review: #20 CI, #23 Flash wiring,
+  #21 eval harness, #22 continuity, #26 and #28 renderer, #24 preflight, #25 product surface, #27 integration,
+  #29 dense-page loop, #30 model policy, #31 docs, #32 start.sh, #33 statue guard, #34 writer repair-once,
+  #36 provider errors and circuit breaker, #37 understanding on Flash. Draft #35 (`release/v0.1` -> `main`)
+  waits for the launch gate.
+- Model policy (D13): Flash on all three goals; M3 is the fallback. Evidence: `docs/launch/MODEL-AB.md`.
+- Gate 1 (26 pp): passed on the newest code: 22/22 pages, ship bar 4-6/22, mean 3.49-3.53 (run 8 panel 3.47).
+- Gate 2 (68 pp, all Flash): PARTIAL. 46/56 pages drawn before the plan limit (tales 1-4). On them: 7/46 ship
+  bar, mean 3.52, continuity 2.94, fidelity 3.57 (run 8 panel: 7/46, 3.47, 2.88, 3.34). Tale 5 not drawn.
+- Blocked: MiniMax plan limit since 08:50 UTC. The final journey (untuned Andersen PDF, fresh database, headed
+  browser) is ready to run at `9e9d135` as soon as the limit resets.
 
 ## Cut list (in this order if the session is late)
 
@@ -120,10 +120,17 @@ Costs are Pi catalog estimates from the edition receipts, not a bill.
 | 06:05 | CI live check, `7312d4a` | CI | two tales | M3 / M3 / M3 | $0.60 |
 | 06:00 | T0 smoke: Flash on each goal, one M3 page | local | two tales; run-8 input | mixed | $0.39 |
 | 06:47 | A/B arm, `217d4e6` | CI | two tales | M3 / Flash / Flash | $0.59 |
-| 06:53 | New code `a53378e`, failed in the understanding (statue guard) | local | two tales | M3 / M3 / M3 | $0.31 |
-| 06:52 | Gate-1 arm, new code `a53378e` | CI | two tales | M3 / Flash / Flash | $0.87 |
-| 07:23 | A/B arm, `217d4e6` | local | two tales | M3 / M3 / Flash | $0.53 |
+| 06:52 | Gate-1 arm, `a53378e` | CI | two tales | M3 / Flash / Flash | $0.87 |
+| 06:53 | `a53378e`, failed in the understanding (statue guard) | local | two tales | M3 / M3 / M3 | $0.31 |
 | 07:00 | F1 page-12 replays (17) | local | two tales | M3, Flash | $0.91 |
+| 07:23 | A/B arm, `217d4e6` | local | two tales | M3 / M3 / Flash | $0.53 |
 | 07:30 | F3 understanding replays | local | two tales | M3, Flash | $0.46 |
-| 08:20 | Understanding A/B, release + F3 | CI and local | two tales | Flash or M3 / Flash / Flash | running |
-| | **Total** | | | | **$5.47 so far** |
+| 07:55 | W2-writer page replays (25) | local | two tales | Flash | $0.49 |
+| 08:08 | Understanding A/B, release + F3 | CI | two tales | Flash / Flash / Flash | $0.59 |
+| 08:08 | Understanding A/B, release + F3 | local | two tales | M3 / Flash / Flash | $0.65 |
+| 08:35 | Gate 2, `d1a2286` (cut by the plan limit: 46/56 pages) | CI | 68 pp | Flash / Flash / Flash | $1.39 |
+| 08:41 | Gate 2, `d1a2286` (cut by the plan limit: 18/50 pages) | local | 68 pp | M3 / Flash / Flash | $0.84 |
+| | **Total (Pi catalog estimates, not a bill)** | | | | **$10.43** |
+
+Since about 08:50 UTC the MiniMax account answers every call with "Token Plan usage limit reached" (2056).
+The real constraint is the account's token plan, not the $25 estimate cap. Live work waits for the reset.
