@@ -233,7 +233,12 @@ Results on this branch (load average 10.8 at the last run):
 - `packages/manga-render`: tsc clean; 8 files, 606 tests pass. `packages/agent-runtime`: tsc clean; 1 file, 10 tests pass.
 - `backend`: `pytest tests -q` against 27018: 15 passed.
 
-Mutation checks in a private `git archive` copy were **not done** (the archive has no installed workspace packages, and the time went to calibration).
+Mutation checks were done by the independent reviewer: 7 of 7 mutations were caught by the tests (state-check call removed, floor comparison changed, claim-page comparison changed, mismatch never flagged, error cutoff of lone speakers removed, expected looks disabled, flashback skip removed). The author did not run them.
+
+Risks to watch in the first live run:
+- The calibration table for the state check was made by hand, with the judged defects known. The evidence is partly circular. If the live understanding writes wrong states, set `FIGURE_STATE_SEVERITY` in `manga-page.ts` to `"warning"`.
+- A bad `at` unit id or an empty `set` patch in a model-written state is a STATE_INVALID error. It can add repair turns to the understanding. Check the understanding time.
+- The `states` field and `trusted_state_fields` make each understanding call a little longer (+295 bytes of prompt).
 
 ## 8. Open problems
 
