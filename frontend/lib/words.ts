@@ -184,3 +184,15 @@ export function preflightLines(p: Preflight) {
     cost: moneyRange(p.estimated_cost_usd),
   };
 }
+
+/**
+ * The backend writes the preflight cost basis as one text. When the edition policy uses models other
+ * than the measured one, it adds a second part that starts with "The current policy uses". Show that
+ * part as its own note, so the reader sees that the numbers were measured on another model.
+ */
+export function splitCostBasis(basis: string | null | undefined): { basis: string; modelNote: string | null } {
+  const text = (basis ?? "").trim();
+  const at = text.indexOf("The current policy uses");
+  if (at < 0) return { basis: text.replace(/\.*$/, ""), modelNote: null };
+  return { basis: text.slice(0, at).trim().replace(/\.*$/, ""), modelNote: text.slice(at).trim() };
+}

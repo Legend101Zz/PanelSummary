@@ -155,6 +155,7 @@ export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage
     time: request.time,
     weather: request.weather,
     snow,
+    treeScale: request.treeScale ?? 1,
     lw: baseLw * shotLw,
     zmid,
     rand: seeded(request.seed, request.environment, request.shot, request.angle, n(box.w), n(box.h)),

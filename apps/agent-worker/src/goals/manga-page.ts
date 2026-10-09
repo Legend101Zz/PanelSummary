@@ -17,6 +17,7 @@ import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
 import { quoteSpeakerIssues } from "./attribution.js";
 import { claimEventIssues, claimOrderIssues } from "./claim-shown.js";
+import { crowdingAdvice, explainAspect, RepairTracker } from "./repair-hints.js";
 import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, unitOrder, type ExpectedLook } from "./continuity.js";
 
 /** Severity of FIGURE_STATE_MISMATCH, set from calibration (docs/launch/T1-continuity.md). */
@@ -49,6 +50,18 @@ interface Input {
 }
 
 const MAX_PREVIEWS = 4;
+
+/**
+ * Page goal limits. maxSubmits is 8 (was 6): in the live runs of page 12 the writer was one
+ * error from done on three submits in a row and then hit the limit (docs/launch/F1-dense-page.md).
+ * maxOutputTokens stays 16,000: a replay with 32,000 at thinking "low" was cut off as well (the
+ * overflow is visible deliberation, not thinking), so a higher cap only lets the writer ramble
+ * longer. The cost limit still bounds the run.
+ */
+export const PAGE_LIMITS = { maxTurns: 20, maxToolCalls: 20, maxSubmits: 8, maxOutputTokens: 16_000, maxCostUsd: 0.8, timeoutMs: 12 * 60_000 } as const;
+
+/** Said after every rejection: a long plan in prose fills the output limit before the tool call (page 12, M3). */
+export const TERSE_REPAIR = "Reply with the corrected tool call now. Do not re-plan the page in prose: keep any notes to 5 lines (long notes use up the output limit and the whole attempt fails).";
 
 /** Distinct error codes for the trace note (diagnosis of repeated rejections). */
 function codesNote(issues: readonly ValidationIssue[]): string {
@@ -83,6 +96,22 @@ function closestSentence(line: string, sentences: readonly string[]): string | u
   return best?.sentence;
 }
 
+/**
+ * The writer often cuts a long line by joining two pieces of the book without "...". Find the
+ * longest run of words from the start of `fragment` that the source has in a row (3+ words); the
+ * words after that run are the join. Returns undefined when not even the first 3 words match.
+ */
+export function quoteJoinPoint(fragment: string, source: string): { kept: string; rest: string } | undefined {
+  const words = fragment.split(" ");
+  let best = 0;
+  for (let n = 3; n < words.length; n += 1) {
+    if (source.includes(` ${words.slice(0, n).join(" ")} `)) best = n;
+    else break;
+  }
+  if (best === 0) return undefined;
+  return { kept: words.slice(0, best).join(" "), rest: words.slice(best).join(" ") };
+}
+
 export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string }[]): ValidationIssue[] {
   const raw = units.map((u) => u.text).join(" ");
   const source = ` ${normalizeWords(raw)} `;
@@ -104,6 +133,11 @@ export function quoteIssues(spec: MangaPageSpec, units: readonly { text: string 
           message: `this line is labelled "quote" but "${missing[0].slice(0, 80)}" is not in the source text for this page. Use the book's exact words (you may cut with "..."), or label it "paraphrase" (or "dramatized" for invented dialogue).${(() => {
             const near = closestSentence(text.text, sentences);
             return near ? ` Closest source sentence: "${near.slice(0, 300)}"` : "";
+          })()}${(() => {
+            const join = quoteJoinPoint(missing[0], source);
+            return join
+              ? ` The words "${join.kept.slice(0, 60)}" are in the book, but "${join.rest.slice(0, 60)}" does not follow them there. Where you skip words, write "..." (and keep the book's order), or letter the next piece as its own line.`
+              : "";
           })()}`,
         });
       }
@@ -297,7 +331,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
   defaults: {
     model: DEFAULT_GOAL_MODEL,
     thinking: "off",
-    limits: { maxTurns: 16, maxToolCalls: 16, maxSubmits: 6, maxOutputTokens: 16_000, maxCostUsd: 0.8, timeoutMs: 12 * 60_000 },
+    limits: PAGE_LIMITS,
   },
   parseInput(input) {
     const record = requireObject(input, "input");
@@ -338,10 +372,15 @@ export const mangaPageGoal: GoalDefinition<Input> = {
     const bookRefs = { cast: input.cast, locations: input.locations };
     let lastRender: { spec: MangaPageSpec; render: RenderResult } | undefined;
     let previews = 0;
+    const tracker = new RepairTracker();
 
     const check = (value: unknown): { issues: ValidationIssue[]; render?: RenderResult } => {
       const structural = validatePage(value, bookRefs, input.page);
-      if (errorsOf(structural).length > 0) return { issues: structural };
+      if (errorsOf(structural).length > 0) {
+        const explained = structural.map((issue) => explainAspect(issue, value as MangaPageSpec));
+        const loop = tracker.record(explained);
+        return { issues: loop ? [...explained, loop] : explained };
+      }
       const spec = value as MangaPageSpec;
       const render = renderPage(spec, bookRefs, { idPrefix: `pg${input.page.page_number}-` });
       const seen = new Set<string>();
@@ -367,6 +406,11 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         seen.add(key);
         return true;
       });
+      // Page-level advice for a loop of single-error repairs (track F1); never blocks a page.
+      const crowding = crowdingAdvice(spec, issues);
+      const loop = tracker.record(issues);
+      if (crowding) issues.push(crowding);
+      if (loop) issues.push(loop);
       return { issues, render };
     };
 
@@ -394,6 +438,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
           errorsOf(issues).length ? `${errorsOf(issues).length} error(s) would block submission:` : "No blocking errors.",
           formatIssues(issues),
         ];
+        if (errorsOf(issues).length) parts.push(TERSE_REPAIR);
         if (render) parts.push(`Layout:\n${layoutReport(render)}`);
         const images = render && options.vision ? [{ data: svgToPng(render.svg, { width: 800 }).toString("base64"), mimeType: "image/png" as const }] : undefined;
         if (images) parts.push("The rendered page is attached. Judge it as a reader: reading order, who is speaking, legibility, whether the art carries the beat.");
@@ -409,7 +454,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         const parsed = parseCandidate(args);
         if (!parsed.ok) return { text: `REJECTED: ${parsed.message}`, note: "parse_error" };
         const { issues, render } = check(parsed.value);
-        if (errorsOf(issues).length > 0 || !render) return { text: rejection(issues), note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
+        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
         const spec = parsed.value as MangaPageSpec;
         lastRender = { spec, render: { ...render, issues } };
         const warnings = warningsOf(issues);
@@ -462,7 +507,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       userPrompt,
       tools: [preview, submit],
       submitTool: submit.name,
-      limits: mangaPageGoal.defaults.limits,
+      limits: PAGE_LIMITS,
       allowImages: options.vision,
       finalize: () => {
         if (!lastRender) throw new Error("accepted page has no render");
