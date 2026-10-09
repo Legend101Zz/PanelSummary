@@ -15,6 +15,8 @@ import { ENVIRONMENTS, EYE_STATES, OBJECT_SHAPES, PROPS } from "../src/contracts
 import { props } from "../src/props/index.js";
 import { beatMentions } from "../src/scene/index.js";
 import { rig } from "../src/rig/index.js";
+import { EXPR as humanExpr } from "../src/rig/human/face.js";
+import { EXPR as creatureExpr } from "../src/rig/creature/face.js";
 
 interface Run8Page {
   page: number;
@@ -485,5 +487,18 @@ describe("D8 legibility kinds: heads in frame, scene captions first, spoken word
     const look: CharacterLook = { kind: "crowd", crowd: "townsfolk", size: "many" } as CharacterLook;
     const svg = rig.draw({ look, pose: "stand", expression: "neutral", facing: "front", lineWidth: 1.2, seed: 7, detail: "silhouette" }, ctx()).svg;
     expect((svg.match(/<circle/g) ?? []).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe("D9 'determined' is not anger (run 8 pages 2 and 14: brows drawn as an angry glare)", () => {
+  it("the human 'determined' brows and lids are at most half as steep as 'angry'", () => {
+    expect(Math.abs(humanExpr.determined.tilt)).toBeLessThanOrEqual(Math.abs(humanExpr.angry.tilt) * 0.5);
+    expect(humanExpr.determined.brow[0]).toBeLessThanOrEqual(humanExpr.angry.brow[0] * 0.55);
+    expect(humanExpr.determined.brow[0]).toBeGreaterThan(0);
+  });
+  it("the creature 'determined' tilt is at most half of 'angry' and the brow is not pulled down", () => {
+    expect(creatureExpr.determined.tilt).toBeLessThanOrEqual(creatureExpr.angry.tilt * 0.5);
+    expect(creatureExpr.determined.raise).toBeGreaterThanOrEqual(-0.1);
+    expect(creatureExpr.determined.tilt).toBeGreaterThan(0);
   });
 });

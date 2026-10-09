@@ -94,7 +94,7 @@ export const EXPR: Record<Expression, ExprLook> = {
   shout: { eye: "wide", look: [0.2, 0], tilt: 1.1, raise: 0, asym: 0, mouth: "shout", open: 1, curve: -0.3 },
   surprised: { eye: "wide", look: [0, 0], tilt: -0.25, raise: 0.9, asym: 0, mouth: "o", open: 0.6, curve: 0, pin: true },
   afraid: { eye: "wide", look: [-0.25, 0.1], tilt: -0.95, raise: 0.55, asym: 0, mouth: "wavy", open: 0.35, curve: -0.6, sweat: true, pin: true },
-  determined: { eye: "firm", look: [0.25, 0], tilt: 0.65, raise: -0.2, asym: 0, mouth: "flat", open: 0, curve: -0.35 },
+  determined: { eye: "firm", look: [0.25, 0], tilt: 0.4, raise: -0.1, asym: 0, mouth: "flat", open: 0, curve: -0.35 },
   thinking: { eye: "open", look: [0.45, -0.55], tilt: 0.25, raise: 0.1, asym: 0.55, mouth: "pout", open: 0, curve: -0.2 },
   worried: { eye: "open", look: [-0.15, 0.2], tilt: -0.8, raise: 0.3, asym: 0, mouth: "wavy", open: 0.1, curve: -0.5, sweat: true },
   smug: { eye: "half", look: [0.35, 0], tilt: 0.3, raise: 0, asym: 0.45, mouth: "smirk", open: 0, curve: 0.7 },
