@@ -46,10 +46,15 @@ export const PROP_WORDS: Partial<Record<PropId, readonly string[]>> = {
   feather: ["feather", "quill"],
   bell: ["bell"],
   flag: ["flag", "banner"],
+  gold_leaf: ["gold-leaf", "gold leaf", "gold leaves", "leaf of gold", "leaves of gold", "gilding"],
+  thorn: ["thorn", "thorns"],
+  axe: ["axe", "hatchet"],
+  firework: ["firework", "fireworks", "squib", "roman candle"],
+  sign: ["sign", "signboard", "notice", "notice-board", "noticeboard"],
 };
 
 /** Props too big or too fixed to be picked up by a carrying figure. */
-const NOT_CARRIED: ReadonlySet<PropId> = new Set(["wheelbarrow", "ballot_box", "coins_pile", "chains"]);
+const NOT_CARRIED: ReadonlySet<PropId> = new Set(["wheelbarrow", "ballot_box", "coins_pile", "chains", "sign"]);
 
 function wordsFor(prop: PropId): readonly string[] {
   return PROP_WORDS[prop] ?? [prop.replace(/_/g, " ")];

@@ -67,8 +67,8 @@ const compose = (p: PanelSpec, box = W, book = BIG, pageVariants?: Record<string
   });
 
 describe("renderer version", () => {
-  it("is 0.3.0", () => {
-    expect(RENDERER_VERSION).toBe("manga-render/0.3.0");
+  it("is 0.4.0", () => {
+    expect(RENDERER_VERSION).toBe("manga-render/0.4.0");
   });
 });
 
@@ -564,13 +564,15 @@ describe("sfx by their source; titles, dashes and name tags", () => {
 describe("catalog for pass 3", () => {
   it("documents variants, eye states, fireworks and the new errors", () => {
     const c = catalog();
-    expect(c.renderer_version).toBe("manga-render/0.3.0");
-    expect(c.vocabularies.eye_states).toEqual(["open", "closed", "blind", "dead"]);
+    expect(c.renderer_version).toBe("manga-render/0.4.0");
+    expect(c.vocabularies.eye_states).toEqual(["open", "closed", "blind", "dead", "one_blind"]);
+    expect(c.vocabularies.plant_blooms).toEqual(["full", "buds", "single", "bare"]);
     expect(c.vocabularies.fx).toContain("fireworks");
     expect(c.fields["figure.variant"]).toMatch(/material/);
     expect(c.fields["figure.variant.eyes"]).toMatch(/blind/);
     expect(c.variants.fields.human).toEqual(["eyes", "material", "outfit_tone", "hair_tone"]);
     expect(c.variants.fields.bird).toEqual(["eyes", "tone"]);
+    expect(c.variants.fields.plant).toEqual(["eyes", "tone", "bloom"]);
     expect(c.variants.fields.crowd).toEqual(["eyes"]);
     for (const k of ["SPEAKER_TOO_SMALL", "TAIL_CROSSES_FACE", "TAIL_CROSSES_TEXT", "TAIL_MISDIRECTED", "KEY_PROP_COVERED", "VARIANT_FIELD_INVALID"]) expect(c.errors[k], k).toBeDefined();
     for (const k of ["DUPLICATE_PROP", "NAME_TAG_AMBIGUOUS", "FIGURE_CLIPPED", "FIGURE_HEAD_CLIPPED", "SUBJECT_TOO_SMALL", "PROP_HIDDEN"]) expect(c.warnings[k], k).toBeDefined();

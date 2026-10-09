@@ -111,7 +111,7 @@ function actCreature(d: FigureDrawing, request: FigureRequest): FigureDrawing {
   const e = px - px * c;
   const f = -px * s - lift;
   const m = `matrix(${n4(c * sx)} ${n4(s * sx)} ${n4(-s * sy)} ${n4(c * sy)} ${n(e)} ${n(f)})`;
-  return { svg: `<g transform="${m}">${d.svg}</g>`, anchors };
+  return { svg: `<g transform="${m}">${d.svg}</g>`, anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}) };
 }
 
 /**
@@ -163,6 +163,6 @@ export const rig: RigModule = {
     const d = actCreature(rigFor(request.look).draw(request, ctx), request);
     const dec = request.lineWidth >= STROKE.figureOutline ? 1 : 2;
     const svg = request.pose === "lie" ? contactShadow(d.anchors, request.lineWidth, ctx.idPrefix) + d.svg : d.svg;
-    return { svg: compactSvg(svg, dec), anchors: d.anchors };
+    return { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
   },
 };

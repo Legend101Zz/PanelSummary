@@ -39,5 +39,5 @@ export interface Ink {
   /** Level of detail requested by the composer (see FigureRequest.detail). */
   detail?: "full" | "reduced" | "silhouette";
   /** Eye state for this appearance (FigureRequest.eyes); overrides the expression's eyes. */
-  eyes?: "open" | "closed" | "blind" | "dead";
+  eyes?: "open" | "closed" | "blind" | "dead" | "one_blind";
 }

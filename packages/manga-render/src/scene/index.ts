@@ -19,3 +19,4 @@ export { planProps, beatMentions, PROP_WORDS, type PropPlan, type HeldProp } fro
 export { scopeIds, hoistDefs, sanitizeFragment, adoptFragment } from "./ids.js";
 export { STAGING_FEATURES, resolveStaging, isStatue, locationStatue, partFromBeat, statueGone, seatKindFor, type Staging, type StagingFeature } from "./staging.js";
 export { circleCoverage, covers } from "./safety.js";
+export { resolveEnvironment, resolveLocation } from "./places.js";
