@@ -37,7 +37,7 @@ Read `docs/decisions.md` before you change the architecture. The rebuild evidenc
 
 - Make the backend environment with Python 3.12 first: `cd backend && uv venv -p 3.12 && uv pip install -r requirements.txt`. A plain `uv venv` can pick Python 3.14, and `pydantic-core` then fails to build.
 - Run `./start.sh`. It starts MongoDB on `127.0.0.1:27018` (data in `.dev/mongo`), the worker on `:8788`, the API on `:8000`, the job runner, and the frontend on `:3100`.
-- To use other ports, set `PANELSUMMARY_WEB_PORT`, `PANELSUMMARY_API_PORT`, `PANELSUMMARY_WORKER_PORT` and `PANELSUMMARY_MONGO_PORT` (and `PANELSUMMARY_DB_NAME`) for `start.sh`, `check.sh` and `stop.sh` alike. Do not stop a process that you did not start.
+- To use other ports, set `PANELSUMMARY_WEB_PORT`, `PANELSUMMARY_API_PORT`, `PANELSUMMARY_WORKER_PORT` and `PANELSUMMARY_MONGO_PORT` (and `PANELSUMMARY_DB_NAME`) for `start.sh` and `check.sh` alike. `stop.sh` needs none: it stops by the pid files in `.dev/pids`. Do not stop a process that you did not start.
 - Run `./check.sh` for status. Run `./stop.sh` to stop. It stops only the processes that `start.sh` started.
 - Logs are in `.dev/logs/`. The worker service token is in `.dev/agent-tokens.env`.
 - `start.sh` finds the MiniMax key in `$MINIMAX_API_KEY`, then `backend/.env`, then the Keychain item `minimax_api_key`. It never prints the key.

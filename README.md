@@ -98,7 +98,8 @@ answer `{"status":"ok", ...}`.
 ### Change the ports
 
 Another program can use these ports. Set these variables to move the stack. Use the same values
-for `./check.sh` and `./stop.sh`, because they read the same variables.
+for `./check.sh`, because it reads the same variables. `./stop.sh` needs none: it stops the
+processes by the pid files in `.dev/pids`.
 
 ```sh
 export PANELSUMMARY_WEB_PORT=3240 PANELSUMMARY_API_PORT=8140 \
