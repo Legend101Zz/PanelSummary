@@ -43,6 +43,14 @@ gh run download RUN_ID -n live-run -D DIR
 
 Then do steps 3 to 5. Skip step 3 if `DIR/judge/` already has the PNG files.
 
+## Live lane in CI
+
+The workflow `.github/workflows/live-journey.yml` runs steps 1 to 3 on a GitHub runner with the
+repository secret `MINIMAX_API_KEY`. It spends real MiniMax money. The models per goal come from
+`scripts/acceptance/live-config.json`. A push to a branch `live/<name>`, or the label `run-live`
+on a pull request, starts it. The artifact `live-run` holds the export. Then do steps 4 and 5.
+The full description is in `docs/launch/CI.md`.
+
 ## Judge workflow arguments
 
 | Argument | Default | Meaning |
