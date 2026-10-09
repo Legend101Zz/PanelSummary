@@ -300,3 +300,21 @@ def test_one_unavailable_answer_that_recovers_does_not_stop_the_job(tmp_path, mo
         assert _page_calls(worker) == [1, 2, 2, 3, 4, 5]
 
     asyncio.run(_scenario(tmp_path, monkeypatch, worker, body))
+
+
+def test_the_shelf_view_says_the_provider_refused(tmp_path, monkeypatch):
+    worker = RefusingWorker()
+    worker.refuse["MANGA_PAGE"] = ("PROVIDER_LIMIT", {3, 4, 5})
+
+    async def body(api, edition_id, run_next_job, edition, resume):
+        await run_next_job()
+        shelf = (await api.get("/books")).json()
+        latest = shelf[0]["latest_edition"]
+        # The cover band can say why the drawing stopped; only the code is sent, not the provider text.
+        assert latest["status"] == "failed" and latest["provider_stop"] == {"code": "PROVIDER_LIMIT"}
+        await resume()
+        worker.refuse.clear()
+        await run_next_job()
+        assert (await api.get("/books")).json()[0]["latest_edition"]["provider_stop"] is None
+
+    asyncio.run(_scenario(tmp_path, monkeypatch, worker, body))

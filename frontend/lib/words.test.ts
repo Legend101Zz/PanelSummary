@@ -9,6 +9,12 @@ describe("words", () => {
     expect(s.tone).toBe("redpen");
     expect(s.text).toContain("1 missing");
   });
+  it("says on the shelf that MiniMax stopped the drawing", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "failed", page_total: 22, pages_accepted: 5, provider_stop: { code: "PROVIDER_LIMIT" } } };
+    expect(shelfStatus(b).text).toBe("MiniMax limit reached, 5 of 22 drawn");
+    b.latest_edition.provider_stop = null;
+    expect(shelfStatus(b).text).toBe("Drawing stopped");
+  });
   it("maps a token limit to a plain sentence", () => {
     expect(plainReason("token limit hit").plain).toMatch(/ran out of room/);
   });
