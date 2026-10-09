@@ -69,6 +69,22 @@ describe("auth", () => {
 });
 
 describe("POST /internal/v2/runs", () => {
+  it("accepts the Flash model and refuses an unknown model or thinking level", async () => {
+    let seen: string | undefined;
+    const app = server(async (request) => {
+      seen = request.model;
+      return succeeded("x");
+    });
+    const ok = await app.inject({ method: "POST", url: "/internal/v2/runs", headers: AUTH, payload: { ...body("flash"), model: "MiniMax-M3.1-Flash-Preview", thinking: "off" } });
+    expect(ok.statusCode).toBe(200);
+    await until(() => seen !== undefined);
+    expect(seen).toBe("MiniMax-M3.1-Flash-Preview");
+    for (const payload of [{ ...body("m1"), model: "gpt-4o" }, { ...body("m2"), thinking: "xhigh" }]) {
+      const res = await app.inject({ method: "POST", url: "/internal/v2/runs", headers: AUTH, payload });
+      expect(res.statusCode).toBe(400);
+    }
+  });
+
   it("returns 400 on a bad body and does not execute", async () => {
     let calls = 0;
     const app = server(async () => {

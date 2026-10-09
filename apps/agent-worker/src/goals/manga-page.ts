@@ -1,3 +1,4 @@
+import { DEFAULT_GOAL_MODEL } from "@panelsummary/agent-runtime";
 import { castCapabilities, catalog, renderPage, validatePage } from "@panelsummary/manga-render";
 import type {
   AdaptationPlan,
@@ -285,7 +286,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
   type: "MANGA_PAGE",
   skillName: "manga-page",
   defaults: {
-    model: "MiniMax-M3",
+    model: DEFAULT_GOAL_MODEL,
     thinking: "off",
     limits: { maxTurns: 16, maxToolCalls: 16, maxSubmits: 6, maxOutputTokens: 16_000, maxCostUsd: 0.8, timeoutMs: 12 * 60_000 },
   },

@@ -1,3 +1,4 @@
+import { DEFAULT_GOAL_MODEL } from "@panelsummary/agent-runtime";
 import { validatePlan } from "@panelsummary/manga-render";
 import type { AdaptationPlan, BookUnderstanding } from "@panelsummary/manga-render";
 
@@ -23,7 +24,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
   type: "ADAPTATION_PLAN",
   skillName: "adaptation-plan",
   defaults: {
-    model: "MiniMax-M3",
+    model: DEFAULT_GOAL_MODEL,
     thinking: "off",
     limits: { maxTurns: 8, maxToolCalls: 8, maxSubmits: 5, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 15 * 60_000 },
   },

@@ -13,7 +13,8 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Status: accepted, built.
 
 ### D2. MiniMax only, through the worker harness (2026-08-08, confirmed 2026-09-25)
-- Statement: Every model call goes through `apps/agent-worker` to `api.minimax.io`. The allowed models are `MiniMax-M3`, `MiniMax-M2.7-highspeed` and `MiniMax-M2.7`. Only M3 gets images.
+- Statement: Every model call goes through `apps/agent-worker` to `api.minimax.io`. The allowed models are `MiniMax-M3`, `MiniMax-M3.1-Flash-Preview`, `MiniMax-M2.7-highspeed` and `MiniMax-M2.7`. Only M3 and Flash get images.
+- Statement: Flash is not in the pinned Pi 0.80.10 catalog. The harness registers it as a custom model through the SDK (`ModelRuntime.registerProvider`, no network). Flash cannot turn thinking off (the API refuses `disabled`), so the harness sends adaptive thinking with an explicit effort. See `docs/launch/T0-model.md`.
 - Statement: `MINIMAX_API_KEY` is a server credential. Only the worker process holds it. The backend and the browser never see it.
 - Why: One provider keeps cost and receipts clear. A key in one process limits the blast radius.
 - Status: accepted. `packages/agent-runtime` refuses other models.
@@ -85,6 +86,7 @@ To change a decision, edit its entry in the same change as the code, and give th
   rejections with `revise_understanding` patches. Plan and pages run with thinking `off`; a
   retry uses `low`. A page gets two attempts (4 previews, 6 submits each).
 - Statement: Four pages run in parallel. The page goal gets a PNG preview (vision). No separate review pass runs.
+- Statement: `MiniMax-M3.1-Flash-Preview` is registered and selectable per goal. The defaults stay M3 until the A/B (orchestrator) decides. Every receipt records the model, the thinking level asked for, the thinking sent and the cost basis.
 - Why: See `docs/rebuild/EXPERIMENTS.md` §4-6 and `docs/rebuild/ACCEPTANCE.md`. Thinking off was
   3-5x faster at equal page quality. For the understanding it was fast but unreliable: acceptance
   run 2 cast the Happy Prince statue as a gold "rocket", and a later run reworded a description to
