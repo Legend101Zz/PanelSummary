@@ -1,3 +1,4 @@
+import { DEFAULT_GOAL_MODEL } from "@panelsummary/agent-runtime";
 import { catalog, validateUnderstanding } from "@panelsummary/manga-render";
 import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-render";
 
@@ -102,7 +103,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
   type: "BOOK_UNDERSTANDING",
   skillName: "book-understanding",
   defaults: {
-    model: "MiniMax-M3",
+    model: DEFAULT_GOAL_MODEL,
     thinking: "low",
     limits: { maxTurns: 16, maxToolCalls: 16, maxSubmits: 3, maxOutputTokens: 64_000, maxCostUsd: 1.5, timeoutMs: 25 * 60_000 },
   },

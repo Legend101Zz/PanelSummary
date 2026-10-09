@@ -51,6 +51,8 @@ def receipt_from(goal_type: str, run_id: str, outcome: WorkerOutcome) -> dict[st
         "provider": trace.get("provider"),
         "model": trace.get("model"),
         "thinking": trace.get("thinking"),
+        "thinking_sent": trace.get("thinking_sent"),
+        "cost_basis": trace.get("cost_basis"),
         "skill": trace.get("skill"),
         "tokens": trace.get("tokens"),
         "cost_usd": trace.get("cost_usd"),

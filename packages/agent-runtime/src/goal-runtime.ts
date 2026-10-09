@@ -20,9 +20,13 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { TSchema } from "typebox";
 
-export const ALLOWED_MODELS = ["MiniMax-M3", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"] as const;
+/** MiniMax-M3.1-Flash-Preview: not in the pinned Pi catalog; registered as a custom model (see registerFlash). */
+export const FLASH_MODEL = "MiniMax-M3.1-Flash-Preview" as const;
+export const ALLOWED_MODELS = ["MiniMax-M3", FLASH_MODEL, "MiniMax-M2.7-highspeed", "MiniMax-M2.7"] as const;
 export type AllowedModel = (typeof ALLOWED_MODELS)[number];
-export const VISION_MODELS: readonly AllowedModel[] = ["MiniMax-M3"];
+export const VISION_MODELS: readonly AllowedModel[] = ["MiniMax-M3", FLASH_MODEL];
+/** The one default model of every goal. A switch is a measured decision written into D13, never a silent edit. */
+export const DEFAULT_GOAL_MODEL: AllowedModel = "MiniMax-M3";
 
 export const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high"] as const;
 export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
@@ -108,11 +112,16 @@ export interface GoalTrace {
   session_id: string;
   provider: string;
   model: string;
+  /** The thinking level the caller asked for. */
   thinking: ThinkingLevel;
+  /** What went on the wire per call (for example "enabled:2048", "disabled", "adaptive:low"); distinct values joined by "|". */
+  thinking_sent: string;
   skill: { name: string; version: string; hash: string };
   tokens: { input: number; output: number; cache_read: number; cache_write: number; total: number };
   /** Pi catalog estimate; not a bill. */
   cost_usd: number;
+  /** Which rate card cost_usd uses. */
+  cost_basis: string;
   latency_ms: number;
   turns: number;
   tool_calls: GoalToolCallRecord[];
@@ -144,7 +153,114 @@ export class GoalRunError extends Error {
 
 const modelCache = new Map<string, Promise<{ model: unknown; runtime: ModelRuntime } | undefined>>();
 
-/** Resolve a model only from the catalog bundled with the pinned Pi runtime. */
+/**
+ * Flash price: MiniMax publishes no price for MiniMax-M3.1-Flash-Preview (pricing page and
+ * Anthropic-API page checked 2026-10-09; see docs/launch/T0-model.md). We use the M3 rates and
+ * say so on every receipt. Never invent a price.
+ */
+export const FLASH_COST_BASIS = "estimate on MiniMax-M3 rates (no published price for MiniMax-M3.1-Flash-Preview)";
+export const CATALOG_COST_BASIS = "Pi catalog rates";
+export function costBasisFor(modelId: string): string {
+  return modelId === FLASH_MODEL ? FLASH_COST_BASIS : CATALOG_COST_BASIS;
+}
+
+/**
+ * Thinking on the wire for Flash. The API refuses thinking {type:"disabled"} and effort "none" with
+ * a 400 ("requires adaptive thinking"), so Flash cannot be switched off. The closest request is
+ * adaptive thinking with the lowest effort. Levels map: off/minimal/low -> low, medium -> medium, high -> high.
+ */
+export function flashThinkingWire(level: ThinkingLevel | undefined): {
+  thinking: { type: "adaptive" };
+  output_config: { effort: "low" | "medium" | "high" };
+} {
+  const effort = level === "medium" ? "medium" : level === "high" ? "high" : "low";
+  return { thinking: { type: "adaptive" }, output_config: { effort } };
+}
+
+/** Rewrite a provider payload for the model. MiniMax-M3 and the other catalog models stay byte-identical. */
+export function applyThinkingToPayload(modelId: string, payload: unknown, level: ThinkingLevel | undefined): unknown {
+  if (modelId !== FLASH_MODEL || !payload || typeof payload !== "object") return payload;
+  const wire = flashThinkingWire(level);
+  const next = { ...(payload as Record<string, unknown>) };
+  next.thinking = wire.thinking;
+  next.output_config = { ...((next.output_config as Record<string, unknown> | undefined) ?? {}), ...wire.output_config };
+  return next;
+}
+
+/** Short text for what a payload asks for, for the trace. */
+export function describeThinkingSent(payload: unknown): string {
+  const body = (payload ?? {}) as { thinking?: { type?: string; budget_tokens?: number }; output_config?: { effort?: string } };
+  const t = body.thinking;
+  if (!t) return body.output_config?.effort ? `default:${body.output_config.effort}` : "none";
+  if (t.type === "enabled") return `enabled:${t.budget_tokens ?? "?"}`;
+  if (t.type === "adaptive") return `adaptive:${body.output_config?.effort ?? "default"}`;
+  return String(t.type);
+}
+
+const FLASH_DEFINITION = {
+  id: FLASH_MODEL,
+  name: FLASH_MODEL,
+  api: "anthropic-messages" as const,
+  baseUrl: "https://api.minimax.io/anthropic",
+  reasoning: true,
+  input: ["text", "image"] as ("text" | "image")[],
+  // Same rates as MiniMax-M3 (see FLASH_COST_BASIS).
+  cost: { input: 0.3, output: 1.2, cacheRead: 0.06, cacheWrite: 0 },
+  contextWindow: 1_000_000,
+  maxTokens: 128_000,
+};
+
+type PayloadSink = (payload: unknown) => void;
+/** Per-session sinks so one shared runtime can serve concurrent runs. */
+const payloadSinks = new Map<string, PayloadSink>();
+export function registerPayloadSink(sessionId: string, sink: PayloadSink): () => void {
+  payloadSinks.set(sessionId, sink);
+  return () => void payloadSinks.delete(sessionId);
+}
+
+/**
+ * Register Flash through the SDK's own custom-model mechanism (registerProvider, no network, no
+ * models.json) and wrap streamSimple so the payload carries the explicit thinking setting.
+ * registerProvider REPLACES the provider's model list, so the catalog models are passed again.
+ */
+function registerFlash(runtime: ModelRuntime): void {
+  const catalog = runtime.getModels(PROVIDER).filter((m) => m.id !== FLASH_MODEL);
+  runtime.registerProvider(PROVIDER, {
+    models: [
+      ...catalog.map((m) => ({
+        id: m.id,
+        name: m.name,
+        api: m.api,
+        baseUrl: m.baseUrl,
+        reasoning: m.reasoning,
+        thinkingLevelMap: m.thinkingLevelMap,
+        input: m.input,
+        cost: m.cost,
+        contextWindow: m.contextWindow,
+        maxTokens: m.maxTokens,
+        compat: m.compat,
+      })),
+      FLASH_DEFINITION,
+    ],
+  });
+  const original = runtime.streamSimple.bind(runtime);
+  runtime.streamSimple = (model, context, options) => {
+    const previous = options?.onPayload;
+    const level = options?.reasoning as ThinkingLevel | undefined;
+    const sessionId = options?.sessionId;
+    return original(model, context, {
+      ...options,
+      onPayload: async (payload, m) => {
+        const base = previous ? ((await previous(payload, m)) ?? payload) : payload;
+        const out = applyThinkingToPayload(model.id, base, level);
+        if (sessionId) payloadSinks.get(sessionId)?.(out);
+        return out;
+      },
+    });
+  };
+}
+
+/** Resolve a model from the pinned Pi catalog, plus the registered Flash custom model. */
 export function resolveModel(modelId: AllowedModel) {
   let pending = modelCache.get(modelId);
   if (!pending) {
@@ -154,6 +270,7 @@ export function resolveModel(modelId: AllowedModel) {
         modelsPath: null,
         allowModelNetwork: false,
       });
+      registerFlash(runtime);
       const model = runtime.getModel(PROVIDER, modelId);
       return model ? { model, runtime } : undefined;
     })();
@@ -238,9 +355,11 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     provider: PROVIDER,
     model: request.model,
     thinking: request.thinking,
+    thinking_sent: "",
     skill: { name: request.skill.name, version: request.skill.version, hash: request.skill.contentHash },
     tokens: { input: 0, output: 0, cache_read: 0, cache_write: 0, total: 0 },
     cost_usd: 0,
+    cost_basis: costBasisFor(request.model),
     latency_ms: 0,
     turns: 0,
     tool_calls: [],
@@ -330,6 +449,11 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     thinkingLevel: request.thinking,
   });
   trace.session_id = session.sessionId;
+  const sentSeen = new Set<string>();
+  const releaseSink = registerPayloadSink(session.sessionId, (payload) => {
+    sentSeen.add(describeThinkingSent(payload));
+    trace.thinking_sent = [...sentSeen].join("|");
+  });
   abortSession = () => void session.abort();
 
   const unsubscribe = session.subscribe((event: { type: string }) => {
@@ -442,6 +566,7 @@ export async function runGoal(request: GoalRunRequest): Promise<GoalRunResult> {
     clearTimeout(timer);
     unsubscribe();
     request.signal?.removeEventListener("abort", onAbort);
+    releaseSink();
     session.dispose?.();
   }
 }

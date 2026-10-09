@@ -1,5 +1,5 @@
 /** Run one production goal through the sealed Pi harness. Used by the HTTP server and the experiment CLI. */
-import { runGoal, GoalRunError, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@panelsummary/agent-runtime";
+import { runGoal, GoalRunError, VISION_MODELS, type AllowedModel, type GoalTrace, type JsonValue, type ThinkingLevel } from "@panelsummary/agent-runtime";
 
 import { GOALS, InputError, type ExperimentalGoalType, type GoalType } from "./goals/index.js";
 import type { GoalDefinition } from "./goals/types.js";
@@ -38,7 +38,7 @@ export async function executeDefinition(
   }
   const model = request.model ?? goal.defaults.model;
   const thinking = request.thinking ?? goal.defaults.thinking;
-  const vision = Boolean(request.vision) && model === "MiniMax-M3";
+  const vision = Boolean(request.vision) && VISION_MODELS.includes(model);
   const prepared = goal.prepare(input, { model, thinking, vision });
   const skill = await loadSkill(prepared.skillName);
   try {
