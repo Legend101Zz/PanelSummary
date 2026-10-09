@@ -85,8 +85,10 @@ Load average given at start of each run. The Mac was shared.
 | repro1 (load 5.5) | a53378e + capture | M3 | accepted, but Mayor and Art Professor set to stone | 1 / 4 (3 rejected by this guard) | 629 s | 87,614 | $0.148 |
 | fixed-m3 | fix v1 | M3 | ACCEPTED, only the Prince is gold | 1 / 1 | 723 s | 71,670 | $0.115 |
 | fixed-flash | fix v1 | Flash | ACCEPTED, but Swallow flagged 3 times (second fault) | 2 / 6 | 240 s | 27,700 | $0.056 |
-| fixed2-m3 (load 7) | fix v2 (final) | M3 | ACCEPTED, only the Prince is gold | 1 / 1 | 980 s | 73,824 | $0.122 |
-| fixed2-flash | fix v2 (final) | Flash | ACCEPTED, only the Prince is gold | 1 / 1 | 168 s | 14,588 | $0.023 |
+| fixed2-m3 (load 7) | fix v2 (final) | M3 | ACCEPTED, only the Prince is gold | 1 / 2 (submit rejected on FIELD_MISSING and STATUE_NOT_HUMAN(c_prince), then 1 revise accepted) | 980 s | 73,824 | $0.122 |
+| fixed2-flash | fix v2 (final) | Flash | ACCEPTED, only the Prince is gold | 1 / 2 (submit rejected, then 1 revise accepted) | 168 s | 14,588 | $0.023 |
+
+Known gap: a human look with flesh material passes when the statue word comes only after a comma or in a phrase such as "on a tall column" (for example "A prince, a gilded statue of fine gold"). The words on, by, than, made, makes, cast and casts were removed from the about-a-statue list to keep this gap small.
 
 Other rejections in these runs (FIELD_MISSING for crowd size, ENUM_INVALID) were fixed by the
 model in one revise. Total live spend for this track: about $0.46 (Pi catalog estimates).

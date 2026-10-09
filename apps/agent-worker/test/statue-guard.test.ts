@@ -102,6 +102,19 @@ describe("statue guard: real statues stay protected", () => {
   });
 });
 
+describe("statue guard: head-only rule and broad verbs (review)", () => {
+  it("keeps a living person unflagged when a statue is named only after the head", () => {
+    const man = { id: "c_man", name: "The Watchman", role: "a night guard", description: "A man who walks the square at night. Behind him stands the statue.", look: flesh, sections: ["s1"] };
+    expect(statueReason(man)).toBeUndefined();
+  });
+
+  it("does not hide a statue behind the words made, makes, casts, on or by", () => {
+    const text = { id: "c_p", name: "The Prince", role: "a prince made a statue of gold", description: "Stands above the city.", look: flesh, sections: ["s1"] };
+    expect(statueReason(text)).toBeDefined();
+    expect(statueReason({ ...text, role: "a prince", description: "A prince on a statue column, gilded" })).toBeDefined();
+  });
+});
+
 describe("issueNote", () => {
   it("lists the failing cast ids next to each code, kept short", () => {
     const note = issueNote([

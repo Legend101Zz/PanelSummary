@@ -54,12 +54,12 @@ export function sectionCoverageIssues(value: unknown, book: BookInput): Validati
  * sticky flag then forced the Mayor and the Art Professor to stone.
  */
 export const ABOUT_A_STATUE = new RegExp(
-  "\\b(?:at|to|of|near|under|beneath|below|around|beside|about|before|from|with|for|on|by|against|than|" +
+  "\\b(?:at|to|of|near|under|beneath|below|around|beside|about|before|from|with|for|against|" +
     "admires?|admired|admiring|praises?|praised|praising|melts?|melted|melting|pulls? down|pulled down|removes?|removed|" +
     "mocks?|mocked|visits?|visited|guards?|guarded|finds?|found|sees?|saw|watch(?:es|ed)?|loves?|loved|" +
     "calls?|called|judg(?:es|ed|ing)|propos(?:es|ed|ing)|orders?|ordered|wants?|wanted|builds?|built|erects?|erected|" +
     "puts? up|put up|raises?|raised|replac(?:es|ed|ing)|topples?|toppled|names?|named|damns?|scorns?|scorned|" +
-    "mentions?|mentioned|notices?|noticed|looks? like|resembles?|likes?|liked|hates?|hated|sets? up|set up|asks? for|casts?|cast|makes?|made)" +
+    "mentions?|mentioned|notices?|noticed|looks? like|resembles?|likes?|liked|hates?|hated|sets? up|set up|asks? for)" +
     "\\s+(?:the|a|an|this|that|his|her|their|its|another|some|any|one|two|new|old|second|same|other)\\s+(?:[\\w'\\u2019-]+\\s+){0,3}?" +
     "(?:statues?|effigy|effigies|monuments?|columns?|pedestals?|carvings?)\\b",
   "g",
