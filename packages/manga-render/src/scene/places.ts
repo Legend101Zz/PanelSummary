@@ -15,6 +15,9 @@ const NAMED: readonly [RegExp, Environment][] = [
   [/\b(?:moors?|moorland|heath|heathland)\b/i, "moor"],
   [/\bditch(?:es)?\b/i, "ditch"],
   [/\b(?:foundry|forge|smithy|furnace room)\b/i, "forge"],
+  // heaven and the dust heap had no backdrop of their own: clouds, and a low waste ground
+  [/\b(?:heaven|paradise|celestial|the clouds)\b/i, "sky"],
+  [/\b(?:dust[- ]?heap|rubbish (?:heap|tip)|refuse heap|dung ?heap|midden)\b/i, "ditch"],
 ];
 
 export function resolveEnvironment(location: Pick<LocationSpec, "environment" | "name" | "description"> | undefined): Environment | undefined {

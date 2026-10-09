@@ -107,6 +107,31 @@ try {
   process.exitCode = report.passed ? 0 : 1;
 }
 
+/**
+ * Times read from the edition document (the database), in seconds. These are the truth for "how long
+ * did it take"; the journey's own polling times (report.timings.observed_*) include the 3 s poll step,
+ * the browser and the time the journey spent before it looked. Null when a stamp is not there (yet).
+ */
+function dbTimings(edition) {
+  const at = (v) => (v ? Date.parse(v) : null);
+  const secs = (from, to) => (from !== null && to !== null && !Number.isNaN(from) && !Number.isNaN(to) ? Math.round(((to - from) / 1000) * 10) / 10 : null);
+  const t = edition.timings ?? {};
+  const created = at(edition.created_at);
+  const generateStarted = at(t.generate_started_at);
+  const drawingStarted = at(t.drawing_started_at);
+  const firstPage = at(t.first_page_at);
+  const finished = at(edition.finished_at);
+  return {
+    source: "edition document (created_at, finished_at, timings.*)",
+    stamps: { created_at: edition.created_at ?? null, generate_started_at: t.generate_started_at ?? null, drawing_started_at: t.drawing_started_at ?? null, first_page_at: t.first_page_at ?? null, finished_at: edition.finished_at ?? null },
+    generate_to_first_page_accepted_s: secs(created, firstPage),
+    generate_to_finished_s: secs(created, finished),
+    generate_to_drawing_started_s: secs(created, drawingStarted),
+    job_start_to_first_page_accepted_s: secs(generateStarted, firstPage),
+    queue_wait_s: secs(created, generateStarted),
+  };
+}
+
 async function runJourney() {
   const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const page = await desktop.newPage();
@@ -166,7 +191,10 @@ async function runJourney() {
     await sleep(3000);
   }
   report.stage_log = stageLog;
-  report.timings.generate_to_first_page_s = firstPageAt ? (firstPageAt - tGen) / 1000 : null;
+  // The journey's own polling clock (3 s steps, plus the browser). It is NOT the database time:
+  // see report.db_timings below, which the report prints beside it.
+  report.timings.observed_generate_to_first_page_s = firstPageAt ? (firstPageAt - tGen) / 1000 : null;
+  report.timings.generate_to_first_page_s = report.timings.observed_generate_to_first_page_s; // kept for older readers
   check("page 1 was drawn", Boolean(firstPageAt) || EXISTING, EXISTING ? "existing edition" : `${report.timings.generate_to_first_page_s}s after Generate`);
   await page.reload();
   await shot(page, "02-book-progress");
@@ -239,10 +267,11 @@ async function runJourney() {
       await sleep(5000);
       state = await api(`/editions/${edition.id}`);
     }
-    report.timings.generate_to_finished_s = (Date.now() - tGen) / 1000;
+    report.timings.observed_generate_to_finished_s = (Date.now() - tGen) / 1000;
+    report.timings.generate_to_finished_s = report.timings.observed_generate_to_finished_s; // kept for older readers
   }
   const receipts = await api(`/editions/${edition.id}/receipts`);
-  const allowedModels = new Set(["MiniMax-M3", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"]);
+  const allowedModels = new Set(["MiniMax-M3", "MiniMax-M3.1-Flash-Preview", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"]);
   const goals = new Set(["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE"]);
   check("every model call is a receipted harness goal on an allowed MiniMax model", receipts.calls.length > 0 && receipts.calls.every((c) => c.provider === "minimax" && allowedModels.has(c.model) && goals.has(c.goal_type)), `${receipts.calls.length} calls`);
   const egressHosts = Object.keys(receipts.worker_egress ?? {});
@@ -259,6 +288,8 @@ async function runJourney() {
     // Claims that were never extracted cannot show up as lost: every part of the book must have claims.
     check("every section of the book has claims (nothing adapted with nothing to convey)", Array.isArray(cov.sections_without_claims) && cov.sections_without_claims.length === 0, `sections without claims: ${(cov.sections_without_claims ?? ["(not reported)"]).join(",") || "none"}`);
   }
+  state = await api(`/editions/${edition.id}`); // fresh read: the stamps may have landed after the last poll
+  report.db_timings = dbTimings(state);
   report.edition = { status: state.status, page_total: state.page_total, accepted, failed, totals: state.totals, coverage: state.coverage, policy: state.policy };
   report.receipts_summary = {
     calls: receipts.calls.length,
