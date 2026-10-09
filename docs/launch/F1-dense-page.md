@@ -199,6 +199,10 @@ We did not run the judge panel on these pages, so we make no claim about their j
 
 ## 6. Not done and open
 
+- Reading note: a `Submits` value of 7 on an attempt that stopped at the limit of 6 counts the rejected seventh call (it is the counter value at the stop, as in the receipts).
+- Cost note: the limit change (6 to 8 submits, 16 to 20 turns and tool calls) adds up to about 30 percent worst-case cost and latency on a page that keeps failing. The cost limit of 0.8 USD still bounds one page.
+- Before launch the owner should decide D13 for the M3 retry (`retry_thinking` off, or a measured Flash at `low`) and run at least 5 live replays per cell.
+
 - `backend/app/settings.py` has `retry_thinking: str = "low"` (and `scripts/acceptance/live-config.json`). For M3, attempt 2 at `low` was cut off
   in 6 of 7 recorded runs (2 live, 4 CI replays; the 7th, a P0 replay, succeeded). Setting `retry_thinking` to `off` for M3 would remove the main cause of `NO_SUBMISSION`.
   This is outside the paths of this track. It needs an owner decision (D13 allows no silent model switches) and a measurement of Flash at `low`.
