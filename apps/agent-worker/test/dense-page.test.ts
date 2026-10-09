@@ -180,7 +180,11 @@ describe("hints reach the writer through submit_page", { timeout: 60_000 }, () =
   });
 
   it("does not add any hint to an accepted page", async () => {
-    const out = await call(prepare(), base());
+    const prepared = prepare();
+    // The fixture page has one repair_once issue (CLAIM_TEXT_THIN): the first submit is its one chance.
+    const first = await call(prepared, base());
+    expect(first.text).toMatch(/FIX BEFORE SUBMIT/);
+    const out = await call(prepared, base());
     expect(out.text).toMatch(/^ACCEPTED/);
     expect(out.text).not.toContain(TERSE_REPAIR);
     expect(out.text).not.toMatch(/PAGE_TOO_FULL|REPAIR_LOOP/);

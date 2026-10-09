@@ -274,12 +274,13 @@ describe("craft grammar in the skills (#6)", () => {
     it(`${name} keeps its key rules and a bumped version`, async () => {
       const skill = await loadSkill(name);
       for (const p of patterns) expect(skill.content, `${name} lacks ${p}`).toMatch(p);
-      const versions: Record<string, string> = { "manga-page": "1.7.0", "book-understanding": "1.7.0", "adaptation-plan": "1.3.0" };
+      const versions: Record<string, string> = { "manga-page": "1.8.0", "book-understanding": "1.7.0", "adaptation-plan": "1.4.0" };
       expect(skill.version).toBe(versions[name]);
     });
   }
 
-  it("grew by less than 8 percent in total", () => {
+  it("grew by less than 14 percent in total", () => {
+    // 8 percent at T1; F1 (1.7.0) and W2-writer (1.8.0, +1.9 KB: docs/launch/W2-writer.md) used the rest.
     const sizes = { "manga-page": 17816, "book-understanding": 10821, "adaptation-plan": 5857 };
     let before = 0;
     let after = 0;
@@ -287,7 +288,7 @@ describe("craft grammar in the skills (#6)", () => {
       before += size;
       after += readFileSync(new URL(`../src/skills/${name}/SKILL.md`, import.meta.url)).length;
     }
-    expect(after / before).toBeLessThan(1.08);
+    expect(after / before).toBeLessThan(1.14);
   });
 });
 

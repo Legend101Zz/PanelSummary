@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     agent_call_timeout_seconds: float = 1800.0  # above the longest goal timeout (understanding: 25 min)
 
     # --- generation policy (recorded on every edition) ---
-    understanding_model: str = "MiniMax-M3"
+    understanding_model: str = "MiniMax-M3.1-Flash-Preview"
     understanding_thinking: str = "low"
     plan_model: str = "MiniMax-M3.1-Flash-Preview"
     plan_thinking: str = "off"  # Flash cannot turn thinking off: the harness sends adaptive effort low
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     # in 6 of 7 recorded M3 runs (F1).
     # RETRY_THINKING (the old single setting) stays as a fallback for the plan and page goals
     # when their own variable is not set. It does not change the understanding retry.
-    understanding_retry_thinking: str = "low"
+    understanding_retry_thinking: str = "medium"
     plan_retry_thinking: str | None = None
     page_retry_thinking: str | None = None
     retry_thinking: str | None = None

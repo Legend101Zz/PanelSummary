@@ -103,6 +103,9 @@ class Edition(Document):
     # (failed, timed out or cancelled): their tokens were spent, so they count.
     stage_failures: list[dict[str, Any]] = Field(default_factory=list)
     error: Optional[str] = None
+    # Set when the model provider refused the work (limit, auth, unavailable): {code, type, http_status,
+    # message, at, stage, page}. The edition is then "failed" and can be resumed (D11).
+    provider_stop: Optional[dict[str, Any]] = None
     # Milestones the job runner stamps (generate_started_at, drawing_started_at, first_page_at).
     timings: dict[str, datetime] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=utcnow)
