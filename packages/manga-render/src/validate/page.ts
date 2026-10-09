@@ -8,6 +8,7 @@ import {
   ANGLES,
   DEPTHS,
   EYE_STATES,
+  PLANT_BLOOMS,
   FACINGS,
   FIDELITY,
   FX,
@@ -60,7 +61,7 @@ export const SPEAKER_KINDS: readonly TextKind[] = ["speech", "thought", "shout",
 const PAGE_KEYS = ["schema", "page_number", "section_id", "purpose", "layout", "panels", "claims", "claim_map", "page_turn_hook"];
 const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather", "figures", "props", "fx", "text", "source"];
 const FIGURE_KEYS = ["character", "variant", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
-const VARIANT_KEYS = ["eyes", "material", "outfit_tone", "hair_tone", "tone"];
+const VARIANT_KEYS = ["eyes", "bloom", "material", "outfit_tone", "hair_tone", "tone"];
 /** Props too big to hold in a hand: draw them as a prop beside the figure. */
 const TOO_BIG_TO_HOLD = new Set(["wheelbarrow", "ballot_box", "coins_pile"]);
 const PROP_KEYS = ["prop", "slot", "depth", "tone"];
@@ -96,6 +97,7 @@ function checkVariant(v: unknown, cast: CastMember | undefined, issues: Issues, 
   }
   warnUnknownKeys(v, VARIANT_KEYS, issues, path);
   checkEnum(v, "eyes", EYE_STATES, issues, path, false);
+  checkEnum(v, "bloom", PLANT_BLOOMS, issues, path, false);
   checkEnum(v, "material", MATERIALS, issues, path, false);
   checkEnum(v, "outfit_tone", TONES, issues, path, false);
   checkEnum(v, "hair_tone", TONES, issues, path, false);

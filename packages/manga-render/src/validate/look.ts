@@ -17,6 +17,7 @@ import {
   MATERIALS,
   OBJECT_SHAPES,
   OUTFITS,
+  PLANT_BLOOMS,
   PLANT_SPECIES,
   SKIN_TONES,
   SPIRIT_TYPES,
@@ -85,7 +86,8 @@ export function validateLook(look: unknown, issues: Issues, path: string): look 
       checkEnum(look, field, allowed, issues, path);
     }
   }
-  warnUnknownKeys(look, ["kind", ...Object.keys(fields)], issues, path);
+  if (kind === "plant") checkEnum(look, "bloom", PLANT_BLOOMS, issues, path, false);
+  warnUnknownKeys(look, ["kind", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : [])], issues, path);
   const after = issues.list.filter((i) => i.severity === "error").length;
   return after === before;
 }

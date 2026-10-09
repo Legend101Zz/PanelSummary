@@ -70,6 +70,8 @@ export interface FigureDrawing {
   /** SVG fragment in figure space. No outer transform. */
   svg: string;
   anchors: FigureAnchors;
+  /** Plants: how many open blooms were drawn (tests and critique tools read it). */
+  blooms?: number;
 }
 
 export interface FigureRequest {

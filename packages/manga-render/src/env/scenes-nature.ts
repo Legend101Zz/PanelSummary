@@ -490,6 +490,121 @@ export function countryRoad(st: Stage): Sites {
   };
 }
 
+/**
+ * Open moorland: far mountains, two rolling ridges, heather and gorse on the
+ * ground, a thin winding track, scattered rocks and a few dark pools ("deep
+ * holes"). Big sky above (the sky is drawn by the stage).
+ */
+export function moor(st: Stage): Sites {
+  const night = st.pal.night;
+  hills(st, 0.34, night ? toneFill("dark", st.p) : toneFill("light", st.p), 1500, 2.2);
+  hills(st, 0.2, night ? toneFill("black", st.p) : toneFill("dots", st.p), 1100, 3.4);
+  hills(st, 0.1, night ? toneFill("dark", st.p) : PAPER, 800, 4.6);
+  drawGround(st, "grass", { density: 1.5 });
+  const r = seeded(st.seed, st.env, "moor");
+  // the track: a narrow winding strip that thins into the distance
+  const far = 300;
+  const L: V3[] = [];
+  const R: V3[] = [];
+  for (let i = 0; i <= 18; i += 1) {
+    const t = i / 18;
+    const z = 0.4 + Math.pow(t, 2.2) * far;
+    const bend = Math.sin(t * 3.1 + 0.6) * 9 * t;
+    const w = 0.9 + 0.7 * (1 - t);
+    L.push({ x: bend - w, y: 0.01, z });
+    R.push({ x: bend + w, y: 0.01, z });
+  }
+  const track = projectPoly(st.cam, [...L, ...R.slice().reverse()]);
+  if (track.length > 2) {
+    const lq = L.map((p) => project(st.cam, p)).filter((p): p is Point => !!p);
+    const rq = R.map((p) => project(st.cam, p)).filter((p): p is Point => !!p);
+    add(
+      st,
+      LAYER.decal,
+      far,
+      pathEl(polyPath(track), { fill: PAPER }) + pathEl((lq.length > 2 ? smoothPath(lq, false) : "") + (rq.length > 2 ? smoothPath(rq, false) : ""), { stroke: st.pal.ink, w: st.lw * 0.7 }),
+    );
+  }
+  // heather and gorse: low bushes in loose drifts, thinning with depth
+  const drifts = st.lod >= 2 ? 22 : st.lod >= 1 ? 16 : 10;
+  for (let i = 0; i < drifts; i += 1) {
+    const z = st.zmid * between(r, 0.5, 1) + Math.pow(r(), 1.6) * (st.lod >= 2 ? 90 : 40);
+    const [xa, xb] = xRangeAt(st.cam, z);
+    bush(st, between(r, xa, xb), z, between(r, 0.45, 1.1), { flowers: i % 3 === 0 });
+  }
+  const [na, nb] = xRangeAt(st.cam, st.zmid + 1);
+  for (let i = 0; i < 4; i += 1) rock(st, between(r, na, nb) * 0.9, st.zmid + between(r, 0.5, 14), between(r, 0.35, 0.9));
+  // a few dark pools: the holes a lost walker falls into
+  pondShape(st, between(r, na, nb) * 0.55, st.zmid + 5.5, 2.4, 1.5, 0);
+  if (st.lod >= 1) pondShape(st, between(r, na, nb) * 0.7, st.zmid + 12, 3.2, 2, 0);
+  // a lone bare thorn tree for scale
+  if (st.lod >= 1) tree(st, xRangeAt(st.cam, st.zmid + 20)[0] * 0.5, st.zmid + 20, { h: 6, kind: "bare" });
+  return outdoorSites(st, st.zmid + 14, st.zmid + 6);
+}
+
+/**
+ * A muddy roadside ditch: a low far bank with a stone wall above it, a band of
+ * muddy water with ripples, mud banks (dense dots) on both sides, bulrushes and
+ * a rock. The road shows as a pale strip beyond the wall.
+ */
+export function ditch(st: Stage): Sites {
+  const night = st.pal.night;
+  hills(st, 0.07, night ? toneFill("dark", st.p) : toneFill("light", st.p), 1000, 2);
+  treeLine(st, 0.05, 600);
+  drawGround(st, "grass", { density: 0.9 });
+  const z0 = st.zmid + 1.4;
+  const z1 = st.zmid + (st.shot === "establishing" ? 9 : 5.4);
+  // muddy far and near banks
+  const [fa, fb] = xRangeAt(st.cam, z1 + 1.2);
+  const bank = projectPoly(st.cam, [
+    { x: fa - 20, y: 0, z: z1 },
+    { x: fb + 20, y: 0, z: z1 },
+    { x: fb + 20, y: 0.5, z: z1 + 1.2 },
+    { x: fa - 20, y: 0.5, z: z1 + 1.2 },
+  ]);
+  if (bank.length > 2 && visible(st, bank)) add(st, LAYER.decal, z1 + 0.2, pathEl(polyPath(bank), { fill: toneFill("dense_dots", st.p), stroke: st.pal.ink, w: st.lw * 0.8 }));
+  // the stone wall on top of the far bank, with courses
+  {
+    const zw = z1 + 2.2;
+    const wall = projectPoly(st.cam, [
+      { x: fa - 20, y: 0.2, z: zw },
+      { x: fb + 20, y: 0.2, z: zw },
+      { x: fb + 20, y: 1.7, z: zw },
+      { x: fa - 20, y: 1.7, z: zw },
+    ]);
+    if (wall.length > 2 && visible(st, wall)) {
+      let courses = "";
+      for (let y = 0.6; y < 1.7; y += 0.4) courses += segD(st, { x: fa - 20, y, z: zw }, { x: fb + 20, y, z: zw });
+      let joints = "";
+      let row = 0;
+      for (let y = 0.2; y < 1.6; y += 0.4) {
+        for (let x = fa - 4 + (row % 2) * 0.5; x < fb + 4; x += 1) joints += segD(st, { x, y, z: zw }, { x, y: y + 0.4, z: zw });
+        row += 1;
+      }
+      add(st, LAYER.decal, zw, pathEl(polyPath(wall), { fill: st.pal.wall, stroke: st.pal.ink, w: st.lw * 1.1 }) + pathEl(courses + joints, { stroke: st.pal.ink, w: st.lw * 0.5 }));
+    }
+  }
+  waterBand(st, z0, z1, { bankJitter: 0.7 });
+  // mud along the near bank
+  const [na, nb] = xRangeAt(st.cam, z0);
+  const mud = projectPoly(st.cam, [
+    { x: na - 20, y: 0, z: z0 - 0.9 },
+    { x: nb + 20, y: 0, z: z0 - 0.9 },
+    { x: nb + 20, y: 0, z: z0 + 0.1 },
+    { x: na - 20, y: 0, z: z0 + 0.1 },
+  ]);
+  if (mud.length > 2 && visible(st, mud)) add(st, LAYER.decal, z0 - 0.4, pathEl(polyPath(mud), { fill: toneFill("dense_dots", st.p), stroke: st.pal.ink, w: st.lw * 0.6 }));
+  const r = seeded(st.seed, st.env, "ditch");
+  for (let i = 0; i < 4 + st.lod * 2; i += 1) {
+    const side = i % 2 === 0 ? between(r, na, na * 0.2) : between(r, nb * 0.2, nb);
+    reeds(st, side, z1 - between(r, 0, 0.6), between(r, 1.2, 2), 8);
+  }
+  for (let i = 0; i < 3; i += 1) reeds(st, between(r, na, nb), z0 + between(r, 0.2, 0.9), between(r, 0.8, 1.3), 6);
+  rock(st, between(r, na, nb) * 0.5, z0 - 0.5, 0.45);
+  if (st.lod >= 1) bush(st, between(r, na, nb) * 0.8, z1 + 1.3, 0.9);
+  return outdoorSites(st, z1 + 3, st.zmid + 0.5);
+}
+
 function postAndRail(st: Stage, x: number, z0: number, z1: number): void {
   const zc = toCam(st.cam, { x, y: 0.6, z: z0 }).z;
   if (zc < st.cam.near) return;

@@ -61,6 +61,7 @@ import { INK, PAPER, STROKE, toneDefs, toneFill } from "../style.js";
 import { n, polyPath } from "../svg.js";
 import { adoptFragment, rescaleTones } from "./ids.js";
 import { castWithVariant } from "./looks.js";
+import { resolveLocation } from "./places.js";
 import { planProps, type HeldProp } from "./props.js";
 import { clearShift, covers, shifted, type Placement } from "./safety.js";
 import {
@@ -162,6 +163,12 @@ export interface ComposedPanel {
   issues: ValidationIssue[];
 }
 
+/** A giant counts at this share of his height when a ground shot picks its figure height. */
+export const GIANT_BAND_SHARE = 0.68;
+
+/** A held prop must have at least this share of its box inside the panel (else it is moved or drawn on the ground). */
+export const HELD_PROP_MIN_INSIDE = 0.9;
+
 export const MAX_FIGURES = 4;
 export const MAX_PROPS = 4;
 export const MAX_FX = 3;
@@ -198,6 +205,11 @@ const SMALL_KINDS = new Set(["bird", "insect", "animal"]);
 function tallHat(cast: CastMember): boolean {
   const look = cast.look as { kind: string; headwear?: string };
   return look.kind === "human" && look.headwear !== undefined && TALL_HEADWEAR.has(look.headwear);
+}
+
+function isGiant(f: { cast: CastMember }): boolean {
+  const look = f.cast.look as { kind: string; height?: string };
+  return look.kind === "human" && look.height === "giant";
 }
 
 function depthOf(f: { depth?: Depth }): Depth {
@@ -421,7 +433,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     const t = rescaleTones(f.body, idPrefix, scope(tag), scale, tones);
     return { body: t.body, defs: f.defs + t.defs };
   };
-  const location = book.locations.find((l) => l.id === panel.location);
+  const location = resolveLocation(book.locations.find((l) => l.id === panel.location));
   const shot: Shot = panel.shot;
   const angle: Angle = panel.angle;
   const beat = typeof panel.beat === "string" ? panel.beat : "";
@@ -596,7 +608,9 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   if (independents.length > 0 && groundShot) {
     const frac = SHOT_HEIGHT[shot] ?? 0.4;
     const ground = independents.filter((f) => !wantsColumn(f));
-    const refH = Math.max(1, ...independents.map((f) => f.height));
+    // a giant counts at two thirds of his height: he may stand a third taller than the
+    // shot's band, so the people beside him are not specks (see GIANT_BAND_SHARE)
+    const refH = Math.max(1, ...independents.map((f) => f.height * (isGiant(f) ? GIANT_BAND_SHARE : 1)));
     const depthMul = (f: FigureInfo) => (depthOf(f.spec) === "fore" ? 1.2 : depthOf(f.spec) === "back" ? 0.62 : 1);
     const maxMul = Math.max(0.62, ...ground.map(depthMul));
     let world = ((frac * box.h) / refH) * groundAngleScale(angle);
@@ -622,6 +636,8 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const need = scaleForHead(d, floor);
       if (need > cur) world = Math.min(world * (need / cur), ((0.9 * box.h) / Math.max(1, root.height)) * (maxMul / depthMul(root)));
     }
+    // a giant never rises past the top of the panel
+    for (const g of ground.filter(isGiant)) world = Math.min(world, (0.92 * (feetPrimary - box.y) * maxMul) / (depthMul(g) * Math.max(1, g.height)));
     worldScale = world;
     const bigOnes = independents.filter((f) => !f.small);
     const scaleOf = (f: FigureInfo) => {
@@ -1244,18 +1260,61 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   drawOrder(independents).forEach(visit);
   for (const f of infos) if (!sequence.includes(f)) sequence.push(f);
 
-  // a carried prop whose hand is out of frame (a medium shot cuts at the waist)
-  // goes back on the ground, where it is seen
-  for (const f of sequence) {
-    const fr = framings.get(f.index);
+  /** Page-space box of the prop a figure holds, at this framing (same maths as the drawing below). */
+  const heldPropBox = (f: FigureInfo, held: HeldProp, at: Framing): Box | undefined => {
     const hand = f.probe.hand;
-    if (!fr || !f.held?.adopted || !f.held.source || !hand) continue;
-    const hx = fr.originX + (f.mirror ? -hand.x : hand.x) * fr.scale;
-    const hy = fr.originY + hand.y * fr.scale;
-    if (hx < box.x || hx > box.x + box.w || hy < box.y || hy > box.y + box.h * 0.9) {
-      propPlan.ground.push(f.held.source);
-      delete f.held;
+    if (!hand) return undefined;
+    const prop = safeProp(held.prop, STROKE.figureOutline / at.scale, hashString(`${panel.id}|held|${f.index}`), idPrefix, held.tone);
+    if (!prop) return undefined;
+    const ox = hand.x - prop.grip.x;
+    const oy = hand.y - prop.grip.y;
+    const toPage = (pt: Point): Point => ({ x: at.originX + (f.mirror ? -pt.x : pt.x) * at.scale, y: at.originY + pt.y * at.scale });
+    const c1 = toPage({ x: ox - prop.width / 2, y: oy - prop.height });
+    const c2 = toPage({ x: ox + prop.width / 2, y: oy });
+    return { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), w: Math.abs(c2.x - c1.x), h: Math.abs(c2.y - c1.y) };
+  };
+
+  // a held prop whose hand is out of frame (a medium shot cuts at the waist, a
+  // slot at the panel edge): first slide the figure sideways so the prop is in
+  // frame; if that cannot work, put the prop on the ground in frame, where it is seen
+  // (a prop the story depends on is never drawn off the panel)
+  for (const f of sequence) {
+    let fr = framings.get(f.index);
+    if (!fr || !f.held || !f.probe.hand) continue;
+    const held = f.held;
+    const inFrame = (at: Framing): number | undefined => {
+      const pb = heldPropBox(f, held, at);
+      return pb ? overlapArea(pb, box) / Math.max(1, boxArea(pb)) : undefined;
+    };
+    const frac = inFrame(fr);
+    if (frac === undefined || frac >= HELD_PROP_MIN_INSIDE) continue;
+    if (!isDependent(f)) {
+      const pb = heldPropBox(f, held, fr)!;
+      const room = 6;
+      const dx = pb.x < box.x + room ? box.x + room - pb.x : pb.x + pb.w > box.x + box.w - room ? box.x + box.w - room - (pb.x + pb.w) : 0;
+      if (dx !== 0) {
+        const moved: Framing = { ...fr, originX: fr.originX + dx };
+        const mp = placementOf(f, moved);
+        const headIn = mp.head.x - mp.r > box.x - mp.r * 0.3 && mp.head.x + mp.r < box.x + box.w + mp.r * 0.3;
+        const after = inFrame(moved);
+        if (headIn && after !== undefined && after >= HELD_PROP_MIN_INSIDE) {
+          framings.set(f.index, moved);
+          fr = moved;
+          continue;
+        }
+      }
     }
+    const fx = fr.originX;
+    const slot: Slot = fx < box.x + box.w * 0.28 ? "left" : fx < box.x + box.w * 0.44 ? "center_left" : fx < box.x + box.w * 0.56 ? "center" : fx < box.x + box.w * 0.72 ? "center_right" : "right";
+    if (f.held.adopted && f.held.source) propPlan.ground.push(f.held.source);
+    else propPlan.ground.push({ spec: { prop: held.prop, slot, depth: "fore", ...(held.tone ? { tone: held.tone } : {}) }, index: panel.props.length + f.index });
+    issues.push({
+      code: "HELD_PROP_OFF_FRAME",
+      severity: "warning",
+      path: ipath,
+      message: `the ${held.prop} held by "${f.cast.id}" would be outside the frame of this ${shot} panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a "reach" pose to show it in the hand.`,
+    });
+    delete f.held;
   }
 
   for (const f of sequence) {
