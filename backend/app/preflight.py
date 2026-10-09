@@ -167,11 +167,12 @@ def estimate(source_words: int, sections: int) -> dict[str, Any]:
 
 def cost_basis(settings: Settings) -> str:
     n_all_m3 = sum(1 for run in FIT_RUNS if run.policy == (_M3, _M3, _M3))
-    n_flash = len(FIT_RUNS) - n_all_m3
+    n_all_flash = sum(1 for run in FIT_RUNS if run.policy == (_FLASH, _FLASH, _FLASH))
+    n_mixed = len(FIT_RUNS) - n_all_m3 - n_all_flash
     text = (
         f"Pi catalog estimate, not a bill. The range comes from {len(FIT_RUNS)} measured runs: "
-        f"{n_all_m3} with MiniMax-M3 on every goal and {n_flash} with Flash on the plan or the pages "
-        "(M3 on the book understanding in all). The Flash runs are one book of 26 PDF pages, so the "
+        f"{n_all_m3} with MiniMax-M3 on every goal, {n_mixed} with Flash on the plan or the pages only, "
+        f"and {n_all_flash} with Flash on every goal. The Flash runs are one book of 26 PDF pages, so the "
         "Flash part of the range is thinner. MiniMax speed varies, so time is the weakest figure."
     )
     policy = (settings.understanding_model, settings.plan_model, settings.page_model)
