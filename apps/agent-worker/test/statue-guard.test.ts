@@ -57,6 +57,24 @@ describe("statue guard: people who mention a statue", () => {
   });
 });
 
+describe("statue guard: animals near the statue (Flash, captured)", () => {
+  const swallow = {
+    id: "c_swallow",
+    name: "The Swallow",
+    role: "the little bird who stays behind",
+    description: "A swallow small enough to sleep between the feet of the gilded figure and to be held in a child's hand; perched on the statue's shoulder; grows cold at the Prince's feet.",
+    look: { kind: "bird" },
+    sections: ["s1"],
+  };
+  it("never reads a bird, animal or plant as a statue of a person", () => {
+    expect(lookSenseIssues({ sections, cast: [swallow] }, new Set())).toEqual([]);
+  });
+  it("does not read a possessive mention as the member being a statue", () => {
+    const sparrow = { ...swallow, look: { kind: "human", material: "flesh" }, name: "The Boy", role: "a boy who sleeps between the statue's feet", description: "A boy at the statue's feet." };
+    expect(lookSenseIssues({ sections, cast: [sparrow] }, new Set())).toEqual([]);
+  });
+});
+
 describe("statue guard: real statues stay protected", () => {
   it("rejects a statue cast as an object, and names the id and the reason", () => {
     const rocket = { ...prince, look: { kind: "object", shape: "rocket", tone: "gold" } };

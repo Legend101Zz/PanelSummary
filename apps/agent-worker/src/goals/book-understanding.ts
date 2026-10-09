@@ -80,7 +80,10 @@ const PERSON_WORDS = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|
  * "rocket" failure). A statue merely mentioned later in a human's description does not.
  */
 export function statueReason(member: { name?: string; role?: string; description?: string; look?: { kind?: string } } | undefined): string | undefined {
-  const strip = (text: string) => text.toLowerCase().replace(ABOUT_A_STATUE, " ");
+  // A bird, animal, plant, insect, crowd or spirit is never a statue of a person (live, Flash:
+  // "sleeps between the statue's feet" made the Swallow a statue).
+  if (member?.look?.kind && !["human", "object"].includes(member.look.kind)) return undefined;
+  const strip = (text: string) => text.toLowerCase().replace(ABOUT_A_STATUE, " ").replace(/\b(?:statue|effigy|monument|column|figure)['\u2019]s\b/g, " ");
   const name = strip(member?.name ?? "");
   const role = strip(member?.role ?? "");
   const description = strip(member?.description ?? "");
