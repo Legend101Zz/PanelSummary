@@ -1,5 +1,6 @@
 // BookReel quality judge panel. Run with the Workflow tool: scriptPath + args.
-// args: { judgeDir, bookTitle, pages: [first, last], judges: 3, groupSize: 6, model: 'sonnet', label, rubric }
+// args: { judgeDir, bookTitle, pages: [first, last], judges: 3, groupSize: 6, model: 'sonnet', label, rubric, concurrency }
+// concurrency: the most judge agents that run at the same time (default: all). Use it to stay under the account session limit.
 // Keep PROMPT_TEMPLATE identical to scripts/acceptance/judge/prompt.md (a unittest verifies this).
 export const meta = {
   name: 'bookreel-judge-panel',
@@ -17,6 +18,7 @@ const JUDGES = A.judges || 3
 const GROUP = A.groupSize || 6
 const MODEL = A.model || 'sonnet'
 const LABEL = A.label || 'judge'
+const CONCURRENCY = A.concurrency || 0
 const FIRST = A.pages[0]
 const LAST = A.pages[1]
 
@@ -81,10 +83,25 @@ for (const [a, b] of groups) {
 
 phase('Judge')
 log(`${groups.length} page groups x ${JUDGES} judges = ${tasks.length} agents (model ${MODEL})`)
-const results = await parallel(tasks.map((t) => () => agent(
+const judge = (t) => agent(
   fill(t.a, t.b),
   { label: `${LABEL}:j${t.j}:p${t.a}-${t.b}`, phase: 'Judge', schema: OUT, model: MODEL },
-).then((r) => (r ? { judge: t.j, a: t.a, b: t.b, pages: r.pages } : null))))
+).then((r) => (r ? { judge: t.j, a: t.a, b: t.b, pages: r.pages } : null)).catch(() => null)
+
+// A small pool: at most CONCURRENCY judge agents at the same time (0 = all at once).
+async function pool(items, n, fn) {
+  const out = new Array(items.length).fill(null)
+  let next = 0
+  const lanes = Array.from({ length: Math.max(1, Math.min(n || items.length, items.length)) }, async () => {
+    while (next < items.length) {
+      const k = next++
+      out[k] = await fn(items[k])
+    }
+  })
+  await Promise.all(lanes)
+  return out
+}
+const results = await pool(tasks, CONCURRENCY, judge)
 
 const missing = results.map((r, i) => (r ? null : tasks[i])).filter(Boolean)
 if (missing.length) log(`WARNING: ${missing.length} judge task(s) returned nothing: ` + missing.map((t) => `j${t.j}:p${t.a}-${t.b}`).join(', '))

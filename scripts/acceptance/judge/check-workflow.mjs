@@ -38,3 +38,20 @@ const first = calls.find((c) => /pages 1-6 /.test(c.prompt)).prompt
 const expect = promptMd.split('{{a}}').join('1').split('{{b}}').join('6').split('{{bookTitle}}').join('TITLE').split('{{rubric}}').join('/R').split('{{judgeDir}}').join('/J')
 if (first !== expect) fail('prompt differs from prompt.md')
 console.log('OK judge-workflow.js parses and runs: 9 agents, 39 tagged judgments, prompt equals prompt.md')
+
+// The pool: with concurrency 2, never more than 2 judge agents run at the same time.
+let live = 0, peak = 0
+const slowAgent = async (prompt, opts) => {
+  live++; peak = Math.max(peak, live)
+  await new Promise((r) => setTimeout(r, 5))
+  const r = await fakeAgent(prompt, opts)
+  live--
+  return r
+}
+calls.length = 0
+const pooled = await run(slowAgent, parallel, () => {}, () => {}, {
+  judgeDir: '/J', pages: [1, 13], judges: 3, groupSize: 6, label: 'chk', rubric: '/R', bookTitle: 'TITLE', concurrency: 2,
+})
+if (pooled.length !== 39) fail(`pool: expected 39 judgments, got ${pooled.length}`)
+if (peak !== 2) fail(`pool: expected at most 2 agents at the same time, saw ${peak}`)
+console.log('OK concurrency 2: 39 judgments, peak 2 agents at the same time')
