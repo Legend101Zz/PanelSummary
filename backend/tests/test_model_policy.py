@@ -28,7 +28,7 @@ def _mongo_up() -> bool:
 
 def test_defaults_are_the_measured_policy():
     s = Settings(_env_file=None)
-    assert (s.understanding_model, s.understanding_thinking, s.understanding_retry_thinking) == ("MiniMax-M3", "low", "low")
+    assert (s.understanding_model, s.understanding_thinking, s.understanding_retry_thinking) == (FLASH, "low", "medium")
     assert (s.plan_model, s.plan_thinking, s.plan_retry_thinking) == (FLASH, "off", "medium")
     assert (s.page_model, s.page_thinking, s.page_retry_thinking) == (FLASH, "off", "medium")
     assert s.page_vision is True
@@ -59,7 +59,7 @@ def test_old_retry_thinking_is_a_fallback_for_plan_and_pages_only(monkeypatch):
     monkeypatch.setenv("RETRY_THINKING", "high")
     s = Settings(_env_file=None)
     assert s.plan_retry_thinking == "high" and s.page_retry_thinking == "high"
-    assert s.understanding_retry_thinking == "low"  # the understanding retry has its own setting
+    assert s.understanding_retry_thinking == "medium"  # the understanding retry has its own setting
     monkeypatch.setenv("PAGE_RETRY_THINKING", "off")  # a per-goal variable wins over the old one
     s = Settings(_env_file=None)
     assert s.page_retry_thinking == "off" and s.plan_retry_thinking == "high"
@@ -109,7 +109,7 @@ def test_record_policy_fills_old_editions_and_keeps_recorded_values(tmp_path, mo
             new = Edition(book_id="b", policy={"page_model": FLASH, "retry_thinking": None})
             await new.insert()
             policy = await _record_policy(new, settings)
-            assert policy["page_model"] == FLASH and policy["plan_model"] == FLASH and policy["understanding_model"] == "MiniMax-M3"
+            assert policy["page_model"] == FLASH and policy["plan_model"] == FLASH and policy["understanding_model"] == FLASH
             assert policy["page_retry_thinking"] == "medium" and policy["retry_thinking"] == "medium"
         finally:
             await client_db.drop_database(db_name)

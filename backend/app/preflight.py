@@ -59,6 +59,8 @@ FIT_RUNS: tuple[FitRun, ...] = (
     FitRun("A/B M3 plan, Flash pages", 26, 5794, 2, 16, 0.53, 954, 1363, 826, (_M3, _M3, _FLASH)),
     FitRun("A/B Flash plan and pages", 26, 5794, 2, 21, 0.59, 744, 1087, 633, (_M3, _FLASH, _FLASH)),
     FitRun("gate 1, Flash plan and pages", 26, 5794, 2, 22, 0.87, 1361, 2094, 1259, (_M3, _FLASH, _FLASH)),
+    FitRun("understanding A/B, M3 understanding", 26, 5794, 2, 22, 0.65, 945, 1337, 801, (_M3, _FLASH, _FLASH)),
+    FitRun("understanding A/B, all Flash", 26, 5794, 2, 22, 0.59, 427, 795, 132, (_FLASH, _FLASH, _FLASH)),
 )
 
 # Manga pages per 1,000 words. Measured 2.76 to 3.71. Widened outward to 2.5 and 4.0.
