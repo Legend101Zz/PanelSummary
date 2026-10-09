@@ -187,6 +187,7 @@ async def _artifact_stage(
     *,
     model: str,
     thinking: str,
+    retry_thinking: str,
     extract,
 ) -> EditionArtifact:
     existing = await EditionArtifact.find_one(EditionArtifact.edition_id == str(edition.id), EditionArtifact.kind == kind)
@@ -197,7 +198,7 @@ async def _artifact_stage(
     for attempt in range(1, 3):
         run_id = f"{edition.id}-{kind}-a{attempt}"
         await ctx.event(kind, f"MiniMax is working on the {kind} (attempt {attempt})")
-        attempt_thinking = thinking if attempt == 1 else edition.policy.get("retry_thinking", thinking)
+        attempt_thinking = thinking if attempt == 1 else retry_thinking
         outcome = await _call(ctx, goal_type, run_id, payload, model=model, thinking=attempt_thinking)
         receipt = receipt_from(goal_type, run_id, outcome)
         await _add_totals(str(edition.id), receipt)
@@ -224,6 +225,30 @@ async def _artifact_stage(
     raise RuntimeError(f"{kind} failed after 2 attempts: {last_error}")
 
 
+async def _record_policy(edition: Edition, settings: Any) -> dict[str, Any]:
+    """Make sure the edition records model, thinking and retry thinking for every goal (D13).
+
+    An edition made before the per-goal retry settings has only the old keys. Missing keys are
+    filled from the legacy ``retry_thinking`` (page and plan goals) and from the current settings
+    (understanding). Keys already recorded are never changed, so a resumed edition keeps the
+    policy it started with.
+    """
+    policy = dict(edition.policy)
+    legacy = policy.get("retry_thinking")
+    defaults = settings.policy_fields()
+    if legacy and legacy != settings.retry_thinking:  # an older edition: keep the level it recorded
+        defaults["plan_retry_thinking"] = legacy
+        defaults["page_retry_thinking"] = legacy
+    changed = {key: value for key, value in defaults.items() if key not in policy or policy[key] is None}
+    if changed:
+        policy.update(changed)
+        await Edition.get_motor_collection().update_one(
+            {"_id": _oid(str(edition.id))}, {"$set": {f"policy.{key}": value for key, value in changed.items()}}
+        )
+        edition.policy = policy
+    return policy
+
+
 async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     settings = get_settings()
     job = ctx.job
@@ -232,7 +257,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     source = await BookSource.find_one(BookSource.book_id == job.book_id)
     if edition is None or book is None or source is None:
         raise RuntimeError("edition, book or parsed source is missing")
-    policy = edition.policy
+    policy = await _record_policy(edition, settings)
     await _mark_timing(str(edition.id), "generate_started_at")
 
     # 1. Book understanding (whole text, one MiniMax session).
@@ -246,6 +271,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
         {"book": book_payload},
         model=policy["understanding_model"],
         thinking=policy["understanding_thinking"],
+        retry_thinking=policy["understanding_retry_thinking"],
         extract=lambda result: result["understanding"],
     )
     understanding = understanding_artifact.content
@@ -261,6 +287,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
         {"book": book_payload, "understanding": understanding},
         model=policy["plan_model"],
         thinking=policy["plan_thinking"],
+        retry_thinking=policy["plan_retry_thinking"],
         extract=lambda result: {**result["plan"], "page_budget": result.get("page_budget")},
     )
     plan = plan_artifact.content
@@ -336,7 +363,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     run_id,
                     payload,
                     model=policy["page_model"],
-                    thinking=policy["page_thinking"] if page.attempts == 1 else policy.get("retry_thinking", policy["page_thinking"]),
+                    thinking=policy["page_thinking"] if page.attempts == 1 else policy["page_retry_thinking"],
                     vision=bool(policy.get("page_vision")),
                 )
                 receipt = receipt_from("MANGA_PAGE", run_id, outcome)

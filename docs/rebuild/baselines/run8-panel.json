@@ -1,0 +1,1387 @@
+{
+ "schema": "bookreel-judge-aggregate.v1",
+ "label": "Run 8 re-judged by the 3-judge Sonnet panel",
+ "judges": 3,
+ "pages": 46,
+ "ships_strict": 7,
+ "ships_majority": 12,
+ "mean_ge_3_5_no_criterion_below_3": 16,
+ "criteria": {
+  "legibility": 3.47826087,
+  "reading_flow": 3.97101449,
+  "speaker_attribution": 3.64492754,
+  "continuity": 2.88405797,
+  "variety": 3.63768116,
+  "page_turn": 3.38405797,
+  "fidelity": 3.34057971,
+  "beat_without_prose_wall": 3.44202899
+ },
+ "overall": 3.47282609,
+ "accepted_only": {
+  "pages": 46,
+  "criteria": {
+   "legibility": 3.47826087,
+   "reading_flow": 3.97101449,
+   "speaker_attribution": 3.64492754,
+   "continuity": 2.88405797,
+   "variety": 3.63768116,
+   "page_turn": 3.38405797,
+   "fidelity": 3.34057971,
+   "beat_without_prose_wall": 3.44202899
+  },
+  "overall": 3.47282609
+ },
+ "failed_pages": [],
+ "pages_below_3": {
+  "legibility": [
+   2
+  ],
+  "reading_flow": [
+   25,
+   36,
+   42
+  ],
+  "speaker_attribution": [
+   2,
+   3,
+   46
+  ],
+  "continuity": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   9,
+   10,
+   13,
+   18,
+   22,
+   23,
+   24,
+   25,
+   28,
+   30,
+   32,
+   33,
+   35,
+   37,
+   45,
+   46
+  ],
+  "variety": [],
+  "page_turn": [
+   2,
+   44
+  ],
+  "fidelity": [
+   13,
+   22,
+   23,
+   24,
+   30,
+   46
+  ],
+  "beat_without_prose_wall": [
+   17,
+   23,
+   24
+  ]
+ },
+ "defects": {
+  "total": 549,
+  "per_judge": 183.0,
+  "by_owner": {
+   "writer": 280,
+   "renderer": 185,
+   "plan": 68,
+   "understanding": 16
+  },
+  "by_severity": {
+   "blocker": 25,
+   "major": 245,
+   "minor": 279
+  },
+  "blockers_by_owner": {
+   "writer": 13,
+   "renderer": 8,
+   "plan": 2,
+   "understanding": 2
+  }
+ },
+ "sections": {
+  "s1": {
+   "pages": 13,
+   "criteria": {
+    "legibility": 3.2051282,
+    "reading_flow": 4.02564103,
+    "speaker_attribution": 3.23076923,
+    "continuity": 2.66666667,
+    "variety": 3.7948718,
+    "page_turn": 3.30769231,
+    "fidelity": 3.25641026,
+    "beat_without_prose_wall": 3.28205128
+   },
+   "overall": 3.34615385,
+   "ships_strict": 1
+  },
+  "s2": {
+   "pages": 6,
+   "criteria": {
+    "legibility": 3.72222222,
+    "reading_flow": 4.11111111,
+    "speaker_attribution": 3.94444445,
+    "continuity": 2.94444445,
+    "variety": 3.66666667,
+    "page_turn": 3.33333333,
+    "fidelity": 3.61111111,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "overall": 3.625,
+   "ships_strict": 1
+  },
+  "s3": {
+   "pages": 6,
+   "criteria": {
+    "legibility": 3.27777778,
+    "reading_flow": 3.72222222,
+    "speaker_attribution": 3.61111111,
+    "continuity": 2.83333334,
+    "variety": 3.55555555,
+    "page_turn": 3.27777778,
+    "fidelity": 2.88888889,
+    "beat_without_prose_wall": 3.05555556
+   },
+   "overall": 3.27777778,
+   "ships_strict": 0
+  },
+  "s4": {
+   "pages": 11,
+   "criteria": {
+    "legibility": 3.60606061,
+    "reading_flow": 3.96969697,
+    "speaker_attribution": 4.0,
+    "continuity": 2.93939394,
+    "variety": 3.39393939,
+    "page_turn": 3.54545455,
+    "fidelity": 3.39393939,
+    "beat_without_prose_wall": 3.54545455
+   },
+   "overall": 3.54924242,
+   "ships_strict": 2
+  },
+  "s5": {
+   "pages": 10,
+   "criteria": {
+    "legibility": 3.66666667,
+    "reading_flow": 3.96666667,
+    "speaker_attribution": 3.63333333,
+    "continuity": 3.1,
+    "variety": 3.73333333,
+    "page_turn": 3.4,
+    "fidelity": 3.5,
+    "beat_without_prose_wall": 3.63333333
+   },
+   "overall": 3.57916667,
+   "ships_strict": 3
+  }
+ },
+ "page_rows": [
+  {
+   "page": 1,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 3.33333333,
+    "continuity": 3.33333333,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.58333333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    true
+   ]
+  },
+  {
+   "page": 2,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 2.0,
+    "reading_flow": 3.33333333,
+    "speaker_attribution": 2.0,
+    "continuity": 2.66666667,
+    "variety": 3.33333333,
+    "page_turn": 2.66666667,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 2.75,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 3,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 2.33333333,
+    "continuity": 2.66666667,
+    "variety": 3.66666667,
+    "page_turn": 4.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.58333333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 4,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.41666667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 5,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 2.66666667,
+    "variety": 4.33333333,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 6,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.66666667,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.45833333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 7,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.0,
+    "variety": 4.0,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 8,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.66666667,
+    "speaker_attribution": 4.0,
+    "continuity": 3.33333333,
+    "variety": 4.0,
+    "page_turn": 3.66666667,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.91666667,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 9,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 3.66666667,
+    "speaker_attribution": 3.0,
+    "continuity": 2.0,
+    "variety": 3.33333333,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.04166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 10,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 2.0,
+    "variety": 4.0,
+    "page_turn": 3.33333333,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.25,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 11,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.33333333,
+    "continuity": 3.33333333,
+    "variety": 4.0,
+    "page_turn": 4.0,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.5,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 12,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 3.0,
+    "variety": 3.66666667,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 13,
+   "section": "s1",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 2.33333333,
+    "variety": 4.0,
+    "page_turn": 3.0,
+    "fidelity": 2.33333333,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.125,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 14,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 4.0,
+    "page_turn": 3.0,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.54166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 15,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.0,
+    "page_turn": 4.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.66666667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 16,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.66666667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    true,
+    false
+   ]
+  },
+  {
+   "page": 17,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.66666667,
+    "continuity": 3.0,
+    "variety": 4.0,
+    "page_turn": 4.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 2.66666667
+   },
+   "mean": 3.54166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 18,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.33333333,
+    "page_turn": 3.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.54166667,
+   "ships_strict": false,
+   "ships_majority": true,
+   "judge_ships": [
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 19,
+   "section": "s2",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 4.0,
+    "page_turn": 3.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.79166667,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 20,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.66666667,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 3.33333333,
+    "variety": 3.33333333,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.375,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    true,
+    false
+   ]
+  },
+  {
+   "page": 21,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.66666667,
+    "continuity": 3.0,
+    "variety": 3.33333333,
+    "page_turn": 3.0,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 22,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.33333333,
+    "page_turn": 4.0,
+    "fidelity": 2.66666667,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.33333333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 23,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 4.0,
+    "page_turn": 3.0,
+    "fidelity": 2.66666667,
+    "beat_without_prose_wall": 2.66666667
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 24,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.33333333,
+    "page_turn": 3.0,
+    "fidelity": 2.66666667,
+    "beat_without_prose_wall": 2.66666667
+   },
+   "mean": 3.20833333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 25,
+   "section": "s3",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 2.33333333,
+    "speaker_attribution": 3.0,
+    "continuity": 2.66666667,
+    "variety": 4.0,
+    "page_turn": 3.66666667,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.16666667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 26,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.66666667,
+    "page_turn": 3.66666667,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.58333333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 27,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.66666667,
+    "speaker_attribution": 4.0,
+    "continuity": 3.33333333,
+    "variety": 3.0,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.54166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 28,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.0,
+    "page_turn": 3.66666667,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.625,
+   "ships_strict": false,
+   "ships_majority": true,
+   "judge_ships": [
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 29,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.0,
+    "page_turn": 4.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.70833333,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 30,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.33333333,
+    "variety": 4.0,
+    "page_turn": 3.66666667,
+    "fidelity": 2.66666667,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.375,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 31,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.0,
+    "page_turn": 3.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.66666667,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 32,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 33,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.66666667,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 4.0,
+    "page_turn": 4.0,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.875,
+   "ships_strict": false,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "page": 34,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 3.66666667,
+    "speaker_attribution": 4.0,
+    "continuity": 3.0,
+    "variety": 3.33333333,
+    "page_turn": 4.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.45833333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 35,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.33333333,
+    "continuity": 2.66666667,
+    "variety": 3.66666667,
+    "page_turn": 3.66666667,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.625,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    true,
+    false
+   ]
+  },
+  {
+   "page": 36,
+   "section": "s4",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.66666667,
+    "reading_flow": 2.0,
+    "speaker_attribution": 3.66666667,
+    "continuity": 4.0,
+    "variety": 3.0,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 37,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.33333333,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 4.0,
+    "page_turn": 3.33333333,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.45833333,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 38,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.66666667,
+    "speaker_attribution": 4.33333333,
+    "continuity": 3.33333333,
+    "variety": 3.66666667,
+    "page_turn": 3.33333333,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.33333333
+   },
+   "mean": 3.95833333,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 39,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.66666667,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.33333333,
+    "continuity": 3.66666667,
+    "variety": 4.0,
+    "page_turn": 3.0,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.625,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 40,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.66666667,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 3.33333333,
+    "variety": 3.66666667,
+    "page_turn": 3.0,
+    "fidelity": 3.66666667,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.625,
+   "ships_strict": false,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "page": 41,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.33333333,
+    "speaker_attribution": 4.0,
+    "continuity": 4.0,
+    "variety": 4.0,
+    "page_turn": 4.0,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 4.04166667,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 42,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 2.66666667,
+    "speaker_attribution": 4.0,
+    "continuity": 3.33333333,
+    "variety": 3.33333333,
+    "page_turn": 3.0,
+    "fidelity": 3.0,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 43,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 3.0,
+    "variety": 4.0,
+    "page_turn": 3.33333333,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 4.0
+   },
+   "mean": 3.66666667,
+   "ships_strict": true,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "page": 44,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 3.0,
+    "continuity": 3.0,
+    "variety": 3.66666667,
+    "page_turn": 2.66666667,
+    "fidelity": 3.33333333,
+    "beat_without_prose_wall": 3.66666667
+   },
+   "mean": 3.29166667,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "page": 45,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 4.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 4.0,
+    "continuity": 2.66666667,
+    "variety": 4.0,
+    "page_turn": 4.66666667,
+    "fidelity": 4.0,
+    "beat_without_prose_wall": 3.33333333
+   },
+   "mean": 3.83333333,
+   "ships_strict": false,
+   "ships_majority": true,
+   "judge_ships": [
+    true,
+    false,
+    true
+   ]
+  },
+  {
+   "page": 46,
+   "section": "s5",
+   "status": "accepted",
+   "failed": false,
+   "judges": 3,
+   "panel": {
+    "legibility": 3.0,
+    "reading_flow": 4.0,
+    "speaker_attribution": 2.66666667,
+    "continuity": 2.0,
+    "variety": 3.0,
+    "page_turn": 3.66666667,
+    "fidelity": 2.66666667,
+    "beat_without_prose_wall": 3.0
+   },
+   "mean": 3.0,
+   "ships_strict": false,
+   "ships_majority": false,
+   "judge_ships": [
+    false,
+    false,
+    false
+   ]
+  }
+ ],
+ "comparison": {
+  "baseline_label": "run8",
+  "warnings": [
+   "Different instrument: 3 judge(s) now, 1 in the baseline. A score change can come from the panel, not from the code."
+  ],
+  "deltas": {
+   "legibility": 0.1739,
+   "reading_flow": -0.442,
+   "speaker_attribution": -0.1812,
+   "continuity": 0.4493,
+   "variety": 0.0725,
+   "page_turn": -0.0507,
+   "fidelity": 0.4058,
+   "beat_without_prose_wall": 0.3551
+  },
+  "overall_delta": 0.0978,
+  "ships_strict_delta": 2,
+  "defects_delta": 291,
+  "defects_per_judge_delta": -75.0,
+  "checks": {
+   "ship_bar_pages_above_baseline": {
+    "value": 7,
+    "baseline": 5,
+    "pass": true
+   },
+   "overall_mean_above_3.37": {
+    "value": 3.47282609,
+    "bar": 3.37,
+    "pass": true
+   },
+   "continuity_above_2.43": {
+    "value": 2.88405797,
+    "bar": 2.43,
+    "pass": true
+   },
+   "no_criterion_more_than_0.2_below_baseline": {
+    "worst_delta": -0.442,
+    "failing": [
+     "reading_flow"
+    ],
+    "pass": false
+   }
+  },
+  "gate2_pass": false
+ }
+}
