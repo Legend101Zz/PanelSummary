@@ -115,6 +115,20 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Statement: A release needs these proofs. The old path is not reachable. A browser journey (upload → Generate → read) passes on the harness path. Every cost figure has a receipt. A human judges the pages side by side.
 - Status: accepted. The offline guard is `backend/tests/test_generate_journey.py`.
 
+### D19. v0.1 scope for large books (2026-10-09, issues #4 and #13)
+- Statement: v0.1 has a size limit and a cost and time preflight. The limits are `max_pdf_pages` 75 and `max_source_words` 17,500. Both are configuration (`MAX_PDF_PAGES`, `MAX_SOURCE_WORDS`).
+- Statement: Upload accepts any parsed PDF, and the reader shows the source. `POST /books/{id}/editions` refuses a book over a limit with HTTP 422 and a plain reason. It creates no edition and no job, and it spends nothing.
+- Statement: `GET /books/{id}/preflight` shows the size, the limits, and low and high estimates of pages, cost and time. It answers 409 for a book that is not parsed.
+- Statement: Chapter-scoped generation, resumable project memory and chunked continuation are not in v0.1. They move to v0.2.
+- Why: The whole book goes into one understanding call. That call wrote 36,000 to 78,700 output tokens and took 259 to 1,166 s on the measured runs, at 31 to 167 output tokens/s. The goal times out at 25 minutes. The largest book that finished end to end has 68 PDF pages and 16,159 words, so each limit is that figure plus 8 % (words) or 10 % (pages). A scope cannot be chosen safely without a table of contents the user can pick from, a persisted understanding per scope and a rule for characters that cross scopes. None of these exists, and a wrong cut would break the source grounding. See `docs/launch/T3-scope.md`.
+- Status: accepted. The limits are not a promise that every book under them finishes. A slow provider hour can still time out the understanding, and the edition then fails with a visible reason.
+
+### D20. Honest latency (2026-10-09)
+- Statement: The edition stores `timings.generate_started_at`, `timings.drawing_started_at` and `timings.first_page_at` in the database. The first value stays after a resume.
+- Statement: Pages start in reading order. No scheduling change is made in v0.1.
+- Why: The measured critical path is understanding, then plan, then the first page. The plan waits for the whole understanding, and a page waits for the plan. No step can start earlier without a quality or honesty cost. The long tail of a run is a page that fails twice, not an idle gap. See `docs/launch/T3-scope.md`.
+- Status: accepted. Estimates are ranges fitted to measured runs, and the basis text says so.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

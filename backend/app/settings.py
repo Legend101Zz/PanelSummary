@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     # --- v0.1 size limits (D19). Generate refuses a book above either limit; upload stays open.
     # Evidence: the largest book run end to end has 68 PDF pages and 16,159 words.
-    # Each limit is that figure plus about 10 %. See docs/launch/T3-scope.md.
+    # Each limit is that figure plus 8 % (words) or 10 % (pages). See docs/launch/T3-scope.md.
     # Override with MAX_PDF_PAGES and MAX_SOURCE_WORDS.
     max_pdf_pages: int = 75
     max_source_words: int = 17500
