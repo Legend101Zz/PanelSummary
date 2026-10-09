@@ -1,5 +1,5 @@
 /** Plain-language wording for statuses, shared by the shelf, book page and reader. */
-import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, Range, TextKind } from "./api";
+import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, ProviderStop, Range, TextKind } from "./api";
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
@@ -134,7 +134,47 @@ export function formatElapsed(totalSeconds: number): string {
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`;
 }
 
+export interface ProviderStopLines {
+  title: string;
+  /** What happened, in one sentence. */
+  plain: string;
+  /** What to do next. */
+  next: string;
+  /** The provider's own words, for a person who wants them. */
+  detail: string | null;
+}
+
+/** Plain words for an edition that stopped because MiniMax refused the work (D11). */
+export function providerStopLines(stop: ProviderStop, pendingPages = 0): ProviderStopLines {
+  const kept = pendingPages > 0 ? ` The pages already drawn stay as they are, and ${plural(pendingPages, "page")} ${pendingPages === 1 ? "was" : "were"} not tried yet.` : " The pages already drawn stay as they are.";
+  const detail = stop.message ? `${stop.type ? `${stop.type}: ` : ""}${stop.message}` : null;
+  switch (stop.code) {
+    case "PROVIDER_LIMIT":
+      return {
+        title: "MiniMax stopped the drawing: usage limit reached",
+        plain: "Your MiniMax plan has no more usage right now. Nothing more was sent, so nothing more was spent." + kept,
+        next: "Wait for the limit to reset, or add credits to the plan. Then press Resume drawing.",
+        detail,
+      };
+    case "PROVIDER_AUTH":
+      return {
+        title: "MiniMax did not accept the key or the plan",
+        plain: "MiniMax refused the request, so the drawing stopped. Nothing more was sent." + kept,
+        next: "Check the MiniMax key and plan in the drawing service settings. Then press Resume drawing.",
+        detail,
+      };
+    default:
+      return {
+        title: "MiniMax was not answering",
+        plain: "MiniMax did not answer after several tries, so the drawing stopped. Nothing more was sent." + kept,
+        next: "Wait a few minutes. Then press Resume drawing.",
+        detail,
+      };
+  }
+}
+
 const FAILURE_REASONS: [RegExp, string][] = [
+  [/usage limit|credits|token plan|insufficient_quota|\(2056\)/i, "The MiniMax plan has reached its usage limit. Wait for it to reset or add credits, then press Resume."],
   [/token limit|cut off|max_tokens/i, "The model ran out of room before it finished this page."],
   [/max_submits|rejected on every|every submit/i, "The model's drawings for this page were rejected every time they were checked."],
   [/did not fit|overflow|balloon|lettering/i, "The text did not fit on the page."],

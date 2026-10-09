@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { useMedia, usePoll, useReducedMotion } from "@/lib/hooks";
 import { readPreference, savePosition, savePreference } from "@/lib/position";
-import { plainReason, plural, stageLine, voiceLabel } from "@/lib/words";
+import { plainReason, plural, providerStopLines, stageLine, voiceLabel } from "@/lib/words";
 import { SvgPage } from "@/components/SvgPage";
 import { Sheet } from "@/components/Paper";
 import { ArrowLeft, ChevronLeft, ChevronRight, PageIcon, PanelsIcon, SourceIcon, ZoomReset } from "@/components/Icons";
@@ -643,8 +643,16 @@ function PageState({
     }
   } else {
     title = page.status === "drawing" ? `Page ${pageNumber} is being drawn` : `Page ${pageNumber} is waiting to be drawn`;
+    const stopLines = !active && edition.status === "failed" && edition.provider_stop ? providerStopLines(edition.provider_stop) : null;
     body = active ? (
       <p>It will appear here as soon as it is ready. This view refreshes on its own.</p>
+    ) : stopLines ? (
+      <>
+        <p>MiniMax stopped the drawing before this page. Nothing was sent for it.</p>
+        <p className={styles.reason}>{stopLines.title}.</p>
+        <p>{stopLines.next}</p>
+        {stopLines.detail ? <p className={styles.detail}>Technical detail: {stopLines.detail}</p> : null}
+      </>
     ) : (
       <p>Drawing stopped before this page.</p>
     );
