@@ -4,6 +4,8 @@ import type { AdaptationPlan, BookUnderstanding } from "@panelsummary/manga-rend
 
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { planOrderIssues } from "./claim-shown.js";
+import { unitOrder } from "./continuity.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 
 interface Input {
@@ -58,6 +60,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
             message: `plan has ${count} pages; it must have between ${pages.min} and ${pages.max} (target about ${pages.target}).`,
           });
         }
+        issues.push(...planOrderIssues(parsed.value as AdaptationPlan, understanding.claims, unitOrder(understanding.sections ?? [])));
         const sectionsOf = new Map(understanding.cast.map((c) => [c.id, c.sections]));
         ((parsed.value as AdaptationPlan)?.pages ?? []).forEach((page) => {
           for (const id of page?.cast ?? []) {

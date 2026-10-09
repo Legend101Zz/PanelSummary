@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Manga page
@@ -129,6 +129,10 @@ right, top to bottom; `panels` must be listed in that reading order.
   the book's argument, a narrator's voice worth keeping. Use at most one narration box per
   panel, 20 words or fewer, and normally at most two per page.
 - **Captions** (`caption`) label place and time in 6 words or fewer ("The city, at night").
+- **Say the key event.** A death, a marriage, an arrival or a gift the claim names is SAID in a
+  caption or line, in the panel that shows it. A closed-eyed face reads as sleep.
+- **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
+  crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the
   panel that shows it, not in the panel after.
 
@@ -180,20 +184,20 @@ right, top to bottom; `panels` must be listed in that reading order.
 
 ## 8a. State continuity: how characters look NOW
 
-Characters change over a book. Use `variant` on a figure to show the change from this
-point on, and keep it on every later appearance:
+Characters change over a book. When the goal gives `expected_looks`, it is computed from the
+story so far: put its `variant_on_every_panel` on EVERY figure of that character, in every
+panel (a character who lost an eye, was stripped of gold or died keeps it until the book says
+otherwise). A `changes_on_this_page` entry means draw the old look until the panel where the
+text shows the change, and the new look from then on, never going back. Do not copy a look
+from an earlier page's picture.
 
 ```json
 { "character": "c_prince", "pose": "stand", "expression": "sad", "facing": "front", "slot": "center",
   "variant": { "eyes": "blind", "material": "stone" } }
 ```
 
-- `eyes`: `open`, `closed`, `blind` (a statue whose gem eyes are gone), `dead`.
-- `material`: a gilded statue stripped of its gold becomes `stone`.
-- `outfit_tone`, `hair_tone`, `tone`: a change of clothes or colour.
-Read the previous pages' beats: if a sapphire was given away, the statue has one blind
-eye from then on (use `blind` once both are gone); a character who has died is drawn with
-`eyes: "dead"` and pose `lie`.
+Variant fields: `eyes` (`open`, `closed`, `blind`, `dead`), `material` (a gilded statue stripped of
+its gold is `stone`), `outfit_tone`, `hair_tone`, `tone`. FIGURE_STATE_MISMATCH is an error.
 
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
@@ -252,6 +256,7 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 - **When `page_turn_hook` is true**, the last panel holds a question, a threat, a decision,
   or a face reacting to something not yet shown. Make that panel small or medium, never
   the page's big panel, and do not show the answer on this page.
+- **Last page of a section:** end on one large panel, then one small reaction panel.
 - **When the previous page ended on a hook**, open with the answer: the first panel is
   large (about 40% of the page or more).
 

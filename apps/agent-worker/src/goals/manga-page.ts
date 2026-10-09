@@ -16,6 +16,11 @@ import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
 import { quoteSpeakerIssues } from "./attribution.js";
+import { claimEventIssues, claimOrderIssues } from "./claim-shown.js";
+import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, unitOrder, type ExpectedLook } from "./continuity.js";
+
+/** Severity of FIGURE_STATE_MISMATCH, set from calibration (docs/launch/T1-continuity.md). */
+export const FIGURE_STATE_SEVERITY: "error" | "warning" = "error";
 
 interface UnitText {
   id: string;
@@ -37,6 +42,10 @@ interface Input {
   first_appearances: string[];
   /** Set on the first page of a section: its title must be lettered in a caption. */
   opens_section?: { id: string; title: string };
+  /** Position of every unit in the book (from the understanding's sections). */
+  order: Map<string, number>;
+  /** Expected look patch of each cast member with story states, computed from this page's units. */
+  expected_looks: Record<string, ExpectedLook>;
 }
 
 const MAX_PREVIEWS = 4;
@@ -317,6 +326,8 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       previous: prevPlanned ? { page_number: prevPlanned.page_number, beat: prevPlanned.beat, ...(previousRendered ?? {}) } : undefined,
       next: nextPlanned ? { page_number: nextPlanned.page_number, beat: nextPlanned.beat } : undefined,
       first_appearances: page.cast.filter((id) => !seenBefore.has(id)),
+      order: unitOrder(understanding.sections ?? []),
+      expected_looks: expectedLooks(understanding.cast, unitOrder(understanding.sections ?? []), { page_number: page.page_number, units: page.units ?? [], claim_pages: claimPages(plan) }),
       opens_section:
         index === 0 || plan.pages[index - 1].section_id !== page.section_id
           ? { id: page.section_id, title: understanding.sections.find((sec) => sec.id === page.section_id)?.title ?? page.section_id }
@@ -347,6 +358,9 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...quoteClaimIssues(spec, input.claims),
         ...statueStagingIssues(spec, input.cast, input.locations),
         ...stagingIssues(spec),
+        ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
+        ...claimOrderIssues(spec, input.claims, input.order),
+        ...claimEventIssues(spec, input.claims),
       ].filter((issue) => {
         const key = `${issue.code}|${issue.path}|${issue.message}`;
         if (seen.has(key)) return false;
@@ -427,6 +441,15 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       dataBlock("trusted_catalog", { limits: vocab.limits, vocabularies: { ...pageVocabulary(), ...vocab.vocabularies }, shots: vocab.shots, text_kinds: vocab.text_kinds, slant: vocab.slant }),
       dataBlock("trusted_cast_capabilities", castCapabilities(input.cast)),
       dataBlock("cast", input.cast),
+      ...(() => {
+        const looks = expectedLooksForPrompt(input.expected_looks);
+        return looks
+          ? [
+              "How these characters look NOW, computed from the story so far (trusted). Put this variant on every figure of the character on this page; where a change happens on this page, draw it from the panel where the text shows it:",
+              dataBlock("expected_looks", looks),
+            ]
+          : [];
+      })(),
       dataBlock("locations", input.locations),
       dataBlock("claims_for_this_page", pageClaims),
       sourceBlock(input.units),
