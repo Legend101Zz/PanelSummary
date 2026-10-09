@@ -139,9 +139,9 @@ const FAILURE_REASONS: [RegExp, string][] = [
   [/max_submits|rejected on every|every submit/i, "The model's drawings for this page were rejected every time they were checked."],
   [/did not fit|overflow|balloon|lettering/i, "The text did not fit on the page."],
   [/timed? ?out|timeout|deadline/i, "The model took too long to answer."],
-  [/stopped answering|unreachable|connect|ECONN|worker/i, "The drawing service stopped answering."],
-  [/rate.?limit|429|quota|overloaded|529/i, "The model service was too busy or over its limit."],
-  [/schema|invalid|validation|not valid/i, "The model's answer did not follow the page format."],
+  [/stopped answering|unreachable|connection (refused|reset|error)|ECONN|worker (stopped|unreachable|not)/i, "The drawing service stopped answering."],
+  [/rate.?limit|\b429\b|quota|overloaded|\b529\b/i, "The model service was too busy or over its limit."],
+  [/schema|invalid (json|output|response|page)|validation|not valid/i, "The model's answer did not follow the page format."],
   [/cancel/i, "Drawing was stopped before this page."],
 ];
 

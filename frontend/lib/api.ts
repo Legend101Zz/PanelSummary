@@ -253,7 +253,8 @@ export function detailText(detail: unknown): string | null {
     const o = detail as Record<string, unknown>;
     const reasons = detailText(o.blocking_reasons) ?? detailText(o.reasons);
     const message = detailText(o.message) ?? detailText(o.msg) ?? detailText(o.error);
-    return [message, reasons].filter(Boolean).join(" ") || null;
+    const end = (t: string) => (/[.!?]$/.test(t) ? t : `${t}.`);
+    return [message, reasons].filter((x): x is string => !!x).map(end).join(" ") || null;
   }
   return null;
 }

@@ -55,9 +55,12 @@ export default function BookPage() {
 
   const loadEdition = useCallback(async (editionId?: string) => {
     const id = editionId ?? (await listEditions(bookId))[0]?.id;
-    setEditionsLoaded(true);
-    if (!id) return;
+    if (!id) {
+      setEditionsLoaded(true);
+      return;
+    }
     setEdition(await getEdition(id));
+    setEditionsLoaded(true);
   }, [bookId]);
 
   useEffect(() => {
@@ -115,7 +118,7 @@ export default function BookPage() {
     } catch (e) {
       const reason = e instanceof Error ? e.message : "";
       const what = kind === "generate" ? "Generate did not start." : kind === "cancel" ? "Drawing could not be stopped." : "Drawing could not be resumed.";
-      const next = e instanceof ApiError && e.status === 0 ? " Check that the server is running, then try again." : kind === "generate" && e instanceof ApiError && e.status >= 400 && e.status < 500 ? " Nothing was started and nothing was spent. Choose a different book, or change the book and try again." : " Try again in a moment.";
+      const next = e instanceof ApiError && e.status === 0 ? " Check that the server is running, then try again." : kind === "generate" && e instanceof ApiError && (e.status === 422 || e.status === 400) ? " Nothing was started and nothing was spent. Choose a different book, or change the book and try again." : " Try again in a moment.";
       setActionError(`${what} ${reason ? `${reason.replace(/\.?$/, ".")}` : ""}${next}`.replace(/\s+/g, " "));
     } finally {
       setPending(null);
@@ -217,7 +220,7 @@ export default function BookPage() {
                         </Link>
                       ) : isActive(edition.status) ? (
                         <button type="button" className="btn btn-ink" disabled title="Available when page 1 is drawn">
-                          Start reading
+                          Page 1 not drawn yet
                         </button>
                       ) : null}
                       {isActive(edition.status) ? (

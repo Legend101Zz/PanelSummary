@@ -57,3 +57,13 @@ No selector changed. Still present: the button "Generate manga", the URLs `/book
 - Failure wording covers the messages seen so far. Unknown messages show as written.
 - The 46-page book (grid at 390 px) was not seen after the change. Seeded editions have 8 pages. The step list and bar are built for any count.
 - The upload page does not show the limits. They show only on the book page after parsing.
+
+## Review follow-up
+
+- Added `frontend/lib/words.test.ts` (5 tests). Run: `cd frontend && ../apps/agent-worker/node_modules/.bin/vitest run lib/words.test.ts --root .`
+- The book page no longer asks for preflight while an edition is loading.
+- The "Nothing was started and nothing was spent" text now shows only for 400 and 422 answers.
+- The failure-reason patterns are narrower (429 and 529 match as whole numbers).
+- The Generate error text puts a full stop between the message and the blocking reasons.
+- While page 1 is not drawn, the disabled button now reads "Page 1 not drawn yet".
+- Not done: a better page picker for 40 or more pages.
