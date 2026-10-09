@@ -31,7 +31,7 @@ Date: 2026-10-09. Branch `fix/provider-stop-ui`. No model call was made. Load av
 - `frontend/lib/api.ts`, `frontend/lib/words.ts`: new `providerStopShort()`. The band says "MiniMax limit reached, 5 of 22 drawn" (or "MiniMax refused the key", "MiniMax not answering"). A failed edition without a provider stop still says "Drawing stopped".
 - `frontend/app/books/[id]/page.tsx`: the cover band gets the same text. The status headline says "Drawing stopped: MiniMax usage limit reached".
 - `frontend/components/reader/Reader.tsx`: the pending-page card has one reason sentence that also says "Nothing was sent for this page", then the next step.
-- `frontend/components/reader/Reader.module.css`: smaller gap and text on narrow screens, so the card does not crowd the frame.
+- `frontend/components/reader/reader.module.css`: smaller gap and text on narrow screens, so the card does not crowd the frame.
 - Tests: `backend/tests/test_provider_stop.py` (new case: shelf view, and cleared after resume), `frontend/lib/words.test.ts` (new case).
 
 ## Checks

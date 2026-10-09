@@ -21,7 +21,7 @@ import {
 } from "@/lib/api";
 import { useNow, usePoll } from "@/lib/hooks";
 import { readPosition } from "@/lib/position";
-import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, providerStopLines, providerStopShort, type ProviderStopLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
+import { bookFacts, editionSummary, formatElapsed, formatTokens, plainReason, plural, preflightLines, providerStopLines, providerStopHeadline, type ProviderStopLines, shelfStatus, splitCostBasis, stageLine } from "@/lib/words";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Cover, Obi } from "@/components/Paper";
 import { CoverSvg } from "@/components/CoverArt";
@@ -371,7 +371,7 @@ function EditionStatus({ edition, stopping, bookId }: { edition: EditionDetail; 
   const line = stopping
     ? "Stopping after the pages in progress"
     : providerStopped
-      ? `Drawing stopped: ${providerStopShort(edition.provider_stop?.code).replace("MiniMax limit reached", "MiniMax usage limit reached")}`
+      ? providerStopHeadline(edition.provider_stop?.code)
       : stageLine(edition.status, edition.pages, total);
   const now = useNow(1000, active);
   const started = Date.parse(edition.job?.created_at ?? edition.created_at);
