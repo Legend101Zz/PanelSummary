@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { egressSnapshot, installEgressRecorder } from "../src/egress.js";
 import type { GoalOutcome, GoalRequest } from "../src/run-goal.js";
 import { buildServer } from "../src/server.js";
+import { executeDefinition } from "../src/run-goal.js";
 
 const TOKEN = "k".repeat(40);
 const AUTH = { authorization: `Bearer ${TOKEN}` };
@@ -199,5 +200,27 @@ describe("GET /internal/v2/egress", () => {
     expect(payload.hosts["api.minimax.io/anthropic/v1/messages"]).toBe(2);
     expect(payload.hosts).toEqual(egressSnapshot());
     for (const count of Object.values(payload.hosts)) expect(Number.isInteger(count)).toBe(true);
+  });
+});
+
+describe("vision gate", () => {
+  const seen = async (model: string, vision: boolean): Promise<boolean> => {
+    let got: boolean | undefined;
+    const goal = {
+      defaults: { model: "MiniMax-M3", thinking: "off" },
+      parseInput: (x: unknown) => x,
+      prepare: (_i: unknown, o: { vision: boolean }) => {
+        got = o.vision;
+        throw new Error("stop");
+      },
+    };
+    await executeDefinition(goal as never, { goal_type: "MANGA_PAGE", run_id: "r", input: {}, model, vision } as never).catch(() => undefined);
+    return got as boolean;
+  };
+  it("allows vision for M3 and Flash and refuses it for M2.7", async () => {
+    expect(await seen("MiniMax-M3", true)).toBe(true);
+    expect(await seen("MiniMax-M3.1-Flash-Preview", true)).toBe(true);
+    expect(await seen("MiniMax-M2.7", true)).toBe(false);
+    expect(await seen("MiniMax-M3.1-Flash-Preview", false)).toBe(false);
   });
 });

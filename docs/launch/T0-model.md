@@ -79,10 +79,16 @@ Reading of the table (one run each; no statistics):
 - The harness works end to end on Flash: tool calls, vision previews, thinking blocks and narration all pass, with no nudge and no text fallback.
 - BOOK_UNDERSTANDING failed three times, at three thinking levels. The failures are model quality, not the harness: the guard `STATUE_NOT_HUMAN` (the Happy Prince is a statue, not a person) was still open at the end of every run, and the model spent its turns or submits on it. M3 passes this guard at thinking `low` in every acceptance run (D13). This is a real signal against Flash for the understanding goal. It was not tested on a second book.
 - The plan was accepted. It has 61 pages against 46 for M3 on the same input; whether that is better is for the A/B.
-- Flash pages: the same page 1 and page 2 both passed the deterministic guards at first submit. Looking at the PNGs: Flash page 1 has a small gap in the establishing panel (the Councillors are a tiny floating group, the statue is small), while M3 page 1 has a larger statue and a cleaner establishing shot but cuts the Mathematical Master's line to "You have never seen one." Flash page 1 keeps the whole line ("How do you know? ...you have never seen one."), which run 8 judged as a loss. Flash page 2 reads well (clear speakers, Swallow and Reed staged). No judge score was run; these are my eyes on three pages, not a quality result.
+- Flash pages: the same page 1 and page 2 both passed the deterministic guards at first submit. Looking at the PNGs: Flash page 1 has a small gap in the establishing panel (the Councillors are a tiny floating group, the statue is small), while M3 page 1 has a larger statue and a cleaner establishing shot but cuts the Mathematical Master's line to "You have never seen one." Flash page 1 keeps the whole line ("How do you know? ...you have never seen one."). Flash page 2 reads well (clear speakers, Swallow and Reed staged). No judge score was run; these are my eyes on three pages, not a quality result.
 - On time and cost Flash was not faster here: page 1 took 59 s on Flash and 45 s on M3 with different loads. Flash used more cache-read tokens (more turns: 7 against 4). The earlier single tiny-call probes showed 1.5 to 1.8 s against 1.9 to 2.0 s.
 
 ## Not done / open
 
 - No judged A/B (the orchestrator runs it). No second book for the understanding.
 - `goals/experimental/*.ts` still hold the literal `"MiniMax-M3"` (outside the owned paths of this track).
+
+## Notes for other tracks
+
+- The worker endpoint `/internal/v2/runs` now returns 400 for an unknown model or an unknown thinking level. Before, it passed them on.
+- `goals/experimental/manga-section.ts` and `page-review.ts` still hold the literal "MiniMax-M3". They are outside this track. The orchestrator should move them to `DEFAULT_GOAL_MODEL`.
+- The Flash live-smoke numbers are one run per cell. Do not read the page latency or cost rows as an A/B result.
