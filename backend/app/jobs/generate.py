@@ -229,9 +229,9 @@ async def _record_policy(edition: Edition, settings: Any) -> dict[str, Any]:
     """Make sure the edition records model, thinking and retry thinking for every goal (D13).
 
     An edition made before the per-goal retry settings has only the old keys. Missing keys are
-    filled from the legacy ``retry_thinking`` (page and plan goals) and from the current settings
-    (understanding). Keys already recorded are never changed, so a resumed edition keeps the
-    policy it started with.
+    filled from the legacy ``retry_thinking``: before the per-goal settings one retry level served
+    every goal. Keys already recorded are never changed, so a resumed edition keeps the policy it
+    started with.
     """
     policy = dict(edition.policy)
     legacy = policy.get("retry_thinking")
@@ -239,6 +239,7 @@ async def _record_policy(edition: Edition, settings: Any) -> dict[str, Any]:
     if legacy and legacy != settings.retry_thinking:  # an older edition: keep the level it recorded
         defaults["plan_retry_thinking"] = legacy
         defaults["page_retry_thinking"] = legacy
+        defaults["understanding_retry_thinking"] = legacy
     changed = {key: value for key, value in defaults.items() if key not in policy or policy[key] is None}
     if changed:
         policy.update(changed)

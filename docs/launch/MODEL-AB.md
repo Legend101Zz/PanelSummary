@@ -54,7 +54,7 @@ Other measurements:
 
 | Goal | Model | Thinking | Retry thinking | Why |
 |---|---|---|---|---|
-| BOOK_UNDERSTANDING | MiniMax-M3 | low | low | Flash failed 3 of 3 (T0 smoke): the statue guard `STATUE_NOT_HUMAN` never cleared at low, medium or high thinking. |
+| BOOK_UNDERSTANDING | MiniMax-M3.1-Flash-Preview (since the second A/B below; first decision: MiniMax-M3) | low | medium | First decision: Flash failed 3 of 3 in the T0 smoke on the statue guard. The guard was wrong (#33). After the fix, Flash passed 4 of 4 and was as good as M3 within noise, and 2.5 to 6 times faster. See "Second A/B: the understanding". |
 | ADAPTATION_PLAN | MiniMax-M3.1-Flash-Preview | off (adaptive low is sent) | medium | Flash plans in 34 to 69 s against up to 235 s. No plan failure in 3 Flash runs. Page quality with a Flash plan is the same as with an M3 plan on continuity (2.87 to 3.04) and fidelity. |
 | MANGA_PAGE | MiniMax-M3.1-Flash-Preview | off (adaptive low is sent) | medium | No failed page in 3 Flash runs (59 pages). Book-level mean 3.40 against 3.20 and 3.31. Cost: $0.53, $0.59 and $0.87 for Flash pages against $0.81 and $0.60 for M3 (the $0.87 run had a 1,259 s understanding). See the caveat. |
 
@@ -76,3 +76,38 @@ recorded runs (F1).
 - `backend/app/jobs/generate.py`: each stage uses its own retry thinking; the edition policy gets every per-goal key at the start of the job (older editions keep the values they recorded).
 - `backend/app/preflight.py`: four more measured runs, a wider cost high factor (1.25), a flat slow-hour term for understanding time (800 s), and a basis text that says what the range rests on.
 - `scripts/acceptance/live-config.json`: the new defaults. The CI workflow reads only `retry_thinking` (not the per-goal keys), so that key is `medium`, and the workflow applies it as `RETRY_THINKING`. In the backend this old setting changes the plan and page retries only; the understanding retry stays `low`.
+
+## Second A/B: the understanding (2026-10-09, after the statue-guard fix #33)
+
+The first decision kept the understanding on M3 because Flash failed it 3 of 3 times in the T0 smoke
+test. Track F3 (#33) then found that the statue guard was wrong: it flagged any cast member whose text
+mentions a statue, and the flag was sticky. In the Flash smoke run it flagged the Swallow ("sleeps
+between the statue's feet"). In M3 runs it flagged the Mayor and the Art Professor, and the model gave
+in and drew them in stone. So the 3 of 3 failures were not evidence about Flash.
+
+Same code (`release/v0.1` with #33), same book (26 PDF pages), plan and pages on Flash in both arms.
+
+| Understanding | Where | Pages | Failed | Ship bar | Mean | Legibility | Speaker | Continuity | Fidelity | Beat | Understanding | Page 1 / finished | Cost (Pi est.) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| MiniMax-M3 | local | 22 | 0 | 6 | 3.53 | 3.47 | 3.50 | 3.05 | 3.33 | 3.55 | 801 s, 2 submits | 945 s / 1,337 s | $0.65 |
+| Flash | CI run 37903122403 | 22 | 0 | 4 | 3.49 | 3.44 | 3.47 | 2.94 | 3.38 | 3.35 | 132 s, 1 submit + 1 patch | 427 s / 795 s | $0.59 |
+
+Reports: `launch/uab-m3-local/aggregate.md` and `launch/uab-flash-ci/aggregate.md` in the scratch
+directory. The Flash understanding had 69 claims and 18 locations (M3: 32 to 39 claims, 7 to 11
+locations). Only the Prince was cast as a statue in both.
+
+Gate 2 (the 68-page book, `release/v0.1` `d1a2286`) ran both understanding models at the same time
+(CI: all Flash; local: M3 understanding). At about 08:50 UTC the MiniMax account reached its plan limit
+("Token Plan usage limit reached", error 2056), so both runs stopped drawing pages:
+
+| Understanding | Pages drawn | Ship bar | Mean (drawn pages) | Tale 1 mean | Understanding | Page 1 / finished |
+|---|---|---|---|---|---|---|
+| Flash (CI run 37906337189) | 46 of 56 (tales 1-4) | 7 of 46 | 3.52 | 3.53 (15 pages) | 221 s | 382 s / 1,231 s |
+| MiniMax-M3 (local) | 18 of 50 | 2 of 20 judged (2 failed) | 3.48 (accepted) | 3.40 (11 pages) | 545 s | 771 s / 1,575 s |
+
+Run 8 judged by the same panel: 7 of 46, mean 3.47 (tales 1-4 only: 4 of 36, 3.44).
+
+Result: the Flash understanding is as good as the M3 understanding within the run-to-run noise (-0.04
+on the 26-page book, +0.13 on tale 1 of the 68-page book), it passed on the first attempt in 4 of 4
+runs, and it is 2.5 to 6 times faster. By the owner's rule the understanding moves to Flash. M3 stays
+the fallback (`UNDERSTANDING_MODEL=MiniMax-M3`, `UNDERSTANDING_RETRY_THINKING=low`).

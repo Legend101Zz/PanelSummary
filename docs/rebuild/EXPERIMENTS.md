@@ -172,3 +172,11 @@ understanding goal 3 of 3 (the statue guard never cleared). **Decision (D13):** 
 M3; plan and pages on Flash; retries at `medium`; M3 is the fallback. Evidence, configs and
 commits: `docs/launch/MODEL-AB.md`. Limit: one or two runs per arm; Gate 2 checks it again.
 
+
+## Understanding A/B, 2026-10-09 (after the statue-guard fix)
+
+The understanding moved from MiniMax-M3 to MiniMax-M3.1-Flash-Preview. On the same code and the 26-page
+book, M3 gave 6 of 22 pages at the ship bar and a mean of 3.53, Flash 4 of 22 and 3.49; on tale 1 of
+the 68-page book Flash gave 3.53 against 3.40. Flash was 2.5 to 6 times faster (132 s against 801 s;
+221 s against 545 s) and passed on the first attempt in 4 of 4 runs. The earlier 3 of 3 Flash failures
+came from a wrong statue guard (#33). Details: `docs/launch/MODEL-AB.md`, D13.

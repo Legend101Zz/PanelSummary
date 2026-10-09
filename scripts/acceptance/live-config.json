@@ -1,6 +1,6 @@
 {
   "book": "happy-prince-two-tales",
-  "understanding_model": "MiniMax-M3",
+  "understanding_model": "MiniMax-M3.1-Flash-Preview",
   "understanding_thinking": "low",
   "plan_model": "MiniMax-M3.1-Flash-Preview",
   "plan_thinking": "off",

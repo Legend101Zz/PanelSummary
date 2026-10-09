@@ -217,7 +217,7 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 policy = edition["policy"]
                 for c in worker.calls:  # each goal uses its own recorded model (D13)
                     assert c["model"] == policy[{"BOOK_UNDERSTANDING": "understanding_model", "ADAPTATION_PLAN": "plan_model", "MANGA_PAGE": "page_model"}[c["goal_type"]]]
-                assert policy["understanding_model"] == "MiniMax-M3"
+                assert policy["understanding_model"] == "MiniMax-M3.1-Flash-Preview"
                 assert policy["plan_model"] == policy["page_model"] == "MiniMax-M3.1-Flash-Preview"
                 first, retry = [c for c in page_calls if c["page"] == 2]
                 assert first["thinking"] == policy["page_thinking"]
@@ -225,7 +225,7 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 assert policy["retry_thinking"] == policy["page_retry_thinking"]
                 u_first, u_retry = [c for c in worker.calls if c["goal_type"] == "BOOK_UNDERSTANDING"]
                 assert u_first["thinking"] == policy["understanding_thinking"] == "low"
-                assert u_retry["thinking"] == policy["understanding_retry_thinking"] == "low"
+                assert u_retry["thinking"] == policy["understanding_retry_thinking"] == "medium"
                 assert all(c["vision"] is True for c in page_calls)
 
                 # The page API serves exactly the worker's artifact and geometry.
