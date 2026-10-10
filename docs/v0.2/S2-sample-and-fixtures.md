@@ -80,3 +80,7 @@ Track S2 adds two things: a built-in sample manga, and a seeder that makes a boo
 
 - Book 21 (`awaiting_plan_review`) is seeded only when the backend knows that status. After the rebase on S1 it was seeded and read through the API (status, 16 pages, spend $0.14864, `draw_estimate_usd` $0.41 to $0.60, plan and 33 cast members).
 - No screenshot of the new UI. The screens shown are the current look of the branch. They prove that the data loads.
+
+## Read-only preview (U1)
+
+`GET /samples/{id}/preview` gives the data that the first run and the landing show: title, author, PDF pages, sections, page total, timings, cost, the estimate, the SVG of page 1, three more page SVGs and the proof (one panel of page 1, its texts with their fidelity labels, and the PDF pages it comes from). It reads the package only. It writes nothing to the database or to disk, and it installs nothing, so opening a screen never puts a book on the shelf. Each number is the same as the one that the installed edition gives. `GET /samples/{id}/pdf/page/{n}` gives one PDF page of the sample as a PNG, also without an install. Both give 404 for an unknown sample. Only a click on "Read a sample" or "Or read the sample first" installs the sample.

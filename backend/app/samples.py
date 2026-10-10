@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import gzip
 import json
+from datetime import datetime
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -21,6 +22,7 @@ from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
 
 from app.documents import BookSource, Edition, EditionArtifact, EditionPage, GenerationJob, LibraryBook, utcnow
+from app.preflight import build_preflight
 from app.settings import get_settings
 
 SAMPLES_DIR = Path(__file__).resolve().parents[1] / "samples"
@@ -183,3 +185,94 @@ async def install_sample(sample_id: str) -> dict[str, str]:
         **edition_doc,
     ).insert()
     return {"book_id": book_id, "edition_id": edition_id}
+
+
+# --- the read-only preview (U1) ---
+
+
+def _seconds(start: str | None, end: str | None) -> float | None:
+    if not start or not end:
+        return None
+    value = (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds()
+    return round(value, 3) if value >= 0 else None
+
+
+def preview(sample_id: str) -> dict[str, Any] | None:
+    """The package part (cached) plus the estimate, which follows the current settings."""
+    base = _preview_base(sample_id)
+    if base is None:
+        return None
+    out = dict(base)
+    pre = build_preflight(sample_id, out["pdf_pages"], out.pop("_words"), out["sections"], get_settings())
+    out["estimate"] = {key: pre[key] for key in ("estimated_manga_pages", "estimated_minutes", "estimated_cost_usd")}
+    return out
+
+
+@lru_cache(maxsize=None)
+def _preview_base(sample_id: str) -> dict[str, Any] | None:
+    """What the first run and the landing show, read from the package. No database, no write, no model call.
+
+    Every number is computed the way the installed edition's API would give it, so the screens
+    show the same value before and after install. The result is small (page 1 and three more pages);
+    the 6 MB package itself is not kept in memory.
+    """
+    info = sample_info(sample_id)
+    if info is None:
+        return None
+    data = _load(sample_id)
+    book, edition = data["book"], data["edition"]
+    timings = edition.get("timings") or {}
+    started = timings.get("generate_started_at") or edition["created_at"]
+    first = timings.get("page_1_at") or timings.get("first_page_at")
+    total = edition.get("active_seconds") or _seconds(edition["created_at"], edition.get("finished_at"))
+    pages = {p["page_number"]: p for p in data["pages"]}
+    page1 = pages[1]
+    panels = sorted(page1["panels"], key=lambda p: p["order"])
+    shown = panels[1] if len(panels) > 1 else panels[0]
+    sources = next((p.get("source", []) for p in (page1.get("spec") or {}).get("panels", []) if p.get("id") == shown["id"]), [])
+    understanding = next((a for a in data["artifacts"] if a["kind"] == "understanding"), None)
+    cast = {c["id"]: c.get("name", c["id"]) for c in ((understanding or {}).get("content", {}).get("cast", []))}
+    return {
+        "id": sample_id,
+        "title": info.title,
+        "author": book.get("author", ""),
+        "pdf_pages": book["page_count"],
+        "sections": book["section_count"],
+        "page_total": edition["page_total"],
+        "pages_accepted": edition["pages_accepted"],
+        "timings": {
+            "created_to_first_page_seconds": _seconds(edition["created_at"], first),
+            "created_to_finished_seconds": _seconds(edition["created_at"], edition.get("finished_at")),
+            "first_page_seconds": _seconds(started, first),
+            "first_is_page_1": bool(timings.get("page_1_at")),
+            "total_seconds": total,
+        },
+        "cost_usd": edition["totals"]["cost_usd"],
+        "_words": book["word_count"],
+        "cover_svg": page1["svg"],
+        "thumbs": [{"page": n, "svg": pages[n]["svg"]} for n in (13, 17, 18) if n in pages and pages[n]["status"] == "accepted"],
+        "proof": {
+            "page": 1,
+            "panel": {"id": shown["id"], "order": shown["order"], "bbox": shown["bbox"]},
+            "texts": [
+                {"panel": t["panel"], "index": t["index"], "kind": t["kind"], "speaker": t.get("speaker"), "text": t["text"], "fidelity": t["fidelity"]}
+                for t in page1["texts"]
+                if t["panel"] == shown["id"]
+            ],
+            "speakers": {t["speaker"]: cast.get(t["speaker"], "") for t in page1["texts"] if t.get("speaker")},
+            "source_pdf_pages": sorted({s["page"] for s in sources}),
+        },
+    }
+
+
+def render_pdf_page(sample_id: str, page_num: int, scale: float = 2.0) -> bytes | None:
+    """A PNG of one page of the sample's PDF, straight from the package. Writes nothing."""
+    import fitz
+
+    info = sample_info(sample_id)
+    if info is None:
+        return None
+    with fitz.open(info.directory / info.pdf) as doc:
+        if page_num < 1 or page_num > doc.page_count:
+            return None
+        return doc[page_num - 1].get_pixmap(matrix=fitz.Matrix(scale, scale)).tobytes("png")

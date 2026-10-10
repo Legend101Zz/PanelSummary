@@ -508,3 +508,40 @@ export interface SampleInstall {
 export const listSamples = () => request<SampleInfo[]>("/samples");
 /** Install a sample (safe to repeat). Then open `/books/${book_id}`. */
 export const installSample = (id: string) => post<SampleInstall>(`/samples/${encodeURIComponent(id)}`);
+
+/**
+ * Read-only sample data for the first run and the landing (GET /samples/{id}/preview). It comes from the package:
+ * nothing is installed and nothing is written, so opening a screen never puts a book on the shelf.
+ */
+export interface SamplePreview {
+  id: string;
+  title: string;
+  author: string;
+  pdf_pages: number;
+  sections: number;
+  page_total: number;
+  pages_accepted: number;
+  timings: {
+    created_to_first_page_seconds: number | null;
+    created_to_finished_seconds: number | null;
+    /** From the start of the Generate job to the first drawn page (page 1 itself when first_is_page_1). */
+    first_page_seconds: number | null;
+    first_is_page_1: boolean;
+    total_seconds: number | null;
+  };
+  cost_usd: number;
+  estimate: { estimated_manga_pages: Range; estimated_minutes: { first_page: Range; total: Range }; estimated_cost_usd: Range };
+  /** The SVG of manga page 1. */
+  cover_svg: string;
+  thumbs: { page: number; svg: string }[];
+  proof: {
+    page: number;
+    panel: { id: string; order: number; bbox: { x: number; y: number; w: number; h: number } };
+    texts: { panel: string; index: number; kind: TextKind; speaker?: string | null; text: string; fidelity: Fidelity }[];
+    speakers: Record<string, string>;
+    source_pdf_pages: number[];
+  };
+}
+export const getSamplePreview = (id: string) => request<SamplePreview>(`/samples/${encodeURIComponent(id)}/preview`);
+/** A PDF page of the sample as a PNG, read from the package (no install). */
+export const samplePdfPageUrl = (id: string, page: number) => `${API_URL}/samples/${encodeURIComponent(id)}/pdf/page/${page}`;
