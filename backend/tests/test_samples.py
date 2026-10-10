@@ -216,6 +216,8 @@ def test_preview_writes_nothing_and_equals_the_installed_edition(tmp_path, monke
         assert proof["speakers"] == page1["speakers"]
         wanted = next(s for s in page1["sources"] if s["panel"] == panel["id"])["source"]
         assert proof["source_pdf_pages"] == sorted({x["page"] for x in wanted}) and proof["source_pdf_pages"]
+        assert preview["hero"]["page"] == 13
+        assert (await api.get(f"/editions/{ids['edition_id']}/pages/13")).json()["svg"] == preview["hero"]["svg"]
         for thumb in preview["thumbs"]:
             assert (await api.get(f"/editions/{ids['edition_id']}/pages/{thumb['page']}")).json()["svg"] == thumb["svg"]
 

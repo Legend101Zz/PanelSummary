@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, PageFrame, TextLink, UploadIcon } from "@/components/ui";
+import { Button, PageFrame, TextLink } from "@/components/ui";
 import { CoverSvg } from "@/components/CoverArt";
 import { SvgPage } from "@/components/SvgPage";
 import { OfflineGate } from "@/components/shelf/OfflineGate";
@@ -13,6 +13,15 @@ import { ANDERSEN_SAMPLE_ID } from "@/components/shelf/sampleFacts";
 import { FALLBACK_LIMITS, FIDELITY_LABEL, GITHUB_URL, plural, sampleLandingSentence, voiceLabel } from "@/lib/words";
 import styles from "./landing.module.css";
 
+/** A closed book (the frames use it on "Read a sample"; the upload arrow belongs to adding a file). Same 20 px grid and stroke as the shared icons. */
+function BookIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M4 3.5h9.5a1.5 1.5 0 0 1 1.5 1.5v11H5.5A1.5 1.5 0 0 1 4 14.5v-11zM4 14.5A1.5 1.5 0 0 1 5.5 13H15" />
+    </svg>
+  );
+}
+
 const HOW = ["You add the PDF.", "A language model reads the text and writes a plan for each page.", "PanelSummary's own code draws each page."];
 
 /** /welcome: the LOCAL landing. The first screen says what this is, holds the working drop zone, and shows the proof. */
@@ -23,6 +32,7 @@ export function LandingScreen() {
   const sample = useSample();
   const proof = sample.preview?.proof ?? null;
   const thumbs = sample.preview?.thumbs ?? [];
+  const hero = sample.preview?.hero ?? null;
   const lim = limits ?? FALLBACK_LIMITS;
 
   const panelBox = proof ? proof.panel.bbox : null;
@@ -41,58 +51,71 @@ export function LandingScreen() {
             <UploadPanel flow={flow} limits={limits} />
             <p className={styles.small}>It runs on your computer. You need your own MiniMax plan and API key.</p>
             <div>
-              <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read a sample: opening" : undefined} onClick={() => sample.open()} iconStart={<UploadIcon size={20} />}>
+              <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read a sample: opening" : undefined} onClick={() => sample.open()} iconStart={<BookIcon />}>
                 {sample.opening ? "Opening" : "Read a sample"}
               </Button>
             </div>
             {sample.error ? <p className={styles.small}>{sample.error}</p> : null}
           </div>
 
+          {hero ? (
+            <figure className={styles.hero}>
+              <div className={styles.heroPage}>
+                <SvgPage svg={hero.svg} decorative />
+              </div>
+              <figcaption className={styles.cap}>
+                Manga page {hero.page} of the sample, {sample.title}
+              </figcaption>
+            </figure>
+          ) : null}
+
           <figure className={styles.proof}>
             {proof && panelBox && sample.svg ? (
               <>
                 <figcaption className={styles.proofHead}>Each line says where it comes from</figcaption>
                 <div className={styles.proofRow}>
-                  <div className={styles.panelCol}>
-                    <div className={styles.panel} style={{ aspectRatio: `${panelBox.w + 20} / ${panelBox.h + 20}` }}>
-                      <SvgPage
-                        svg={sample.svg}
-                        decorative
-                        onReady={(root) => root.setAttribute("viewBox", `${panelBox.x - 10} ${panelBox.y - 10} ${panelBox.w + 20} ${panelBox.h + 20}`)}
-                      />
-                    </div>
-                    <p className={styles.cap}>
-                      Manga page {proof.page}, panel {proof.panel.order + 1}
-                    </p>
-                    <ul className={styles.lines}>
-                      {lines.map((t) => (
-                        <li key={`${t.panel}-${t.index}`}>
-                          <span className={styles.meta}>
-                            {voiceLabel(t.kind, t.speaker ?? undefined, proof.speakers)} · {FIDELITY_LABEL[t.fidelity]}
-                          </span>
-                          <span>{t.text}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className={styles.panel} style={{ aspectRatio: `${panelBox.w + 20} / ${panelBox.h + 20}` }}>
+                    <SvgPage
+                      svg={sample.svg}
+                      decorative
+                      onReady={(root) => root.setAttribute("viewBox", `${panelBox.x - 10} ${panelBox.y - 10} ${panelBox.w + 20} ${panelBox.h + 20}`)}
+                    />
                   </div>
-                  <div className={styles.pdfCol}>
-                    <p className={styles.from}>
-                      Comes from{" "}
-                      {proof.source_pdf_pages.map((p, i) => (
-                        <span key={p}>
-                          {i > 0 ? (i === proof.source_pdf_pages.length - 1 ? " and " : ", ") : ""}
-                          {/* the PDF viewer needs the book, so this installs the sample first (idempotent), only on this click */}
-                          <button type="button" className={`text-link ${styles.linkButton}`} disabled={sample.opening} onClick={() => sample.open({ source: p })}>
-                            PDF page {p}
-                          </button>
+                  <ul className={styles.lines}>
+                    {lines.map((t) => (
+                      <li key={`${t.panel}-${t.index}`}>
+                        <span className={styles.meta}>
+                          {voiceLabel(t.kind, t.speaker ?? undefined, proof.speakers)} · {FIDELITY_LABEL[t.fidelity]}
                         </span>
-                      ))}
-                    </p>
-                    <div className={styles.pdf}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={samplePdfPageUrl(ANDERSEN_SAMPLE_ID, proof.source_pdf_pages[0] ?? 1)} alt={`PDF page ${proof.source_pdf_pages[0] ?? 1} of ${sample.title}, the page this panel comes from`} />
-                    </div>
+                        <span>{t.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* the leader: a drawn line from the panel to the PDF page it comes from (decorative; the link says it in words) */}
+                <svg className={styles.leader} viewBox="0 0 100 48" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                  <path d="M10 0 C 10 32, 38 14, 40 48" fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                </svg>
+                <div className={styles.pdfCol}>
+                  <p className={styles.from}>
+                    Comes from{" "}
+                    {proof.source_pdf_pages.map((p, i) => (
+                      <span key={p}>
+                        {i > 0 ? (i === proof.source_pdf_pages.length - 1 ? " and " : ", ") : ""}
+                        {/* the PDF viewer needs the book, so this installs the sample first (idempotent), only on this click */}
+                        <button type="button" className={styles.linkButton} disabled={sample.opening} onClick={() => sample.open({ source: p })}>
+                          PDF page {p}
+                        </button>
+                      </span>
+                    ))}
+                  </p>
+                  <div className={styles.pdf}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={samplePdfPageUrl(ANDERSEN_SAMPLE_ID, proof.source_pdf_pages[0] ?? 1)} alt={`PDF page ${proof.source_pdf_pages[0] ?? 1} of ${sample.title}, the page this panel comes from`} />
                   </div>
+                  <p className={styles.cap}>
+                    Manga page {proof.page}, panel {proof.panel.order + 1}, and the PDF page it comes from.
+                  </p>
                 </div>
               </>
             ) : (
