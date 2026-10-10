@@ -20,7 +20,9 @@ import { plainReason, plural, providerStopLines, stageLine, voiceLabel } from "@
 import { SvgPage } from "@/components/SvgPage";
 import { Sheet } from "@/components/Paper";
 import { ArrowLeft, ChevronLeft, ChevronRight, PageIcon, PanelsIcon, SourceIcon, ZoomReset } from "@/components/Icons";
-import { PAGE, fitScale, panelCam, toPage, useCameraRig, zoomCam, type Size } from "./camera";
+import { PAGE, maxZoom, overflows, panelCam, restScale, scrollStep, toPage, useCameraRig, zoomCam, type PageView, type Size } from "./camera";
+import { PagePicker } from "./PagePicker";
+import { groupPages, pageLabel, ticksAreButtons } from "./picker";
 import { SourceDrawer } from "./SourceDrawer";
 import { transcript } from "./transcript";
 import { useStageGestures } from "./gestures";
@@ -28,8 +30,10 @@ import styles from "./reader.module.css";
 
 type Mode = "page" | "panel";
 type Zoom = { z: number; cx: number; cy: number };
-const MAX_ZOOM = 5;
-const NO_ZOOM: Zoom = { z: 1, cx: PAGE.w / 2, cy: PAGE.h / 2 };
+/** Zoom 1 is the resting view; cy 0 asks for the top of the page, which centres a page that fits. */
+const REST: Zoom = { z: 1, cx: PAGE.w / 2, cy: 0 };
+/** Width the picker button takes in the bottom bar, with its gap. */
+const PICKER_BTN_W = 140;
 
 interface Pos {
   page: number;
@@ -49,9 +53,12 @@ export function Reader({ bookId }: { bookId: string }) {
   const [pos, setPos] = useState<Pos>({ page: urlPage, panel: 0 });
   const [loaded, setLoaded] = useState<{ n: number; page: EditionPage | null; missing?: boolean; error?: string } | null>(null);
   const [mode, setMode] = useState<Mode>("page");
-  const [zoom, setZoomState] = useState<Zoom>(NO_ZOOM);
+  const [view, setView] = useState<PageView>("read");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [midW, setMidW] = useState(0);
+  const [zoom, setZoomState] = useState<Zoom>(REST);
   // gestures fire faster than React renders: the latest zoom lives in a ref too
-  const zoomRef = useRef<Zoom>(NO_ZOOM);
+  const zoomRef = useRef<Zoom>(REST);
   const setZoom = useCallback((z: Zoom) => {
     zoomRef.current = z;
     setZoomState(z);
@@ -65,6 +72,8 @@ export function Reader({ bookId }: { bookId: string }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const drawerHeadingRef = useRef<HTMLHeadingElement>(null);
   const sourceButtonRef = useRef<HTMLButtonElement>(null);
+  const pickerButtonRef = useRef<HTMLButtonElement>(null);
+  const midRef = useRef<HTMLDivElement>(null);
   const animateNext = useRef(false);
   const rig = useCameraRig();
   const reduced = useReducedMotion();
@@ -172,12 +181,20 @@ export function Reader({ bookId }: { bookId: string }) {
   useEffect(() => {
     const saved = readPreference("reader-mode");
     setMode(saved === "page" || saved === "panel" ? saved : window.innerWidth < 700 ? "panel" : "page");
+    setView(readPreference("reader-view") === "whole" ? "whole" : "read");
   }, []);
+
+  const chooseView = (v: PageView) => {
+    animateNext.current = true;
+    setView(v);
+    setZoom(REST);
+    savePreference("reader-view", v);
+  };
 
   const chooseMode = (m: Mode) => {
     animateNext.current = true;
     setMode(m);
-    setZoom(NO_ZOOM);
+    setZoom(REST);
     savePreference("reader-mode", m);
   };
 
@@ -201,11 +218,26 @@ export function Reader({ bookId }: { bookId: string }) {
     return () => ro.disconnect();
   }, [fatal]);
 
+  /** Scale at zoom 1: the page fills the width up to a readable size, or fits whole. */
+  const base = useMemo(() => (stage ? restScale(stage, pad, view) : 1), [stage, pad, view]);
+  /** The page is bigger than the stage at rest, so it scrolls up and down. */
+  const scrolls = !!stage && overflows(stage, restScale(stage, pad, "read")) && restScale(stage, pad, "read") > restScale(stage, pad, "whole") + 0.001;
+
+  useLayoutEffect(() => {
+    const el = midRef.current;
+    if (!el) return;
+    const measure = () => setMidW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [edition, chrome, fatal]);
+
   const targetCam = useMemo(() => {
     if (!stage) return null;
     if (activePanel) return panelCam(activePanel.bbox, stage, pad);
-    return zoomCam(stage, pad, zoom.z, zoom.cx, zoom.cy).cam;
-  }, [stage, activePanel, pad, zoom]);
+    return zoomCam(stage, pad, zoom.z, zoom.cx, zoom.cy, base).cam;
+  }, [stage, activePanel, pad, zoom, base]);
 
   useLayoutEffect(() => {
     if (!targetCam) return;
@@ -219,7 +251,7 @@ export function Reader({ bookId }: { bookId: string }) {
     (n: number, panel = 0) => {
       if (n < 1 || (total > 0 && n > total)) return;
       animateNext.current = false;
-      setZoom(NO_ZOOM);
+      setZoom(REST);
       setPos({ page: n, panel });
     },
     [total, setZoom],
@@ -244,42 +276,58 @@ export function Reader({ bookId }: { bookId: string }) {
   }, [mode, panels.length, panelIndex, pos.page, goToPage]);
 
   const zoomed = mode === "page" && accepted && zoom.z > 1.001;
+  const panable = mode === "page" && accepted && !!stage && overflows(stage, base * zoom.z);
 
   /** Zoom to `z` keeping the page point under stage pixel (px, py) where it is. */
   const setZoomAt = useCallback(
     (z: number, px: number, py: number, animate: boolean) => {
       if (!stage) return;
       const cur = zoomRef.current;
-      const nz = Math.min(MAX_ZOOM, Math.max(1, z));
-      const point = toPage(zoomCam(stage, pad, cur.z, cur.cx, cur.cy).cam, stage, px, py);
-      const s = fitScale(PAGE, stage, pad) * nz;
-      const clamped = zoomCam(stage, pad, nz, point.x + (stage.w / 2 - px) / s, point.y + (stage.h / 2 - py) / s);
+      const nz = Math.min(maxZoom(stage, pad, base), Math.max(1, z));
+      const point = toPage(zoomCam(stage, pad, cur.z, cur.cx, cur.cy, base).cam, stage, px, py);
+      const s = base * nz;
+      const clamped = zoomCam(stage, pad, nz, point.x + (stage.w / 2 - px) / s, point.y + (stage.h / 2 - py) / s, base);
       animateNext.current = animate;
       setZoom({ z: nz, cx: clamped.cx, cy: clamped.cy });
     },
-    [stage, pad, setZoom],
+    [stage, pad, base, setZoom],
   );
 
   const resetZoom = useCallback(() => {
     animateNext.current = true;
-    setZoom(NO_ZOOM);
+    setZoom(REST);
   }, [setZoom]);
 
   const panBy = useCallback(
     (dx: number, dy: number) => {
       if (!stage) return;
       const zm = zoomRef.current;
-      const s = fitScale(PAGE, stage, pad) * zm.z;
-      const c = zoomCam(stage, pad, zm.z, zm.cx - dx / s, zm.cy - dy / s);
+      const s = base * zm.z;
+      // start from where the camera really is: the stored centre may lie outside the clamp (zoom 1 asks for the top)
+      const here = zoomCam(stage, pad, zm.z, zm.cx, zm.cy, base);
+      const c = zoomCam(stage, pad, zm.z, here.cx - dx / s, here.cy - dy / s, base);
       animateNext.current = false;
       setZoom({ z: zm.z, cx: c.cx, cy: c.cy });
     },
-    [stage, pad, setZoom],
+    [stage, pad, base, setZoom],
+  );
+
+  /** Scroll the page by a part of the screen; true when it was already at that end. */
+  const scrollPage = useCallback(
+    (dir: 1 | -1, fraction: number) => {
+      if (!stage) return true;
+      const r = scrollStep(stage, pad, base, zoomRef.current, dir, fraction);
+      animateNext.current = true;
+      if (!r.atEdge) setZoom(r.zoom);
+      return r.atEdge;
+    },
+    [stage, pad, base, setZoom],
   );
 
   useStageGestures(stageRef, {
     mode,
     zoomed,
+    panable,
     // taps and swipes turn pages whatever the page state; zoom needs a drawn page
     enabled: !!current,
     onTapZone: (zone) => {
@@ -304,7 +352,22 @@ export function Reader({ bookId }: { bookId: string }) {
       if (e.defaultPrevented || e.altKey || e.metaKey || e.ctrlKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (pickerOpen && e.key !== "Escape") return;
       switch (e.key) {
+        case "ArrowDown":
+        case "ArrowUp":
+          if (!panable) break;
+          e.preventDefault();
+          scrollPage(e.key === "ArrowDown" ? 1 : -1, 0.25);
+          break;
+        case " ":
+          // a focused button keeps its own Space
+          if (t && /^(BUTTON|A)$/.test(t.tagName)) break;
+          e.preventDefault();
+          if (e.shiftKey) {
+            if (panable ? scrollPage(-1, 0.85) : true) prev();
+          } else if (panable ? scrollPage(1, 0.85) : true) next();
+          break;
         case "ArrowRight":
         case "PageDown":
           e.preventDefault();
@@ -334,7 +397,10 @@ export function Reader({ bookId }: { bookId: string }) {
           if (mode === "page") resetZoom();
           break;
         case "Escape":
-          if (drawerOpen) {
+          if (pickerOpen) {
+            setPickerOpen(false);
+            pickerButtonRef.current?.focus();
+          } else if (drawerOpen) {
             setDrawerOpen(false);
             sourceButtonRef.current?.focus();
           } else if (zoomed) resetZoom();
@@ -343,7 +409,7 @@ export function Reader({ bookId }: { bookId: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev, goToPage, total, mode, stage, accepted, zoomed, setZoomAt, resetZoom, drawerOpen]);
+  }, [next, prev, goToPage, total, mode, stage, accepted, zoomed, panable, scrollPage, setZoomAt, resetZoom, drawerOpen, pickerOpen]);
 
   // ---------------------------------------------------------------- drawer
 
@@ -475,11 +541,20 @@ export function Reader({ bookId }: { bookId: string }) {
             />
           )}
 
-          {zoomed ? (
-            <button type="button" className={styles.fitBtn} onClick={resetZoom}>
-              <ZoomReset />
-              Fit page
-            </button>
+          {mode === "page" && accepted && (zoomed || scrolls) ? (
+            <div className={styles.viewTools}>
+              {zoomed ? (
+                <button type="button" className={styles.fitBtn} onClick={resetZoom}>
+                  <ZoomReset />
+                  {view === "whole" ? "Fit page" : "Reset zoom"}
+                </button>
+              ) : null}
+              {scrolls ? (
+                <button type="button" className={styles.fitBtn} aria-pressed={view === "whole"} onClick={() => chooseView(view === "whole" ? "read" : "whole")}>
+                  {view === "whole" ? "Read size" : "Whole page"}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -508,25 +583,58 @@ export function Reader({ bookId }: { bookId: string }) {
             <ChevronLeft />
           </button>
           {edition && total ? (
-            <ol className={styles.ticks} aria-label="Pages">
-              {Array.from({ length: total }, (_, i) => {
-                const n = i + 1;
-                const st = edition.pages.find((p) => p.page_number === n)?.status ?? "pending";
-                const label = `Page ${n}${st === "failed" ? ", could not be drawn" : st === "accepted" ? "" : ", not drawn yet"}`;
-                return (
-                  <li key={n}>
-                    <button
-                      type="button"
-                      className={`${styles.tick} ${styles[`tick_${st}`]}`}
-                      aria-current={n === pos.page ? "page" : undefined}
-                      aria-label={label}
-                      title={label}
-                      onClick={() => goToPage(n)}
-                    />
-                  </li>
-                );
-              })}
-            </ol>
+            <div className={styles.middle} ref={midRef}>
+              {ticksAreButtons(midW - PICKER_BTN_W, total) ? (
+                <ol className={styles.ticks} aria-label="Pages">
+                  {Array.from({ length: total }, (_, i) => {
+                    const n = i + 1;
+                    const st = edition.pages.find((p) => p.page_number === n)?.status ?? "pending";
+                    const label = pageLabel(n, st);
+                    return (
+                      <li key={n}>
+                        <button
+                          type="button"
+                          className={`${styles.tick} ${styles[`tick_${st}`]}`}
+                          aria-current={n === pos.page ? "page" : undefined}
+                          aria-label={label}
+                          title={label}
+                          onClick={() => goToPage(n)}
+                        />
+                      </li>
+                    );
+                  })}
+                </ol>
+              ) : (
+                // too many pages for 44 px buttons: a picture of the book; the picker is the control
+                <div className={styles.strip} aria-hidden="true">
+                  {Array.from({ length: total }, (_, i) => {
+                    const n = i + 1;
+                    const st = edition.pages.find((p) => p.page_number === n)?.status ?? "pending";
+                    return <span key={n} className={`${styles.seg} ${styles[`tick_${st}`]}`} data-current={n === pos.page ? "true" : undefined} />;
+                  })}
+                </div>
+              )}
+              <button
+                ref={pickerButtonRef}
+                type="button"
+                className={styles.pickerBtn}
+                aria-haspopup="dialog"
+                aria-expanded={pickerOpen}
+                aria-label={`All pages. Page ${pos.page} of ${total}`}
+                onClick={() => setPickerOpen((o) => !o)}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                  <rect x="4" y="4" width="6" height="6" />
+                  <rect x="14" y="4" width="6" height="6" />
+                  <rect x="4" y="14" width="6" height="6" />
+                  <rect x="14" y="14" width="6" height="6" />
+                </svg>
+                <span className={styles.pickerWide}>All pages</span>
+                <span className={styles.pickerNarrow}>
+                  Page {pos.page} <span className={styles.counterOf}>of {total}</span>
+                </span>
+              </button>
+            </div>
           ) : (
             <span />
           )}
@@ -534,6 +642,23 @@ export function Reader({ bookId }: { bookId: string }) {
             <ChevronRight />
           </button>
         </footer>
+      ) : null}
+
+      {pickerOpen && edition && total ? (
+        <PagePicker
+          groups={groupPages(edition.pages, total, edition.book?.sections)}
+          current={pos.page}
+          total={total}
+          onSelect={(n) => {
+            setPickerOpen(false);
+            goToPage(n);
+            pickerButtonRef.current?.focus();
+          }}
+          onClose={() => {
+            setPickerOpen(false);
+            pickerButtonRef.current?.focus();
+          }}
+        />
       ) : null}
 
       <p className="sr-only" aria-live="polite">
