@@ -515,3 +515,58 @@ export function workerStatusLine(worker: { reachable: boolean; key_set: boolean;
   if (worker.replay) return { ok: true, text: REPLAY_WORKER_LINE };
   return worker.key_set ? { ok: true, text: "MiniMax key set" } : { ok: false, text: "MiniMax key not set" };
 }
+
+// ---------------------------------------------------------------------------
+// Release prep: planner reasons are model text. They can name internal claim ids (k41).
+// ---------------------------------------------------------------------------
+
+/** Claim text by id: a Map or a plain object. */
+export type ClaimTexts = ReadonlyMap<string, string> | Readonly<Record<string, string>>;
+
+const CLAIM_ID = "k\\d+";
+// "claim k1", "claims k1 and k2", "(k1)", "k1": one run of ids, with an optional leading "claim"/"claims" and optional brackets.
+const CLAIM_REF = new RegExp(`(\\(\\s*)?\\b(?:claims?\\s+)?(${CLAIM_ID}(?:\\s*(?:,|&|and)\\s*${CLAIM_ID})*)\\b(\\s*\\))?`, "gi");
+
+const ANOTHER_POINT = "another key point";
+
+function claimText(claims: ClaimTexts | undefined, id: string): string | undefined {
+  if (!claims) return undefined;
+  const key = id.toLowerCase(); // claim ids are lower case (k41); the model may write K41
+  const t = claims instanceof Map ? claims.get(key) : (claims as Record<string, string>)[key];
+  return typeof t === "string" && t.trim() ? t.trim() : undefined;
+}
+
+function shortClaim(t: string): string {
+  const s = t.replace(/\s+/g, " ");
+  return s.length > 60 ? `${s.slice(0, 59).trimEnd()}…` : s;
+}
+
+/**
+ * A planner reason for a reader: no internal claim ids and no machine prefix.
+ * With a claim map, only ids the map knows are replaced by the claim text in quotes (about 60 characters);
+ * an unknown id that is written as "claim k9" or "(k9)" becomes "another key point"; a bare unknown id stays.
+ * With no map (or an empty one), every id of the form k<digits> becomes "another key point".
+ */
+export function readableReason(reason: string, claimsById?: ClaimTexts): string {
+  const hasMap = claimsById instanceof Map ? claimsById.size > 0 : !!claimsById && Object.keys(claimsById).length > 0;
+  let out = reason.trim();
+  out = out.replace(CLAIM_REF, (whole, open: string | undefined, ids: string, close: string | undefined) => {
+    const parts = ids.match(new RegExp(CLAIM_ID, "gi")) ?? [];
+    const labelled = /^\(?\s*claims?\s/i.test(whole) || (!!open && !!close);
+    const known = parts.map((id) => claimText(claimsById, id));
+    if (hasMap && !labelled && known.every((k) => k === undefined)) return whole; // "k9 unit" with a map that does not know k9
+    const seen = new Set<string>();
+    const pieces: string[] = [];
+    parts.forEach((id, i) => {
+      const t = known[i];
+      const piece = t ? `"${shortClaim(t)}"` : ANOTHER_POINT;
+      if (!seen.has(piece)) {
+        seen.add(piece);
+        pieces.push(piece);
+      }
+    });
+    return pieces.join(" and ");
+  });
+  out = out.replace(/^[a-z][a-z_-]*:\s+/i, "");
+  return out ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+}
