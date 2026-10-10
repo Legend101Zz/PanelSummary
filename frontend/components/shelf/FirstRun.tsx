@@ -2,7 +2,7 @@
 
 import { Button, Notice, StatusLine, CheckIcon, ProblemIcon, RetryIcon } from "@/components/ui";
 import type { ServerStatus } from "@/lib/api";
-import { FIRST_RUN_LEDE, sampleEstimateSentence, sampleRealSentence } from "@/lib/words";
+import { FIRST_RUN_LEDE, sampleEstimateSentence, sampleRealSentence, workerStatusLine } from "@/lib/words";
 import { OfflineGate } from "./OfflineGate";
 import { SampleCard } from "./SampleCard";
 import { UploadPanel } from "./UploadPanel";
@@ -46,7 +46,7 @@ function StatusSummary({ status, onRefresh }: { status: ServerStatus | null | un
   const items: { ok: boolean; text: string }[] = [
     { ok: true, text: "PanelSummary server reachable" },
     { ok: status.runner.running, text: status.runner.running ? "Job runner running" : "Job runner not running" },
-    { ok: status.worker.reachable && status.worker.key_set, text: !status.worker.reachable ? "Drawing service not reachable" : status.worker.key_set ? "MiniMax key set" : "MiniMax key not set" },
+    workerStatusLine(status.worker),
   ];
   return (
     <>
@@ -58,7 +58,7 @@ function StatusSummary({ status, onRefresh }: { status: ServerStatus | null | un
           </li>
         ))}
       </ul>
-      {status.worker.reachable && !status.worker.key_set ? (
+      {status.worker.reachable && !status.worker.key_set && !status.worker.replay ? (
         <div className={styles.block}>
           <Notice tone="needs" role="alert" title="PanelSummary has no MiniMax key.">
             Put MINIMAX_API_KEY in backend/.env, or in the macOS Keychain item minimax_api_key. Then run ./stop.sh and ./start.sh.

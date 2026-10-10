@@ -501,3 +501,17 @@ export function thinkingSent(model: string, asked: string): string {
   return asked === "off" && /flash/i.test(model) ? "low" : asked;
 }
 export const AFTER_UPLOAD = "PanelSummary reads the text and finds the sections. Then the book's page opens by itself.";
+
+// ---------------------------------------------------------------------------
+// Release prep: server status when the drawing service is the replay worker.
+// ---------------------------------------------------------------------------
+
+/** Shown on the first run and in Settings when GET /status says worker.replay. No key is used. */
+export const REPLAY_WORKER_LINE = "Replay worker: no MiniMax key is used; pages come from a saved run.";
+
+/** The drawing-service line of the first-run status: ok, and the text. */
+export function workerStatusLine(worker: { reachable: boolean; key_set: boolean; replay?: boolean }): { ok: boolean; text: string } {
+  if (!worker.reachable) return { ok: false, text: "Drawing service not reachable" };
+  if (worker.replay) return { ok: true, text: REPLAY_WORKER_LINE };
+  return worker.key_set ? { ok: true, text: "MiniMax key set" } : { ok: false, text: "MiniMax key not set" };
+}

@@ -22,6 +22,7 @@ import {
   STEP_NAMES,
   thinkingSent,
   limitsSettingsLine,
+  REPLAY_WORKER_LINE,
 } from "@/lib/words";
 import styles from "./settings.module.css";
 
@@ -97,7 +98,11 @@ export function SettingsScreen() {
           <dl className={styles.facts}>
             <Fact label="PanelSummary server" ok yes="Reachable" no="" />
             <Fact label="Job runner" ok={status.runner.running} yes="Running" no="Not running" />
-            <Fact label="Drawing service key" ok={status.worker.reachable && status.worker.key_set} yes="Set" no={status.worker.reachable ? "Not set" : "Drawing service not reachable"} />
+            {status.worker.reachable && status.worker.replay ? (
+              <Fact label="Drawing service" ok yes={REPLAY_WORKER_LINE} no="" />
+            ) : (
+              <Fact label="Drawing service key" ok={status.worker.reachable && status.worker.key_set} yes="Set" no={status.worker.reachable ? "Not set" : "Drawing service not reachable"} />
+            )}
           </dl>
         ) : null}
         <p className={styles.small}>{SETTINGS_SET_NOTE}</p>

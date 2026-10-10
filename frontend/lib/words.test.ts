@@ -163,3 +163,18 @@ describe("Gate 1 fix wave copy", () => {
     expect(w.thinkingSent("MiniMax-M3", "off")).toBe("off");
   });
 });
+
+describe("replay worker status copy", () => {
+  it("says that no key is used, never 'key set', in replay mode", async () => {
+    const w = await import("./words");
+    expect(w.workerStatusLine({ reachable: true, key_set: false, replay: true })).toEqual({ ok: true, text: w.REPLAY_WORKER_LINE });
+    expect(w.REPLAY_WORKER_LINE).toBe("Replay worker: no MiniMax key is used; pages come from a saved run.");
+    expect(w.workerStatusLine({ reachable: true, key_set: true, replay: true }).text).not.toMatch(/key set/i);
+  });
+  it("keeps the real-worker lines", async () => {
+    const w = await import("./words");
+    expect(w.workerStatusLine({ reachable: true, key_set: true, replay: false })).toEqual({ ok: true, text: "MiniMax key set" });
+    expect(w.workerStatusLine({ reachable: true, key_set: false, replay: false })).toEqual({ ok: false, text: "MiniMax key not set" });
+    expect(w.workerStatusLine({ reachable: false, key_set: false, replay: false })).toEqual({ ok: false, text: "Drawing service not reachable" });
+  });
+});

@@ -165,7 +165,7 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Status: accepted. D12 and D13 hold: every call before and after the review has its receipt and the recorded policy.
 
 ### D25. Server status endpoint (2026-10-10)
-- Statement: `GET /status` returns `api`, `version`, `runner {running, last_seen}`, `worker {reachable, key_set}`, `models [{step, model, thinking}]`, `limits` and `plan_review_default`. It is read only, spends nothing and makes no model call.
+- Statement: `GET /status` returns `api`, `version`, `runner {running, last_seen}`, `worker {reachable, key_set, replay}` (`replay` is true for the replay worker; `key_set` is then false), `models [{step, model, thinking}]`, `limits` and `plan_review_default`. It is read only, spends nothing and makes no model call.
 - Statement: The runner writes one heartbeat document on every poll. The runner counts as running when the beat is younger than three polls plus 5 s. The job lease is not used: it is empty when the runner is idle. The worker is asked at its free `/readyz` with a 2 s timeout. `ready` there means that a key is set; the answer cannot say that MiniMax accepts the key. The response never holds a key, a token or a database URL. A test checks the field names and values, and a static guard checks that the route does not read those settings.
 - Why: The first-run and Settings screens must say "no key" or "the drawing service is down" before the user presses Generate.
 - Status: accepted.

@@ -34,17 +34,23 @@ async def runner_state(settings: Settings) -> dict:
 
 
 async def worker_state(settings: Settings) -> dict:
-    """Ask the worker's ``/readyz`` (free). ``ready`` there means the MiniMax key is set."""
+    """Ask the worker's ``/readyz`` (free). ``ready`` there means the MiniMax key is set.
+
+    The replay worker also answers ``ready: true``, with ``replay: true``. It uses no key, so then
+    ``replay`` is true and ``key_set`` is false: the screens never say "key set" for a replay.
+    """
     try:
         async with httpx.AsyncClient(timeout=WORKER_TIMEOUT_SECONDS) as client:
             response = await client.get(f"{settings.agent_worker_url}/readyz")
     except httpx.HTTPError:
-        return {"reachable": False, "key_set": False}
+        return {"reachable": False, "key_set": False, "replay": False}
     try:
-        ready = response.json().get("ready") is True
-    except ValueError:
-        ready = False
-    return {"reachable": True, "key_set": ready}
+        body = response.json()
+        ready = body.get("ready") is True
+        replay = ready and body.get("replay") is True
+    except (ValueError, AttributeError):
+        ready, replay = False, False
+    return {"reachable": True, "key_set": ready and not replay, "replay": replay}
 
 
 @router.get("/status")

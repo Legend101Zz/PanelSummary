@@ -466,8 +466,11 @@ export interface ServerStatus {
   api: "ok";
   version: string;
   runner: { running: boolean; last_seen: string | null };
-  /** key_set says that the drawing service has a MiniMax key. It cannot say that MiniMax accepts it. */
-  worker: { reachable: boolean; key_set: boolean };
+  /**
+   * key_set says that the drawing service has a MiniMax key. It cannot say that MiniMax accepts it.
+   * replay is true when the worker is the replay worker: it uses no key, and key_set is then false.
+   */
+  worker: { reachable: boolean; key_set: boolean; replay: boolean };
   /** The thinking level asked for each step. What was sent is on the receipts. */
   models: { step: "understanding" | "plan" | "pages"; model: string; thinking: string }[];
   limits: { max_pdf_size_mb: number; max_pdf_pages: number; max_source_words: number; page_attempts: number; page_concurrency: number };
