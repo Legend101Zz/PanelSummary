@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { columns, groupPages, moveIndex, pageLabel, ticksAreButtons } from "./picker";
+import { columns, groupPages, moveIndex, pageLabel, ticksAreButtons, wrapIndex } from "./picker";
 import { MAX_FIT_MULTIPLE, READ_SCALE, fitScale, maxZoom, overflows, PAGE, restScale, scrollStep, zoomCam } from "./camera";
 
 describe("pageLabel", () => {
@@ -100,5 +100,15 @@ describe("scrolling", () => {
     const w = zoomCam(d, 28, 1, 500, 0, restScale(d, 28, "whole"));
     expect(w.cy).toBe(750);
     expect(w.cx).toBe(500);
+  });
+});
+
+describe("wrapIndex", () => {
+  it("loops forward and back", () => {
+    expect(wrapIndex(0, 1, 2)).toBe(1);
+    expect(wrapIndex(1, 1, 2)).toBe(0);
+    expect(wrapIndex(0, -1, 2)).toBe(1);
+    expect(wrapIndex(0, 1, 1)).toBe(0);
+    expect(wrapIndex(0, -1, 0)).toBe(0);
   });
 });

@@ -78,3 +78,9 @@ export function moveIndex(index: number, key: string, cols: number, count: numbe
 export function ticksAreButtons(width: number, total: number): boolean {
   return total > 0 && width / total >= TARGET;
 }
+
+/** Tab order inside a modal: the next index in a loop of `count` stops, wrapping at both ends. */
+export function wrapIndex(index: number, dir: 1 | -1, count: number): number {
+  if (count <= 0) return 0;
+  return (((index + dir) % count) + count) % count;
+}

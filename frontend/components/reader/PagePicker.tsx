@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { columns, moveIndex, pageLabel, type PickerGroup } from "./picker";
+import { columns, moveIndex, pageLabel, wrapIndex, type PickerGroup } from "./picker";
 import styles from "./picker.module.css";
 
 /**
@@ -24,6 +24,7 @@ export function PagePicker({
   onClose: () => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const [active, setActive] = useState(Math.min(Math.max(current, 1), Math.max(total, 1)) - 1);
   const [cols, setCols] = useState(6);
@@ -82,6 +83,16 @@ export function PagePicker({
       onClose();
       return;
     }
+    if (e.key === "Tab") {
+      // modal: Tab and Shift+Tab loop inside the panel
+      const stops = Array.from(panelRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? []).filter((b) => b.tabIndex >= 0);
+      if (!stops.length) return;
+      e.preventDefault();
+      const at = stops.indexOf(document.activeElement as HTMLButtonElement);
+      const to = at < 0 ? (e.shiftKey ? stops.length - 1 : 0) : wrapIndex(at, e.shiftKey ? -1 : 1, stops.length);
+      stops[to].focus();
+      return;
+    }
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     let next: number | null = null;
     if (e.key === "ArrowDown") next = vertical(active, 1);
@@ -96,9 +107,9 @@ export function PagePicker({
   return (
     <>
       <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
-      <div className={styles.panel} role="dialog" aria-label="All pages" onKeyDown={onKeyDown}>
+      <div className={styles.panel} ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="page-picker-title" onKeyDown={onKeyDown}>
         <div className={styles.head}>
-          <h2 className={styles.title}>
+          <h2 className={styles.title} id="page-picker-title">
             All pages <span className={styles.count}>· {total}</span>
           </h2>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close all pages">
