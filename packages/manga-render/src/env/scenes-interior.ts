@@ -4,7 +4,7 @@ import { INK, PAPER, toneFill } from "../style.js";
 import { n, polyPath, smoothPath } from "../svg.js";
 import { between, seeded } from "../prng.js";
 import { project, projectPoly, scaleAt, toCam, type V3 } from "./camera.js";
-import { LAYER, add, pathEl, place, polyD, segD, wAt, type Stage } from "./stage.js";
+import { LAYER, add, pathEl, place, placeVisible, polyD, segD, wAt, type Stage } from "./stage.js";
 import { boxSvg, columnSvg, drawSteps, frame } from "./architecture.js";
 import { drawGround } from "./ground.js";
 import {
@@ -154,6 +154,92 @@ export function forge(st: Stage): Sites {
     ],
     ["fireplace"],
   );
+}
+
+/**
+ * A foundry: the forge room, set up for casting. A crucible on a stand tips a
+ * stream of metal into a row of moulds on the floor; a hoist chain hangs from
+ * the beam. (The leaden heart of the Happy Prince is cast in a room like this.)
+ */
+export function foundry(st: Stage): Sites {
+  const sites = forge(st);
+  const room = sites.room;
+  if (!room) return sites;
+  const zc = room.zb - 1.3;
+  const x = room.x0 + 4.7;
+  const pl = place(st, { x, y: 0, z: zc });
+  if (pl && placeVisible(st, pl, 2.4, 2.4)) {
+    const lw = wAt(st, pl.z);
+    const A = (px: number, py: number) => pl.at(px, py);
+    const ink = st.pal.ink;
+    const dark = toneFill("black", st.p);
+    let s = "";
+    // the crucible is tipped to pour to the left: its lip (in metres from the stand) sets where the moulds lie
+    const ang = (-52 * Math.PI) / 180;
+    const cx = 0;
+    const cy = 1.62;
+    const Rm = (px: number, py: number): { x: number; y: number } => ({ x: cx + px * Math.cos(ang) - py * Math.sin(ang), y: cy + px * Math.sin(ang) + py * Math.cos(ang) });
+    const lipM = Rm(-0.34, 0.46);
+    const poolX = lipM.x - 0.1;
+    // the row of ingot moulds on the floor under the lip: dark trays with bright metal in them
+    for (let i = 0; i < 3; i += 1) {
+      const x0 = poolX - 0.25 + (i - 1) * 0.62;
+      s += pathEl(polyD2([A(x0, 0), A(x0 + 0.5, 0), A(x0 + 0.46, 0.16), A(x0 + 0.04, 0.16)]), { fill: toneFill("dark", st.p), stroke: ink, w: lw * 0.9 });
+      s += pathEl(polyD2([A(x0 + 0.08, 0.15), A(x0 + 0.42, 0.15), A(x0 + 0.4, 0.2), A(x0 + 0.1, 0.2)]), { fill: i < 2 ? PAPER : toneFill("mid", st.p), stroke: ink, w: lw * 0.5 });
+    }
+    // the stand: a three-legged ring on legs, with the crucible tipped in it
+    s += pathEl(`M${n(A(-0.55, 0).x)} ${n(A(-0.55, 0).y)}L${n(A(-0.1, 1.3).x)} ${n(A(-0.1, 1.3).y)}M${n(A(0.55, 0).x)} ${n(A(0.55, 0).y)}L${n(A(0.1, 1.3).x)} ${n(A(0.1, 1.3).y)}M${n(A(0, 0).x)} ${n(A(0, 0).y)}L${n(A(0, 1.3).x)} ${n(A(0, 1.3).y)}`, { stroke: ink, w: lw * 1.5 });
+    // the crucible: a bucket tilted to pour to the left (rotated about its centre)
+    const R = (px: number, py: number): Point => {
+      const m = Rm(px, py);
+      return A(m.x, m.y);
+    };
+    s += pathEl(polyD2([R(-0.34, 0.46), R(0.34, 0.46), R(0.22, -0.46), R(-0.22, -0.46)]), { fill: dark, stroke: ink, w: lw * 1.3 });
+    s += pathEl(polyD2([R(-0.36, 0.46), R(0.36, 0.46), R(0.35, 0.36), R(-0.35, 0.36)]), { fill: toneFill("mid", st.p), stroke: ink, w: lw * 0.8 });
+    s += pathEl(polyD2([R(-0.3, 0.46), R(0.3, 0.46), R(0.3, 0.52), R(-0.3, 0.52)]), { fill: PAPER, stroke: ink, w: lw * 0.6 });
+    // the stream of bright metal from the lip to the middle mould
+    const lip = R(-0.36, 0.46);
+    const pool = A(poolX, 0.2);
+    const mid = { x: lip.x - 0.02 * pl.k, y: (lip.y + pool.y) / 2 };
+    const stream = `M${n(lip.x)} ${n(lip.y)}Q${n(mid.x)} ${n(mid.y)} ${n(pool.x)} ${n(pool.y)}`;
+    s += pathEl(stream, { stroke: ink, w: Math.max(3, 0.16 * pl.k) }) + pathEl(stream, { stroke: PAPER, w: Math.max(1.6, 0.1 * pl.k) });
+    // heat marks around the crucible and sparks at the mould
+    if (st.lod >= 1) {
+      let sp = "";
+      for (let i = 0; i < 7; i += 1) {
+        const a = -Math.PI * (0.1 + (0.8 * i) / 6);
+        sp += `M${n(pool.x + Math.cos(a) * 0.1 * pl.k)} ${n(pool.y + Math.sin(a) * 0.1 * pl.k)}L${n(pool.x + Math.cos(a) * 0.3 * pl.k)} ${n(pool.y + Math.sin(a) * 0.3 * pl.k)}`;
+      }
+      for (let i = 0; i < 5; i += 1) {
+        const a = -Math.PI * (0.25 + (0.6 * i) / 4);
+        const c0 = A(0.1, 1.95);
+        sp += `M${n(c0.x + Math.cos(a) * 0.55 * pl.k)} ${n(c0.y + Math.sin(a) * 0.55 * pl.k)}L${n(c0.x + Math.cos(a) * 0.8 * pl.k)} ${n(c0.y + Math.sin(a) * 0.8 * pl.k)}`;
+      }
+      s += pathEl(sp, { stroke: ink, w: lw * 0.8 });
+    }
+    add(st, LAYER.stand, pl.z, s);
+  }
+  // a hoist chain hangs from the beam above the casting floor
+  if (st.lod >= 1) {
+    const top = project(st.cam, { x: x + 1.5, y: room.h, z: zc });
+    const low = project(st.cam, { x: x + 1.5, y: 2.2, z: zc });
+    if (top && low) {
+      let links = "";
+      const steps = 8;
+      for (let i = 0; i < steps; i += 1) {
+        const y0 = top.y + ((low.y - top.y) * i) / steps;
+        const y1 = top.y + ((low.y - top.y) * (i + 0.7)) / steps;
+        links += `M${n(top.x)} ${n(y0)}L${n(top.x + (i % 2 ? 1 : -1) * 0.8)} ${n((y0 + y1) / 2)}L${n(top.x)} ${n(y1)}`;
+      }
+      add(st, LAYER.stand, toCam(st.cam, { x: x + 1.5, y: 2.5, z: zc }).z, pathEl(links, { stroke: st.pal.ink, w: st.lw * 0.9 }));
+    }
+  }
+  return sites;
+}
+
+/** A closed polygon path from page-space points. */
+function polyD2(pts: Point[]): string {
+  return polyPath(pts);
 }
 
 export function roomRich(st: Stage): Sites {

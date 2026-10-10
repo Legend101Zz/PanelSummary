@@ -1,6 +1,5 @@
 /**
- * A location the writer left as a stand-in. The vocabulary had no moor, ditch
- * or foundry, so run 8's writer stood them in "abstract" or "country_road" and
+ * A location the writer left as a stand-in. The vocabulary had no moor or ditch (v0.2 added foundry, dust heap and Paradise), so run 8's writer stood them in "abstract" or "country_road" and
  * the panels drew blank paper or a dry road. A location that sits on one of
  * those stand-ins but NAMES a moor, a ditch or a forge in its name or
  * description is drawn as that place. A location with a real environment is
@@ -14,10 +13,12 @@ const STAND_INS: ReadonlySet<Environment> = new Set(["abstract", "void", "countr
 const NAMED: readonly [RegExp, Environment][] = [
   [/\b(?:moors?|moorland|heath|heathland)\b/i, "moor"],
   [/\bditch(?:es)?\b/i, "ditch"],
-  [/\b(?:foundry|forge|smithy|furnace room)\b/i, "forge"],
-  // heaven and the dust heap had no backdrop of their own: clouds, and a low waste ground
-  [/\b(?:heaven|paradise|celestial|the clouds)\b/i, "sky"],
-  [/\b(?:dust[- ]?heap|rubbish (?:heap|tip)|refuse heap|dung ?heap|midden)\b/i, "ditch"],
+  // v0.2 (#41): a foundry, the dust heap and Paradise have environments of their own
+  [/\b(?:foundry|foundries|furnace room)\b/i, "foundry"],
+  [/\b(?:forge|smithy)\b/i, "forge"],
+  [/\b(?:dust[- ]?heap|dust[- ]?hill|rubbish (?:heap|tip)|refuse heap|dung ?heap|midden)\b/i, "dustheap"],
+  [/\b(?:heaven|paradise|celestial)\b/i, "paradise"],
+  [/\bthe clouds\b/i, "sky"],
 ];
 
 export function resolveEnvironment(location: Pick<LocationSpec, "environment" | "name" | "description"> | undefined): Environment | undefined {
