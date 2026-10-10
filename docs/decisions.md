@@ -128,11 +128,13 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Statement: Upload accepts any parsed PDF, and the reader shows the source. `POST /books/{id}/editions` refuses a book over a limit with HTTP 422 and a plain reason. It creates no edition and no job, and it spends nothing.
 - Statement: `GET /books/{id}/preflight` shows the size, the limits, and low and high estimates of pages, cost and time. It answers 409 for a book that is not parsed.
 - Statement: Chapter-scoped generation, resumable project memory and chunked continuation are not in v0.1. They move to v0.2.
+- Amended 2026-10-10 (v0.2, issue #40): the limits apply to the chosen scope, not to the whole book. The values do not change: 75 PDF pages and 17,500 words. `POST /books/{id}/editions` and `GET /books/{id}/preflight` accept a scope (sections, or a PDF page range). A 150-page book can draw one section inside the limits. With no scope the whole book is checked, as in v0.1. A scope that is empty, unknown or out of range gives 422 with plain reasons. A scope over a limit gives 422 with the limit reasons. The edition stores `scope` (null = the whole book). Project memory and "Continue with the next section" are not part of this amendment.
 - Why: The whole book goes into one understanding call. That call wrote 36,000 to 78,700 output tokens and took 259 to 1,166 s on the measured runs, at 31 to 167 output tokens/s. The goal times out at 25 minutes. The largest book that finished end to end has 68 PDF pages and 16,159 words, so each limit is that figure plus 8 % (words) or 10 % (pages). A scope cannot be chosen safely without a table of contents the user can pick from, a persisted understanding per scope and a rule for characters that cross scopes. None of these exists, and a wrong cut would break the source grounding. See `docs/launch/T3-scope.md`.
 - Status: accepted. The limits are not a promise that every book under them finishes. A slow provider hour can still time out the understanding, and the edition then fails with a visible reason.
 
 ### D20. Honest latency (2026-10-09)
 - Statement: The edition stores `timings.generate_started_at`, `timings.drawing_started_at` and `timings.first_page_at` in the database. The first value stays after a resume.
+- Amended 2026-10-10 (v0.2): the edition also stores `timings.page_1_at` (page 1 accepted; the first value stays) and `active_seconds` (the sum of the run times of its jobs, so the pause before a resume does not count). `first_page_at` stays the first accepted page of any number.
 - Statement: Pages start in reading order. No scheduling change is made in v0.1.
 - Why: The measured critical path is understanding, then plan, then the first page. The plan waits for the whole understanding, and a page waits for the plan. No step can start earlier without a quality or honesty cost. The long tail of a run is a page that fails twice, not an idle gap. See `docs/launch/T3-scope.md`.
 - Status: accepted. Estimates are ranges fitted to measured runs, and the basis text says so.
@@ -153,6 +155,20 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Statement: The page goal adds a generic cast member (`id` `m_<word>`, `"minor": true`, a plain human look) for a speaker the page's source text names, who is a person, and whom no cast member of the section answers to. It uses the T1 speaker rules (a person hidden in a crowd, "one of the workmen", a singular attribution with no cast member). At most 3 per page. The figure is part of the page's cast for validation and rendering and is listed in the prompt. It is not written into the understanding.
 - Why: The understanding adds one-line characters only when the model remembers (T1 allows 3 errors per book), and a page could not draw anyone outside the cast. Animals, objects and groups are never guessed.
 - Status: accepted. The reader shows a speaker without a name in the understanding as "Someone". Naming minor speakers in the source drawer needs a backend change that is not in this track.
+
+### D24. Plan review before drawing (2026-10-10, issue #49)
+- Statement: An edition can stop after the plan and wait. `POST /books/{id}/editions` takes `review_plan` (true or false). When it is missing, the setting `PLAN_REVIEW_DEFAULT` decides (default false, so the v0.1 flow and `journey.mjs` do not change). The choice is recorded in `policy.review_plan`.
+- Statement: When the edition waits, the understanding and the plan are stored, the page rows and beats exist, and the status is `awaiting_plan_review`. The job ends `succeeded`. No page call is made. The status is not an active status for the runner, but `POST /books/{id}/editions` returns the waiting edition (`already_running`) and does not start a second one.
+- Statement: `POST /editions/{id}/approve-plan` records `policy.plan_approved` and queues a resume job. It reuses the understanding and the plan, so only the pages are paid for. It gives 409 when the edition does not wait. `POST /editions/{id}/cancel` on a waiting edition sets `cancelled`. `resume` and page redraw give 409 while the plan waits.
+- Statement: While it waits, the edition view adds `draw_estimate_usd {low, high}` (the page term of the cost model, `COST_PER_PAGE` with the low and high factors, times `page_total`) and `plan_omitted [{claim, reason}]`. `book.claims` gives the claim text. The money spent so far is `totals.cost_usd`.
+- Why: The plan is the cheapest point to catch a wrong cut. The owner decided to build it as a setting that is off by default.
+- Status: accepted. D12 and D13 hold: every call before and after the review has its receipt and the recorded policy.
+
+### D25. Server status endpoint (2026-10-10)
+- Statement: `GET /status` returns `api`, `version`, `runner {running, last_seen}`, `worker {reachable, key_set}`, `models [{step, model, thinking}]`, `limits` and `plan_review_default`. It is read only, spends nothing and makes no model call.
+- Statement: The runner writes one heartbeat document on every poll. The runner counts as running when the beat is younger than three polls plus 5 s. The job lease is not used: it is empty when the runner is idle. The worker is asked at its free `/readyz` with a 2 s timeout. `ready` there means that a key is set; the answer cannot say that MiniMax accepts the key. The response never holds a key, a token or a database URL. A test checks the field names and values, and a static guard checks that the route does not read those settings.
+- Why: The first-run and Settings screens must say "no key" or "the drawing service is down" before the user presses Generate.
+- Status: accepted.
 
 ## Superseded (history only)
 

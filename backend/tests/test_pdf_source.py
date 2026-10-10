@@ -133,3 +133,13 @@ def test_ligatures_become_plain_letters():
     # Typeset PDFs extract "off" as "o\ufb00"; the lettering fonts have no glyph for it
     # (acceptance run 4 drew a missing-glyph box inside a quote).
     assert _clean("take it o\ufb00 \ufb03ce \ufb04 \ufb01ne \ufb02y") == "take it off ffice ffl fine fly"
+
+
+def test_page_words_sum_to_the_word_count(parsed):
+    from app.scope import page_words
+
+    words = page_words(parsed.to_dict()["units"], parsed.page_count)
+    assert len(words) == parsed.page_count  # index = PDF page - 1
+    assert sum(words) == parsed.word_count
+    assert words[0] == 0  # the title page has no body text
+    assert all(w > 0 for w in words[1:])

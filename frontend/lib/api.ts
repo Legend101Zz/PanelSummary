@@ -16,6 +16,8 @@ export type EditionStatus =
   | "queued"
   | "understanding"
   | "planning"
+  /** The plan is ready and waits for approval (D24). Not an active status: nothing runs. */
+  | "awaiting_plan_review"
   | "drawing"
   | "complete"
   | "completed_with_failures"
@@ -30,6 +32,7 @@ export interface EditionSummary {
   status: EditionStatus;
   page_total: number;
   pages_accepted: number;
+  pages_failed?: number;
   /** Set when the model provider refused the work (D11). Only the code is on the shelf. */
   provider_stop?: { code: string } | null;
 }
@@ -62,6 +65,8 @@ export interface BookSection {
 
 export interface BookDetail extends Book {
   sections: BookSection[];
+  /** Words per PDF page, index = PDF page - 1. A page with no body text is 0. Empty before the PDF is parsed. */
+  page_words?: number[];
 }
 
 export interface JobEvent {
@@ -79,6 +84,8 @@ export interface Job {
   total: number;
   message: string;
   error: string | null;
+  /** True after Stop was pressed and before the job ended; survives a page reload. */
+  cancel_requested?: boolean;
   events: JobEvent[];
   created_at: string;
   finished_at: string | null;
@@ -119,6 +126,19 @@ export interface ProviderStop {
   at?: string;
 }
 
+/** What part of the book an edition draws. null = the whole book. */
+export type EditionScope = { section_ids: string[] } | { pdf_page_from: number; pdf_page_to: number };
+
+/** Milestones as ISO strings. A key is absent until it happened. Older editions have no page_1_at: use first_page_at. */
+export interface Timings {
+  generate_started_at?: string;
+  drawing_started_at?: string;
+  /** The first accepted page of ANY number (pages are drawn in parallel). */
+  first_page_at?: string;
+  /** Page 1 accepted. */
+  page_1_at?: string;
+}
+
 export interface Edition {
   id: string;
   book_id: string;
@@ -135,6 +155,13 @@ export interface Edition {
   job_id: string | null;
   created_at: string;
   finished_at: string | null;
+  timings?: Timings;
+  /** null or absent = the whole book. */
+  scope?: EditionScope | null;
+  /** Seconds the jobs of this edition ran (a pause before a resume does not count). null when not recorded. */
+  active_seconds?: number | null;
+  /** Cost range to draw the planned pages. Set only while status is awaiting_plan_review. */
+  draw_estimate_usd?: Range | null;
 }
 
 export interface EditionPageSummary {
@@ -154,6 +181,8 @@ export interface EditionBook {
   kind: string | null;
   sections: { id: string; title: string }[];
   cast: { id: string; name: string; role: string }[];
+  /** Claim text for the coverage lists and the plan review. Present when coverage is set or the plan waits. */
+  claims?: { id: string; text: string; importance: string | null; section_id: string | null }[];
 }
 
 export interface EditionDetail extends Edition {
@@ -161,6 +190,8 @@ export interface EditionDetail extends Edition {
   pages: EditionPageSummary[];
   book?: EditionBook;
   has_plan: boolean;
+  /** What the plan leaves out, while status is awaiting_plan_review (else null). Claim ids; text is in book.claims. */
+  plan_omitted?: { claim: string; reason: string }[] | null;
 }
 
 export interface Point {
@@ -299,7 +330,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-const post = <T>(path: string) => request<T>(path, { method: "POST" });
+const post = <T>(path: string, body?: unknown) =>
+  request<T>(path, {
+    method: "POST",
+    ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
+  });
 
 // ---------------------------------------------------------------------------
 // Books
@@ -348,11 +383,13 @@ export interface Range {
 }
 export interface Preflight {
   book_id: string;
+  /** null = the whole book. */
+  scope?: EditionScope | null;
   pdf_pages: number;
   source_words: number;
   sections: number;
   estimated_manga_pages: Range;
-  estimated_cost_usd: Range & { basis?: string };
+  estimated_cost_usd: Range & { basis?: string; basis_short?: string };
   estimated_minutes: { first_page: Range; total: Range };
   limits: { max_pdf_pages: number; max_source_words: number };
   within_limits: boolean;
@@ -360,9 +397,14 @@ export interface Preflight {
 }
 
 /** Null when the backend has no such endpoint (404), or it fails: the panel is then hidden and Generate still works. */
-export async function getPreflight(bookId: string): Promise<Preflight | null> {
+export async function getPreflight(bookId: string, scope?: EditionScope | null): Promise<Preflight | null> {
   try {
-    const p = await request<Preflight>(`/books/${bookId}/preflight`);
+    const query = !scope
+      ? ""
+      : "section_ids" in scope
+        ? `?section_ids=${scope.section_ids.map(encodeURIComponent).join(",")}`
+        : `?page_from=${scope.pdf_page_from}&page_to=${scope.pdf_page_to}`;
+    const p = await request<Preflight>(`/books/${bookId}/preflight${query}`);
     if (!p || typeof p !== "object" || !p.estimated_manga_pages || !p.estimated_minutes || !p.estimated_cost_usd) return null;
     return p;
   } catch {
@@ -370,11 +412,25 @@ export async function getPreflight(bookId: string): Promise<Preflight | null> {
   }
 }
 
-export const generateEdition = (bookId: string) => post<GenerateResult>(`/books/${bookId}/editions`);
+/** Optional body of Generate. No body = the whole book, no plan review. */
+export interface GenerateBody {
+  section_ids?: string[];
+  pdf_page_from?: number;
+  pdf_page_to?: number;
+  review_plan?: boolean;
+}
+
+/** A bad scope or a scope over the limit throws ApiError(422) with the reasons as its message. */
+export const generateEdition = (bookId: string, body?: GenerateBody) => post<GenerateResult>(`/books/${bookId}/editions`, body);
 export const listEditions = (bookId: string) => request<Edition[]>(`/books/${bookId}/editions`);
 export const getEdition = (editionId: string) => request<EditionDetail>(`/editions/${editionId}`);
 export const getEditionPage = (editionId: string, page: number) => request<EditionPage>(`/editions/${editionId}/pages/${page}`);
 export const cancelEdition = (editionId: string) => post<Edition>(`/editions/${editionId}/cancel`);
+/** Start drawing after a plan review. 409 when the edition is not waiting. */
+export const approvePlan = (editionId: string) => post<{ edition: Edition; job: Job | null }>(`/editions/${editionId}/approve-plan`);
+/** Draw one page again (the other pages and the understanding are reused). */
+export const redrawPage = (editionId: string, page: number) =>
+  post<{ edition: Edition; job: Job | null }>(`/editions/${editionId}/pages/${page}/redraw`);
 export const resumeEdition = (editionId: string) => post<{ edition: Edition; job: Job | null }>(`/editions/${editionId}/resume`);
 
 // ---------------------------------------------------------------------------
@@ -399,3 +455,28 @@ export function loadPage(editionId: string, page: number, { fresh = false } = {}
 
 export const ACTIVE_EDITION: readonly EditionStatus[] = ["queued", "understanding", "planning", "drawing"];
 export const isActive = (status: EditionStatus | undefined | null) => !!status && ACTIVE_EDITION.includes(status);
+
+// ---------------------------------------------------------------------------
+// Server status (GET /status). Never holds a key, a token or a database URL.
+// ---------------------------------------------------------------------------
+
+export interface ServerStatus {
+  api: "ok";
+  version: string;
+  runner: { running: boolean; last_seen: string | null };
+  /** key_set says that the drawing service has a MiniMax key. It cannot say that MiniMax accepts it. */
+  worker: { reachable: boolean; key_set: boolean };
+  /** The thinking level asked for each step. What was sent is on the receipts. */
+  models: { step: "understanding" | "plan" | "pages"; model: string; thinking: string }[];
+  limits: { max_pdf_size_mb: number; max_pdf_pages: number; max_source_words: number; page_attempts: number; page_concurrency: number };
+  plan_review_default: boolean;
+}
+
+/** Null when the server cannot be reached or has no /status (an older backend). */
+export async function getStatus(): Promise<ServerStatus | null> {
+  try {
+    return await request<ServerStatus>("/status");
+  } catch {
+    return null;
+  }
+}

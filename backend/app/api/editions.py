@@ -2,23 +2,45 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict
 
 from app.api.library import _check_id, get_book_or_404
-from app.documents import Edition, EditionArtifact, EditionPage, GenerationJob, utcnow
-from app.preflight import check_limits
+from app.documents import BookSource, Edition, EditionArtifact, EditionPage, GenerationJob, utcnow
+from app.preflight import check_limits, draw_cost_range
+from app.scope import ScopeError, resolve_scope
 from app.settings import get_settings
 from app import worker_client
 
 router = APIRouter()
 
 ACTIVE = ("queued", "understanding", "planning", "drawing")
+# The plan is ready and the job has ended. The runner is idle, so this is not an ACTIVE status,
+# but no second edition may start for the book while one waits (D24).
+WAITING = ("awaiting_plan_review",)
 
 
-def policy_snapshot() -> dict:
-    """The generation policy recorded on a new edition: per-goal model, thinking and retry thinking (D13)."""
+class GenerateBody(BaseModel):
+    """Optional body of ``POST /books/{id}/editions``. No body = the whole book, no review (v0.1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    section_ids: Optional[list[str]] = None
+    pdf_page_from: Optional[int] = None
+    pdf_page_to: Optional[int] = None
+    review_plan: Optional[bool] = None
+
+
+def policy_snapshot(review_plan: bool = False) -> dict:
+    """The generation policy recorded on a new edition: per-goal model, thinking and retry thinking (D13).
+
+    ``review_plan`` records whether the edition stops after the plan to wait for approval (D24).
+    """
     return {
         **get_settings().policy_fields(),
+        "review_plan": review_plan,
         "harness": "apps/agent-worker (Pi sealed session) -> MiniMax",
         "image_models": "none",
     }
@@ -46,6 +68,7 @@ async def job_view(job_id: str | None) -> dict | None:
         "total": job.total,
         "message": job.message,
         "error": job.error,
+        "cancel_requested": job.cancel_requested,
         "events": [{"at": e.at.isoformat(), "stage": e.stage, "message": e.message} for e in job.events[-30:]],
         "created_at": job.created_at.isoformat(),
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
@@ -65,6 +88,7 @@ def edition_view(edition: Edition) -> dict:
         "pages_accepted": edition.pages_accepted,
         "pages_failed": edition.pages_failed,
         "coverage": edition.coverage,
+        "scope": edition.scope,
         "totals": edition.totals.model_dump(),
         "policy": edition.policy,
         "error": edition.error,
@@ -74,24 +98,54 @@ def edition_view(edition: Edition) -> dict:
         "finished_at": edition.finished_at.isoformat() if edition.finished_at else None,
         # Milestones from the job runner (ISO strings; a key is absent until it happened).
         "timings": {key: _iso(value) for key, value in (edition.timings or {}).items()},
+        # Sum of the run times of the jobs; null when not recorded (v0.1 editions).
+        "active_seconds": round(edition.active_seconds, 1) if edition.active_seconds else None,
+        # Cost range to draw the planned pages; only while the plan waits for review.
+        "draw_estimate_usd": draw_cost_range(edition.page_total) if edition.status in WAITING else None,
     }
 
 
 @router.post("/books/{book_id}/editions")
-async def generate(book_id: str) -> dict:
-    """The Generate button: start a harness-driven MiniMax adaptation."""
+async def generate(book_id: str, body: Optional[GenerateBody] = None) -> dict:
+    """The Generate button: start a harness-driven MiniMax adaptation.
+
+    No body: the whole book, drawn without a plan review (the v0.1 behaviour). With a body the
+    edition draws a scope (D19, amended) and may stop after the plan (D24).
+    """
     book = await get_book_or_404(book_id)
     if book.status != "parsed":
         raise HTTPException(status_code=409, detail="The book is not parsed yet")
-    running = await Edition.find(Edition.book_id == book_id, {"status": {"$in": list(ACTIVE)}}).first_or_none()
+    running = await Edition.find(Edition.book_id == book_id, {"status": {"$in": [*ACTIVE, *WAITING]}}).first_or_none()
     if running is not None:
         return {"edition": edition_view(running), "job": await job_view(running.job_id), "already_running": True}
-    # v0.1 size limits (D19): refuse before any edition, job or spend exists.
     settings = get_settings()
-    reasons = check_limits(book.page_count, book.word_count, settings.max_pdf_pages, settings.max_source_words)
+    body = body or GenerateBody()
+    scope: Optional[dict] = None
+    if body.section_ids is None and body.pdf_page_from is None and body.pdf_page_to is None:
+        # v0.1 size limits (D19): refuse before any edition, job or spend exists.
+        reasons = check_limits(book.page_count, book.word_count, settings.max_pdf_pages, settings.max_source_words)
+    else:
+        source = await BookSource.find_one(BookSource.book_id == book_id)
+        if source is None:
+            raise HTTPException(status_code=409, detail="The book has no parsed text")
+        try:
+            resolved = resolve_scope(
+                source.sections,
+                source.units,
+                book.page_count,
+                section_ids=body.section_ids,
+                page_from=body.pdf_page_from,
+                page_to=body.pdf_page_to,
+            )
+        except ScopeError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        scope = resolved.scope
+        # The limits apply to the scope, not to the book.
+        reasons = check_limits(resolved.pdf_pages, resolved.words, settings.max_pdf_pages, settings.max_source_words, scoped=True)
     if reasons:
         raise HTTPException(status_code=422, detail=" ".join(reasons))
-    edition = Edition(book_id=book_id, policy=policy_snapshot())
+    review = settings.plan_review_default if body.review_plan is None else body.review_plan
+    edition = Edition(book_id=book_id, policy=policy_snapshot(review), scope=scope)
     await edition.insert()
     job = GenerationJob(kind="generate", book_id=book_id, edition_id=str(edition.id), message="Waiting for the generator")
     await job.insert()
@@ -126,6 +180,7 @@ async def get_edition(edition_id: str) -> dict:
     ]
     plan = await EditionArtifact.find_one(EditionArtifact.edition_id == edition_id, EditionArtifact.kind == "plan")
     understanding = await EditionArtifact.find_one(EditionArtifact.edition_id == edition_id, EditionArtifact.kind == "understanding")
+    waiting = edition.status in WAITING
     if understanding is not None:
         u = understanding.content
         view["book"] = {
@@ -136,7 +191,20 @@ async def get_edition(edition_id: str) -> dict:
             "sections": [{"id": s["id"], "title": s["title"]} for s in u.get("sections", [])],
             "cast": [{"id": c["id"], "name": c["name"], "role": c.get("role", "")} for c in u.get("cast", [])],
         }
+        # The claim text behind the coverage lists and the plan review. A long book has many claims,
+        # so they are sent only when there is something to show them for.
+        if edition.coverage or waiting:
+            view["book"]["claims"] = [
+                {"id": c["id"], "text": c.get("text", ""), "importance": c.get("importance"), "section_id": c.get("section_id")}
+                for c in u.get("claims", [])
+            ]
     view["has_plan"] = plan is not None
+    # What the plan leaves out, for the review screen: only while the plan waits.
+    view["plan_omitted"] = (
+        [{"claim": o.get("claim"), "reason": o.get("reason", "")} for o in (plan.content.get("omitted") or [])]
+        if waiting and plan is not None
+        else None
+    )
     return view
 
 
@@ -177,6 +245,15 @@ async def get_page(edition_id: str, page_number: int) -> dict:
 @router.post("/editions/{edition_id}/cancel")
 async def cancel(edition_id: str) -> dict:
     edition = await get_edition_or_404(edition_id)
+    if edition.status in WAITING:
+        # The job has ended; there is nothing to signal. Stop the edition itself (D24).
+        result = await Edition.get_motor_collection().update_one(
+            {"_id": edition.id, "status": {"$in": list(WAITING)}}, {"$set": {"status": "cancelled", "updated_at": utcnow()}}
+        )
+        if result.modified_count == 0:
+            # An approve won the race: the drawing job is being made. Do not report a stop that did not happen.
+            raise HTTPException(status_code=409, detail="The plan was approved at the same moment. Stop the edition again.")
+        return edition_view(await get_edition_or_404(edition_id))
     if edition.job_id:
         job = await GenerationJob.get(edition.job_id)
         if job is not None and job.status in ("queued", "running"):
@@ -190,13 +267,9 @@ async def cancel(edition_id: str) -> dict:
     return edition_view(edition)
 
 
-@router.post("/editions/{edition_id}/resume")
-async def resume(edition_id: str) -> dict:
-    """Continue an edition: reuses every accepted artifact and page."""
-    edition = await get_edition_or_404(edition_id)
-    if edition.status in ACTIVE:
-        return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
-    job = GenerationJob(kind="generate", book_id=edition.book_id, edition_id=edition_id, message="Resuming")
+async def _queue_job(edition: Edition, message: str) -> dict:
+    """Queue a new generate job for an edition. The job reuses every accepted artifact and page."""
+    job = GenerationJob(kind="generate", book_id=edition.book_id, edition_id=str(edition.id), message=message)
     await job.insert()
     edition.job_id = str(job.id)
     edition.status = "queued"
@@ -204,6 +277,54 @@ async def resume(edition_id: str) -> dict:
     edition.provider_stop = None
     await edition.save()
     return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
+
+
+@router.post("/editions/{edition_id}/resume")
+async def resume(edition_id: str) -> dict:
+    """Continue an edition: reuses every accepted artifact and page."""
+    edition = await get_edition_or_404(edition_id)
+    if edition.status in ACTIVE:
+        return {"edition": edition_view(edition), "job": await job_view(edition.job_id)}
+    if edition.status in WAITING:
+        raise HTTPException(status_code=409, detail="The plan waits for review. Approve it to start drawing, or stop the edition.")
+    return await _queue_job(edition, "Resuming")
+
+
+@router.post("/editions/{edition_id}/approve-plan")
+async def approve_plan(edition_id: str) -> dict:
+    """Start drawing after a plan review (D24). It reuses the understanding and the plan."""
+    edition = await get_edition_or_404(edition_id)
+    if edition.status not in WAITING:
+        raise HTTPException(status_code=409, detail="This edition is not waiting for a plan review")
+    # Atomic: one write moves the status out of WAITING and records the approval.
+    # Only the call that matches gets modified_count 1, so two clicks start one drawing job.
+    # Cancel filters on WAITING too, so approve and cancel cannot both win.
+    now = utcnow()
+    result = await Edition.get_motor_collection().update_one(
+        {"_id": edition.id, "status": {"$in": list(WAITING)}},
+        {
+            "$set": {
+                "status": "queued",
+                "policy.plan_approved": True,
+                "policy.plan_approved_at": now.isoformat(),
+                "error": None,
+                "provider_stop": None,
+                "updated_at": now,
+            }
+        },
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=409, detail="This edition is not waiting for a plan review")
+    edition = await get_edition_or_404(edition_id)
+    try:
+        return await _queue_job(edition, "Drawing the approved plan")
+    except Exception:
+        # No job was made. Put the edition back to the review so the owner can try again.
+        await Edition.get_motor_collection().update_one(
+            {"_id": edition.id, "status": "queued", "job_id": edition.job_id},
+            {"$set": {"status": WAITING[0], "policy.plan_approved": False, "updated_at": utcnow()}},
+        )
+        raise
 
 
 @router.post("/editions/{edition_id}/pages/{page_number}/redraw")
@@ -216,6 +337,8 @@ async def redraw_page(edition_id: str, page_number: int) -> dict:
     edition = await get_edition_or_404(edition_id)
     if edition.status in ACTIVE:
         raise HTTPException(status_code=409, detail="The edition is still generating")
+    if edition.status in WAITING:
+        raise HTTPException(status_code=409, detail="The plan waits for review, so no page is drawn yet")
     page = await EditionPage.find_one(EditionPage.edition_id == edition_id, EditionPage.page_number == page_number)
     if page is None:
         raise HTTPException(status_code=404, detail="Page not found")

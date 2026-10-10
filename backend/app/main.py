@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.editions import router as editions_router
 from app.api.library import router as library_router
+from app.api.status import router as status_router
 from app.db import close_db, init_db
 from app.settings import get_settings
 
@@ -39,6 +40,7 @@ app.add_middleware(
 )
 app.include_router(library_router)
 app.include_router(editions_router)
+app.include_router(status_router)
 
 
 @app.get("/health")

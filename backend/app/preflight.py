@@ -111,21 +111,31 @@ def _budget(words: int, sections: int) -> tuple[int, int]:
     return minimum, maximum
 
 
-def check_limits(pdf_pages: int, source_words: int, max_pdf_pages: int, max_source_words: int) -> list[str]:
-    """Return a user-readable reason for each limit the book is over. Empty means inside."""
+def check_limits(
+    pdf_pages: int, source_words: int, max_pdf_pages: int, max_source_words: int, *, scoped: bool = False
+) -> list[str]:
+    """Return a user-readable reason for each limit that is exceeded. Empty means inside.
+
+    ``scoped`` is true when the numbers are those of a chosen part of the book (D19, amended in
+    v0.2: the limits apply to the scope). The words then say "selection", not "book".
+    """
     reasons: list[str] = []
+    subject = "This selection" if scoped else "This book"
     if source_words > max_source_words:
         reasons.append(
-            f"This book has {source_words:,} words. PanelSummary can adapt books up to "
-            f"{max_source_words:,} words in one run."
+            f"{subject} has {source_words:,} words. PanelSummary can adapt "
+            f"{'up to' if scoped else 'books up to'} {max_source_words:,} words in one run."
         )
     if pdf_pages > max_pdf_pages:
         reasons.append(
-            f"This book has {pdf_pages:,} PDF pages. PanelSummary can adapt books up to "
-            f"{max_pdf_pages:,} PDF pages in one run."
+            f"{subject} has {pdf_pages:,} PDF pages. PanelSummary can adapt "
+            f"{'up to' if scoped else 'books up to'} {max_pdf_pages:,} PDF pages in one run."
         )
     if reasons:
-        reasons.append("You can still read the PDF here. Longer books are planned for a later version.")
+        if scoped:
+            reasons.append("Choose fewer sections or a shorter page range.")
+        else:
+            reasons.append("You can still read the PDF here. Longer books are planned for a later version.")
     return reasons
 
 
@@ -165,6 +175,21 @@ def estimate(source_words: int, sections: int) -> dict[str, Any]:
     }
 
 
+def draw_cost_range(pages: int) -> dict[str, float]:
+    """Cost range to draw ``pages`` pages after the plan exists (plan review, D24).
+
+    The understanding and the plan are already paid for, so only the page term of the cost model
+    applies. It uses the same coefficient and the same low and high factors as ``estimate``.
+    """
+    return {
+        "low": round(COST_PER_PAGE * pages * COST_LOW_FACTOR, 2),
+        "high": round(COST_PER_PAGE * pages * COST_HIGH_FACTOR, 2),
+    }
+
+
+BASIS_SHORT = "Estimate at MiniMax-M3 rates, not a bill."
+
+
 def cost_basis(settings: Settings) -> str:
     n_all_m3 = sum(1 for run in FIT_RUNS if run.policy == (_M3, _M3, _M3))
     n_all_flash = sum(1 for run in FIT_RUNS if run.policy == (_FLASH, _FLASH, _FLASH))
@@ -184,13 +209,25 @@ def cost_basis(settings: Settings) -> str:
     return text
 
 
-def build_preflight(book_id: str, pdf_pages: int, source_words: int, sections: int, settings: Settings) -> dict[str, Any]:
+def build_preflight(
+    book_id: str,
+    pdf_pages: int,
+    source_words: int,
+    sections: int,
+    settings: Settings,
+    scope: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """The numbers for the whole book (``scope`` None) or for a scope (``pdf_pages`` etc. are then the scope's)."""
     est = estimate(source_words, sections)
     est.pop("_seconds")
+    est["estimated_cost_usd"]["basis_short"] = BASIS_SHORT
     est["estimated_cost_usd"]["basis"] = cost_basis(settings)
-    reasons = check_limits(pdf_pages, source_words, settings.max_pdf_pages, settings.max_source_words)
+    reasons = check_limits(
+        pdf_pages, source_words, settings.max_pdf_pages, settings.max_source_words, scoped=scope is not None
+    )
     return {
         "book_id": book_id,
+        "scope": scope,
         "pdf_pages": pdf_pages,
         "source_words": source_words,
         "sections": sections,

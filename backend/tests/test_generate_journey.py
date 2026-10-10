@@ -66,6 +66,8 @@ class FakeWorker:
 
     def __init__(self, fail_pages: set[int], fail_understanding_once: bool = False):
         self.calls: list[dict] = []
+        # What the worker received for the book understanding: section ids and unit ids (scope tests).
+        self.understanding_inputs: list[dict] = []
         self.fail_pages = fail_pages
         self.fail_understanding_once = fail_understanding_once
         self.app = FastAPI()
@@ -86,6 +88,9 @@ class FakeWorker:
             self.fail_understanding_once = False
             return {"run_id": body["run_id"], "state": "FAILED", "error": {"code": "TIMEOUT", "message": "timeout"}, "trace": trace}
         if goal == "BOOK_UNDERSTANDING":
+            self.understanding_inputs.append(
+                {"sections": [s["id"] for s in data["book"]["sections"]], "units": [u["id"] for u in data["book"]["units"]]}
+            )
             sections = data["book"]["sections"]
             units = data["book"]["units"]
             claims = [
@@ -99,7 +104,7 @@ class FakeWorker:
                 "locations": [{"id": "l_a", "name": "Sky", "environment": "sky", "features": [], "description": "d"}],
                 "claims": claims, "themes": [],
             }
-            assert len(units) >= 2
+            assert len(units) >= 1
             return {"run_id": body["run_id"], "state": "SUCCEEDED", "result": {"understanding": understanding}, "trace": trace}
         if goal == "ADAPTATION_PLAN":
             u = data["understanding"]
@@ -195,6 +200,9 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 started = (await api.post(f"/books/{book_id}/editions")).json()
                 edition_id = started["edition"]["id"]
                 assert started["edition"]["policy"]["image_models"] == "none"
+                # No body: the whole book, no plan review (the v0.1 behaviour).
+                assert started["edition"]["scope"] is None and started["edition"]["policy"]["review_plan"] is False
+                assert started["edition"]["draw_estimate_usd"] is None and started["job"]["cancel_requested"] is False
                 job = await claim_job()
                 assert job is not None and job.kind == "generate"
                 await execute(job)
@@ -207,6 +215,13 @@ def test_generate_goes_through_the_harness_and_failures_stay_visible(tmp_path, m
                 assert edition["coverage"]["core_not_conveyed"] == ["k2"]
                 assert edition["coverage"]["sections_without_claims"] == []
                 assert [p["status"] for p in edition["pages"]] == ["accepted", "failed"]
+                assert edition["scope"] is None and edition["plan_omitted"] is None
+                assert [c["id"] for c in edition["book"]["claims"]] == ["k1", "k2"]  # coverage is set
+                assert set(edition["book"]["claims"][0]) == {"id", "text", "importance", "section_id"}
+                assert edition["timings"]["page_1_at"] >= edition["timings"]["first_page_at"]
+                assert edition["active_seconds"] is not None and edition["active_seconds"] >= 0
+                shelf = (await api.get("/books")).json()
+                assert shelf[0]["latest_edition"]["pages_failed"] == 1 and shelf[0]["latest_edition"]["pages_accepted"] == 1
                 assert (await GenerationJob.get(job.id)).status == "completed_with_failures"
 
                 # Every model call went through the worker, with the recorded policy.
@@ -365,3 +380,268 @@ def test_a_cancelled_call_keeps_its_receipt(monkeypatch):
     finally:
         server.should_exit = True
         get_settings.cache_clear()
+
+
+# --- scope and plan review (v0.2, issues #40 and #49) ---
+
+
+def _make_three_chapter_pdf(path: Path) -> None:
+    doc = fitz.open()
+    for i in range(3):
+        page = doc.new_page()
+        page.insert_text((72, 90), f"Chapter {i + 1}", fontsize=22)
+        page.insert_textbox(fitz.Rect(72, 120, 520, 780), f"The swallow flew over town number {i + 1}. " * 60, fontsize=10)
+    doc.save(path)
+
+
+def _run(tmp_path, monkeypatch, scenario, *, fail_pages=frozenset(), **env):
+    """Run ``scenario(api, worker, ids)`` against the real API app and a fake worker.
+
+    ``ids`` has the parsed book id. The database is a throwaway one. Returns the fake worker.
+    """
+    worker = FakeWorker(fail_pages=set(fail_pages))
+    port = _free_port()
+    server = _serve(worker.app, port)
+    db_name = f"ps_v02_{uuid.uuid4().hex[:8]}"
+    monkeypatch.setenv("MONGODB_URL", MONGO_URL)
+    monkeypatch.setenv("DB_NAME", db_name)
+    monkeypatch.setenv("STORAGE_DIR", str(tmp_path / "storage"))
+    monkeypatch.setenv("AGENT_WORKER_URL", f"http://127.0.0.1:{port}")
+    monkeypatch.setenv("AGENT_WORKER_TOKEN", TOKEN)
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+
+    from app import db as db_module
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+    db_module._client = None
+
+    async def main():
+        from app.db import init_db
+        from app.jobs.runner import claim_job, execute
+        from app.main import app
+
+        client_db = await init_db()
+        try:
+            pdf = tmp_path / "book.pdf"
+            _make_three_chapter_pdf(pdf)
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://api") as api:
+                up = (await api.post("/upload", files={"file": ("book.pdf", pdf.read_bytes(), "application/pdf")})).json()
+                await execute(await claim_job())
+                book = (await api.get(f"/books/{up['book']['id']}")).json()
+                assert book["status"] == "parsed" and [s["id"] for s in book["sections"]] == ["s1", "s2", "s3"]
+                await scenario(api, worker, book)
+        finally:
+            await client_db.drop_database(db_name)
+
+    try:
+        asyncio.run(main())
+    finally:
+        server.should_exit = True
+        get_settings.cache_clear()
+        db_module._client = None
+    return worker
+
+
+async def _drive(api, book_id, body=None):
+    """Press Generate and run the job it queued. Returns the edition id."""
+    from app.jobs.runner import claim_job, execute
+
+    started = (await api.post(f"/books/{book_id}/editions", **({"json": body} if body is not None else {}))).json()
+    await execute(await claim_job())
+    return started["edition"]["id"]
+
+
+def test_a_scoped_run_draws_only_the_chosen_sections(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        bid = book["id"]
+        eid = await _drive(api, bid, {"section_ids": ["s2"]})
+        edition = (await api.get(f"/editions/{eid}")).json()
+        assert edition["scope"] == {"section_ids": ["s2"]}
+        assert edition["status"] == "complete" and edition["page_total"] == 1
+        # The worker saw one section and only that section's units, with their PDF pages.
+        assert len(worker.understanding_inputs) == 1
+        assert worker.understanding_inputs[0]["sections"] == ["s2"]
+        assert all(u.startswith("s2u") for u in worker.understanding_inputs[0]["units"])
+        assert [p["section_id"] for p in edition["pages"]] == ["s2"]
+        assert edition["coverage"]["sections_without_claims"] == []  # judged on the scope, not on the book
+        assert edition["book"]["sections"] == [{"id": "s2", "title": edition["book"]["sections"][0]["title"]}]
+
+        # A page range: PDF page 3 is chapter 3 only. A resume keeps the same scope.
+        eid3 = await _drive(api, bid, {"pdf_page_from": 3, "pdf_page_to": 3})
+        e3 = (await api.get(f"/editions/{eid3}")).json()
+        assert e3["scope"] == {"pdf_page_from": 3, "pdf_page_to": 3}
+        assert worker.understanding_inputs[1]["sections"] == ["s3"]
+        assert [p["section_id"] for p in e3["pages"]] == ["s3"]
+
+        # A body with only review_plan false is the whole book.
+        whole = await _drive(api, bid, {"review_plan": False})
+        w = (await api.get(f"/editions/{whole}")).json()
+        assert w["scope"] is None and w["page_total"] == 3
+        assert worker.understanding_inputs[2]["sections"] == ["s1", "s2", "s3"]
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_bad_scopes_are_refused_before_any_edition_or_call(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        from app.documents import Edition, GenerationJob
+
+        bid = book["id"]
+        for body, fragment in (
+            ({"section_ids": ["s7"]}, "no section 's7'"),
+            ({"section_ids": []}, "scope is empty"),
+            ({"pdf_page_from": 3, "pdf_page_to": 1}, "comes after"),
+            ({"pdf_page_from": 1, "pdf_page_to": 99}, "pages 1 to 3"),
+            ({"pdf_page_from": 2}, "both a first page and a last page"),
+            ({"section_ids": ["s1"], "pdf_page_from": 1, "pdf_page_to": 2}, "not both"),
+        ):
+            r = await api.post(f"/books/{bid}/editions", json=body)
+            assert r.status_code == 422 and fragment in r.json()["detail"], (body, r.text)
+        assert (await api.post(f"/books/{bid}/editions", json={"surprise": 1})).status_code == 422  # a misspelt key is not ignored
+        assert await Edition.find_all().count() == 0
+        assert await GenerationJob.find(GenerationJob.kind == "generate").count() == 0
+        assert worker.calls == []
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_a_scope_over_the_limit_is_refused_on_the_scope(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        bid = book["id"]
+        # chapters have about 360 words each: two chapters are over a 500-word limit, one is inside it.
+        two = await api.post(f"/books/{bid}/editions", json={"section_ids": ["s1", "s2"]})
+        assert two.status_code == 422 and "This selection has" in two.json()["detail"] and "words" in two.json()["detail"]
+        assert (await api.post(f"/books/{bid}/editions")).status_code == 422  # the whole book is over it too
+        one = await api.post(f"/books/{bid}/editions", json={"section_ids": ["s1"]})
+        assert one.status_code == 200 and one.json()["edition"]["scope"] == {"section_ids": ["s1"]}
+        assert worker.calls == []
+
+    _run(tmp_path, monkeypatch, scenario, MAX_SOURCE_WORDS="500")
+
+
+def test_plan_review_stops_before_drawing_and_approve_completes_it(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        from app.jobs.runner import claim_job, execute
+
+        bid = book["id"]
+        started = (await api.post(f"/books/{bid}/editions", json={"review_plan": True})).json()
+        eid = started["edition"]["id"]
+        assert started["edition"]["policy"]["review_plan"] is True
+        await execute(await claim_job())
+
+        waiting = (await api.get(f"/editions/{eid}")).json()
+        assert waiting["status"] == "awaiting_plan_review"
+        assert waiting["page_total"] == 3 and [p["status"] for p in waiting["pages"]] == ["pending"] * 3
+        assert [p["beat"] for p in waiting["pages"]] == ["beat 1", "beat 2", "beat 3"]  # the review screen reads these
+        assert [c["goal_type"] for c in worker.calls] == ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN"]  # 0 drawing calls
+        assert waiting["draw_estimate_usd"] == {"low": 0.08, "high": 0.11}  # 3 pages
+        assert waiting["plan_omitted"] == []
+        assert len(waiting["book"]["claims"]) == 3  # claim text for the review, sent while the plan waits
+        assert waiting["totals"]["calls"] == 2 and waiting["totals"]["cost_usd"] == 0.002  # spent so far is live
+        assert waiting["job"]["status"] == "succeeded"
+        assert (await api.get("/books")).json()[0]["latest_edition"]["status"] == "awaiting_plan_review"
+
+        # It is not an active status, but it blocks a second edition.
+        again = (await api.post(f"/books/{bid}/editions")).json()
+        assert again["already_running"] is True and again["edition"]["id"] == eid
+        assert (await api.post(f"/editions/{eid}/resume")).status_code == 409
+        assert (await api.post(f"/editions/{eid}/pages/1/redraw")).status_code == 409
+
+        approved = (await api.post(f"/editions/{eid}/approve-plan")).json()
+        assert approved["edition"]["status"] == "queued" and approved["edition"]["policy"]["plan_approved"] is True
+        assert approved["edition"]["draw_estimate_usd"] is None
+        assert (await api.post(f"/editions/{eid}/approve-plan")).status_code == 409  # no longer waiting
+        before = len(worker.calls)
+        await execute(await claim_job())
+        done = (await api.get(f"/editions/{eid}")).json()
+        assert done["status"] == "complete" and done["pages_accepted"] == 3 and done["plan_omitted"] is None
+        # The understanding and the plan were reused: only the three pages were paid for.
+        assert [c["goal_type"] for c in worker.calls[before:]] == ["MANGA_PAGE"] * 3
+        assert done["totals"]["calls"] == 5
+        assert "plan_approved_at" in done["policy"]
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_two_concurrent_approvals_and_a_racing_cancel_make_one_drawing_job(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        import asyncio
+
+        from app.jobs.runner import claim_job, execute
+        from app.documents import GenerationJob
+
+        bid = book["id"]
+        eid = await _drive(api, bid, {"review_plan": True})
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "awaiting_plan_review"
+        jobs_before = await GenerationJob.find(GenerationJob.edition_id == eid).count()
+
+        first, second = await asyncio.gather(api.post(f"/editions/{eid}/approve-plan"), api.post(f"/editions/{eid}/approve-plan"))
+        assert sorted([first.status_code, second.status_code]) == [200, 409]
+        assert await GenerationJob.find(GenerationJob.edition_id == eid).count() == jobs_before + 1
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "queued"
+
+        # Cancel racing with approve: exactly one of them wins the status change.
+        await execute(await claim_job())
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "complete"
+        eid2 = await _drive(api, bid, {"review_plan": True})
+        assert (await api.get(f"/editions/{eid2}")).json()["status"] == "awaiting_plan_review"
+        approve, cancel = await asyncio.gather(api.post(f"/editions/{eid2}/approve-plan"), api.post(f"/editions/{eid2}/cancel"))
+        assert sorted([cancel.status_code, approve.status_code]) == [200, 409]
+        edition = (await api.get(f"/editions/{eid2}")).json()
+        jobs = await GenerationJob.find(GenerationJob.edition_id == eid2).to_list()
+        drawing = [j for j in jobs if j.status == "queued"]
+        if cancel.status_code == 200:  # cancel won: approve was refused and no drawing job exists
+            assert approve.status_code == 409 and edition["status"] == "cancelled" and drawing == []
+        else:  # approve won: cancel said so, and exactly one drawing job is queued
+            assert approve.status_code == 200 and cancel.status_code == 409 and edition["status"] == "queued" and len(drawing) == 1
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_plan_review_can_be_cancelled_and_a_run_without_it_is_unchanged(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        from app.jobs.runner import claim_job, execute
+
+        bid = book["id"]
+        eid = await _drive(api, bid, {"section_ids": ["s1", "s2"], "review_plan": True})
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "awaiting_plan_review"
+        stopped = (await api.post(f"/editions/{eid}/cancel")).json()
+        assert stopped["status"] == "cancelled" and stopped["draw_estimate_usd"] is None
+        assert (await api.post(f"/editions/{eid}/approve-plan")).status_code == 409  # not waiting any more
+        assert [c["goal_type"] for c in worker.calls].count("MANGA_PAGE") == 0
+        # The book is free again: a new edition may start, and with no body it draws without review.
+        fresh = (await api.post(f"/books/{bid}/editions")).json()
+        assert fresh["already_running"] is False and fresh["edition"]["id"] != eid
+        await execute(await claim_job())
+        edition = (await api.get(f"/editions/{fresh['edition']['id']}")).json()
+        assert edition["status"] == "complete" and edition["policy"]["review_plan"] is False
+        assert (await api.post(f"/editions/{fresh['edition']['id']}/approve-plan")).status_code == 409
+        assert (await api.post("/editions/ffffffffffffffffffffffff/approve-plan")).status_code == 404
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_the_server_default_turns_plan_review_on_and_a_request_turns_it_off(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        bid = book["id"]
+        assert (await api.get("/status")).json()["plan_review_default"] is True
+        eid = await _drive(api, bid)  # no body: the default applies
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "awaiting_plan_review"
+        await api.post(f"/editions/{eid}/cancel")
+        off = await _drive(api, bid, {"review_plan": False})
+        assert (await api.get(f"/editions/{off}")).json()["status"] == "complete"
+
+    _run(tmp_path, monkeypatch, scenario, PLAN_REVIEW_DEFAULT="true")
+
+
+def test_cancel_requested_is_in_the_job_view(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        started = (await api.post(f"/books/{book['id']}/editions")).json()
+        assert started["job"]["cancel_requested"] is False
+        await api.post(f"/editions/{started['edition']['id']}/cancel")
+        job = (await api.get(f"/jobs/{started['job']['id']}")).json()
+        assert job["cancel_requested"] is True and job["status"] == "cancelled"
+
+    _run(tmp_path, monkeypatch, scenario)
