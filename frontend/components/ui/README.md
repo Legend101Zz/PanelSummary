@@ -72,7 +72,7 @@ Board: DS-components (Notice), `2-components/Comp-RunCard`.
 ### MomentBand
 Board: Comp-RunCard (page 1 moment).
 - Props: `children` (the line), `actions`, `animate`.
-- The only motion of the app: the yellow fill grows from the left (`scaleX(0)` to 1, 400 ms, `cubic-bezier(0.16, 1, 0.3, 1)`). With `prefers-reduced-motion` it is full at once. It is a polite live region. The focus ring inside it is `--app-focus-on-moment`.
+- The only motion of the app: the yellow fill grows from the left (`scaleX(0)` to 1, 400 ms, `cubic-bezier(0.16, 1, 0.3, 1)`). With `prefers-reduced-motion` it is full from the first frame. The line (not the buttons) is a polite live region. The focus ring inside it is `--app-focus-on-moment`.
 - Use it once, when page 1 is drawn. On a phone the book page puts this message in the `BottomBar`.
 
 ### Checkbox, Switch

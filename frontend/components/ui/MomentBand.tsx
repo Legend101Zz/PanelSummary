@@ -15,13 +15,16 @@ export interface MomentBandProps {
   className?: string;
 }
 
+const reducedMotion = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 /**
  * The page 1 moment: yellow, shown once, when page 1 is drawn. The fill grows from the left,
  * scaleX(0) to 1, 400 ms, cubic-bezier(0.16, 1, 0.3, 1). With prefers-reduced-motion the band
  * is full at once (tokens.css removes the transition). It is a polite live region.
  */
 export function MomentBand({ children, actions, animate = true, className }: MomentBandProps) {
-  const [phase, setPhase] = useState<"before" | "after">(animate ? "before" : "after");
+  // With prefers-reduced-motion the band is filled from the first frame (no empty yellow frame before the jump).
+  const [phase, setPhase] = useState<"before" | "after">(() => (animate && !reducedMotion() ? "before" : "after"));
   useEffect(() => {
     if (!animate) return;
     // two frames: the browser must paint scaleX(0) before it sees scaleX(1)
@@ -35,9 +38,12 @@ export function MomentBand({ children, actions, animate = true, className }: Mom
     };
   }, [animate]);
   return (
-    <div className={cx("app-moment", styles.band, className)} role="status" aria-live="polite">
-      <span className={cx("app-moment__fill", styles.fill)} data-phase={phase} aria-hidden="true" />
-      <p className={styles.text}>{children}</p>
+    <div className={cx("app-moment", styles.band, className)}>
+      <span className={cx("app-moment__fill", styles.fill)} data-phase={phase} aria-hidden="true" suppressHydrationWarning />
+      {/* Only the line is announced. The buttons are not part of the live region. */}
+      <p className={styles.text} role="status" aria-live="polite">
+        {children}
+      </p>
       {actions ? <div className={styles.actions}>{actions}</div> : null}
     </div>
   );
