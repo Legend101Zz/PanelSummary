@@ -1,5 +1,5 @@
 /** Plain-language wording for statuses, shared by the shelf, book page and reader. */
-import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, ProviderStop, Range, TextKind } from "./api";
+import type { Book, EditionDetail, EditionScope, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, ProviderStop, Range, TextKind } from "./api";
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
@@ -63,7 +63,7 @@ export function providerStopHeadline(code: string | null | undefined): string {
   }
 }
 
-export function stageLine(status: EditionStatus, pages: EditionPageSummary[], total: number): string {
+export function stageLine(status: EditionStatus, pages: EditionPageSummary[], total: number, opts?: { keyPointsLeftOut?: number }): string {
   switch (status) {
     case "queued":
       return "Waiting to start";
@@ -83,7 +83,10 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
       return `All ${plural(total, "page")} are drawn`;
     case "completed_with_failures": {
       const missing = pages.filter((p) => p.status !== "accepted").length;
-      return missing > 0 ? `Finished, but ${plural(missing, "page")} ${missing === 1 ? "is" : "are"} missing` : "Finished, with pages missing";
+      if (missing > 0) return `Finished, but ${plural(missing, "page")} ${missing === 1 ? "is" : "are"} missing`;
+      // G-O1: every page is drawn, but the checks left key points out.
+      const left = opts?.keyPointsLeftOut ?? 0;
+      return left > 0 ? `Drawn, ${plural(left, "key point")} left out` : "Drawn, with some key points left out";
     }
     case "cancelled":
       return "Drawing stopped";
@@ -192,7 +195,7 @@ export function providerStopLines(stop: ProviderStop, pendingPages = 0): Provide
       return {
         title: "MiniMax did not accept the key or the plan",
         plain: "MiniMax refused the request, so the drawing stopped. Nothing more was sent." + kept,
-        next: "Check the MiniMax key and plan in the drawing service settings. Then press Resume drawing.",
+        next: "Check the MiniMax key on the PanelSummary server (MINIMAX_API_KEY) and your MiniMax plan. Then press Resume drawing.",
         detail,
       };
     default:
@@ -208,7 +211,7 @@ export function providerStopLines(stop: ProviderStop, pendingPages = 0): Provide
 const FAILURE_REASONS: [RegExp, string][] = [
   [/usage limit|credits|token plan|insufficient_quota|\(2056\)/i, "The MiniMax plan has reached its usage limit. Wait for it to reset or add credits, then press Resume."],
   [/token limit|cut off|max_tokens/i, "The model ran out of room before it finished this page."],
-  [/max_submits|rejected on every|every submit/i, "The model's drawings for this page were rejected every time they were checked."],
+  [/max_submits|rejected on every|every submit/i, "Each version of this page that the model wrote failed the page checks."],
   [/did not fit|overflow|balloon|lettering/i, "The text did not fit on the page."],
   [/timed? ?out|timeout|deadline/i, "The model took too long to answer."],
   [/stopped answering|unreachable|connection (refused|reset|error)|ECONN|worker (stopped|unreachable|not)/i, "The drawing service stopped answering."],
@@ -419,3 +422,19 @@ export function limitsSettingsLine(l: LimitValues & { page_attempts: number; pag
 
 /** The tab title of the PDF viewer (as in v0.1). */
 export const pdfViewerTitle = (title: string | null | undefined, page: number) => (title ? `${title}, PDF page ${page}` : `PDF page ${page}`);
+
+/** The stage an edition was in when it stopped with an error. */
+export type StopStage = "reading" | "planning" | "drawing";
+
+/** "Stopped with an error while reading the book". */
+export function failedStageLine(stage: StopStage): string {
+  const what = stage === "reading" ? "reading the book" : stage === "planning" ? "planning the pages" : "drawing the pages";
+  return `Stopped with an error while ${what}`;
+}
+
+/** What a run draws, in words, for the run card: "Drawing 1 of 5 sections" or "PDF pages 3\u201340". null = the whole book. */
+export function scopeLabel(scope: EditionScope | null | undefined, sectionCount: number): string | null {
+  if (!scope) return null;
+  if ("section_ids" in scope) return `Drawing ${scope.section_ids.length.toLocaleString()} of ${plural(sectionCount, "section")}`;
+  return `PDF pages ${scope.pdf_page_from}\u2013${scope.pdf_page_to}`;
+}

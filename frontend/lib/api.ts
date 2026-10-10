@@ -110,6 +110,8 @@ export interface Coverage {
   omitted_by_plan?: { claim: string; reason: string }[];
   not_planned?: string[];
   core_not_conveyed?: string[];
+  required_not_planned?: string[];
+  sections_without_claims?: string[];
 }
 
 /** Set when the model provider refused the work and the edition stopped (D11). */

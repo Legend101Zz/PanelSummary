@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus, stageLine } from "./words";
+import { bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -50,6 +50,32 @@ describe("words", () => {
   });
   it("joins message and blocking reasons with punctuation", () => {
     expect(detailText({ message: "Book too long", blocking_reasons: ["Too many words (50,000)."] })).toBe("Book too long. Too many words (50,000).");
+  });
+  it("words the plain reason of a page that failed every check", () => {
+    expect(plainReason("rejected on every submit (max_submits)").plain).toBe("Each version of this page that the model wrote failed the page checks.");
+  });
+  it("says 'Drawn, n key points left out' when every page is drawn (G-O1)", () => {
+    const pages: any[] = [{ page_number: 1, status: "accepted" }, { page_number: 2, status: "accepted" }];
+    expect(stageLine("completed_with_failures", pages, 2, { keyPointsLeftOut: 2 })).toBe("Drawn, 2 key points left out");
+    expect(stageLine("completed_with_failures", pages, 2, { keyPointsLeftOut: 1 })).toBe("Drawn, 1 key point left out");
+    expect(stageLine("completed_with_failures", [{ page_number: 1, status: "failed" }, ...pages] as any, 3)).toBe("Finished, but 1 page is missing");
+  });
+  it("names the stage of a run that stopped with an error", () => {
+    expect(failedStageLine("reading")).toBe("Stopped with an error while reading the book");
+    expect(failedStageLine("planning")).toBe("Stopped with an error while planning the pages");
+    expect(failedStageLine("drawing")).toBe("Stopped with an error while drawing the pages");
+  });
+  it("tells the next step of the three MiniMax stops", () => {
+    const limit = providerStopLines({ code: "PROVIDER_LIMIT", type: "rate_limit_error", message: "Token Plan usage limit reached" }, 11);
+    expect(limit.plain).toContain("11 pages were not tried yet");
+    expect(limit.detail).toBe("rate_limit_error: Token Plan usage limit reached");
+    expect(providerStopLines({ code: "PROVIDER_AUTH" }).next).toBe("Check the MiniMax key on the PanelSummary server (MINIMAX_API_KEY) and your MiniMax plan. Then press Resume drawing.");
+    expect(providerStopLines({ code: "PROVIDER_UNAVAILABLE" }).next).toBe("Wait a few minutes. Then press Resume drawing.");
+  });
+  it("labels what a run draws", () => {
+    expect(scopeLabel(null, 5)).toBeNull();
+    expect(scopeLabel({ section_ids: ["s1"] }, 5)).toBe("Drawing 1 of 5 sections");
+    expect(scopeLabel({ pdf_page_from: 3, pdf_page_to: 40 }, 5)).toBe("PDF pages 3\u201340");
   });
 });
 
