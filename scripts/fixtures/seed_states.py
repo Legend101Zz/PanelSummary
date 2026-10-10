@@ -13,7 +13,9 @@ What is real. Page art is only ever a real persisted SVG from a saved run:
     <exports>/uab-m3-local/export and <exports>/gate2b-ci/live-run/export. Without --exports these two books
     use the Andersen pages instead, and the 60-page book is left out.
 The panel and text geometry of the export pages is made by the renderer from the saved spec; the renderer
-reproduces the saved SVG byte for byte (render_export_pages.ts stops if it does not). Titles, authors,
+is used for geometry only. The stored page art is always the SAVED SVG, with the renderer version the run recorded
+(journey-report.json next to the export). Saved exports come from older renderers, so today's renderer may not
+reproduce them; use --verify-render to make that an error. Titles, authors,
 statuses, page states, provider stops and error texts of the fixture books are fixture data. Page numbers,
 claims, beats, receipts and totals come from the real runs. Fixture runs are partial copies of a real run (the
 first N pages, the plan cut to N pages), so totals are the sum of the receipts that the copy holds.
@@ -29,6 +31,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -131,15 +134,31 @@ def load_andersen() -> Template:
     return Template("andersen", pick(artifacts["understanding"]), pick(artifacts["plan"]), pages, data["edition"]["policy"], offsets, SAMPLE_DIR / manifest["pdf"])
 
 
-def load_export(key: str, export_dir: Path, pdf: Path) -> Template:
+def saved_renderer_version(export_dir: Path) -> str:
+    """The renderer version the run recorded: journey-report.json sits next to the export directory."""
+    report = export_dir.parent / "journey-report.json"
+    try:
+        found = sorted(set(re.findall(r"manga-render/[0-9]+\.[0-9]+\.[0-9]+", report.read_text(encoding="utf-8"))))
+    except OSError:
+        found = []
+    return found[-1] if found else "unknown-saved-export"
+
+
+def load_export(key: str, export_dir: Path, pdf: Path, verify_render: bool = False) -> Template:
     understanding = json.loads((export_dir / "understanding.json").read_text(encoding="utf-8"))
     plan = json.loads((export_dir / "plan.json").read_text(encoding="utf-8"))
     edition = json.loads((export_dir / "edition.json").read_text(encoding="utf-8"))
     calls = json.loads((export_dir / "receipts.json").read_text(encoding="utf-8"))["calls"]
-    run = subprocess.run([str(TSX), str(RENDER_HELPER), str(export_dir)], capture_output=True, text=True, cwd=REPO)
+    cmd = [str(TSX), str(RENDER_HELPER), str(export_dir)] + (["--verify"] if verify_render else [])
+    run = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO)
     if run.returncode != 0:
         refuse(f"render_export_pages.ts failed for {export_dir}: {run.stderr.strip()[-400:]}")
     rendered = json.loads(run.stdout)
+    saved_version = saved_renderer_version(export_dir)
+    not_reproduced = sorted(int(n) for n, g in rendered["pages"].items() if not g.get("reproduced", True))
+    if not_reproduced:
+        print(f"note: {key}: {len(not_reproduced)} of {len(rendered['pages'])} saved pages are not reproduced by {rendered['renderer_version']} "
+              f"(saved with {saved_version}); the saved SVG is stored, the panel and text geometry comes from today's renderer", file=sys.stderr)
 
     def artifact(content: dict, goal: str) -> dict:
         receipts = [c for c in calls if c.get("goal_type") == goal and c.get("state") == "SUCCEEDED"]
@@ -155,7 +174,7 @@ def load_export(key: str, export_dir: Path, pdf: Path) -> Template:
             "spec": saved["spec"],
             "svg": (export_dir / "judge" / f"page-{n:02d}.svg").read_text(encoding="utf-8"),
             "svg_hash": geometry["svg_hash"],
-            "renderer_version": rendered["renderer_version"],
+            "renderer_version": saved_version,
             "panels": geometry["panels"],
             "texts": geometry["texts"],
             "warnings": geometry["warnings"],
@@ -427,6 +446,7 @@ def main() -> None:
     parser.add_argument("--storage", default=os.environ.get("STORAGE_DIR") or str(REPO / "storage"), help="storage directory the API serves PDFs from")
     parser.add_argument("--web", default=None, help="web base URL for the table, for example http://127.0.0.1:3270 (never port 3000)")
     parser.add_argument("--exports", default=str(DEFAULT_EXPORTS), help='saved run exports, or "none" to use only the committed Andersen run')
+    parser.add_argument("--verify-render", action="store_true", help="stop if today's renderer does not reproduce a saved export page byte for byte")
     parser.add_argument("--out", default=str(REPO / ".dev" / "fixtures"), help="directory for the state table (states.md, states.json)")
     parser.add_argument("--plan-review", choices=["auto", "yes", "no"], default="auto", help="seed the awaiting_plan_review book; auto = only if the backend knows that status")
     args = parser.parse_args()
@@ -472,9 +492,9 @@ def main() -> None:
             if not (exports / rel / "judge").is_dir():
                 print(f"warning: {exports / rel} is missing, so {key} falls back", file=sys.stderr)
         if (exports / "uab-m3-local/export/judge").is_dir():
-            hp26 = load_export("hp26", exports / "uab-m3-local/export", BOOKS / "happy-prince-two-tales.pdf")
+            hp26 = load_export("hp26", exports / "uab-m3-local/export", BOOKS / "happy-prince-two-tales.pdf", args.verify_render)
         if (exports / "gate2b-ci/live-run/export/judge").is_dir():
-            hp60 = load_export("hp60", exports / "gate2b-ci/live-run/export", BOOKS / "happy-prince-and-other-tales.pdf")
+            hp60 = load_export("hp60", exports / "gate2b-ci/live-run/export", BOOKS / "happy-prince-and-other-tales.pdf", args.verify_render)
     wilde = hp26 or andersen  # the template for the Wilde two-tales books
 
     # --- PDFs and their parse (the real parser)

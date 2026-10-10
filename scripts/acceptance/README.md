@@ -3,7 +3,7 @@
 | Script | Use |
 |---|---|
 | `journey.mjs` | Live journey in Chrome (spends MiniMax tokens) |
-| `ui-retry.mjs` | Press "Retry failed pages" in the UI |
+| `ui-retry.mjs` | Press "Retry failed pages" in the UI (`--web`, `--api`; default `http://127.0.0.1:3100` and `http://127.0.0.1:8000`) |
 | `export_run.py` | Export one edition for the judges (added by the CI track) |
 | `judge/` | Quality judge panel and aggregation (this page) |
 
@@ -34,6 +34,17 @@ python3 scripts/acceptance/judge/aggregate.py DIR/judgments.json \
 
 `export_run.py` writes `understanding.json`, `plan.json`, `units.json`, `edition.json`,
 `receipts.json`, `egress.json` and `judge/page-NN.{json,svg}`.
+
+## Check that the app calls no third party
+
+Add `--check-hosts` to `journey.mjs`. The journey records the host of every http, https and ws request that
+the browser makes. It adds one check and fails if a host is not the host of `--web` or `--api` (fonts,
+telemetry and other third-party calls). The check is off by default, so the live lane is unchanged. Use the
+same host name in `--web` as the browser really uses (`127.0.0.1` and `localhost` are different hosts).
+
+```sh
+node scripts/acceptance/journey.mjs --pdf book.pdf --out OUT --web http://127.0.0.1:3100 --check-hosts
+```
 
 ## Score a CI live run
 
