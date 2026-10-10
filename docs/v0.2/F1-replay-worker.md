@@ -106,7 +106,7 @@ Stack on the F1 ports (web 3280, API 8180, worker 8880, MongoDB 27180, database 
 
 | Run | Result |
 |---|---|
-| A. Two-tale package, default delays, `journey.mjs --full --replay` | JOURNEY PASSED, 61 of 61 checks, edition `complete`, 22 of 22 pages, 24 calls, egress `{}`. 85 seconds from Generate to finished. |
+| A. Two-tale package, default delays, `journey.mjs --full --replay` | JOURNEY PASSED, 61 of 61 checks, edition `complete`, 22 of 22 pages, 24 calls, egress `{}`. 79 seconds from Generate to finished. |
 | B. Andersen package, `FAIL_PAGES=7` | `completed_with_failures` (17 accepted, 1 failed), page 7 receipts `NO_SUBMISSION` twice. Pressing "Retry failed pages" in the UI: `complete`, 18 of 18. |
 | C. Andersen package, `PROVIDER_STOP=limit@page=5` | The edition `failed` with `provider_stop` `PROVIDER_LIMIT` (429, stage `drawing`, page 5). Pressing "Resume drawing": `complete`, 18 of 18. Page 5 has a refused receipt and, after Resume, a successful one under run id `...-page5-a1-r1`. |
 
