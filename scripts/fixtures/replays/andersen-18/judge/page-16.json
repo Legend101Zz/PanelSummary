@@ -1,0 +1,482 @@
+{
+ "page_number": 16,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 16,
+  "section_id": "s4",
+  "beat": "Too cold and too afraid to go home without a farthing, she crouches in the corner between two houses and strikes one match; the great iron stove with brass feet vanishes when the flame dies, and a second match makes the wall transparent to show a snow-white tablecloth and a roast goose that hops down to her.",
+  "claims": [
+   "k46",
+   "k47",
+   "k48"
+  ],
+  "cast": [
+   "c_match_girl",
+   "c_matches"
+  ],
+  "locations": [
+   "l_house_corner",
+   "l_merchant_room"
+  ],
+  "units": [
+   "s4u1",
+   "s4u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k46",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "She sits in a corner between two houses and will not go home, since she has no money and would be beaten.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    },
+    {
+     "unit": "s4u1",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k47",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "One match flares like a candle and she imagines a great iron stove with brass feet, until the flame dies.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k48",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "A second match makes the wall transparent, showing a snow-white tablecloth and a steaming roast goose that hops down to her.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 20
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 16,
+  "section_id": "s4",
+  "purpose": "The girl crouches too afraid to go home without a farthing, and two matches give her a stove and a roast goose that each vanish with the flame.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     1
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       }
+      ]
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p4"
+       },
+       {
+        "panel": "p5"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The girl crouches in the corner formed by two projecting houses, snow falling past her",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "cower",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_matches",
+      "pose": "lie",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "fore",
+      "on": {
+       "target": "c_match_girl",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The corner between two houses",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "She draws out a single match with numb fingers, too afraid to go home",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "kneel",
+      "expression": "afraid",
+      "facing": "right",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "matches",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Not one farthing sold. Home would mean blows.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "Her match blazes like a candle and a great iron stove with brass feet appears",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "reach",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "candle",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "shout",
+      "speaker": "c_match_girl",
+      "text": "Rischt!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u1",
+       "page": 20
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "A great iron stove, brass feet and all.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The flame dies and the stove is gone; only a burnt-out match is left in her hand",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [],
+    "props": [
+     {
+      "prop": "matches",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The small flame went out, and the stove vanished.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "A second match makes the wall transparent: a snow-white tablecloth and a steaming roast goose that hops down toward her",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_merchant_room",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "kneel",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "bread",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "prop": "cup",
+      "slot": "center_right",
+      "depth": "back"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "Inside the merchant's warm room",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 20
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The wall turned transparent: snow-white cloth, a steaming roast goose hopped down.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 20
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k46",
+   "k47",
+   "k48"
+  ],
+  "claim_map": [
+   {
+    "claim": "k46",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows her crouching in the corner between two houses with her bundle at her feet; p2 narrates that no farthing was sold and home would mean blows."
+   },
+   {
+    "claim": "k47",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 shows the match burning like a candle with the great iron stove and brass feet lettered; p4 the flame dies and the stove vanishes, leaving the burnt match."
+   },
+   {
+    "claim": "k48",
+    "panels": [
+     "p5"
+    ],
+    "how": "p5 lettered caption places the warm room behind a transparent wall, with the snow-white tablecloth and the steaming roast goose hopping down to her."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "47 of 48 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "CLAIM_EVENT_UNSTATED",
+   "severity": "warning",
+   "path": "page.claims",
+   "message": "claim k47 is a death, but no caption or line on this page says so. A picture alone leaves it implied: state it in a caption or a line, in the panel that shows it."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s4u1",
+   "pages": null,
+   "text": "Most terribly cold it was; it snowed, and was nearly quite dark, and evening--the last evening of the year. In this cold and darkness there went along the street a poor little girl, bareheaded, and with naked feet. When she left home she had slippers on, it is true; but what was the good of that? They were very large slippers, which her mother had hitherto worn; so large were they; and the poor little thing lost them as she scuffled away across the street, because of two carriages that rolled by dreadfully fast.\n\nOne slipper was nowhere to be found; the other had been laid hold of by an urchin, and off he ran with it; he thought it would do capitally for a cradle when he some day or other should have children himself. So the little maiden walked on with her tiny naked feet, that were quite red and blue from cold. She carried a quantity of matches in an old apron, and she held a bundle of them in her hand. Nobody had bought anything of her the whole livelong day; no one had given her a single farthing.\n\nShe crept along trembling with cold and hunger--a very picture of sorrow, the poor little thing!\n\nThe flakes of snow covered her long fair hair, which fell in beautiful curls around her neck; but of that, of course, she never once now thought. From all the windows the candles were gleaming, and it smelt so deliciously of roast goose, for you know it was New Year's Eve; yes, of that she thought.\n\nIn a corner formed by two houses, of which one advanced more than the other, she seated herself down and cowered together. Her little feet she had drawn close up to her, but she grew colder and colder, and to go home she did not venture, for she had not sold any matches and could not bring a farthing of money: from her father she would certainly get blows, and at home it was cold too, for above her she had only the roof, through which the wind whistled, even though the largest cracks were stopped up with straw and rags.\n\nHer little hands were almost numbed with cold. Oh! a match might afford her a world of comfort, if she only dared take a single one out of the bundle, draw it against the wall, and warm her fingers by it. She drew one out. “Rischt!” how it blazed, how it burnt! It was a warm, bright flame, like a candle, as she held her hands over it: it was a wonderful light. It seemed really to the little maiden as though she were sitting before a large iron stove, with burnished brass feet and a brass ornament at top. The fire burned with such blessed influence; it warmed so delightfully. The little girl had already stretched out her feet to warm them too; but--the small flame went out, the stove vanished: she had only the remains of the burnt-out match in her hand."
+  },
+  {
+   "id": "s4u2",
+   "pages": null,
+   "text": "She rubbed another against the wall: it burned brightly, and where the light fell on the wall, there the wall became transparent like a veil, so that she could see into the room. On the table was spread a snow-white tablecloth; upon it was a splendid porcelain service, and the roast goose was steaming famously with its stuffing of apple and dried plums.\n\nAnd what was still more capital to behold was, the goose hopped down from the dish, reeled about on the floor with knife and fork in its breast, till it came up to the poor little girl; when--the match went out and nothing but the thick, cold, damp wall was left behind. She lighted another match. Now there she was sitting under the most magnificent Christmas tree: it was still larger, and more decorated than the one which she had seen through the glass door in the rich merchant's house.\n\nThousands of lights were burning on the green branches, and gaily-colored pictures, such as she had seen in the shopwindows, looked down upon her. The little maiden stretched out her hands towards them when--the match went out. The lights of the Christmas tree rose higher and higher, she saw them now as stars in heaven; one fell down and formed a long trail of fire.\n\n“Someone is just dead!” said the little girl; for her old grandmother, the only person who had loved her, and who was now no more, had told her, that when a star falls, a soul ascends to God.\n\nShe drew another match against the wall: it was again light, and in the lustre there stood the old grandmother, so bright and radiant, so mild, and with such an expression of love.\n\n“Grandmother!” cried the little one. “Oh, take me with you! You go away when the match burns out; you vanish like the warm stove, like the delicious roast goose, and like the magnificent Christmas tree!” And she rubbed the whole bundle of matches quickly against the wall, for she wanted to be quite sure of keeping her grandmother near her. And the matches gave such a brilliant light that it was brighter than at noon-day: never formerly had the grandmother been so beautiful and so tall. She took the little maiden, on her arm, and both flew in brightness and in joy so high, so very high, and then above was neither cold, nor hunger, nor anxiety-- they were with God.\n\nBut in the corner, at the cold hour of dawn, sat the poor girl, with rosy cheeks and with a smiling mouth, leaning against the wall--frozen to death on the last evening of the old year. Stiff and stark sat the child there with her matches, of which one bundle had been burnt. “She wanted to warm herself,” people said. No one had the slightest suspicion of what beautiful things she had seen; no one even dreamed of the splendor in which, with her grandmother she had entered on the joys of a new year."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_matches",
+   "name": "The bundle of matches",
+   "role": "the matches the girl carries and burns",
+   "description": "A small paper bundle of matches, sold all day without a single purchaser and burnt down one by one against the wall; the only thing the girl owns.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "object",
+    "shape": "candle",
+    "tone": "light",
+    "face": false
+   }
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The little Match Girl",
+   "role": "the poor girl selling matches on New Year's Eve",
+   "description": "A small, thin child with long fair curls falling to her neck, bareheaded and barefoot, in an old apron she uses to carry matches. She crouches in a corner between two houses, lights matches against the wall and at dawn is found frozen against it with rosy cheeks and a smiling mouth; timid, cold, hungry, yet radiant in her visions.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u2",
+     "claim": "k53",
+     "set": {
+      "eyes": "dead",
+      "outfit_tone": "white"
+     }
+    }
+   ]
+  }
+ ]
+}

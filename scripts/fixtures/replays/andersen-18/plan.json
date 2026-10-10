@@ -1,0 +1,434 @@
+{
+ "schema": "adaptation-plan.v1",
+ "pages": [
+  {
+   "page_number": 1,
+   "section_id": "s1",
+   "beat": "In the capital the Emperor lives in his wardrobe and ignores his soldiers, theatre and chase until two rogues promise cloth invisible to anyone unfit or very simple, take his money for silk and gold thread and pocket it.",
+   "claims": [
+    "k1",
+    "k2",
+    "k3"
+   ],
+   "cast": [
+    "c_emperor_s1",
+    "c_weaver_one",
+    "c_weaver_two"
+   ],
+   "locations": [
+    "l_capital_street"
+   ],
+   "units": [
+    "s1u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 2,
+   "section_id": "s1",
+   "beat": "The Emperor sends his faithful old minister to the hall of the two looms; the minister finds no thread at all, fears he may be a simpleton or unfit for his office, says nothing, and praises the unseen cloth as excellent.",
+   "claims": [
+    "k4",
+    "k5",
+    "k7"
+   ],
+   "cast": [
+    "c_minister",
+    "c_weaver_one",
+    "c_weaver_two"
+   ],
+   "locations": [
+    "l_loom_hall"
+   ],
+   "units": [
+    "s1u1",
+    "s1u2"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 3,
+   "section_id": "s1",
+   "beat": "The second officer and then the Emperor himself stare at the empty frames and each fears to seem stupid; the Emperor declares the cloth charming with his complete approbation while his retinue cry it is beautiful, and he makes the rogues Gentlemen Weavers.",
+   "claims": [
+    "k8",
+    "k9",
+    "k10"
+   ],
+   "cast": [
+    "c_emperor_s1",
+    "c_officer_ambassador",
+    "c_officers_crown",
+    "c_weaver_one"
+   ],
+   "locations": [
+    "l_loom_hall"
+   ],
+   "units": [
+    "s1u2",
+    "s1u3"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 4,
+   "section_id": "s1",
+   "beat": "The rogues work all night with sixteen lights, cutting the air with scissors and sewing with needleless needles, then pretend to array the Emperor in trousers, scarf and mantle and turn him before the looking glass.",
+   "claims": [
+    "k11",
+    "k12",
+    "k13"
+   ],
+   "cast": [
+    "c_weaver_one",
+    "c_weaver_two",
+    "c_emperor_s1"
+   ],
+   "locations": [
+    "l_looking_glass_room"
+   ],
+   "units": [
+    "s1u3",
+    "s1u4"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 5,
+   "section_id": "s1",
+   "beat": "The Emperor asks whether his new clothes fit well; the lords of the bedchamber feel along the ground for a train that is not there, and he walks under his high canopy through the streets while the people at the windows praise his magnificent train and scarf.",
+   "claims": [
+    "k14",
+    "k16",
+    "k17"
+   ],
+   "cast": [
+    "c_emperor_s1",
+    "c_bedchamber_lords",
+    "c_townsfolk_s1"
+   ],
+   "locations": [
+    "l_looking_glass_room",
+    "l_capital_street"
+   ],
+   "units": [
+    "s1u4"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 6,
+   "section_id": "s1",
+   "beat": "A little child cries that the Emperor has nothing at all on; the father calls it the voice of innocence, the whole crowd takes up the words, and the Emperor lets the procession go on while his attendants work harder at the empty train.",
+   "claims": [
+    "k18",
+    "k19",
+    "k20"
+   ],
+   "cast": [
+    "c_child_s1",
+    "c_father_s1",
+    "c_emperor_s1",
+    "c_townsfolk_s1"
+   ],
+   "locations": [
+    "l_capital_street"
+   ],
+   "units": [
+    "s1u4"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 7,
+   "section_id": "s2",
+   "beat": "A poor Prince with a small kingdom offers to marry the Emperor's daughter and sends her a rose tree that bore one rose every five years and a nightingale in silver caskets, but she touches the rose, calls it natural, and refuses to see him.",
+   "claims": [
+    "k21",
+    "k22",
+    "k23"
+   ],
+   "cast": [
+    "c_prince",
+    "c_princess",
+    "c_emperor_s2",
+    "c_court_ladies"
+   ],
+   "locations": [
+    "l_gift_hall",
+    "l_rose_grave"
+   ],
+   "units": [
+    "s2u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 8,
+   "section_id": "s2",
+   "beat": "The nightingale sings so sweetly that an old knight names the Empress's musical box and the Emperor weeps like a child, yet the Princess insists it is a real bird and again refuses him, so the Prince daubs his face brown and black and knocks at the palace door for employment.",
+   "claims": [
+    "k24",
+    "k25",
+    "k26"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_knight",
+    "c_emperor_s2",
+    "c_princess"
+   ],
+   "locations": [
+    "l_gift_hall",
+    "l_palace_gate"
+   ],
+   "units": [
+    "s2u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 9,
+   "section_id": "s2",
+   "beat": "The Emperor makes the disguised Prince Imperial Swineherd with a dirty little room by the pigsty, where he makes a kitchen-pot hung with little bells that plays 'Ach! du lieber Augustin' and whose smoke smells every dish cooking in the city; the Princess buys the pot for ten kisses paid by her ladies behind a screen of dresses.",
+   "claims": [
+    "k27",
+    "k28",
+    "k29"
+   ],
+   "cast": [
+    "c_prince",
+    "c_emperor_s2",
+    "c_princess",
+    "c_court_lady_slipper"
+   ],
+   "locations": [
+    "l_swineherd_room",
+    "l_palace_gate"
+   ],
+   "units": [
+    "s2u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 10,
+   "section_id": "s2",
+   "beat": "From the pot the court ladies learn every dish cooking from the chamberlain's to the cobbler's, and the swineherd then builds a rattle playing every waltz and jig tune ever heard, which the Princess buys for a hundred kisses, ten of them her own.",
+   "claims": [
+    "k30",
+    "k31",
+    "k32"
+   ],
+   "cast": [
+    "c_prince",
+    "c_princess",
+    "c_court_ladies"
+   ],
+   "locations": [
+    "l_swineherd_room"
+   ],
+   "units": [
+    "s2u2",
+    "s2u3"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 11,
+   "section_id": "s2",
+   "beat": "The Emperor comes out on the balcony in his spectacles, creeps down on tiptoe and catches the ladies counting kisses by the pigsty; at the eighty-sixth kiss he boxes the Princess's ears with his slipper and thrusts Princess and swineherd out of the city.",
+   "claims": [
+    "k33",
+    "k34"
+   ],
+   "cast": [
+    "c_emperor_s2",
+    "c_princess",
+    "c_prince",
+    "c_court_ladies"
+   ],
+   "locations": [
+    "l_palace_balcony",
+    "l_swineherd_room"
+   ],
+   "units": [
+    "s2u3"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 12,
+   "section_id": "s2",
+   "beat": "In the pouring rain the swineherd washes the false colour from his face, throws off his dirty clothes and steps forth in princely robes; he scorns the Princess for valuing a plaything above an honourable Prince and shuts his palace door in her face.",
+   "claims": [
+    "k35",
+    "k36"
+   ],
+   "cast": [
+    "c_prince",
+    "c_princess"
+   ],
+   "locations": [
+    "l_palace_gate"
+   ],
+   "units": [
+    "s2u3"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 13,
+   "section_id": "s3",
+   "beat": "A Prince who has travelled the whole world unable to decide which ladies are real returns home cast down; in a fearful tempest a soaked woman knocks at the palace door and says she is a real Princess.",
+   "claims": [
+    "k37",
+    "k38"
+   ],
+   "cast": [
+    "c_prince_s3",
+    "c_king_s3",
+    "c_princess_s3"
+   ],
+   "locations": [
+    "s3_palace_door"
+   ],
+   "units": [
+    "s3u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 14,
+   "section_id": "s3",
+   "beat": "The Queen-mother silently lays three peas on the bedstead under twenty mattresses and twenty feather beds; the Princess reports something hard beneath her and is black and blue, proving her delicacy, so the Prince marries her and the three peas go into the cabinet of curiosities.",
+   "claims": [
+    "k39",
+    "k40",
+    "k41"
+   ],
+   "cast": [
+    "c_queen_mother",
+    "c_princess_s3",
+    "c_prince_s3"
+   ],
+   "locations": [
+    "l_bedroom",
+    "l_cabinet"
+   ],
+   "units": [
+    "s3u1"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 15,
+   "section_id": "s4",
+   "beat": "On the snow-dark last evening of the year the poor little Match Girl scuffs along the street in her mother's far-too-large slippers, loses one to the street and the other to an urchin, and walks on with red and blue naked feet, her bundle of matches unsold all day.",
+   "claims": [
+    "k43",
+    "k44",
+    "k45"
+   ],
+   "cast": [
+    "c_match_girl",
+    "c_urchin",
+    "c_matches"
+   ],
+   "locations": [
+    "l_new_year_street"
+   ],
+   "units": [
+    "s4u1"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 16,
+   "section_id": "s4",
+   "beat": "Too cold and too afraid to go home without a farthing, she crouches in the corner between two houses and strikes one match; the great iron stove with brass feet vanishes when the flame dies, and a second match makes the wall transparent to show a snow-white tablecloth and a roast goose that hops down to her.",
+   "claims": [
+    "k46",
+    "k47",
+    "k48"
+   ],
+   "cast": [
+    "c_match_girl",
+    "c_matches"
+   ],
+   "locations": [
+    "l_house_corner",
+    "l_merchant_room"
+   ],
+   "units": [
+    "s4u1",
+    "s4u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 17,
+   "section_id": "s4",
+   "beat": "A third match shows her a magnificent Christmas tree whose thousands of lights rise as stars, and one star falls in a trail of fire; she names the falling star a soul ascending to God as her grandmother taught her, and a fourth match shows the grandmother radiant and tall.",
+   "claims": [
+    "k49",
+    "k50",
+    "k51"
+   ],
+   "cast": [
+    "c_match_girl",
+    "c_christmas_tree",
+    "c_grandmother",
+    "c_matches"
+   ],
+   "locations": [
+    "l_house_corner"
+   ],
+   "units": [
+    "s4u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 18,
+   "section_id": "s4",
+   "beat": "She rubs the whole bundle against the wall and the grandmother takes her on her arm so they fly up to God; at dawn she sits frozen to death against the wall, smiling, one bundle of matches burnt, and the onlookers say only that she wanted to warm herself.",
+   "claims": [
+    "k52",
+    "k53",
+    "k54"
+   ],
+   "cast": [
+    "c_match_girl",
+    "c_grandmother",
+    "c_matches"
+   ],
+   "locations": [
+    "l_house_corner"
+   ],
+   "units": [
+    "s4u2"
+   ],
+   "page_turn_hook": false
+  }
+ ],
+ "omitted": [
+  {
+   "claim": "k6",
+   "reason": "supporting line from the knaves; the beat of the minister's silent fear and false praise carries the same moment without the extra exchanged line"
+  },
+  {
+   "claim": "k15",
+   "reason": "supporting detail: the master of ceremonies announcing the canopy is shown directly as the canopy page rather than as a separate announcement"
+  },
+  {
+   "claim": "k42",
+   "reason": "detail closing line that only restates the delicacy claim k40 the same page already makes"
+  }
+ ],
+ "page_budget": {
+  "min": 14,
+  "max": 18,
+  "target": 14
+ }
+}

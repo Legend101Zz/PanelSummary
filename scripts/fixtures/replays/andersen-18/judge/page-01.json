@@ -1,0 +1,469 @@
+{
+ "page_number": 1,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 1,
+  "section_id": "s1",
+  "beat": "In the capital the Emperor lives in his wardrobe and ignores his soldiers, theatre and chase until two rogues promise cloth invisible to anyone unfit or very simple, take his money for silk and gold thread and pocket it.",
+  "claims": [
+   "k1",
+   "k2",
+   "k3"
+  ],
+  "cast": [
+   "c_emperor_s1",
+   "c_weaver_one",
+   "c_weaver_two"
+  ],
+  "locations": [
+   "l_capital_street"
+  ],
+  "units": [
+   "s1u1"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k1",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor spends all his money on dress and neglects his soldiers, theatre and hunting except to display his clothes.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k2",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Two rogues calling themselves weavers offer the Emperor cloth that is invisible to anyone unfit for his office or very simple.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k3",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Emperor gives the weavers large sums of money, and they pocket the silk and gold thread instead of weaving.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    },
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 1,
+  "section_id": "s1",
+  "purpose": "The Emperor of a clothes-mad capital meets two rogues who promise cloth invisible to the unfit and the simple, and they take his money for silk and gold they never weave.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The wide street of the Emperor's capital, onlookers at the windows.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_capital_street",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Emperor's New Clothes",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Emperor admires himself in a new suit, ignoring the business of his empire.",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_capital_street",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s1",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "paper",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_emperor_s1",
+      "text": "The Emperor",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "All his money went on dress; soldiers, theatre and chase went untended.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "Two strangers in shabby clothes bow before the Emperor and name their offer.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_capital_street",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "bow",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "bow",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_emperor_s1",
+      "pose": "stand",
+      "expression": "thinking",
+      "facing": "front",
+      "slot": "center",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_weaver_one",
+      "text": "The first knave",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_weaver_two",
+      "text": "The second knave",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_weaver_one",
+      "text": "We weave cloth invisible to any one unfit for his office, or very simple.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Dazzled, the Emperor holds out the money for the cloth at once.",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_capital_street",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s1",
+      "pose": "reach",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid",
+      "holding": "money_bag",
+      "holding_tone": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s1",
+      "text": "Splendid! Weave it for me at once; take the money.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The knaves pocket the money and swear to weave nothing at all.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_capital_street",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "reach",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid",
+      "holding": "money_bag",
+      "holding_tone": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "arms_crossed",
+      "expression": "laugh",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "bag",
+      "slot": "right",
+      "depth": "fore"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "whisper",
+      "speaker": "c_weaver_two",
+      "text": "Silk and gold thread for our knapsacks... and no thread on the loom.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k1",
+   "k2",
+   "k3"
+  ],
+  "claim_map": [
+   {
+    "claim": "k1",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 establishes the capital; p2 shows the Emperor in a fine new suit with a narration saying his money goes on dress while soldiers, theatre and chase go untended."
+   },
+   {
+    "claim": "k2",
+    "panels": [
+     "p3"
+    ],
+    "how": "The two knaves are named as they bow, and the first says aloud that their cloth is invisible to anyone unfit for his office or very simple."
+   },
+   {
+    "claim": "k3",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 the Emperor holds out the money bag on his order; p5 the knaves take the money and a knapsack and whisper that silk and gold go in while no thread reaches the loom."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROP_HIDDEN",
+   "severity": "warning",
+   "path": "panel p5 prop 0",
+   "message": "prop \"bag\" is hidden behind a figure in this medium panel. Use another slot or depth, or mention it in the beat so it is drawn in front."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u1",
+   "pages": null,
+   "text": "Many years ago, there was an Emperor, who was so excessively fond of new clothes, that he spent all his money in dress. He did not trouble himself in the least about his soldiers; nor did he care to go either to the theatre or the chase, except for the opportunities then afforded him for displaying his new clothes. He had a different suit for each hour of the day; and as of any other king or emperor, one is accustomed to say, “he is sitting in council,” it was always said of him, “The Emperor is sitting in his wardrobe.”\n\nTime passed merrily in the large town which was his capital; strangers arrived every day at the court. One day, two rogues, calling themselves weavers, made their appearance. They gave out that they knew how to weave stuffs of the most beautiful colors and elaborate patterns, the clothes manufactured from which should have the wonderful property of remaining invisible to everyone who was unfit for the office he held, or who was extraordinarily simple in character.\n\n“These must, indeed, be splendid clothes!” thought the Emperor. “Had I such a suit, I might at once find out what men in my realms are unfit for their office, and also be able to distinguish the wise from the foolish! This stuff must be woven for me immediately.” And he caused large sums of money to be given to both the weavers in order that they might begin their work directly.\n\nSo the two pretended weavers set up two looms, and affected to work very busily, though in reality they did nothing at all. They asked for the most delicate silk and the purest gold thread; put both into their own knapsacks; and then continued their pretended work at the empty looms until late at night.\n\n“I should like to know how the weavers are getting on with my cloth,” said the Emperor to himself, after some little time had elapsed; he was, however, rather embarrassed, when he remembered that a simpleton, or one unfit for his office, would be unable to see the manufacture. To be sure, he thought he had nothing to risk in his own person; but yet, he would prefer sending somebody else, to bring him intelligence about the weavers, and their work, before he troubled himself in the affair. All the people throughout the city had heard of the wonderful property the cloth was to possess; and all were anxious to learn how wise, or how ignorant, their neighbors might prove to be.\n\n“I will send my faithful old minister to the weavers,” said the Emperor at last, after some deliberation, “he will be best able to see how the cloth looks; for he is a man of sense, and no one can be more suitable for his office than he is.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_weaver_one",
+   "name": "The first knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "One of the two rogues who pretend to weave; he keeps up the pretense at the empty loom and asks the minister whether the stuff pleases him. About the same size as the Emperor but dark and shabby, so he disappears in a crowd.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s1",
+   "name": "The Emperor",
+   "role": "the city's Emperor, vainly fond of new clothes",
+   "description": "A grown, tall man who wears a different suit for each hour of the day and neglects soldiers, theatre and hunting for chances to display his clothes. He stands at the empty looms and later walks naked under the canopy, turning before the looking glass; proud, vain, easily flattered, and at the end too embarrassed to halt the procession.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "royal",
+    "outfit_tone": "gold",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_weaver_two",
+   "name": "The second knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "The taller, broader partner of the rogue weaver, who talks of colors and patterns that are not there and demands more silk and gold. He stands beside the first knave at the two empty looms.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

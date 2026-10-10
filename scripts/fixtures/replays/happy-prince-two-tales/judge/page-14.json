@@ -1,0 +1,475 @@
+{
+ "page_number": 14,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 14,
+  "section_id": "s1",
+  "beat": "The broken leaden heart will not melt in the furnace, so it is thrown on a dustheap beside the dead Swallow; in heaven the Angel brings God those two most precious things and God says they were rightly chosen, the bird to sing for evermore and the Happy Prince to praise him.",
+  "claims": [
+   "k42",
+   "k43"
+  ],
+  "cast": [
+   "c_overseer",
+   "c_swallow",
+   "c_prince"
+  ],
+  "locations": [
+   "l_dustheap",
+   "l_foundry"
+  ],
+  "units": [
+   "s1u8"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k42",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The overseer finds that the broken lead heart will not melt in the furnace, so it is thrown on a dustheap where the dead Swallow is also lying.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k43",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "God asks for the two most precious things in the city, and when the Angel brings the leaden heart and the dead bird, God says they were rightly chosen.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 14,
+  "section_id": "s1",
+  "purpose": "The leaden heart will not melt and is thrown on the dustheap beside the dead Swallow, and in heaven God says those two were rightly chosen.",
+  "layout": {
+   "template": "staggered_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "Wide view of the foundry furnace as the statue is melted",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_foundry",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_overseer",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_overseer",
+      "text": "The overseer of the workmen",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The overseer stares at the lump of lead heart and says it will not melt",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_foundry",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_overseer",
+      "pose": "point",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_overseer",
+      "text": "This broken lead heart will not melt in the furnace.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 16
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The un-melted broken statue lies in the ashes while the overseer orders it thrown away",
+    "shot": "full",
+    "angle": "high",
+    "location": "l_foundry",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "lie",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "material": "bronze",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     },
+     {
+      "character": "c_overseer",
+      "pose": "point",
+      "expression": "determined",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_overseer",
+      "text": "We must throw it away.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 16
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The leaden heart lies in the rubbish beside the dead Swallow on the dustheap",
+    "shot": "wide",
+    "angle": "high",
+    "location": "l_dustheap",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "dead"
+      }
+     },
+     {
+      "character": "c_prince",
+      "pose": "lie",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center_right",
+      "depth": "mid",
+      "variant": {
+       "material": "bronze",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The dustheap outside the city",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 16
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Light from heaven over the dustheap as God speaks of the bird singing for evermore",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_dustheap",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "dead"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays",
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "\"Bring me the two most precious things in the city,\" said God... the Angel brought Him the leaden heart and the dead bird.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "\"You have rightly chosen...\" \"this little bird shall sing for evermore...\" \"the Happy Prince shall praise me.\"",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 16
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k42",
+   "k43"
+  ],
+  "claim_map": [
+   {
+    "claim": "k42",
+    "panels": [
+     "p2",
+     "p3",
+     "p4"
+    ],
+    "how": "p2 the overseer says the broken lead heart will not melt; p3 he orders it thrown away and the un-melted broken statue lies in the ashes; p4 it lies on the dustheap beside the dead Swallow."
+   },
+   {
+    "claim": "k43",
+    "panels": [
+     "p5"
+    ],
+    "how": "narration gives God's request for the two most precious things, the Angel bringing the leaden heart and the dead bird, and God's words that they were rightly chosen."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "WORDS_BALLOON",
+   "severity": "warning",
+   "path": "panel p5 text 0",
+   "message": "23 words in one narration; aim for ≤22 (ideally ≤12)."
+  },
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "50 of 65 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "SPEECH_IN_NARRATION",
+   "severity": "warning",
+   "path": "panel p5 text 0",
+   "message": "this box quotes someone speaking; put spoken words in a speech balloon from the drawn speaker so readers see who says them."
+  },
+  {
+   "code": "SPEECH_IN_NARRATION",
+   "severity": "warning",
+   "path": "panel p5 text 1",
+   "message": "this box quotes someone speaking; put spoken words in a speech balloon from the drawn speaker so readers see who says them."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u8",
+   "pages": null,
+   "text": "Then they melted the statue in a furnace, and the Mayor held a meeting of the Corporation to decide what was to be done with the metal. “We must have another statue, of course,” he said, “and it shall be a statue of myself.”\n\n“Of myself,” said each of the Town Councillors, and they quarrelled. When I last heard of them they were quarrelling still.\n\n“What a strange thing!” said the overseer of the workmen at the foundry. “This broken lead heart will not melt in the furnace. We must throw it away.” So they threw it on a dustheap where the dead Swallow was also lying.\n\n“Bring me the two most precious things in the city,” said God to one of His Angels; and the Angel brought Him the leaden heart and the dead bird.\n\n“You have rightly chosen,” said God, “for in my garden of Paradise this little bird shall sing for evermore, and in my city of gold the Happy Prince shall praise me.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_overseer",
+   "name": "The Overseer of the Workmen",
+   "role": "overseer at the foundry",
+   "description": "A practical foreman at the foundry who notes that the broken lead heart will not melt in the furnace and orders it thrown on a dustheap.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "mustache",
+    "outfit": "work_apron",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

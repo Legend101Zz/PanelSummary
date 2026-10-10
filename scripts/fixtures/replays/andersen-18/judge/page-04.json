@@ -1,0 +1,446 @@
+{
+ "page_number": 4,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 4,
+  "section_id": "s1",
+  "beat": "The rogues work all night with sixteen lights, cutting the air with scissors and sewing with needleless needles, then pretend to array the Emperor in trousers, scarf and mantle and turn him before the looking glass.",
+  "claims": [
+   "k11",
+   "k12",
+   "k13"
+  ],
+  "cast": [
+   "c_weaver_one",
+   "c_weaver_two",
+   "c_emperor_s1"
+  ],
+  "locations": [
+   "l_looking_glass_room"
+  ],
+  "units": [
+   "s1u3",
+   "s1u4"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k11",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The rogues work all night cutting the air with scissors and sewing with needleless needles, then announce the new clothes are ready.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The rogues pretend to array the Emperor in trousers, scarf and mantle and call the suit as light as a cobweb.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k13",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor is undressed and turns from side to side before the looking glass in the pretended suit.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 4,
+  "section_id": "s1",
+  "purpose": "The rogues fake a night's work, then pretend to dress the Emperor, who turns before the looking glass in a suit only he cannot see.",
+  "layout": {
+   "template": "establish_4"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The two rogues work by sixteen burning lights through the night",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_looking_glass_room",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "stand",
+      "expression": "determined",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "reach",
+      "expression": "determined",
+      "facing": "front",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "candle",
+      "slot": "center",
+      "depth": "back"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The night before the procession",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "They sat up the whole night, sixteen lights burning.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 8
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "Scissors cut the empty air and needleless needles sew nothing",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_looking_glass_room",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "reach",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "hold",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "They cut the air with scissors and sewed with needles without thread.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     },
+     {
+      "kind": "shout",
+      "speaker": "c_weaver_one",
+      "text": "See! The Emperor's new clothes are ready!",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 8
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The rogues raise their arms as if holding up an invisible suit before the Emperor",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_looking_glass_room",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "reach",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_emperor_s1",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_weaver_one",
+      "text": "Here are your Majesty's trousers!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "A scarf. A mantle. A suit as light as a cobweb.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 8
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Emperor, undressed, turns before the looking glass, admiring what is not there",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_looking_glass_room",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_emperor_s1",
+      "pose": "walk",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "bow",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Undressed, he turns before the looking glass.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u4",
+       "page": 8
+      }
+     },
+     {
+      "kind": "thought",
+      "speaker": "c_emperor_s1",
+      "text": "So light! As if I had nothing at all on.",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 8
+     },
+     {
+      "unit": "s1u4",
+      "page": 8
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k11",
+   "k12",
+   "k13"
+  ],
+  "claim_map": [
+   {
+    "claim": "k11",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows the two knaves working by sixteen candle-lights all night; p2 states they cut the air with scissors and sewed with needles without thread, then cry that the Emperor's new clothes are ready."
+   },
+   {
+    "claim": "k12",
+    "panels": [
+     "p3"
+    ],
+    "how": "p3 has the knaves raising their arms as if holding up trousers, scarf and mantle, calling the suit as light as a cobweb."
+   },
+   {
+    "claim": "k13",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 shows the Emperor being arrayed by the rogues; p4 says he was undressed and shows him turning before the looking glass in the pretended suit."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "44 of 66 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u3",
+   "pages": null,
+   "text": "The whole city was talking of the splendid cloth which the Emperor had ordered to be woven at his own expense.\n\nAnd now the Emperor himself wished to see the costly manufacture, while it was still in the loom. Accompanied by a select number of officers of the court, among whom were the two honest men who had already admired the cloth, he went to the crafty impostors, who, as soon as they were aware of the Emperor's approach, went on working more diligently than ever; although they still did not pass a single thread through the looms.\n\n“Is not the work absolutely magnificent?” said the two officers of the crown, already mentioned. “If your Majesty will only be pleased to look at it! What a splendid design! What glorious colors!” and at the same time they pointed to the empty frames; for they imagined that everyone else could see this exquisite piece of workmanship.\n\n“How is this?” said the Emperor to himself. “I can see nothing! This is indeed a terrible affair! Am I a simpleton, or am I unfit to be an Emperor? That would be the worst thing that could happen--Oh! the cloth is charming,” said he, aloud. “It has my complete approbation.” And he smiled most graciously, and looked closely at the empty looms; for on no account would he say that he could not see what two of the officers of his court had praised so much. All his retinue now strained their eyes, hoping to discover something on the looms, but they could see no more than the others; nevertheless, they all exclaimed, “Oh, how beautiful!” and advised his majesty to have some new clothes made from this splendid material, for the approaching procession. “Magnificent! Charming! Excellent!” resounded on all sides; and everyone was uncommonly gay. The Emperor shared in the general satisfaction; and presented the impostors with the riband of an order of knighthood, to be worn in their buttonholes, and the title of “Gentlemen Weavers.”\n\nThe rogues sat up the whole of the night before the day on which the procession was to take place, and had sixteen lights burning, so that everyone might see how anxious they were to finish the Emperor's new suit. They pretended to roll the cloth off the looms; cut the air with their scissors; and sewed with needles without any thread in them. “See!” cried they, at last. “The Emperor's new clothes are ready!”\n\nAnd now the Emperor, with all the grandees of his court, came to the weavers; and the rogues raised their arms, as if in the act of holding something up, saying, “Here are your Majesty's trousers! Here is the scarf! Here is the mantle! The whole suit is as light as a cobweb; one might fancy one has nothing at all on, when dressed in it; that, however, is the great virtue of this delicate cloth.”"
+  },
+  {
+   "id": "s1u4",
+   "pages": null,
+   "text": "“Yes indeed!” said all the courtiers, although not one of them could see anything of this exquisite manufacture.\n\n“If your Imperial Majesty will be graciously pleased to take off your clothes, we will fit on the new suit, in front of the looking glass.”\n\nThe Emperor was accordingly undressed, and the rogues pretended to array him in his new suit; the Emperor turning round, from side to side, before the looking glass.\n\n“How splendid his Majesty looks in his new clothes, and how well they fit!” everyone cried out. “What a design! What colors! These are indeed royal robes!”\n\n“The canopy which is to be borne over your Majesty, in the procession, is waiting,” announced the chief master of the ceremonies.\n\n“I am quite ready,” answered the Emperor. “Do my new clothes fit well?” asked he, turning himself round again before the looking glass, in order that he might appear to be examining his handsome suit.\n\nThe lords of the bedchamber, who were to carry his Majesty's train felt about on the ground, as if they were lifting up the ends of the mantle; and pretended to be carrying something; for they would by no means betray anything like simplicity, or unfitness for their office.\n\nSo now the Emperor walked under his high canopy in the midst of the procession, through the streets of his capital; and all the people standing by, and those at the windows, cried out, “Oh! How beautiful are our Emperor's new clothes! What a magnificent train there is to the mantle; and how gracefully the scarf hangs!” in short, no one would allow that he could not see these much-admired clothes; because, in doing so, he would have declared himself either a simpleton or unfit for his office. Certainly, none of the Emperor's various suits, had ever made so great an impression, as these invisible ones.\n\n“But the Emperor has nothing at all on!” said a little child.\n\n“Listen to the voice of innocence!” exclaimed his father; and what the child had said was whispered from one to another.\n\n“But he has nothing at all on!” at last cried out all the people. The Emperor was vexed, for he knew that the people were right; but he thought the procession must go on now! And the lords of the bedchamber took greater pains than ever, to appear holding up a train, although, in reality, there was no train to hold."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_weaver_one",
+   "name": "The first knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "One of the two rogues who pretend to weave; he keeps up the pretense at the empty loom and asks the minister whether the stuff pleases him. About the same size as the Emperor but dark and shabby, so he disappears in a crowd.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s1",
+   "name": "The Emperor",
+   "role": "the city's Emperor, vainly fond of new clothes",
+   "description": "A grown, tall man who wears a different suit for each hour of the day and neglects soldiers, theatre and hunting for chances to display his clothes. He stands at the empty looms and later walks naked under the canopy, turning before the looking glass; proud, vain, easily flattered, and at the end too embarrassed to halt the procession.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "royal",
+    "outfit_tone": "gold",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_weaver_two",
+   "name": "The second knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "The taller, broader partner of the rogue weaver, who talks of colors and patterns that are not there and demands more silk and gold. He stands beside the first knave at the two empty looms.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

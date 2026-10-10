@@ -1,0 +1,609 @@
+{
+ "page_number": 7,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 7,
+  "section_id": "s1",
+  "beat": "The Prince next points to a young man in a garret, too cold and hungry to finish his play, and gives up a rare sapphire; the weeping Swallow plucks out the Prince's eye, and the young man finds the sapphire on his withered violets and cries that he can now finish his play.",
+  "claims": [
+   "k21",
+   "k22",
+   "k23"
+  ],
+  "cast": [
+   "c_prince",
+   "c_swallow",
+   "c_playwright"
+  ],
+  "locations": [
+   "l_column_top",
+   "l_garret"
+  ],
+  "units": [
+   "s1u4",
+   "s1u5"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k21",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince asks the Swallow to bring his other eye to a young man in a garret who is too cold and hungry to finish his play.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k22",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince gives up one of his rare sapphires for the playwright, and the weeping Swallow obeys him and plucks out the eye.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k23",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The young man finds the sapphire lying on his withered violets and, delighted, says he can now finish his play.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 7,
+  "section_id": "s1",
+  "purpose": "The Prince gives up his second sapphire for a freezing playwright, and the young man finds it on his withered violets and can finish his play.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     2
+    ],
+    "children": [
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p1"
+       },
+       {
+        "panel": "p2"
+       }
+      ]
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       2
+      ],
+      "children": [
+       {
+        "panel": "p3"
+       },
+       {
+        "panel": "p4"
+       }
+      ]
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       2
+      ],
+      "children": [
+       {
+        "panel": "p5"
+       },
+       {
+        "panel": "p6"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Prince, high on his column, points down into the city.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "point",
+      "expression": "gentle",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "sad",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Far away across the city I see a young man in a garret.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u4",
+       "page": 9
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u4",
+      "page": 9
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "In a freezing garret a young man slumps over his papers beside withered violets.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_garret",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_playwright",
+      "pose": "sit",
+      "expression": "tired",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "paper",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "prop": "flower",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_playwright",
+      "text": "A Young Man in a Garret",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u4",
+       "page": 9
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "No fire in the grate; hunger has made him faint.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u4",
+       "page": 9
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u4",
+      "page": 9
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Swallow refuses and weeps; the Prince orders his sapphire eye given away.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "cry",
+      "facing": "left",
+      "slot": "right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "I cannot do that.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u5",
+       "page": 10
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Pluck out one of them.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u5",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u5",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Weeping, the Swallow plucks the sapphire eye from the Prince's face.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "cry",
+      "facing": "left",
+      "slot": "right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "pain",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "one_blind",
+       "material": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "PLUCK",
+      "fidelity": "dramatized"
+     },
+     {
+      "kind": "caption",
+      "text": "So the Swallow plucked out the Prince's eye.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u5",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u5",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The sapphire lies on the withered violets.",
+    "shot": "insert",
+    "angle": "high",
+    "location": "l_garret",
+    "time": "night",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "flower",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "dots"
+     },
+     {
+      "prop": "gem",
+      "slot": "center",
+      "depth": "fore",
+      "tone": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The beautiful sapphire, on the withered violets.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u5",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u5",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The young man looks up and lifts the sapphire, crying that he can now finish his play.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_garret",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_playwright",
+      "pose": "reach",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_playwright",
+      "text": "This is from some great admirer. Now I can finish my play.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u5",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u5",
+      "page": 10
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k21",
+   "k22",
+   "k23"
+  ],
+  "claim_map": [
+   {
+    "claim": "k21",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 the Prince points down and names a young man in a garret; p2 shows him frozen over his papers, faint with hunger, unable to finish his play."
+   },
+   {
+    "claim": "k22",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 the Prince orders the sapphire eye plucked out; p4 the weeping Swallow plucks out the Prince's eye, now one-eyed and grey."
+   },
+   {
+    "claim": "k23",
+    "panels": [
+     "p5",
+     "p6"
+    ],
+    "how": "p5 the sapphire lies on the withered violets; p6 the young man rejoices that he can now finish his play."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u4",
+   "pages": null,
+   "text": "He passed over the river, and saw the lanterns hanging to the masts of the ships. He passed over the Ghetto, and saw the old Jews bargaining with each other, and weighing out money in copper scales. At last he came to the poor house and looked in. The boy was tossing feverishly on his bed, and the mother had fallen asleep, she was so tired. In he hopped, and laid the great ruby on the table beside the woman’s thimble. Then he flew gently round the bed, fanning the boy’s forehead with his wings. “How cool I feel,” said the boy, “I must be getting better”; and he sank into a delicious slumber.\n\nThen the Swallow flew back to the Happy Prince, and told him what he had done. “It is curious,” he remarked, “but I feel quite warm now, although it is so cold.”\n\n“That is because you have done a good action,” said the Prince. And the little Swallow began to think, and then he fell asleep. Thinking always made him sleepy.\n\nWhen day broke he flew down to the river and had a bath. “What a remarkable phenomenon,” said the Professor of Ornithology as he was passing over the bridge. “A swallow in winter!” And he wrote a long letter about it to the local newspaper. Every one quoted it, it was full of so many words that they could not understand.\n\n“To-night I go to Egypt,” said the Swallow, and he was in high spirits at the prospect. He visited all the public monuments, and sat a long time on top of the church steeple. Wherever he went the Sparrows chirruped, and said to each other, “What a distinguished stranger!” so he enjoyed himself very much.\n\nWhen the moon rose he flew back to the Happy Prince. “Have you any commissions for Egypt?” he cried; “I am just starting.”\n\n“Swallow, Swallow, little Swallow,” said the Prince, “will you not stay with me one night longer?”\n\n“I am waited for in Egypt,” answered the Swallow. “Tomorrow my friends will fly up to the Second Cataract. The river-horse couches there among the bulrushes, and on a great granite throne sits the God Memnon. All night long he watches the stars, and when the morning star shines he utters one cry of joy, and then he is silent. At noon the yellow lions come down to the water’s edge to drink. They have eyes like green beryls, and their roar is louder than the roar of the cataract.”\n\n“Swallow, Swallow, little Swallow,” said the Prince, “far away across the city I see a young man in a garret. He is leaning over a desk covered with papers, and in a tumbler by his side there is a bunch of withered violets. His hair is brown and crisp, and his lips are red as a pomegranate, and he has large and dreamy eyes. He is trying to finish a play for the Director of the Theatre, but he is too cold to write any more. There is no fire in the grate, and hunger has made him faint.”"
+  },
+  {
+   "id": "s1u5",
+   "pages": null,
+   "text": "“I will wait with you one night longer,” said the Swallow, who really had a good heart. “Shall I take him another ruby?”\n\n“Alas! I have no ruby now,” said the Prince; “my eyes are all that I have left. They are made of rare sapphires, which were brought out of India a thousand years ago. Pluck out one of them and take it to him. He will sell it to the jeweller, and buy food and firewood, and finish his play.”\n\n“Dear Prince,” said the Swallow, “I cannot do that”; and he began to weep.\n\n“Swallow, Swallow, little Swallow,” said the Prince, “do as I command you.”\n\nSo the Swallow plucked out the Prince’s eye, and flew away to the student’s garret. It was easy enough to get in, as there was a hole in the roof. Through this he darted, and came into the room. The young man had his head buried in his hands, so he did not hear the flutter of the bird’s wings, and when he looked up he found the beautiful sapphire lying on the withered violets.\n\n“I am beginning to be appreciated,” he cried; “this is from some great admirer. Now I can finish my play,” and he looked quite happy.\n\nThe next day the Swallow flew down to the harbour. He sat on the mast of a large vessel and watched the sailors hauling big chests out of the hold with ropes. “Heave a-hoy!” they shouted as each chest came up. “I am going to Egypt”! cried the Swallow, but nobody minded, and when the moon rose he flew back to the Happy Prince.\n\n“I am come to bid you good-bye,” he cried.\n\n“Swallow, Swallow, little Swallow,” said the Prince, “will you not stay with me one night longer?”\n\n“It is winter,” answered the Swallow, “and the chill snow will soon be here. In Egypt the sun is warm on the green palmtrees, and the crocodiles lie in the mud and look lazily about them. My companions are building a nest in the Temple of Baalbec, and the pink and white doves are watching them, and cooing to each other. Dear Prince, I must leave you, but I will never forget you, and next spring I will bring you back two beautiful jewels in place of those you have given away. The ruby shall be redder than a red rose, and the sapphire shall be as blue as the great sea.”\n\n“In the square below,” said the Happy Prince, “there stands a little match-girl. She has let her matches fall in the gutter, and they are all spoiled. Her father will beat her if she does not bring home some money, and she is crying. She has no shoes or stockings, and her little head is bare. Pluck out my other eye, and give it to her, and her father will not beat her.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_playwright",
+   "name": "The Young Man in the Garret",
+   "role": "a dramatist trying to finish a play",
+   "description": "A young playwright in a cold garret, brown crisp hair, red lips like a pomegranate, large dreamy eyes; starving and freezing over papers and a bunch of withered violets, and happier at once when the sapphire appears.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,471 @@
+{
+ "page_number": 16,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 16,
+  "section_id": "s2",
+  "beat": "The Nightingale asks first the white Rose-tree and then the yellow one round the sun-dial for a red rose and is refused by both, and the red Rose-tree beneath the Student's window refuses too, saying winter has chilled its veins and the storm broken its branches, and hints that there is a way, only one too terrible to tell.",
+  "claims": [
+   "k49",
+   "k50",
+   "k51"
+  ],
+  "cast": [
+   "c_nightingale",
+   "c_rose_trees"
+  ],
+  "locations": [
+   "l_garden",
+   "l_student_window"
+  ],
+  "units": [
+   "s2u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k49",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale flies to the white Rose-tree in the centre of the grass-plot and is refused, for its roses are white as the foam of the sea.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k50",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Nightingale flies to the yellow Rose-tree round the old sun-dial and is again refused, and is sent to the tree beneath the Student's window.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 19
+    },
+    {
+     "unit": "s2u2",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k51",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The red Rose-tree under the Student's window refuses too, saying that winter has chilled its veins and the storm broken its branches, so it will have no roses this year.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 20
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 16,
+  "section_id": "s2",
+  "purpose": "The Nightingale is refused a red rose by the white, yellow and red Rose-trees in turn, and the red one hints at a way too terrible to tell.",
+  "layout": {
+   "template": "staggered_6"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Nightingale soars across the garden and lights on the white Rose-tree in the centre of the grass-plot.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "fly",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "fore"
+     },
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_rose_trees",
+      "text": "The Rose-trees of the garden",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 19
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_nightingale",
+      "text": "Give me a red rose... I will sing you my sweetest song.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The white Rose-tree shakes its head and refuses.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_rose_trees",
+      "text": "My roses are white... as white as the foam of the sea.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The yellow Rose-tree round the old sun-dial refuses her and points her on to the tree beneath the Student's window.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "fly",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_rose_trees",
+      "pose": "bow",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "clock",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_rose_trees",
+      "text": "My roses are yellow... go to my brother... beneath the Student's window.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The red Rose-tree beneath the Student's window refuses: winter has chilled its veins and the storm broken its branches.",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "afraid",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_rose_trees",
+      "pose": "cower",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind",
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "Beneath the Student's window",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 20
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_rose_trees",
+      "text": "The winter has chilled my veins... and the storm has broken my branches.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 20
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_rose_trees",
+      "text": "...I shall have no roses at all this year.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Nightingale cries that one red rose is all she wants, and asks if there is no way.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "fore"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_nightingale",
+      "text": "One red rose is all I want... Is there no way by which I can get it?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 20
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The red Rose-tree answers that there is a way, but one too terrible to tell.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "talk",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "whisper",
+      "speaker": "c_rose_trees",
+      "text": "There is a way... it is so terrible that I dare not tell it.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 20
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 20
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k49",
+   "k50",
+   "k51"
+  ],
+  "claim_map": [
+   {
+    "claim": "k49",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows her flying to the white Rose-tree and asking for a red rose; p2 the tree refuses, saying its roses are white as the foam of the sea."
+   },
+   {
+    "claim": "k50",
+    "panels": [
+     "p3"
+    ],
+    "how": "p3 shows the yellow Rose-tree round the old sun-dial refusing her and sending her to the tree beneath the Student's window."
+   },
+   {
+    "claim": "k51",
+    "panels": [
+     "p4",
+     "p6"
+    ],
+    "how": "p4 the red Rose-tree beneath the window says winter has chilled its veins and the storm broken its branches and it will have no roses; p5 she asks if there is no way and p6 it hints at a way too terrible to tell."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s2u2",
+   "pages": null,
+   "text": "“Why, indeed?” said a Butterfly, who was fluttering about after a sunbeam.\n\n“Why, indeed?” whispered a Daisy to his neighbour, in a soft, low voice.\n\n“He is weeping for a red rose,” said the Nightingale.\n\n“For a red rose?” they cried; “how very ridiculous!” and the little Lizard, who was something of a cynic, laughed outright.\n\nBut the Nightingale understood the secret of the Student’s sorrow, and she sat silent in the oak-tree, and thought about the mystery of Love.\n\nSuddenly she spread her brown wings for flight, and soared into the air. She passed through the grove like a shadow, and like a shadow she sailed across the garden.\n\nIn the centre of the grass-plot was standing a beautiful Rosetree, and when she saw it she flew over to it, and lit upon a spray.\n\n“Give me a red rose,” she cried, “and I will sing you my sweetest song.”\n\nBut the Tree shook its head.\n\n“My roses are white,” it answered; “as white as the foam of the sea, and whiter than the snow upon the mountain. But go to my brother who grows round the old sun-dial, and perhaps he will give you what you want.”\n\nSo the Nightingale flew over to the Rose-tree that was growing round the old sun-dial.\n\n“Give me a red rose,” she cried, “and I will sing you my sweetest song.”\n\nBut the Tree shook its head.\n\n“My roses are yellow,” it answered; “as yellow as the hair of the mermaiden who sits upon an amber throne, and yellower than the daffodil that blooms in the meadow before the mower comes with his scythe. But go to my brother who grows beneath the Student’s window, and perhaps he will give you what you want.”\n\nSo the Nightingale flew over to the Rose-tree that was growing beneath the Student’s window.\n\n“Give me a red rose,” she cried, “and I will sing you my sweetest song.”\n\nBut the Tree shook its head.\n\n“My roses are red,” it answered, “as red as the feet of the dove, and redder than the great fans of coral that wave and wave in the ocean-cavern. But the winter has chilled my veins, and the frost has nipped my buds, and the storm has broken my branches, and I shall have no roses at all this year.”\n\n“One red rose is all I want,” cried the Nightingale, “only one red rose! Is there no way by which I can get it?”\n\n“There is a way,” answered the Tree; “but it is so terrible that I dare not tell it to you.”\n\n“Tell it to me,” said the Nightingale, “I am not afraid.”\n\n“If you want a red rose,” said the Tree, “you must build it out of music by moonlight, and stain it with your own heart’sblood. You must sing to me with your breast against a thorn. All night long you must sing to me, and the thorn must pierce your heart, and your life-blood must flow into my veins, and become mine.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_rose_trees",
+   "name": "The Rose-trees",
+   "role": "the white, yellow and red rose-trees of the garden",
+   "description": "Three rose-trees in the garden — one white in the centre of the grass-plot, one yellow round the old sun-dial, one red beneath the Student's window.",
+   "look": {
+    "kind": "plant",
+    "species": "rose_bush",
+    "tone": "flowers",
+    "face": false,
+    "bloom": "buds"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  }
+ ]
+}
