@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -176,5 +176,39 @@ describe("replay worker status copy", () => {
     expect(w.workerStatusLine({ reachable: true, key_set: true, replay: false })).toEqual({ ok: true, text: "MiniMax key set" });
     expect(w.workerStatusLine({ reachable: true, key_set: false, replay: false })).toEqual({ ok: false, text: "MiniMax key not set" });
     expect(w.workerStatusLine({ reachable: false, key_set: false, replay: false })).toEqual({ ok: false, text: "Drawing service not reachable" });
+  });
+});
+
+describe("readableReason", () => {
+  const raw = "detail: the Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn claim k41";
+  const claims = new Map([
+    ["k41", "The Cat scorns the Dog"],
+    ["k3", "Short one"],
+    ["k12", "A very long claim text that goes on and on and on well past sixty characters in length"],
+  ]);
+  it("replaces the id with the claim text and drops the prefix", () => {
+    expect(readableReason(raw, claims)).toBe(`The Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn "The Cat scorns the Dog"`);
+  });
+  it("says another key point when the text is not known", () => {
+    const r = readableReason(raw);
+    expect(r).toBe("The Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn another key point");
+    expect(r).not.toMatch(/k41/);
+    expect(readableReason(raw, new Map([["k1", "x"]]))).not.toMatch(/k41/);
+  });
+  it("handles a list of ids and shortens long text", () => {
+    expect(readableReason("Same as claims k3 and k12.", claims)).toBe(`Same as "Short one" and "A very long claim text that goes on and on and on well past…".`);
+    expect(readableReason("claims k3 and k12")).toBe("Another key point");
+  });
+  it("handles brackets and bare ids", () => {
+    expect(readableReason("Repeats the point (k3).", claims)).toBe(`Repeats the point "Short one".`);
+    expect(readableReason("Repeats k3 here", claims)).toBe(`Repeats "Short one" here`);
+  });
+  it("keeps a reason with no id", () => {
+    expect(readableReason("Too minor for a page.", claims)).toBe("Too minor for a page.");
+  });
+  it("does not touch words that are not claim ids", () => {
+    expect(readableReason("Good for kids.", claims)).toBe("Good for kids.");
+    expect(readableReason("It is a k9 unit.", claims)).toBe("It is a k9 unit.");
+    expect(readableReason("It is a k9 unit.")).toBe("It is a another key point unit.");
   });
 });

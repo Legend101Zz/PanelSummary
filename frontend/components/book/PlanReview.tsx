@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { BookDetail, EditionDetail } from "@/lib/api";
-import { scopeLabel, stageLine } from "@/lib/words";
+import { readableReason, scopeLabel, stageLine } from "@/lib/words";
 import { Button, Disclosure, Notice, RunCard, StepList, ToneStrip, formatCount, formatUsd, segmentsFromPages } from "@/components/ui";
 import type { Pending } from "./RunPanel";
 import styles from "./Book.module.css";
@@ -101,7 +101,7 @@ export function PlanReview({
             {omitted.map((o) => (
               <li key={o.claim}>
                 <strong>{claims.get(o.claim) ?? "A key point of the book"}</strong>
-                <span>Reason: {o.reason || "No reason was given."}</span>
+                <span>Reason: {o.reason ? readableReason(o.reason, claims) : "No reason was given."}</span>
               </li>
             ))}
           </ul>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { BookDetail, EditionDetail } from "@/lib/api";
-import { plural, formatTokens } from "@/lib/words";
+import { plural, formatTokens, readableReason } from "@/lib/words";
 import { Disclosure } from "@/components/ui";
 import { mangaRanges, pdfRange } from "./bookLogic";
 import styles from "./Book.module.css";
@@ -73,7 +73,7 @@ export function About({ edition }: { edition: EditionDetail }) {
                 <ul>
                   {omitted.map((o) => (
                     <li key={o.claim}>
-                      <strong>{text(o.claim)}</strong> <span>Reason: {o.reason || "No reason was given."}</span>
+                      <strong>{text(o.claim)}</strong> <span>Reason: {o.reason ? readableReason(o.reason, claims) : "No reason was given."}</span>
                     </li>
                   ))}
                 </ul>
