@@ -26,6 +26,19 @@
   .backRow { padding-top: 4px; }
 }
 
+/* While a run is active, on a desktop screen: a smaller cover (still 2:3), a tighter run card, so the page 1 band
+   with "Start reading" is in the first screen at 1440x820 (final-journey finding). The phone layout is unchanged. */
+@media (min-width: 768px) {
+  .top[data-live="true"] { grid-template-columns: 120px minmax(0, 1fr); gap: 12px 32px; }
+  .top[data-live="true"] .cover { width: 120px; }
+  .top[data-live="true"] .title { font-size: clamp(32px, 3.4vw, 44px); }
+  .top[data-live="true"] .logline { font-size: 16px; line-height: 1.5; }
+  .top[data-live="true"] .console { gap: 12px; }
+  .liveCard { padding-top: 20px; padding-bottom: 20px; }
+  .top .liveCard > :not(:first-child) { margin-top: 12px; }
+  .liveCard .liveSteps { gap: 4px; }
+}
+
 /* ----------------------------------------------------------------- loading and whole-page errors */
 .skBack { padding: 8px 0 12px; }
 .skRows { display: flex; flex-direction: column; gap: 14px; margin: 18px 0 22px; }
