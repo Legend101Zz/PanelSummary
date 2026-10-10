@@ -1,0 +1,363 @@
+{
+ "page_number": 20,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 20,
+  "section_id": "s2",
+  "beat": "The Tree cries that she must press closer or the Day will come before the rose is finished; the thorn touches her heart and, as she sings of the Love that is perfected by Death, the rose becomes crimson like the eastern sky, and with one last burst of music her voice fails as the rose trembles open to the cold morning air.",
+  "claims": [
+   "k59",
+   "k61",
+   "k62"
+  ],
+  "cast": [
+   "c_nightingale",
+   "c_rose_trees"
+  ],
+  "locations": [
+   "l_student_window"
+  ],
+  "units": [
+   "s2u4"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k59",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "Press closer, little Nightingale, or the Day will come before the rose is finished.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  },
+  {
+   "id": "k61",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "When the thorn touches her heart and she sings of the Love that is perfected by Death, the marvellous rose becomes crimson, like the rose of the eastern sky.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    },
+    {
+     "unit": "s2u4",
+     "page": 24
+    }
+   ]
+  },
+  {
+   "id": "k62",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "Her voice grows fainter and a film comes over her eyes, but she gives one last burst of music, so that the Moon lingers and the red rose trembles open to the cold morning air.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 24
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 20,
+  "section_id": "s2",
+  "purpose": "The Tree's cry drives the Nightingale into the thorn; her song of Death turns the rose crimson and her last note makes it open to the morning.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     2,
+     1
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "slant": 6,
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The rose-tree in the night garden; the nightingale presses her breast to the thorn.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "pain",
+      "facing": "right",
+      "slot": "center_right",
+      "depth": "fore",
+      "on": {
+       "target": "c_rose_trees",
+       "part": "shoulder"
+      }
+     }
+    ],
+    "props": [
+     {
+      "prop": "thorn",
+      "slot": "center_right",
+      "depth": "fore"
+     }
+    ],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "\"Press closer, little Nightingale,\" cried the Tree, \"or the Day will come before the rose is finished.\"",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u4",
+       "page": 23
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 23
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The thorn touches the heart and the rose's white heart floods crimson.",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "figures": [],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "dark"
+     },
+     {
+      "prop": "thorn",
+      "slot": "center",
+      "depth": "fore"
+     }
+    ],
+    "fx": [
+     "sparkle",
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The thorn touched her heart, and she sang of the Love that is perfected by Death.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 23
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 23
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "Her wings fail and she falls back as the crimson rose opens to the cold morning air.",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_student_window",
+    "time": "dawn",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_nightingale",
+      "pose": "fall",
+      "expression": "tired",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "fore"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "left",
+      "depth": "mid",
+      "tone": "dark"
+     }
+    ],
+    "fx": [
+     "light_rays"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Her voice grew fainter, a film over her eyes -- then one last burst of music.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 24
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "CHOO",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 24
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 24
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k59",
+   "k61",
+   "k62"
+  ],
+  "claim_map": [
+   {
+    "claim": "k59",
+    "panels": [
+     "p1"
+    ],
+    "how": "p1 letters the Tree's cry as the Nightingale presses closer to the thorn."
+   },
+   {
+    "claim": "k61",
+    "panels": [
+     "p2"
+    ],
+    "how": "p2 inserts the thorn and the rose's crimson heart; the line names the Love perfected by Death."
+   },
+   {
+    "claim": "k62",
+    "panels": [
+     "p3"
+    ],
+    "how": "p3 shows her wings failing and the crimson rose opening in the dawn, with the last burst of music."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "49 of 49 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "SPEECH_IN_NARRATION",
+   "severity": "warning",
+   "path": "panel p1 text 0",
+   "message": "this box quotes someone speaking; put spoken words in a speech balloon from the drawn speaker so readers see who says them."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u4",
+   "pages": null,
+   "text": "And when the Moon shone in the heavens the Nightingale flew to the Rose-tree, and set her breast against the thorn. All night long she sang with her breast against the thorn, and the cold crystal Moon leaned down and listened. All night long she sang, and the thorn went deeper and deeper into her breast, and her life-blood ebbed away from her.\n\nShe sang first of the birth of love in the heart of a boy and a girl. And on the top-most spray of the Rose-tree there blossomed a marvellous rose, petal following petal, as song followed song. Pale was it, at first, as the mist that hangs over the river—pale as the feet of the morning, and silver as the wings of the dawn. As the shadow of a rose in a mirror of silver, as the shadow of a rose in a water-pool, so was the rose that blossomed on the topmost spray of the Tree.\n\nBut the Tree cried to the Nightingale to press closer against the thorn. “Press closer, little Nightingale,” cried the Tree, “or the Day will come before the rose is finished.”\n\nSo the Nightingale pressed closer against the thorn, and louder and louder grew her song, for she sang of the birth of passion in the soul of a man and a maid.\n\nAnd a delicate flush of pink came into the leaves of the rose, like the flush in the face of the bridegroom when he kisses the lips of the bride. But the thorn had not yet reached her heart, so the rose’s heart remained white, for only a Nightingale’s heart’s-blood can crimson the heart of a rose.\n\nAnd the Tree cried to the Nightingale to press closer against the thorn. “Press closer, little Nightingale,” cried the Tree, “or the Day will come before the rose is finished.”\n\nSo the Nightingale pressed closer against the thorn, and the thorn touched her heart, and a fierce pang of pain shot through her. Bitter, bitter was the pain, and wilder and wilder grew her song, for she sang of the Love that is perfected by Death, of the Love that dies not in the tomb.\n\nAnd the marvellous rose became crimson, like the rose of the eastern sky. Crimson was the girdle of petals, and crimson as a ruby was the heart.\n\nBut the Nightingale’s voice grew fainter, and her little wings began to beat, and a film came over her eyes. Fainter and fainter grew her song, and she felt something choking her in her throat.\n\nThen she gave one last burst of music. The white Moon heard it, and she forgot the dawn, and lingered on in the sky. The red rose heard it, and it trembled all over with ecstasy, and opened its petals to the cold morning air. Echo bore it to her purple cavern in the hills, and woke the sleeping shepherds from their dreams. It floated through the reeds of the river, and they carried its message to the sea."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_rose_trees",
+   "name": "The Rose-trees",
+   "role": "the white, yellow and red rose-trees of the garden",
+   "description": "Three rose-trees in the garden — one white in the centre of the grass-plot, one yellow round the old sun-dial, one red beneath the Student's window.",
+   "look": {
+    "kind": "plant",
+    "species": "rose_bush",
+    "tone": "flowers",
+    "face": false,
+    "bloom": "buds"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  }
+ ]
+}

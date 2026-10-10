@@ -1,0 +1,587 @@
+{
+ "page_number": 3,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 3,
+  "section_id": "s1",
+  "beat": "The second officer and then the Emperor himself stare at the empty frames and each fears to seem stupid; the Emperor declares the cloth charming with his complete approbation while his retinue cry it is beautiful, and he makes the rogues Gentlemen Weavers.",
+  "claims": [
+   "k8",
+   "k9",
+   "k10"
+  ],
+  "cast": [
+   "c_emperor_s1",
+   "c_officer_ambassador",
+   "c_officers_crown",
+   "c_weaver_one"
+  ],
+  "locations": [
+   "l_loom_hall"
+  ],
+  "units": [
+   "s1u2",
+   "s1u3"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k8",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Emperor's second officer also sees nothing, decides he must not be stupid, and reports the cloth as extraordinarily magnificent.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    },
+    {
+     "unit": "s1u2",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k9",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor himself visits the looms, sees nothing, and aloud declares the cloth charming with his complete approbation.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    },
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "All the retinue cry the unseen cloth is beautiful, and the Emperor gives the impostors an order's riband and the title of Gentlemen Weavers.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 3,
+  "section_id": "s1",
+  "purpose": "The second officer and the Emperor himself each stare at the empty looms, fear they are fools, and aloud praise cloth that is not there; the rogues are made Gentlemen Weavers.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1.5,
+     1
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1.4
+      ],
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       }
+      ]
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p4"
+       },
+       {
+        "panel": "p5"
+       },
+       {
+        "panel": "p6"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The second officer walks round the looms, stares at the bare frames, and decides he is not stupid.",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_officer_ambassador",
+      "pose": "walk",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_one",
+      "pose": "talk",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_officer_ambassador",
+      "text": "The second officer",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     },
+     {
+      "kind": "thought",
+      "speaker": "c_officer_ambassador",
+      "text": "I certainly am not stupid!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     },
+     {
+      "unit": "s1u2",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The two officers of the crown point at the empty frames, praising a splendid design and glorious colours.",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_officers_crown",
+      "pose": "point",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_officers_crown",
+      "text": "The two officers of the crown",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_officers_crown",
+      "text": "What a splendid design! What glorious colors!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 7
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Emperor leans to the empty frame, cannot see anything, then smiles and declares the cloth charming.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s1",
+      "pose": "reach",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "thought",
+      "speaker": "c_emperor_s1",
+      "text": "I can see nothing! ... Am I unfit to be an Emperor?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s1",
+      "text": "Oh! the cloth is charming... my complete approbation.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 7
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The retinue strains its eyes at the bare looms and cries the cloth is magnificent.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_officer_ambassador",
+      "pose": "talk",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_emperor_s1",
+      "pose": "stand",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_officer_ambassador",
+      "text": "Magnificent! Charming! Excellent!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 7
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Emperor gives the first knave the riband of an order and the title of Gentlemen Weavers.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s1",
+      "pose": "hold",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_one",
+      "pose": "bow",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "gold_leaf",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s1",
+      "text": "The riband of an order, and the title of Gentlemen Weavers.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 7
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "That night sixteen lights burn at the looms and the knave works at the empty frames.",
+    "shot": "wide",
+    "angle": "high",
+    "location": "l_loom_hall",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "carry",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "lamp",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "That night sixteen lights burned in the hall.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 8
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 8
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k8",
+   "k9",
+   "k10"
+  ],
+  "claim_map": [
+   {
+    "claim": "k8",
+    "panels": [
+     "p1",
+     "p4"
+    ],
+    "how": "p1 shows the second officer named, staring at the empty frames and thinking he is not stupid; p4 he joins the praise, calling the cloth magnificent, charming and excellent."
+   },
+   {
+    "claim": "k9",
+    "panels": [
+     "p2",
+     "p3"
+    ],
+    "how": "p2 the officers of the crown point at the empty frames calling the design splendid and colours glorious; p3 the Emperor in close reaches to the frame, thinks he sees nothing and fears he is unfit to be Emperor, then aloud declares the cloth charming with his complete approbation."
+   },
+   {
+    "claim": "k10",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 the retinue cry Magnificent! Charming! Excellent!; p5 the Emperor hands the first knave the riband and calls them Gentlemen Weavers."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u2",
+   "pages": null,
+   "text": "So the faithful old minister went into the hall, where the knaves were working with all their might, at their empty looms. “What can be the meaning of this?” thought the old man, opening his eyes very wide. “I cannot discover the least bit of thread on the looms.” However, he did not express his thoughts aloud.\n\nThe impostors requested him very courteously to be so good as to come nearer their looms; and then asked him whether the design pleased him, and whether the colors were not very beautiful; at the same time pointing to the empty frames. The poor old minister looked and looked, he could not discover anything on the looms, for a very good reason, viz: there was nothing there. “What!” thought he again. “Is it possible that I am a simpleton? I have never thought so myself; and no one must know it now if I am so. Can it be, that I am unfit for my office? No, that must not be said either. I will never confess that I could not see the stuff.”\n\n“Well, Sir Minister!” said one of the knaves, still pretending to work. “You do not say whether the stuff pleases you.”\n\n“Oh, it is excellent!” replied the old minister, looking at the loom through his spectacles. “This pattern, and the colors, yes, I will tell the Emperor without delay, how very beautiful I think them.”\n\n“We shall be much obliged to you,” said the impostors, and then they named the different colors and described the pattern of the pretended stuff. The old minister listened attentively to their words, in order that he might repeat them to the Emperor; and then the knaves asked for more silk and gold, saying that it was necessary to complete what they had begun. However, they put all that was given them into their knapsacks; and continued to work with as much apparent diligence as before at their empty looms.\n\nThe Emperor now sent another officer of his court to see how the men were getting on, and to ascertain whether the cloth would soon be ready. It was just the same with this gentleman as with the minister; he surveyed the looms on all sides, but could see nothing at all but the empty frames.\n\n“Does not the stuff appear as beautiful to you, as it did to my lord the minister?” asked the impostors of the Emperor's second ambassador; at the same time making the same gestures as before, and talking of the design and colors which were not there.\n\n“I certainly am not stupid!” thought the messenger. “It must be, that I am not fit for my good, profitable office! That is very odd; however, no one shall know anything about it.” And accordingly he praised the stuff he could not see, and declared that he was delighted with both colors and patterns. “Indeed, please your Imperial Majesty,” said he to his sovereign when he returned, “the cloth which the weavers are preparing is extraordinarily magnificent.”"
+  },
+  {
+   "id": "s1u3",
+   "pages": null,
+   "text": "The whole city was talking of the splendid cloth which the Emperor had ordered to be woven at his own expense.\n\nAnd now the Emperor himself wished to see the costly manufacture, while it was still in the loom. Accompanied by a select number of officers of the court, among whom were the two honest men who had already admired the cloth, he went to the crafty impostors, who, as soon as they were aware of the Emperor's approach, went on working more diligently than ever; although they still did not pass a single thread through the looms.\n\n“Is not the work absolutely magnificent?” said the two officers of the crown, already mentioned. “If your Majesty will only be pleased to look at it! What a splendid design! What glorious colors!” and at the same time they pointed to the empty frames; for they imagined that everyone else could see this exquisite piece of workmanship.\n\n“How is this?” said the Emperor to himself. “I can see nothing! This is indeed a terrible affair! Am I a simpleton, or am I unfit to be an Emperor? That would be the worst thing that could happen--Oh! the cloth is charming,” said he, aloud. “It has my complete approbation.” And he smiled most graciously, and looked closely at the empty looms; for on no account would he say that he could not see what two of the officers of his court had praised so much. All his retinue now strained their eyes, hoping to discover something on the looms, but they could see no more than the others; nevertheless, they all exclaimed, “Oh, how beautiful!” and advised his majesty to have some new clothes made from this splendid material, for the approaching procession. “Magnificent! Charming! Excellent!” resounded on all sides; and everyone was uncommonly gay. The Emperor shared in the general satisfaction; and presented the impostors with the riband of an order of knighthood, to be worn in their buttonholes, and the title of “Gentlemen Weavers.”\n\nThe rogues sat up the whole of the night before the day on which the procession was to take place, and had sixteen lights burning, so that everyone might see how anxious they were to finish the Emperor's new suit. They pretended to roll the cloth off the looms; cut the air with their scissors; and sewed with needles without any thread in them. “See!” cried they, at last. “The Emperor's new clothes are ready!”\n\nAnd now the Emperor, with all the grandees of his court, came to the weavers; and the rogues raised their arms, as if in the act of holding something up, saying, “Here are your Majesty's trousers! Here is the scarf! Here is the mantle! The whole suit is as light as a cobweb; one might fancy one has nothing at all on, when dressed in it; that, however, is the great virtue of this delicate cloth.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_weaver_one",
+   "name": "The first knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "One of the two rogues who pretend to weave; he keeps up the pretense at the empty loom and asks the minister whether the stuff pleases him. About the same size as the Emperor but dark and shabby, so he disappears in a crowd.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_officers_crown",
+   "name": "The two officers of the crown",
+   "role": "the two honest officers who first admire the cloth",
+   "description": "Two courtiers who, having already praised the unseen cloth, stand beside the Emperor at the looms and point at the empty frames, delighted with the 'splendid design'. They are of ordinary height, plainly dressed in uniform.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few",
+    "count": 2,
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_emperor_s1",
+   "name": "The Emperor",
+   "role": "the city's Emperor, vainly fond of new clothes",
+   "description": "A grown, tall man who wears a different suit for each hour of the day and neglects soldiers, theatre and hunting for chances to display his clothes. He stands at the empty looms and later walks naked under the canopy, turning before the looking glass; proud, vain, easily flattered, and at the end too embarrassed to halt the procession.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "royal",
+    "outfit_tone": "gold",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_officer_ambassador",
+   "name": "The second officer",
+   "role": "the Emperor's second officer, sent to inspect the looms",
+   "description": "A middle-aged courtier sent as the Emperor's second ambassador; like the minister he sees nothing, decides he must not be stupid, and praises the invisible cloth to the Emperor.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "uniform",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

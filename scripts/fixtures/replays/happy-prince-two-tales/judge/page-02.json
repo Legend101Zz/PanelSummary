@@ -1,0 +1,424 @@
+{
+ "page_number": 2,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 2,
+  "section_id": "s1",
+  "beat": "A little Swallow has stayed behind in the cold north because he loves the most beautiful Reed, courts her all summer to the laughing Scorn of the other Swallows, and when she shakes her head at his invitation he cries she has been trifling with him and flies off toward the Pyramids.",
+  "claims": [
+   "k6",
+   "k7",
+   "k8"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_reed"
+  ],
+  "locations": [
+   "l_river"
+  ],
+  "units": [
+   "s1u1"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k6",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "A little Swallow stays behind in the city while his friends fly to Egypt, because he is in love with the most beautiful Reed.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k7",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow courts the Reed all through the summer, flying round her and touching the water with his wings, while other Swallows call the attachment ridiculous.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k8",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "When the Swallow asks the Reed to leave with him, she shakes her head, so he cries that she has been trifling with him and flies off to the Pyramids.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 2,
+  "section_id": "s1",
+  "purpose": "The reader learns the little Swallow stayed behind in the cold north for the beautiful Reed, courted her all summer to the other Swallows' scorn, was refused, and leaves for the Pyramids.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1.8,
+     0.8
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1.5,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       }
+      ]
+     },
+     {
+      "panel": "p4"
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The river in late summer, empty of birds but for one little Swallow circling.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_river",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The river, late summer",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "His friends had flown to Egypt six weeks before.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Swallow flies round and round the Reed, touching the water with his wings.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_river",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "love",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "fore"
+     },
+     {
+      "character": "c_reed",
+      "pose": "bow",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind",
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_swallow",
+      "text": "The Swallow",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "Shall I love you?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "All summer he courted the most beautiful Reed.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "He asks the Reed to come away; she shakes her head.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_river",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "fore"
+     },
+     {
+      "character": "c_reed",
+      "pose": "bow",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "Will you come away with me?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The other Swallows twittered that it was a ridiculous attachment.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "She shook her head: she loved her home.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Swallow tears away south, crying that she has been trifling with him.",
+    "shot": "medium",
+    "angle": "dutch",
+    "location": "l_river",
+    "time": "dusk",
+    "weather": "wind",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "cry",
+      "facing": "right",
+      "slot": "center",
+      "depth": "fore"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "She has been trifling with me! I fly to the Pyramids.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "FLAP FLAP",
+      "fidelity": "dramatized"
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k6",
+   "k7",
+   "k8"
+  ],
+  "claim_map": [
+   {
+    "claim": "k6",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows one little Swallow left alone over the river while his friends are gone to Egypt; p2 names him and says he courted the most beautiful Reed."
+   },
+   {
+    "claim": "k7",
+    "panels": [
+     "p2",
+     "p3"
+    ],
+    "how": "p2 shows him flying round the Reed, touching the water as she bows; p3 says the other Swallows called it a ridiculous attachment."
+   },
+   {
+    "claim": "k8",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 he asks \"Will you come away with me?\" and she shakes her head; p4 he cries she has been trifling with him and flies off toward the Pyramids."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "41 of 62 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u1",
+   "pages": null,
+   "text": "HIGH above the city, on a tall column, stood the statue of the Happy Prince. He was gilded all over with thin leaves of fine gold, for eyes he had two bright sapphires, and a large red ruby glowed on his sword-hilt.\n\nHe was very much admired indeed. “He is as beautiful as a weathercock,” remarked one of the Town Councillors who wished to gain a reputation for having artistic tastes; “only not quite so useful,” he added, fearing lest people should think him unpractical, which he really was not.\n\n“Why can’t you be like the Happy Prince?” asked a sensible mother of her little boy who was crying for the moon. “The Happy Prince never dreams of crying for anything.”\n\n“I am glad there is some one in the world who is quite happy,” muttered a disappointed man as he gazed at the wonderful statue.\n\n“He looks just like an angel,” said the Charity Children as they came out of the cathedral in their bright scarlet cloaks and their clean white pinafores.\n\n“How do you know?” said the Mathematical Master, “you have never seen one.”\n\n“Ah! but we have, in our dreams,” answered the children; and the Mathematical Master frowned and looked very severe, for he did not approve of children dreaming.\n\nOne night there flew over the city a little Swallow. His friends had gone away to Egypt six weeks before, but he had stayed behind, for he was in love with the most beautiful Reed. He had met her early in the spring as he was flying down the river after a big yellow moth, and had been so attracted by her slender waist that he had stopped to talk to her.\n\n“Shall I love you?” said the Swallow, who liked to come to the point at once, and the Reed made him a low bow. So he flew round and round her, touching the water with his wings, and making silver ripples. This was his courtship, and it lasted all through the summer.\n\n“It is a ridiculous attachment,” twittered the other Swallows; “she has no money, and far too many relations”; and indeed the river was quite full of Reeds. Then, when the autumn came they all flew away.\n\nAfter they had gone he felt lonely, and began to tire of his lady-love. “She has no conversation,” he said, “and I am afraid that she is a coquette, for she is always flirting with the wind.” And certainly, whenever the wind blew, the Reed made the most graceful curtseys. “I admit that she is domestic,” he continued, “but I love travelling, and my wife, consequently, should love travelling also.”\n\n“Will you come away with me?” he said finally to her; but the Reed shook her head, she was so attached to her home."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_reed",
+   "name": "The Reed",
+   "role": "the Swallow's lady-love on the river",
+   "description": "A slender reed beside the river, small compared with a person, with a slender waist; she bows low and makes graceful curtseys to the wind. Domestic, home-loving, mute.",
+   "look": {
+    "kind": "plant",
+    "species": "reed",
+    "tone": "mid",
+    "face": false
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  }
+ ]
+}

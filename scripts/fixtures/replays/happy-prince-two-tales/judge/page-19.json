@@ -1,0 +1,361 @@
+{
+ "page_number": 19,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 19,
+  "section_id": "s2",
+  "beat": "All night the Nightingale sings with her breast against the thorn while the cold crystal Moon leans down and listens and her life-blood ebbs away; petal following petal a pale rose blossoms on the topmost spray, but its heart stays white, for only a Nightingale's heart's-blood can crimson it.",
+  "claims": [
+   "k57",
+   "k58",
+   "k60"
+  ],
+  "cast": [
+   "c_nightingale",
+   "c_rose_trees"
+  ],
+  "locations": [
+   "l_student_window",
+   "l_garden"
+  ],
+  "units": [
+   "s2u4"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k57",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "All night the Nightingale sings with her breast against the thorn while the cold crystal Moon leans down and listens and her life-blood ebbs away.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k58",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "As she sings of the birth of love in the heart of a boy and a girl, a pale rose blossoms petal following petal on the topmost spray.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 22
+    },
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  },
+  {
+   "id": "k60",
+   "section_id": "s2",
+   "kind": "fact",
+   "importance": "core",
+   "text": "The rose's heart stays white until the thorn reaches the Nightingale's heart, for only a Nightingale's heart's-blood can crimson the heart of a rose.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 19,
+  "section_id": "s2",
+  "purpose": "All night the Nightingale sings her breast against the thorn under the listening Moon, and a pale rose opens petal by petal while its heart stays white.",
+  "layout": {
+   "template": "l_shape_4"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Nightingale clings to the red rose-tree, breast pressed to the thorn, singing all night",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     },
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "left",
+      "depth": "back"
+     }
+    ],
+    "props": [
+     {
+      "prop": "thorn",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "SONG",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s2u4",
+       "page": 22
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "She set her breast against the thorn, and sang all night.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 22
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 22
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The cold crystal Moon leans down over the sleeping garden to listen",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "center",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The cold crystal Moon leaned down and listened.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 22
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 22
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "A pale rose opens on the topmost spray, petal following petal",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center",
+      "tone": "white"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "On the topmost spray a pale rose blossomed, petal following petal.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 22
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 22
+     },
+     {
+      "unit": "s2u4",
+      "page": 23
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The opened rose on the branch: its heart is still white",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_rose_trees",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center_right",
+      "tone": "white"
+     }
+    ],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Its heart stayed white. Only a Nightingale's heart's-blood can crimson it.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u4",
+       "page": 23
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u4",
+      "page": 23
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k57",
+   "k58",
+   "k60"
+  ],
+  "claim_map": [
+   {
+    "claim": "k57",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows the Nightingale with her breast against the thorn singing through the night; p2 shows the cold crystal Moon leaning down to listen."
+   },
+   {
+    "claim": "k58",
+    "panels": [
+     "p1",
+     "p3"
+    ],
+    "how": "p1's singing Nightingale, and p3's rose opening petal following petal on the topmost spray."
+   },
+   {
+    "claim": "k60",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 shows the pale rose; p4 shows its still-white heart and states only the Nightingale's heart's-blood can crimson it."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "41 of 41 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u4",
+   "pages": null,
+   "text": "And when the Moon shone in the heavens the Nightingale flew to the Rose-tree, and set her breast against the thorn. All night long she sang with her breast against the thorn, and the cold crystal Moon leaned down and listened. All night long she sang, and the thorn went deeper and deeper into her breast, and her life-blood ebbed away from her.\n\nShe sang first of the birth of love in the heart of a boy and a girl. And on the top-most spray of the Rose-tree there blossomed a marvellous rose, petal following petal, as song followed song. Pale was it, at first, as the mist that hangs over the river—pale as the feet of the morning, and silver as the wings of the dawn. As the shadow of a rose in a mirror of silver, as the shadow of a rose in a water-pool, so was the rose that blossomed on the topmost spray of the Tree.\n\nBut the Tree cried to the Nightingale to press closer against the thorn. “Press closer, little Nightingale,” cried the Tree, “or the Day will come before the rose is finished.”\n\nSo the Nightingale pressed closer against the thorn, and louder and louder grew her song, for she sang of the birth of passion in the soul of a man and a maid.\n\nAnd a delicate flush of pink came into the leaves of the rose, like the flush in the face of the bridegroom when he kisses the lips of the bride. But the thorn had not yet reached her heart, so the rose’s heart remained white, for only a Nightingale’s heart’s-blood can crimson the heart of a rose.\n\nAnd the Tree cried to the Nightingale to press closer against the thorn. “Press closer, little Nightingale,” cried the Tree, “or the Day will come before the rose is finished.”\n\nSo the Nightingale pressed closer against the thorn, and the thorn touched her heart, and a fierce pang of pain shot through her. Bitter, bitter was the pain, and wilder and wilder grew her song, for she sang of the Love that is perfected by Death, of the Love that dies not in the tomb.\n\nAnd the marvellous rose became crimson, like the rose of the eastern sky. Crimson was the girdle of petals, and crimson as a ruby was the heart.\n\nBut the Nightingale’s voice grew fainter, and her little wings began to beat, and a film came over her eyes. Fainter and fainter grew her song, and she felt something choking her in her throat.\n\nThen she gave one last burst of music. The white Moon heard it, and she forgot the dawn, and lingered on in the sky. The red rose heard it, and it trembled all over with ecstasy, and opened its petals to the cold morning air. Echo bore it to her purple cavern in the hills, and woke the sleeping shepherds from their dreams. It floated through the reeds of the river, and they carried its message to the sea."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_rose_trees",
+   "name": "The Rose-trees",
+   "role": "the white, yellow and red rose-trees of the garden",
+   "description": "Three rose-trees in the garden — one white in the centre of the grass-plot, one yellow round the old sun-dial, one red beneath the Student's window.",
+   "look": {
+    "kind": "plant",
+    "species": "rose_bush",
+    "tone": "flowers",
+    "face": false,
+    "bloom": "buds"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  }
+ ]
+}

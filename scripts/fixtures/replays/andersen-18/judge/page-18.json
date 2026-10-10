@@ -1,0 +1,437 @@
+{
+ "page_number": 18,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 18,
+  "section_id": "s4",
+  "beat": "She rubs the whole bundle against the wall and the grandmother takes her on her arm so they fly up to God; at dawn she sits frozen to death against the wall, smiling, one bundle of matches burnt, and the onlookers say only that she wanted to warm herself.",
+  "claims": [
+   "k52",
+   "k53",
+   "k54"
+  ],
+  "cast": [
+   "c_match_girl",
+   "c_grandmother",
+   "c_matches"
+  ],
+  "locations": [
+   "l_house_corner"
+  ],
+  "units": [
+   "s4u2"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k52",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "She rubs the whole bundle against the wall, and the grandmother takes her on her arm and they fly up to God.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    },
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k53",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "At dawn she is found frozen to death against the wall, smiling, with one bundle of matches burnt.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k54",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The onlookers say she wanted to warm herself, and none imagines the splendour she entered with her grandmother.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 18,
+  "section_id": "s4",
+  "purpose": "She burns the whole bundle and flies with her grandmother to God, yet at dawn she is found frozen against the wall while the onlookers say she only wanted to warm herself.",
+  "layout": {
+   "template": "beats_then_impact_4"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The girl rubs the whole bundle of matches fast against the wall",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "kneel",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "matches",
+      "tone": "light",
+      "slot": "center_right"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "She rubbed the whole bundle of matches quickly against the wall.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "In the brilliant light the grandmother stands radiant and taller than life, and takes the child on her arm",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_grandmother",
+      "pose": "reach",
+      "expression": "love",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "eyes": "open"
+      }
+     },
+     {
+      "character": "c_match_girl",
+      "pose": "reach",
+      "expression": "love",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays",
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The grandmother was never so beautiful and so tall.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The two rise in brightness and joy, far up out of the cold",
+    "shot": "wide",
+    "angle": "worms_eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_grandmother",
+      "pose": "jump",
+      "expression": "gentle",
+      "facing": "back",
+      "slot": "center",
+      "depth": "back",
+      "variant": {
+       "eyes": "open"
+      }
+     },
+     {
+      "character": "c_match_girl",
+      "pose": "jump",
+      "expression": "happy",
+      "facing": "back",
+      "slot": "center_left",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays",
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Both flew in brightness and in joy so high, so very high... they were with God.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "At dawn the girl sits stiff and frozen against the wall, rosy-cheeked and smiling, one bundle of matches burnt",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "sit",
+      "expression": "asleep",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "dead",
+       "outfit_tone": "white"
+      }
+     }
+    ],
+    "props": [
+     {
+      "prop": "matches",
+      "tone": "black",
+      "slot": "center_right"
+     }
+    ],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Sat the poor girl, with rosy cheeks and with a smiling mouth... frozen to death.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u2",
+       "page": 22
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The onlookers thought only that she wanted to warm herself; none imagined the splendour she entered with her grandmother.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 22
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 22
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k52",
+   "k53",
+   "k54"
+  ],
+  "claim_map": [
+   {
+    "claim": "k52",
+    "panels": [
+     "p1",
+     "p2",
+     "p3"
+    ],
+    "how": "p1 she rubs the whole bundle against the wall; p2 the grandmother, radiant and tall, reaches for her; p3 the two rise up in light and are with God."
+   },
+   {
+    "claim": "k53",
+    "panels": [
+     "p4"
+    ],
+    "how": "p4 shows her sitting frozen against the wall at dawn with a smiling mouth and a burnt bundle of matches, and the box says it."
+   },
+   {
+    "claim": "k54",
+    "panels": [
+     "p4"
+    ],
+    "how": "the second box names the onlookers, their reason (to warm herself) and that none imagined the splendour she entered with her grandmother."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "70 of 70 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "PLANNED_CAST_MISSING",
+   "severity": "warning",
+   "path": "page",
+   "message": "planned cast not drawn on this page: c_matches."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s4u2",
+   "pages": null,
+   "text": "She rubbed another against the wall: it burned brightly, and where the light fell on the wall, there the wall became transparent like a veil, so that she could see into the room. On the table was spread a snow-white tablecloth; upon it was a splendid porcelain service, and the roast goose was steaming famously with its stuffing of apple and dried plums.\n\nAnd what was still more capital to behold was, the goose hopped down from the dish, reeled about on the floor with knife and fork in its breast, till it came up to the poor little girl; when--the match went out and nothing but the thick, cold, damp wall was left behind. She lighted another match. Now there she was sitting under the most magnificent Christmas tree: it was still larger, and more decorated than the one which she had seen through the glass door in the rich merchant's house.\n\nThousands of lights were burning on the green branches, and gaily-colored pictures, such as she had seen in the shopwindows, looked down upon her. The little maiden stretched out her hands towards them when--the match went out. The lights of the Christmas tree rose higher and higher, she saw them now as stars in heaven; one fell down and formed a long trail of fire.\n\n“Someone is just dead!” said the little girl; for her old grandmother, the only person who had loved her, and who was now no more, had told her, that when a star falls, a soul ascends to God.\n\nShe drew another match against the wall: it was again light, and in the lustre there stood the old grandmother, so bright and radiant, so mild, and with such an expression of love.\n\n“Grandmother!” cried the little one. “Oh, take me with you! You go away when the match burns out; you vanish like the warm stove, like the delicious roast goose, and like the magnificent Christmas tree!” And she rubbed the whole bundle of matches quickly against the wall, for she wanted to be quite sure of keeping her grandmother near her. And the matches gave such a brilliant light that it was brighter than at noon-day: never formerly had the grandmother been so beautiful and so tall. She took the little maiden, on her arm, and both flew in brightness and in joy so high, so very high, and then above was neither cold, nor hunger, nor anxiety-- they were with God.\n\nBut in the corner, at the cold hour of dawn, sat the poor girl, with rosy cheeks and with a smiling mouth, leaning against the wall--frozen to death on the last evening of the old year. Stiff and stark sat the child there with her matches, of which one bundle had been burnt. “She wanted to warm herself,” people said. No one had the slightest suspicion of what beautiful things she had seen; no one even dreamed of the splendor in which, with her grandmother she had entered on the joys of a new year."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_matches",
+   "name": "The bundle of matches",
+   "role": "the matches the girl carries and burns",
+   "description": "A small paper bundle of matches, sold all day without a single purchaser and burnt down one by one against the wall; the only thing the girl owns.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "object",
+    "shape": "candle",
+    "tone": "light",
+    "face": false
+   }
+  },
+  {
+   "id": "c_grandmother",
+   "name": "The old grandmother",
+   "role": "the only one who loved the Match Girl",
+   "description": "A small, gentle old woman in a light gown and bonnet, long dead and gone from the girl; when a match burns she appears bright, radiant and taller than life, takes the child on her arm and rises with her.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "white",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "light",
+    "headwear": "bonnet",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u1",
+     "claim": "k50",
+     "set": {
+      "eyes": "dead"
+     }
+    },
+    {
+     "at": "s4u2",
+     "claim": "k51",
+     "set": {
+      "eyes": "open"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The little Match Girl",
+   "role": "the poor girl selling matches on New Year's Eve",
+   "description": "A small, thin child with long fair curls falling to her neck, bareheaded and barefoot, in an old apron she uses to carry matches. She crouches in a corner between two houses, lights matches against the wall and at dawn is found frozen against it with rosy cheeks and a smiling mouth; timid, cold, hungry, yet radiant in her visions.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u2",
+     "claim": "k53",
+     "set": {
+      "eyes": "dead",
+      "outfit_tone": "white"
+     }
+    }
+   ]
+  }
+ ]
+}

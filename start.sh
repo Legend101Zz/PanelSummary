@@ -55,14 +55,18 @@ wait_url() {
 }
 
 # --- secrets -----------------------------------------------------------------
-MINIMAX_KEY="${MINIMAX_API_KEY:-}"
-if [[ -z "$MINIMAX_KEY" && -f "$ROOT/backend/.env" ]]; then
+# Opt-in replay worker (track F1): PANELSUMMARY_REPLAY_WORKER=<replay package dir> starts the replay worker
+# instead of the real one. It makes no model call, so no MiniMax key is looked up, read or passed on.
+REPLAY_PKG="${PANELSUMMARY_REPLAY_WORKER:-}"
+MINIMAX_KEY=""
+[[ -z "$REPLAY_PKG" ]] && MINIMAX_KEY="${MINIMAX_API_KEY:-}"
+if [[ -z "$REPLAY_PKG" && -z "$MINIMAX_KEY" && -f "$ROOT/backend/.env" ]]; then
   MINIMAX_KEY="$(grep -E '^MINIMAX_API_KEY=' "$ROOT/backend/.env" | head -1 | cut -d= -f2- | tr -d '"'"'"' ')"
 fi
-if [[ -z "$MINIMAX_KEY" ]] && command -v security >/dev/null; then
+if [[ -z "$REPLAY_PKG" && -z "$MINIMAX_KEY" ]] && command -v security >/dev/null; then
   MINIMAX_KEY="$(security find-generic-password -s minimax_api_key -w 2>/dev/null || true)"
 fi
-[[ -n "$MINIMAX_KEY" ]] || fail "No MiniMax key found (MINIMAX_API_KEY, backend/.env, or Keychain 'minimax_api_key')."
+[[ -n "$MINIMAX_KEY" || -n "$REPLAY_PKG" ]] || fail "No MiniMax key found (MINIMAX_API_KEY, backend/.env, or Keychain 'minimax_api_key')."
 
 if [[ ! -f "$TOKENS_FILE" ]] || ! grep -q '^AGENT_WORKER_TOKEN=' "$TOKENS_FILE"; then
   echo "AGENT_WORKER_TOKEN=$(openssl rand -hex 32)" >"$TOKENS_FILE"
@@ -99,7 +103,19 @@ mkdir -p "$ROOT/frontend/public/fonts"
 cp "$ROOT/packages/manga-render/fonts/"*.ttf "$ROOT/frontend/public/fonts/"
 
 # --- agent worker (MiniMax harness) -------------------------------------------
-if ! port_busy "$WORKER_PORT"; then
+if [[ -n "$REPLAY_PKG" ]]; then
+  [[ "$REPLAY_PKG" == /* ]] || REPLAY_PKG="$ROOT/$REPLAY_PKG"
+  [[ -f "$REPLAY_PKG/plan.json" ]] || fail "PANELSUMMARY_REPLAY_WORKER: no replay package at $REPLAY_PKG (plan.json is missing)"
+  if ! port_busy "$WORKER_PORT"; then
+    step "Starting the REPLAY worker on :$WORKER_PORT (no model call, no MiniMax key) from $REPLAY_PKG"
+    start_service worker "agent-worker/scripts/replay-worker.ts" env -i PATH="$PATH" HOME="$HOME" \
+      AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" AGENT_WORKER_PORT="$WORKER_PORT" AGENT_WORKER_HOST=127.0.0.1 \
+      REPLAY_PACKAGE="$REPLAY_PKG" ${FAIL_PAGES:+FAIL_PAGES=$FAIL_PAGES} ${FAIL_TIMES:+FAIL_TIMES=$FAIL_TIMES} \
+      ${PROVIDER_STOP:+PROVIDER_STOP=$PROVIDER_STOP} ${PROVIDER_STOP_TIMES:+PROVIDER_STOP_TIMES=$PROVIDER_STOP_TIMES} \
+      ${REPLAY_DELAYS:+REPLAY_DELAYS=$REPLAY_DELAYS} ${REPLAY_FAST:+REPLAY_FAST=$REPLAY_FAST} ${REPLAY_COSTS:+REPLAY_COSTS=$REPLAY_COSTS} \
+      "$ROOT/apps/agent-worker/node_modules/.bin/tsx" "$ROOT/apps/agent-worker/scripts/replay-worker.ts"
+  fi
+elif ! port_busy "$WORKER_PORT"; then
   step "Starting the agent worker on :$WORKER_PORT"
   start_service worker "agent-worker/src/index.ts" env -i PATH="$PATH" HOME="$HOME" \
     MINIMAX_API_KEY="$MINIMAX_KEY" AGENT_WORKER_TOKEN="$AGENT_WORKER_TOKEN" \

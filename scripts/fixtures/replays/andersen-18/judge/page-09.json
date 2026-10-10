@@ -1,0 +1,588 @@
+{
+ "page_number": 9,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 9,
+  "section_id": "s2",
+  "beat": "The Emperor makes the disguised Prince Imperial Swineherd with a dirty little room by the pigsty, where he makes a kitchen-pot hung with little bells that plays 'Ach! du lieber Augustin' and whose smoke smells every dish cooking in the city; the Princess buys the pot for ten kisses paid by her ladies behind a screen of dresses.",
+  "claims": [
+   "k27",
+   "k28",
+   "k29"
+  ],
+  "cast": [
+   "c_prince",
+   "c_emperor_s2",
+   "c_princess",
+   "c_court_lady_slipper"
+  ],
+  "locations": [
+   "l_swineherd_room",
+   "l_palace_gate"
+  ],
+  "units": [
+   "s2u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k27",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor appoints the disguised Prince Imperial Swineherd, giving him a dirty little room by the pigsty.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 12
+    }
+   ]
+  },
+  {
+   "id": "k28",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The swineherd makes a kitchen-pot hung with little bells that plays 'Ach! du lieber Augustin' and whose smoke smells every dish cooking in the city.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 12
+    },
+    {
+     "unit": "s2u2",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k29",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess buys the kitchen-pot by having the court ladies pay the swineherd ten kisses behind a screen of their own bodies.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 13
+    },
+    {
+     "unit": "s2u2",
+     "page": 14
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 9,
+  "section_id": "s2",
+  "purpose": "The disguised Prince is made Imperial Swineherd, makes his bell-hung pot whose smoke smells every dish in the city, and the Princess buys it with ten kisses hidden behind her ladies.",
+  "layout": {
+   "template": "establish_6"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The dirty little room close by the pigsty",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "walk",
+      "expression": "tired",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The room by the pigsty",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Emperor appoints him Imperial Swineherd",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "point",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "bow",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s2",
+      "text": "I want some one to take care of the pigs.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 12
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "So he is made Imperial Swineherd.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "Little bells hung round the boiling kitchen-pot",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "bell",
+      "tone": "gold",
+      "slot": "center"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The little bells play Ach! du lieber Augustin.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "He holds a finger in the smoke and the city's dishes smell out",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "hold",
+      "expression": "smug",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind",
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Whoever holds a finger in that smoke smells every dish cooking on every hearth in the city.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 12
+     },
+     {
+      "unit": "s2u2",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Princess buys the pot behind a screen of her ladies",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_court_lady_slipper",
+      "pose": "stand",
+      "expression": "determined",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "bow",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_court_lady_slipper",
+      "text": "The lady in the wooden slippers",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 13
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Ten kisses from the Princess.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 13
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_princess",
+      "text": "Stand before me that no one may see us.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 13
+     },
+     {
+      "unit": "s2u2",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The Princess regards her new kitchen-pot",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "hold",
+      "expression": "love",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "They spread out their dresses; the swineherd got ten kisses.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     },
+     {
+      "kind": "thought",
+      "speaker": "c_princess",
+      "text": "Now I own my one tune.",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s2u2",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 13
+     },
+     {
+      "unit": "s2u2",
+      "page": 14
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k27",
+   "k28",
+   "k29"
+  ],
+  "claim_map": [
+   {
+    "claim": "k27",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows the dirty room by the pigsty; p2 the Emperor appoints him Imperial Swineherd of his pigs."
+   },
+   {
+    "claim": "k28",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 the insert shows bells hung round the pot playing the tune; p4 the smoke smells every dish cooking in the city."
+   },
+   {
+    "claim": "k29",
+    "panels": [
+     "p5",
+     "p6"
+    ],
+    "how": "p5 the Prince asks ten kisses from the Princess and she orders her ladies to screen them; p6 the ladies spread their dresses and she holds the pot she bought."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "52 of 82 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u2",
+   "pages": null,
+   "text": "“Good day to my lord, the Emperor!” said he. “Can I have employment at the palace?”\n\n“Why, yes,” said the Emperor. “I want some one to take care of the pigs, for we have a great many of them.”\n\nSo the Prince was appointed “Imperial Swineherd.” He had a dirty little room close by the pigsty; and there he sat the whole day, and worked. By the evening he had made a pretty little kitchen-pot. Little bells were hung all round it; and when the pot was boiling, these bells tinkled in the most charming manner, and played the old melody,\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”*\n\n* “Ah! dear Augustine! All is gone, gone, gone!”\n\nBut what was still more curious, whoever held his finger in the smoke of the kitchen-pot, immediately smelt all the dishes that were cooking on every hearth in the city--this, you see, was something quite different from the rose.\n\nNow the Princess happened to walk that way; and when she heard the tune, she stood quite still, and seemed pleased; for she could play “Lieber Augustine”; it was the only piece she knew; and she played it with one finger.\n\n“Why there is my piece,” said the Princess. “That swineherd must certainly have been well educated! Go in and ask him the price of the instrument.”\n\nSo one of the court-ladies must run in; however, she drew on wooden slippers first.\n\n“What will you take for the kitchen-pot?” said the lady.\n\n“I will have ten kisses from the Princess,” said the swineherd.\n\n“Yes, indeed!” said the lady.\n\n“I cannot sell it for less,” rejoined the swineherd.\n\n“He is an impudent fellow!” said the Princess, and she walked on; but when she had gone a little way, the bells tinkled so prettily\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”\n\n“Stay,” said the Princess. “Ask him if he will have ten kisses from the ladies of my court.”\n\n“No, thank you!” said the swineherd. “Ten kisses from the Princess, or I keep the kitchen-pot myself.”\n\n“That must not be, either!” said the Princess. “But do you all stand before me that no one may see us.”\n\nAnd the court-ladies placed themselves in front of her, and spread out their dresses--the swineherd got ten kisses, and the Princess--the kitchen-pot.\n\nThat was delightful! The pot was boiling the whole evening, and the whole of the following day. They knew perfectly well what was cooking at every fire throughout the city, from the chamberlain's to the cobbler's; the court-ladies danced and clapped their hands.\n\n“We know who has soup, and who has pancakes for dinner to-day, who has cutlets, and who has eggs. How interesting!”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_court_lady_slipper",
+   "name": "The lady in the wooden slippers",
+   "role": "one of the court ladies sent to ask the swineherd's price",
+   "description": "One court lady who pulls on wooden slippers before running into the swineherd's room and, later, returns to announce the hundred kisses the Princess will pay.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s2",
+   "name": "The Emperor",
+   "role": "the Princess's father, who catches the ladies at the pigsty",
+   "description": "An elderly, grey-bearded ruler in a dark robe who watches the doings at the palace from his balcony in spectacles and wooden slippers, then boxes his daughter's ears.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

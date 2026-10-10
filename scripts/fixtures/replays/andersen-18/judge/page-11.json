@@ -1,0 +1,521 @@
+{
+ "page_number": 11,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 11,
+  "section_id": "s2",
+  "beat": "The Emperor comes out on the balcony in his spectacles, creeps down on tiptoe and catches the ladies counting kisses by the pigsty; at the eighty-sixth kiss he boxes the Princess's ears with his slipper and thrusts Princess and swineherd out of the city.",
+  "claims": [
+   "k33",
+   "k34"
+  ],
+  "cast": [
+   "c_emperor_s2",
+   "c_princess",
+   "c_prince",
+   "c_court_ladies"
+  ],
+  "locations": [
+   "l_palace_balcony",
+   "l_swineherd_room"
+  ],
+  "units": [
+   "s2u3"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k33",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor comes out on the balcony in his spectacles, creeps down on tiptoe, and catches the ladies counting kisses by the pigsty.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k34",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor boxes the Princess's ears with his slipper at the eighty-sixth kiss and thrusts both Princess and swineherd out of the city.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 15
+    },
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 11,
+  "section_id": "s2",
+  "purpose": "The Emperor catches his daughter kissing the swineherd, boxes her ears with his slipper at the eighty-sixth kiss, and drives both out of the city.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     3
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "panel": "p2"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p3"
+       },
+       {
+        "panel": "p4"
+       },
+       {
+        "panel": "p5"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Emperor steps out on the palace balcony and rubs his eyes into his spectacles.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_palace_balcony",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The palace balcony",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "He creeps into the courtyard on tiptoe to see what the ladies are about.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "walk",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s2",
+      "text": "I must go down and see what they are about!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The ladies stand in a ring counting the kisses as the Princess leans in to the swineherd.",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "reach",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     },
+     {
+      "character": "c_court_ladies",
+      "pose": "talk",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "left",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "They counted the kisses, and perceived nothing.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Emperor boxes the Princess's ears with his slipper.",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "point",
+      "expression": "shout",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_princess",
+      "pose": "cower",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "surprised",
+      "facing": "front",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "impact_burst"
+    ],
+    "text": [
+     {
+      "kind": "shout",
+      "speaker": "c_emperor_s2",
+      "text": "What is all this!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "SLAP",
+      "fidelity": "dramatized"
+     },
+     {
+      "kind": "narration",
+      "text": "At the eighty-sixth kiss.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Alone outside the city, the Princess turns back weeping.",
+    "shot": "close",
+    "angle": "high",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "walk",
+      "expression": "cry",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_emperor_s2",
+      "text": "March out!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Princess and swineherd were both thrust out of the city.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     },
+     {
+      "unit": "s2u3",
+      "page": 16
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k33",
+   "k34"
+  ],
+  "claim_map": [
+   {
+    "claim": "k33",
+    "panels": [
+     "p1",
+     "p2",
+     "p3"
+    ],
+    "how": "p1 shows him come out on the balcony in his spectacles; p2 has him creep down on tiptoe saying he must see; p3 shows the ladies counting kisses by the pigsty, unaware."
+   },
+   {
+    "claim": "k34",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 shows him box the Princess's ears with his slipper, lettered as the eighty-sixth kiss; p5 carries his shout 'March out' and the narration names both Princess and swineherd thrust out of the city."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "SPEAKER_OFF_PANEL",
+   "severity": "warning",
+   "path": "panel p5 text 0",
+   "message": "speaker \"c_emperor_s2\" is not drawn in this panel, so the speech tail will point off-panel. Add them to \"figures\" if they should be seen speaking."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u3",
+   "pages": null,
+   "text": "“Yes, but keep my secret, for I am an Emperor's daughter.”\n\nThe swineherd--that is to say--the Prince, for no one knew that he was other than an ill-favored swineherd, let not a day pass without working at something; he at last constructed a rattle, which, when it was swung round, played all the waltzes and jig tunes, which have ever been heard since the creation of the world.\n\n“Ah, that is superbe!” said the Princess when she passed by. “I have never heard prettier compositions! Go in and ask him the price of the instrument; but mind, he shall have no more kisses!”\n\n“He will have a hundred kisses from the Princess!” said the lady who had been to ask.\n\n“I think he is not in his right senses!” said the Princess, and walked on, but when she had gone a little way, she stopped again. “One must encourage art,” said she, “I am the Emperor's daughter. Tell him he shall, as on yesterday, have ten kisses from me, and may take the rest from the ladies of the court.”\n\n“Oh--but we should not like that at all!” said they. “What are you muttering?” asked the Princess. “If I can kiss him, surely you can. Remember that you owe everything to me.” So the ladies were obliged to go to him again.\n\n“A hundred kisses from the Princess,” said he, “or else let everyone keep his own!”\n\n“Stand round!” said she; and all the ladies stood round her whilst the kissing was going on.\n\n“What can be the reason for such a crowd close by the pigsty?” said the Emperor, who happened just then to step out on the balcony; he rubbed his eyes, and put on his spectacles. “They are the ladies of the court; I must go down and see what they are about!” So he pulled up his slippers at the heel, for he had trodden them down.\n\nAs soon as he had got into the court-yard, he moved very softly, and the ladies were so much engrossed with counting the kisses, that all might go on fairly, that they did not perceive the Emperor. He rose on his tiptoes.\n\n“What is all this?” said he, when he saw what was going on, and he boxed the Princess's ears with his slipper, just as the swineherd was taking the eighty-sixth kiss.\n\n“March out!” said the Emperor, for he was very angry; and both Princess and swineherd were thrust out of the city.\n\nThe Princess now stood and wept, the swineherd scolded, and the rain poured down.\n\n“Alas! Unhappy creature that I am!” said the Princess. “If I had but married the handsome young Prince! Ah! how unfortunate I am!”\n\nAnd the swineherd went behind a tree, washed the black and brown color from his face, threw off his dirty clothes, and stepped forth in his princely robes; he looked so noble that the Princess could not help bowing before him.\n\n“I am come to despise thee,” said he. “Thou would'st not have an honorable Prince! Thou could'st not prize the rose and the nightingale, but thou wast ready to kiss the swineherd for the sake of a trumpery plaything. Thou art rightly served.”\n\nHe then went back to his own little kingdom, and shut the door of his palace in her face. Now she might well sing,\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_court_ladies",
+   "name": "The court ladies",
+   "role": "the ladies of the court who pay the kisses",
+   "description": "A crowd of finely dressed ladies of the court who chatter French badly, stand in a ring around the Princess while she kisses the swineherd, and count the kisses together.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "nobles",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s2",
+   "name": "The Emperor",
+   "role": "the Princess's father, who catches the ladies at the pigsty",
+   "description": "An elderly, grey-bearded ruler in a dark robe who watches the doings at the palace from his balcony in spectacles and wooden slippers, then boxes his daughter's ears.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

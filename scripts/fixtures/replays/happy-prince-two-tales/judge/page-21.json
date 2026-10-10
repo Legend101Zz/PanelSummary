@@ -1,0 +1,550 @@
+{
+ "page_number": 21,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 21,
+  "section_id": "s2",
+  "beat": "The Tree calls out that the rose is finished, but the Nightingale makes no answer, lying dead in the long grass with the thorn in her heart; at noon the Student opens his window, declares he has never seen a rose so beautiful, plucks it and runs to the Professor's house, where the girl in the doorway frowns and says real jewels cost far more than flowers.",
+  "claims": [
+   "k63",
+   "k64",
+   "k66"
+  ],
+  "cast": [
+   "c_nightingale",
+   "c_student",
+   "c_profs_daughter",
+   "c_dog"
+  ],
+  "locations": [
+   "l_garden",
+   "l_student_window",
+   "l_professor_door"
+  ],
+  "units": [
+   "s2u5"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k63",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale makes no answer, for she is lying dead in the long grass with the thorn in her heart.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 24
+    }
+   ]
+  },
+  {
+   "id": "k64",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "At noon the Student opens his window, finds the red rose, declares he has never seen one so beautiful, plucks it and runs to the Professor's house.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 24
+    },
+    {
+     "unit": "s2u5",
+     "page": 25
+    }
+   ]
+  },
+  {
+   "id": "k66",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The girl frowns at the rose, saying it will not go with her dress and that the Chamberlain's nephew has sent her real jewels, which cost far more than flowers.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 25
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 21,
+  "section_id": "s2",
+  "purpose": "The Nightingale's silent death is left in the grass while, at noon, the Student finds the rose she made and runs with it to be met with the girl's scorn.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     0.9,
+     2.1,
+     1.4
+    ],
+    "children": [
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p1"
+       },
+       {
+        "panel": "p2"
+       }
+      ]
+     },
+     {
+      "panel": "p3"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1.4
+      ],
+      "children": [
+       {
+        "panel": "p4"
+       },
+       {
+        "panel": "p5"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The nightingale lies dead in the long grass under the oak as the tree calls that the rose is finished",
+    "shot": "wide",
+    "angle": "high",
+    "location": "l_garden",
+    "time": "dawn",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "fore",
+      "variant": {
+       "eyes": "dead"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The garden, at daybreak",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 24
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The Tree calls out that the rose is finished now.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 24
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 24
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "Close on the silent nightingale with the thorn in her breast",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "dawn",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "eyes": "dead"
+      }
+     }
+    ],
+    "props": [
+     {
+      "prop": "thorn",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "But the Nightingale made no answer. She lay dead, the thorn in her heart.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 24
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 24
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "At noon the Student leans out of his window and plucks the red rose",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_student_window",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "reach",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "Why, what a wonderful piece of luck!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 24
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 24
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Student runs to the Professor's house with the rose in his hand",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_professor_door",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "run",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Professor's house",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "The reddest rose in all the world!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 25
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "In the doorway the girl frowns at the rose and names the real jewels",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_professor_door",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_profs_daughter",
+      "pose": "sit",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_dog",
+      "pose": "lie",
+      "expression": "neutral",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "fore",
+      "on": {
+       "target": "c_profs_daughter",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_profs_daughter",
+      "text": "The Professor's daughter",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_dog",
+      "text": "Her little dog",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_profs_daughter",
+      "text": "Jewels cost far more than flowers.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 25
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k63",
+   "k64",
+   "k66"
+  ],
+  "claim_map": [
+   {
+    "claim": "k63",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows the nightingale lying in the long grass with closed dead eyes while the Tree calls the rose finished; p2 closes on her silent face with the thorn in her heart, and the narration says she made no answer."
+   },
+   {
+    "claim": "k64",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3 has the Student open his window at noon, cry out at the red rose and pluck it; p4 shows him running to the Professor's house calling the rose the reddest in the world."
+   },
+   {
+    "claim": "k66",
+    "panels": [
+     "p5"
+    ],
+    "how": "the daughter sits scowling in the doorway with her little dog at her feet and says jewels cost far more than flowers."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "37 of 57 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "HELD_PROP_OFF_FRAME",
+   "severity": "warning",
+   "path": "panel p4",
+   "message": "the rose held by \"c_student\" would be outside the frame of this medium panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a \"reach\" pose to show it in the hand."
+  },
+  {
+   "code": "CLAIM_THIN",
+   "severity": "warning",
+   "path": "page.claims",
+   "message": "claim k66 is only partly on the page; it never shows or says \"frowns\", \"saying\", \"dress\", \"chamberlains\", \"nephew\", \"sent\", \"real\". Check that every part of the claim reaches the reader."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u5",
+   "pages": null,
+   "text": "“Look, look!” cried the Tree, “the rose is finished now”; but the Nightingale made no answer, for she was lying dead in the long grass, with the thorn in her heart.\n\nAnd at noon the Student opened his window and looked out.\n\n“Why, what a wonderful piece of luck!” he cried; “here is a red rose! I have never seen any rose like it in all my life. It is so beautiful that I am sure it has a long Latin name”; and he leaned down and plucked it.\n\nThen he put on his hat, and ran up to the Professor’s house with the rose in his hand.\n\nThe daughter of the Professor was sitting in the doorway winding blue silk on a reel, and her little dog was lying at her feet.\n\n“You said that you would dance with me if I brought you a red rose,” cried the Student. “Here is the reddest rose in all the world. You will wear it to-night next your heart, and as we dance together it will tell you how I love you.”\n\nBut the girl frowned.\n\n“I am afraid it will not go with my dress,” she answered; “and, besides, the Chamberlain’s nephew has sent me some real jewels, and everybody knows that jewels cost far more than flowers.”\n\n“Well, upon my word, you are very ungrateful,” said the Student angrily; and he threw the rose into the street, where it fell into the gutter, and a cart-wheel went over it.\n\n“Ungrateful!” said the girl. “I tell you what, you are very rude; and, after all, who are you? Only a Student. Why, I don’t believe you have even got silver buckles to your shoes as the Chamberlain’s nephew has”; and she got up from her chair and went into the house.\n\n“What a silly thing Love is,” said the Student as he walked away. “It is not half as useful as Logic, for it does not prove anything, and it is always telling one of things that are not going to happen, and making one believe things that are not true. In fact, it is quite unpractical, and, as in this age to be practical is everything, I shall go back to Philosophy and study Metaphysics.”\n\nSo he returned to his room and pulled out a great dusty book, and began to read."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_student",
+   "name": "The Young Student",
+   "role": "a lover in a garden, writer of a note-book",
+   "description": "A young lover, slight and boyish, with dark hyacinth-blossom hair, red lips and beautiful eyes pale as ivory; he lies on the grass weeping, writes in a note-book, and ends by rejecting Love for Logic and Metaphysics.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_dog",
+   "name": "Her Little Dog",
+   "role": "the girl's pet dog",
+   "description": "A small dog lying at the girl's feet in the doorway while she winds blue silk.",
+   "look": {
+    "kind": "animal",
+    "species": "dog",
+    "tone": "light"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_profs_daughter",
+   "name": "The Professor's Daughter",
+   "role": "the girl in the doorway with the blue silk",
+   "description": "A young woman sitting in the doorway of the Professor's house winding blue silk on a reel, with her little dog at her feet; scornful, and dressed for the Chamberlain's ball.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_straight",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "gold",
+    "headwear": "bonnet",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  }
+ ]
+}

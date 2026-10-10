@@ -1,0 +1,396 @@
+{
+ "page_number": 4,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 4,
+  "section_id": "s1",
+  "beat": "The statue explains that he lived in the Palace of Sans-Souci where sorrow was not allowed to enter and was called happy if pleasure be happiness, and that now, set up high after his death, he sees all the ugliness and misery of his city and cannot choose but weep.",
+  "claims": [
+   "k11",
+   "k12"
+  ],
+  "cast": [
+   "c_prince",
+   "c_swallow"
+  ],
+  "locations": [
+   "l_column_top"
+  ],
+  "units": [
+   "s1u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k11",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "I lived in the Palace of Sans-Souci, where sorrow is not allowed to enter. My courtiers called me the Happy Prince, and happy indeed I was, if pleasure be happiness.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "section_id": "s1",
+   "kind": "idea",
+   "importance": "core",
+   "text": "The Prince says that now that he is dead and set up high, he can see all the ugliness and misery of his city, and though his heart is made of lead he cannot choose but weep.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    },
+    {
+     "unit": "s1u2",
+     "page": 6
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 4,
+  "section_id": "s1",
+  "purpose": "The Prince explains why he weeps: sorrow was barred from Sans-Souci, but from his high column he now sees all the city's misery.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     3
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "panel": "p2"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       3,
+       2
+      ],
+      "children": [
+       {
+        "panel": "p3"
+       },
+       {
+        "panel": "p4"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The statue begins his answer, explaining that while alive he did not know tears.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "talk",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "worried",
+      "facing": "left",
+      "slot": "right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "When I was alive and had a human heart, I did not know what tears were.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The statue names the Palace of Sans-Souci, where sorrow was not allowed to enter.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "talk",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "I lived in the Palace of Sans-Souci, where sorrow is not allowed to enter.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "From his high column the statue looks down and sees all the misery of the city below.",
+    "shot": "full",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "point",
+      "expression": "sad",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "afraid",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "They have set me up here so high that I can see all the ugliness and all the misery of my city.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Tears run again as the statue says his heart is lead and he cannot choose but weep.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "cover_face",
+      "expression": "cry",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "And though my heart is made of lead yet I cannot chose but weep.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 6
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k11",
+   "k12"
+  ],
+  "claim_map": [
+   {
+    "claim": "k11",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1: the statue says that while alive he did not know tears; p2: he says in a close line that he lived in the Palace of Sans-Souci, where sorrow is not allowed to enter."
+   },
+   {
+    "claim": "k12",
+    "panels": [
+     "p3",
+     "p4"
+    ],
+    "how": "p3: from the column top he points down over the city and says he can see all its ugliness and misery; p4: he weeps and says his heart is lead yet he cannot choose but weep."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u2",
+   "pages": null,
+   "text": "“You have been trifling with me,” he cried. “I am off to the Pyramids. Good-bye!” and he flew away.\n\nAll day long he flew, and at night-time he arrived at the city. “Where shall I put up?” he said; “I hope the town has made preparations.”\n\nThen he saw the statue on the tall column.\n\n“I will put up there,” he cried; “it is a fine position, with plenty of fresh air.” So he alighted just between the feet of the Happy Prince.\n\n“I have a golden bedroom,” he said softly to himself as he looked round, and he prepared to go to sleep; but just as he was putting his head under his wing a large drop of water fell on him. “What a curious thing!” he cried; “there is not a single cloud in the sky, the stars are quite clear and bright, and yet it is raining. The climate in the north of Europe is really dreadful. The Reed used to like the rain, but that was merely her selfishness.”\n\nThen another drop fell.\n\n“What is the use of a statue if it cannot keep the rain off?” he said; “I must look for a good chimney-pot,” and he determined to fly away.\n\nBut before he had opened his wings, a third drop fell, and he looked up, and saw—Ah! what did he see?\n\nThe eyes of the Happy Prince were filled with tears, and tears were running down his golden cheeks. His face was so beautiful in the moonlight that the little Swallow was filled with pity.\n\n“Who are you?” he said.\n\n“I am the Happy Prince.”\n\n“Why are you weeping then?” asked the Swallow; “you have quite drenched me.”\n\n“When I was alive and had a human heart,” answered the statue, “I did not know what tears were, for I lived in the Palace of Sans-Souci, where sorrow is not allowed to enter. In the daytime I played with my companions in the garden, and in the evening I led the dance in the Great Hall. Round the garden ran a very lofty wall, but I never cared to ask what lay beyond it, everything about me was so beautiful. My courtiers called me the Happy Prince, and happy indeed I was, if pleasure be happiness. So I lived, and so I died. And now that I am dead they have set me up here so high that I can see all the ugliness and all the misery of my city, and though my heart is made of lead yet I cannot chose but weep.”\n\n“What! is he not solid gold?” said the Swallow to himself. He was too polite to make any personal remarks out loud."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  }
+ ]
+}

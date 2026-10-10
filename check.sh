@@ -9,6 +9,7 @@ probe() {
   if curl -sf "$2" >/dev/null 2>&1; then print -P "%F{green}✓%f $1  $2"; up=$((up+1)); else print -P "%F{red}✗%f $1  $2"; down=$((down+1)); fi
 }
 probe "agent worker" "http://127.0.0.1:$WORKER_PORT/readyz"
+curl -sf "http://127.0.0.1:$WORKER_PORT/readyz" 2>/dev/null | grep -q '"replay":true' && print -P "%F{yellow}!%f the agent worker is the REPLAY worker: no model call, nothing is spent"
 probe "api         " "http://127.0.0.1:$API_PORT/health"
 probe "frontend    " "http://127.0.0.1:$WEB_PORT"
 ROOT="$(cd "$(dirname "$0")" && pwd)"

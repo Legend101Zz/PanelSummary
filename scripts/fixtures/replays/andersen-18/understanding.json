@@ -1,0 +1,1663 @@
+{
+ "schema": "book-understanding.v1",
+ "title": "Four Tales by Hans Christian Andersen",
+ "author": "Hans Christian Andersen",
+ "kind": "fiction",
+ "logline": "In four fairy tales, a vain Emperor, a shallow Princess, a doubtful Prince and a starving match girl each meet a test of true worth: when appearance, flattery or cold and hunger strip them bare, only what is real — a child's voice, a swine's work, three peas, a grandmother's love — reveals what they are.",
+ "sections": [
+  {
+   "id": "s1",
+   "title": "The Emperor's New Clothes",
+   "summary": "A vain Emperor who spends his money on clothes is deceived by two rogue weavers who promise cloth invisible to the unfit or the simple. Minister, officers and Emperor himself each stare at empty looms and, fearing to seem foolish, praise what they cannot see. The fraud culminates in a procession in which a bare Emperor is acclaimed by everyone until a little child speaks the truth, and even then the procession goes on.",
+   "units": [
+    "s1u1",
+    "s1u2",
+    "s1u3",
+    "s1u4"
+   ]
+  },
+  {
+   "id": "s2",
+   "title": "The Swineherd",
+   "summary": "A poor Prince proposes to the Emperor's daughter and sends her a magical rose tree and a nightingale, but she prefers a kitchen-pot and a rattle. Disguised as a swineherd, he wins her kisses with his cooking-pot and rattle, until the Emperor catches the court ladies kissing him by the pigsty and throws both out of the city. The swineherd then washes off his disguise, reveals his princely robes, scorns the Princess and shuts his palace door in her face.",
+   "units": [
+    "s2u1",
+    "s2u2",
+    "s2u3"
+   ]
+  },
+  {
+   "id": "s3",
+   "title": "The Real Princess",
+   "summary": "A Prince travels the world unable to decide which ladies are real Princesses, and returns home cast down. In a great tempest a drenched woman claims to be a real Princess, and the Queen-mother secretly lays three peas on the bedstead under twenty mattresses and twenty feather beds. Her complaint of something hard proves her sensitivity, so the Prince marries her and the three peas are kept in the cabinet of curiosities.",
+   "units": [
+    "s3u1"
+   ]
+  },
+  {
+   "id": "s4",
+   "title": "The Little Match Girl",
+   "summary": "On the snow-dark last evening of the year a poor girl loses her slippers and sells no matches, and will not go home. Each match she strikes lights a vision: a warm iron stove, a steaming roast goose, a Christmas tree whose lights become stars, and finally her grandmother, radiant and tall. She burns the whole bundle to keep her grandmother, and is found at dawn frozen to death against the wall, smiling, with no one knowing what she saw.",
+   "units": [
+    "s4u1",
+    "s4u2"
+   ]
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_emperor_s1",
+   "name": "The Emperor",
+   "role": "the city's Emperor, vainly fond of new clothes",
+   "description": "A grown, tall man who wears a different suit for each hour of the day and neglects soldiers, theatre and hunting for chances to display his clothes. He stands at the empty looms and later walks naked under the canopy, turning before the looking glass; proud, vain, easily flattered, and at the end too embarrassed to halt the procession.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "royal",
+    "outfit_tone": "gold",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_weaver_one",
+   "name": "The first knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "One of the two rogues who pretend to weave; he keeps up the pretense at the empty loom and asks the minister whether the stuff pleases him. About the same size as the Emperor but dark and shabby, so he disappears in a crowd.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_weaver_two",
+   "name": "The second knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "The taller, broader partner of the rogue weaver, who talks of colors and patterns that are not there and demands more silk and gold. He stands beside the first knave at the two empty looms.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_minister",
+   "name": "The old minister",
+   "role": "the Emperor's faithful old minister",
+   "description": "A small, elderly, bespectacled man whom the Emperor trusts to judge the cloth; he is the first to stare at an empty loom and say nothing, for fear of seeming a simpleton. He leans close to the frames to look through his spectacles.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "masc",
+    "hair": "long_straight",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "robe",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_officer_ambassador",
+   "name": "The second officer",
+   "role": "the Emperor's second officer, sent to inspect the looms",
+   "description": "A middle-aged courtier sent as the Emperor's second ambassador; like the minister he sees nothing, decides he must not be stupid, and praises the invisible cloth to the Emperor.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "uniform",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_officers_crown",
+   "name": "The two officers of the crown",
+   "role": "the two honest officers who first admire the cloth",
+   "description": "Two courtiers who, having already praised the unseen cloth, stand beside the Emperor at the looms and point at the empty frames, delighted with the 'splendid design'. They are of ordinary height, plainly dressed in uniform.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few",
+    "count": 2,
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_courtier",
+   "name": "One of the courtiers",
+   "role": "the courtier who offers to fit the new suit on the Emperor",
+   "description": "A slim, light-haired courtier of the court who steps forward alone to ask the Emperor to take off his clothes so the new suit can be fitted before the looking glass.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "short",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "long_coat",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [
+     "cane"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_master_ceremonies",
+   "name": "The chief master of the ceremonies",
+   "role": "announcer of the procession canopy",
+   "description": "An elderly, upright official who announces that the canopy to be borne over the Emperor in the procession is waiting.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "cloak",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "cane",
+     "medal"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_bedchamber_lords",
+   "name": "The lords of the bedchamber",
+   "role": "courtiers who pretend to carry the mantle's train",
+   "description": "Two or three great officers of the bedchamber who feel about on the ground as if lifting the ends of a mantle and pretend to carry a train that is not there.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_child_s1",
+   "name": "The little child",
+   "role": "the child who says the Emperor is naked",
+   "description": "A small child in the street who speaks the plain truth aloud; much smaller than the adults around him, standing up among a crowd of taller onlookers.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "neutral",
+    "hair": "short",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_father_s1",
+   "name": "The child's father",
+   "role": "the father who calls the child's words the voice of innocence",
+   "description": "A broad, tall working man in a dark coat and wide hat who holds his child and defends the Emperor when the boy speaks the truth.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "mid",
+    "facial_hair": "beard",
+    "outfit": "long_coat",
+    "outfit_tone": "dark",
+    "headwear": "wide_hat",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_townsfolk_s1",
+   "name": "The townspeople",
+   "role": "the crowd in the streets and at the windows",
+   "description": "A great crowd of citizens who stand in the streets and at the windows of the capital and shout that the Emperor's new clothes are beautiful.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "townsfolk",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s2",
+   "name": "The Emperor",
+   "role": "the Princess's father, who catches the ladies at the pigsty",
+   "description": "An elderly, grey-bearded ruler in a dark robe who watches the doings at the palace from his balcony in spectacles and wooden slippers, then boxes his daughter's ears.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_knight",
+   "name": "The old knight",
+   "role": "the old knight who remembers the Empress's musical box",
+   "description": "A tall, thin, bald old knight of the court who compares the nightingale to the musical box of the late Empress and weeps at the memory.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_court_ladies",
+   "name": "The court ladies",
+   "role": "the ladies of the court who pay the kisses",
+   "description": "A crowd of finely dressed ladies of the court who chatter French badly, stand in a ring around the Princess while she kisses the swineherd, and count the kisses together.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "nobles",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_court_lady_slipper",
+   "name": "The lady in the wooden slippers",
+   "role": "one of the court ladies sent to ask the swineherd's price",
+   "description": "One court lady who pulls on wooden slippers before running into the swineherd's room and, later, returns to announce the hundred kisses the Princess will pay.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [
+     "gloves"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The nightingale",
+   "role": "the Prince's gift bird that sings in the great hall",
+   "description": "A small dark nightingale carried in a silver casket and released to sing; barely larger than a girl's hand, perched in the hall while the court weeps.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "dark"
+   }
+  },
+  {
+   "id": "c_rose_tree",
+   "name": "The rose tree",
+   "role": "the gift rose tree that blossomed once in five years",
+   "description": "A most beautiful rose tree that grew where the Prince's father lay buried and bore only one flower every five years; sent to the Princess in a large silver casket.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "plant",
+    "species": "rose_bush",
+    "tone": "flowers",
+    "face": false,
+    "bloom": "single"
+   }
+  },
+  {
+   "id": "c_prince_s3",
+   "name": "The Prince",
+   "role": "the Prince searching the world for a real Princess",
+   "description": "A young, tall, slim Prince who rides through the world unable to decide which ladies are real Princesses, and returns to his palace cast down.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "royal",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_king_s3",
+   "name": "The old King",
+   "role": "the Prince's father, who opens the door",
+   "description": "An old, tall, broad, bearded King in a dark robe who himself goes out into the storm to open the palace door to the stranger.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_queen_mother",
+   "name": "The Queen-mother",
+   "role": "the old Queen-mother who lays the three peas",
+   "description": "A small, elderly woman with white hair who thinks 'Ah! we shall soon see that!' but says nothing, then quietly strips the bed and lays three peas on the bedstead.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "white",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_princess_s3",
+   "name": "The real Princess",
+   "role": "the drenched woman who claims to be a real Princess",
+   "description": "A tall, slim young woman in a white gown, soaked by rain and wind so that her clothes cling to her body and water runs from her hair; she complains of the hard thing in her bed.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "fem",
+    "hair": "long_straight",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "white",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_princesses_s3",
+   "name": "The princesses",
+   "role": "the many princesses the Prince could not judge",
+   "description": "A crowd of fine ladies met on the Prince's travels, none of whom he could decide was a real Princess.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "nobles",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The little Match Girl",
+   "role": "the poor girl selling matches on New Year's Eve",
+   "description": "A small, thin child with long fair curls falling to her neck, bareheaded and barefoot, in an old apron she uses to carry matches. She crouches in a corner between two houses, lights matches against the wall and at dawn is found frozen against it with rosy cheeks and a smiling mouth; timid, cold, hungry, yet radiant in her visions.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u2",
+     "claim": "k53",
+     "set": {
+      "eyes": "dead",
+      "outfit_tone": "white"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_urchin",
+   "name": "The urchin",
+   "role": "the boy who runs off with her slipper",
+   "description": "A small barefoot boy who grabs the girl's second slipper and runs off, thinking it will do for a cradle when he has children of his own.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_grandmother",
+   "name": "The old grandmother",
+   "role": "the only one who loved the Match Girl",
+   "description": "A small, gentle old woman in a light gown and bonnet, long dead and gone from the girl; when a match burns she appears bright, radiant and taller than life, takes the child on her arm and rises with her.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "white",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "light",
+    "headwear": "bonnet",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u1",
+     "claim": "k50",
+     "set": {
+      "eyes": "dead"
+     }
+    },
+    {
+     "at": "s4u2",
+     "claim": "k51",
+     "set": {
+      "eyes": "open"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_matches",
+   "name": "The bundle of matches",
+   "role": "the matches the girl carries and burns",
+   "description": "A small paper bundle of matches, sold all day without a single purchaser and burnt down one by one against the wall; the only thing the girl owns.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "object",
+    "shape": "candle",
+    "tone": "light",
+    "face": false
+   }
+  },
+  {
+   "id": "c_christmas_tree",
+   "name": "The Christmas tree",
+   "role": "the tree seen in the third match's light",
+   "description": "A great green Christmas tree, larger and more decorated than the one in the shop window, its thousands of lights rising into the sky as stars when the match goes out.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "plant",
+    "species": "tree",
+    "tone": "light",
+    "face": false,
+    "bloom": "full"
+   }
+  }
+ ],
+ "locations": [
+  {
+   "id": "l_loom_hall",
+   "name": "The hall of the two looms",
+   "environment": "palace_hall",
+   "features": [
+    "window",
+    "door"
+   ],
+   "description": "The great hall where the two impostors set up their empty looms and pretend to work until late at night; daylight through the high windows."
+  },
+  {
+   "id": "l_looking_glass_room",
+   "name": "The Emperor's dressing room with the looking glass",
+   "environment": "room_rich",
+   "features": [
+    "door",
+    "fireplace"
+   ],
+   "description": "A rich chamber where the Emperor is undressed and turned round before a large looking glass in the pretended new suit."
+  },
+  {
+   "id": "l_capital_street",
+   "name": "The streets of the capital",
+   "environment": "street",
+   "features": [
+    "crowd_background",
+    "window"
+   ],
+   "description": "The wide streets of the Emperor's capital, lined with houses whose windows are full of onlookers, through which the procession passes."
+  },
+  {
+   "id": "l_rose_grave",
+   "name": "The Prince's father's grave",
+   "environment": "meadow",
+   "features": [
+    "trees"
+   ],
+   "description": "The place where the old Prince lies buried and where the rose tree grew that blossomed once in five years."
+  },
+  {
+   "id": "l_gift_hall",
+   "name": "The great hall of gifts",
+   "environment": "palace_hall",
+   "features": [
+    "window",
+    "flowers"
+   ],
+   "description": "A large hall where the Princess plays at 'Visiting' with her ladies and the silver caskets of rose tree and nightingale are brought in."
+  },
+  {
+   "id": "l_swineherd_room",
+   "name": "The swineherd's room by the pigsty",
+   "environment": "garret",
+   "features": [
+    "window",
+    "high_wall"
+   ],
+   "description": "A dirty little room close beside the pigsty where the disguised Prince sits all day, with a great many pigs and the kitchen-pot and rattle he makes."
+  },
+  {
+   "id": "l_palace_balcony",
+   "name": "The palace balcony over the courtyard",
+   "environment": "palace_hall",
+   "features": [
+    "window"
+   ],
+   "description": "The balcony from which the Emperor, in spectacles and trodden-down slippers, looks down into the courtyard by the pigsty."
+  },
+  {
+   "id": "l_palace_gate",
+   "name": "The palace door",
+   "environment": "palace_hall",
+   "features": [
+    "door"
+   ],
+   "description": "The great palace door where the disguised Prince knocks to ask for employment, and where the Princess is later shut out."
+  },
+  {
+   "id": "s3_palace_door",
+   "name": "The palace door in the tempest",
+   "environment": "palace_hall",
+   "features": [
+    "door",
+    "window"
+   ],
+   "description": "The palace door in a fearful storm of thunder, lightning and pouring rain, pitch dark, where the drenched Princess knocks and is let in."
+  },
+  {
+   "id": "l_bedroom",
+   "name": "The Princess's bedroom with the piled bed",
+   "environment": "room_rich",
+   "features": [
+    "bed"
+   ],
+   "description": "The bedchamber where three little peas are laid on the bedstead under twenty mattresses and twenty feather beds."
+  },
+  {
+   "id": "l_cabinet",
+   "name": "The cabinet of curiosities",
+   "environment": "study",
+   "features": [
+    "bookshelf"
+   ],
+   "description": "The room where the three little peas are kept in the cabinet of curiosities, where they still are to be seen, provided they are not lost."
+  },
+  {
+   "id": "l_new_year_street",
+   "name": "The street on New Year's Eve",
+   "environment": "street",
+   "features": [
+    "window",
+    "crowd_background"
+   ],
+   "description": "A street in terrible cold, snowing and nearly dark at dusk on the last evening of the year, with candle-gleaming windows and the smell of roast goose."
+  },
+  {
+   "id": "l_house_corner",
+   "name": "The corner between the two houses",
+   "environment": "street",
+   "features": [
+    "high_wall",
+    "door"
+   ],
+   "description": "A corner where one house projects further than the other, cold and sheltered, where the girl crouches with her feet drawn up against the wall."
+  },
+  {
+   "id": "l_merchant_room",
+   "name": "The rich merchant's room behind the glass door",
+   "environment": "room_rich",
+   "features": [
+    "table",
+    "window"
+   ],
+   "description": "A warm, well-furnished room seen through the wall: snow-white tablecloth, splendid porcelain, a steaming roast goose, and beyond the glass door a decorated Christmas tree."
+  }
+ ],
+ "claims": [
+  {
+   "id": "k1",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor spends all his money on dress and neglects his soldiers, theatre and hunting except to display his clothes.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k2",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Two rogues calling themselves weavers offer the Emperor cloth that is invisible to anyone unfit for his office or very simple.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k3",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Emperor gives the weavers large sums of money, and they pocket the silk and gold thread instead of weaving.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    },
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k4",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor, afraid of being seen for a simpleton, sends his faithful old minister to inspect the weavers' work.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k5",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The old minister finds no thread at all on the looms and says nothing aloud, fearing he may be unfit for his office.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k6",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "You do not say whether the stuff pleases you.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k7",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The minister praises the unseen cloth to the Emperor as excellent in pattern and colours.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k8",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Emperor's second officer also sees nothing, decides he must not be stupid, and reports the cloth as extraordinarily magnificent.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    },
+    {
+     "unit": "s1u2",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k9",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor himself visits the looms, sees nothing, and aloud declares the cloth charming with his complete approbation.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    },
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "All the retinue cry the unseen cloth is beautiful, and the Emperor gives the impostors an order's riband and the title of Gentlemen Weavers.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k11",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The rogues work all night cutting the air with scissors and sewing with needleless needles, then announce the new clothes are ready.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The rogues pretend to array the Emperor in trousers, scarf and mantle and call the suit as light as a cobweb.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k13",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor is undressed and turns from side to side before the looking glass in the pretended suit.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k14",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "I am quite ready. Do my new clothes fit well?",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k15",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The chief master of the ceremonies announces that the canopy for the procession is waiting.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k16",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The lords of the bedchamber feel on the ground pretending to lift a mantle's train that is not there.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k17",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor walks under his canopy through the streets while the people at the windows praise his magnificent train and scarf.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k18",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "But the Emperor has nothing at all on!",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k19",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The child's father calls the words the voice of innocence, and soon all the people cry the Emperor has nothing on.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k20",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor knows the people are right but lets the procession go on while his attendants work harder at the empty train.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k21",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "A poor Prince with a small kingdom wishes to marry the Emperor's daughter.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k22",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince sends the Princess a rose tree that bore one flower every five years and a nightingale, in large silver caskets.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k23",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess touches the rose and says it is natural, not made, and she refuses to see the Prince.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    },
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k24",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "How much the bird reminds me of the musical box that belonged to our blessed Empress.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k25",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The nightingale sings so sweetly that the Emperor weeps, but the Princess insists it is a real bird and again refuses to see him.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k26",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince daubs his face brown and black, pulls his cap over his ears, and knocks at the palace door for employment.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k27",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor appoints the disguised Prince Imperial Swineherd, giving him a dirty little room by the pigsty.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 12
+    }
+   ]
+  },
+  {
+   "id": "k28",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The swineherd makes a kitchen-pot hung with little bells that plays 'Ach! du lieber Augustin' and whose smoke smells every dish cooking in the city.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 12
+    },
+    {
+     "unit": "s2u2",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k29",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess buys the kitchen-pot by having the court ladies pay the swineherd ten kisses behind a screen of their own bodies.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 13
+    },
+    {
+     "unit": "s2u2",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k30",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "From the pot the ladies learn what is cooking at every hearth in the city, from the chamberlain's to the cobbler's.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k31",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The swineherd builds a rattle that plays all the waltzes and jig tunes ever heard.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k32",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess buys the rattle for a hundred kisses, giving ten herself and requiring the court ladies to supply the rest.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 14
+    },
+    {
+     "unit": "s2u3",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k33",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor comes out on the balcony in his spectacles, creeps down on tiptoe, and catches the ladies counting kisses by the pigsty.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k34",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor boxes the Princess's ears with his slipper at the eighty-sixth kiss and thrusts both Princess and swineherd out of the city.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 15
+    },
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k35",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "In the rain the swineherd washes the false colour from his face, throws off his dirty clothes, and appears in princely robes.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k36",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The revealed Prince scorns the Princess for valuing a plaything over an honourable Prince, and shuts his palace door in her face.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k37",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "A Prince travels all the world seeking a real Princess but cannot decide which ladies are real.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k38",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "In a fearful tempest a soaked woman knocks at the palace door and says she is a real Princess.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k39",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Queen-mother silently lays three little peas on the bedstead under twenty mattresses and twenty feather beds.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k40",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess reports she slept badly and felt something hard under her, black and blue all over.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k41",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince marries her, convinced she is real, and the three peas are put in the cabinet of curiosities.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k42",
+   "section_id": "s3",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "Wasn't this a lady of real delicacy?",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k43",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "On the last evening of the year a poor little girl walks a snowy dark street in her mother's far-too-large slippers.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k44",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "She loses one slipper in the street and an urchin runs off with the other to use as a cradle.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k45",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "Nobody buys her matches all day and she carries the bundle in an old apron, with red and blue naked feet.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k46",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "She sits in a corner between two houses and will not go home, since she has no money and would be beaten.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    },
+    {
+     "unit": "s4u1",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k47",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "One match flares like a candle and she imagines a great iron stove with brass feet, until the flame dies.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k48",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "A second match makes the wall transparent, showing a snow-white tablecloth and a steaming roast goose that hops down to her.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k49",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "A third match shows a magnificent Christmas tree whose lights rise as stars, and one star falls in a trail of fire.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k50",
+   "section_id": "s4",
+   "kind": "fact",
+   "importance": "supporting",
+   "text": "Her grandmother taught her that when a star falls, a soul ascends to God.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k51",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "In the light of a match the grandmother appears radiant and tall, and the girl begs to go with her.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k52",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "She rubs the whole bundle against the wall, and the grandmother takes her on her arm and they fly up to God.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    },
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k53",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "At dawn she is found frozen to death against the wall, smiling, with one bundle of matches burnt.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k54",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The onlookers say she wanted to warm herself, and none imagines the splendour she entered with her grandmother.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 22
+    }
+   ]
+  }
+ ],
+ "themes": [
+  "vanity rewarded by flattery",
+  "what is real cannot be seen or bought",
+  "love that values appearance over worth",
+  "cold and hunger met by grace and death"
+ ]
+}

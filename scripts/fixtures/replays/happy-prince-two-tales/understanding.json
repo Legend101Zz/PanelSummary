@@ -1,0 +1,1797 @@
+{
+ "schema": "book-understanding.v1",
+ "title": "The Happy Prince and Other Tales (first two tales)",
+ "author": "Oscar Wilde",
+ "kind": "fiction",
+ "logline": "When a gilded statue on a city column realises he cannot see the misery below unless he gives away everything he has, a little swallow stays with him through a winter and returns his leaden heart to heaven; and when a student's love needs a red rose, a nightingale sings it out of her heart's blood and is thrown into a gutter.",
+ "sections": [
+  {
+   "id": "s1",
+   "title": "The Happy Prince",
+   "summary": "A gilded statue on a tall column weeps because, raised above the city, he can now see all its misery, and he spends his jewels and his gold leaf sending a swallow to a sick child, a starving playwright and a beaten match-girl. Each gift leaves him less beautiful, and the swallow, held by love rather than by duty, stays through the snow and frost until it dies at his feet. The leaden heart snaps in the hard frost, and the town pulls down and melts the statue as useless, while God chooses the heart and the bird as the city's most precious things.",
+   "units": [
+    "s1u1",
+    "s1u2",
+    "s1u3",
+    "s1u4",
+    "s1u5",
+    "s1u6",
+    "s1u7",
+    "s1u8"
+   ]
+  },
+  {
+   "id": "s2",
+   "title": "The Nightingale and the Rose",
+   "summary": "A young student weeps in his garden because his love will not dance with him unless he brings her a red rose, and none grows there. A nightingale, who has sung of him nightly without knowing him, offers to build the rose out of music by moonlight, stained with her own heart's-blood, and dies with the thorn in her heart. The student plucks the crimson rose, but the Professor's daughter scorns it as cheaper than jewels and he throws it into the gutter, resolving that Love is unpractical and that he will study Metaphysics instead.",
+   "units": [
+    "s2u1",
+    "s2u2",
+    "s2u3",
+    "s2u4",
+    "s2u5"
+   ]
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_reed",
+   "name": "The Reed",
+   "role": "the Swallow's lady-love on the river",
+   "description": "A slender reed beside the river, small compared with a person, with a slender waist; she bows low and makes graceful curtseys to the wind. Domestic, home-loving, mute.",
+   "look": {
+    "kind": "plant",
+    "species": "reed",
+    "tone": "mid",
+    "face": false
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_councillors",
+   "name": "The Town Councillors",
+   "role": "the town's councillors, who praise and agree",
+   "description": "A small group of well-dressed town councillors who admire the statue for show and always echo the Mayor; they are also the ones who condemn it once it is shabby.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_mayor",
+   "name": "The Mayor",
+   "role": "the city's Mayor",
+   "description": "A heavy, well-fed older man in a robe of office with a chain of office, who walks the square with the councillors, calls the statue shabby, orders it pulled down, and proposes a statue of himself. Pompous, self-serving, practical.",
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "heavy",
+    "height": "average",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "medal",
+     "necklace"
+    ],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_seamstress",
+   "name": "The Seamstress",
+   "role": "the poor woman at the window who sews for the Queen",
+   "description": "A thin, worn woman with coarse red hands pricked by the needle, seated at a table in a poor house; she can give her sick son only river water, and she falls asleep from tiredness beside her thimble.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_boy",
+   "name": "The Little Boy",
+   "role": "the seamstress's sick son",
+   "description": "A child small in his mother's bed, feverish and tossing, asking for oranges; a huge ruby laid beside the thimble and the fanning of the swallow's wings cool him into a delicious slumber.",
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "neutral",
+    "hair": "short",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_math_master",
+   "name": "The Mathematical Master",
+   "role": "a severe teacher of the Charity Children",
+   "description": "A stern, thin scholar in dark clothes, seen outside the cathedral among the children; he frowns and looks severe because he does not approve of children dreaming.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "scholar",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_charity_children",
+   "name": "The Charity Children",
+   "role": "children in scarlet cloaks from the cathedral",
+   "description": "A small group of poor schoolchildren in bright scarlet cloaks and clean white pinafores; they say the statue looks like an angel, which they have seen in their dreams.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "children",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_ball_girl",
+   "name": "The Girl on the Balcony",
+   "role": "a beautiful young woman going to the State-ball",
+   "description": "A young woman on a palace balcony with her lover, dressed for the ball; she watches the stars and thinks of love, then only of whether her dress will be ready.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "necklace",
+     "earring"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_ornith_professor",
+   "name": "The Professor of Ornithology",
+   "role": "a professor who records the winter swallow",
+   "description": "An elderly professor crossing a bridge, staring at the swimming swallow and writing a long letter about it to the local newspaper.",
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "scholar",
+    "outfit_tone": "dark",
+    "headwear": "cap",
+    "accessories": [
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_sparrows",
+   "name": "The Sparrows",
+   "role": "town sparrows who gossip about the stranger",
+   "description": "Small grey town sparrows that chirrup wherever the swallow goes and call him a distinguished stranger.",
+   "look": {
+    "kind": "bird",
+    "species": "sparrow",
+    "tone": "mid"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_playwright",
+   "name": "The Young Man in the Garret",
+   "role": "a dramatist trying to finish a play",
+   "description": "A young playwright in a cold garret, brown crisp hair, red lips like a pomegranate, large dreamy eyes; starving and freezing over papers and a bunch of withered violets, and happier at once when the sapphire appears.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_sailors",
+   "name": "The Sailors",
+   "role": "ship's crew unloading chests at the harbour",
+   "description": "A group of sailors hauling big chests out of a ship's hold with ropes, shouting 'Heave a-hoy!' as each chest comes up.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "workers",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The Little Match-girl",
+   "role": "a child who has dropped her matches",
+   "description": "A barefoot child, small even beside the swallow, with no shoes, no stockings and a bare little head; her matches lie spoiled in the gutter and she is crying because her father will beat her.",
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bob",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_watchman",
+   "name": "The Watchman",
+   "role": "a night watchman at the bridge archway",
+   "description": "A broad, heavy policeman in a uniform who shouts at two starving boys lying under a bridge arch to move along, driving them out into the rain.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "heavy",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "dark",
+    "facial_hair": "stubble",
+    "outfit": "uniform",
+    "outfit_tone": "dark",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_beggars",
+   "name": "The Beggars and Poor of the City",
+   "role": "the city's poor who sit at the gates",
+   "description": "Crowds of ragged poor — starving children with white faces in dark lanes, and two little boys lying in each other's arms for warmth.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "townsfolk",
+    "size": "many"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_art_professor",
+   "name": "The Art Professor",
+   "role": "a professor of art at the University",
+   "description": "A dry, severe man of letters who pronounces that the statue, no longer beautiful, is no longer useful, and so is pulled down.",
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "long_straight",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "scholar",
+    "outfit_tone": "dark",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_overseer",
+   "name": "The Overseer of the Workmen",
+   "role": "overseer at the foundry",
+   "description": "A practical foreman at the foundry who notes that the broken lead heart will not melt in the furnace and orders it thrown on a dustheap.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "mustache",
+    "outfit": "work_apron",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_student",
+   "name": "The Young Student",
+   "role": "a lover in a garden, writer of a note-book",
+   "description": "A young lover, slight and boyish, with dark hyacinth-blossom hair, red lips and beautiful eyes pale as ivory; he lies on the grass weeping, writes in a note-book, and ends by rejecting Love for Logic and Metaphysics.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_oak",
+   "name": "The Tree",
+   "role": "the holm-oak tree in the garden, and the rose-trees",
+   "description": "A large tree whose branches hold the nightingale's nest and a garden voice; it advises her, asks for one last song, and urges her twice to press closer against the thorn.",
+   "look": {
+    "kind": "plant",
+    "species": "oak",
+    "tone": "mid",
+    "face": true
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_rose_trees",
+   "name": "The Rose-trees",
+   "role": "the white, yellow and red rose-trees of the garden",
+   "description": "Three rose-trees in the garden — one white in the centre of the grass-plot, one yellow round the old sun-dial, one red beneath the Student's window.",
+   "look": {
+    "kind": "plant",
+    "species": "rose_bush",
+    "tone": "flowers",
+    "face": false,
+    "bloom": "buds"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_lizard",
+   "name": "The Little Green Lizard",
+   "role": "a small lizard passing in the garden",
+   "description": "A tiny bright green lizard, small beside the weeping Student, with its tail in the air; something of a cynic, and it laughs outright.",
+   "look": {
+    "kind": "animal",
+    "species": "lizard",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_butterfly",
+   "name": "The Butterfly",
+   "role": "a butterfly fluttering after a sunbeam",
+   "description": "A small butterfly chasing a sunbeam over the grass, repeating 'Why, indeed?' when it hears the Student weeping.",
+   "look": {
+    "kind": "insect",
+    "species": "butterfly",
+    "tone": "light"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_daisy",
+   "name": "The Daisy",
+   "role": "a neighbouring garden daisy",
+   "description": "A small daisy in the grass that whispers to its neighbour to ask why the Student weeps.",
+   "look": {
+    "kind": "plant",
+    "species": "daisy",
+    "tone": "white",
+    "face": false,
+    "bloom": "single"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_profs_daughter",
+   "name": "The Professor's Daughter",
+   "role": "the girl in the doorway with the blue silk",
+   "description": "A young woman sitting in the doorway of the Professor's house winding blue silk on a reel, with her little dog at her feet; scornful, and dressed for the Chamberlain's ball.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_straight",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "gold",
+    "headwear": "bonnet",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_dog",
+   "name": "Her Little Dog",
+   "role": "the girl's pet dog",
+   "description": "A small dog lying at the girl's feet in the doorway while she winds blue silk.",
+   "look": {
+    "kind": "animal",
+    "species": "dog",
+    "tone": "light"
+   },
+   "sections": [
+    "s2"
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "l_city_square",
+   "name": "The City Square",
+   "environment": "city_square",
+   "features": [
+    "statue_column",
+    "crowd_background"
+   ],
+   "description": "The square below the Happy Prince's tall column; in winter its streets are bright with frost and hard snow, and icicles hang like crystal daggers from the eaves. The Mayor and councillors walk here at daybreak and look up at the statue."
+  },
+  {
+   "id": "l_column_top",
+   "name": "The Top of the Column",
+   "environment": "rooftops",
+   "features": [
+    "statue_column"
+   ],
+   "description": "High above the city where the statue stands; the swallow sleeps between the statue's feet, sheltered only by the gold, in clear cold nights."
+  },
+  {
+   "id": "l_poor_house",
+   "name": "The Poor House Room",
+   "environment": "room_poor",
+   "features": [
+    "window",
+    "bed",
+    "table"
+   ],
+   "description": "A dim little room in a far-away little street, with one open window, a table with a thimble, and a bed in the corner where the sick boy lies."
+  },
+  {
+   "id": "l_cathedral",
+   "name": "The Cathedral",
+   "environment": "church",
+   "features": [
+    "statue_column"
+   ],
+   "description": "The cathedral with white marble angels sculptured on its tower, where the Charity Children come out in their scarlet cloaks."
+  },
+  {
+   "id": "l_palace_balcony",
+   "name": "The Palace Balcony",
+   "environment": "palace_hall",
+   "features": [
+    "window"
+   ],
+   "description": "Where dancing goes on inside the palace and a beautiful girl comes out on the balcony with her lover to look at the stars."
+  },
+  {
+   "id": "l_river",
+   "name": "The River",
+   "environment": "riverbank",
+   "features": [
+    "river",
+    "bridge"
+   ],
+   "description": "The river where the reeds grow and the swallow bathed in autumn, later hung with ship lanterns; the Professor of Ornithology crosses the bridge above it."
+  },
+  {
+   "id": "l_ghetto",
+   "name": "The Ghetto",
+   "environment": "street",
+   "features": [
+    "crowd_background"
+   ],
+   "description": "The narrow street of the old Jews, bargaining and weighing out money in copper scales beneath the swallow's flight."
+  },
+  {
+   "id": "l_garret",
+   "name": "The Student's Garret",
+   "environment": "garret",
+   "features": [
+    "window",
+    "fireplace"
+   ],
+   "description": "A freezing room under the roof, entered by a hole in the roof; papers on a desk, a bunch of withered violets in a tumbler, a cold grate with no fire."
+  },
+  {
+   "id": "l_harbour",
+   "name": "The Harbour",
+   "environment": "seaside",
+   "features": [
+    "river"
+   ],
+   "description": "Where the swallow sits on a ship's mast and watches sailors haul chests out of the hold."
+  },
+  {
+   "id": "l_market_street",
+   "name": "The Match-girl's Street",
+   "environment": "street",
+   "features": [
+    "lamp_post",
+    "crowd_background"
+   ],
+   "description": "The wet street where the match-girl has dropped her matches in the gutter, watched over by her angry father."
+  },
+  {
+   "id": "l_bakers_door",
+   "name": "The Baker's Door",
+   "environment": "street",
+   "features": [
+    "door"
+   ],
+   "description": "The bakery door where the starving swallow picks up crumbs the baker has thrown out, when the baker is not looking."
+  },
+  {
+   "id": "l_foundry",
+   "name": "The Foundry",
+   "environment": "forge",
+   "features": [
+    "fireplace"
+   ],
+   "description": "Where the statue is melted in a furnace and the broken leaden heart will not melt; its pieces are carried out to a dustheap."
+  },
+  {
+   "id": "l_dustheap",
+   "name": "The Dustheap",
+   "environment": "street",
+   "features": [],
+   "description": "The rubbish heap outside the city where the lead heart is thrown and where the dead swallow is also lying."
+  },
+  {
+   "id": "l_garden",
+   "name": "The Student's Garden",
+   "environment": "garden",
+   "features": [
+    "trees",
+    "flowers",
+    "fence"
+   ],
+   "description": "A garden with a grass-plot, an old sun-dial, an oak tree and rose-trees; the Student lies weeping on the grass and there is no red rose anywhere in it."
+  },
+  {
+   "id": "l_oak_branch",
+   "name": "The Holm-oak Nest",
+   "environment": "forest",
+   "features": [
+    "trees"
+   ],
+   "description": "High in the branches of the holm-oak where the Nightingale's nest is, from which she watches the Student below."
+  },
+  {
+   "id": "l_student_window",
+   "name": "The Window Beneath the Red Rose-tree",
+   "environment": "room_poor",
+   "features": [
+    "window",
+    "trees"
+   ],
+   "description": "The window of the Student's room, with the red rose-tree growing beneath it; he opens it at noon and finds the rose."
+  },
+  {
+   "id": "l_professor_door",
+   "name": "The Professor's Doorway",
+   "environment": "cottage",
+   "features": [
+    "door"
+   ],
+   "description": "The doorway where the Professor's daughter sits winding blue silk on a reel, her little dog at her feet; the Student runs here with the rose."
+  },
+  {
+   "id": "l_gutter",
+   "name": "The Gutter in the Street",
+   "environment": "street",
+   "features": [
+    "crowd_background"
+   ],
+   "description": "The gutter into which the Student throws the red rose, where a cart-wheel goes over it."
+  }
+ ],
+ "claims": [
+  {
+   "id": "k1",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "core",
+   "text": "The statue of the Happy Prince stands high above the city on a tall column, gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k2",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "He is as beautiful as a weathercock; only not quite so useful.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k3",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "Why can't you be like the Happy Prince? The Happy Prince never dreams of crying for anything.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k4",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Charity Children say the statue looks like an angel, and answer the Mathematical Master that they have seen angels in their dreams.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    },
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k5",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The Mathematical Master frowns and looks severe because he does not approve of children dreaming.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k6",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "A little Swallow stays behind in the city while his friends fly to Egypt, because he is in love with the most beautiful Reed.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k7",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow courts the Reed all through the summer, flying round her and touching the water with his wings, while other Swallows call the attachment ridiculous.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k8",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "When the Swallow asks the Reed to leave with him, she shakes her head, so he cries that she has been trifling with him and flies off to the Pyramids.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k9",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swarrow alights between the Happy Prince's feet to sleep, and is woken by drops of rain falling on him from a cloudless sky.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    },
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "After a third drop, the Swallow looks up and sees that the Happy Prince's eyes are filled with tears running down his golden cheeks.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k11",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "I lived in the Palace of Sans-Souci, where sorrow is not allowed to enter. My courtiers called me the Happy Prince, and happy indeed I was, if pleasure be happiness.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "section_id": "s1",
+   "kind": "idea",
+   "importance": "core",
+   "text": "The Prince says that now that he is dead and set up high, he can see all the ugliness and misery of his city, and though his heart is made of lead he cannot choose but weep.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    },
+    {
+     "unit": "s1u2",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k13",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince shows the Swallow a poor house where a seamstress with needle-pricked red hands sits sewing, and her little boy lies ill with a fever, asking for oranges.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k14",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince asks the Swallow to carry the ruby out of his sword-hilt to the thirsty boy and his sad mother.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k15",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow objects that he is waited for in Egypt and that he dislikes boys, but agrees to stay one night as the Prince's messenger.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k16",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "Flying with the ruby in his beak, the Swallow passes the cathedral tower with its marble angels and hears the sound of dancing from the palace.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k17",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "I hope my dress will be ready in time for the State-ball; but the seamstresses are so lazy.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k18",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow lays the great ruby on the table beside the seamstress's thimble and fans the feverish boy, who says he feels cool and falls into a delicious slumber.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k19",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "That is because you have done a good action.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k20",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The Professor of Ornithology sees a swallow in winter and writes a long letter about it to the local newspaper that everybody quotes.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k21",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince asks the Swallow to bring his other eye to a young man in a garret who is too cold and hungry to finish his play.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k22",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince gives up one of his rare sapphires for the playwright, and the weeping Swallow obeys him and plucks out the eye.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k23",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The young man finds the sapphire lying on his withered violets and, delighted, says he can now finish his play.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k24",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The Swallow watches sailors heave big chests out of a ship's hold at the harbour, and no one minds his cry that he is going to Egypt.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    },
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k25",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow explains that winter and snow are coming and that he must leave, promising to bring back two beautiful jewels next spring in place of those given away.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k26",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince points out a little match-girl whose matches are spoiled in the gutter and whose father will beat her, and asks for his other eye.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k27",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow plucks out the Prince's other eye and slips it into the match-girl's palm, and she laughs and runs home calling it a lovely bit of glass.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 12
+    }
+   ]
+  },
+  {
+   "id": "k28",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow declares that the Prince is blind now and insists on staying with him always, sleeping at the Prince's feet.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 12
+    }
+   ]
+  },
+  {
+   "id": "k29",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "detail",
+   "text": "All day the Swallow sits on the Prince's shoulder telling him stories of red ibises, the Sphinx, merchants, pygmies and strange lands.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k30",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "You tell me of marvellous things, but more marvellous than anything is the suffering of men and of women. There is no Mystery so great as Misery.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k31",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Flying over the city, the Swallow sees the rich making merry while beggars sit at the gates, starving children in dark lanes, and two boys driven out into the rain by the Watchman.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k32",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince orders the Swallow to take his fine gold off leaf by leaf and give it to the poor, because the living always think gold can make them happy.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    },
+    {
+     "unit": "s1u7",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k33",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow strips the statue leaf by leaf until the Prince looks dull and grey, and the poor children grow rosier and cry that they have bread now.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 13
+    },
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k34",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "detail",
+   "text": "Snow and then frost come, the streets glisten like silver, icicles hang like crystal daggers, and little boys in scarlet caps skate on the ice.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k35",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow grows colder and colder but stays, picking up crumbs outside the baker's door when the baker is not looking.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k36",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Knowing he is going to die, the Swallow says he is going not to Egypt but to the House of Death, kisses the Prince on the lips and falls down dead at his feet.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k37",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "I am glad that you are going to Egypt at last, little Swallow; you have stayed too long here; but you must kiss me on the lips, for I love you.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k38",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "At the moment the Swallow dies a crack sounds inside the statue, for the leaden heart has snapped right in two in the dreadfully hard frost.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k39",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Mayor and the Town Councillors find the statue shabby, missing its ruby and eyes, with a dead bird at its feet, and order a proclamation that birds are not to be allowed to die there.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    },
+    {
+     "unit": "s1u7",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k40",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "As he is no longer beautiful he is no longer useful.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k41",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Mayor proposes that the new statue be of himself, and the Town Councillors quarrel over the proposal without ever agreeing.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 15
+    },
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k42",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The overseer finds that the broken lead heart will not melt in the furnace, so it is thrown on a dustheap where the dead Swallow is also lying.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k43",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "God asks for the two most precious things in the city, and when the Angel brings the leaden heart and the dead bird, God says they were rightly chosen.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k44",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "No red rose in all my garden! Ah, on what little things does happiness depend!",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k45",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale hears the Student weeping and recognises him as the true lover she has sung of night after night without knowing him.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 17
+    },
+    {
+     "unit": "s2u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k46",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Student says that unless he brings a red rose to the Prince's ball, his love will pass him by and his heart will break.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k47",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "Love is a wonderful thing. It is more precious than emeralds, and dearer than fine opals.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k48",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "detail",
+   "text": "A little Green Lizard, a Butterfly and a Daisy ask why the Student is weeping and, told it is for a red rose, call it ridiculous and laugh.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 18
+    },
+    {
+     "unit": "s2u2",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k49",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale flies to the white Rose-tree in the centre of the grass-plot and is refused, for its roses are white as the foam of the sea.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k50",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Nightingale flies to the yellow Rose-tree round the old sun-dial and is again refused, and is sent to the tree beneath the Student's window.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 19
+    },
+    {
+     "unit": "s2u2",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k51",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The red Rose-tree under the Student's window refuses too, saying that winter has chilled its veins and the storm broken its branches, so it will have no roses this year.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k52",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "You must build it out of music by moonlight, and stain it with your own heart's-blood. You must sing to me with your breast against a thorn.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 20
+    }
+   ]
+  },
+  {
+   "id": "k53",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "Death is a great price to pay for a red rose, and Life is very dear to all. Yet Love is better than Life.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k54",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale tells the Student to be happy, for she will build him a red rose out of music by moonlight, asking only that he be a true lover.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 21
+    },
+    {
+     "unit": "s2u3",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k55",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Oak-tree, fond of the little Nightingale, asks her for one last song before she goes.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k56",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "She is like most artists; she is all style, without any sincerity. She would not sacrifice herself for others.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k57",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "All night the Nightingale sings with her breast against the thorn while the cold crystal Moon leans down and listens and her life-blood ebbs away.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 22
+    }
+   ]
+  },
+  {
+   "id": "k58",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "As she sings of the birth of love in the heart of a boy and a girl, a pale rose blossoms petal following petal on the topmost spray.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 22
+    },
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  },
+  {
+   "id": "k59",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "Press closer, little Nightingale, or the Day will come before the rose is finished.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  },
+  {
+   "id": "k60",
+   "section_id": "s2",
+   "kind": "fact",
+   "importance": "core",
+   "text": "The rose's heart stays white until the thorn reaches the Nightingale's heart, for only a Nightingale's heart's-blood can crimson the heart of a rose.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    }
+   ]
+  },
+  {
+   "id": "k61",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "When the thorn touches her heart and she sings of the Love that is perfected by Death, the marvellous rose becomes crimson, like the rose of the eastern sky.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 23
+    },
+    {
+     "unit": "s2u4",
+     "page": 24
+    }
+   ]
+  },
+  {
+   "id": "k62",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "Her voice grows fainter and a film comes over her eyes, but she gives one last burst of music, so that the Moon lingers and the red rose trembles open to the cold morning air.",
+   "source": [
+    {
+     "unit": "s2u4",
+     "page": 24
+    }
+   ]
+  },
+  {
+   "id": "k63",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale makes no answer, for she is lying dead in the long grass with the thorn in her heart.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 24
+    }
+   ]
+  },
+  {
+   "id": "k64",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "At noon the Student opens his window, finds the red rose, declares he has never seen one so beautiful, plucks it and runs to the Professor's house.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 24
+    },
+    {
+     "unit": "s2u5",
+     "page": 25
+    }
+   ]
+  },
+  {
+   "id": "k65",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "detail",
+   "text": "The Professor's daughter sits in the doorway winding blue silk on a reel, with her little dog lying at her feet.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 25
+    }
+   ]
+  },
+  {
+   "id": "k66",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The girl frowns at the rose, saying it will not go with her dress and that the Chamberlain's nephew has sent her real jewels, which cost far more than flowers.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 25
+    }
+   ]
+  },
+  {
+   "id": "k67",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Student angrily throws the rose into the street, where it falls into the gutter and a cart-wheel goes over it.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 25
+    },
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  },
+  {
+   "id": "k68",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "Who are you? Only a Student. Why, I don't believe you have even got silver buckles to your shoes as the Chamberlain's nephew has.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  },
+  {
+   "id": "k69",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "It is not half as useful as Logic, for it does not prove anything. I shall go back to Philosophy and study Metaphysics.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  }
+ ],
+ "themes": [
+  "sacrifice that costs the giver",
+  "beauty stripped down to worth",
+  "the misery gold cannot buy",
+  "love rejected as unpractical"
+ ]
+}
