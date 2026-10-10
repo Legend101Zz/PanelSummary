@@ -20,6 +20,7 @@
 .errorBody { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
 .title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
 .over .title { color: var(--app-action); }
+.sub { margin: -4px 0 0; font-size: 15px; color: var(--app-text-2); }
 .hint { margin: 0; max-width: 40ch; font-size: 15px; line-height: 1.45; color: var(--app-text-2); }
 .over .hint { color: var(--app-text); }
 .icon { color: inherit; }
@@ -50,5 +51,10 @@
 .choose:has(.input:focus-visible) { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
 .choose[aria-disabled="true"] { background: transparent; color: var(--app-text-2); border-width: var(--app-line-seg); border-color: var(--app-text-2); cursor: not-allowed; }
 .extra { margin: 0; font-size: 15px; font-weight: 700; }
+
+.errorActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.chooseSecondary { background: transparent; color: var(--app-text); }
+.chooseSecondary:hover { background: var(--app-action-wash); }
+.chooseSecondary:active { background: var(--app-action-wash-2); }
 
 .over .choose { display: none; }

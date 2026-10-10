@@ -1,7 +1,7 @@
 "use client";
 
-import { TextLink } from "@/components/ui";
-import { ADD_BOOK_NOTE, addBookLede } from "@/lib/words";
+import { Notice, TextLink } from "@/components/ui";
+import { ADD_BOOK_NOTE, AFTER_UPLOAD, addBookLede } from "@/lib/words";
 import { FALLBACK_LIMITS } from "@/lib/words";
 import { OfflineGate } from "./OfflineGate";
 import { UploadPanel } from "./UploadPanel";
@@ -21,13 +21,19 @@ export function AddBookScreen() {
       <TextLink href="/" kind="back">
         Your shelf
       </TextLink>
+      <div className={styles.copy}>
+        <h1 className={styles.h1}>Add a book</h1>
+        <p className={styles.lede}>{addBookLede(maxMb)}</p>
+      </div>
       <div className={styles.layout}>
-        <div className={styles.copy}>
-          <h1 className={styles.h1}>Add a book</h1>
-          <p className={styles.lede}>{addBookLede(maxMb)}</p>
-          <p className={styles.note}>{ADD_BOOK_NOTE}</p>
-        </div>
         <UploadPanel flow={flow} limits={limits} />
+        <aside className={styles.after} aria-labelledby="after-h">
+          <h2 id="after-h" className={styles.h2}>
+            After the upload
+          </h2>
+          <p className={styles.afterText}>{AFTER_UPLOAD}</p>
+          <Notice tone="note">{ADD_BOOK_NOTE}</Notice>
+        </aside>
       </div>
     </main>
   );

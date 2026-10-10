@@ -535,6 +535,8 @@ export interface SamplePreview {
   estimate: { estimated_manga_pages: Range; estimated_minutes: { first_page: Range; total: Range }; estimated_cost_usd: Range };
   /** The SVG of manga page 1. */
   cover_svg: string;
+  /** The SVG of manga page 13, the large page of the landing (null when the package has no accepted page 13). */
+  hero: { page: number; svg: string } | null;
   thumbs: { page: number; svg: string }[];
   proof: {
     page: number;

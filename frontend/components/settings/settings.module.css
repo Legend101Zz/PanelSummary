@@ -15,6 +15,7 @@
 .table th, .table td { padding: 10px 12px 10px 0; text-align: left; vertical-align: top; border-bottom: 1px solid var(--app-line); }
 .table td { overflow-wrap: anywhere; }
 .table thead th { font-size: 14px; font-weight: 700; color: var(--app-text-2); border-bottom: var(--app-line-control) solid var(--app-line); }
+.asked { display: block; font-size: 13px; font-weight: 400; color: var(--app-text-2); }
 .table tbody th { font-weight: 800; }
 .off { display: flex; }
 @media (max-width: 767px) {

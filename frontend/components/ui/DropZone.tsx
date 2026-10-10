@@ -13,7 +13,11 @@ export interface DropZoneProps {
   error?: ReactNode;
   disabled?: boolean;
   title?: string;
+  /** A quiet line under the title, before the button ("or choose it from your computer"). */
+  subtitle?: string;
   buttonLabel?: string;
+  /** Buttons that come before "Choose a PDF" in the error state (a primary "Try again"). "Choose a PDF" then turns secondary. */
+  errorActions?: ReactNode;
   /** The hint under the button. Default says what a PDF must be. */
   hint?: ReactNode;
   accept?: string;
@@ -27,7 +31,7 @@ const DEFAULT_HINT = "Selectable text, not a scan. English. Up to 60 MB, 75 PDF 
  * (visually hidden), so a click, a keyboard press and a test script all use it. Drag-over: 3 px dashed action
  * edge on the action wash and "Drop to add". Several files: the first is used and the zone says so.
  */
-export function DropZone({ onFile, error, disabled = false, title = "Drop a PDF here", buttonLabel = "Choose a PDF", hint = DEFAULT_HINT, accept = "application/pdf", className }: DropZoneProps) {
+export function DropZone({ onFile, error, disabled = false, title = "Drop a PDF here", subtitle, buttonLabel = "Choose a PDF", hint = DEFAULT_HINT, accept = "application/pdf", className, errorActions }: DropZoneProps) {
   const [over, setOver] = useState(false);
   const [extra, setExtra] = useState(0);
   const depth = useRef(0);
@@ -63,7 +67,7 @@ export function DropZone({ onFile, error, disabled = false, title = "Drop a PDF 
   };
 
   const chooser = (
-    <label className={styles.choose} aria-disabled={disabled || undefined}>
+    <label className={cx(styles.choose, error && errorActions ? styles.chooseSecondary : undefined)} aria-disabled={disabled || undefined}>
       <input
         ref={inputRef}
         className={styles.input}
@@ -95,7 +99,14 @@ export function DropZone({ onFile, error, disabled = false, title = "Drop a PDF 
             <span>{error}</span>
           </div>
           <div className={styles.errorBody}>
-            {chooser}
+            {errorActions ? (
+              <div className={styles.errorActions}>
+                {errorActions}
+                {chooser}
+              </div>
+            ) : (
+              chooser
+            )}
             {extraNote}
             <p className={styles.hint}>{hint}</p>
           </div>
@@ -104,6 +115,7 @@ export function DropZone({ onFile, error, disabled = false, title = "Drop a PDF 
         <>
           <UploadIcon className={styles.icon} size={24} />
           <p className={styles.title}>{over ? "Drop to add" : title}</p>
+          {subtitle && !over ? <p className={styles.sub}>{subtitle}</p> : null}
           {chooser}
           {extraNote}
           <p className={styles.hint}>{over ? "If you drop more than one file, only the first is added." : hint}</p>

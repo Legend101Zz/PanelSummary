@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, CheckIcon, ProblemIcon, SegmentedControl, Switch, TextLink } from "@/components/ui";
+import { Button, CheckIcon, ProblemIcon, RetryIcon, SegmentedControl, Switch, TextLink } from "@/components/ui";
 import { OfflineGate } from "@/components/shelf/OfflineGate";
 import { useServerStatus } from "@/components/shelf/useServerStatus";
 import { readReviewPlan, writeReviewPlan } from "@/lib/prefs";
@@ -20,6 +20,7 @@ import {
   SETTINGS_SET_NOTE,
   SETTINGS_VERSION,
   STEP_NAMES,
+  thinkingSent,
   limitsSettingsLine,
 } from "@/lib/words";
 import styles from "./settings.module.css";
@@ -100,7 +101,7 @@ export function SettingsScreen() {
           </dl>
         ) : null}
         <p className={styles.small}>{SETTINGS_SET_NOTE}</p>
-        <DisabledAction label="Check again" />
+        <DisabledAction label="Check again" icon={<RetryIcon size={20} />} />
       </Row>
 
       <Row title="Models for each step">
@@ -110,7 +111,7 @@ export function SettingsScreen() {
               <tr>
                 <th scope="col">Step</th>
                 <th scope="col">Model</th>
-                <th scope="col">Thinking (asked)</th>
+                <th scope="col">Thinking (sent)</th>
               </tr>
             </thead>
             <tbody>
@@ -118,7 +119,10 @@ export function SettingsScreen() {
                 <tr key={m.step}>
                   <th scope="row">{STEP_NAMES[m.step] ?? m.step}</th>
                   <td>{m.model}</td>
-                  <td>{m.thinking}</td>
+                  <td>
+                    {thinkingSent(m.model, m.thinking)}
+                    {thinkingSent(m.model, m.thinking) !== m.thinking ? <span className={styles.asked}>Asked: {m.thinking}</span> : null}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -156,10 +160,10 @@ export function SettingsScreen() {
 }
 
 /** A control that is off, with the reason written beside it (never only in a tooltip). */
-function DisabledAction({ label }: { label: string }) {
+function DisabledAction({ label, icon }: { label: string; icon?: React.ReactNode }) {
   return (
     <div className={styles.off}>
-      <Button variant="secondary" size="sm" disabled why={NOT_AVAILABLE}>
+      <Button variant="secondary" size="sm" disabled why={NOT_AVAILABLE} iconStart={icon}>
         {label}
       </Button>
     </div>

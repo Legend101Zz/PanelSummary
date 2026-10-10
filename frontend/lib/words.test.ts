@@ -139,3 +139,27 @@ describe("U1 copy", () => {
     expect(limitsSettingsLine({ ...FALLBACK_LIMITS, page_attempts: 2, page_concurrency: 4 })).toBe("A book can be up to 60 MB, 75 PDF pages and 17,500 words. A page gets 2 tries, and 4 pages are drawn at the same time.");
   });
 });
+
+describe("Gate 1 fix wave copy", () => {
+  it("splits an error text into what happened and the next step", async () => {
+    const w = await import("./words");
+    expect(w.splitNextStep(`big.pdf is 72 MB. The limit is 60 MB. ${w.tooLargeNext(60)}`)).toEqual({ title: "big.pdf is 72 MB. The limit is 60 MB.", next: "Choose a PDF of 60 MB or less." });
+    expect(w.splitNextStep(w.withNextStep("FileDataError: x"))).toEqual({ title: "The PDF could not be read. The file may be damaged.", next: "Choose another PDF." });
+    expect(w.splitNextStep("The server answered 502. Try again in a moment.")).toEqual({ title: "The server answered 502.", next: "Try again in a moment." });
+    expect(w.splitNextStep("Something else")).toEqual({ title: "Something else", next: null });
+  });
+  it("marks the failed limit on its own chip", async () => {
+    const w = await import("./words");
+    expect(w.limitChips(w.FALLBACK_LIMITS).every((c) => !c.failed)).toBe(true);
+    const size = w.limitChips(w.FALLBACK_LIMITS, { limit: "size", fileMb: 72 });
+    expect(size[2]).toEqual({ text: "Up to 60 MB (this file: 72 MB)", failed: true });
+    expect(size.filter((c) => c.failed)).toHaveLength(1);
+    expect(w.limitChips(w.FALLBACK_LIMITS, { limit: "scan" })[0]).toEqual({ text: "Selectable text, not a scan (this file: a scan)", failed: true });
+  });
+  it("shows the thinking level that is sent", async () => {
+    const w = await import("./words");
+    expect(w.thinkingSent("MiniMax-M3.1-Flash-Preview", "off")).toBe("low");
+    expect(w.thinkingSent("MiniMax-M3.1-Flash-Preview", "low")).toBe("low");
+    expect(w.thinkingSent("MiniMax-M3", "off")).toBe("off");
+  });
+});

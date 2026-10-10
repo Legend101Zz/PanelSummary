@@ -421,7 +421,7 @@ export function sampleLandingSentence(title: string, sections: number, pdfPages:
 export const SETTINGS_LEDE = "How this copy of PanelSummary is set up. You can change the theme and the plan review here. The other settings are read-only in this version.";
 export const SETTINGS_SET_NOTE = "\"Set\" is the most the check can say: it cannot see if MiniMax accepts the key. A refused key shows during a run as \"MiniMax refused the key\".";
 export const SETTINGS_MODELS_NOTE =
-  "The server asks for no thinking on the plan and the pages, but the Flash model cannot turn thinking off, so it gets \"low\". A retry uses \"medium\". The owner can set any step to MiniMax-M3 with an environment setting. The app does not change models by itself. Each page gets a PNG preview of itself to check.";
+  "The column shows what the server sends. The server asks for no thinking on the plan and the pages, but the Flash model cannot turn thinking off, so it is sent \"low\". A retry is sent \"medium\". The owner can set any step to MiniMax-M3 with an environment setting. The app does not change models by itself. Each page gets a PNG preview of itself to check.";
 export const SETTINGS_LEAVES =
   "The book text and a PNG preview of each drawn page go to MiniMax (api.minimax.io). In the final v0.1 test run, the drawing service contacted no other host. No image-generation model is used. In your browser, the app talks only to your own PanelSummary server.";
 export const SETTINGS_COST = "Costs are estimates at MiniMax-M3 rates, because MiniMax publishes no price for the M3.1 Flash model. They are not a bill.";
@@ -457,3 +457,47 @@ export function scopeLabel(scope: EditionScope | null | undefined, sectionCount:
   if ("section_ids" in scope) return `Drawing ${scope.section_ids.length.toLocaleString()} of ${plural(sectionCount, "section")}`;
   return `PDF pages ${scope.pdf_page_from}\u2013${scope.pdf_page_to}`;
 }
+
+// ---------------------------------------------------------------------------
+// U1 fix wave (Gate 1): Add a book errors, the limit chips, the Settings thinking column.
+// ---------------------------------------------------------------------------
+
+/** The next step after a too-large file. */
+export const tooLargeNext = (maxMb: number) => `Choose a PDF of ${maxMb} MB or less.`;
+/** The next step after a server error that may pass by itself. */
+export const TRY_AGAIN_NEXT = "Try again in a moment.";
+export const NO_JOB_NEXT = "Check that the PanelSummary job runner is running (./start.sh), then try again.";
+export const ALREADY_ON_SHELF = "This book is already on your shelf.";
+
+const NEXT_STEP = /^([\s\S]*?)\s*(Choose a PDF of \d[\d,]* MB or less\.|Use a PDF with selectable text\.|Choose another PDF\.|Choose a \.pdf file\.|Try again in a moment\.|Check that the PanelSummary job runner is running \(\.\/start\.sh\), then try again\.)$/;
+
+/** Splits an error text into what happened and the next step, so the screen can set them on two lines. */
+export function splitNextStep(text: string): { title: string; next: string | null } {
+  const m = NEXT_STEP.exec(text.trim());
+  if (!m || !m[1]) return { title: text.trim(), next: null };
+  return { title: m[1].trim(), next: m[2] };
+}
+
+/** The server says "The server answered 502" for an error without a text. */
+export const serverAnsweredText = (status: number) => `The server answered ${status}.`;
+
+export type FailedLimit = { limit: "size"; fileMb: number } | { limit: "scan" };
+
+/** The five limit chips of the drop zone. The one that failed carries what is true of this file, in the same chip. */
+export function limitChips(limits: LimitValues = FALLBACK_LIMITS, failed?: FailedLimit | null): { text: string; failed: boolean }[] {
+  const items = limitItems(limits);
+  return items.map((text, i) => {
+    if (failed?.limit === "scan" && i === 0) return { text: `${text} (this file: a scan)`, failed: true };
+    if (failed?.limit === "size" && i === 2) return { text: `${text} (this file: ${failed.fileMb} MB)`, failed: true };
+    return { text, failed: false };
+  });
+}
+
+/**
+ * What the worker SENDS as the thinking level. The Flash model cannot turn thinking off, so "off" is sent as "low".
+ * Any other model gets the level as it was asked.
+ */
+export function thinkingSent(model: string, asked: string): string {
+  return asked === "off" && /flash/i.test(model) ? "low" : asked;
+}
+export const AFTER_UPLOAD = "PanelSummary reads the text and finds the sections. Then the book's page opens by itself.";
