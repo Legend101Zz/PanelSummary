@@ -159,3 +159,10 @@ New tests: `apps/agent-worker/test/q2b-continuity.test.ts` (places, location che
 
 1. Should the backend show the names of minor figures in the source drawer (a 3-line change in `editions.py`)?
 2. After the first live run: promote `PLAN_LOCATION_NOT_IN_UNITS` to an error only if its flagged pages match the judges' setting complaints better than chance. Is that the right bar?
+
+## Guard for the `vision` flag (review fix)
+
+The `vision` flag skips FIGURE_STATE_MISMATCH for its panel, so the page goal now checks the flag (`visionIssues` in `continuity.ts`):
+
+- VISION_OVERUSED (error): a page of 2 or more panels sets `vision` on more than half of its panels. A page that flags all panels is rejected.
+- VISION_NOT_PLANNED (warning): a panel sets `vision`, but the planned beat of the page has none of: afterlife, dream, memory, paradise, heaven, vision. This stays a warning until it is calibrated on judged pages.

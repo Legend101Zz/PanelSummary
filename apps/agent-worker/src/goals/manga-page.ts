@@ -21,7 +21,7 @@ import { claimEventIssues, claimOrderIssues } from "./claim-shown.js";
 import { applyRepairOnce, isRepairOnce, repairOnceIssues } from "./repair-once.js";
 import { crowdingAdvice, explainAspect, RepairTracker } from "./repair-hints.js";
 import { minorFigures } from "./minor-figures.js";
-import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, unitOrder, type ExpectedLook } from "./continuity.js";
+import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, visionIssues, unitOrder, type ExpectedLook } from "./continuity.js";
 
 /** Severity of FIGURE_STATE_MISMATCH, set from calibration (docs/launch/T1-continuity.md). */
 export const FIGURE_STATE_SEVERITY: "error" | "warning" = "error";
@@ -403,6 +403,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
         ...statueStagingIssues(spec, input.cast, input.locations),
         ...stagingIssues(spec),
         ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
+        ...visionIssues(spec, input.page.beat),
         ...claimOrderIssues(spec, input.claims, input.order),
         ...claimEventIssues(spec, input.claims),
         ...repairOnceIssues(spec, input),

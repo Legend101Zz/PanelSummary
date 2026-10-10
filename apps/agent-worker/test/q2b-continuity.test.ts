@@ -10,7 +10,7 @@ import { VISIONS } from "@panelsummary/manga-render/contracts";
 
 import { PAGES, PLAN, UNDERSTANDING, UNIT_IDS } from "../../../packages/manga-render/test/fixtures/happy-prince.js";
 import { CANDIDATE_ARG } from "../src/goals/common.js";
-import { claimPages, expectedLooks, figureStateIssues, unitOrder } from "../src/goals/continuity.js";
+import { claimPages, expectedLooks, figureStateIssues, unitOrder, visionIssues } from "../src/goals/continuity.js";
 import { mangaPageGoal } from "../src/goals/manga-page.js";
 import { genericLook, minorFigures } from "../src/goals/minor-figures.js";
 import { deriveUnits, hasPlaceUnits, placeIssues, planPlaceIssues } from "../src/goals/places.js";
@@ -165,6 +165,33 @@ describe("vision panels (afterlife, dream, memory)", () => {
     expect(figureStateIssues(wrong as unknown as MangaPageSpec, [swallow], looks, "error")).toHaveLength(1);
   });
 
+  it("abuse guard: flagging every panel of a page with a dead-character mismatch is an error", () => {
+    const looks = expectedLooks([girl], order, { page_number: 19, units: ["s4u3"], claim_pages: claimPages(plan) });
+    const page = (flags: Array<string | undefined>): MangaPageSpec =>
+      ({ panels: flags.map((v, i) => ({ id: `p${i + 1}`, fx: [], ...(v ? { vision: v } : {}), figures: [{ character: "c_girl", variant: { eyes: "open" } }], text: [] })) }) as unknown as MangaPageSpec;
+    const all = page(["dream", "dream", "dream"]);
+    // the state check alone is silenced by the flag ...
+    expect(figureStateIssues(all, [girl], looks, "error")).toEqual([]);
+    // ... so the guard must catch it
+    expect(visionIssues(all, "She dreams of her grandmother").map((i) => `${i.severity}:${i.code}`)).toEqual(["error:VISION_OVERUSED"]);
+    expect(visionIssues(page(["dream", "dream"]), "dream").map((i) => i.code)).toEqual(["VISION_OVERUSED"]);
+    expect(visionIssues(page(["dream", "dream", undefined]), "dream").map((i) => i.code)).toEqual(["VISION_OVERUSED"]);
+    // one flagged panel of two is allowed; the unflagged panel is still checked by the state check
+    expect(visionIssues(page(["dream", undefined]), "dream")).toEqual([]);
+    expect(figureStateIssues(page(["dream", undefined]), [girl], looks, "error").map((i) => i.path)).toEqual(["panel p2 figure c_girl"]);
+    // no flag: nothing
+    expect(visionIssues(page([undefined, undefined]), "plain")).toEqual([]);
+  });
+
+  it("abuse guard: a flag the plan does not mention is a warning; a beat with the word passes", () => {
+    const one = { panels: [{ id: "p1", fx: [], vision: "afterlife", figures: [], text: [] }, { id: "p2", fx: [], figures: [], text: [] }] } as unknown as MangaPageSpec;
+    expect(visionIssues(one, "The bird sings in the city square").map((i) => `${i.severity}:${i.code}`)).toEqual(["warning:VISION_NOT_PLANNED"]);
+    for (const word of ["afterlife", "a dream", "memory", "Paradise", "Heaven", "a vision"]) expect(visionIssues(one, `The bird in ${word}`)).toEqual([]);
+    // a single-panel page may carry the flag (the ratio rule needs 2+ panels)
+    const solo = { panels: [{ id: "p1", fx: [], vision: "dream", figures: [], text: [] }] } as unknown as MangaPageSpec;
+    expect(visionIssues(solo, "a dream")).toEqual([]);
+  });
+
   it("the flag is part of the page spec: accepted for the three values, an error for any other", () => {
     const base = clone(PAGES.find((p) => p.page_number === 3)!) as MangaPageSpec;
     const book = { cast: UNDERSTANDING.cast, locations: UNDERSTANDING.locations };
@@ -204,8 +231,17 @@ describe("vision panels (afterlife, dream, memory)", () => {
       const submit = prepared.tools.find((t) => t.name === "submit_page")!;
       expect((await submit.execute({ [CANDIDATE_ARG]: JSON.stringify(page3()) }, undefined)).text).toContain("FIGURE_STATE_MISMATCH");
       const flagged = await submit.execute({ [CANDIDATE_ARG]: JSON.stringify(page3("afterlife")) }, undefined);
+      // every panel flagged: the state check is silent, but the guard rejects the page
       expect(flagged.text).not.toContain("FIGURE_STATE_MISMATCH");
-      expect(flagged.text).not.toContain("vision");
+      expect(flagged.text).toContain("VISION_OVERUSED");
+      expect(flagged.accepted).toBeUndefined();
+      // only the first panel flagged: the guard is quiet, and the other panels are held to the state again
+      const some = page3("afterlife");
+      some.panels.forEach((panel, i) => i >= 1 && delete (panel as { vision?: string }).vision);
+      const partial = await submit.execute({ [CANDIDATE_ARG]: JSON.stringify(some) }, undefined);
+      expect(partial.text).not.toContain("[ERROR VISION_OVERUSED]");
+      expect(partial.text).toContain("[ERROR FIGURE_STATE_MISMATCH] panel p2 figure prince");
+      expect(partial.text).not.toContain("[ERROR FIGURE_STATE_MISMATCH] panel p1 ");
       expect(prepared.userPrompt).toContain('"vision" set (afterlife, dream, memory)');
     });
   });
