@@ -42,10 +42,37 @@ describe("camera push-in and speakers in frame (#42)", () => {
       for (const f of d.figures) if (f.headCropped) expect(speakers.has(f.character), `page ${p.page} ${d.id} ${f.character}`).toBe(false);
     });
   });
-  it("a hero that was under the floor is no smaller than before the push (sizes only grow)", () => {
-    for (const { r } of all) for (const d of r.details) for (const f of d.figures) {
-      expect(f.scale).toBeGreaterThan(0);
-      expect(Number.isFinite(f.head.x) && Number.isFinite(f.head.y)).toBe(true);
+  /**
+   * Panels where a small subject was under the floor before the push. "before" is the share measured on
+   * this fixture with the push switched off (the tighter dimension of the figure's body over the panel);
+   * "floor" is what the push must reach (the floor itself, or the most the camera may push here).
+   */
+  const SHARE = (d: { bbox: { w: number; h: number } }, f: { body: { w: number; h: number } }): number =>
+    Math.max(Math.min(f.body.h, d.bbox.h) / d.bbox.h, Math.min(f.body.w, d.bbox.w) / d.bbox.w);
+  const SMALL: { page: number; panel: string; who: string; before: number; floor: number }[] = [
+    { page: 7, panel: "p3", who: "c_student_garret", before: 0.223, floor: SUBJECT_MIN_SIZE },
+    { page: 44, panel: "p1", who: "c_dragonfly", before: 0.173, floor: 0.173 * 1.4 },
+    { page: 17, panel: "p2", who: "c_nightingale", before: 0.19, floor: 0.19 * 1.35 },
+    { page: 8, panel: "p1", who: "c_swallow", before: 0.198, floor: 0.198 * 1.35 },
+  ];
+  it("a small subject under the floor is pushed up to it (or by the expected factor), head in the panel, no speaker cropped", () => {
+    for (const c of SMALL) {
+      const p = PAGES.find((x) => x.page === c.page);
+      expect(p, `page ${c.page}`).toBeDefined();
+      const r = render(p as (typeof PAGES)[number]);
+      const d = r.details.find((x) => x.id === c.panel);
+      expect(d, `${c.page} ${c.panel}`).toBeDefined();
+      const f = d!.figures.find((x) => x.character === c.who);
+      expect(f, `${c.page} ${c.panel} ${c.who}`).toBeDefined();
+      const share = SHARE(d!, f!);
+      expect(share, `${c.page} ${c.panel} ${c.who} share ${share.toFixed(3)} was ${c.before}`).toBeGreaterThanOrEqual(c.floor - 0.005);
+      expect(f!.headCropped).toBeFalsy();
+      expect(f!.head.x).toBeGreaterThanOrEqual(d!.bbox.x);
+      expect(f!.head.x).toBeLessThanOrEqual(d!.bbox.x + d!.bbox.w);
+      expect(f!.head.y).toBeGreaterThanOrEqual(d!.bbox.y);
+      expect(f!.head.y).toBeLessThanOrEqual(d!.bbox.y + d!.bbox.h);
+      const speakers = new Set((p!.spec.panels.find((x: any) => x.id === c.panel)?.text ?? []).map((t: any) => t.speaker));
+      for (const g of d!.figures) if (speakers.has(g.character)) expect(g.headCropped, `speaker ${g.character}`).toBeFalsy();
     }
   });
 });
