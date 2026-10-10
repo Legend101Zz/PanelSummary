@@ -7,12 +7,14 @@ import { useEffect, useRef, type RefObject } from "react";
  * - tap the left / right third to go back / forward, the middle to show or hide the bars
  * - double tap (page mode) to zoom in or back out
  * - horizontal swipe to turn (when not zoomed)
- * - drag to pan and pinch to zoom (page mode)
+ * - drag to move the page and pinch to zoom (page mode)
  * - ctrl + wheel (trackpad pinch) to zoom, wheel to pan while zoomed
  */
 export interface GestureHandlers {
   mode: "page" | "panel";
   zoomed: boolean;
+  /** The page is bigger than the stage: drag and wheel move it. */
+  panable: boolean;
   enabled: boolean;
   onTapZone: (zone: "left" | "middle" | "right") => void;
   onDoubleTap: (x: number, y: number) => void;
@@ -80,7 +82,7 @@ export function useStageGestures(ref: RefObject<HTMLElement | null>, handlers: G
       }
       if (!start) return;
       if (!moved && Math.hypot(p.x - start.x, p.y - start.y) > 8) moved = true;
-      if (moved && h.current.zoomed) h.current.onPan(p.x - prev.x, p.y - prev.y);
+      if (moved && h.current.panable) h.current.onPan(p.x - prev.x, p.y - prev.y);
     };
 
     const up = (e: PointerEvent) => {
@@ -137,7 +139,7 @@ export function useStageGestures(ref: RefObject<HTMLElement | null>, handlers: G
         const p = local(e);
         const delta = Math.max(-50, Math.min(50, e.deltaY));
         h.current.onZoom(Math.exp(-delta * 0.012), p.x, p.y);
-      } else if (h.current.zoomed) {
+      } else if (h.current.panable) {
         e.preventDefault();
         h.current.onPan(-e.deltaX, -e.deltaY);
       }
