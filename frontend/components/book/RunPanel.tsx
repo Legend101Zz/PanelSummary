@@ -133,9 +133,10 @@ export function RunPanel(p: RunPanelProps) {
   } else if (active && !page1Ready) {
     notes.push(<p key="n1">{WAIT_FOR_PAGE_1}</p>);
   } else if (active) {
-    notes.push(<p key="n1">This page updates itself, so you can leave it open.</p>);
+    // One line, so the card stays short and the page 1 band stays in the first screen (final-journey finding).
+    const same = e.status === "drawing" ? concurrencyLine(p.pageConcurrency) : null;
+    notes.push(<p key="n1">{same ? `This page updates itself, so you can leave it open. ${same}` : "This page updates itself, so you can leave it open."}</p>);
   }
-  if (active && e.status === "drawing" && concurrencyLine(p.pageConcurrency)) notes.push(<p key="n2">{concurrencyLine(p.pageConcurrency)}</p>);
 
   // --- actions --------------------------------------------------------------
   const read = (variant: "primary" | "secondary") => (
@@ -306,10 +307,11 @@ export function RunPanel(p: RunPanelProps) {
   return (
     <>
       <RunCard
+        className={active ? styles.liveCard : undefined}
         eyebrow={scopeLabel(e.scope, p.book.sections.length) ?? undefined}
         headline={headline}
         notice={notices.length ? <>{notices}</> : undefined}
-        steps={showSteps ? <StepList steps={stepLabels.map((label) => ({ label }))} current={current} /> : undefined}
+        steps={showSteps ? <StepList className={styles.liveSteps} steps={stepLabels.map((label) => ({ label }))} current={current} /> : undefined}
         strip={stop || (!active && total === 0) ? undefined : strip}
         time={stop ? undefined : timeLine ?? undefined}
         actions={actions.length ? <>{actions}</> : undefined}
