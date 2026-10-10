@@ -17,6 +17,10 @@ backend/.venv/bin/python scripts/fixtures/seed_states.py \
 - The Mongo URL must be on this computer and have no password. It never reads `backend/.env`.
 - `--exports <dir>` (default `/Volumes/Mrigesh SSD/Book-Reel-scratch/launch`) holds saved run exports. Pass `--exports none` to use only
   the committed Andersen run. Then the Wilde books use Andersen pages and the 60-page book is left out.
+- The stored page art of an export page is always the SAVED SVG, with the renderer version that the run recorded
+  (`journey-report.json` next to the export, for example `manga-render/0.5.0`). Today's renderer may not reproduce it
+  (renderer 0.6.0 changed the output). The script then prints a note, and the panel and text geometry of those pages comes
+  from today's renderer (an approximation). `--verify-render` makes a difference an error.
 - `--plan-review auto` (default) adds the `awaiting_plan_review` book only when the backend knows that status (track S1).
 - Run it again to reset. The ids are stable, so URLs survive a re-seed (the installed sample gets a new id).
 - The script writes `states.md` and `states.json` (book id, state, URL) to `--out` and prints the table.

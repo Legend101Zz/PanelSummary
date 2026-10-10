@@ -109,6 +109,12 @@ the numbers are in `docs/launch/EVAL.md`. The short command list is in
 `scripts/acceptance/README.md`. Read the job summary and `aggregate.md` together. A passed
 journey with a low judge score is a quality problem, not a pass.
 
+## Queue the next run only after the previous one has started
+
+GitHub keeps only ONE pending run in the live-journey concurrency group. A newer dispatch cancels the
+older run that is still pending. This happened on 2026-10-10: run 38064776577 was cancelled. Queue the next
+run only after the previous one has started (check with `gh run list --workflow live-journey.yml`).
+
 ## Known limits of this lane
 
 - This page comes from the workflow files. The documentation track made no live run.
