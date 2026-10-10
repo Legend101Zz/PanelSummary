@@ -98,3 +98,14 @@ def test_requirements_do_not_pin_banned_packages():
 def test_backend_never_holds_the_model_key():
     for path in sorted((BACKEND / "app").rglob("*.py")):
         assert "MINIMAX_API_KEY" not in path.read_text(encoding="utf-8"), path
+
+
+def test_the_status_route_never_reads_a_secret_setting():
+    """D25: GET /status answers with named fields only. Its source never touches the worker token,
+    the database URL or the MiniMax key, so no refactor can start to echo one of them."""
+    source = (BACKEND / "app" / "api" / "status.py").read_text(encoding="utf-8")
+    code = "\n".join(line for line in source.splitlines() if not line.lstrip().startswith(("#", '"""')))
+    for forbidden in ("agent_worker_token", "mongodb_url", "MINIMAX", "minimax_api_key", "model_dump", "settings.dict", "os.environ", "response.text", "response.json()["):
+        assert forbidden not in code, f"app/api/status.py must not use {forbidden!r}"
+    # The only worker field it keeps is the boolean `ready`.
+    assert 'get("ready") is True' in code

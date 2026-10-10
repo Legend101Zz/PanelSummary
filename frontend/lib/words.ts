@@ -18,6 +18,10 @@ export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
       return { text: "Reading the book", tone: "pencil" };
     case "planning":
       return { text: "Planning pages", tone: "pencil" };
+    case "awaiting_plan_review":
+      // Family "Not started" (outline band, tone quiet): nothing is drawn and nothing failed. "Needs you"
+      // has the problem icon and the red tone in SCREENS-AND-STATES, which would call a plan a fault.
+      return { text: "Plan ready to review", tone: "quiet" };
     case "drawing":
       return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "pencil" };
     case "complete":
@@ -67,6 +71,8 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
       return "Reading the book";
     case "planning":
       return "Planning the pages";
+    case "awaiting_plan_review":
+      return "Plan ready to review";
     case "drawing": {
       const drawing = pages.filter((p) => p.status === "drawing").map((p) => p.page_number);
       const next = drawing[0] ?? pages.find((p) => p.status === "pending")?.page_number;

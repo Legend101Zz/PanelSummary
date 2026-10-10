@@ -7,11 +7,12 @@ import re
 from pathlib import Path
 
 import fitz
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, Response
 
 from app.preflight import build_preflight
 from app.documents import BookSource, Edition, GenerationJob, LibraryBook, utcnow
+from app.scope import ScopeError, page_words, resolve_scope
 from app.settings import get_settings
 
 router = APIRouter()
@@ -100,6 +101,7 @@ async def list_books() -> list[dict]:
                 "status": latest.status,
                 "page_total": latest.page_total,
                 "pages_accepted": latest.pages_accepted,
+                "pages_failed": latest.pages_failed,
                 # Only the code: the shelf band says why the drawing stopped (D11).
                 "provider_stop": {"code": latest.provider_stop.get("code")} if latest.provider_stop else None,
             }
@@ -123,16 +125,39 @@ async def get_book(book_id: str) -> dict:
         if source
         else []
     )
+    # Words per PDF page (index = PDF page - 1), for the page-range meter. See app/scope.py.
+    view["page_words"] = page_words(source.units, book.page_count) if source else []
     return view
 
 
 @router.get("/books/{book_id}/preflight")
-async def preflight(book_id: str) -> dict:
-    """Size, limits and a cost/time range, shown before Generate. No model call, no spend."""
+async def preflight(
+    book_id: str,
+    section_ids: str | None = Query(None, description="Comma-separated section ids, for example s1,s2"),
+    page_from: int | None = Query(None),
+    page_to: int | None = Query(None),
+) -> dict:
+    """Size, limits and a cost/time range, shown before Generate. No model call, no spend.
+
+    With ``section_ids`` or ``page_from`` and ``page_to`` the numbers are those of that scope
+    (D19: the limits apply to the scope). Without them the numbers are those of the whole book.
+    """
     book = await get_book_or_404(book_id)
     if book.status != "parsed":
         raise HTTPException(status_code=409, detail="The book is not parsed yet, so it cannot be measured")
-    return build_preflight(str(book.id), book.page_count, book.word_count, book.section_count, get_settings())
+    if section_ids is None and page_from is None and page_to is None:
+        return build_preflight(str(book.id), book.page_count, book.word_count, book.section_count, get_settings())
+    source = await BookSource.find_one(BookSource.book_id == str(book.id))
+    if source is None:
+        raise HTTPException(status_code=409, detail="The book has no parsed text, so it cannot be measured")
+    ids = [part.strip() for part in section_ids.split(",") if part.strip()] if section_ids is not None else None
+    try:
+        resolved = resolve_scope(source.sections, source.units, book.page_count, section_ids=ids, page_from=page_from, page_to=page_to)
+    except ScopeError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return build_preflight(
+        str(book.id), resolved.pdf_pages, resolved.words, len(resolved.sections), get_settings(), scope=resolved.scope
+    )
 
 
 def _pdf_path(book: LibraryBook) -> Path:

@@ -118,10 +118,12 @@ def test_build_preflight_shape_and_basis():
     s = Settings(_env_file=None)
     out = build_preflight("b1", 26, 5794, 2, s)
     assert list(out) == [
-        "book_id", "pdf_pages", "source_words", "sections", "estimated_manga_pages", "estimated_cost_usd",
+        "book_id", "scope", "pdf_pages", "source_words", "sections", "estimated_manga_pages", "estimated_cost_usd",
         "estimated_minutes", "limits", "within_limits", "blocking_reasons",
     ]
-    assert list(out["estimated_cost_usd"]) == ["low", "high", "basis"]
+    assert out["scope"] is None  # the whole book
+    assert list(out["estimated_cost_usd"]) == ["low", "high", "basis_short", "basis"]
+    assert out["estimated_cost_usd"]["basis_short"] == "Estimate at MiniMax-M3 rates, not a bill."
     assert list(out["estimated_minutes"]) == ["first_page", "total"]
     assert out["within_limits"] is True and out["blocking_reasons"] == []
     assert "not a bill" in out["estimated_cost_usd"]["basis"]
@@ -248,3 +250,135 @@ def test_the_basis_counts_each_policy_and_names_no_stale_claim():
     assert n_all_flash >= 1
     assert f"and {n_all_flash} with Flash on every goal" in text
     assert "M3 on the book understanding in all" not in text
+
+
+# --- scope (issue #40) and the plan-review cost range ---
+
+
+def test_draw_cost_range_for_sixteen_pages():
+    from app.preflight import COST_HIGH_FACTOR, COST_LOW_FACTOR, COST_PER_PAGE, draw_cost_range
+
+    out = draw_cost_range(16)
+    assert out == {"low": round(16 * COST_PER_PAGE * COST_LOW_FACTOR, 2), "high": round(16 * COST_PER_PAGE * COST_HIGH_FACTOR, 2)}
+    assert out == {"low": 0.41, "high": 0.6}
+    assert draw_cost_range(0) == {"low": 0.0, "high": 0.0}
+
+
+def test_scoped_limit_reasons_say_selection_and_keep_the_numbers():
+    reasons = check_limits(120, 20000, 75, 17500, scoped=True)
+    assert reasons[0] == "This selection has 20,000 words. PanelSummary can adapt up to 17,500 words in one run."
+    assert reasons[1].startswith("This selection has 120 PDF pages.")
+    assert reasons[-1] == "Choose fewer sections or a shorter page range."
+    assert check_limits(75, 17500, 75, 17500, scoped=True) == []
+    # the unscoped words are the v0.1 words, unchanged
+    assert check_limits(60, 20000, 75, 17500)[0].startswith("This book has 20,000 words. PanelSummary can adapt books up to")
+
+
+def _big_book(pdf_pages=150):
+    """A 150-page, 30,000-word book that is parsed: three sections of 50 pages and 10,000 words."""
+    from app.documents import BookSource, LibraryBook
+
+    book = LibraryBook(
+        title="Big", original_filename="big.pdf", pdf_hash=uuid.uuid4().hex, pdf_path="/nonexistent.pdf",
+        status="parsed", page_count=pdf_pages, word_count=30000, section_count=3,
+    )
+    sections, units = [], []
+    for i in range(3):
+        sid = f"s{i + 1}"
+        first = i * 50 + 1
+        sections.append({"id": sid, "title": f"Part {i + 1}", "page_start": first, "page_end": first + 49, "word_count": 10000, "unit_ids": [f"{sid}u1", f"{sid}u2"]})
+        for j in range(2):
+            start = first + j * 25
+            units.append({"id": f"{sid}u{j + 1}", "section_id": sid, "page_start": start, "page_end": start + 24, "word_count": 5000, "text": f"text of {sid}u{j + 1}"})
+    return book, BookSource(book_id="", parser="test", content_hash="x", page_count=pdf_pages, word_count=30000, sections=sections, units=units)
+
+
+@needs_mongo
+def test_a_150_page_book_is_outside_the_limit_but_one_section_is_inside(tmp_path, monkeypatch):
+    import test_generate_journey as journey
+
+    worker = journey.FakeWorker(fail_pages=set())
+    port = journey._free_port()
+    server = journey._serve(worker.app, port)
+    db_name = f"ps_scope_{uuid.uuid4().hex[:8]}"
+    _env(monkeypatch, tmp_path, db_name, worker_port=port)  # default limits: 75 pages, 17,500 words
+
+    async def scenario():
+        from app.db import init_db
+        from app.documents import Edition, GenerationJob
+        from app.main import app
+
+        client_db = await init_db()
+        try:
+            book, source = _big_book()
+            await book.insert()
+            source.book_id = str(book.id)
+            await source.insert()
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://api") as api:
+                detail = (await api.get(f"/books/{book.id}")).json()
+                assert len(detail["page_words"]) == 150 and sum(detail["page_words"]) == detail["word_count"] == 30000
+                assert detail["page_words"][0] == 200 and detail["page_words"][149] == 200  # 5,000 words over 25 pages
+                whole = (await api.get(f"/books/{book.id}/preflight")).json()
+                assert whole["scope"] is None and whole["pdf_pages"] == 150 and whole["source_words"] == 30000
+                assert whole["within_limits"] is False and whole["sections"] == 3
+                assert (await api.post(f"/books/{book.id}/editions")).status_code == 422  # unchanged v0.1 refusal
+
+                one = (await api.get(f"/books/{book.id}/preflight", params={"section_ids": "s2"})).json()
+                assert one["scope"] == {"section_ids": ["s2"]}
+                assert (one["pdf_pages"], one["source_words"], one["sections"]) == (50, 10000, 1)
+                assert one["within_limits"] is True and one["blocking_reasons"] == []
+                assert one["estimated_manga_pages"]["high"] < whole["estimated_manga_pages"]["high"]
+                assert one["estimated_cost_usd"]["high"] < whole["estimated_cost_usd"]["high"]
+                assert one["estimated_cost_usd"]["basis_short"] == "Estimate at MiniMax-M3 rates, not a bill."
+                assert list(one) == list(whole)  # the same shape
+
+                # two sections: 100 pages and 20,000 words are over both limits, with plain reasons
+                two = (await api.get(f"/books/{book.id}/preflight", params={"section_ids": "s1,s3"})).json()
+                assert two["within_limits"] is False and (two["pdf_pages"], two["source_words"]) == (100, 20000)
+                assert two["blocking_reasons"][0].startswith("This selection has 20,000 words")
+                refused = await api.post(f"/books/{book.id}/editions", json={"section_ids": ["s1", "s3"]})
+                assert refused.status_code == 422 and "This selection has 20,000 words" in refused.json()["detail"]
+
+                # a page range: units that overlap pages 40 to 60 (s1u2 on 26-50 and s2u1 on 51-75)
+                ranged = (await api.get(f"/books/{book.id}/preflight", params={"page_from": 40, "page_to": 60})).json()
+                assert ranged["scope"] == {"pdf_page_from": 40, "pdf_page_to": 60}
+                assert (ranged["pdf_pages"], ranged["source_words"], ranged["sections"]) == (21, 10000, 2)
+
+                # bad scopes: 422 with a reason, on the estimate and on Generate
+                bad = [
+                    ({"section_ids": "s9"}, {"section_ids": ["s9"]}, "no section 's9'"),
+                    ({"section_ids": ""}, {"section_ids": []}, "scope is empty"),
+                    ({"page_from": 60, "page_to": 40}, {"pdf_page_from": 60, "pdf_page_to": 40}, "comes after"),
+                    ({"page_from": 0, "page_to": 10}, {"pdf_page_from": 0, "pdf_page_to": 10}, "inside the book"),
+                    ({"page_from": 100, "page_to": 151}, {"pdf_page_from": 100, "pdf_page_to": 151}, "pages 1 to 150"),
+                    ({"page_from": 5}, {"pdf_page_from": 5}, "both a first page and a last page"),
+                    ({"section_ids": "s1", "page_from": 1, "page_to": 5}, {"section_ids": ["s1"], "pdf_page_from": 1, "pdf_page_to": 5}, "not both"),
+                ]
+                for query, body, fragment in bad:
+                    r = await api.get(f"/books/{book.id}/preflight", params=query)
+                    assert r.status_code == 422 and fragment in r.json()["detail"], (query, r.text)
+                    r = await api.post(f"/books/{book.id}/editions", json=body)
+                    assert r.status_code == 422 and fragment in r.json()["detail"], (body, r.text)
+                assert await Edition.find_all().count() == 0
+                assert await GenerationJob.find(GenerationJob.kind == "generate").count() == 0
+
+                # one section starts an edition that stores its scope; every view returns it
+                started = (await api.post(f"/books/{book.id}/editions", json={"section_ids": ["s2"]})).json()
+                assert started["already_running"] is False and started["edition"]["scope"] == {"section_ids": ["s2"]}
+                eid = started["edition"]["id"]
+                assert (await api.get(f"/editions/{eid}")).json()["scope"] == {"section_ids": ["s2"]}
+                assert (await api.get(f"/books/{book.id}/editions")).json()[0]["scope"] == {"section_ids": ["s2"]}
+                assert worker.calls == []  # nothing reached the worker
+        finally:
+            await client_db.drop_database(db_name)
+
+    from app import db as db_module
+    from app.settings import get_settings
+
+    try:
+        asyncio.run(scenario())
+    finally:
+        server.should_exit = True
+        get_settings.cache_clear()
+        db_module._client = None

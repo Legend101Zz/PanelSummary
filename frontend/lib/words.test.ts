@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus } from "./words";
+import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus, stageLine } from "./words";
 
 describe("words", () => {
   it("shows completed_with_failures in the red tone", () => {
@@ -34,6 +34,11 @@ describe("words", () => {
   it("says manga pages on the cover band for a complete edition", () => {
     const b: any = { status: "parsed", latest_edition: { status: "complete", page_total: 18, pages_accepted: 18 } };
     expect(shelfStatus(b).text).toBe("18 manga pages");
+  });
+  it("words an edition that waits for a plan review, on the shelf and in the stage line", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "awaiting_plan_review", page_total: 16, pages_accepted: 0 } };
+    expect(shelfStatus(b)).toEqual({ text: "Plan ready to review", tone: "quiet" });
+    expect(stageLine("awaiting_plan_review", [], 16)).toBe("Plan ready to review");
   });
   it("marks the PDF page count in the meta line", () => {
     const b: any = { page_count: 22, section_count: 4, word_count: 4775 };

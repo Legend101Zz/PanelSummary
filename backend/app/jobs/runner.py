@@ -13,12 +13,13 @@ import asyncio
 import logging
 import os
 import socket
-from datetime import timedelta
+from datetime import timedelta, timezone
 
+from bson import ObjectId
 from pymongo import ReturnDocument
 
 from app.db import init_db
-from app.documents import GenerationJob, JobEvent, utcnow
+from app.documents import Edition, GenerationJob, JobEvent, RunnerHeartbeat, utcnow
 from app.settings import get_settings
 
 logger = logging.getLogger("panelsummary.runner")
@@ -132,6 +133,31 @@ async def finish(job_id, status: str, message: str, error: str | None = None) ->
     )
 
 
+async def beat_runner() -> None:
+    """Write the runner heartbeat: one document, updated on every poll (not the job lease).
+
+    ``GET /status`` reads it. A failed write is logged and never stops the runner.
+    """
+    try:
+        await RunnerHeartbeat.get_motor_collection().update_one(
+            {"key": "runner"}, {"$set": {"runner_id": RUNNER_ID, "at": utcnow()}}, upsert=True
+        )
+    except Exception:  # noqa: BLE001 — the heartbeat is information, not work
+        logger.warning("could not write the runner heartbeat", exc_info=True)
+
+
+async def add_active_time(job: GenerationJob) -> None:
+    """Add this job's run time to its edition (``active_seconds``). Idle time between jobs is not counted."""
+    if job.kind != "generate" or not job.edition_id or job.started_at is None:
+        return
+    started = job.started_at if job.started_at.tzinfo else job.started_at.replace(tzinfo=timezone.utc)
+    seconds = max(0.0, (utcnow() - started).total_seconds())
+    try:
+        await Edition.get_motor_collection().update_one({"_id": ObjectId(job.edition_id)}, {"$inc": {"active_seconds": seconds}})
+    except Exception:  # noqa: BLE001
+        logger.warning("could not add the run time to edition %s", job.edition_id, exc_info=True)
+
+
 async def execute(job: GenerationJob) -> None:
     from app.jobs.generate import mark_cancelled, mark_failed, run_generate_job
     from app.jobs.parse import run_parse_job
@@ -167,6 +193,7 @@ async def execute(job: GenerationJob) -> None:
     finally:
         stop.set()
         await beat
+    await add_active_time(job)
     await finish(job.id, *outcome)
 
 
@@ -177,6 +204,7 @@ async def run_forever() -> None:
     running: set[asyncio.Task] = set()
     max_parallel_jobs = 2
     while True:
+        await beat_runner()
         running = {task for task in running if not task.done()}
         if len(running) < max_parallel_jobs:
             job = await claim_job()
