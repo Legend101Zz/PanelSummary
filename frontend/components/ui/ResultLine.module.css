@@ -1,0 +1,10 @@
+.root { display: block; font-variant-numeric: tabular-nums; }
+.title { margin: 0; font-size: 17px; font-weight: 700; }
+.rng { position: relative; height: 66px; margin-top: 4px; }
+.av { position: absolute; top: 0; font-size: 14px; font-weight: 800; white-space: nowrap; }
+.bar { position: absolute; left: 0; right: 0; top: 26px; height: 14px; border-radius: var(--app-radius-range); background: var(--app-track); }
+.mark { position: absolute; top: 20px; width: 4px; height: 26px; margin-left: -2px; border-radius: var(--app-radius-mark); background: var(--app-text); }
+.lo, .hi { position: absolute; top: 46px; font-size: 13px; color: var(--app-text-2); }
+.lo { left: 0; }
+.hi { right: 0; }
+.note { margin: 2px 0 0; font-size: 15px; line-height: 1.4; color: var(--app-text-2); }

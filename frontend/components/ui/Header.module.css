@@ -1,0 +1,26 @@
+.header { position: relative; z-index: 30; color: var(--app-text); }
+.inner { position: relative; z-index: 31; max-width: var(--app-max); margin: 0 auto; padding: 0 var(--app-gutter); height: 84px; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-sizing: border-box; }
+.mark { display: inline-flex; align-items: center; gap: 10px; min-height: var(--app-target); color: var(--app-text); text-decoration: none; }
+.tile { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 10px; background: var(--app-action); color: var(--app-on-action); }
+.word { font-size: 24px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.nav { display: flex; align-items: center; gap: 8px; }
+.phone { display: none; }
+.menu { display: none; }
+
+@media (max-width: 767px) {
+  .inner { height: 64px; }
+  .tile { width: 30px; height: 30px; }
+  .tile svg { width: 12px; height: 17px; }
+  .word { font-size: 20px; }
+  .nav { display: none; }
+  .phone { display: flex; align-items: center; gap: 8px; }
+  .menu { display: block; position: absolute; z-index: 30; left: 0; right: 0; top: 100%; padding: 6px 16px 18px; box-sizing: border-box; background: var(--app-surface); border-bottom: var(--app-line-control) solid var(--app-line); }
+  .menu[hidden] { display: none; }
+  .menu ul { margin: 0; padding: 0; list-style: none; }
+  .menu li { border-bottom: 1px solid var(--app-line); }
+  .menuAction { margin-top: 16px; }
+  .scrim { position: fixed; z-index: 25; inset: 0; background: var(--app-scrim); }
+}
+@media (min-width: 768px) {
+  .menu, .scrim { display: none; }
+}

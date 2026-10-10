@@ -1,0 +1,4 @@
+.footer { max-width: var(--app-max); width: 100%; margin: 0 auto; padding: 0 var(--app-gutter) 24px; box-sizing: border-box; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 24px; padding-top: 12px; border-top: 1px solid var(--app-line); font-size: 15px; line-height: 1.5; color: var(--app-text-2); }
+.line { flex-basis: 100%; margin: 0; }
+@media (min-width: 768px) { .line { flex-basis: auto; } }

@@ -1,0 +1,26 @@
+.root { position: relative; display: flex; align-items: center; gap: 12px; min-height: var(--app-target); cursor: pointer; font-size: 17px; }
+.input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.box {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  color: var(--app-on-action);
+}
+.box svg { visibility: hidden; }
+.root:hover .box { background: var(--app-action-wash); }
+.input:checked + .box { background: var(--app-action); }
+.input:checked + .box svg { visibility: visible; }
+.root:hover .input:checked + .box { background: var(--app-action-hover); }
+.input:focus-visible + .box { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
+.input:disabled + .box { background: var(--app-surface-2); border-width: var(--app-line-seg); border-color: var(--app-text-2); color: var(--app-text-2); }
+.input:disabled:checked + .box { background: var(--app-surface-2); }
+.root:has(.input:disabled) { cursor: not-allowed; color: var(--app-text-2); }
+.text { flex: 1 1 auto; min-width: 0; }
+.extra { flex: 0 0 auto; margin-left: auto; font-size: 15px; color: var(--app-text-2); font-variant-numeric: tabular-nums; }

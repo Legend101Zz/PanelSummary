@@ -1,0 +1,33 @@
+.band {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: var(--app-radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  /* the width axis of the variable font: a little narrower, so the longest shelf copy fits two lines in 160 px */
+  font-stretch: 90%;
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text);
+}
+.fill { padding: 6px 7px; min-height: 30px; }
+.icon { display: inline-block; vertical-align: -2px; margin-right: 5px; }
+.nowrap { white-space: nowrap; }
+.drawn { background: var(--app-done); color: var(--app-on-fill); }
+.needs { background: var(--app-needs-you); color: var(--app-on-fill); }
+.outline { border: var(--app-line-seg) solid var(--app-line-strong); padding: 5px 8px; min-height: 30px; }
+.progress { padding: 0; }
+.text { display: block; }
+.line {
+  display: block;
+  height: 6px;
+  margin-top: 5px;
+  border: var(--app-line-seg) solid var(--app-line-strong);
+  border-radius: var(--app-radius-full);
+  background: var(--app-surface);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.lineFill { display: block; height: 100%; background: var(--app-text); }
+/* Before the plan exists: static dashes, no sweep. */
+.lineIndet { display: block; height: 100%; background-image: linear-gradient(90deg, var(--app-text) 0 14px, transparent 14px); background-size: 26px 100%; }

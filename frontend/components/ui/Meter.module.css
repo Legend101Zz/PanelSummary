@@ -1,0 +1,10 @@
+.root { display: block; }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 17px; font-weight: 700; }
+.value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.track { display: flex; height: 14px; margin-top: 6px; border-radius: var(--app-radius-full); background: var(--app-track); overflow: hidden; }
+.progress .track { height: 8px; }
+.fill { background: var(--app-text); height: 100%; }
+/* the 2 px on-fill edge between the fill and the coral part, drawn as the first 2 px of the coral part */
+.over { background: linear-gradient(90deg, var(--app-on-fill) 0 2px, var(--app-needs-you) 2px); height: 100%; }
+.note { margin: 6px 0 0; font-size: 15px; line-height: 1.4; color: var(--app-text-2); }
+.noteOver { color: var(--app-text); font-weight: 700; }
