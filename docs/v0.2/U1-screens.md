@@ -64,7 +64,7 @@ All evidence is in `/Volumes/Mrigesh SSD/Book-Reel-scratch/v02/u1/`.
 ## 6. Notes for track U2 and the orchestrator
 
 - Server not reachable on the book page: `import { OfflineGate } from "@/components/shelf/OfflineGate"` and show `<OfflineGate onRetry={load} />` at the top of `<main>` when a request fails with `ApiError.status === 0`.
-- `lib/api.ts`: the S2 block (`is_sample`, `listSamples`, `installSample`) is added here with the same text as in S2, so that S2 and U1 merge without a conflict in meaning. Take one copy when both are on `release/v0.2`.
+- `lib/api.ts`: U1 does not change it any more. The S2 calls (`is_sample`, `listSamples`, `installSample`) came in with S2 (#66) and the rebase.
 - `lib/prefs.ts` is the shared file. Its content must stay byte for byte the same in U1 and U2.
 - `next dev` shows a "1 error" badge on the error page. A production build does not.
 
