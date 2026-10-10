@@ -42,12 +42,12 @@ All evidence is in `/Volumes/Mrigesh SSD/Book-Reel-scratch/v02/u1/`.
 | Frame | Build | Reason |
 |---|---|---|
 | Landing has its own header (How it works, The sample, GitHub). | The landing uses the app header. | The app layout draws one header for every `(app)` route. |
-| Landing proof: the whole page 13 plus a small callout. | One panel (page 1, panel 2) next to the PDF page 3. | The task says to show one panel joined to its PDF page, with real data. The panel is the page SVG with a changed `viewBox`; the SVG itself is not restyled. |
+| Landing proof: the whole page 13 plus a small callout. | Fixed in the Gate 1 fix wave (section 9): page 13 is the large hero, and the proof is the panel of page 1 joined to PDF page 3 by a drawn line. | The panel is the page SVG with a changed `viewBox`; the SVG itself is not restyled. |
 | First run: the sample cover is the real page 1. | The cover is a blank sheet until the sample is installed. | The app must not install the sample before the person asks. The API has no preview image for an uninstalled sample. |
 | First run sentence: "page 1 after 3 min 58 s". | "the first page drawn after 3 min 47 s". | The shipped sample has no `page_1_at`, only `first_page_at` (3 min 47 s after the start of generation). The screens show the measured value and say "first page", not "page 1". |
-| Settings column "Thinking (sent)" shows low, low, low. | The column is "Thinking (asked)" and shows low, off, off. | `GET /status` gives the level asked. The note under the table says what is sent (the Flash model cannot turn thinking off, so it gets "low"). |
+| Settings column "Thinking (sent)" shows low, low, low. | Fixed in the Gate 1 fix wave (section 9): the column is "Thinking (sent)". | `GET /status` gives the level asked. `thinkingSent()` in `lib/words.ts` turns "off" into "low" for a Flash model; the asked value is shown under it. |
 | First run "Check again" is a plain button. | It runs `GET /status` again. | The endpoint exists now. In Settings it stays off, as the design default says. |
-| Shelf: a "Drawing now" feature card with "Start reading" and "See progress". | Not built. | It is not in `SCREENS-AND-STATES.md` section 4. The tile band says the state. |
+| Shelf: a "Drawing now" feature card with "Start reading" and "See progress". | Fixed in the Gate 1 fix wave (section 9). | The Gate 1 review asked for it (Shelf.html, Final-Shelf-*). |
 | A run with `completed_with_failures` and no missing page shows "16 of 16 drawn, 0 missing" in `shelfStatus()`. | The tile shows "16 manga pages" in the drawn family. | `bandForBook()` uses `pages_failed` of S1 (no change to `shelfStatus()`, which U2 owns). |
 | The PDF viewer: "Page [3] of 22" at 390. | The label "Go to PDF page" is visually hidden at 390; "of 22" stays. | Room in the 60 px bar. The name stays for assistive technology. |
 
@@ -79,3 +79,28 @@ All evidence is in `/Volumes/Mrigesh SSD/Book-Reel-scratch/v02/u1/`.
 
 - No live run, no Generate, no model call. Uploads used the fake-key worker and the offline parser only.
 - The frames and the build were compared by looking at the screenshots one by one. No pixel diff was made.
+
+## 9. Gate 1 fix wave (track fx1)
+
+The Gate 1 UI review of the integrated release found these problems. All are fixed on branch `v02/fx1`.
+
+| Problem | Fix |
+|---|---|
+| Landing: the "PDF page 3" link was #141414 on #26272a (1.23 to 1 contrast) and a 86 by 24 target. | The link has its own class. It uses `--app-text` and has a 44 px target. The global `.text-link` (the reader ink) is not used. |
+| Landing: no hero page. | Page 13 of the sample is the large page of the first screen. `GET /samples/andersen/preview` has a new field `hero` (`{page: 13, svg}`; a test asserts that the SVG equals the package page). The proof is the panel of page 1 with its lines, joined by a drawn line (an SVG path, `aria-hidden`) to the PDF page. "Read a sample" has a book icon. |
+| First run with the server not reachable collapsed to a bare shelf. | The shelf shows the first run under the coral band, with a secondary "Check again" button (refresh icon). If this browser has seen books on the shelf before, the shelf does not show the first run (it would say that nothing is on the shelf). The browser keeps one flag for this (`ps.shelf-had-books` in `localStorage`; the shelf works without it). |
+| Add a book: errors had no next step, a solid card replaced the drop zone, no failed limit on the chip. | The drop zone keeps its dashed edge. The error has two lines: what happened, and the next step ("Choose a PDF of 60 MB or less."). The chip of the failed limit is in the needs-you style ("Up to 60 MB (this file: 72 MB)"; "Selectable text, not a scan (this file: a scan)"). A server problem (status 500 and above, no job started, any other failure) shows "Try again" beside "Choose a PDF". Status 413 from the server is the same as the check in the browser. |
+| Add a book: layout. | The drop zone is on the left. "After the upload" and the note are on the right. The zone says "or choose it from your computer". Every limit chip has a check mark (the first run too). |
+| "Already on the shelf" moved by itself. | It shows one line, the cover, the title and "Open the book". There is no move by itself. A new upload of another file still moves to `/books/{id}` when the book is read. |
+| Shelf: no "Drawing now" card. | One card for each book with a run that is active (queued, reading, planning, drawing) or stopped (failed or cancelled, with pages missing): title, tone strip, "N of M drawn", "Start reading" (when page 1 is drawn), "See progress", "Resume drawing" (when stopped). The numbers come from the shelf polling (4 s while a run is active). At most two cards, active runs first, then "and N more". A run that waits for a plan review has no card. |
+| Shelf: the error band was not full width at 390. | The Notice in `.block` stretches. |
+| Settings: the column said "Thinking (asked)". | "Thinking (sent)". Flash models show "low" where "off" was asked, with "Asked: off" under it. The note and the table agree. "Check again" has the refresh icon (it stays off). |
+
+Files outside the owned paths (small changes):
+
+- `frontend/components/ui/DropZone.tsx` and `.module.css`: new optional props `subtitle` and `errorActions`. Their defaults change nothing for other users.
+- `frontend/lib/api.ts`: `SamplePreview.hero`.
+- `backend/app/samples.py`, `backend/tests/test_samples.py`: `hero` in the preview and its test.
+- `frontend/lib/words.ts`: the U1 block at the end has the new copy. The note `SETTINGS_MODELS_NOTE` is higher in the file; its text changed ("The column shows what the server sends ...").
+
+Evidence is in `/Volumes/Mrigesh SSD/Book-Reel-scratch/v02/fx1/` (`shots/`, `impeccable/`, `tools/`). Files with `MOCK` in the name used a Playwright route for one request.

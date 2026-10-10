@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Notice, StatusLine, CheckIcon, ProblemIcon } from "@/components/ui";
+import { Button, Notice, StatusLine, CheckIcon, ProblemIcon, RetryIcon } from "@/components/ui";
 import type { ServerStatus } from "@/lib/api";
 import { FIRST_RUN_LEDE, sampleEstimateSentence, sampleRealSentence } from "@/lib/words";
 import { OfflineGate } from "./OfflineGate";
@@ -42,7 +42,7 @@ export function FirstRun({ status, onRefresh }: { status: ServerStatus | null | 
 /** One line: the server, the job runner and the key. A full block only for "not reachable" and "no key". */
 function StatusSummary({ status, onRefresh }: { status: ServerStatus | null | undefined; onRefresh: () => void }) {
   if (status === undefined) return <StatusLine tone="wait">Checking the PanelSummary server</StatusLine>;
-  if (status === null) return <OfflineGate onRetry={onRefresh} />;
+  if (status === null) return <OfflineGate onRetry={onRefresh} checkAgain />;
   const items: { ok: boolean; text: string }[] = [
     { ok: true, text: "PanelSummary server reachable" },
     { ok: status.runner.running, text: status.runner.running ? "Job runner running" : "Job runner not running" },
@@ -63,7 +63,7 @@ function StatusSummary({ status, onRefresh }: { status: ServerStatus | null | un
           <Notice tone="needs" role="alert" title="PanelSummary has no MiniMax key.">
             Put MINIMAX_API_KEY in backend/.env, or in the macOS Keychain item minimax_api_key. Then run ./stop.sh and ./start.sh.
           </Notice>
-          <Button variant="secondary" size="sm" onClick={onRefresh}>
+          <Button variant="secondary" size="sm" iconStart={<RetryIcon size={20} />} onClick={onRefresh}>
             Check again
           </Button>
         </div>

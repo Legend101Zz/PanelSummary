@@ -1,8 +1,11 @@
 "use client";
 
-import { Button, Card, DropZone, Meter, Notice, StepList, formatPercent } from "@/components/ui";
+import { useEffect, useState, type Ref } from "react";
+import { ArrowRightIcon, Button, Card, CheckIcon, CloseIcon, DropZone, Meter, Notice, PageFrame, RetryIcon, StepList, cx, formatPercent } from "@/components/ui";
+import { CoverSvg, useFirstPage } from "@/components/CoverArt";
+import { listBooks, type LibraryBook } from "@/lib/api";
 import { useNow } from "@/lib/hooks";
-import { UPLOAD_SLOW_TEXT, limitItems, type LimitValues } from "@/lib/words";
+import { ALREADY_ON_SHELF, UPLOAD_SLOW_TEXT, limitChips, plural, type LimitValues } from "@/lib/words";
 import type { UploadFlow } from "./useUploadFlow";
 import styles from "./shelf.module.css";
 
@@ -10,24 +13,88 @@ import styles from "./shelf.module.css";
 export function UploadPanel({ flow, limits, title, className }: { flow: UploadFlow; limits?: LimitValues; title?: string; className?: string }) {
   const { phase } = flow;
   if (phase.kind === "idle" || phase.kind === "error") {
+    const failed = phase.kind === "error" ? phase.failed : null;
     return (
       <DropZone
-        className={className}
+        // the zone stays dashed in the error state (a solid card would read as another screen)
+        className={cx(styles.zoneDashed, className)}
         title={title}
+        subtitle="or choose it from your computer"
         // the offline sentence is shown once, by the OfflineGate banner of the screen
-        error={phase.kind === "error" && !phase.offline ? phase.message : undefined}
+        error={
+          phase.kind === "error" && !phase.offline ? (
+            <>
+              <span className={styles.errTitle}>{phase.message}</span>
+              {phase.next ? <span className={styles.errNext}>{phase.next}</span> : null}
+            </>
+          ) : undefined
+        }
+        errorActions={
+          phase.kind === "error" && !phase.offline && phase.retry ? (
+            <Button variant="primary" size="md" iconStart={<RetryIcon size={20} />} onClick={flow.again}>
+              Try again
+            </Button>
+          ) : undefined
+        }
         onFile={(file) => flow.start(file)}
         hint={
-          <span className={styles.limits}>
-            {limitItems(limits).map((t) => (
-              <span key={t}>{t}</span>
+          <span className={cx(styles.limits, phase.kind === "error" && !phase.offline ? styles.limitsLeft : undefined)}>
+            {limitChips(limits, failed).map((c) => (
+              <span key={c.text} className={c.failed ? styles.chipFailed : styles.chip}>
+                {c.failed ? <CloseIcon size={14} /> : <CheckIcon size={14} />}
+                {c.text}
+              </span>
             ))}
           </span>
         }
       />
     );
   }
+  if (phase.kind === "done" && phase.already) return <AlreadyOnShelf bookId={phase.bookId} onOther={flow.reset} className={className} />;
   return <Progress flow={flow} className={className} />;
+}
+
+/** "Already on the shelf": one short line, the cover and "Open the book". No silent move. */
+function AlreadyOnShelf({ bookId, onOther, className }: { bookId: string; onOther: () => void; className?: string }) {
+  const [book, setBook] = useState<LibraryBook | null>(null);
+  useEffect(() => {
+    let alive = true;
+    listBooks()
+      .then((list) => alive && setBook(list.find((b) => b.id === bookId) ?? null))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [bookId]);
+  const edition = book?.latest_edition;
+  const { ref, svg } = useFirstPage(edition?.id, !!edition && edition.pages_accepted > 0);
+  return (
+    <Card className={className}>
+      <div className={styles.already} ref={ref as unknown as Ref<HTMLDivElement>}>
+        <p className={styles.alreadyLine}>{ALREADY_ON_SHELF}</p>
+        <div className={styles.alreadyRow}>
+          <div className={styles.alreadyCover}>
+            <PageFrame state={svg ? "drawn" : "blank"} variant="cover">
+              {svg ? <CoverSvg svg={svg} /> : null}
+            </PageFrame>
+          </div>
+          <div className={styles.alreadyText}>
+            <p className={styles.alreadyTitle}>{book?.title ?? "Your book"}</p>
+            {book?.author ? <p className={styles.alreadyMeta}>{book.author}</p> : null}
+            {edition?.page_total ? <p className={styles.alreadyMeta}>{plural(edition.page_total, "manga page")}</p> : null}
+          </div>
+        </div>
+        <div className={styles.alreadyActions}>
+          <Button variant="primary" size="md" href={`/books/${bookId}`} iconEnd={<ArrowRightIcon size={20} />}>
+            Open the book
+          </Button>
+          <button type="button" className={styles.otherLink} onClick={onOther}>
+            Choose a different PDF
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 function Progress({ flow, className }: { flow: UploadFlow; className?: string }) {

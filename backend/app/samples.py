@@ -250,6 +250,7 @@ def _preview_base(sample_id: str) -> dict[str, Any] | None:
         "cost_usd": edition["totals"]["cost_usd"],
         "_words": book["word_count"],
         "cover_svg": page1["svg"],
+        "hero": {"page": 13, "svg": pages[13]["svg"]} if 13 in pages and pages[13]["status"] == "accepted" else None,
         "thumbs": [{"page": n, "svg": pages[n]["svg"]} for n in (13, 17, 18) if n in pages and pages[n]["status"] == "accepted"],
         "proof": {
             "page": 1,

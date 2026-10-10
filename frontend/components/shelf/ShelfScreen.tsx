@@ -2,31 +2,59 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getEdition, isActive, listBooks, type LibraryBook } from "@/lib/api";
+import { ApiError, getEdition, isActive, listBooks, type EditionDetail, type LibraryBook } from "@/lib/api";
 import { usePoll } from "@/lib/hooks";
 import { Button, Notice, Skeleton, UploadIcon } from "@/components/ui";
 import { SHELF_LEDE, SHELF_LOAD_ERROR, limitsSentence } from "@/lib/words";
 import { BookTile } from "./BookTile";
+import { DrawingNowCard } from "./DrawingNow";
+import { isDrawingNow, pickCards } from "./drawingNowLogic";
 import { FirstRun } from "./FirstRun";
 import { OfflineGate } from "./OfflineGate";
 import { useServerStatus } from "./useServerStatus";
+import drawStyles from "./drawingNow.module.css";
 import styles from "./shelf.module.css";
+
+const HAD_BOOKS_KEY = "ps.shelf-had-books";
+/** Per-viewer convenience only: did this browser ever see books on the shelf? Without it, an unreachable server shows the first run. */
+function readHadBooks(): boolean {
+  try {
+    return window.localStorage.getItem(HAD_BOOKS_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeHadBooks(had: boolean) {
+  try {
+    if (had) window.localStorage.setItem(HAD_BOOKS_KEY, "1");
+    else window.localStorage.removeItem(HAD_BOOKS_KEY);
+  } catch {
+    /* the shelf works without it */
+  }
+}
 
 /** The shelf at /. With no books it is the first run (same route, a page, not a redirect). */
 export function ShelfScreen() {
   const [books, setBooks] = useState<LibraryBook[] | null>(null);
   const [error, setError] = useState<{ message: string; offline: boolean } | null>(null);
+  const [details, setDetails] = useState<Record<string, EditionDetail | null>>({});
   const { status, refresh } = useServerStatus();
 
   const load = useCallback(async () => {
     try {
       const list = await listBooks();
       // latest_edition.pages_accepted is only written when a run finishes, so count the drawn pages of editions that still run
-      const live = await Promise.all(list.map((b) => (b.latest_edition && isActive(b.latest_edition.status) ? getEdition(b.latest_edition.id).catch(() => null) : null)));
+      // the Drawing now cards also need the page statuses of a stopped run
+      const live = await Promise.all(list.map((b) => (b.latest_edition && (isActive(b.latest_edition.status) || isDrawingNow(b)) ? getEdition(b.latest_edition.id).catch(() => null) : null)));
+      const byBook: Record<string, EditionDetail | null> = {};
+      list.forEach((b, i) => {
+        if (live[i]) byBook[b.id] = live[i];
+      });
+      setDetails(byBook);
       setBooks(
         list.map((b, i) => {
           const detail = live[i];
-          if (!detail || !b.latest_edition) return b;
+          if (!detail || !b.latest_edition || !isActive(b.latest_edition.status)) return b;
           return {
             ...b,
             latest_edition: {
@@ -38,6 +66,7 @@ export function ShelfScreen() {
           };
         }),
       );
+      writeHadBooks(list.length > 0);
       setError(null);
     } catch (e) {
       setError({ message: SHELF_LOAD_ERROR, offline: e instanceof ApiError && e.status === 0 });
@@ -52,7 +81,12 @@ export function ShelfScreen() {
   // keep polling while the server cannot be reached: the band goes by itself when the next request works
   usePoll(load, 4000, busy || !!error?.offline);
 
+  // the server cannot be reached and this browser never saw a book on the shelf: show the first run under the coral band (FirstRun.html, Not reachable)
+  const unreachableFirstRun = books === null && !!error?.offline && !readHadBooks();
   if (books && books.length === 0) return <FirstRun status={status} onRefresh={refresh} />;
+  if (unreachableFirstRun) return <FirstRun status={null} onRefresh={() => { refresh(); load(); }} />;
+
+  const cards = books ? pickCards(books.filter(isDrawingNow).map((book) => ({ book, detail: details[book.id] ?? null }))) : { shown: [], more: 0 };
 
   return (
     <main id="main" className={styles.main}>
@@ -80,6 +114,15 @@ export function ShelfScreen() {
               </li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {cards.shown.length ? (
+        <div>
+          {cards.shown.map((run) => (
+            <DrawingNowCard key={run.book.id} run={run} onChanged={load} />
+          ))}
+          {cards.more ? <p className={drawStyles.more}>{`and ${cards.more} more`}</p> : null}
         </div>
       ) : null}
 
