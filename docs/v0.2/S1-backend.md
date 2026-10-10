@@ -92,7 +92,7 @@ While the edition waits:
 {
   "api": "ok", "version": "0.2.0",
   "runner": {"running": true, "last_seen": "2026-10-10T13:47:58.976000+00:00"},
-  "worker": {"reachable": true, "key_set": true},
+  "worker": {"reachable": true, "key_set": true, "replay": false},
   "models": [{"step": "understanding", "model": "MiniMax-M3.1-Flash-Preview", "thinking": "low"},
              {"step": "plan", "model": "...", "thinking": "off"}, {"step": "pages", "model": "...", "thinking": "off"}],
   "limits": {"max_pdf_size_mb": 60, "max_pdf_pages": 75, "max_source_words": 17500, "page_attempts": 2, "page_concurrency": 4},
@@ -102,6 +102,7 @@ While the edition waits:
 
 - `runner.running`: the runner writes one heartbeat document (`runner_heartbeat`) on every poll. It is running when the last beat is younger than 3 polls + 5 s (9.5 s at the default poll of 1.5 s). The job lease is not used.
 - `worker`: the API calls the worker's `/readyz` (free, no token, 2 s timeout). `ready` there is `key_set`. The worker needed no change: its `/readyz` already says `ready` only when `MINIMAX_API_KEY` is set. No answer in 2 s, or a connection error: `reachable: false`. An answer without `ready: true`: `key_set: false`.
+- `worker.replay`: true when `/readyz` says `ready: true` and `replay: true` (the replay worker, F1). The replay worker uses no key, so `key_set` is then `false`. The screens show "Replay worker: no MiniMax key is used; pages come from a saved run." and never "key set". Any other answer: `replay: false`. A new field is appended; `reachable` and `key_set` keep their meaning.
 - `key_set` cannot say that MiniMax accepts the key. Do not show "key valid".
 - `models[].thinking` is the level asked. The level sent is on the receipts.
 - The response never has a key, a token or a database URL.

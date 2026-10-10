@@ -148,4 +148,4 @@ if ! port_busy "$WEB_PORT"; then
     zsh -c "tail -f /dev/null | exec npx next dev -p $WEB_PORT"
 fi
 wait_url "http://127.0.0.1:$WEB_PORT" 120 || fail "Frontend not up (see .dev/logs/web.log)"
-ok "Open http://localhost:$WEB_PORT"
+ok "Open http://127.0.0.1:$WEB_PORT"

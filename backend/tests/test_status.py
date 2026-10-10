@@ -20,7 +20,7 @@ import test_generate_journey as journey
 from test_preflight import _env, needs_mongo
 
 SECRET_NAME = re.compile(r"key|token|secret|password|passwd|credential|auth|url|uri|mongo", re.IGNORECASE)
-ALLOWED_NAMES = {"key_set"}  # a boolean: says that a key exists, never the key
+ALLOWED_NAMES = {"key_set", "replay"}  # a boolean: says that a key exists, never the key
 
 
 def _worker(ready: bool | None, extra: dict | None = None) -> FastAPI:
@@ -88,7 +88,7 @@ def _with_stack(tmp_path, monkeypatch, worker_app, scenario, port=None, **env):
 def test_worker_up_with_key(tmp_path, monkeypatch):
     async def scenario(app):
         body = await _status(app)
-        assert body["worker"] == {"reachable": True, "key_set": True}
+        assert body["worker"] == {"reachable": True, "key_set": True, "replay": False}
         assert body["api"] == "ok" and body["version"] == "0.2.0"
 
     _with_stack(tmp_path, monkeypatch, _worker(True), scenario)
@@ -97,15 +97,34 @@ def test_worker_up_with_key(tmp_path, monkeypatch):
 @needs_mongo
 def test_worker_up_without_key(tmp_path, monkeypatch):
     async def scenario(app):
-        assert (await _status(app))["worker"] == {"reachable": True, "key_set": False}
+        assert (await _status(app))["worker"] == {"reachable": True, "key_set": False, "replay": False}
 
     _with_stack(tmp_path, monkeypatch, _worker(False), scenario)
 
 
 @needs_mongo
+def test_replay_worker_is_replay_and_has_no_key_set(tmp_path, monkeypatch):
+    async def scenario(app):
+        body = await _status(app)
+        assert body["worker"] == {"reachable": True, "key_set": False, "replay": True}
+        assert not SECRET_NAME.search("replay")  # the new field name is not secret-looking
+        assert set(_names(body)) >= {"replay"}
+
+    _with_stack(tmp_path, monkeypatch, _worker(True, {"replay": True}), scenario)
+
+
+@needs_mongo
+def test_replay_flag_needs_a_ready_worker(tmp_path, monkeypatch):
+    async def scenario(app):
+        assert (await _status(app))["worker"] == {"reachable": True, "key_set": False, "replay": False}
+
+    _with_stack(tmp_path, monkeypatch, _worker(False, {"replay": True}), scenario)
+
+
+@needs_mongo
 def test_worker_down(tmp_path, monkeypatch):
     async def scenario(app):
-        assert (await _status(app))["worker"] == {"reachable": False, "key_set": False}
+        assert (await _status(app))["worker"] == {"reachable": False, "key_set": False, "replay": False}
 
     _with_stack(tmp_path, monkeypatch, None, scenario)
 
@@ -113,7 +132,7 @@ def test_worker_down(tmp_path, monkeypatch):
 @needs_mongo
 def test_an_old_worker_without_readyz_has_no_key_set(tmp_path, monkeypatch):
     async def scenario(app):
-        assert (await _status(app))["worker"] == {"reachable": True, "key_set": False}
+        assert (await _status(app))["worker"] == {"reachable": True, "key_set": False, "replay": False}
 
     _with_stack(tmp_path, monkeypatch, _worker(None), scenario)
 
@@ -131,7 +150,7 @@ def test_a_slow_worker_is_cut_off_after_two_seconds(tmp_path, monkeypatch):
         loop = asyncio.get_running_loop()
         started = loop.time()
         body = await _status(api_app)
-        assert body["worker"] == {"reachable": False, "key_set": False}
+        assert body["worker"] == {"reachable": False, "key_set": False, "replay": False}
         assert loop.time() - started < 4.5
 
     _with_stack(tmp_path, monkeypatch, app, scenario)

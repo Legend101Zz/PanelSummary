@@ -155,6 +155,8 @@ quality, speed or cost. Every receipt says provider `replay`. Options (delays, f
 MiniMax stop) are in [`docs/v0.2/F1-replay-worker.md`](docs/v0.2/F1-replay-worker.md). Stop the stack
 with `./stop.sh`.
 
+In replay mode the first-run status line and Settings say "Replay worker: no MiniMax key is used; pages come from a saved run." instead of "MiniMax key set".
+
 ## Using it
 
 1. **First run.** On an empty shelf the app shows three facts in one line: the server is reachable,
