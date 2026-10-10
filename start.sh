@@ -88,7 +88,7 @@ DB_NAME="${PANELSUMMARY_DB_NAME:-panelsummary}"
 
 # --- dependencies --------------------------------------------------------------
 if [[ ! -d "$ROOT/node_modules/.pnpm" ]]; then step "pnpm install"; (cd "$ROOT" && pnpm install --frozen-lockfile); fi
-if [[ ! -d "$ROOT/frontend/node_modules" ]]; then step "frontend npm install"; (cd "$ROOT/frontend" && npm install); fi
+if [[ ! -d "$ROOT/frontend/node_modules" ]]; then step "frontend npm ci"; (cd "$ROOT/frontend" && npm ci); fi
 # Python 3.12 (pydantic-core has no wheel for newer Pythons yet). A venv without uvicorn is
 # a half-made one from a failed install: make it again instead of skipping it.
 if [[ ! -x "$ROOT/backend/.venv/bin/uvicorn" ]]; then
@@ -128,7 +128,7 @@ ok "Job runner started"
 # --- frontend ----------------------------------------------------------------------
 if ! port_busy "$WEB_PORT"; then
   step "Starting the frontend on :$WEB_PORT"
-  start_service web "next dev" env -C "$ROOT/frontend" NEXT_PUBLIC_API_URL="http://127.0.0.1:$API_PORT" \
+  start_service web "next dev" env -C "$ROOT/frontend" NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_API_URL="http://127.0.0.1:$API_PORT" \
     zsh -c "tail -f /dev/null | exec npx next dev -p $WEB_PORT"
 fi
 wait_url "http://127.0.0.1:$WEB_PORT" 120 || fail "Frontend not up (see .dev/logs/web.log)"

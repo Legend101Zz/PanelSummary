@@ -85,7 +85,7 @@ something the renderer cannot draw (an undressed Emperor, a kitchen pot, a stove
 | The writer gets one repair round for nine checks (repair_once); other warnings are only recorded. | `docs/launch/W2-writer.md` |
 | The page picker of the reader is narrow for 40 or more pages. The upload page does not show the limits. | `docs/launch/T5-product.md` |
 | Born-digital PDFs only. A closed drawing vocabulary. English, left to right. | `README.md` |
-| The live lane runs from `live/**` branches, from the `run-live` label, or from a manual run once the file is on `main`. | `docs/launch/CI.md` |
+| The live lane runs from a manual run (`workflow_dispatch`) or when the `run-live` label is added. A push does not start it (v0.2, #47). | `docs/launch/CI.md` |
 
 ## Open (owner decisions)
 

@@ -38,7 +38,7 @@ At most five long agents run at the same time (the account session limit).
 
 ### Live journey configuration (CI ↔ T0 ↔ orchestrator)
 
-`live-journey.yml` runs on `workflow_dispatch` (only after the file is on `main`), on a push to `live/**`, and on a PR with the label `run-live`.
+`live-journey.yml` runs on `workflow_dispatch` (only after the file is on `main`), on a push to `live/**`, and on a PR with the label `run-live`. (v0.1. In v0.2 only a manual run or adding the label starts it; see `docs/launch/CI.md`.)
 It reads `scripts/acceptance/live-config.json` from the commit. Dispatch inputs override the file.
 
 ```json

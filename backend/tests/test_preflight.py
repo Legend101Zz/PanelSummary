@@ -99,9 +99,12 @@ def test_check_limits():
     assert len(words) == 2 and "20,000 words" in words[0] and "17,500" in words[0]
     pages = check_limits(120, 9000, 75, 17500)
     assert "120 PDF pages" in pages[0]
+    assert pages[0].endswith("PanelSummary can adapt books up to 75 PDF pages in one run.")
+    assert words[0].endswith("PanelSummary can adapt books up to 17,500 words in one run.")
     both = check_limits(120, 20000, 75, 17500)
     assert len(both) == 3  # two reasons plus the note that the PDF stays readable
     assert "read the PDF" in both[-1]
+    assert not any("BookReel" in r for r in both)
 
 
 def test_limits_are_configuration(monkeypatch):
