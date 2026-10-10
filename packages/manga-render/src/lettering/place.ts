@@ -206,7 +206,7 @@ function clamp(v: number, lo: number, hi: number): number {
  * at the speaker's mouth from about halfway out and never runs into a hat or
  * a face.
  */
-export function tailToward(anchor: SpeakerAnchor, from: Point, target?: Point): TailGeometry {
+export function tailToward(anchor: SpeakerAnchor, from: Point, target?: Point, full = false): TailGeometry {
   const m = target ?? voicePoint(anchor, from);
   const dx = m.x - from.x;
   const dy = m.y - from.y;
@@ -229,6 +229,8 @@ export function tailToward(anchor: SpeakerAnchor, from: Point, target?: Point): 
   const near = Math.max(70, anchor.headRadius * 2.6);
   let t = Math.min(Math.max(gap * TAIL_REACH, gap - near), free);
   t = Math.max(t, Math.min(14, gap * 0.5));
+  // v0.2 (#42): a full-reach tail runs on to the speaker's own head (just outside its circle), so no other head can be mistaken for the speaker
+  if (full) t = Math.max(t, free);
   return { tip: { x: from.x + ux * t, y: from.y + uy * t }, free, gap };
 }
 
@@ -794,9 +796,9 @@ function score(
     const thought = layout.shape === "cloud";
     const allowance = 120 + 0.35 * bbox.h * tall;
     /** One way to aim the tail: its tip, its cost (ownership, faces, hats, bodies). */
-    const aimAt = (target: Point) => {
+    const aimAt = (target: Point, full = false) => {
       const from = boundaryToward(layout, center, target);
-      const t = tailToward(anchor, from, thought ? anchor.head : target);
+      const t = tailToward(anchor, from, thought ? anchor.head : target, full);
       let tip = thought ? thoughtTip(anchor, from) : t.tip;
       let c = 0;
       if (!thought) {
@@ -822,7 +824,10 @@ function score(
       const base = boundaryToward(layout, center, tip);
       for (const h of panel.heads) {
         if (h.character === anchor.character) continue;
-        if (Math.hypot(tip.x - h.center.x, tip.y - h.center.y) - h.radius < tipOwn) c += 600;
+        const tipOther = Math.hypot(tip.x - h.center.x, tip.y - h.center.y) - h.radius;
+        if (tipOther < tipOwn) c += 600;
+        // v0.2 (#42): and clearly nearer: a tip about as near another head as its own (between two faces) is ambiguous
+        else if (tipOther - Math.max(0, tipOwn) < 0.5 * anchor.headRadius) c += 90;
         // tail must not pass through other faces
         if (distPointSegment(h.center, base, tip) < h.radius) c += 400;
       }
@@ -847,7 +852,14 @@ function score(
     // aim beside the mouth on the balloon's side; else the other side, else at the mouth itself
     const options = thought
       ? [aimAt(anchor.head)]
-      : [aimAt(voicePoint(anchor, center)), { ...aimAt(voicePoint(anchor, center, true)), extra: 12 }, { ...aimAt(anchor.mouth), extra: 20 }];
+      : [
+          aimAt(voicePoint(anchor, center)),
+          { ...aimAt(voicePoint(anchor, center, true)), extra: 12 },
+          { ...aimAt(anchor.mouth), extra: 20 },
+          // a tail that runs on to the head: kept for when the ordinary tail ends between two faces
+          { ...aimAt(voicePoint(anchor, center), true), extra: 6 },
+          { ...aimAt(voicePoint(anchor, center, true), true), extra: 14 },
+        ];
     const best = options.reduce((a, b) => (b.cost + ("extra" in b ? b.extra : 0) < a.cost + ("extra" in a ? a.extra : 0) ? b : a));
     if ("extra" in best) cost += best.extra;
     cost += best.cost;
