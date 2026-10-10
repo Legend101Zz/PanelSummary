@@ -1,0 +1,19 @@
+.root { position: relative; display: inline-flex; align-items: center; gap: 12px; min-height: var(--app-target); cursor: pointer; font-size: 17px; font-weight: 700; }
+.input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 28px;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-control);
+  background: var(--app-surface);
+}
+.knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: var(--app-radius-full); background: var(--app-text); }
+.input:checked + .track { background: var(--app-action); }
+.input:checked + .track .knob { left: 21px; background: var(--app-on-action); }
+.input:focus-visible + .track { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
+.input:disabled + .track { background: var(--app-surface-2); border-width: var(--app-line-seg); border-color: var(--app-text-2); }
+.input:disabled + .track .knob { background: var(--app-text-2); }
+.root:has(.input:disabled) { cursor: not-allowed; color: var(--app-text-2); }

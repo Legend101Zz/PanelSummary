@@ -1,0 +1,21 @@
+/* The page 1 moment. The yellow fill is the one authored motion of the app (tokens.css: .app-moment__fill). */
+.band {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  padding: 22px 32px 18px;
+  border-radius: var(--app-radius-control);
+  color: var(--app-on-fill);
+  box-sizing: border-box;
+}
+.fill { position: absolute; inset: 0; background: var(--app-moment); }
+.text { position: relative; flex: 1 1 280px; font-size: 24px; font-weight: 800; letter-spacing: var(--app-tracking-heading); line-height: 1.2; margin: 0; }
+.actions { position: relative; display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 767px) {
+  .band { padding: 18px 16px 16px; }
+  .text { font-size: 20px; }
+}

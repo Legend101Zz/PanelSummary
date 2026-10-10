@@ -1,0 +1,31 @@
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--app-target);
+  min-width: var(--app-target);
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--app-text);
+  text-decoration: none;
+}
+.label {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+.link:hover .label { text-decoration-thickness: 3px; }
+.link:active { background: var(--app-action-wash-2); border-radius: var(--app-radius-sm); }
+
+.secondary { color: var(--app-text-2); font-size: 15px; }
+
+/* Navigation: plain until it is the current page (2 px underline and 700 weight). */
+.nav { padding: 0 12px; font-weight: 500; font-size: 17px; }
+.nav .label { text-decoration: none; }
+.nav:hover .label { text-decoration: underline; text-decoration-thickness: 1.5px; }
+.nav[aria-current="page"] { font-weight: 700; }
+.nav[aria-current="page"] .label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.navMenu { min-height: 56px; width: 100%; font-size: 19px; padding: 0; }

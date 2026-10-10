@@ -1,0 +1,13 @@
+.card {
+  --card-pad-x: 32px;
+  display: block;
+  box-sizing: border-box;
+  padding: 28px var(--card-pad-x);
+  border: var(--app-line-control) solid var(--app-line);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface);
+  color: var(--app-text);
+  overflow: hidden;
+}
+.narrow { --card-pad-x: 18px; padding: 18px; }
+@media (max-width: 767px) { .card { --card-pad-x: 18px; padding: 18px; } }

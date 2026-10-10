@@ -1,14 +1,12 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-export function SiteHeader({ action }: { action?: ReactNode }) {
-  return (
-    <header className="site-header">
-      <Link href="/" className="wordmark" aria-label="PanelSummary, your shelf">
-        <span className="wordmark-mark" aria-hidden="true" />
-        PanelSummary
-      </Link>
-      {action}
-    </header>
-  );
+/**
+ * v0.1 header, kept only so the v0.1 screens still compile. The app layout
+ * (app/(app)/layout.tsx) now draws the one Header, so this renders nothing
+ * (two headers would show otherwise). The `action` prop is dropped: the
+ * header's "Add a book" button replaces the shelf's old action. Screen tracks
+ * delete the calls to this component when they rewrite their screens.
+ */
+export function SiteHeader(_props: { action?: ReactNode }) {
+  return null;
 }

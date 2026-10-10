@@ -1,0 +1,11 @@
+.list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.step { display: flex; align-items: flex-start; gap: 12px; font-size: 17px; line-height: 1.35; }
+.mark { flex: 0 0 auto; margin-top: 2px; }
+.body { min-width: 0; flex: 1 1 auto; }
+.row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.word { font-size: 14px; font-weight: 400; color: var(--app-text-2); }
+.current .label { font-weight: 700; }
+.current .word { color: var(--app-text); font-weight: 700; }
+.next { color: var(--app-text-2); }
+.detail { margin-top: 6px; }
+.num { font-weight: 700; }
