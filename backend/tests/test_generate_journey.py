@@ -565,6 +565,41 @@ def test_plan_review_stops_before_drawing_and_approve_completes_it(tmp_path, mon
     _run(tmp_path, monkeypatch, scenario)
 
 
+def test_two_concurrent_approvals_and_a_racing_cancel_make_one_drawing_job(tmp_path, monkeypatch):
+    async def scenario(api, worker, book):
+        import asyncio
+
+        from app.jobs.runner import claim_job, execute
+        from app.documents import GenerationJob
+
+        bid = book["id"]
+        eid = await _drive(api, bid, {"review_plan": True})
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "awaiting_plan_review"
+        jobs_before = await GenerationJob.find(GenerationJob.edition_id == eid).count()
+
+        first, second = await asyncio.gather(api.post(f"/editions/{eid}/approve-plan"), api.post(f"/editions/{eid}/approve-plan"))
+        assert sorted([first.status_code, second.status_code]) == [200, 409]
+        assert await GenerationJob.find(GenerationJob.edition_id == eid).count() == jobs_before + 1
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "queued"
+
+        # Cancel racing with approve: exactly one of them wins the status change.
+        await execute(await claim_job())
+        assert (await api.get(f"/editions/{eid}")).json()["status"] == "complete"
+        eid2 = await _drive(api, bid, {"review_plan": True})
+        assert (await api.get(f"/editions/{eid2}")).json()["status"] == "awaiting_plan_review"
+        approve, cancel = await asyncio.gather(api.post(f"/editions/{eid2}/approve-plan"), api.post(f"/editions/{eid2}/cancel"))
+        assert sorted([cancel.status_code, approve.status_code]) == [200, 409]
+        edition = (await api.get(f"/editions/{eid2}")).json()
+        jobs = await GenerationJob.find(GenerationJob.edition_id == eid2).to_list()
+        drawing = [j for j in jobs if j.status == "queued"]
+        if cancel.status_code == 200:  # cancel won: approve was refused and no drawing job exists
+            assert approve.status_code == 409 and edition["status"] == "cancelled" and drawing == []
+        else:  # approve won: cancel said so, and exactly one drawing job is queued
+            assert approve.status_code == 200 and cancel.status_code == 409 and edition["status"] == "queued" and len(drawing) == 1
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
 def test_plan_review_can_be_cancelled_and_a_run_without_it_is_unchanged(tmp_path, monkeypatch):
     async def scenario(api, worker, book):
         from app.jobs.runner import claim_job, execute

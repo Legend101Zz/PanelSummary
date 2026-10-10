@@ -247,11 +247,13 @@ async def cancel(edition_id: str) -> dict:
     edition = await get_edition_or_404(edition_id)
     if edition.status in WAITING:
         # The job has ended; there is nothing to signal. Stop the edition itself (D24).
-        await Edition.get_motor_collection().update_one(
+        result = await Edition.get_motor_collection().update_one(
             {"_id": edition.id, "status": {"$in": list(WAITING)}}, {"$set": {"status": "cancelled", "updated_at": utcnow()}}
         )
-        edition = await get_edition_or_404(edition_id)
-        return edition_view(edition)
+        if result.modified_count == 0:
+            # An approve won the race: the drawing job is being made. Do not report a stop that did not happen.
+            raise HTTPException(status_code=409, detail="The plan was approved at the same moment. Stop the edition again.")
+        return edition_view(await get_edition_or_404(edition_id))
     if edition.job_id:
         job = await GenerationJob.get(edition.job_id)
         if job is not None and job.status in ("queued", "running"):
@@ -294,15 +296,35 @@ async def approve_plan(edition_id: str) -> dict:
     edition = await get_edition_or_404(edition_id)
     if edition.status not in WAITING:
         raise HTTPException(status_code=409, detail="This edition is not waiting for a plan review")
-    # Atomic: two clicks start one drawing job.
+    # Atomic: one write moves the status out of WAITING and records the approval.
+    # Only the call that matches gets modified_count 1, so two clicks start one drawing job.
+    # Cancel filters on WAITING too, so approve and cancel cannot both win.
+    now = utcnow()
     result = await Edition.get_motor_collection().update_one(
         {"_id": edition.id, "status": {"$in": list(WAITING)}},
-        {"$set": {"policy.plan_approved": True, "policy.plan_approved_at": utcnow().isoformat(), "updated_at": utcnow()}},
+        {
+            "$set": {
+                "status": "queued",
+                "policy.plan_approved": True,
+                "policy.plan_approved_at": now.isoformat(),
+                "error": None,
+                "provider_stop": None,
+                "updated_at": now,
+            }
+        },
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=409, detail="This edition is not waiting for a plan review")
     edition = await get_edition_or_404(edition_id)
-    return await _queue_job(edition, "Drawing the approved plan")
+    try:
+        return await _queue_job(edition, "Drawing the approved plan")
+    except Exception:
+        # No job was made. Put the edition back to the review so the owner can try again.
+        await Edition.get_motor_collection().update_one(
+            {"_id": edition.id, "status": "queued", "job_id": edition.job_id},
+            {"$set": {"status": WAITING[0], "policy.plan_approved": False, "updated_at": utcnow()}},
+        )
+        raise
 
 
 @router.post("/editions/{edition_id}/pages/{page_number}/redraw")
