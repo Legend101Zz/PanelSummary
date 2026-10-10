@@ -137,6 +137,22 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: The measured critical path is understanding, then plan, then the first page. The plan waits for the whole understanding, and a page waits for the plan. No step can start earlier without a quality or honesty cost. The long tail of a run is a page that fails twice, not an idle gap. See `docs/launch/T3-scope.md`.
 - Status: accepted. Estimates are ranges fitted to measured runs, and the basis text says so.
 
+### D21. Places per source unit; the location check is a warning (2026-10-10, issue #44, track Q2b)
+- Statement: A location of the book understanding may carry `units`: the ids of the source units in which the story is at that place. The field is optional and additive. The schema name stays `book-understanding.v1`. An understanding saved before this change (no `units`) loads, validates and plans as before, and none of the new checks speaks on it. The book-understanding skill (1.8.0) and the receipt's skill hash record that the model was told to write the field.
+- Statement: `PLACE_UNITS_INVALID` (an unknown unit id or a malformed list) is an error. `PLACE_UNITS_MISSING`, `PLACE_UNIT_UNCOVERED`, `PLAN_LOCATION_NOT_IN_UNITS` and `PLAN_PLACE_UNLISTED` are warnings.
+- Why: The new plan checks cannot be calibrated on the saved runs, because no saved understanding has `units`. The proxy that derives places from location names flags 64 of 309 judged pages, and 36 percent of them have a setting defect against 30 percent of the others (`docs/v0.2/Q2b-continuity.md`). That is no evidence. The rule of `CLAUDE.md` holds: a new deterministic validation stays a warning until judged pages from a live run calibrate it.
+- Status: accepted. Promote a plan check only with live understandings that carry `units`.
+
+### D22. A panel flag for the afterlife, dreams and memories (2026-10-10, issue #44, track Q2b)
+- Statement: A panel may set `"vision": "afterlife" | "dream" | "memory"` (`VISIONS` in `packages/manga-render/src/contracts.ts`). `FIGURE_STATE_MISMATCH` skips a panel that has the flag, like a panel with fx `flashback`. The renderer does not read the field, so the SVG does not change and `RENDERER_VERSION` stays.
+- Why: A dead character shown alive in paradise, or a grandmother in a dream, failed the check unless the writer used `flashback`, which also means a different time. `FIGURE_STATE_SEVERITY` stays `"error"`: the flag removes the known false positive (run 8 page 13) and the present-day check stays strict.
+- Status: accepted. The page and plan skills tell when to use it.
+
+### D23. Minor figures come from the page's own text (2026-10-10, issue #44, track Q2b)
+- Statement: The page goal adds a generic cast member (`id` `m_<word>`, `"minor": true`, a plain human look) for a speaker the page's source text names, who is a person, and whom no cast member of the section answers to. It uses the T1 speaker rules (a person hidden in a crowd, "one of the workmen", a singular attribution with no cast member). At most 3 per page. The figure is part of the page's cast for validation and rendering and is listed in the prompt. It is not written into the understanding.
+- Why: The understanding adds one-line characters only when the model remembers (T1 allows 3 errors per book), and a page could not draw anyone outside the cast. Animals, objects and groups are never guessed.
+- Status: accepted. The reader shows a speaker without a name in the understanding as "Someone". Naming minor speakers in the source drawer needs a backend change that is not in this track.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

@@ -4,6 +4,7 @@ import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-ren
 
 import { loneSpeakerIssues, loneSpeakers, speakerCastIssues, speakerList } from "./attribution.js";
 import { stateIssues, unitOrder } from "./continuity.js";
+import { placeIssues } from "./places.js";
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
@@ -201,7 +202,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     const order = unitOrder(book.sections.map((section) => ({ units: section.unit_ids })));
     const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...sectionCoverageIssues(value, book)];
+      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds), ...sectionCoverageIssues(value, book)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

@@ -189,8 +189,10 @@ export function figureStateIssues(
   // Highest step of a change-on-this-page already shown, per character and field.
   const reached = new Map<string, number>();
   for (const panel of spec.panels ?? []) {
-    // A flashback shows the past: looks there follow their own time.
-    if ((panel.fx ?? []).includes("flashback" as never)) continue;
+    // A flashback shows the past: looks there follow their own time. A panel flagged `vision`
+    // (afterlife, dream, memory) shows what is not the story's present: a dead character may be
+    // alive there (Q2b, issue #44). Both are skipped.
+    if ((panel.fx ?? []).includes("flashback" as never) || panel.vision !== undefined) continue;
     for (const fig of panel.figures ?? []) {
       const expected = looks[fig?.character];
       const member = byId.get(fig?.character);
