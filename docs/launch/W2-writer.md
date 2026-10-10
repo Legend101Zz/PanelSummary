@@ -144,3 +144,13 @@ Defect by defect (page, what the judges said, what these runs show):
 - `order`: only `DIALOGUE_ORDER` as a warning (2 flags, 1 hit). More data is needed before it can be repair_once.
 - Calibrate again after the next full live run. On pages from the new writer, count how many submits end in a repair_once rejection. Remove a code from `REPAIR_ONCE_CODES` if its precision drops below the bar; the list is one constant.
 - `continuity.test.ts` needs the merge with F3 (see section 3).
+
+## 6. v0.2 update (track Q2a)
+
+Skill `manga-page` 1.10.0. The calibration was repeated on 319 judged pages with `apps/agent-worker/scripts/calibrate-checks.ts`. The written rule, the tables and the decisions are in `docs/v0.2/Q2a-writer-checks.md` and decision D26. Short form:
+
+- `PROSE_WALL` is now in `REPAIR_ONCE_CODES` (68 flagged pages, 75% specific hit, 12 of 134 good pages).
+- `DUPLICATE_CAPTION` and `SPEAKER_OFF_PANEL_LIMIT` left the class: 2 and 1 flagged pages are no evidence. The class now has 8 codes.
+- `KEY_PROP_NOT_DRAWN` no longer triggers on the word "leaf" (0 hits on 4 pages). Specific hit 67% on 39 pages.
+- New plain warnings: `SAME_SHOT_TWICE` (two panels with the same shot, angle, place and figures in the same poses) and `QUOTE_CLIPPED` (a quote stops 2 to 6 words before the end of its source sentence). `QUOTE_CLIPPED` has no measured signal.
+- Section 5 above ("what remains"): the clipped-quote check now exists. The table in section 2 is superseded by the v0.2 table.

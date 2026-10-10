@@ -170,6 +170,14 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: The first-run and Settings screens must say "no key" or "the drawing service is down" before the user presses Generate.
 - Status: accepted.
 
+### D26. Writer-check calibration rule and classes (2026-10-10, v0.2 track Q2a, issues #43 and #45)
+- Statement: A page check is in `repair_once` only when four tests hold on the judged pages: at least 10 flagged pages (a code already in the class may stay with 3 to 9), a hit rate of 60% or more (the specific hit where the check names words), a hit rate at least 20 points above the unflagged pages (not applied to a specific hit), and at most 25% of the judged-good pages flagged. A code with fewer than 3 flagged pages, and a new code with fewer than 10, is a warning. Nothing becomes a hard error without a separate calibration.
+- Statement: `PROSE_WALL` is promoted to `repair_once`, with the renderer threshold unchanged (more than 40 words, more than 60% in captions or narration). On 319 judged pages it flags 68, 75% specific hit, 12 of 134 good pages.
+- Statement: `DUPLICATE_CAPTION` (2 flagged pages) and `SPEAKER_OFF_PANEL_LIMIT` (1) leave `repair_once` and are plain warnings. `KEY_PROP_NOT_DRAWN` stays after its trigger "leaf" is removed (specific hit 67%, was 59.5%). `CLAIM_TEXT_THIN`, `SPEECH_IN_NARRATION`, `REPEAT_NAME_TAG`, `LOCATION_OFF_PLAN`, `HERO_TOO_SMALL` and `STATUE_LOCATION_SWAPPED` stay (the last four on thin evidence).
+- Statement: `SAME_SHOT_TWICE` (8 flagged pages, 63% hit) and `QUOTE_CLIPPED` (49 pages, 31% hit against a 31% base rate) are new plain warnings. `DIALOGUE_ORDER` (8 pages, 88% hit) stays a warning. `CLAIM_ORDER` (0 flags on 319 pages) stays a warning and is removed if the next measurement also has 0.
+- Why: Seven of the nine W2 codes rested on 1 to 5 flagged pages. The 319 pages of 12 saved runs, joined with the judges' defects, give the numbers. The tables and the limits of the data (one book supplies 301 pages; the kind patterns are loose) are in `docs/v0.2/Q2a-writer-checks.md`.
+- Status: accepted for the next live run. `manga-page` skill 1.10.0 records the new class list. The effect on the judged rates is a prediction until the orchestrator verifies it with a live run and a judge panel.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.
