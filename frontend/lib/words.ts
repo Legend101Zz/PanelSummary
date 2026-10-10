@@ -531,7 +531,8 @@ const ANOTHER_POINT = "another key point";
 
 function claimText(claims: ClaimTexts | undefined, id: string): string | undefined {
   if (!claims) return undefined;
-  const t = claims instanceof Map ? claims.get(id) : (claims as Record<string, string>)[id];
+  const key = id.toLowerCase(); // claim ids are lower case (k41); the model may write K41
+  const t = claims instanceof Map ? claims.get(key) : (claims as Record<string, string>)[key];
   return typeof t === "string" && t.trim() ? t.trim() : undefined;
 }
 
@@ -566,6 +567,6 @@ export function readableReason(reason: string, claimsById?: ClaimTexts): string 
     });
     return pieces.join(" and ");
   });
-  out = out.replace(/^[a-z][a-z_-]*:\s+/, "");
+  out = out.replace(/^[a-z][a-z_-]*:\s+/i, "");
   return out ? out.charAt(0).toUpperCase() + out.slice(1) : out;
 }

@@ -212,3 +212,11 @@ describe("readableReason", () => {
     expect(readableReason("It is a k9 unit.")).toBe("It is a another key point unit.");
   });
 });
+
+describe("readableReason, case", () => {
+  it("finds an upper-case id and strips a capitalised machine prefix", () => {
+    const claims = new Map([["k41", "The Cat scorns the Dog"]]);
+    expect(readableReason("Detail: restates Claim K41", claims)).toBe('Restates "The Cat scorns the Dog"');
+  });
+});
+
