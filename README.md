@@ -146,7 +146,7 @@ PANELSUMMARY_REPLAY_WORKER=scripts/fixtures/replays/happy-prince-two-tales ./sta
 
 Then open the app, choose **Add a book** and upload the PDF that matches the package:
 `scripts/acceptance/books/happy-prince-two-tales.pdf`. Press **Generate manga**. The run ends in
-about 80 seconds with 22 pages. Use another PDF and the run fails with `REPLAY_BOOK_MISMATCH`.
+about one minute (48 seconds in the last check) with 22 pages. Use another PDF and the run fails with `REPLAY_BOOK_MISMATCH`.
 The package `scripts/fixtures/replays/andersen-18` replays the Andersen run, but its PDF is not in
 the repository. The built-in sample needs no replay: it is stored data.
 
@@ -232,8 +232,14 @@ repository root.
 (cd apps/agent-worker && npx tsc --noEmit && npx vitest run)   # includes the replay worker
 (cd packages/agent-runtime && npx tsc --noEmit && npx vitest run)
 (cd packages/manga-render && npx tsc --noEmit && npx vitest run)
-(cd frontend && npx tsc --noEmit && npm test && npm run build)
+(cd frontend && npx tsc --noEmit && npm test)
+./stop.sh                                                  # the build below must not run while the stack runs
+(cd frontend && npm run build)
 ```
+
+`start.sh` runs `next dev` in `frontend/`. A production build in the same folder breaks it, so run
+`npm run build` only after `./stop.sh`. The backend tests need the MongoDB, so run them before
+`./stop.sh` (or start your own `mongod`).
 
 GitHub Actions runs the same checks on every pull request into `release/v0.1`, `release/v0.2` and `main`. It
 also has a manual lane for a live run with real MiniMax calls. See
