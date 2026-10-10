@@ -72,7 +72,7 @@ describe("REPAIR_ONCE_CODES", () => {
     const skill = await loadSkill("manga-page");
     const step = /FIX BEFORE SUBMIT\*\* items \(([^)]*)\)/.exec(skill.content)?.[1] ?? "";
     expect(step.split(",").map((c) => c.trim()).sort()).toEqual([...REPAIR_ONCE_CODES].sort());
-    expect(skill.version).toBe("1.10.0");
+    expect(skill.version).toBe("1.11.0");
     expect(skill.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 

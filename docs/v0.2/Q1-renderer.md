@@ -15,7 +15,7 @@ New names in the closed vocabulary. Each one is drawn by code in the black-and-w
 
 - A person can change clothes in one panel: `figure.variant.outfit` (the catalog lists it for people only). The understanding sets it in `states` (`{"outfit": "underclothes"}`).
 - A place that the writer stood in `abstract`, `void`, `country_road` or `meadow` but named a foundry, a dust heap or Paradise is drawn as it.
-- `apps/agent-worker/src/goals/vocabulary.ts` is built from the renderer contracts: no change was needed, and a new test (`vocabulary-sync.test.ts`) fails if the lists differ. One line was added to each of the two SKILL.md files (the size guard of the skills test allowed only 225 bytes). `continuity.ts` got one line (`outfit` in the state value list).
+- `apps/agent-worker/src/goals/vocabulary.ts` is built from the renderer contracts: no change was needed, and a new test (`vocabulary-sync.test.ts`) fails if the lists differ. One line was added to each of the two SKILL.md files. Versions: `manga-page` 1.11.0, `book-understanding` 1.9.0. The skills size cap went from 1.22 to 1.23 (measured 42198 / 34494 = 1.2233). The decision entry is D28 in `docs/decisions.md`. `repair-once.ts` has no trigger words for the new props: not added, because that would change a calibrated check without a new measurement. `continuity.ts` got one line (`outfit` in the state value list).
 - Tests: `test/story-vocab.test.ts` (38 tests): each prop and backdrop is inside its stated bounds, is deterministic, is in the panel at medium, full and wide shots, and no lettering covers it.
 - Looked at (Read tool): `sheets-v2/props.png`, `sheets-v2/envs.png`, `sheets-v2/envs-night.png`, and in context `sheets-v2/page-01.png` to `page-03.png` (all under `/Volumes/Mrigesh SSD/Book-Reel-scratch/v02/q1/`). The pot reads as a pot beside the bell; the first foundry drawing was a black box and was redrawn.
 
@@ -53,6 +53,8 @@ Tails (speaker drawn, not off-panel): tip to the mouth, in head radii, median 1.
 `HERO_TOO_SMALL` threshold: at 0.25 the new code flags 4 pages (3 judged hero_tiny by at least two judges, 0 judged clean); the old code at the same line would flag 19 pages (13 of them judged). Warning only: only 44 pages have no hero_tiny finding, and one judge panel is a weak oracle.
 Issue codes, old to new: `FIGURE_CLIPPED` 2 to 6, `HERO_TOO_SMALL` 0 to 4, `TEXT_DOES_NOT_FIT` 0 to 1, no other change, no new error.
 
+Re-run on 2026-10-10 after the rebase onto `origin/release/v0.2` (4adfd39): the renderer logs of the final journey (87 panels), Gate 2 flash (209) and Gate 2b (285) are identical to the logs above (compared panel by panel), so every number in this section holds.
+
 ## 4. Before and after (looked at with the Read tool)
 
 Pairs of whole pages: `img/g2/pairs/page-NN.png`, `img/final/pairs/` (NN = 4, 5, 8, 12, 13, 20, 21, 22, 23 for Gate 2; 1, 3, 4, 9, 11 for the final journey). Every changed panel, side by side: `img/changed/sheet-01.png` to `sheet-13.png`.
@@ -79,7 +81,7 @@ Pairs of whole pages: `img/g2/pairs/page-NN.png`, `img/final/pairs/` (NN = 4, 5,
 
 ```
 cd packages/manga-render && npx tsc --noEmit && npx vitest run     # 13 files, 772 tests pass
-cd apps/agent-worker      && npx tsc --noEmit && npx vitest run     # 8 files, 118 tests pass
+cd apps/agent-worker      && npx tsc --noEmit && npx vitest run     # 9 files, 166 tests pass
 npx tsx scripts/calibrate-q1.ts --src <old or new dir> --run <run dir> --tag <t> --out <file>
 python3 scripts/calibrate-q1-report.py <cal dir>
 npx tsx scripts/q1-panel-pairs.ts --old <dir> --new <dir> --list <list.json> --out <dir> && python3 scripts/q1-panel-pairs.py <dir>

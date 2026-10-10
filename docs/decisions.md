@@ -184,6 +184,14 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: A first-time user can read a finished manga before they spend anything, and every screen of the book page and the reader can be shown with real data. The text is public domain (Project Gutenberg eBook #1597).
 - Status: accepted (owner decision, 2026-10-10). The sample keeps the v0.1 policy and the v0.1 renderer output (`manga-render/0.5.0`). It does not follow later model or renderer changes.
 
+### D28. Renderer 0.6.0: story vocabulary and camera push-in (2026-10-10, issues #41 and #42, track Q1)
+- D4 stays (deterministic SVG). The renderer is `manga-render/0.6.0`. Old stored pages keep their SVG.
+- The closed vocabulary grows by name: outfits `underclothes` and `undressed` (also as a per-panel `variant.outfit`), props `pot`, `stove`, `roast_goose`, `heart`, `angel`, `loom`, `sledge`, environments `foundry`, `dustheap`, `paradise`. The worker reads the lists from the renderer contracts, so they cannot differ.
+- Camera push-in (replaces "the hero floor only enlarges the figure"): the hero and every speaker fill at least 30 percent of the panel in their tighter dimension (15 percent in an establishing shot). A smaller one is brought up by moving the camera toward it, as far as every subject, speaker and name-tagged head stays in the panel. A speaking statue keeps its head in the panel.
+- Tail rule changed: a tail still stops about halfway to the mouth, except when that tip would end between two faces. Then it runs on to just outside its own speaker's head circle.
+- `HERO_TOO_SMALL` (warning) now uses the same measure: under 25 percent of the panel after the push. Calibration: `docs/v0.2/Q1-renderer.md`.
+- Status: accepted for the next live run. Skills: `manga-page` 1.11.0 and `book-understanding` 1.9.0.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.
@@ -199,11 +207,3 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Image budgets (`none | sprites_only | budgeted | full_panel_art`). Removed with D3.
 - The v1 deprecation plan of issue #15. The rebuild removed v1 directly on 2026-09-25.
 - The owner-requested database wipe (2026-08-09). History only.
-
-## v0.2 renderer changes (Q1, issues #41 and #42)
-
-- D4 stays (deterministic SVG). The renderer is `manga-render/0.6.0`. Old stored pages keep their SVG.
-- The closed vocabulary grows by name: outfits `underclothes` and `undressed` (also as a per-panel `variant.outfit`), props `pot`, `stove`, `roast_goose`, `heart`, `angel`, `loom`, `sledge`, environments `foundry`, `dustheap`, `paradise`. The worker reads the lists from the renderer contracts, so they cannot differ.
-- Camera push-in (replaces "the hero floor only enlarges the figure"): the hero and every speaker fill at least 30 percent of the panel in their tighter dimension (15 percent in an establishing shot). A smaller one is brought up by moving the camera toward it, as far as every subject, speaker and name-tagged head stays in the panel. A speaking statue keeps its head in the panel.
-- Tail rule changed: a tail still stops about halfway to the mouth, except when that tip would end between two faces. Then it runs on to just outside its own speaker's head circle.
-- `HERO_TOO_SMALL` (warning) now uses the same measure: under 25 percent of the panel after the push. Calibration: `docs/v0.2/Q1-renderer.md`.

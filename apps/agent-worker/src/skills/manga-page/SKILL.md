@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.10.0
+version: 1.11.0
 ---
 
 # Manga page

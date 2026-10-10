@@ -274,7 +274,7 @@ describe("craft grammar in the skills (#6)", () => {
     it(`${name} keeps its key rules and a bumped version`, async () => {
       const skill = await loadSkill(name);
       for (const p of patterns) expect(skill.content, `${name} lacks ${p}`).toMatch(p);
-      const versions: Record<string, string> = { "manga-page": "1.10.0", "book-understanding": "1.8.0", "adaptation-plan": "1.5.0" };
+      const versions: Record<string, string> = { "manga-page": "1.11.0", "book-understanding": "1.9.0", "adaptation-plan": "1.5.0" };
       expect(skill.version).toBe(versions[name]);
     });
   }
@@ -283,6 +283,7 @@ describe("craft grammar in the skills (#6)", () => {
     // 8 percent at T1; F1 (1.7.0) and W2-writer (1.8.0, +1.9 KB: docs/launch/W2-writer.md) used the rest up to 14.
     // Q2b (manga-page 1.9.0, book-understanding 1.8.0, adaptation-plan 1.5.0) adds 1.9 KB (docs/v0.2/Q2b-continuity.md): measured 1.1897.
     // Q2a (manga-page 1.10.0, +974 bytes: docs/v0.2/Q2a-writer-checks.md) raised the limit from 1.20 to 1.22 (measured on the merged files: 42011 / 34494 = 1.2179).
+    // Q1 (manga-page 1.11.0, book-understanding 1.9.0, +187 bytes: docs/v0.2/Q1-renderer.md) raised the limit from 1.22 to 1.23 (measured on the merged files: 42198 / 34494 = 1.2233).
     const sizes = { "manga-page": 17816, "book-understanding": 10821, "adaptation-plan": 5857 };
     let before = 0;
     let after = 0;
@@ -290,7 +291,7 @@ describe("craft grammar in the skills (#6)", () => {
       before += size;
       after += readFileSync(new URL(`../src/skills/${name}/SKILL.md`, import.meta.url)).length;
     }
-    expect(after / before).toBeLessThan(1.22);
+    expect(after / before).toBeLessThan(1.23);
   });
 });
 
