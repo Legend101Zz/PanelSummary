@@ -52,7 +52,7 @@ cd packages/manga-render && npx tsc --noEmit && npx vitest run
 cd frontend && npx tsc --noEmit                          # the production build runs in CI
 ```
 
-- GitHub Actions (`.github/workflows/ci.yml`) runs these checks on every pull request into `release/v0.1` and `main`.
+- GitHub Actions (`.github/workflows/ci.yml`) runs these checks on every pull request into `release/v0.1`, `release/v0.2` and `main`.
 - The live lane (`live-journey.yml`) spends real MiniMax money. Start it only when the owner asks. See `docs/launch/CI.md`.
 - The quality judge harness is in `scripts/acceptance/judge/`. Its guide is `docs/launch/EVAL.md`. Judge runs call no MiniMax model, but they need a saved run export.
 

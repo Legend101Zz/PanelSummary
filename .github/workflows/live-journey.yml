@@ -1,9 +1,9 @@
 name: live-journey
 
-# REAL MiniMax spend (about 1 USD for the 26-page book). Three triggers:
-#  1. workflow_dispatch (only works once this file is on the default branch);
-#  2. push to a branch live/**  (configuration: scripts/acceptance/live-config.json in the commit);
-#  3. pull_request labelled "run-live" (configuration: the same file in the PR head).
+# REAL MiniMax spend (about 1 USD for the 26-page book). One paid run per explicit request (#47):
+#  1. workflow_dispatch (gh workflow run live-journey.yml --ref <branch> -f book=...);
+#  2. the label "run-live" added to a pull request (configuration: scripts/acceptance/live-config.json
+#     in the PR head). A new push to that pull request does NOT start a run; add the label again.
 # Dispatch inputs override the JSON file.
 on:
   workflow_dispatch:
@@ -42,10 +42,8 @@ on:
       retry_thinking:
         type: string
         default: ""
-  push:
-    branches: ["live/**"]
   pull_request:
-    types: [labeled, synchronize]
+    types: [labeled]
 
 permissions:
   contents: read
@@ -59,8 +57,9 @@ jobs:
       group: live-journey
       cancel-in-progress: false
     if: >-
-      github.event_name != 'pull_request' ||
-      (contains(github.event.pull_request.labels.*.name, 'run-live') &&
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' &&
+       github.event.label.name == 'run-live' &&
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 120

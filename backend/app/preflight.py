@@ -116,13 +116,13 @@ def check_limits(pdf_pages: int, source_words: int, max_pdf_pages: int, max_sour
     reasons: list[str] = []
     if source_words > max_source_words:
         reasons.append(
-            f"This book has {source_words:,} words. BookReel v0.1 can adapt books up to "
+            f"This book has {source_words:,} words. PanelSummary can adapt books up to "
             f"{max_source_words:,} words in one run."
         )
     if pdf_pages > max_pdf_pages:
         reasons.append(
-            f"This book has {pdf_pages:,} PDF pages. BookReel v0.1 can adapt books up to "
-            f"{max_pdf_pages:,} pages in one run."
+            f"This book has {pdf_pages:,} PDF pages. PanelSummary can adapt books up to "
+            f"{max_pdf_pages:,} PDF pages in one run."
         )
     if reasons:
         reasons.append("You can still read the PDF here. Longer books are planned for a later version.")
