@@ -75,7 +75,8 @@ criterion below 3, legibility and fidelity of 4 or more, mean of 3.5 or more. A 
 | Two-tale book (26 PDF pp) | v0.1, two runs | 22 | 2 and 4 | 3.42 and 3.49 | 3.11 and 2.94 | 3.33 and 3.44 |
 | Two-tale book | **v0.2 (Gate 1)** | 22 | **6** | **3.60** | 3.08 | **3.65** |
 | 68-page acceptance book | v0.1 (Gate 2 bar) | 46 | 7 | 3.52 | 2.94 | 3.43 |
-| 68-page acceptance book | **v0.2 (Gate 2)** | 61 | **20** | **3.55** | **2.99** | **3.61** |
+| 68-page acceptance book | v0.1 (complete run, 60 pages) | 60 | 12 | 3.54 | 3.02 | 3.58 |
+| 68-page acceptance book | **v0.2 (Gate 2)** | 61 | **20** | 3.55 | 2.99 | **3.61** |
 | *Self-Reliance* (hold-out, nonfiction) | v0.2, two runs | 38 and 36 | 11 and 8 | 3.55 and 3.60 | 3.26 and 3.40 | 3.60 and 3.69 |
 | *Civil Disobedience* (nonfiction) | v0.2 | 36 | 11 | 3.53 | 3.34 | 3.74 |
 | *Just So Stories* (hold-out, fiction) | **v0.1.0, same panel (controlled)** | 30 | 4 | 3.38 | 2.68 | 3.33 |
@@ -83,16 +84,18 @@ criterion below 3, legibility and fidelity of 4 or more, mean of 3.5 or more. A 
 
 Defects the v0.2 work aimed at (blocker + major per judge-page, 68-page book, v0.1 → v0.2): hero a
 speck or cropped 0.62 → 0.35; tail at the wrong figure 0.22 → 0.11; label clutter 0.20 → 0.08;
-repeated panels 0.17 → 0.08.
+repeated panels 0.17 → 0.08. Against the complete v0.1 run of the same book, the mean is about the same
+(3.54 against 3.55) and continuity is a little lower (3.02 against 2.99).
 
 **On a book that was not used for tuning, v0.2 is not yet better than v0.1.** On *Just So Stories*, run once
 with v0.1.0 and three times with v0.2 and judged by the same panel, the mean is about the same (3.38 against
 3.44, 3.41 and 3.40, inside run-to-run noise) and fewer pages pass the strict bar (4 of 30 against 2, 1 and 2). The writer
-changes carry over (label clutter 0.43 → 0.16 and 0.10; beat without prose wall 3.18 → 3.35), but missing
-key props (0.59 → 0.73 and 0.86) and wrong settings (0.09 → 0.18 and 0.15) are worse on this book.
+changes carry over: label clutter goes from 0.43 to 0.16, 0.10 and 0.09, and beat without prose wall from
+3.18 to 3.35, 3.34 and 3.41. Missing key props (0.59 against 0.73, 0.86 and 0.64) and wrong settings
+(0.09 against 0.18, 0.15 and 0.11) are worse on this book.
 
-**Read these numbers with their limits.** The judges are AI (Sonnet), not readers. Each book has one or
-two runs. The two Wilde books were used for tuning; the hold-out books were not. On the fiction hold-out
+**Read these numbers with their limits.** The judges are AI (Sonnet), not readers. Each book has one to
+three runs. The two Wilde books were used for tuning; the hold-out books were not. On the fiction hold-out
 the gains do not fully carry over: continuity 2.59 and few pages at the strict bar, mostly because the
 closed drawing vocabulary has no cave or bone (a cave is drawn as a modern room; a mutton blade-bone as
 a sword). Page turn is the weakest criterion (3.35 on the 68-page book, 0.19 below v0.1).
@@ -102,15 +105,14 @@ a sword). Page turn is the weakest criterion (3.35 on the 68-page book, 0.19 bel
 Costs are estimates at MiniMax-M3 rates (MiniMax publishes no price for the Flash model), not a bill.
 Two-tale book: 22 pages in 7 min 27 s, about $0.69. 68-page book: 60 of 61 pages in 14 min 42 s, about
 $1.88. Final journey on the release head (*Just So Stories*, 38 PDF pages, real worker, fresh database, new
-UI): 29 pages in 6 min 7 s, page 1 after 2 min 0 s, about $0.80. Total live spend for the v0.2 build:
-about $9.40 for 10 paid runs (cap $50).
+UI, `3113fc3`): 29 pages in 6 min 7 s, page 1 after 2 min 0 s, about $0.80. Total live spend for the v0.2 build:
+about $9.4 for 10 paid runs (cap $50).
 
 The full gate record, with the evidence, is in `docs/v0.2/GATES.md`.
 
 ## Known limits
 
 - On a book that was not used for tuning (fiction), v0.2 is not yet better than v0.1 (see above).
-
 - Born-digital PDFs with selectable text, English, up to 75 PDF pages and 17,500 words per run (a longer
   book can be drawn one part at a time).
 - The closed drawing vocabulary does not cover every book (see above).

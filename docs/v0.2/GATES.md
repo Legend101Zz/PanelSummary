@@ -64,6 +64,24 @@ failed with its reason), first page 292 s, all 882 s, about $1.88.
 | Image-model egress | zero | zero (only `api.minimax.io`) | PASS |
 | Every failure visible | | page 42 failed, shown with its reason | PASS |
 
+The bar is the 46-page v0.1 run (`gate2-flash-ci`), which the plan set before the build. v0.1 also has a
+complete run of the same book (`gate2b-ci`, 60 pages, same panel). Against that run, v0.2 is not better on
+every number:
+
+| Measure | v0.1 complete run (60 pages) | v0.2 (61 pages) |
+|---|---|---|
+| Mean | 3.54 | 3.55 |
+| Strict ship-bar pages | 12/60 | 20/61 |
+| Continuity | 3.02 | 2.99 |
+| Legibility | 3.58 | 3.61 |
+| Hero a speck or cropped | 0.48 | 0.35 |
+| Tail at the wrong figure | 0.20 | 0.11 |
+| Label clutter | 0.16 | 0.08 |
+| Repeated panels | 0.09 | 0.08 |
+
+The mean is about the same. More pages pass the strict bar, and the targeted defects are fewer.
+Continuity is a little lower.
+
 The defect rates are blocker plus major defects per judge-page, with the v0.1 classifier
 (`launch/clusters/kinds2.py`). The script `gates/kinds_rates.py` reproduces the v0.1 report's numbers for
 `gate2-flash-ci` exactly (0.62, 0.22, 0.20, 0.17).
@@ -81,17 +99,21 @@ The defect rates are blocker plus major defects per judge-page, with the v0.1 cl
 | *Just So Stories*, run 3 (final journey on the release head) | v0.2 | 29 | 2 | 3.40 | 2.64 | 3.41 |
 
 On the fiction hold-out, v0.2 is not better than v0.1: over three v0.2 runs the mean is about the same
-(3.40–3.44 against 3.38) and fewer pages pass the strict bar (1–2 against 4). The writer changes carry over (label clutter 0.43 → 0.16 and 0.10). The closed drawing
+(3.40–3.44 against 3.38) and fewer pages pass the strict bar (1–2 against 4). The writer changes carry over: label clutter goes from 0.43 to 0.16, 0.10
+and 0.09. The closed drawing
 vocabulary does not: the book needs an elephant, a cave and a mutton bone, so the Elephant's Child is drawn
-as a human boy, a cave as a modern room and a bone as a sword (key prop not drawn 0.59 → 0.73 and 0.86;
-wrong setting 0.09 → 0.18 and 0.15). This is a v0.3 problem (a general fallback, not a fix tuned on the
+as a human boy, a cave as a modern room and a bone as a sword (key prop not drawn: 0.59 against 0.73, 0.86
+and 0.64; wrong setting: 0.09 against 0.18, 0.15 and 0.11). This is a v0.3 problem (a general fallback, not a fix tuned on the
 hold-out).
 
 ## 6. The final journey
 
 Run on the real worker, in a real foreground Chrome window, on a fresh database, with the untuned
 *Just So Stories* PDF, through the new UI. Evidence: `final-journey/REPORT.md` (release candidate
-`a5b4a5c`) and `final-journey-2/REPORT.md` (release head `3113fc3`).
+`a5b4a5c`) and `final-journey-2/REPORT.md` (`3113fc3`, the release head when it ran). PR #77 merged after
+final journey 2: it changes only how left-out reasons read (no internal claim ids). Its unit tests and the
+final offline check on `f744cd6` cover it (journey 62/62 with the replay worker and the browser host check;
+all test suites green). Final journey 2 did not measure the delay of the page 1 band; the page polls every 2 s.
 
 | Question | `a5b4a5c` | `3113fc3` |
 |---|---|---|
@@ -106,5 +128,5 @@ Run on the real worker, in a real foreground Chrome window, on a fresh database,
 
 ## 7. Spend
 
-Ten paid runs, about $9.40 in total (estimates at MiniMax-M3 rates, not a bill), against the cap of $50:
+Ten paid runs, about $9.4 in total (estimates at MiniMax-M3 rates, not a bill), against the cap of $50:
 seven in the live lane, two v0.2 final journeys and one v0.1.0 baseline run on the hold-out book. The ledger is in `docs/v0.2/PLAN.md` §6.
