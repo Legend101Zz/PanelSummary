@@ -77,7 +77,14 @@ const STATUE_WORDS = /\b(statue|effigy|carving|carved figure|monument|gilded|ped
  * words between the article and the noun may not be a preposition, relative word or "and", so
  * "a man, standing by a statue" and "a sculptor, who carves a statue" stay silent.
  */
-const STATUE_APPOSITIVE = /^[^,;.]*,\s*(?:a|an|the)\s+(?:(?!(?:of|in|on|at|by|to|for|from|with|near|beside|under|who|whom|whose|which|that|and|but|or|as)\b)[\w'\u2019-]+\s+){0,3}(?:statue|effigy|monument|carving|pedestal)\b/;
+const STATUE_APPOSITIVE = new RegExp(
+  "^[^,;.]*,\\s*(?:a|an|the)\\s+" +
+    // Up to 3 words between the article and the noun. A word may not be a preposition, a relative
+    // word, a conjunction, a second article, or end in -ing ("a tourist photographing a statue").
+    "(?:(?!(?:of|in|on|at|by|to|for|from|with|near|beside|under|who|whom|whose|which|that|and|but|or|as|a|an|the)\\b)(?![\\w'\\u2019-]*ing\\b)[\\w'\\u2019-]+\\s+){0,3}" +
+    // The noun may not start a compound: "statue-maker", "statue-like", "a statue restorer".
+    "(?:statue|effigy|monument|pedestal)\\b(?![-\\u2010\\u2011]|\\s+(?:makers?|keepers?|restorers?|builders?|inspectors?|carvers?|guards?|sculptors?|thieves|thief|cleaners?|designers?|owners?|sellers?|collectors?|apprentices?|workers?|painters?|masons?|like))",
+);
 
 const PERSON_WORDS = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/;
 

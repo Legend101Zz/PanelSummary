@@ -149,6 +149,17 @@ describe("statue guard: appositive statue description (#48)", () => {
     expect(reasonOf("a sculptor", "a sculptor who carves a statue of the king")).toBeUndefined();
     expect(reasonOf("a man", "a man who stands beside the statue")).toBeUndefined();
   });
+  it("stays silent for an -ing participle or a second article inside the window", () => {
+    expect(reasonOf("a man", "A man, a tourist photographing a statue")).toBeUndefined();
+    expect(reasonOf("a sculptor", "A sculptor, a man carving a statue")).toBeUndefined();
+  });
+  it("stays silent when the statue noun is the start of a compound", () => {
+    expect(reasonOf("a restorer", "Marcus, a statue restorer")).toBeUndefined();
+    expect(reasonOf("a keeper", "Ana, a statue keeper")).toBeUndefined();
+    expect(reasonOf("a builder", "Tom, a monument builder")).toBeUndefined();
+    expect(reasonOf("an apprentice", "Lia, a statue-maker's apprentice")).toBeUndefined();
+    expect(reasonOf("a figure", "A man, a statue-like figure frozen in fear")).toBeUndefined();
+  });
   it("stays silent for a comma followed by a clause or another noun", () => {
     expect(reasonOf("a sculptor", "A sculptor, who carves a statue of the king")).toBeUndefined();
     expect(reasonOf("a sculptor", "A sculptor, a man who carves a statue of the king")).toBeUndefined();

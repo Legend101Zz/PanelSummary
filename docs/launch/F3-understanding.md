@@ -102,12 +102,8 @@ T0's 3-of-3 failures are gone. The default model is not changed by this track.
 
 Change: `statueReason` now also reads an appositive after the first comma of the role or
 description. The appositive must start with a, an or the, and its head noun must be statue,
-effigy, monument, carving or pedestal. At most three words may stand between the article and the
-noun, and none of them may be a preposition, a relative word, "and", "but", "or" or "as". So "A
-prince, a gilded statue of fine gold" and "The Happy Prince, a statue covered in gold leaf" now
-return a reason. "a prince who admires a statue", "a sculptor who carves a statue of the king",
-"stands beside the statue", "A sculptor, who carves a statue" and "A man, standing by a statue"
-stay silent. Tests: `apps/agent-worker/test/statue-guard.test.ts` (6 new tests, written first
+effigy, monument or pedestal. At most three words may stand between the article and the
+noun, and none of them may be a preposition, a relative word, "and", "but", "or", "as", a second article (a, an, the) or a word that ends in -ing. The noun may not be followed by a hyphen or by an agent word (maker, keeper, restorer, builder, inspector, carver, guard, sculptor, -like and similar). "carving" is no longer an appositive noun. So "A prince, a gilded statue of fine gold" and "The Happy Prince, a statue covered in gold leaf" now return a reason. "a prince who admires a statue", "a sculptor who carves a statue of the king", "stands beside the statue", "A sculptor, who carves a statue", "A man, standing by a statue", "A man, a tourist photographing a statue", "A sculptor, a man carving a statue", "Marcus, a statue restorer", "a statue keeper", "a monument builder", "a statue-maker's apprentice" and "a statue-like figure frozen in fear" stay silent. Tests: `apps/agent-worker/test/statue-guard.test.ts` (8 new tests, written first
 and seen failing).
 
 Calibration: the guard ran over all 20 saved `understanding.json` files under
@@ -121,6 +117,4 @@ Calibration: the guard ran over all 20 saved `understanding.json` files under
 | Files with one reason (the Prince) | 19 of 20 | 19 of 20 |
 
 `final-journey` has no reason before or after. No new false positive on a real saved
-understanding, so the rule was not narrowed further. The real saved texts do not contain the
-appositive form, so the calibration shows no regression but does not show a catch. Only the unit
-tests show the catch.
+understanding, so the rule was not narrowed further. 2 saved texts match the appositive rule (the `uab-m3-local` role "the Happy Prince, a gilded statue on a tall column..." and the `f3-impl/repro1` description "...city square, the whole statue gilded..."). The old rule already flagged both, so the saved texts do not show a new catch. Only the unit tests show the catch.
