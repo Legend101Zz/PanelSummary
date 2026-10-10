@@ -16,6 +16,8 @@ on:
           - happy-prince-two-tales
           - happy-prince-and-other-tales
           - civil-disobedience
+          - just-so-three-tales
+          - self-reliance
           - other (use book_path)
       book_path:
         description: Path of a PDF in the repo (used only when book is "other")
