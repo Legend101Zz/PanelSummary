@@ -85,6 +85,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
+      - name: Unit tests (shared copy, words.test.ts)
+        run: npm test
       - name: Build
         run: npm run build
         env:
