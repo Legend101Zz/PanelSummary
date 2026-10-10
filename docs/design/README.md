@@ -119,6 +119,7 @@ Source: `chat-log/RUN-LOG.md`, section "Open points for the owner". "Default" me
 | 26 | 4a | The wdth axis is held at 100; the font path; `.app-root`; `.app-reading-room` | Recorded in `DESIGN.md` and `tokens.css` |
 | 27 | 4a | New tokens and changed values (hover, pressed, wash-2, drag-over fill, dark track, meter edge) | Accepted, in `tokens.css` |
 | 28 | 4b | Claude no longer had the original Round 1 and Choice wording after the compactions and checked "against the rules as I have them recorded" | Open. No fix is possible. The build review checks the screens against `SCREENS-AND-STATES.md` |
+| 30 | 2d | Contents shows manga page ranges only after planning | Kept as designed; recorded in `SCREENS-AND-STATES.md` §6 E |
 | 29 | after 4b | Claude's open questions in the chat, the HTML export that failed, no handoff file | Not needed. The zip has every board as a standalone page |
 
 ## Copy waiting for owner approval

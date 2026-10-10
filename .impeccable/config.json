@@ -3,7 +3,7 @@
   "detector": {
     "ignoreFiles": [
       "frontend/components/reader/**",
-      "frontend/app/books/[id]/read/**",
+      "frontend/app/**/books/*/read/**",
       "frontend/components/SvgPage.tsx",
       "packages/manga-render/**"
     ]

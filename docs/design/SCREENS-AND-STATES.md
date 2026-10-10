@@ -137,7 +137,7 @@ The acceptance scripts click or read these:
   - You see the estimated cost and time before you start.
   - It runs on your own computer. The code is on GitHub (https://github.com/Legend101Zz/PanelSummary).
 - **The sample:** "Four Tales by Hans Christian Andersen": 4 tales, 22 PDF pages, 18 manga pages, drawn in 7 min 08 s. The estimate before the run was 5 to 58 min. Set this as one sentence, not as number tiles.
-- **The limits, stated honestly:** born-digital PDFs with selectable text, English, up to 75 PDF pages and 17,500 words in v0.1. Version 0.2 plans a way to choose sections of a longer book.
+- **The limits, stated honestly:** born-digital PDFs with selectable text, English, up to 75 PDF pages and 17,500 words in v0.1. Version 0.2 lets you choose sections of a longer book **[suggested]**.
 
 **Hero page.** Use only real Andersen pages, under the title "Four Tales by Hans Christian Andersen".
 - Pages 13, 17 and 18 pass the strict quality bar.
@@ -470,7 +470,7 @@ A heading "Pages" and "18 of 18 pages ready." Each page has a thumbnail and its 
 - A heading "Contents" and "As found in the PDF".
 - One row for each section: the number, the title and a link to the PDF viewer. The numbers are fine here, because the order is information.
 - Today the link reads "pages 3–9". **[suggested]** "PDF pages 3–9".
-- **[data exists] [suggested]** Also show the manga pages of each section.
+- **[data exists] [suggested]** Also show the manga pages of each section. The manga page ranges show only after planning (Round 2d), because the plan sets them.
 
 The rows for the Andersen book:
 
