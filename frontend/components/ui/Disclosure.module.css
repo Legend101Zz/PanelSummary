@@ -1,0 +1,27 @@
+.root { display: block; }
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--app-target);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.label { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.toggle:hover .label { text-decoration-thickness: 3px; }
+.panel {
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  border-radius: var(--app-radius-input);
+  background: var(--app-surface-2);
+  color: var(--app-text);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}

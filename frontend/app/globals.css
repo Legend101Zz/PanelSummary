@@ -416,3 +416,17 @@ svg {
     scroll-behavior: auto !important;
   }
 }
+
+/* App screens only (v0.2): the ground behind .app-root follows the app theme, so overscroll and
+   short pages do not show the v0.1 board colour. The reader has no .app-root and keeps --board. */
+body:has(.app-root) {
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+/* v0.2 gutter: 40 px, 16 px below 768 px (--app-gutter is declared in tokens.css). */
+@media (max-width: 767px) {
+  .app-root {
+    --app-gutter: 16px;
+  }
+}

@@ -1,0 +1,26 @@
+.root { display: inline-flex; flex-direction: column; gap: 6px; }
+.label { font-size: 17px; font-weight: 700; }
+.line { display: inline-flex; align-items: center; gap: 10px; }
+.input {
+  width: 88px;
+  height: 48px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-input);
+  background: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.input::-webkit-outer-spin-button, .input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.input:hover { border-color: var(--app-action); }
+.input[aria-invalid="true"] { border: var(--app-line-error) solid var(--app-needs-you); }
+.input:disabled { background: var(--app-surface-2); color: var(--app-text-2); border: var(--app-line-seg) solid var(--app-text-2); cursor: not-allowed; }
+.suffix { font-size: 17px; color: var(--app-text-2); }
+.hint { font-size: 15px; line-height: 1.4; font-weight: 700; }
+.hintPlain { color: var(--app-text-2); font-weight: 400; }

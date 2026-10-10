@@ -1,0 +1,23 @@
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--app-radius-control);
+  font-size: 17px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+.icon { flex: 0 0 auto; margin-top: 2px; }
+.body { min-width: 0; flex: 1 1 auto; }
+.title { font-weight: 700; margin: 0; }
+.text { margin: 0; }
+.title + .text { margin-top: 4px; }
+.detail { margin-top: 6px; }
+
+.needs { background: var(--app-needs-you); color: var(--app-on-fill); }
+.note { background: var(--app-note); color: var(--app-on-note); }
+.info, .wait { background: var(--app-surface-2); color: var(--app-text); }
+
+/* Inside a card a notice is a full-width fill with square corners. The RunCard slot stretches it edge to edge. */
+.inCard { border-radius: 0; }

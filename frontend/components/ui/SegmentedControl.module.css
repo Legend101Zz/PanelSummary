@@ -1,0 +1,12 @@
+.group { align-self: flex-start; display: inline-flex; flex-wrap: nowrap; max-width: 100%; border: var(--app-line-control) solid var(--app-line-strong); border-radius: var(--app-radius-control); background: var(--app-surface); overflow: hidden; box-sizing: border-box; }
+.option { position: relative; display: flex; flex-direction: column; justify-content: center; min-height: 52px; padding: 6px 16px; box-sizing: border-box; font-size: 17px; cursor: pointer; background: var(--app-surface); color: var(--app-text); }
+.option + .option { border-left: var(--app-line-control) solid var(--app-line-strong); }
+.option:hover { background: var(--app-action-wash); }
+.input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.row { display: inline-flex; align-items: center; gap: 8px; }
+.reason { font-size: 13px; line-height: 1.3; color: var(--app-text-2); }
+.chosen { background: var(--app-action); color: var(--app-on-action); font-weight: 700; }
+.chosen:hover { background: var(--app-action-hover); }
+.off, .off:hover { background: var(--app-surface-2); color: var(--app-text-2); cursor: not-allowed; }
+.option:has(.input:focus-visible) { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: -4px; }
+@media (max-width: 767px) { .group { display: flex; } .option { flex: 1 1 auto; min-width: 0; padding: 6px 10px; } }

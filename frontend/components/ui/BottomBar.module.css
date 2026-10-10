@@ -1,0 +1,19 @@
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+  border-top: var(--app-line-control) solid var(--app-line);
+  background: var(--app-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bar > * { width: 100%; }
+.spacer { height: calc(76px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) {
+  .bar.narrowOnly, .spacer.narrowOnly { display: none; }
+}

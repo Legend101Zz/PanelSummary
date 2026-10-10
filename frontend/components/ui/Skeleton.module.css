@@ -1,0 +1,5 @@
+/* A loading placeholder: a flat block. No edge, no text, no shimmer, nothing moves. */
+.sk { display: block; background: var(--app-skeleton); border: 0; }
+.cover { aspect-ratio: 2 / 3; border-radius: var(--app-radius-cover); }
+.line { height: 20px; border-radius: var(--app-radius-sm); }
+.block { border-radius: var(--app-radius-control); }
