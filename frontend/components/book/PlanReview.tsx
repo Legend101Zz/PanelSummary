@@ -2,11 +2,12 @@
 
 import type { ReactNode } from "react";
 import type { BookDetail, EditionDetail } from "@/lib/api";
-import { plural, scopeLabel, stageLine } from "@/lib/words";
-import { Button, Disclosure, Notice, RunCard, StepList, formatCount, formatUsd } from "@/components/ui";
+import { scopeLabel, stageLine } from "@/lib/words";
+import { Button, Disclosure, Notice, RunCard, StepList, ToneStrip, formatCount, formatUsd, segmentsFromPages } from "@/components/ui";
 import type { Pending } from "./RunPanel";
 import styles from "./Book.module.css";
 
+const CAST_SHOWN = 12;
 const money = (low: number, high: number) => (Math.abs(high - low) < 0.005 ? `about ${formatUsd(low)}` : `about ${formatUsd(low)} to ${formatUsd(high)}`);
 
 /**
@@ -54,16 +55,26 @@ export function PlanReview({
           <h3 id="review-cast" className={styles.reviewHead}>
             Cast
           </h3>
-          <Disclosure label={`${formatCount(cast.length)} characters`} defaultOpen={cast.length <= 8}>
-            <ul className={styles.castList}>
-              {cast.map((c) => (
-                <li key={c.id}>
-                  <strong>{c.name}</strong>
-                  {c.role ? `: ${c.role}` : ""}
-                </li>
-              ))}
-            </ul>
-          </Disclosure>
+          <ul className={styles.castList}>
+            {cast.slice(0, CAST_SHOWN).map((c) => (
+              <li key={c.id}>
+                <strong>{c.name}</strong>
+                {c.role ? `: ${c.role}` : ""}
+              </li>
+            ))}
+          </ul>
+          {cast.length > CAST_SHOWN ? (
+            <Disclosure label={`${formatCount(cast.length - CAST_SHOWN)} more ${cast.length - CAST_SHOWN === 1 ? "character" : "characters"}`}>
+              <ul className={styles.castList}>
+                {cast.slice(CAST_SHOWN).map((c) => (
+                  <li key={c.id}>
+                    <strong>{c.name}</strong>
+                    {c.role ? `: ${c.role}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </Disclosure>
+          ) : null}
         </section>
       ) : null}
 
@@ -101,7 +112,7 @@ export function PlanReview({
   const info: ReactNode = (
     <div className={styles.review}>
       <p className={styles.reviewLead}>
-        <strong>{plural(total, "page")}</strong> are planned. Nothing is drawn yet.
+        Nothing is drawn yet. Look at the plan, then draw the pages.
       </p>
       <dl className={styles.reviewCosts}>
         <div>
@@ -125,6 +136,7 @@ export function PlanReview({
       headline={stageLine("awaiting_plan_review", e.pages, total)}
       notice={actionError ? <Notice tone="needs" inCard role="alert">{actionError}</Notice> : undefined}
       steps={<StepList steps={["Reading the book", "Planning the pages", "Checking the plan", "Drawing the pages"].map((label) => ({ label }))} current={2} />}
+      strip={total > 0 ? <ToneStrip segments={segmentsFromPages(e.pages, total)} legend={false} /> : undefined}
       actions={narrow ? stop : <>{approve}{stop}</>}
       notes={details}
     >

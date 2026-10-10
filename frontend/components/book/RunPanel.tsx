@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { BookDetail, EditionDetail, Preflight } from "@/lib/api";
 import { isActive } from "@/lib/api";
-import { failedStageLine, plainReason, plural, providerStopHeadline, providerStopLines, scopeLabel, stageLine } from "@/lib/words";
+import { DRAWING_AGAIN, failedStageLine, plainReason, stoppedLine, stoppedNote, plural, providerStopHeadline, providerStopLines, scopeLabel, stageLine } from "@/lib/words";
 import {
   Button,
   Disclosure,
@@ -68,11 +68,15 @@ export function RunPanel(p: RunPanelProps) {
   const keyPointsLeft = (cov.core_not_conveyed?.length ?? 0) || (cov.required_not_planned?.length ?? 0);
   const gaps = e.status === "completed_with_failures" && missing === 0;
 
+  // A queued run on an edition whose plan exists is a retry or a resume: reading and planning are done, so the card says so.
+  const resuming = active && e.has_plan && e.status === "queued";
+
   // --- headline -------------------------------------------------------------
   let headline: string;
   if (p.stopping) headline = "Stopping after the pages in progress";
   else if (stop) headline = providerStopHeadline(stop.code);
   else if (e.status === "failed") headline = failedStageLine(failedStage(e));
+  else if (resuming) headline = DRAWING_AGAIN;
   else headline = stageLine(e.status, e.pages, total, { keyPointsLeftOut: keyPointsLeft });
 
   // --- steps ----------------------------------------------------------------
@@ -102,6 +106,7 @@ export function RunPanel(p: RunPanelProps) {
       <span key="t">
         {active ? "Running for " : "Took "}
         <span className={styles.clock}>{formatDuration(secs)}</span>
+        {active && (e.active_seconds ?? 0) > 0 ? " in all" : ""}
       </span>,
     );
   }
@@ -119,8 +124,10 @@ export function RunPanel(p: RunPanelProps) {
 
   // --- notes ----------------------------------------------------------------
   const notes: ReactNode[] = [];
-  if (active && (e.status === "understanding" || e.status === "planning" || e.status === "queued")) {
+  if (active && !e.has_plan && (e.status === "understanding" || e.status === "planning" || e.status === "queued")) {
     notes.push(<p key="n1">Reading and planning a long book can take 10 minutes or more. This page updates itself, so you can leave it open.</p>);
+  } else if (active && !page1Ready && !e.has_plan) {
+    notes.push(<p key="n1">{WAIT_FOR_PAGE_1}</p>);
   } else if (active && !page1Ready) {
     notes.push(<p key="n1">{WAIT_FOR_PAGE_1}</p>);
   } else if (active) {
@@ -157,14 +164,17 @@ export function RunPanel(p: RunPanelProps) {
       }
       // On a phone the band and Stop sit together in the bottom bar (see the page).
     } else {
-      actions.push(
-        <Tooltip key="wait" text="Available when page 1 is drawn">
-          <Button variant="primary" size="md" disabled>
-            Page 1 not drawn yet
-          </Button>
-        </Tooltip>,
-        stopBtn,
-      );
+      // On a phone the bottom bar already has the disabled "Page 1 not drawn yet": it is said once.
+      if (!p.narrow) {
+        actions.push(
+          <Tooltip key="wait" text="Available when page 1 is drawn">
+            <Button variant="primary" size="md" disabled>
+              Page 1 not drawn yet
+            </Button>
+          </Tooltip>,
+        );
+      }
+      actions.push(stopBtn);
     }
   } else if (e.status === "complete") {
     if (p.canRead) actions.push(read("primary"));
@@ -200,11 +210,10 @@ export function RunPanel(p: RunPanelProps) {
       </Notice>,
     );
   } else if (e.status === "failed") {
-    const known = plainReason(e.error);
     const stage = failedStage(e);
     const generic = `The model could not finish ${stage === "reading" ? "reading the book" : stage === "planning" ? "planning the pages" : "drawing the pages"}.`;
     // A reason the words file knows is said plainly. An unknown one is said in one generic sentence; the raw text stays behind "Technical detail".
-    const r = known.detail !== null || !e.error ? known : { plain: generic, detail: e.error };
+    const r = e.error ? plainReason(e.error, generic) : plainReason(e.error);
     notices.push(
       <Notice key="err" tone="needs" inCard role="alert" title={r.plain} detail={r.detail ?? undefined}>
         <p>The pages already drawn stay as they are. Press Resume drawing to try again.</p>
@@ -245,7 +254,9 @@ export function RunPanel(p: RunPanelProps) {
                   <PageFrame state="failed" />
                 </span>
                 <div>
-                  <TextLink href={`/books/${p.bookId}/read?edition=${e.id}&page=${pg.page_number}`}>Page {pg.page_number} could not be drawn</TextLink>
+                  <TextLink href={`/books/${p.bookId}/read?edition=${e.id}&page=${pg.page_number}`}>
+                    {failedPages.length === 1 ? `Open page ${pg.page_number} in the reader` : `Page ${pg.page_number} could not be drawn`}
+                  </TextLink>
                   <p>{r.plain}</p>
                   {r.detail ? (
                     <Disclosure label="Technical detail">
@@ -268,8 +279,16 @@ export function RunPanel(p: RunPanelProps) {
   }
   if (p.pending === "retry") footnote = <p>Drawing is starting again, and these pages will be tried again.</p>;
 
+  const stoppedNode =
+    e.status === "cancelled" && !p.stopping ? (
+      <p key="stopped">
+        <strong>{stoppedLine(counts.drawn, total)}.</strong> {stoppedNote(counts.drawn, total)}
+      </p>
+    ) : null;
+
   const noteNodes = (
     <>
+      {stoppedNode}
       {stop ? (
         <>
           {strip}
@@ -292,7 +311,7 @@ export function RunPanel(p: RunPanelProps) {
         strip={stop || (!active && total === 0) ? undefined : strip}
         time={stop ? undefined : timeLine ?? undefined}
         actions={actions.length ? <>{actions}</> : undefined}
-        notes={stop || failures || footnote || notes.length ? noteNodes : undefined}
+        notes={stop || failures || footnote || stoppedNode || notes.length ? noteNodes : undefined}
       >
         {result}
       </RunCard>

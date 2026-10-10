@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { DRAWING_AGAIN, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -28,6 +28,19 @@ describe("words", () => {
   it("maps a token limit to a plain sentence", () => {
     expect(plainReason("token limit hit").plain).toMatch(/ran out of room/);
   });
+  it("never shows an unknown raw text as the plain reason", () => {
+    const r = plainReason("replay: page 7 is set to fail (FAIL_PAGES), call 2 of 2");
+    expect(r.plain).toBe(UNKNOWN_PAGE_REASON);
+    expect(r.detail).toBe("replay: page 7 is set to fail (FAIL_PAGES), call 2 of 2");
+    expect(plainReason("odd text", "The model could not finish drawing the pages.").plain).toBe("The model could not finish drawing the pages.");
+  });
+  it("words a stopped run and a run that starts again", () => {
+    expect(stoppedLine(3, 16)).toBe("Stopped at 3 of 16 pages");
+    expect(stoppedLine(0, 16)).toBe("Stopped before drawing");
+    expect(stoppedNote(3, 16)).toBe("The pages already drawn stay. Resume drawing draws the other 13.");
+    expect(stoppedNote(1, 2)).toBe("The page already drawn stays. Resume drawing draws the other 1.");
+    expect(DRAWING_AGAIN).toBe("Drawing is starting again");
+  });
   it("does not match 429 inside a longer number", () => {
     expect(plainReason("page 14290 broke").plain).not.toMatch(/busy/);
     expect(plainReason("HTTP 429").plain).toMatch(/busy/);
@@ -39,7 +52,8 @@ describe("words", () => {
   it("words an edition that waits for a plan review, on the shelf and in the stage line", () => {
     const b: any = { status: "parsed", latest_edition: { status: "awaiting_plan_review", page_total: 16, pages_accepted: 0 } };
     expect(shelfStatus(b)).toEqual({ text: "Plan ready to review", tone: "quiet" });
-    expect(stageLine("awaiting_plan_review", [], 16)).toBe("Plan ready to review");
+    expect(stageLine("awaiting_plan_review", [], 16)).toBe("The plan is ready: 16 pages");
+    expect(stageLine("awaiting_plan_review", [], 1)).toBe("The plan is ready: 1 page");
   });
   it("marks the PDF page count in the meta line", () => {
     const b: any = { page_count: 22, section_count: 4, word_count: 4775 };

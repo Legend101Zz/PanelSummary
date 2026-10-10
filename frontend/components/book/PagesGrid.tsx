@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { loadPage, type EditionDetail, type EditionPageSummary } from "@/lib/api";
 import { useNearViewport } from "@/lib/hooks";
 import { SvgPage } from "@/components/SvgPage";
-import { Button, PageFrame, Switch } from "@/components/ui";
+import { Button, PageFrame, Skeleton, Switch } from "@/components/ui";
 import { groupBySection, mangaRanges, pagesSummary, pdfRange } from "./bookLogic";
 import styles from "./Book.module.css";
 
@@ -34,12 +34,16 @@ function PageCell({ bookId, editionId, page }: { bookId: string; editionId: stri
   const n = page.page_number;
   const drawn = page.status === "accepted";
   const failed = page.status === "failed";
-  const state = drawn ? (svg ? "drawn" : "waiting") : failed ? "failed" : page.status === "drawing" ? "drawing" : "waiting";
-  const frame = (
-    <PageFrame state={state} variant="thumbnail">
-      {drawn && svg ? <SvgPage svg={svg} decorative /> : null}
-    </PageFrame>
-  );
+  const state = drawn ? "drawn" : failed ? "failed" : page.status === "drawing" ? "drawing" : "waiting";
+  // An accepted page whose SVG has not loaded yet is a neutral loading tile, never the screentone of a waiting page.
+  const frame =
+    drawn && !svg ? (
+      <Skeleton shape="cover" />
+    ) : (
+      <PageFrame state={state} variant="thumbnail">
+        {drawn && svg ? <SvgPage svg={svg} decorative /> : null}
+      </PageFrame>
+    );
   const word = drawn ? "" : failed ? ", could not be drawn" : page.status === "drawing" ? ", drawing" : ", waiting";
   return (
     <li ref={ref} className={styles.cell}>
@@ -78,12 +82,15 @@ function BeatRow({
   const n = page.page_number;
   const drawn = page.status === "accepted";
   const failed = page.status === "failed";
-  const state = drawn ? (svg ? "drawn" : "waiting") : failed ? "failed" : page.status === "drawing" ? "drawing" : "waiting";
-  const thumb = (
-    <PageFrame state={state} variant="thumbnail">
-      {drawn && svg ? <SvgPage svg={svg} decorative /> : null}
-    </PageFrame>
-  );
+  const state = drawn ? "drawn" : failed ? "failed" : page.status === "drawing" ? "drawing" : "waiting";
+  const thumb =
+    drawn && !svg ? (
+      <Skeleton shape="cover" />
+    ) : (
+      <PageFrame state={state} variant="thumbnail">
+        {drawn && svg ? <SvgPage svg={svg} decorative /> : null}
+      </PageFrame>
+    );
   return (
     <li ref={ref} className={styles.beatRow}>
       <div className={styles.beatThumb}>
