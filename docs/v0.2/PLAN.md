@@ -139,11 +139,21 @@ no criterion more than 0.2 below v0.1; zero image-model egress; every failure vi
 Live runs go to GitHub Actions (`gh workflow run live-journey.yml --ref <branch> -f book=<book>`), one at a time.
 The cost is the run's own estimate at MiniMax-M3 rates (`totals.cost_usd`), not a bill.
 
-| # | When | Branch and commit | Book | Pages | Estimated cost | Result |
-|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — |
+| # | Started (UTC) | Run | Branch @ commit | Book | Purpose | Pages and time | Estimated cost | Result |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 2026-10-10 14:18 | 38059054224 | release/v0.2 @ 3aaf6cb | happy-prince-two-tales | early Q2 check (G0+Q2a+Q2b, no Q1; renderer 0.5.0) | 21/21, 0 failed; first page 211 s, all 516 s; 23 calls | $0.75 | journey PASSED; egress api.minimax.io only; coverage 59/66 conveyed, 7 omitted, 0 lost |
+| 2 | 2026-10-10 14:58 | 38061258863 | release/v0.2 @ d373d8f | happy-prince-two-tales | GATE 1 (Q1 renderer 0.6.0 + Q2a + Q2b + G0) | 22/22, 0 failed; first page 187 s, all 447 s; 24 calls | $0.69 | journey PASSED; egress api.minimax.io only; coverage 54/57 conveyed, 3 omitted, 0 lost |
+| 3 | 2026-10-10 14:52 (queued) | 38061300872 | release/v0.2 @ d373d8f | happy-prince-and-other-tales (68 pp) | GATE 2 acceptance book (same code as Gate 1) | 60/61, 1 failed (p42, submit limit); first page 292 s, all 882 s; 64 calls | $1.88 | journey PASSED; egress api.minimax.io only; coverage 126/138 conveyed, 7 omitted, 3 lost (k97,k98 core not conveyed, accounted) |
+| 4 | 2026-10-10 15:43 | 38064770960 | release/v0.2 @ dcd9d9c | self-reliance (hold-out, nonfiction) | #50 hold-out run 1 | 38/38, 0 failed; first page 188 s, all 534 s; 40 calls | $0.86 | journey PASSED (new UI) |
+| - | 2026-10-10 15:43 | 38064776577 | release/v0.2 @ dcd9d9c | just-so-three-tales | #50 hold-out | 0 | $0 | CANCELLED by GitHub concurrency (a newer queued run replaces a pending one); not run |
+| 5 | 2026-10-10 15:43 (queued) | 38064781814 | release/v0.2 @ dcd9d9c | civil-disobedience (nonfiction) | nonfiction | 36/36, 0 failed; first page 149 s, all 491 s; 38 calls | $0.81 | journey PASSED (new UI) |
+| 6 | 2026-10-10 16:13 | 38066788100 | release/v0.2 @ dcd9d9c | just-so-three-tales (hold-out, fiction) | #50 hold-out run 1 | 34/34, 0 failed; first page 189 s, all 550 s; 36 calls | $0.99 | journey PASSED (new UI) |
+| 7 | 2026-10-10 ~16:50 | local (headed Chrome) | release/v0.2 @ a5b4a5c | just-so-three-tales (hold-out, fiction) | FINAL JOURNEY (fresh DB v02_final_1, new UI, real worker) | 35/35, 0 failed; first page 131 s, page 1 ~135 s, all 464 s; 37 calls | $0.99 | 4 journey questions PASS; egress api.minimax.io only; browser hosts 127.0.0.1 only |
+| 8 | 2026-10-10 17:07 | 38070441034 | release/v0.2 @ a5b4a5c | self-reliance (hold-out, nonfiction) | #50 hold-out run 2 | 36/36, 0 failed; first page 131 s, all 401 s; 38 calls | $0.83 | journey PASSED (new UI) |
+| 9 | 2026-10-10 17:16 | local (v0.1.0 worktree) | tag v0.1.0 @ ae959fa | just-so-three-tales (hold-out, fiction) | CONTROLLED v0.1 BASELINE on the hold-out | 30/30, 0 failed; first page 121 s, all 427 s; 33 calls (1 failed) | $0.80 | journey PASSED (v0.1 UI) |
+| 10 | 2026-10-10 ~18:25 | local (headed Chrome) | release/v0.2 @ 3113fc3 (release head) | just-so-three-tales (hold-out, fiction) | FINAL JOURNEY 2 on the release head (fresh DB v02_final_2, real worker) | 29/29, 0 failed; first page 104 s, page 1 120 s, all 367 s; 31 calls | $0.80 | 4 journey questions PASS; truth 14/14 OK; egress api.minimax.io only; browser hosts 127.0.0.1 only |
 
-Running total: $0.00 of $50.
+Running total: $9.40 of $50 (10 paid runs: 7 in the live lane, 3 local: two v0.2 final journeys and the v0.1.0 hold-out baseline). All costs are estimates at MiniMax-M3 rates, not a bill.
 
 ## 7. Cut list (drop in this order if the build is late)
 
@@ -165,3 +175,13 @@ The final journey and honest reporting are never cut.
 | 2026-10-10 13:10 | `release/v0.2` made from `main` (`ae959fa`, `v0.1.0`). |
 | 2026-10-10 13:23 | CI red on the planted error (run 38055517882, PR #55), then green after the revert. |
 | 2026-10-10 13:30 | Phase 0 baseline: all offline checks green on `main`; 32 v0.1 screenshots; impeccable 0 findings on v0.1. |
+| 2026-10-10 13:40–14:20 | Merged #55, #58, #56, #57 (Phase 0, #48). Tracks U0, S1, Q1, Q2a, Q2b started. |
+| 2026-10-10 14:20–15:00 | Merged #61 (Q2b), #60 (S1), #63 (U0), #62 (Q2a), #64 (U3), #66 (S2), #65 (Q1). Live run 1 (Q2 only) and Gate 1 run. |
+| 2026-10-10 15:00–15:45 | Gate 1 quality PASS. Merged #68 (F1 replay worker), #69 (hold-out books), #67 (U1), #70 (U2). Gate 2 run: PASS. |
+| 2026-10-10 15:45–17:00 | Gate 1 UI review (journey 61/61 offline); fix wave #71, #72, #73. Hold-out runs. Final journey on `a5b4a5c`: 4 of 4 PASS. |
+| 2026-10-10 17:00–18:40 | v0.1.0 baseline run on the fiction hold-out; #74 (docs, README verified on a clean clone), #75, #76. Final journey 2 on the release head `3113fc3`: 4 of 4 PASS. |
+
+## 9. Outcome
+
+The gate results and their evidence are in `docs/v0.2/GATES.md`. The release notes are in
+`docs/launch/RELEASE-NOTES-v0.2.0.md`. Work moved to v0.3 is in the issues with the label `v0.3`.

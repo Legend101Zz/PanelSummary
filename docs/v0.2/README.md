@@ -7,7 +7,8 @@ built, how it verified it and what stays open. The design is in `docs/design/` (
 
 | File | What it is |
 |---|---|
-| `PLAN.md` | The v0.2 build plan: owner decisions, tracks, owned paths, contracts and gates. |
+| `PLAN.md` | The v0.2 build plan: owner decisions, tracks, owned paths, contracts and gates, the live-run ledger and the status log. |
+| `GATES.md` | The gate results (CI, UI, quality, hold-out books, the final journey, spend) and where the evidence is. |
 | `API-GAPS.md` | The API that the new screens need and what the backend lacked. |
 | `S1-backend.md` | Track S1: scope (sections or a PDF page range), plan review (D24), `GET /status` (D25), timings. |
 | `S2-sample-and-fixtures.md` | Track S2: the built-in Andersen sample (D27), `GET/POST /samples`, and the state seeder. |
