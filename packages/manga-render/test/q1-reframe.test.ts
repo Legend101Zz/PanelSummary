@@ -20,7 +20,8 @@ describe("camera push-in and speakers in frame (#42)", () => {
     expect(SUBJECT_MAX_PUSH).toBeLessThanOrEqual(3);
   });
   const all = PAGES.map((p) => ({ p, r: render(p) }));
-  it("over the 46 run-8 pages: rendering is deterministic and raises no new error", () => {
+  // Rendering 12 pages again takes about 5 s on a CI runner, over the 5 s default.
+  it("over the first 12 run-8 pages: rendering is deterministic and raises no new error", { timeout: 30_000 }, () => {
     for (const { p, r } of all.slice(0, 12)) {
       expect(render(p).result.svg).toBe(r.result.svg);
       expect(r.result.issues.filter((i) => i.severity === "error").map((i) => i.code)).not.toContain("SPEAKER_TOO_SMALL");
