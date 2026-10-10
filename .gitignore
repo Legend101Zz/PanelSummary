@@ -36,3 +36,6 @@ storage/
 
 # Local dev runtime (pids, logs, service tokens)
 .dev/
+
+# impeccable skill (third-party text, local tool)
+.claude/skills/impeccable/
