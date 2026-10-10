@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.7.0
+version: 1.8.0
 ---
 
 # Book understanding
@@ -21,7 +21,7 @@ recoverable from your descriptions.
   "logline": "one or two sentences: what the book is and why it matters",
   "sections": [{ "id": "s1", "title": "…", "summary": "2-4 sentences", "units": ["s1u1", "s1u2"] }],
   "cast": [{ "id": "c_swallow", "name": "The Swallow", "role": "…", "description": "…", "look": { "kind": "bird", "species": "swallow", "tone": "dark" }, "sections": ["s1"] }],
-  "locations": [{ "id": "l_square", "name": "…", "environment": "city_square", "features": ["statue_column"], "description": "…" }],
+  "locations": [{ "id": "l_square", "name": "…", "environment": "city_square", "features": ["statue_column"], "units": ["s1u1", "s1u2"], "description": "…" }],
   "claims": [{ "id": "k1", "section_id": "s1", "kind": "event", "importance": "core", "text": "…", "source": [{ "unit": "s1u1", "page": 3 }] }],
   "themes": ["…"]
 }
@@ -171,6 +171,16 @@ giant's garden, bars for a jail).
   a house by the fire, a professor's doorway) and the waterside where a scene opens.
   Never reuse an unrelated location because it is close enough: a scene set by the river
   must not be drawn in the city square.
+- **Places per unit.** `units` lists every source unit in which the story is at that place
+  (a place used in two units lists both; a unit may list several places). Every unit where
+  the story is somewhere needs a place. A courtyard below a balcony, a palace door and a
+  throne hall are three places. The plan puts a page in a place only when the page's units
+  are in that place's `units`.
+- **Map by where the people stand.** A door, gate or threshold seen from outside is an
+  outdoor place (`street`, `city_square`, `garden`, `country_road`) with feature `door` or
+  `gate`. `palace_hall` is an interior: the judges saw it drawn as a throne hall with a
+  checkered floor, never as a door. A figure "against the wall" needs a place with
+  `high_wall`.
 - **Merge, don't multiply.** Two mentions of the same place are one location. A place seen
   only in a sentence of narration does not need an entry.
 
@@ -185,7 +195,7 @@ giant's garden, bars for a jail).
 - Every claim has at least one source ref; pages inside the unit's range.
 - Every `quote` claim is 25 words or fewer and attributed to the right speaker.
 - Cast looks are complete and distinct; every non-human's `description` gives its size
-  relative to people. Staging features are present on locations.
+  relative to people. Staging features are present on locations, and every location has `units`.
 - No invented cast other than at most one labelled adaptation device (nonfiction).
 - Every speaking or acting character in every section is in the cast, including
   personified forces (as `spirit`). Re-read each section and check. Anyone the book gives

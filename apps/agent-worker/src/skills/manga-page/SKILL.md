@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.8.0
+version: 1.9.0
 ---
 
 # Manga page
@@ -176,9 +176,13 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **A line the book gives to a character is `speech` from that character**, never a narration
   or caption box (SPEECH_IN_NARRATION). Narration is the narrator's voice only.
 - **Ask before answer**: letter the book's lines in the book's order across the panels.
+- **A cast entry with `"minor": true`** is a bit player the cast lacks (the child, one of the
+  workmen), added by the goal. Draw it by its id and give it its line. It has a plain look and
+  no state. Do not borrow another character's figure for it.
 - **Never give a line to a character who is absent, asleep or dead** in this page's source
   units. Draw only the planned cast, and set panels only in the planned locations (a
-  flashback is the exception). (LOCATION_OFF_PLAN.)
+  flashback is the exception). (LOCATION_OFF_PLAN.) A location that lists `units` is used
+  only in those units: put a panel there only when this page's text is in one of them.
 - `speech` for normal lines. `thought` for inner voice. `whisper` for secrets. `shout` for
   raised voices: 8 words or fewer, and rare. `sfx` for sounds: 1-3 punchy words ("FLAP",
   "CRACK", "DRIP"), only for sounds the scene makes, in panels where something happens.
@@ -218,6 +222,12 @@ from an earlier page's picture.
 
 Variant fields: `eyes` (`open`, `closed`, `blind`, `dead`), `material` (a gilded statue stripped of
 its gold is `stone`), `outfit_tone`, `hair_tone`, `tone`. FIGURE_STATE_MISMATCH is an error.
+
+**Afterlife, dream, memory.** When a panel shows what is not the story's present (the dead
+Swallow alive in paradise, the grandmother in the match-girl's vision, a dream), set
+`"vision": "afterlife"`, `"dream"` or `"memory"` on that panel only. Its figures are not held to
+`expected_looks`; letter a caption that says what the reader sees. A flashback to an earlier
+time still uses fx `flashback`. Never use `vision` to avoid a continuity error in the present.
 
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a

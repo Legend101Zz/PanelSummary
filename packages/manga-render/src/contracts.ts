@@ -499,6 +499,15 @@ export const FX = [
 ] as const;
 export type FxId = (typeof FX)[number];
 
+/**
+ * A panel that shows what is not the story's present: the afterlife, a dream or a
+ * memory. Characters there may look different from their present state (a dead
+ * character alive in paradise), so the continuity check skips the panel. The
+ * renderer does not read this field: the SVG output does not change.
+ */
+export const VISIONS = ["afterlife", "dream", "memory"] as const;
+export type Vision = (typeof VISIONS)[number];
+
 // ---------------------------------------------------------------------------
 // Layout
 // ---------------------------------------------------------------------------
@@ -622,6 +631,8 @@ export interface PanelSpec {
   figures: FigureSpec[];
   props: PropSpec[];
   fx: FxId[];
+  /** Set when the panel shows the afterlife, a dream or a memory (see VISIONS). */
+  vision?: Vision;
   text: TextSpec[];
   source: SourceRef[];
 }
