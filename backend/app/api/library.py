@@ -34,6 +34,8 @@ async def get_book_or_404(book_id: str) -> LibraryBook:
 
 
 def book_view(book: LibraryBook) -> dict:
+    from app.samples import sample_hashes  # local import: keeps this file's import block free of merge conflicts
+
     return {
         "id": str(book.id),
         "title": book.title,
@@ -46,6 +48,7 @@ def book_view(book: LibraryBook) -> dict:
         "parser": book.parser,
         "parse_job_id": book.parse_job_id,
         "created_at": book.created_at.isoformat(),
+        "is_sample": book.pdf_hash in sample_hashes(),
     }
 
 

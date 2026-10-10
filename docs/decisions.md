@@ -178,6 +178,12 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: Seven of the nine W2 codes rested on 1 to 5 flagged pages. The 319 pages of 12 saved runs, joined with the judges' defects, give the numbers. The tables and the limits of the data (one book supplies 301 pages; the kind patterns are loose) are in `docs/v0.2/Q2a-writer-checks.md`.
 - Status: accepted for the next live run. `manga-page` skill 1.10.0 records the new class list. The effect on the judged rates is a prediction until the orchestrator verifies it with a live run and a judge panel.
 
+### D27. Built-in sample edition (2026-10-10)
+- Statement: The repository ships one finished edition as a sample: "Four Tales by Hans Christian Andersen", 18 manga pages, in `backend/samples/andersen/`. `GET /samples` lists it. `POST /samples/andersen` installs it into the database (safe to repeat) and returns `{book_id, edition_id}`. The book view and the shelf carry `is_sample`.
+- Statement: The sample is the real v0.1 final-journey run, exported unchanged except for the machine path of the PDF. Its numbers (20 model calls, $0.460227, 54 key points, the timings, the policy) are the measured values of that run. It is not drawn again, and installing it calls no worker and spends nothing.
+- Why: A first-time user can read a finished manga before they spend anything, and every screen of the book page and the reader can be shown with real data. The text is public domain (Project Gutenberg eBook #1597).
+- Status: accepted (owner decision, 2026-10-10). The sample keeps the v0.1 policy and the v0.1 renderer output (`manga-render/0.5.0`). It does not follow later model or renderer changes.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

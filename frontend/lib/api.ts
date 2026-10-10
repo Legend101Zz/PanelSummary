@@ -480,3 +480,31 @@ export async function getStatus(): Promise<ServerStatus | null> {
     return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Samples (S2). A sample is a finished edition from a real run, stored in the repository.
+// Installing it makes no model call and spends nothing.
+// ---------------------------------------------------------------------------
+
+// Declaration merging: the book and shelf views carry is_sample (true for the built-in sample books).
+export interface Book {
+  is_sample?: boolean;
+}
+
+export interface SampleInfo {
+  id: string;
+  title: string;
+  installed: boolean;
+  /** Set when installed. */
+  book_id?: string;
+  edition_id?: string;
+}
+
+export interface SampleInstall {
+  book_id: string;
+  edition_id: string;
+}
+
+export const listSamples = () => request<SampleInfo[]>("/samples");
+/** Install a sample (safe to repeat). Then open `/books/${book_id}`. */
+export const installSample = (id: string) => post<SampleInstall>(`/samples/${encodeURIComponent(id)}`);
