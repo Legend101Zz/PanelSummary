@@ -9,8 +9,8 @@ public. Every fact here comes from `ci.yml` and `live-journey.yml` at the commit
 
 | When | Rule |
 |---|---|
-| Pull request | Into `release/v0.1` or `main` |
-| Push | To `release/v0.1` |
+| Pull request | Into `release/v0.1`, `release/v0.2` or `main` |
+| Push | To `release/v0.1` or `release/v0.2` |
 | Manual | `workflow_dispatch` (works only after the file is on the default branch, see below) |
 
 A new push to the same pull request or branch cancels the run that is still going. Every job has
@@ -30,25 +30,24 @@ The live lane runs the full journey (upload, Generate, read) against a real Mini
 comment in the file puts the cost at about 1 USD for the 26-page book. The orchestrator or the
 owner starts it. Do not start it to test a documentation change.
 
-### Three ways to start a run
+### Two ways to start a run
 
-1. **`workflow_dispatch`.** GitHub lets you start a workflow by hand only when the workflow file
-   is on the default branch (`main`). Until then the Actions page shows no "Run workflow"
-   button for it. The inputs (book, and a model and thinking level per goal) replace the values
-   in the JSON file. An empty input keeps the file value.
-2. **Push a branch named `live/<name>`.** The workflow runs from that branch. It reads the models
-   from `scripts/acceptance/live-config.json` in the pushed commit. This is the way to run
-   before the file reaches `main`.
+Each run spends money. Each explicit request starts exactly one run (#47). A push does not start a run.
+
+1. **`workflow_dispatch`.** The workflow file is on `main`, so the Actions page shows "Run workflow".
+   From the terminal, choose the branch with `--ref`. The workflow file and
+   `scripts/acceptance/live-config.json` come from that branch. The inputs (book, and a model and
+   thinking level per goal) replace the values in the JSON file. An empty input keeps the file value.
    ```sh
-   git switch -c live/flash-ab
-   # edit scripts/acceptance/live-config.json (models per goal), then:
-   git commit -m "live: flash A/B" -- scripts/acceptance/live-config.json
-   git push -u origin live/flash-ab
+   gh workflow run live-journey.yml --ref release/v0.2 -f book=happy-prince-two-tales
    ```
-3. **The `run-live` label on a pull request.** The pull request head must be in this repository
-   (a fork never runs). The workflow reads `live-config.json` from the pull request head. The
-   workflow also runs again on every new push to a pull request that has the label (the
-   `synchronize` event). Each run spends money. Remove the label to stop it.
+2. **The `run-live` label on a pull request.** The pull request head must be in this repository
+   (a fork never runs). The workflow reads `live-config.json` from the pull request head. Only the
+   act of adding the label starts a run. A new push to the pull request does not start a run. To
+   run again on a new head, remove the label and add it again.
+
+v0.1 also started a run on each push to a `live/**` branch and on each push to a labelled pull
+request. v0.2 removed these two triggers (#47).
 
 ### What `live-config.json` holds
 

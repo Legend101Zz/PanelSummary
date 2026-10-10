@@ -2,9 +2,9 @@ name: ci
 
 on:
   pull_request:
-    branches: [release/v0.1, main]
+    branches: [release/v0.1, release/v0.2, main]
   push:
-    branches: [release/v0.1]
+    branches: [release/v0.1, release/v0.2]
   workflow_dispatch:
 
 permissions:
@@ -85,6 +85,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
+      - name: Unit tests (shared copy, words.test.ts)
+        run: npm test
       - name: Build
         run: npm run build
         env:
