@@ -1,0 +1,8 @@
+.main { max-width: var(--app-max); margin: 0 auto; padding: 8px var(--app-gutter) 72px; box-sizing: border-box; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 520px); gap: clamp(32px, 6vw, 88px); align-items: start; margin-top: 24px; }
+.copy { display: flex; flex-direction: column; gap: 14px; max-width: 34em; }
+.h1 { margin: 0; font-size: 46px; line-height: 1.1; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.lede { margin: 0; font-size: 18px; line-height: 1.5; }
+.note { margin: 0; font-size: 16px; color: var(--app-text-2); }
+@media (max-width: 899px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
+@media (max-width: 767px) { .main { padding-bottom: 56px; } .h1 { font-size: 36px; } }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
 import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus, stageLine } from "./words";
+import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
   it("shows completed_with_failures in the red tone", () => {
@@ -49,5 +50,51 @@ describe("words", () => {
   });
   it("joins message and blocking reasons with punctuation", () => {
     expect(detailText({ message: "Book too long", blocking_reasons: ["Too many words (50,000)."] })).toBe("Book too long. Too many words (50,000).");
+  });
+});
+
+describe("U1 copy", () => {
+  it("shows every limit before the upload (#49)", () => {
+    expect(limitItems(FALLBACK_LIMITS)).toEqual(["Selectable text, not a scan", "In English", "Up to 60 MB", "Up to 75 PDF pages", "Up to 17,500 words"]);
+    expect(limitsSentence(FALLBACK_LIMITS)).toBe("A PDF with selectable text, in English, up to 60 MB, 75 PDF pages and 17,500 words.");
+    expect(limitItems({ max_pdf_size_mb: 10, max_pdf_pages: 5, max_source_words: 1000 })[2]).toBe("Up to 10 MB");
+  });
+  it("says sections, not chapters, on Add a book", () => {
+    expect(addBookLede(60)).toBe("Choose a PDF with selectable text, up to 60 MB. It is uploaded to your PanelSummary server, which reads its text and finds its sections.");
+  });
+  it("words the upload errors with a next step", () => {
+    expect(notPdfText("notes.txt")).toBe("notes.txt is not a PDF. Choose a .pdf file.");
+    expect(tooLargeText("big.pdf", 72 * 1048576, 60)).toBe("big.pdf is 72 MB. The limit is 60 MB.");
+    expect(withNextStep("The PDF has no extractable text.")).toBe("The PDF has no extractable text. Use a PDF with selectable text.");
+    expect(withNextStep("The PDF has no extractable body text")).toBe("The PDF has no extractable body text. Use a PDF with selectable text.");
+    expect(withNextStep("FileDataError: Failed to open stream")).toBe("The PDF could not be read. The file may be damaged. Choose another PDF.");
+    expect(withNextStep("That file is not a PDF")).toBe("That file is not a PDF");
+  });
+  it("turns the parse message into plain words", () => {
+    expect(readSummary("Parsed 22 pages into 4 sections and 10 source units")).toBe("Read 22 PDF pages and found 4 sections.");
+    expect(readSummary("Parsed 1 page into 1 section and 2 source units")).toBe("Read 1 PDF page and found 1 section.");
+    expect(readSummary("Something else")).toBe("Something else");
+  });
+  it("writes the sample run from real fields, with the first page of any number when page_1_at is absent", () => {
+    const edition = {
+      page_total: 18,
+      pages_accepted: 18,
+      created_at: "2026-10-09T10:07:38.810000+00:00",
+      finished_at: "2026-10-09T10:14:46.695000+00:00",
+      active_seconds: null,
+      totals: { cost_usd: 0.460227 },
+      timings: { generate_started_at: "2026-10-09T10:07:39.478000+00:00", first_page_at: "2026-10-09T10:11:26.164000+00:00" },
+    };
+    const pre: any = { estimated_manga_pages: { low: 11, high: 18 }, estimated_minutes: { first_page: { low: 2, high: 31 }, total: { low: 5, high: 58 } }, estimated_cost_usd: { low: 0.33, high: 0.75 } };
+    const f = sampleRunFacts(edition, pre);
+    expect(sampleEstimateSentence(f)).toBe("Before the run, the estimate was 11 to 18 manga pages, page 1 in 2 to 31 min, all pages in 5 to 58 min and $0.33 to $0.75.");
+    expect(sampleRealSentence(f)).toBe("The real run made 18 pages: the first page drawn after 3 min 47 s, all pages after 7 min 08 s and an estimated $0.46 (not a bill).");
+    const withPage1 = sampleRunFacts({ ...edition, timings: { ...edition.timings, page_1_at: "2026-10-09T10:11:37.478000+00:00" } }, null);
+    expect(sampleRealSentence(withPage1)).toContain("page 1 after 3 min 58 s");
+    expect(sampleEstimateSentence(withPage1)).toBeNull();
+    expect(sampleLandingSentence("Four Tales", 4, 22, f)).toBe("Four Tales: 4 sections, 22 PDF pages, 18 manga pages, drawn in 7 min 08 s. The estimate before the run was 5 to 58 min.");
+  });
+  it("words the limits of Settings", () => {
+    expect(limitsSettingsLine({ ...FALLBACK_LIMITS, page_attempts: 2, page_concurrency: 4 })).toBe("A book can be up to 60 MB, 75 PDF pages and 17,500 words. A page gets 2 tries, and 4 pages are drawn at the same time.");
   });
 });

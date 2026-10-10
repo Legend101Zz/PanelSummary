@@ -268,3 +268,153 @@ export function splitCostBasis(basis: string | null | undefined): { basis: strin
   if (at < 0) return { basis: text.replace(/\.*$/, ""), modelNote: null };
   return { basis: text.slice(0, at).trim().replace(/\.*$/, ""), modelNote: text.slice(at).trim() };
 }
+
+// ---------------------------------------------------------------------------
+// U1 screens: shelf, first run, Add a book, landing, Settings, PDF viewer.
+// Copy marked [suggested] in docs/design/SCREENS-AND-STATES.md is listed in docs/v0.2/U1-screens.md.
+// ---------------------------------------------------------------------------
+
+export interface LimitValues {
+  max_pdf_size_mb: number;
+  max_pdf_pages: number;
+  max_source_words: number;
+}
+
+/** The D19 limits. The screens show the values of GET /status and use these when the server cannot say. */
+export const FALLBACK_LIMITS: LimitValues = { max_pdf_size_mb: 60, max_pdf_pages: 75, max_source_words: 17500 };
+
+/** The facts a PDF must meet, in the order of the design. */
+export function limitItems(limits: LimitValues = FALLBACK_LIMITS): string[] {
+  return [
+    "Selectable text, not a scan",
+    "In English",
+    `Up to ${limits.max_pdf_size_mb} MB`,
+    `Up to ${limits.max_pdf_pages} PDF pages`,
+    `Up to ${limits.max_source_words.toLocaleString("en-US")} words`,
+  ];
+}
+
+/** The same limits as one sentence (Add a book, Settings). */
+export function limitsSentence(limits: LimitValues = FALLBACK_LIMITS): string {
+  return `A PDF with selectable text, in English, up to ${limits.max_pdf_size_mb} MB, ${limits.max_pdf_pages} PDF pages and ${limits.max_source_words.toLocaleString("en-US")} words.`;
+}
+
+export const SHELF_LEDE = "Books you have added, and the manga drawn from them.";
+export const SHELF_LOAD_ERROR = "The shelf could not be loaded.";
+export const FIRST_RUN_LEDE = "Nothing is on the shelf yet. Add a book as a PDF with selectable text. PanelSummary reads its sections, and you choose when to draw it as manga.";
+
+export function addBookLede(maxMb: number): string {
+  return `Choose a PDF with selectable text, up to ${maxMb} MB. It is uploaded to your PanelSummary server, which reads its text and finds its sections.`;
+}
+export const ADD_BOOK_NOTE = "Nothing is drawn yet. You start the manga from the book's page when you are ready.";
+
+export const OFFLINE_SENTENCE = "Can't reach the PanelSummary server. Check that it is running (./start.sh).";
+
+export function notPdfText(name: string): string {
+  return `${name} is not a PDF. Choose a .pdf file.`;
+}
+export function tooLargeText(name: string, bytes: number, maxMb: number): string {
+  return `${name} is ${Math.ceil(bytes / 1048576)} MB. The limit is ${maxMb} MB.`;
+}
+
+/** Adds the next step to a server error when the problem is a PDF with no text. */
+export function withNextStep(message: string): string {
+  // a damaged file: the parser's own error text is not for a reader
+  if (/FileDataError|Failed to open stream|broken document|cannot open/i.test(message)) return "The PDF could not be read. The file may be damaged. Choose another PDF.";
+  if (/no extractable/i.test(message) && !/selectable text/i.test(message)) return `${message.replace(/\.*$/, ".")} Use a PDF with selectable text.`;
+  return message;
+}
+
+/** "Parsed 22 pages into 4 sections and 10 source units" becomes "Read 22 PDF pages and found 4 sections." */
+export function readSummary(jobMessage: string | null | undefined): string {
+  const m = /(\d[\d,]*)\s+pages?\s+into\s+(\d[\d,]*)\s+sections?/i.exec(jobMessage ?? "");
+  if (!m) return (jobMessage ?? "").trim() || "The PDF is read.";
+  const pages = Number(m[1].replace(/,/g, ""));
+  const sections = Number(m[2].replace(/,/g, ""));
+  return `Read ${plural(pages, "PDF page")} and found ${plural(sections, "section")}.`;
+}
+
+export const UPLOAD_SLOW_TEXT = "Still waiting. The PDF is read by the PanelSummary job runner; check that it is running.";
+
+export interface SampleRunFacts {
+  pages: number;
+  firstPageSeconds: number | null;
+  /** True when the first value is page 1 itself (timings.page_1_at). Older runs only know the first page of any number. */
+  firstIsPage1: boolean;
+  totalSeconds: number | null;
+  costUsd: number | null;
+  estimate: { pages: Range; firstPageMin: Range; totalMin: Range; costUsd: Range } | null;
+}
+
+/** Real numbers of the sample edition. Nothing here is typed in: every value comes from the edition and its preflight. */
+export function sampleRunFacts(
+  edition: { page_total: number; pages_accepted: number; created_at: string; finished_at: string | null; active_seconds?: number | null; totals?: { cost_usd: number }; timings?: { generate_started_at?: string; first_page_at?: string; page_1_at?: string } },
+  preflight: Preflight | null,
+): SampleRunFacts {
+  const start = Date.parse(edition.timings?.generate_started_at ?? edition.created_at);
+  const first = edition.timings?.page_1_at ?? edition.timings?.first_page_at;
+  const firstMs = first ? Date.parse(first) - start : NaN;
+  const totalFromDates = edition.finished_at ? (Date.parse(edition.finished_at) - Date.parse(edition.created_at)) / 1000 : NaN;
+  const total = edition.active_seconds ?? (Number.isFinite(totalFromDates) ? totalFromDates : null);
+  return {
+    pages: edition.pages_accepted || edition.page_total,
+    firstPageSeconds: Number.isFinite(firstMs) && firstMs >= 0 ? firstMs / 1000 : null,
+    firstIsPage1: !!edition.timings?.page_1_at,
+    totalSeconds: total,
+    costUsd: edition.totals?.cost_usd ?? null,
+    estimate: preflight
+      ? { pages: preflight.estimated_manga_pages, firstPageMin: preflight.estimated_minutes.first_page, totalMin: preflight.estimated_minutes.total, costUsd: preflight.estimated_cost_usd }
+      : null,
+  };
+}
+
+const money = (n: number) => `$${n.toFixed(2)}`;
+const minRange = (r: Range) => `${Math.max(1, Math.round(r.low))} to ${Math.max(1, Math.round(r.high))} min`;
+
+/** The estimate before the run and the real run, side by side (first run) or as one sentence (landing). */
+export function sampleEstimateSentence(f: SampleRunFacts): string | null {
+  if (!f.estimate) return null;
+  const e = f.estimate;
+  return `Before the run, the estimate was ${Math.round(e.pages.low)} to ${Math.round(e.pages.high)} manga pages, page 1 in ${minRange(e.firstPageMin)}, all pages in ${minRange(e.totalMin)} and ${money(e.costUsd.low)} to ${money(e.costUsd.high)}.`;
+}
+
+export function sampleRealSentence(f: SampleRunFacts): string {
+  const parts: string[] = [];
+  if (f.firstPageSeconds !== null) parts.push(f.firstIsPage1 ? `page 1 after ${formatElapsed(f.firstPageSeconds)}` : `the first page drawn after ${formatElapsed(f.firstPageSeconds)}`);
+  if (f.totalSeconds !== null) parts.push(`all pages after ${formatElapsed(f.totalSeconds)}`);
+  if (f.costUsd !== null) parts.push(`an estimated ${money(f.costUsd)} (not a bill)`);
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0] ?? "";
+  return `The real run made ${plural(f.pages, "page")}${list ? `: ${list}` : ""}.`;
+}
+
+/** The landing's sample sentence: "{title}: 4 tales ..." The tale count is the section count of the book. */
+export function sampleLandingSentence(title: string, sections: number, pdfPages: number, f: SampleRunFacts): string {
+  const drawn = f.totalSeconds !== null ? `, drawn in ${formatElapsed(f.totalSeconds)}` : "";
+  const est = f.estimate ? ` The estimate before the run was ${minRange(f.estimate.totalMin)}.` : "";
+  return `${title}: ${plural(sections, "section")}, ${plural(pdfPages, "PDF page")}, ${plural(f.pages, "manga page")}${drawn}.${est}`;
+}
+
+// Settings and about (design section 8). Copy marked [suggested] in the design.
+export const SETTINGS_LEDE = "How this copy of PanelSummary is set up. You can change the theme and the plan review here. The other settings are read-only in this version.";
+export const SETTINGS_SET_NOTE = "\"Set\" is the most the check can say: it cannot see if MiniMax accepts the key. A refused key shows during a run as \"MiniMax refused the key\".";
+export const SETTINGS_MODELS_NOTE =
+  "The server asks for no thinking on the plan and the pages, but the Flash model cannot turn thinking off, so it gets \"low\". A retry uses \"medium\". The owner can set any step to MiniMax-M3 with an environment setting. The app does not change models by itself. Each page gets a PNG preview of itself to check.";
+export const SETTINGS_LEAVES =
+  "The book text and a PNG preview of each drawn page go to MiniMax (api.minimax.io). In the final v0.1 test run, the drawing service contacted no other host. No image-generation model is used. In your browser, the app talks only to your own PanelSummary server.";
+export const SETTINGS_COST = "Costs are estimates at MiniMax-M3 rates, because MiniMax publishes no price for the M3.1 Flash model. They are not a bill.";
+export const SETTINGS_DATA = "On your computer, in MongoDB and the stored PDFs.";
+export const SETTINGS_VERSION = "PanelSummary v0.2. Version 0.1.0 was released on 9 October 2026.";
+export const SETTINGS_CREDITS =
+  "The interface is set in Bricolage Grotesque. The manga lettering uses Comic Neue for balloons and captions and Bangers for sound effects. Bricolage Grotesque, Comic Neue and Bangers are all under the SIL Open Font License. The sample texts are from Project Gutenberg.";
+export const REVIEW_PLAN_NOTE = "When this is on, PanelSummary shows the plan of the pages before it draws, and you press the button to start the drawing. It is off until you turn it on.";
+export const NOT_AVAILABLE = "Not available in this version";
+export const GITHUB_URL = "https://github.com/Legend101Zz/PanelSummary";
+
+export const STEP_NAMES: Record<string, string> = { understanding: "Book understanding", plan: "Page plan", pages: "Page drawing" };
+
+export function limitsSettingsLine(l: LimitValues & { page_attempts: number; page_concurrency: number }): string {
+  return `A book can be up to ${l.max_pdf_size_mb} MB, ${l.max_pdf_pages} PDF pages and ${l.max_source_words.toLocaleString("en-US")} words. A page gets ${l.page_attempts} tries, and ${l.page_concurrency} pages are drawn at the same time.`;
+}
+
+/** The tab title of the PDF viewer (as in v0.1). */
+export const pdfViewerTitle = (title: string | null | undefined, page: number) => (title ? `${title}, PDF page ${page}` : `PDF page ${page}`);
