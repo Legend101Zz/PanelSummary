@@ -97,3 +97,30 @@ Caveats: one run per cell; model output varies between runs (repro1 passed after
 fight, the production run did not). Flash at 14.6k output tokens gave 30 cast and 72 claims,
 the same size as M3; quality was not judged here. The Flash result is one pass, not proof that
 T0's 3-of-3 failures are gone. The default model is not changed by this track.
+
+## v0.2 (#48): the guard reads an appositive statue description
+
+Change: `statueReason` now also reads an appositive after the first comma of the role or
+description. The appositive must start with a, an or the, and its head noun must be statue,
+effigy, monument, carving or pedestal. At most three words may stand between the article and the
+noun, and none of them may be a preposition, a relative word, "and", "but", "or" or "as". So "A
+prince, a gilded statue of fine gold" and "The Happy Prince, a statue covered in gold leaf" now
+return a reason. "a prince who admires a statue", "a sculptor who carves a statue of the king",
+"stands beside the statue", "A sculptor, who carves a statue" and "A man, standing by a statue"
+stay silent. Tests: `apps/agent-worker/test/statue-guard.test.ts` (6 new tests, written first
+and seen failing).
+
+Calibration: the guard ran over all 20 saved `understanding.json` files under
+`Book-Reel-scratch/launch` (704 characters; many files are repeat runs of the same book).
+
+| Measure | Before | After |
+| --- | --- | --- |
+| Characters checked | 704 | 704 |
+| Characters with a statue reason | 19 | 19 |
+| New reasons | - | 0 |
+| Files with one reason (the Prince) | 19 of 20 | 19 of 20 |
+
+`final-journey` has no reason before or after. No new false positive on a real saved
+understanding, so the rule was not narrowed further. The real saved texts do not contain the
+appositive form, so the calibration shows no regression but does not show a catch. Only the unit
+tests show the catch.

@@ -71,6 +71,14 @@ export function headOf(text: string): string {
 }
 
 const STATUE_WORDS = /\b(statue|effigy|carving|carved figure|monument|gilded|pedestal|on a (tall )?column|on its column|bronze figure|stone figure)\b/;
+/**
+ * An appositive right after the first comma whose head noun is a statue word: "A prince, a
+ * gilded statue of fine gold", "The Happy Prince, a statue covered in gold leaf" (#48). The
+ * words between the article and the noun may not be a preposition, relative word or "and", so
+ * "a man, standing by a statue" and "a sculptor, who carves a statue" stay silent.
+ */
+const STATUE_APPOSITIVE = /^[^,;.]*,\s*(?:a|an|the)\s+(?:(?!(?:of|in|on|at|by|to|for|from|with|near|beside|under|who|whom|whose|which|that|and|but|or|as)\b)[\w'\u2019-]+\s+){0,3}(?:statue|effigy|monument|carving|pedestal)\b/;
+
 const PERSON_WORDS = /\b(prince|king|queen|man|woman|boy|girl|knight|saint|hero|person|lady|lord|soldier|angel|his|her)\b/;
 
 /**
@@ -90,6 +98,8 @@ export function statueReason(member: { name?: string; role?: string; description
   const whole = `${name} ${role} ${description}`;
   const wholeHead = `${name} ${headOf(role)} ${headOf(description)}`;
   const word = (re: RegExp, text: string) => text.match(re)?.[0];
+  const appositive = [role, description].find((text) => STATUE_APPOSITIVE.test(text));
+  if (appositive !== undefined && PERSON_WORDS.test(whole)) return `"${appositive.match(STATUE_APPOSITIVE)?.[0].replace(/^[^,]*,\s*/, "")}" as an appositive in its role or description`;
   if (STATUE_WORDS.test(wholeHead) && PERSON_WORDS.test(whole)) return `"${word(STATUE_WORDS, wholeHead)}" in its name, role or description`;
   if ((member?.look?.kind === "object" || member?.look?.kind === undefined) && STATUE_WORDS.test(whole) && PERSON_WORDS.test(whole)) return `"${word(STATUE_WORDS, whole)}" in its text while its look is "${member?.look?.kind}"`;
   return undefined;

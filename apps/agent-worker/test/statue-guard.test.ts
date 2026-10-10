@@ -125,3 +125,34 @@ describe("issueNote", () => {
     expect(note).toBe("FIELD_MISSING(c_bridge_boys.look),STATUE_NOT_HUMAN(c_a|c_b)");
   });
 });
+
+// #48: a statue word in an appositive after the first comma says what the character is.
+describe("statue guard: appositive statue description (#48)", () => {
+  const make = (role: string, description: string) => ({ id: "c_x", name: "Someone", role, description, look: flesh, sections: ["s1"] });
+  const reasonOf = (role: string, description: string) => statueReason(make(role, description));
+
+  it("flags an appositive statue in the description", () => {
+    expect(reasonOf("a prince", "A prince, a gilded statue of fine gold")).toBeDefined();
+  });
+  it("flags an appositive statue covered in gold leaf", () => {
+    expect(statueReason({ name: "The Happy Prince", role: "the town's ornament", description: "The Happy Prince, a statue covered in gold leaf", look: flesh })).toBeDefined();
+  });
+  it("flags the appositive when it is in the role", () => {
+    expect(reasonOf("A prince, a gilded statue of fine gold", "Stands over the city.")).toBeDefined();
+  });
+  it("makes lookSenseIssues return STATUE_NOT_HUMAN for the appositive form", () => {
+    const codes = lookSenseIssues({ sections, cast: [make("a prince", "A prince, a gilded statue of fine gold")] }).map((i) => i.code);
+    expect(codes).toContain("STATUE_NOT_HUMAN");
+  });
+  it("stays silent when a person only admires, carves or stands beside a statue", () => {
+    expect(reasonOf("a prince", "a prince who admires a statue")).toBeUndefined();
+    expect(reasonOf("a sculptor", "a sculptor who carves a statue of the king")).toBeUndefined();
+    expect(reasonOf("a man", "a man who stands beside the statue")).toBeUndefined();
+  });
+  it("stays silent for a comma followed by a clause or another noun", () => {
+    expect(reasonOf("a sculptor", "A sculptor, who carves a statue of the king")).toBeUndefined();
+    expect(reasonOf("a sculptor", "A sculptor, a man who carves a statue of the king")).toBeUndefined();
+    expect(reasonOf("a man", "A man, standing by a statue in the square")).toBeUndefined();
+    expect(reasonOf("a man", "A tired man, a guard at a statue in the square")).toBeUndefined();
+  });
+});
