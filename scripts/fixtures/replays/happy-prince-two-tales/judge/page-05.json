@@ -1,0 +1,584 @@
+{
+ "page_number": 5,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 5,
+  "section_id": "s1",
+  "beat": "The Prince shows the Swallow a poor house where a seamstress with needle-pricked red hands sews by an open window while her feverish little boy asks for oranges, and asks for the ruby from his sword-hilt; the Swallow objects that he is waited for in Egypt and that he dislikes boys, then agrees to stay one night as the Prince's messenger.",
+  "claims": [
+   "k13",
+   "k14",
+   "k15"
+  ],
+  "cast": [
+   "c_prince",
+   "c_swallow",
+   "c_seamstress",
+   "c_boy"
+  ],
+  "locations": [
+   "l_column_top",
+   "l_poor_house"
+  ],
+  "units": [
+   "s1u3"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k13",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince shows the Swallow a poor house where a seamstress with needle-pricked red hands sits sewing, and her little boy lies ill with a fever, asking for oranges.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k14",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince asks the Swallow to carry the ruby out of his sword-hilt to the thirsty boy and his sad mother.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k15",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow objects that he is waited for in Egypt and that he dislikes boys, but agrees to stay one night as the Prince's messenger.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 5,
+  "section_id": "s1",
+  "purpose": "The reader learns that the Prince sends the Swallow to a poor house where a sick boy asks for oranges, and that the Swallow agrees to be his messenger for one night.",
+  "layout": {
+   "template": "establish_6"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The statue on his column above the dark city, the swallow at his feet.",
+    "shot": "wide",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "tired",
+      "facing": "front",
+      "slot": "center_right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The top of the column, night",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "A dim little room: one open window, a woman sewing at a table, a bed in the corner.",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_poor_house",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_seamstress",
+      "pose": "sit",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_boy",
+      "pose": "lie",
+      "expression": "pain",
+      "facing": "left",
+      "slot": "right",
+      "depth": "back",
+      "on": {
+       "target": "bed"
+      }
+     }
+    ],
+    "props": [
+     {
+      "prop": "needle",
+      "tone": "light",
+      "slot": "center_left"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "A poor house, far away",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The seamstress bends over her embroidery, her coarse hands red and pricked.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_poor_house",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_seamstress",
+      "pose": "sit",
+      "expression": "tired",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "needle",
+      "tone": "light",
+      "slot": "center_left"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_seamstress",
+      "text": "The Seamstress",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Coarse, red hands, all pricked by the needle.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "In the corner bed the little boy tosses, feverish, asking for oranges.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_poor_house",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_boy",
+      "pose": "lie",
+      "expression": "cry",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid",
+      "on": {
+       "target": "bed"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sweat_drop"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_boy",
+      "text": "Her little boy, ill",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_boy",
+      "text": "Mummy... I want an orange.",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Back on the column, the Prince asks for the ruby; the Swallow objects.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "point",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "worried",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Will you not bring her the ruby out of my sword-hilt?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "I am waited for in Egypt.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 6
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 6
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The Swallow softens and promises to stay one night as the Prince's messenger.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "gentle",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "I will stay with you for one night, and be your messenger.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u3",
+       "page": 7
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u3",
+      "page": 7
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k13",
+   "k14",
+   "k15"
+  ],
+  "claim_map": [
+   {
+    "claim": "k13",
+    "panels": [
+     "p2",
+     "p3",
+     "p4"
+    ],
+    "how": "p2 shows the poor room with the woman sewing and a bed in the corner, p3 names the seamstress and shows her needle-pricked red hands, p4 shows the feverish boy in bed asking for oranges."
+   },
+   {
+    "claim": "k14",
+    "panels": [
+     "p1",
+     "p5"
+    ],
+    "how": "the Prince on his column points and asks in p5 for the ruby out of his sword-hilt to be brought to the thirsty boy and his sad mother."
+   },
+   {
+    "claim": "k15",
+    "panels": [
+     "p5",
+     "p6"
+    ],
+    "how": "the Swallow objects in p5 that he is waited for in Egypt, and in p6 agrees to stay one night and be the Prince's messenger."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u3",
+   "pages": null,
+   "text": "“Far away,” continued the statue in a low musical voice, “far away in a little street there is a poor house. One of the windows is open, and through it I can see a woman seated at a table. Her face is thin and worn, and she has coarse, red hands, all pricked by the needle, for she is a seamstress. She is embroidering passion-flowers on a satin gown for the loveliest of the Queen’s maids-of-honour to wear at the next Court-ball. In a bed in the corner of the room her little boy is lying ill. He has a fever, and is asking for oranges. His mother has nothing to give him but river water, so he is crying. Swallow, Swallow, little Swallow, will you not bring her the ruby out of my sword-hilt? My feet are fastened to this pedestal and I cannot move.”\n\n“I am waited for in Egypt,” said the Swallow. “My friends are flying up and down the Nile, and talking to the large lotusflowers. Soon they will go to sleep in the tomb of the great King. The King is there himself in his painted coffin. He is wrapped in yellow linen, and embalmed with spices. Round his neck is a chain of pale green jade, and his hands are like withered leaves.”\n\n“Swallow, Swallow, little Swallow,” said the Prince, “will you not stay with me for one night, and be my messenger? The boy is so thirsty, and the mother so sad.”\n\n“I don’t think I like boys,” answered the Swallow. “Last summer, when I was staying on the river, there were two rude boys, the miller’s sons, who were always throwing stones at me. They never hit me, of course; we swallows fly far too well for that, and besides, I come of a family famous for its agility; but still, it was a mark of disrespect.”\n\nBut the Happy Prince looked so sad that the little Swallow was sorry. “It is very cold here,” he said; “but I will stay with you for one night, and be your messenger.”\n\n“Thank you, little Swallow,” said the Prince.\n\nSo the Swallow picked out the great ruby from the Prince’s sword, and flew away with it in his beak over the roofs of the town.\n\nHe passed by the cathedral tower, where the white marble angels were sculptured. He passed by the palace and heard the sound of dancing. A beautiful girl came out on the balcony with her lover. “How wonderful the stars are,” he said to her, “and how wonderful is the power of love!”\n\n“I hope my dress will be ready in time for the State-ball,” she answered; “I have ordered passion-flowers to be embroidered on it; but the seamstresses are so lazy.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_boy",
+   "name": "The Little Boy",
+   "role": "the seamstress's sick son",
+   "description": "A child small in his mother's bed, feverish and tossing, asking for oranges; a huge ruby laid beside the thimble and the fanning of the swallow's wings cool him into a delicious slumber.",
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "neutral",
+    "hair": "short",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_seamstress",
+   "name": "The Seamstress",
+   "role": "the poor woman at the window who sews for the Queen",
+   "description": "A thin, worn woman with coarse red hands pricked by the needle, seated at a table in a poor house; she can give her sick son only river water, and she falls asleep from tiredness beside her thimble.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "messy",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

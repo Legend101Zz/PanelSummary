@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.10.0
+version: 1.11.0
 ---
 
 # Manga page
@@ -152,7 +152,7 @@ right, top to bottom; `panels` must be listed in that reading order.
   words. (CLAIM_TEXT_THIN.)
 - **Draw the key object or action of the beat**: put it in `props`, in a figure's `holding`, or
   in an `insert` panel. A claim that names a rose, a thorn or a sack needs it drawn.
-  (KEY_PROP_NOT_DRAWN.)
+  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge.
 - **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
   crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the

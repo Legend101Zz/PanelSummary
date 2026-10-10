@@ -11,7 +11,7 @@ export const TONED_KINDS: ReadonlySet<CharacterLook["kind"]> = new Set(["bird", 
 
 /** Variant fields each look kind accepts (eyes apply to every kind). */
 export function variantFieldsFor(kind: CharacterLook["kind"]): readonly (keyof LookVariant)[] {
-  if (kind === "human") return ["eyes", "material", "outfit_tone", "hair_tone"];
+  if (kind === "human") return ["eyes", "material", "outfit", "outfit_tone", "hair_tone"];
   if (kind === "plant") return ["eyes", "tone", "bloom"];
   if (TONED_KINDS.has(kind)) return ["eyes", "tone"];
   return ["eyes"];
@@ -23,6 +23,7 @@ export function lookWithVariant(look: CharacterLook, variant: LookVariant | unde
   if (look.kind === "human") {
     const out = { ...look };
     if (variant.material) out.material = variant.material;
+    if (variant.outfit) out.outfit = variant.outfit;
     if (variant.outfit_tone) out.outfit_tone = variant.outfit_tone;
     if (variant.hair_tone) out.hair_tone = variant.hair_tone;
     return out;

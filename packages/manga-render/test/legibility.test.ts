@@ -90,9 +90,9 @@ describe("statue on its column", () => {
 });
 
 describe("settings", () => {
-  it("a place that names heaven or a dust heap is drawn as sky or waste ground, not blank paper", () => {
-    expect(resolveEnvironment({ environment: "abstract", name: "Paradise", description: "" })).toBe("sky");
-    expect(resolveEnvironment({ environment: "void", name: "The dust-heap", description: "" })).toBe("ditch");
+  it("a place that names heaven or a dust heap is drawn as Paradise or the dust heap, not blank paper", () => {
+    expect(resolveEnvironment({ environment: "abstract", name: "Paradise", description: "" })).toBe("paradise");
+    expect(resolveEnvironment({ environment: "void", name: "The dust-heap", description: "" })).toBe("dustheap");
     expect(resolveEnvironment({ environment: "garden", name: "Paradise garden", description: "" })).toBe("garden");
   });
 

@@ -207,11 +207,29 @@ export const HERO_MIN_HEAD_RADIUS = 16;
 export const HERO_SMALL_MIN_HEAD_RADIUS = 12;
 /** Below this head radius a hero that the floors could not enlarge is flagged (HERO_TOO_SMALL, a warning). */
 export const HERO_WARN_HEAD_RADIUS = 8;
+/** ... or when its body fills less than this share of the panel in its tighter dimension (calibrated in docs/v0.2/Q1-renderer.md). */
+export const HERO_WARN_SIZE = 0.25;
 /** A figure this short (figure units; an adult is about 100) counts as a small creature for the hero floor (a daisy). */
 const TINY_NOMINAL = 45;
 /** The key prop of a beat is drawn at least this share of the panel height (establishing: the second value). */
 export const KEY_PROP_MIN_HEIGHT = 0.12;
 export const KEY_PROP_MIN_HEIGHT_ESTABLISHING = 0.06;
+
+/**
+ * v0.2 (#42): a camera push-in. The subjects of a panel (the hero and every speaker) fill at least
+ * this share of the panel in their tighter dimension (body height over panel height, or body width
+ * over panel width). A subject below it is brought up to it by cropping IN (the camera moves toward
+ * it and the rest of the panel crops), never by drawing the subject larger than the rest of the scene.
+ * An establishing shot is small on purpose: a lower floor. The push is limited so every subject head
+ * stays inside the panel (calibration: docs/v0.2/Q1-renderer.md).
+ */
+export const SUBJECT_MIN_SIZE = 0.3;
+export const SUBJECT_MIN_SIZE_ESTABLISHING = 0.15;
+/** Most the camera pushes in on one panel (a factor on every size). */
+export const SUBJECT_MAX_PUSH = 3;
+export const SUBJECT_MAX_PUSH_ESTABLISHING = 2.4;
+/** After the push, a small creature that is still under the floor is drawn up to this much larger (a manga convention; see SMALL_SPEAKER_BOOST). */
+export const SUBJECT_MAX_ENLARGE = 1.8;
 
 /** Figure height targets for ground shots (fraction of the panel height, ±25%). */
 export const SHOT_HEIGHT: Partial<Record<Shot, number>> = { establishing: 0.22, wide: 0.4, full: 0.74 };
@@ -963,6 +981,12 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       let s = Math.min(own.scale, cap);
       if (speakers.has(feetDep.cast.id)) s = Math.max(s, Math.min(scaleForHead(feetDep, SPEAKER_MIN_HEAD_RADIUS + 0.5), (3.2 * box.h) / Math.max(1, statue.height)));
       const topY = box.y + box.h * 0.9;
+      // a statue that SPEAKS keeps its head (and its mouth, where the tail points) inside the panel: the
+      // camera backs off until the head circle is a quarter of the panel below the top edge (v0.2, #42)
+      if (speakers.has(statue.cast.id)) {
+        const headReach = Math.max(1, -statue.probe.head.y + statue.probe.headRadius);
+        s = Math.min(s, (0.65 * box.h) / headReach);
+      }
       // the statue's feet stand opposite the creature's slot, so the creature is framed beside (or between) them
       const between0 = /\bbetween\b/i.test(beat);
       const fSlot = slotFrac(feetDep.spec.slot, rtl);
@@ -1345,6 +1369,163 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     worldScale = framings.get((mids[0] ?? independents[0])?.index ?? -1)?.scale ?? worldScale;
   }
 
+  /** The camera pushed in on this panel (the figures it cropped are cropped on purpose). */
+  let pushedIn = false;
+  // --- camera push-in: the subjects meet a minimum size (v0.2, #42) -----------
+  // The hero and every speaker fill at least SUBJECT_MIN_SIZE of the panel. A smaller one is brought up
+  // to it by moving the camera toward it (every figure and the set scale about it, the frame crops), as far
+  // as every subject, speaker and name-tagged head stays inside the panel (and, when that costs little, every
+  // other head too). A small creature that is still under the floor (the push stopped at a big host's head)
+  // is then drawn a little larger.
+  if (shot !== "insert" && shot !== "extreme_close" && framings.size > 0) {
+    const labelled = new Set(panel.text.filter((t) => typeof t.about === "string").map((t) => t.about as string));
+    const live = infos.filter((f) => framings.has(f.index) && !headCropped.has(f.index));
+    const subjects = live.filter((f) => heroes.has(f.index) || speakers.has(f.cast.id));
+    const must = live.filter((f) => heroes.has(f.index) || speakers.has(f.cast.id) || labelled.has(f.cast.id));
+    const sizeOf = (f: FigureInfo): number => {
+      const b = placementOf(f, framings.get(f.index) as Framing).body;
+      return Math.max(Math.min(b.h, box.h) / box.h, Math.min(b.w, box.w) / box.w);
+    };
+    const minSize = shot === "establishing" ? SUBJECT_MIN_SIZE_ESTABLISHING : SUBJECT_MIN_SIZE;
+    if (subjects.length > 0) {
+      const smallest = subjects.reduce((a, b) => (sizeOf(b) < sizeOf(a) ? b : a));
+      const size = sizeOf(smallest);
+      if (size < minSize) {
+        const want = Math.min(minSize / Math.max(0.01, size), shot === "establishing" ? SUBJECT_MAX_PUSH_ESTABLISHING : SUBJECT_MAX_PUSH);
+        const sb = placementOf(smallest, framings.get(smallest.index) as Framing).body;
+        const F: Point = { x: sb.x + sb.w / 2, y: sb.y + sb.h * 0.45 };
+        const edge = { x: box.w * 0.025, y: box.h * 0.025 };
+        const framingNow = (f: FigureInfo): Placement => placementOf(f, framings.get(f.index) as Framing);
+        /**
+         * A push of k about F that keeps every head of `keep` inside the panel (translated if need be),
+         * and every other figure at least half inside (one that was less inside than that stays as it was).
+         */
+        const tryPush = (k: number, keep: FigureInfo[]): { dx: number; dy: number } | undefined => {
+          let x0 = Infinity;
+          let x1 = -Infinity;
+          let y0 = Infinity;
+          let y1 = -Infinity;
+          for (const f of keep) {
+            const h = framingNow(f);
+            const hx = F.x + (h.head.x - F.x) * k;
+            const hy = F.y + (h.head.y - F.y) * k;
+            x0 = Math.min(x0, hx - h.r * k * 0.95);
+            x1 = Math.max(x1, hx + h.r * k * 0.95);
+            y0 = Math.min(y0, hy - h.r * k * 1.05);
+            y1 = Math.max(y1, hy + h.r * k * 1.1);
+          }
+          if (x1 - x0 > box.w * 0.95 || y1 - y0 > box.h * 0.95) return undefined;
+          let loX = box.x + edge.x - x0;
+          let hiX = box.x + box.w - edge.x - x1;
+          let loY = box.y + edge.y - y0;
+          let hiY = box.y + box.h - edge.y - y1;
+          // a small creature that is a subject is seen whole (a bird cut by the bottom edge is no hero)
+          for (const f of subjects) {
+            if (!(f.small || f.nominal <= TINY_NOMINAL) || f.lying) continue;
+            const b = framingNow(f).body;
+            const bx0 = F.x + (b.x - F.x) * k;
+            const bx1 = F.x + (b.x + b.w - F.x) * k;
+            const by0 = F.y + (b.y - F.y) * k;
+            const by1 = F.y + (b.y + b.h - F.y) * k;
+            loX = Math.max(loX, box.x + edge.x - bx0);
+            hiX = Math.min(hiX, box.x + box.w - edge.x - bx1);
+            loY = Math.max(loY, box.y + edge.y - by0);
+            hiY = Math.min(hiY, box.y + box.h - edge.y - by1);
+          }
+          // the ground line stays in the panel, so what stands or lies on it (props) is still seen
+          if (groundModel) hiY = Math.min(hiY, box.y + box.h * 0.98 - (F.y + (groundModel.feet - F.y) * k));
+          if (loX > hiX || loY > hiY) return undefined;
+          const dx = clamp(0, loX, hiX);
+          const dy = clamp(0, loY, hiY);
+          for (const f of live) {
+            if (keep.includes(f)) continue;
+            const b = framingNow(f).body;
+            const before = overlapArea(b, box) / Math.max(1, boxArea(b));
+            const nb: Box = { x: F.x + (b.x - F.x) * k + dx, y: F.y + (b.y - F.y) * k + dy, w: b.w * k, h: b.h * k };
+            const after = overlapArea(nb, box) / Math.max(1, boxArea(nb));
+            if (after < Math.min(0.5, before)) return undefined;
+          }
+          return { dx, dy };
+        };
+        /** The largest push (at most `want`) that works for `keep`, with its translation. */
+        const bestPush = (keep: FigureInfo[]): { k: number; dx: number; dy: number } | undefined => {
+          for (let k = want; k >= 1.03; k -= 0.04) {
+            const t = tryPush(k, keep);
+            if (t) return { k, ...t };
+          }
+          return undefined;
+        };
+        // every head if the push stays useful (a third more), else only the subjects' heads
+        const all = bestPush(live);
+        const mine = bestPush(must);
+        const pick = all && all.k >= Math.min(want, 1.35) ? all : mine;
+        if (pick) {
+          const { k, dx, dy } = pick;
+          const trial = new Map<number, Framing>();
+          for (const [key, fr] of framings) {
+            const z = zoomAbout(fr, F, k);
+            trial.set(key, { ...z, originX: z.originX + dx, originY: z.originY + dy });
+          }
+          // the set follows the camera; a statue on the set's own column follows the column's new top
+          const box2 = reframeBox(envBox, F, { x: F.x + dx, y: F.y + dy }, k);
+          const env2 = drawEnv(box2);
+          let ok = true;
+          for (const i of onColumnSet) {
+            if (ownColumn.has(i)) continue;
+            const top = env2.anchors?.statue_top;
+            const fr = trial.get(i);
+            if (!top || !fr) {
+              ok = false;
+              break;
+            }
+            const dTop = { x: top.x - fr.originX, y: top.y - fr.originY };
+            if (Math.hypot(dTop.x, dTop.y) > 0.08 * box.h) {
+              ok = false;
+              break;
+            }
+            for (const f of infos) {
+              const tf = trial.get(f.index);
+              if (tf && (f.index === i || rootOf(f).index === i)) trial.set(f.index, { ...tf, originX: tf.originX + dTop.x, originY: tf.originY + dTop.y });
+            }
+          }
+          if (ok) {
+            for (const [key, fr] of trial) framings.set(key, fr);
+            envBox = box2;
+            env = env2;
+            if (groundModel) {
+              const zy = (y: number) => F.y + (y - F.y) * k + dy;
+              groundModel = { ...groundModel, horizon: zy(groundModel.horizon), feet: zy(groundModel.feet), scale: groundModel.scale * k };
+            }
+            worldScale *= k;
+            pushedIn = true;
+          }
+        }
+      }
+    }
+    // a small creature still under the floor is drawn larger, about its feet, as long as its own head stays
+    // inside the panel and it does not cover another face
+    for (const f of subjects) {
+      const fr = framings.get(f.index) as Framing;
+      const cur = sizeOf(f);
+      if (cur >= minSize * 0.98 || !(f.small || f.nominal <= TINY_NOMINAL) || f.lying) continue;
+      const others = live.filter((g) => g !== f).map((g) => placementOf(g, framings.get(g.index) as Framing));
+      for (let e = Math.min(SUBJECT_MAX_ENLARGE, minSize / Math.max(0.01, cur)); e >= 1.1; e -= 0.1) {
+        const trial: Framing = { ...fr, scale: fr.scale * e };
+        const p = placementOf(f, trial);
+        const inside = p.head.x - p.r * 0.95 >= box.x + box.w * 0.02 && p.head.x + p.r * 0.95 <= box.x + box.w * 0.98 && p.head.y - p.r * 1.05 >= box.y + box.h * 0.02 && p.head.y + p.r * 1.1 <= box.y + box.h * 0.98;
+        if (inside && !others.some((o) => covers(p, o))) {
+          framings.set(f.index, trial);
+          break;
+        }
+      }
+    }
+    // an extra pushed out of frame is cropped on purpose (the subjects never are)
+    for (const f of live) {
+      const p = placementOf(f, framings.get(f.index) as Framing);
+      if (p.head.y + p.r < box.y || p.head.y - p.r > box.y + box.h || p.head.x + p.r < box.x || p.head.x - p.r > box.x + box.w) headCropped.add(f.index);
+    }
+  }
+
   // --- draw figures + props by depth ----------------------------------------
   const figures: FigurePlacement[] = [];
   const hatBoxes: Box[] = [];
@@ -1652,7 +1833,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       issues.push({ code: "FIGURE_CLIPPED", severity: "warning", path: ipath, message: `"${fp.character}" ends up outside the frame of this ${shot} panel and is not seen. Use another slot, "on" part or shot.` });
     } else if (headOut && shot !== "extreme_close") {
       issues.push({ code: "FIGURE_HEAD_CLIPPED", severity: "warning", path: ipath, message: `the head of "${fp.character}" falls outside the frame of this ${shot} panel. Use a wider shot or another slot so the face is seen.` });
-    } else if (groundShot && inside < 0.7) {
+    } else if (groundShot && inside < 0.7 && !(pushedIn && !heroes.has(fp.figureIndex) && !speakers.has(fp.character))) {
       issues.push({ code: "FIGURE_CLIPPED", severity: "warning", path: ipath, message: `${Math.round((1 - inside) * 100)}% of "${fp.character}" falls outside the frame of this ${shot} panel. Use a slot nearer the centre or a wider shot.` });
     }
   }
@@ -1660,12 +1841,14 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   if (shot !== "establishing") {
     for (const fp of figures) {
       if (fp.headCropped || !heroes.has(fp.figureIndex) || speakers.has(fp.character)) continue;
-      if (fp.headRadius < HERO_WARN_HEAD_RADIUS) {
+      // the same measure as the camera push-in (v0.2, #42): the share of the panel the body fills in its tighter dimension
+      const share = Math.max(Math.min(fp.body.h, box.h) / box.h, Math.min(fp.body.w, box.w) / box.w);
+      if (fp.headRadius < HERO_WARN_HEAD_RADIUS || share < HERO_WARN_SIZE) {
         issues.push({
           code: "HERO_TOO_SMALL",
           severity: "warning",
           path: ipath,
-          message: `"${fp.character}", the subject of this beat, is drawn with a head radius of ${Math.round(fp.headRadius)} units in this ${shot} shot and will not read. Use a medium or close shot for the subject, or a panel of its own.`,
+          message: `"${fp.character}", the subject of this beat, fills only ${Math.round(share * 100)}% of this ${shot} panel (head radius ${Math.round(fp.headRadius)} units) even after the camera pushed in, and will not read. Use a medium or close shot for the subject, or a panel of its own.`,
         });
       }
     }

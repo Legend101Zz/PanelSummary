@@ -1,0 +1,531 @@
+{
+ "page_number": 3,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 3,
+  "section_id": "s1",
+  "beat": "At night the Swallow alights between the Happy Prince's feet for a golden bedroom, but drops of water fall on him from a cloudless sky; on the third drop he looks up and sees tears running down the statue's golden cheeks.",
+  "claims": [
+   "k9",
+   "k10"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_prince"
+  ],
+  "locations": [
+   "l_column_top"
+  ],
+  "units": [
+   "s1u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k9",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swarrow alights between the Happy Prince's feet to sleep, and is woken by drops of rain falling on him from a cloudless sky.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    },
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "After a third drop, the Swallow looks up and sees that the Happy Prince's eyes are filled with tears running down his golden cheeks.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 3,
+  "section_id": "s1",
+  "purpose": "The Swallow settles to sleep at the statue's feet, and drops of water fall on him from a cloudless sky until he looks up and sees the Happy Prince weeping.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     1.2,
+     1
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       }
+      ]
+     },
+     {
+      "panel": "p4"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       3,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p5"
+       },
+       {
+        "panel": "p6"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The swallow flies in over the sleeping city to the tall column where the gilded statue stands.",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "tired",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_prince",
+      "text": "The Happy Prince",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "FLAP FLAP",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The swallow alights between the statue's feet and looks round at his golden bedroom.",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "I have a golden bedroom.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "He alighted between the statue's feet.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "A large drop of water falls on the swallow as he tucks his head under his wing and wakes.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "stand",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "DRIP",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "What a curious thing! Yet it is raining.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Another drop falls and the swallow decides a statue that cannot keep the rain off is useless.",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "walk",
+      "expression": "worried",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "DRIP",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "There is not a single cloud in the sky. A statue that cannot keep the rain off is no use at all.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Before he can fly away a third drop falls, and the swallow looks up to find tears running down the statue's golden cheeks.",
+    "shot": "close",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "cry",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines",
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "DRIP",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The eyes of the Happy Prince were filled with tears.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The swallow stares up, silenced, as the moonlight catches the weeping statue.",
+    "shot": "extreme_close",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "stand",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k9",
+   "k10"
+  ],
+  "claim_map": [
+   {
+    "claim": "k9",
+    "panels": [
+     "p1",
+     "p2",
+     "p3",
+     "p4"
+    ],
+    "how": "p1 the swallow arrives at the column by night; p2 he alights between the statue's feet and calls it a golden bedroom; p3 a drop of water falls on him and wakes him under a clear sky; p4 a second drop falls and he calls the statue useless."
+   },
+   {
+    "claim": "k10",
+    "panels": [
+     "p4",
+     "p5",
+     "p6"
+    ],
+    "how": "p4 the swallow is about to leave; p5 a third drop falls and the picture shows tears running down the statue's golden cheeks, with the narration saying so; p6 the swallow's stunned face looks up at him."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u2",
+   "pages": null,
+   "text": "“You have been trifling with me,” he cried. “I am off to the Pyramids. Good-bye!” and he flew away.\n\nAll day long he flew, and at night-time he arrived at the city. “Where shall I put up?” he said; “I hope the town has made preparations.”\n\nThen he saw the statue on the tall column.\n\n“I will put up there,” he cried; “it is a fine position, with plenty of fresh air.” So he alighted just between the feet of the Happy Prince.\n\n“I have a golden bedroom,” he said softly to himself as he looked round, and he prepared to go to sleep; but just as he was putting his head under his wing a large drop of water fell on him. “What a curious thing!” he cried; “there is not a single cloud in the sky, the stars are quite clear and bright, and yet it is raining. The climate in the north of Europe is really dreadful. The Reed used to like the rain, but that was merely her selfishness.”\n\nThen another drop fell.\n\n“What is the use of a statue if it cannot keep the rain off?” he said; “I must look for a good chimney-pot,” and he determined to fly away.\n\nBut before he had opened his wings, a third drop fell, and he looked up, and saw—Ah! what did he see?\n\nThe eyes of the Happy Prince were filled with tears, and tears were running down his golden cheeks. His face was so beautiful in the moonlight that the little Swallow was filled with pity.\n\n“Who are you?” he said.\n\n“I am the Happy Prince.”\n\n“Why are you weeping then?” asked the Swallow; “you have quite drenched me.”\n\n“When I was alive and had a human heart,” answered the statue, “I did not know what tears were, for I lived in the Palace of Sans-Souci, where sorrow is not allowed to enter. In the daytime I played with my companions in the garden, and in the evening I led the dance in the Great Hall. Round the garden ran a very lofty wall, but I never cared to ask what lay beyond it, everything about me was so beautiful. My courtiers called me the Happy Prince, and happy indeed I was, if pleasure be happiness. So I lived, and so I died. And now that I am dead they have set me up here so high that I can see all the ugliness and all the misery of my city, and though my heart is made of lead yet I cannot chose but weep.”\n\n“What! is he not solid gold?” said the Swallow to himself. He was too polite to make any personal remarks out loud."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  }
+ ]
+}

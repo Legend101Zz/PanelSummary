@@ -1,0 +1,461 @@
+{
+ "page_number": 2,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 2,
+  "section_id": "s1",
+  "beat": "The Emperor sends his faithful old minister to the hall of the two looms; the minister finds no thread at all, fears he may be a simpleton or unfit for his office, says nothing, and praises the unseen cloth as excellent.",
+  "claims": [
+   "k4",
+   "k5",
+   "k7"
+  ],
+  "cast": [
+   "c_minister",
+   "c_weaver_one",
+   "c_weaver_two"
+  ],
+  "locations": [
+   "l_loom_hall"
+  ],
+  "units": [
+   "s1u1",
+   "s1u2"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k4",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Emperor, afraid of being seen for a simpleton, sends his faithful old minister to inspect the weavers' work.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k5",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The old minister finds no thread at all on the looms and says nothing aloud, fearing he may be unfit for his office.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k7",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The minister praises the unseen cloth to the Emperor as excellent in pattern and colours.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 2,
+  "section_id": "s1",
+  "purpose": "The Emperor sends his old minister to the looms; the minister finds no thread at all, fears he may be unfit for his office, says nothing aloud and praises the unseen cloth as excellent.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The great hall with two bare looms where the knaves pretend to work",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_weaver_one",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The hall of the two looms",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The old minister enters the hall and approaches the looms",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_minister",
+      "pose": "walk",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_one",
+      "pose": "stand",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "left",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_minister",
+      "text": "The old minister",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "The Emperor sends his faithful old minister to see the cloth.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     },
+     {
+      "unit": "s1u2",
+      "page": 4
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The minister leans close to the bare frame and stares in fear",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_minister",
+      "pose": "hold",
+      "expression": "afraid",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "thought",
+      "speaker": "c_minister",
+      "text": "I cannot discover the least bit of thread!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 4
+      }
+     },
+     {
+      "kind": "thought",
+      "speaker": "c_minister",
+      "text": "Am I unfit for my office? No!",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 4
+     },
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "A knave courteously asks the minister whether the design pleases him",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_minister",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_one",
+      "pose": "point",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_weaver_one",
+      "text": "You do not say whether the stuff pleases you.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The minister looks through his spectacles and praises the unseen cloth",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_loom_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_minister",
+      "pose": "stand",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_weaver_two",
+      "pose": "arms_crossed",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sweat_drop"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_minister",
+      "text": "This pattern, and the colors, yes, I will tell the Emperor without delay, how very beautiful I think them.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u2",
+       "page": 5
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u2",
+      "page": 5
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k4",
+   "k5",
+   "k7"
+  ],
+  "claim_map": [
+   {
+    "claim": "k4",
+    "panels": [
+     "p2"
+    ],
+    "how": "Narration in p2 states the Emperor sends his faithful old minister to see the cloth, and the name tag introduces him."
+   },
+   {
+    "claim": "k5",
+    "panels": [
+     "p3",
+     "p5"
+    ],
+    "how": "p3 lettered thoughts state he can discover no thread and fears he may be unfit for his office; p5 he says nothing of this aloud, only praise."
+   },
+   {
+    "claim": "k7",
+    "panels": [
+     "p5"
+    ],
+    "how": "The minister says the pattern and colours are beautiful and he will tell the Emperor without delay."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u1",
+   "pages": null,
+   "text": "Many years ago, there was an Emperor, who was so excessively fond of new clothes, that he spent all his money in dress. He did not trouble himself in the least about his soldiers; nor did he care to go either to the theatre or the chase, except for the opportunities then afforded him for displaying his new clothes. He had a different suit for each hour of the day; and as of any other king or emperor, one is accustomed to say, “he is sitting in council,” it was always said of him, “The Emperor is sitting in his wardrobe.”\n\nTime passed merrily in the large town which was his capital; strangers arrived every day at the court. One day, two rogues, calling themselves weavers, made their appearance. They gave out that they knew how to weave stuffs of the most beautiful colors and elaborate patterns, the clothes manufactured from which should have the wonderful property of remaining invisible to everyone who was unfit for the office he held, or who was extraordinarily simple in character.\n\n“These must, indeed, be splendid clothes!” thought the Emperor. “Had I such a suit, I might at once find out what men in my realms are unfit for their office, and also be able to distinguish the wise from the foolish! This stuff must be woven for me immediately.” And he caused large sums of money to be given to both the weavers in order that they might begin their work directly.\n\nSo the two pretended weavers set up two looms, and affected to work very busily, though in reality they did nothing at all. They asked for the most delicate silk and the purest gold thread; put both into their own knapsacks; and then continued their pretended work at the empty looms until late at night.\n\n“I should like to know how the weavers are getting on with my cloth,” said the Emperor to himself, after some little time had elapsed; he was, however, rather embarrassed, when he remembered that a simpleton, or one unfit for his office, would be unable to see the manufacture. To be sure, he thought he had nothing to risk in his own person; but yet, he would prefer sending somebody else, to bring him intelligence about the weavers, and their work, before he troubled himself in the affair. All the people throughout the city had heard of the wonderful property the cloth was to possess; and all were anxious to learn how wise, or how ignorant, their neighbors might prove to be.\n\n“I will send my faithful old minister to the weavers,” said the Emperor at last, after some deliberation, “he will be best able to see how the cloth looks; for he is a man of sense, and no one can be more suitable for his office than he is.”"
+  },
+  {
+   "id": "s1u2",
+   "pages": null,
+   "text": "So the faithful old minister went into the hall, where the knaves were working with all their might, at their empty looms. “What can be the meaning of this?” thought the old man, opening his eyes very wide. “I cannot discover the least bit of thread on the looms.” However, he did not express his thoughts aloud.\n\nThe impostors requested him very courteously to be so good as to come nearer their looms; and then asked him whether the design pleased him, and whether the colors were not very beautiful; at the same time pointing to the empty frames. The poor old minister looked and looked, he could not discover anything on the looms, for a very good reason, viz: there was nothing there. “What!” thought he again. “Is it possible that I am a simpleton? I have never thought so myself; and no one must know it now if I am so. Can it be, that I am unfit for my office? No, that must not be said either. I will never confess that I could not see the stuff.”\n\n“Well, Sir Minister!” said one of the knaves, still pretending to work. “You do not say whether the stuff pleases you.”\n\n“Oh, it is excellent!” replied the old minister, looking at the loom through his spectacles. “This pattern, and the colors, yes, I will tell the Emperor without delay, how very beautiful I think them.”\n\n“We shall be much obliged to you,” said the impostors, and then they named the different colors and described the pattern of the pretended stuff. The old minister listened attentively to their words, in order that he might repeat them to the Emperor; and then the knaves asked for more silk and gold, saying that it was necessary to complete what they had begun. However, they put all that was given them into their knapsacks; and continued to work with as much apparent diligence as before at their empty looms.\n\nThe Emperor now sent another officer of his court to see how the men were getting on, and to ascertain whether the cloth would soon be ready. It was just the same with this gentleman as with the minister; he surveyed the looms on all sides, but could see nothing at all but the empty frames.\n\n“Does not the stuff appear as beautiful to you, as it did to my lord the minister?” asked the impostors of the Emperor's second ambassador; at the same time making the same gestures as before, and talking of the design and colors which were not there.\n\n“I certainly am not stupid!” thought the messenger. “It must be, that I am not fit for my good, profitable office! That is very odd; however, no one shall know anything about it.” And accordingly he praised the stuff he could not see, and declared that he was delighted with both colors and patterns. “Indeed, please your Imperial Majesty,” said he to his sovereign when he returned, “the cloth which the weavers are preparing is extraordinarily magnificent.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_weaver_one",
+   "name": "The first knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "One of the two rogues who pretend to weave; he keeps up the pretense at the empty loom and asks the minister whether the stuff pleases him. About the same size as the Emperor but dark and shabby, so he disappears in a crowd.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_minister",
+   "name": "The old minister",
+   "role": "the Emperor's faithful old minister",
+   "description": "A small, elderly, bespectacled man whom the Emperor trusts to judge the cloth; he is the first to stare at an empty loom and say nothing, for fear of seeming a simpleton. He leans close to the frames to look through his spectacles.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "masc",
+    "hair": "long_straight",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "robe",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_weaver_two",
+   "name": "The second knave",
+   "role": "one of the two impostor weavers (the knaves)",
+   "description": "The taller, broader partner of the rogue weaver, who talks of colors and patterns that are not there and demands more silk and gold. He stands beside the first knave at the two empty looms.",
+   "sections": [
+    "s1"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "broad",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "mid",
+    "headwear": "cap",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

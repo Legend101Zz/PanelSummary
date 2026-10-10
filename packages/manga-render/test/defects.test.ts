@@ -215,7 +215,7 @@ describe("D4 blocker: the moor, the ditch and the foundry are places, not blank 
       [32, "p2", "moor"],
       [42, "p1", "ditch"],
       [43, "p1", "ditch"],
-      [13, "p1", "forge"],
+      [13, "p1", "foundry"],
     ];
     for (const [n, panelId, want] of cases) {
       const { details } = renderRun8(n);

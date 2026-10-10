@@ -1,0 +1,502 @@
+{
+ "page_number": 17,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 17,
+  "section_id": "s4",
+  "beat": "A third match shows her a magnificent Christmas tree whose thousands of lights rise as stars, and one star falls in a trail of fire; she names the falling star a soul ascending to God as her grandmother taught her, and a fourth match shows the grandmother radiant and tall.",
+  "claims": [
+   "k49",
+   "k50",
+   "k51"
+  ],
+  "cast": [
+   "c_match_girl",
+   "c_christmas_tree",
+   "c_grandmother",
+   "c_matches"
+  ],
+  "locations": [
+   "l_house_corner"
+  ],
+  "units": [
+   "s4u2"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k49",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "A third match shows a magnificent Christmas tree whose lights rise as stars, and one star falls in a trail of fire.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k50",
+   "section_id": "s4",
+   "kind": "fact",
+   "importance": "supporting",
+   "text": "Her grandmother taught her that when a star falls, a soul ascends to God.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  },
+  {
+   "id": "k51",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "In the light of a match the grandmother appears radiant and tall, and the girl begs to go with her.",
+   "source": [
+    {
+     "unit": "s4u2",
+     "page": 21
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 17,
+  "section_id": "s4",
+  "purpose": "The girl sees a magnificent Christmas tree whose lights rise as stars, one falling in fire; she calls it a soul ascending to God, and a fourth match brings her radiant grandmother.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "the cold corner between two houses as she strikes another match",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "kneel",
+      "expression": "tired",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_matches",
+      "pose": "lie",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "fore"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The corner between two houses",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "the wall turns transparent and a magnificent Christmas tree appears",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "kneel",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_christmas_tree",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center_right",
+      "depth": "back"
+     }
+    ],
+    "props": [
+     {
+      "prop": "matches",
+      "slot": "center_left",
+      "depth": "fore"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_christmas_tree",
+      "text": "The magnificent Christmas tree",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "FSSSH",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "the tree's thousands of lights rise into the sky as stars",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_christmas_tree",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle",
+     "light_rays"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Its thousands of lights rose higher and higher: stars in heaven.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "one star falls in a long trail of fire and the girl names it a soul",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "point",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines",
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_match_girl",
+      "text": "Someone is just dead!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Grandmother taught: a falling star is a soul ascending to God.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "a fourth match shows the grandmother radiant and tall beside the girl",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_house_corner",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_grandmother",
+      "pose": "stand",
+      "expression": "love",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "eyes": "open"
+      }
+     },
+     {
+      "character": "c_match_girl",
+      "pose": "reach",
+      "expression": "cry",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "light_rays",
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_grandmother",
+      "text": "The old grandmother",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_match_girl",
+      "text": "Grandmother! ... Oh, take me with you!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u2",
+       "page": 21
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u2",
+      "page": 21
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k49",
+   "k50",
+   "k51"
+  ],
+  "claim_map": [
+   {
+    "claim": "k49",
+    "panels": [
+     "p2",
+     "p3",
+     "p4"
+    ],
+    "how": "p2 draws the magnificent decorated tree in the match's light, p3 shows its lights rising as stars, p4 has a falling trail of fire with speed lines and the girl's cry."
+   },
+   {
+    "claim": "k50",
+    "panels": [
+     "p4"
+    ],
+    "how": "narration states the grandmother's teaching: a falling star is a soul ascending to God."
+   },
+   {
+    "claim": "k51",
+    "panels": [
+     "p5"
+    ],
+    "how": "the grandmother appears radiant, tall and loving beside the girl, who begs to go with her."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "34 of 45 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s4u2",
+   "pages": null,
+   "text": "She rubbed another against the wall: it burned brightly, and where the light fell on the wall, there the wall became transparent like a veil, so that she could see into the room. On the table was spread a snow-white tablecloth; upon it was a splendid porcelain service, and the roast goose was steaming famously with its stuffing of apple and dried plums.\n\nAnd what was still more capital to behold was, the goose hopped down from the dish, reeled about on the floor with knife and fork in its breast, till it came up to the poor little girl; when--the match went out and nothing but the thick, cold, damp wall was left behind. She lighted another match. Now there she was sitting under the most magnificent Christmas tree: it was still larger, and more decorated than the one which she had seen through the glass door in the rich merchant's house.\n\nThousands of lights were burning on the green branches, and gaily-colored pictures, such as she had seen in the shopwindows, looked down upon her. The little maiden stretched out her hands towards them when--the match went out. The lights of the Christmas tree rose higher and higher, she saw them now as stars in heaven; one fell down and formed a long trail of fire.\n\n“Someone is just dead!” said the little girl; for her old grandmother, the only person who had loved her, and who was now no more, had told her, that when a star falls, a soul ascends to God.\n\nShe drew another match against the wall: it was again light, and in the lustre there stood the old grandmother, so bright and radiant, so mild, and with such an expression of love.\n\n“Grandmother!” cried the little one. “Oh, take me with you! You go away when the match burns out; you vanish like the warm stove, like the delicious roast goose, and like the magnificent Christmas tree!” And she rubbed the whole bundle of matches quickly against the wall, for she wanted to be quite sure of keeping her grandmother near her. And the matches gave such a brilliant light that it was brighter than at noon-day: never formerly had the grandmother been so beautiful and so tall. She took the little maiden, on her arm, and both flew in brightness and in joy so high, so very high, and then above was neither cold, nor hunger, nor anxiety-- they were with God.\n\nBut in the corner, at the cold hour of dawn, sat the poor girl, with rosy cheeks and with a smiling mouth, leaning against the wall--frozen to death on the last evening of the old year. Stiff and stark sat the child there with her matches, of which one bundle had been burnt. “She wanted to warm herself,” people said. No one had the slightest suspicion of what beautiful things she had seen; no one even dreamed of the splendor in which, with her grandmother she had entered on the joys of a new year."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_matches",
+   "name": "The bundle of matches",
+   "role": "the matches the girl carries and burns",
+   "description": "A small paper bundle of matches, sold all day without a single purchaser and burnt down one by one against the wall; the only thing the girl owns.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "object",
+    "shape": "candle",
+    "tone": "light",
+    "face": false
+   }
+  },
+  {
+   "id": "c_grandmother",
+   "name": "The old grandmother",
+   "role": "the only one who loved the Match Girl",
+   "description": "A small, gentle old woman in a light gown and bonnet, long dead and gone from the girl; when a match burns she appears bright, radiant and taller than life, takes the child on her arm and rises with her.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "white",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "light",
+    "headwear": "bonnet",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u1",
+     "claim": "k50",
+     "set": {
+      "eyes": "dead"
+     }
+    },
+    {
+     "at": "s4u2",
+     "claim": "k51",
+     "set": {
+      "eyes": "open"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_christmas_tree",
+   "name": "The Christmas tree",
+   "role": "the tree seen in the third match's light",
+   "description": "A great green Christmas tree, larger and more decorated than the one in the shop window, its thousands of lights rising into the sky as stars when the match goes out.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "plant",
+    "species": "tree",
+    "tone": "light",
+    "face": false,
+    "bloom": "full"
+   }
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The little Match Girl",
+   "role": "the poor girl selling matches on New Year's Eve",
+   "description": "A small, thin child with long fair curls falling to her neck, bareheaded and barefoot, in an old apron she uses to carry matches. She crouches in a corner between two houses, lights matches against the wall and at dawn is found frozen against it with rosy cheeks and a smiling mouth; timid, cold, hungry, yet radiant in her visions.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u2",
+     "claim": "k53",
+     "set": {
+      "eyes": "dead",
+      "outfit_tone": "white"
+     }
+    }
+   ]
+  }
+ ]
+}

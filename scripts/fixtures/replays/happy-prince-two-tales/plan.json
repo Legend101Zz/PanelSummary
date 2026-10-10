@@ -1,0 +1,550 @@
+{
+ "schema": "adaptation-plan.v1",
+ "pages": [
+  {
+   "page_number": 1,
+   "section_id": "s1",
+   "beat": "High above the city the gilded Happy Prince stands on his tall column with sapphires for eyes and a ruby on his sword-hilt, admired by the Town Councillors as beautiful but not quite so useful, while the Charity Children coming out of the cathedral in scarlet cloaks swear he looks like an angel; the page writer letters the title.",
+   "claims": [
+    "k1",
+    "k2",
+    "k4"
+   ],
+   "cast": [
+    "c_prince",
+    "c_councillors",
+    "c_math_master",
+    "c_charity_children"
+   ],
+   "locations": [
+    "l_column_top",
+    "l_cathedral"
+   ],
+   "units": [
+    "s1u1"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 2,
+   "section_id": "s1",
+   "beat": "A little Swallow has stayed behind in the cold north because he loves the most beautiful Reed, courts her all summer to the laughing Scorn of the other Swallows, and when she shakes her head at his invitation he cries she has been trifling with him and flies off toward the Pyramids.",
+   "claims": [
+    "k6",
+    "k7",
+    "k8"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_reed"
+   ],
+   "locations": [
+    "l_river"
+   ],
+   "units": [
+    "s1u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 3,
+   "section_id": "s1",
+   "beat": "At night the Swallow alights between the Happy Prince's feet for a golden bedroom, but drops of water fall on him from a cloudless sky; on the third drop he looks up and sees tears running down the statue's golden cheeks.",
+   "claims": [
+    "k9",
+    "k10"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince"
+   ],
+   "locations": [
+    "l_column_top"
+   ],
+   "units": [
+    "s1u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 4,
+   "section_id": "s1",
+   "beat": "The statue explains that he lived in the Palace of Sans-Souci where sorrow was not allowed to enter and was called happy if pleasure be happiness, and that now, set up high after his death, he sees all the ugliness and misery of his city and cannot choose but weep.",
+   "claims": [
+    "k11",
+    "k12"
+   ],
+   "cast": [
+    "c_prince",
+    "c_swallow"
+   ],
+   "locations": [
+    "l_column_top"
+   ],
+   "units": [
+    "s1u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 5,
+   "section_id": "s1",
+   "beat": "The Prince shows the Swallow a poor house where a seamstress with needle-pricked red hands sews by an open window while her feverish little boy asks for oranges, and asks for the ruby from his sword-hilt; the Swallow objects that he is waited for in Egypt and that he dislikes boys, then agrees to stay one night as the Prince's messenger.",
+   "claims": [
+    "k13",
+    "k14",
+    "k15"
+   ],
+   "cast": [
+    "c_prince",
+    "c_swallow",
+    "c_seamstress",
+    "c_boy"
+   ],
+   "locations": [
+    "l_column_top",
+    "l_poor_house"
+   ],
+   "units": [
+    "s1u3"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 6,
+   "section_id": "s1",
+   "beat": "The Swallow flies over the roofs with the great ruby in his beak, past the cathedral tower of white marble angels and the palace where a girl on the balcony wishes for stars and a finished dress, and lays the jewel beside the seamstress's thimble so the boy grows cool and sleeps.",
+   "claims": [
+    "k16",
+    "k18",
+    "k19"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_ball_girl",
+    "c_seamstress",
+    "c_boy"
+   ],
+   "locations": [
+    "l_cathedral",
+    "l_palace_balcony",
+    "l_poor_house"
+   ],
+   "units": [
+    "s1u3",
+    "s1u4"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 7,
+   "section_id": "s1",
+   "beat": "The Prince next points to a young man in a garret, too cold and hungry to finish his play, and gives up a rare sapphire; the weeping Swallow plucks out the Prince's eye, and the young man finds the sapphire on his withered violets and cries that he can now finish his play.",
+   "claims": [
+    "k21",
+    "k22",
+    "k23"
+   ],
+   "cast": [
+    "c_prince",
+    "c_swallow",
+    "c_playwright"
+   ],
+   "locations": [
+    "l_column_top",
+    "l_garret"
+   ],
+   "units": [
+    "s1u4",
+    "s1u5"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 8,
+   "section_id": "s1",
+   "beat": "After watching sailors haul chests from a ship at the harbour, the Swallow comes back to say good-bye, and the Prince tells him winter and snow are coming; then the statue points down into the square at a little match-girl whose matches are spoiled in the gutter and asks for his other eye.",
+   "claims": [
+    "k24",
+    "k25",
+    "k26"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince",
+    "c_sailors",
+    "c_match_girl"
+   ],
+   "locations": [
+    "l_harbour",
+    "l_column_top",
+    "l_market_street"
+   ],
+   "units": [
+    "s1u5"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 9,
+   "section_id": "s1",
+   "beat": "The Swallow plucks out the Prince's other eye and slips it into the match-girl's palm, and she laughs and runs home calling it a lovely bit of glass; returning, he announces that the Prince is blind now and sleeps at his feet to stay with him always.",
+   "claims": [
+    "k27",
+    "k28"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince",
+    "c_match_girl"
+   ],
+   "locations": [
+    "l_market_street",
+    "l_column_top"
+   ],
+   "units": [
+    "s1u6"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 10,
+   "section_id": "s1",
+   "beat": "All day the Swallow tells the blind Prince of red ibises, the Sphinx and pygmies, and the Prince answers that more marvellous than any of it is human misery and sends him to fly over the city and report; the Swallow sees the rich making merry while beggars sit at the gates and two boys are driven into the rain, and the Prince orders his fine gold taken off leaf by leaf for the poor.",
+   "claims": [
+    "k30",
+    "k31",
+    "k32"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince",
+    "c_beggars",
+    "c_watchman"
+   ],
+   "locations": [
+    "l_column_top",
+    "l_city_square",
+    "l_gutter"
+   ],
+   "units": [
+    "s1u6"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 11,
+   "section_id": "s1",
+   "beat": "Leaf after leaf of gold goes to the poor until the statue looks dull and grey and the children cry that they have bread, then snow and hard frost silver the streets with icicles and skating boys; the Swallow grows colder and colder, picking up crumbs outside the baker's door when the baker is not looking.",
+   "claims": [
+    "k33",
+    "k34",
+    "k35"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince",
+    "c_beggars"
+   ],
+   "locations": [
+    "l_column_top",
+    "l_city_square",
+    "l_bakers_door"
+   ],
+   "units": [
+    "s1u7"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 12,
+   "section_id": "s1",
+   "beat": "Knowing he is going to die, the Swallow says he is going not to Egypt but to the House of Death, kisses the Prince on the lips as the Prince asks, and falls dead at his feet; at that moment a crack sounds inside the statue as the leaden heart snaps in two in the hard frost.",
+   "claims": [
+    "k36",
+    "k37",
+    "k38"
+   ],
+   "cast": [
+    "c_swallow",
+    "c_prince"
+   ],
+   "locations": [
+    "l_column_top"
+   ],
+   "units": [
+    "s1u7"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 13,
+   "section_id": "s1",
+   "beat": "The Mayor and the Town Councillors find the statue shabby, its ruby and eyes gone, with a dead bird at its feet, order a proclamation against birds dying there, pull the statue down as no longer useful, melt it, and quarrel endlessly over the Mayor's proposal that the new statue be of himself.",
+   "claims": [
+    "k39",
+    "k40",
+    "k41"
+   ],
+   "cast": [
+    "c_mayor",
+    "c_councillors",
+    "c_art_professor",
+    "c_swallow"
+   ],
+   "locations": [
+    "l_city_square",
+    "l_column_top",
+    "l_foundry"
+   ],
+   "units": [
+    "s1u7",
+    "s1u8"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 14,
+   "section_id": "s1",
+   "beat": "The broken leaden heart will not melt in the furnace, so it is thrown on a dustheap beside the dead Swallow; in heaven the Angel brings God those two most precious things and God says they were rightly chosen, the bird to sing for evermore and the Happy Prince to praise him.",
+   "claims": [
+    "k42",
+    "k43"
+   ],
+   "cast": [
+    "c_overseer",
+    "c_swallow",
+    "c_prince"
+   ],
+   "locations": [
+    "l_dustheap",
+    "l_foundry"
+   ],
+   "units": [
+    "s1u8"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 15,
+   "section_id": "s2",
+   "beat": "In the Student's garden a young man weeps because there is no red rose in it all, and the Nightingale in the holm-oak above realises she has sung of this true lover every night without knowing him; he fears that without a rose for the Prince's ball his love will pass him by and his heart will break.",
+   "claims": [
+    "k44",
+    "k45",
+    "k46"
+   ],
+   "cast": [
+    "c_student",
+    "c_nightingale"
+   ],
+   "locations": [
+    "l_garden",
+    "l_oak_branch"
+   ],
+   "units": [
+    "s2u1"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 16,
+   "section_id": "s2",
+   "beat": "The Nightingale asks first the white Rose-tree and then the yellow one round the sun-dial for a red rose and is refused by both, and the red Rose-tree beneath the Student's window refuses too, saying winter has chilled its veins and the storm broken its branches, and hints that there is a way, only one too terrible to tell.",
+   "claims": [
+    "k49",
+    "k50",
+    "k51"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_rose_trees"
+   ],
+   "locations": [
+    "l_garden",
+    "l_student_window"
+   ],
+   "units": [
+    "s2u2"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 17,
+   "section_id": "s2",
+   "beat": "The Tree tells the Nightingale she must build the rose out of music by moonlight and stain it with her own heart's-blood, singing with her breast against a thorn all night; she answers that Death is a great price yet Love is better than Life, and flies to tell the weeping Student he shall have his red rose if he will be a true lover.",
+   "claims": [
+    "k52",
+    "k53",
+    "k54"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_rose_trees",
+    "c_student",
+    "c_oak"
+   ],
+   "locations": [
+    "l_garden",
+    "l_oak_branch"
+   ],
+   "units": [
+    "s2u2",
+    "s2u3"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 18,
+   "section_id": "s2",
+   "beat": "The Oak asks the Nightingale for one last song before she goes and she sings to him like water from a silver jar, while the Student walks off with his note-book sneering that she is all style without sincerity and would not sacrifice herself; by then he is asleep on his pallet-bed.",
+   "claims": [
+    "k55",
+    "k56"
+   ],
+   "cast": [
+    "c_oak",
+    "c_nightingale",
+    "c_student"
+   ],
+   "locations": [
+    "l_oak_branch",
+    "l_garden"
+   ],
+   "units": [
+    "s2u3"
+   ],
+   "page_turn_hook": false
+  },
+  {
+   "page_number": 19,
+   "section_id": "s2",
+   "beat": "All night the Nightingale sings with her breast against the thorn while the cold crystal Moon leans down and listens and her life-blood ebbs away; petal following petal a pale rose blossoms on the topmost spray, but its heart stays white, for only a Nightingale's heart's-blood can crimson it.",
+   "claims": [
+    "k57",
+    "k58",
+    "k60"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_rose_trees"
+   ],
+   "locations": [
+    "l_student_window",
+    "l_garden"
+   ],
+   "units": [
+    "s2u4"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 20,
+   "section_id": "s2",
+   "beat": "The Tree cries that she must press closer or the Day will come before the rose is finished; the thorn touches her heart and, as she sings of the Love that is perfected by Death, the rose becomes crimson like the eastern sky, and with one last burst of music her voice fails as the rose trembles open to the cold morning air.",
+   "claims": [
+    "k59",
+    "k61",
+    "k62"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_rose_trees"
+   ],
+   "locations": [
+    "l_student_window"
+   ],
+   "units": [
+    "s2u4"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 21,
+   "section_id": "s2",
+   "beat": "The Tree calls out that the rose is finished, but the Nightingale makes no answer, lying dead in the long grass with the thorn in her heart; at noon the Student opens his window, declares he has never seen a rose so beautiful, plucks it and runs to the Professor's house, where the girl in the doorway frowns and says real jewels cost far more than flowers.",
+   "claims": [
+    "k63",
+    "k64",
+    "k66"
+   ],
+   "cast": [
+    "c_nightingale",
+    "c_student",
+    "c_profs_daughter",
+    "c_dog"
+   ],
+   "locations": [
+    "l_garden",
+    "l_student_window",
+    "l_professor_door"
+   ],
+   "units": [
+    "s2u5"
+   ],
+   "page_turn_hook": true
+  },
+  {
+   "page_number": 22,
+   "section_id": "s2",
+   "beat": "Anger at her scorn the Student throws the rose into the street, where a cart-wheel crushes it in the gutter, and she retorts that he is only a Student without even silver buckles to his shoes; walking away he pronounces Love quite unpractical and not half so useful as Logic, and goes back to his room to study Metaphysics.",
+   "claims": [
+    "k67",
+    "k68",
+    "k69"
+   ],
+   "cast": [
+    "c_student",
+    "c_profs_daughter"
+   ],
+   "locations": [
+    "l_professor_door",
+    "l_gutter",
+    "l_student_window"
+   ],
+   "units": [
+    "s2u5"
+   ],
+   "page_turn_hook": false
+  }
+ ],
+ "omitted": [
+  {
+   "claim": "k3",
+   "reason": "detail: the mother scolding her boy for crying at the moon, covered by the same page's beat about the town below"
+  },
+  {
+   "claim": "k5",
+   "reason": "detail: the Master's frown at the children dreaming adds nothing to k4"
+  },
+  {
+   "claim": "k17",
+   "reason": "detail: the balcony girl's remark about lazy seamstresses, no effect on the Swallow's errand"
+  },
+  {
+   "claim": "k20",
+   "reason": "detail: the Professor of Ornithology's newspaper letter, a comic aside that does not carry the gift or its consequence"
+  },
+  {
+   "claim": "k29",
+   "reason": "detail: the list of faraway wonders is summarised in the beat; k30 carries its point"
+  },
+  {
+   "claim": "k47",
+   "reason": "supporting: the idea that love outweighs jewels is restated by k54 and acted out by k66 and k68"
+  },
+  {
+   "claim": "k48",
+   "reason": "detail: the lizard, butterfly and daisy laughing at the Student entertain but do not teach"
+  },
+  {
+   "claim": "k65",
+   "reason": "detail: the daughter winding blue silk with her dog is stage setting for k66"
+  }
+ ],
+ "page_budget": {
+  "min": 17,
+  "max": 22,
+  "target": 17
+ }
+}

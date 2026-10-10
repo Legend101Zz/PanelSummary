@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.8.0
+version: 1.9.0
 ---
 
 # Book understanding
@@ -140,6 +140,7 @@ source order: `{"at": "<unit where it happens>", "claim": "<claim that tells it>
 patch>}}`, with fields and values from `trusted_state_fields`. The Prince: `[{"at":"s1u6","claim":"k16",
 "set":{"eyes":"blind"}},{"at":"s1u7","claim":"k19","set":{"material":"stone"}}]`; a death is
 `{"eyes":"dead"}`. Code then tells every page how the character looks at that point.
+Clothes: `{"outfit": "underclothes"}` or `"undressed"` (robe off).
 
 **Sacred figures.** Do not make God, angels or other sacred figures into emblems or
 cartoon characters. Leave them out of the cast; pages show them through light
@@ -161,6 +162,7 @@ Every place a scene happens (at most 20), mapped to the closest `environment` pl
 `features` that make it recognisable (a column for the statue, a high wall around the
 giant's garden, bars for a jail).
 
+- New environments: `foundry`, `dustheap`, `paradise`.
 - **Include staging features.** Include every feature a scene relies on: `statue_column`
   when a statue stands on one, `bed` when someone lies ill, `window` when someone looks
   or flies in through it. Use 1-4 features. More makes the background busy.
