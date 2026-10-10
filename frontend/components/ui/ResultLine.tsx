@@ -20,7 +20,7 @@ export interface ResultLineProps {
 }
 
 /**
- * The range strip: the estimate range as a grey bar, the actual value as a mark with its label above.
+ * The range strip: the estimate range as a pale bar with a 1 px edge, the actual value as an action-colour mark with its label above.
  * Under 20% of the range the label starts at the mark, over 80% it ends at the mark, between it is centred.
  * The range ends sit below the bar, so the label never covers them. The words in `title` say the same thing.
  */

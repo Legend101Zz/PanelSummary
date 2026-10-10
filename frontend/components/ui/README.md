@@ -37,6 +37,8 @@ The reader and the PDF viewer are in `app/(reader)/`. They do not get this frame
 
 Light, Dark or "Use the system setting" (the default). The choice is in `localStorage` under `ps-theme` and in `data-theme` on `<html>` (no attribute = system). A blocking script in `<head>` sets the attribute before the first paint. Use `useTheme()` from `@/lib/useTheme` for a Settings control: it returns `pref`, `resolved`, `setPref` and `toggle`. The pure parts are in `@/lib/theme`.
 
+**Hand-off to the Settings track.** The header `ThemeButton` only toggles Light and Dark. Once a viewer has chosen one, it cannot return to "Use the system setting" from the app frame. The Settings screen must provide the three-way control (Light, Dark, Use the system setting), for example a `SegmentedControl` that calls `useTheme().setPref("light" | "dark" | "system")`, as `/dev/components` does. Until Settings ships, nothing in the app returns to system.
+
 ## Components
 
 Each entry names the design board it comes from. Boards are in `Book-Reel-scratch/design-v02/from-claude-design/round-4b/round-4b/`.

@@ -46,7 +46,7 @@ export function shelfBandExamples(): ShelfBandExample[] {
     { key: "limit_no_plan", family: "needs", text: "MiniMax limit reached" },
     { key: "key", family: "needs", text: "MiniMax refused the key, 13 of 16 drawn" },
     { key: "noanswer", family: "needs", text: "MiniMax not answering, 9 of 16 drawn" },
-    { key: "error", family: "needs", text: "Stopped with an error" },
+    { key: "error", family: "needs", text: "Drawing stopped" },
   ];
 }
 
