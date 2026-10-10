@@ -26,5 +26,7 @@ decision D13 in `docs/decisions.md`.
 | `W2-writer.md` | Track W2-writer: the repair-once checks and the writer skill rules. |
 | `README.md` | This index. |
 
+The v0.2 documents are indexed in `docs/v0.2/README.md`.
+
 Other pages: `README.md` in the repository root (run it, verify it, limits),
 `docs/rebuild/STATE.md` (state of the system), `docs/rebuild/ACCEPTANCE.md` (the eight live runs of the rebuild and the v0.1 launch runs).
