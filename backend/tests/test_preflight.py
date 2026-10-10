@@ -101,10 +101,10 @@ def test_check_limits():
     assert "120 PDF pages" in pages[0]
     assert pages[0].endswith("PanelSummary can adapt books up to 75 PDF pages in one run.")
     assert words[0].endswith("PanelSummary can adapt books up to 17,500 words in one run.")
-    assert not any("BookReel" in r for r in both)
     both = check_limits(120, 20000, 75, 17500)
     assert len(both) == 3  # two reasons plus the note that the PDF stays readable
     assert "read the PDF" in both[-1]
+    assert not any("BookReel" in r for r in both)
 
 
 def test_limits_are_configuration(monkeypatch):
@@ -248,8 +248,3 @@ def test_the_basis_counts_each_policy_and_names_no_stale_claim():
     assert n_all_flash >= 1
     assert f"and {n_all_flash} with Flash on every goal" in text
     assert "M3 on the book understanding in all" not in text
-
-
-def test_planted_ci_failure():
-    # Planted on purpose (v0.2 Phase 0): CI must go red on this. Reverted in the next commit.
-    assert False, "planted CI failure"
