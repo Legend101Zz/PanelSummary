@@ -121,3 +121,11 @@ Stack on the F1 ports (web 3280, API 8180, worker 8880, MongoDB 27180, database 
 - Page checks that look at the previous page use what the backend sends, as in a real run.
 - The retry of a failing page succeeds by design. To test a page that never succeeds, set `FAIL_TIMES` high.
 - The provider refusal counters are in the memory of the worker. A restart of the worker resets them.
+
+## Note after the rebase on renderer 0.6.0 (Q1)
+
+With `manga-render/0.6.0` (track Q1), today's checks reject 2 of the 22 saved pages of the two-tale run:
+page 2 (`TAIL_CROSSES_TEXT`) and page 7 (`TEXT_DOES_NOT_FIT`). Before Q1, all saved pages passed. The
+replay still draws these pages and names the codes in the receipt warning. The test now verifies that
+every page succeeds and that each drawn-anyway warning names its codes, because the set of rejected
+saved pages changes with the renderer. In a live run the writer gets these errors and repairs the page.
