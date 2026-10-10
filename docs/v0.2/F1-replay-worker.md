@@ -34,9 +34,9 @@ The replay worker serves `POST /internal/v2/runs`, `POST /internal/v2/runs/{id}/
 
 Every receipt is marked as a replay: `provider` is `replay`, `thinking_sent` is `replay`, `stop_reason` is
 `replay`, and `cost_basis` says that nothing was spent now. The model name and thinking level are the ones
-in the request. With `REPLAY_COSTS=saved` (the default) the tokens and cost are copied from the saved
-receipt of the same call, so the cost screens show a realistic number. That number is not a spend. With
-`REPLAY_COSTS=zero` they are all zero.
+in the request. With `REPLAY_COSTS=zero` (the default) the tokens and cost are all zero, because a replay spends nothing.
+With `REPLAY_COSTS=saved` they are copied from the saved receipt of the same call, so the cost screens show a
+realistic number. That number is not a spend.
 
 ## Build a replay package
 
@@ -94,7 +94,7 @@ environment.
 | `FAIL_TIMES` | `--fail-times` | How many calls of a failing page fail before it succeeds. The backend tries a page twice per Generate, so `2` ends in `completed_with_failures` and the retry succeeds. | `2` |
 | `PROVIDER_STOP` | `--provider-stop` | `limit`, `auth` or `unavailable`, then `@page=N`, `@understanding` or `@plan`. The error has the shape of a real MiniMax refusal, so the backend stops the job with `provider_stop` (D11). | none |
 | `PROVIDER_STOP_TIMES` | | How many calls meet the refusal. After that, work goes on, so Resume continues. | `1` (`2` for `unavailable`, which the backend retries once) |
-| `REPLAY_COSTS` | `--costs` | `saved` or `zero`. | `saved` |
+| `REPLAY_COSTS` | `--costs` | `zero` or `saved`. | `zero` |
 | `AGENT_WORKER_TOKEN`, `AGENT_WORKER_HOST`, `AGENT_WORKER_PORT` | | As the real worker. | |
 
 Cancel is honoured: the call ends at once with `CANCELLED`. A dropped connection from the backend also stops it.
@@ -117,7 +117,7 @@ Stack on the F1 ports (web 3280, API 8180, worker 8880, MongoDB 27180, database 
 - It shows today's renderer on yesterday's specs. It says nothing about model quality, cost or speed of the
   model, and its latency is the delay you set.
 - With `REPLAY_COSTS=saved` the edition totals show the saved run's cost, but nothing was spent. The receipt
-  `cost_basis` says so.
+  `cost_basis` says so. The default is `zero`.
 - Page checks that look at the previous page use what the backend sends, as in a real run.
 - The retry of a failing page succeeds by design. To test a page that never succeeds, set `FAIL_TIMES` high.
 - The provider refusal counters are in the memory of the worker. A restart of the worker resets them.

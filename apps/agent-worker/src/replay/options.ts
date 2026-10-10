@@ -8,7 +8,7 @@
  *   FAIL_TIMES / --fail-times N        how many calls of a failing page fail before it succeeds (default 2 = the backend's page_attempts)
  *   PROVIDER_STOP / --provider-stop X  limit|auth|unavailable@page=N | @understanding | @plan
  *   PROVIDER_STOP_TIMES                how many calls meet the refusal (default 1; 2 for "unavailable", the backend retries it once)
- *   REPLAY_COSTS / --costs saved|zero  cost and tokens in the receipts: copied from the saved run (default) or zero
+ *   REPLAY_COSTS / --costs saved|zero  cost and tokens in the receipts: zero (default: a replay spends nothing) or copied from the saved run
  *   AGENT_WORKER_TOKEN, AGENT_WORKER_HOST, AGENT_WORKER_PORT   as the real worker
  */
 
@@ -112,7 +112,7 @@ export function parseOptions(argv: readonly string[], env: Record<string, string
   if (!packageDir) throw new OptionError("a replay package is required (REPLAY_PACKAGE or --package DIR)");
   const token = env.AGENT_WORKER_TOKEN ?? "";
   if (token.length < 32) throw new OptionError("AGENT_WORKER_TOKEN must be set (at least 32 characters)");
-  const costs = pick("costs", "REPLAY_COSTS") ?? "saved";
+  const costs = pick("costs", "REPLAY_COSTS") ?? "zero";
   if (costs !== "saved" && costs !== "zero") throw new OptionError(`REPLAY_COSTS must be saved or zero, not "${costs}"`);
   const timesText = env.PROVIDER_STOP_TIMES;
   return {

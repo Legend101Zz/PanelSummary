@@ -71,7 +71,7 @@ describe("options", () => {
     expect(given.providerStop?.kind).toBe("limit");
     expect(given.port).toBe(8880);
     expect(given.failTimes).toBe(2);
-    expect(given.costs).toBe("saved");
+    expect(given.costs).toBe("zero"); // a replay spends nothing, so its receipts say $0 unless asked
     expect(() => parseOptions([], { AGENT_WORKER_TOKEN: TOKEN })).toThrow(/replay package/);
     expect(() => parseOptions([], { REPLAY_PACKAGE: "/p" })).toThrow(/AGENT_WORKER_TOKEN/);
     expect(() => parseOptions([], { AGENT_WORKER_TOKEN: TOKEN, REPLAY_PACKAGE: "/p", REPLAY_COSTS: "free" })).toThrow(/saved or zero/);
@@ -148,7 +148,7 @@ describe("request to response", () => {
   });
 
   it("MANGA_PAGE renders the saved spec now, with a consistent hash and a receipt marked replay", async () => {
-    const out = await new ReplayHandler(pkg, options()).execute(pageRequest(pkg, 1), signal);
+    const out = await new ReplayHandler(pkg, options({ REPLAY_COSTS: "saved" })).execute(pageRequest(pkg, 1), signal);
     expect(out.state).toBe("SUCCEEDED");
     if (out.state !== "SUCCEEDED") return;
     const result = out.result as { spec: { page_number: number }; render: { svg: string; svg_hash: string; renderer_version: string; panels: unknown[]; texts: unknown[]; issues: unknown[] } };
@@ -158,7 +158,7 @@ describe("request to response", () => {
     expect(result.render.renderer_version).toMatch(/\S/);
     expect(result.render.panels.length).toBeGreaterThan(0);
     expect(out.trace.stop_reason).toBe("replay");
-    expect(out.trace.cost_usd).toBeGreaterThan(0); // copied from the saved receipt
+    expect(out.trace.cost_usd).toBeGreaterThan(0); // REPLAY_COSTS=saved copies it from the saved receipt
   });
 
   it("REPLAY_COSTS=zero puts zero cost and zero tokens on the receipt", async () => {
