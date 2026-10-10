@@ -912,6 +912,227 @@ const SPECS: Record<PropId, Spec> = {
       return s;
     },
   },
+  // ---- v0.2 (#41): props that stories need ----------------------------------
+  pot: {
+    // a kitchen cooking pot: round belly, side lugs, lid with a knob. NOT a bell (no flare, no loop, no clapper).
+    h: 21,
+    w: 22,
+    grip: { x: 9.6, y: -6 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      // steam above the lid
+      if (!k.simple) s += L(`${M(-2.2, -16.4)}q-1.5 -1.2 0 -2.4t0 -2.4${M(2.4, -16)}q-1.5 -1.2 0 -2.4`, k.dw * 0.9);
+      // side lugs
+      s += P(`${M(-7.4, -7.8)}${Q(-11.6, -8.2, -11.2, -5)}${Q(-11, -3.9, -7.2, -4.6)}`, "none", k.lw * 1.25);
+      s += P(`${M(7.4, -7.8)}${Q(11.6, -8.2, 11.2, -5)}${Q(11, -3.9, 7.2, -4.6)}`, "none", k.lw * 1.25);
+      // round belly, flat foot
+      const belly = `${M(-6.6, -9.6)}${Q(-8.6, -6, -7.2, -2.8)}${Q(-6.2, -0.6, -3.6, -0.6)}${Lto(3.6, -0.6)}${Q(6.2, -0.6, 7.2, -2.8)}${Q(8.6, -6, 6.6, -9.6)}Z`;
+      s += P(belly, bodyOf(k, g.dark), k.lw);
+      if (!k.simple) s += L(`${M(-5.4, -7.2)}${Q(-6, -5, -5.2, -3.4)}`, k.dw * 1.2, PAPER);
+      // rim and domed lid with a knob
+      s += P(`${M(-7.4, -10.6)}${Lto(7.4, -10.6)}${Lto(7.2, -9)}${Lto(-7.2, -9)}Z`, g.mid, k.lw);
+      s += P(`${M(-6, -10.6)}${Q(0, -16, 6, -10.6)}Z`, g.light, k.lw);
+      s += C(0, -14.6, 1.1, g.dark, k.dw);
+      return s;
+    },
+  },
+  stove: {
+    // a tiled iron-and-tile room stove with a pipe: door with a lit window, vents, a flat top
+    h: 64,
+    w: 36,
+    grip: { x: 0, y: -30 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      // flue pipe up and out
+      s += P(poly(5, -45, 11, -45, 11, -64, 5, -64), g.mid, k.lw);
+      if (!k.simple) s += L(`${M(5, -52)}${Lto(11, -52)}${M(5, -58)}${Lto(11, -58)}`, k.dw);
+      // feet
+      s += P(poly(-15, -4, -11, -4, -11, 0, -15, 0), g.dark, k.lw);
+      s += P(poly(11, -4, 15, -4, 15, 0, 11, 0), g.dark, k.lw);
+      // tiled body
+      s += P(poly(-16, -4, 16, -4, 16, -42, -16, -42), bodyOf(k, PAPER), k.lw);
+      if (!k.simple) {
+        let tiles = "";
+        for (let y = -10; y > -42; y += -6) tiles += `${M(-16, y)}${Lto(16, y)}`;
+        for (let x = -10; x < 16; x += 6) tiles += `${M(x, -4)}${Lto(x, -42)}`;
+        s += L(tiles, k.dw * 0.6);
+        s += F(poly(11, -4, 16, -4, 16, -42, 11, -42), g.dots);
+      }
+      // top plate and base plate
+      s += P(poly(-18, -45, 18, -45, 18, -42, -18, -42), g.dark, k.lw);
+      s += P(poly(-17, -4, 17, -4, 17, -6.2, -17, -6.2), g.dark, k.lw);
+      // iron door with an arched lit window
+      s += P(`${M(-8.5, -12)}${Lto(-8.5, -32)}${Q(-8.5, -37.6, -3, -37.6)}${Q(2.5, -37.6, 2.5, -32)}${Lto(2.5, -12)}Z`, g.dark, k.lw);
+      s += P(`${M(-5.6, -17)}${Lto(-5.6, -31.4)}${Q(-5.6, -34.8, -3, -34.8)}${Q(-0.4, -34.8, -0.4, -31.4)}${Lto(-0.4, -17)}Z`, PAPER, k.dw * 1.2);
+      s += flame(-3, -17.6, 11, k.dw * 1.1);
+      s += C(4.6, -24, 1.1, PAPER, k.dw);
+      // air vents under the door
+      if (!k.simple) s += L(`${M(7.4, -12)}${Lto(13, -12)}${M(7.4, -14.4)}${Lto(13, -14.4)}${M(7.4, -16.8)}${Lto(13, -16.8)}`, k.dw * 1.1);
+      return s;
+    },
+  },
+  roast_goose: {
+    // a roast goose on a platter, legs up, knife and fork in the breast, steam over it
+    h: 26,
+    w: 34,
+    grip: { x: -15, y: -3 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      if (!k.simple) s += L(`${M(-4, -19)}q-1.8 -1.6 0 -3.4t0 -3.4${M(1.2, -18.4)}q-1.8 -1.6 0 -3.4${M(6, -18)}q-1.6 -1.5 0 -3.2`, k.dw * 0.9);
+      // platter
+      s += E(0, -1.9, 16.5, 2.4, PAPER, k.lw);
+      s += E(0, -2.6, 11.5, 1.4, g.light, k.dw);
+      // two drumsticks tied up at the back: a meaty club with a bone end and a paper frill
+      for (const [x0, lean] of [[7.4, 0.2], [11, 0.55]] as const) {
+        const tx = x0 + lean * 4;
+        s += P(`${M(x0 - 2.3, -6)}${Q(x0 - 3.2, -11.5, tx - 1.4, -14.4)}${Lto(tx + 1.4, -14.4)}${Q(x0 + 3.4, -11, x0 + 2.4, -6)}Z`, bodyOf(k, g.mid), k.lw);
+        s += P(poly(tx - 0.9, -14.4, tx + 0.9, -14.4, tx + 0.8, -16.4, tx - 0.8, -16.4), PAPER, k.dw);
+        s += P(`${M(tx - 2.4, -16)}${Lto(tx + 2.4, -16)}${Lto(tx + 3, -18.8)}${Lto(tx - 3, -18.8)}Z`, PAPER, k.dw);
+      }
+      // the body: a plump brown bird, breast to the left
+      const body = `${M(-14, -4.2)}${Q(-15.6, -11.4, -8, -13.4)}${Q(-0.6, -15.6, 7.6, -11.6)}${Q(14.4, -9.4, 13.2, -4.2)}${Q(0, -1.6, -14, -4.2)}Z`;
+      s += P(body, bodyOf(k, g.mid), k.lw);
+      if (!k.simple) {
+        s += F(`${M(-13.4, -5.6)}${Q(0, -3.2, 12.8, -5.6)}${Lto(12.6, -4.4)}${Q(0, -1.8, -13.6, -4.4)}Z`, g.dark);
+        s += L(`${M(-9, -12)}${Q(-3, -13.8, 3, -12.6)}`, k.dw * 1.3, PAPER);
+        // carved breast slices and a wing
+        s += L(`${M(-10.6, -11.4)}${Q(-9.4, -8.4, -10.2, -5.6)}${M(-7.4, -12.4)}${Q(-6.2, -9, -7, -5.2)}${M(-4.2, -12.8)}${Q(-3, -9.4, -3.8, -5)}`, k.dw * 0.9);
+        s += L(`${M(1, -10)}${Q(5, -11.4, 8, -8)}${Q(4, -6.6, 1, -10)}`, k.dw);
+        // a small knife and fork stuck in the breast, with short handles
+        s += L(`${M(-12.2, -10.6)}${Lto(-13.2, -15.8)}${M(-11.4, -10.8)}${Lto(-11.4, -15.8)}`, k.lw * 0.7);
+        s += P(poly(-13.8, -15.8, -12.6, -15.8, -12.6, -18.4, -13.8, -18.4), PAPER, k.dw);
+        s += P(poly(-12, -15.8, -10.8, -15.8, -10.8, -18.4, -12, -18.4), PAPER, k.dw);
+      }
+      return s;
+    },
+  },
+  heart: {
+    // a heart cast in lead: dark, heavy, with a glint (tone variant for other hearts)
+    h: 14,
+    w: 15,
+    grip: { x: 0, y: -7 },
+    draw: (k) => {
+      const g = G(k.p);
+      const shape = `${M(0, -0.4)}${Q(-8, -5.4, -7.4, -9.6)}${Q(-6.6, -13.6, -3.2, -13.4)}${Q(-0.7, -13.2, 0, -10.2)}${Q(0.7, -13.2, 3.2, -13.4)}${Q(6.6, -13.6, 7.4, -9.6)}${Q(8, -5.4, 0, -0.4)}Z`;
+      let s = P(shape, bodyOf(k, g.dark), k.lw);
+      if (!k.simple) {
+        s += L(`${M(-5.2, -8.4)}${Q(-5.4, -10.8, -3.6, -11.4)}`, k.dw * 1.5, darkBody(k) || !k.tone ? PAPER : INK);
+        s += L(`${M(2, -1.6)}${Q(5, -3.4, 6.2, -6.4)}`, k.dw, PAPER);
+      }
+      return s;
+    },
+  },
+  angel: {
+    // a winged angel in a long gown with a halo, hands together: drawn plainly, no face detail beyond closed eyes
+    h: 58,
+    w: 58,
+    grip: { x: 0, y: -26 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      // wings behind the figure: two layered feathered shapes on each side
+      for (const sx of [-1, 1]) {
+        const X = (x: number) => sx * x;
+        const wing = `${M(X(3), -42)}${Q(X(12), -58, X(25), -54)}${Q(X(28.4), -50, X(25.6), -46.6)}${Q(X(29), -43.4, X(25.4), -40.6)}${Q(X(27.6), -37, X(23), -35)}${Q(X(23.4), -31, X(18.4), -30)}${Q(X(15), -26, X(4), -23)}Z`;
+        s += P(wing, PAPER, k.lw);
+        if (!k.simple) {
+          s += L(`${M(X(5), -40)}${Q(X(16), -49, X(24), -51)}${M(X(5), -36.6)}${Q(X(16), -43, X(25), -43.6)}${M(X(5), -33)}${Q(X(15), -37, X(22.4), -36.6)}${M(X(5), -29)}${Q(X(12), -31, X(18), -31)}`, k.dw * 0.9);
+        }
+      }
+      // the gown: shoulders to a wide hem, with folds
+      const gown = `${M(-5.2, -37)}${Q(-6.6, -22, -10.6, -2.4)}${Q(0, 0.6, 10.6, -2.4)}${Q(6.6, -22, 5.2, -37)}${Q(0, -39.4, -5.2, -37)}Z`;
+      s += P(gown, bodyOf(k, PAPER), k.lw);
+      if (!k.simple) {
+        s += L(`${M(-3, -24)}${Q(-4.4, -13, -6.4, -3.2)}${M(1.4, -22)}${Q(1.8, -12, 1, -1.6)}${M(5, -24)}${Q(6, -13, 7.6, -3)}`, k.dw);
+        s += F(`${M(5.2, -37)}${Q(6.6, -22, 10.6, -2.4)}${Q(8.4, -1.6, 6.4, -2)}${Q(4.8, -20, 3, -37)}Z`, g.dots);
+      }
+      // arms folded in front, hands together
+      s += P(`${M(-5, -35)}${Q(-9, -28, -2.4, -27.2)}${Lto(2.4, -27.2)}${Q(9, -28, 5, -35)}${Q(0, -32.4, -5, -35)}Z`, PAPER, k.lw);
+      s += C(0, -27.8, 2.1, PAPER, k.dw * 1.2);
+      // head, hair and halo
+      s += C(0, -43.2, 4.6, PAPER, k.lw);
+      s += P(`${M(-4.7, -43)}${Q(-5, -49, 0, -49)}${Q(5, -49, 4.7, -43)}${Q(2.4, -46.6, -4.7, -43)}Z`, g.mid, k.dw * 1.2);
+      if (!k.simple) s += L(`${M(-2.6, -42.4)}${Q(-1.6, -41.8, -0.8, -42.4)}${M(0.8, -42.4)}${Q(1.6, -41.8, 2.6, -42.4)}`, k.dw);
+      s += E(0, -53, 6.4, 1.9, "none", k.lw * 1.1);
+      return s;
+    },
+  },
+  loom: {
+    // a weaver's frame loom: two posts, beams, bare warp threads, a shuttle and treadles. Empty on purpose
+    // (the cheats in the tale weave nothing); a short band of cloth sits at the bottom.
+    h: 66,
+    w: 56,
+    grip: { x: 0, y: -30 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      // warp threads between the beams
+      let warp = "";
+      for (let x = -19; x <= 19; x += 3.17) warp += `${M(x, -56)}${Lto(x, -22)}`;
+      s += L(warp, k.dw * 0.55);
+      // a band of woven cloth just above the lower beam, and a shuttle on the warp
+      s += P(poly(-19.2, -22, 19.2, -22, 19.2, -29, -19.2, -29), bodyOf(k, g.light), k.dw);
+      if (!k.simple) {
+        let weft = "";
+        for (let y = -24; y > -29; y += -2) weft += `${M(-19.2, y)}${Lto(19.2, y)}`;
+        s += L(weft, k.dw * 0.6);
+        s += P(`${M(-9, -37)}${Q(-4, -39.2, 7, -37)}${Q(-4, -34.8, -9, -37)}Z`, g.dark, k.dw);
+      }
+      // posts with feet
+      for (const sx of [-1, 1]) {
+        s += P(poly(sx * 22.8, 0, sx * 25.8, 0, sx * 25.8, -62, sx * 22.8, -62), g.dark, k.lw);
+        s += P(poly(sx * 20, 0, sx * 28, 0, sx * 28, -3, sx * 20, -3), g.mid, k.lw);
+      }
+      // top beam and cloth beam, a lower rail
+      s += P(poly(-27.8, -62, 27.8, -62, 27.8, -55.6, -27.8, -55.6), g.mid, k.lw);
+      s += P(poly(-27, -22, 27, -22, 27, -17.6, -27, -17.6), g.mid, k.lw);
+      s += P(poly(-25.8, -9, 25.8, -9, 25.8, -6.6, -25.8, -6.6), g.dark, k.lw);
+      if (!k.simple) {
+        s += L(`${M(-24, -59)}${Lto(24, -59)}`, k.dw * 0.8, PAPER);
+        // treadles at the front, pegs on the beams
+        s += P(poly(-12, -3, -4, -3, -4, -1, -12, -1), g.dark, k.dw);
+        s += P(poly(4, -3, 12, -3, 12, -1, 4, -1), g.dark, k.dw);
+        s += L(`${M(-8, -3)}${Lto(-8, -9)}${M(8, -3)}${Lto(8, -9)}`, k.dw);
+        s += C(-27.8, -59, 1, PAPER, k.dw);
+        s += C(27.8, -59, 1, PAPER, k.dw);
+      }
+      return s;
+    },
+  },
+  sledge: {
+    // a sledge (sleigh) with curled runners and a high curved back, facing right
+    h: 31,
+    w: 56,
+    grip: { x: 18, y: -8 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = "";
+      // everything below is drawn from the sledge's own origin (runner start at x = -21): shift to centre it
+      // runners: long curves, front curl up
+      s += L(`${M(-21, -3.4)}${Q(-22.6, -1, -20, 0)}${Lto(18, 0)}${Q(24, 0, 23.4, -6)}${Q(23, -9.6, 20.4, -9.4)}`, k.lw * 1.7);
+      // posts from runner to body
+      s += L(`${M(-12, -1.6)}${Lto(-12, -8)}${M(10, -1.6)}${Lto(10, -8)}`, k.lw * 1.2);
+      // the body: high curved back at the left, low front board
+      const body = `${M(-20, -23)}${Q(-20.6, -12, -17, -9)}${Lto(17, -9)}${Q(19.4, -9.6, 20, -12)}${Lto(17.6, -13.4)}${Q(12, -13.2, 8, -14)}${Lto(-12, -14)}${Q(-14, -18, -13.2, -26)}${Q(-17, -27, -20, -23)}Z`;
+      s += P(body, bodyOf(k, g.gold), k.lw);
+      if (!k.simple) {
+        s += F(`${M(-17, -9)}${Lto(17, -9)}${Q(19.4, -9.6, 20, -12)}${Lto(17, -11.4)}${Lto(-16.6, -11.4)}Z`, g.mid);
+        s += L(`${M(-18, -21)}${Q(-17.4, -14, -15.4, -10.8)}`, k.dw * 1.2);
+        s += P(poly(-12, -14, 8, -14, 8, -16.4, -12, -16.4), g.dark, k.dw);
+        // a scroll curl on the front board
+        s += L(`${M(16, -12)}${Q(18.6, -14.4, 16.4, -16.6)}${Q(14.6, -15.2, 16, -14.2)}`, k.dw);
+      }
+      // the swan-neck prow: a curled neck, a head with a beak and an eye
+      s += L(`${M(18, -12.6)}${Q(25, -15, 23.4, -21)}${Q(22.4, -25.2, 24.6, -27.4)}`, k.lw * 1.4);
+      s += P(`${M(23, -26.2)}${Q(24.6, -29.4, 27.6, -28)}${Lto(30.6, -27.4)}${Lto(27.4, -26.2)}${Q(25.6, -25, 23, -26.2)}Z`, PAPER, k.dw * 1.2);
+      s += P(poly(27.6, -28, 30.6, -27.4, 27.4, -26.2), g.dark, k.dw);
+      s += C(25.6, -27.4, 0.5, INK, k.dw * 0.5);
+      return `<g transform="translate(-4 0)">${s}</g>`;
+    },
+  },
 };
 
 export function propSpec(prop: PropId): { h: number; w: number; grip: Point } {

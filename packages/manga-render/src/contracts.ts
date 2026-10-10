@@ -183,6 +183,9 @@ export const OUTFITS = [
   "cloak",
   "royal",
   "scholar",
+  // v0.2 (#41): a person without the outer clothes, for a story that strips someone
+  "underclothes",
+  "undressed",
 ] as const;
 export const HEADWEAR = [
   "none",
@@ -406,6 +409,10 @@ export const ENVIRONMENTS = [
   "moor",
   "ditch",
   "forge",
+  // v0.2 (#41)
+  "foundry",
+  "dustheap",
+  "paradise",
   "abstract",
   "void",
 ] as const;
@@ -477,6 +484,14 @@ export const PROPS = [
   "axe",
   "firework",
   "sign",
+  // v0.2 (#41)
+  "pot",
+  "stove",
+  "roast_goose",
+  "heart",
+  "angel",
+  "loom",
+  "sledge",
 ] as const;
 export type PropId = (typeof PROPS)[number];
 
@@ -591,6 +606,8 @@ export interface LookVariant {
   /** Plants only: how much bloom this appearance carries (see PLANT_BLOOMS). */
   bloom?: PlantBloom;
   material?: (typeof MATERIALS)[number];
+  /** People only: the clothes in this appearance (a robe taken off: "underclothes"). */
+  outfit?: (typeof OUTFITS)[number];
   outfit_tone?: Tone;
   hair_tone?: Tone;
   tone?: Tone;

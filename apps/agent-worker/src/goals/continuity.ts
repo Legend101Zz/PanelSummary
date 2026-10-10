@@ -292,6 +292,7 @@ export function visionIssues(spec: MangaPageSpec, plannedBeat: string | undefine
 
 const KNOWN_VALUES: Record<string, readonly string[]> = {
   material: C.MATERIALS,
+  outfit: C.OUTFITS,
   outfit_tone: C.TONES,
   hair_tone: C.TONES,
   tone: C.TONES,

@@ -74,7 +74,11 @@ function expectTailToward(p: Placed, fig: { head: { x: number; y: number }; head
   // collinear with edge → aim
   const cross = ((aim.x - base.x) * (tip.y - base.y) - (aim.y - base.y) * (tip.x - base.x)) / Math.max(1, gap);
   expect(Math.abs(cross)).toBeLessThan(2);
-  expect(reach).toBeLessThanOrEqual(Math.max(gap * 0.56, gap - Math.max(70, r * 2.6)) + 1);
+  // (v0.2, #42: when the halfway tail would end between two faces, a full-reach tail runs on to just outside
+  // its own speaker's head circle; it never enters the head)
+  const toHead = Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y) - r;
+  const fullReach = toHead <= Math.max(4, r * 0.08) + 1;
+  if (!fullReach) expect(reach).toBeLessThanOrEqual(Math.max(gap * 0.56, gap - Math.max(70, r * 2.6)) + 1);
   expect(reach).toBeGreaterThan(Math.min(12, gap * 0.4));
   expect(Math.hypot(tip.x - fig.head.x, tip.y - fig.head.y)).toBeGreaterThanOrEqual(r - 0.5);
 }
