@@ -1,0 +1,486 @@
+{
+ "page_number": 9,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 9,
+  "section_id": "s1",
+  "beat": "The Swallow plucks out the Prince's other eye and slips it into the match-girl's palm, and she laughs and runs home calling it a lovely bit of glass; returning, he announces that the Prince is blind now and sleeps at his feet to stay with him always.",
+  "claims": [
+   "k27",
+   "k28"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_prince",
+   "c_match_girl"
+  ],
+  "locations": [
+   "l_market_street",
+   "l_column_top"
+  ],
+  "units": [
+   "s1u6"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k27",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow plucks out the Prince's other eye and slips it into the match-girl's palm, and she laughs and runs home calling it a lovely bit of glass.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 12
+    }
+   ]
+  },
+  {
+   "id": "k28",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow declares that the Prince is blind now and insists on staying with him always, sleeping at the Prince's feet.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 12
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 9,
+  "section_id": "s1",
+  "purpose": "The Swallow gives up the Prince's second eye to the match-girl, who laughs and runs home with it, then returns to declare the Prince blind and that he will stay with him always.",
+  "layout": {
+   "template": "l_shape_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "On the column the Swallow refuses to take the Prince's eye.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "one_blind"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "text": "I cannot pluck out your eye.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      },
+      "speaker": "c_swallow"
+     },
+     {
+      "kind": "speech",
+      "text": "Do as I command you.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      },
+      "speaker": "c_prince"
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The second sapphire comes away into the Swallow's grasp.",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "gem",
+      "tone": "mid",
+      "slot": "center"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "He plucked out the Prince's other eye.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Swallow swoops down the wet street past the weeping match-girl.",
+    "shot": "wide",
+    "angle": "high",
+    "location": "l_market_street",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_match_girl",
+      "pose": "stand",
+      "expression": "cry",
+      "facing": "left",
+      "slot": "left",
+      "depth": "back"
+     }
+    ],
+    "props": [
+     {
+      "prop": "matches",
+      "tone": "mid",
+      "slot": "left"
+     }
+    ],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The match-girl's street",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The jewel lies in the girl's open palm and she laughs.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_market_street",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "reach",
+      "expression": "laugh",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid",
+      "holding": "gem",
+      "holding_tone": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "text": "What a lovely bit of glass.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      },
+      "speaker": "c_match_girl"
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 12
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Back on the column the blind Prince is told the Swallow will stay with him always, and the Swallow sleeps at his feet.",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center_right",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind"
+      }
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "gentle",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "text": "You are blind now.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      },
+      "speaker": "c_swallow"
+     },
+     {
+      "kind": "speech",
+      "text": "I will stay with you always.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      },
+      "speaker": "c_swallow"
+     },
+     {
+      "kind": "narration",
+      "text": "And he slept at the Prince's feet.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 12
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 12
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k27",
+   "k28"
+  ],
+  "claim_map": [
+   {
+    "claim": "k27",
+    "panels": [
+     "p1",
+     "p2",
+     "p3",
+     "p4"
+    ],
+    "how": "p1 the Swallow obeys the Prince's command; p2 the second sapphire is plucked out; p3 he swoops down the street to the match-girl; p4 the jewel is in her palm and she laughs, calling it a lovely bit of glass."
+   },
+   {
+    "claim": "k28",
+    "panels": [
+     "p5"
+    ],
+    "how": "the Prince is drawn blind while the Swallow says he will stay with him always, and the narration says he slept at the Prince's feet."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "HELD_PROP_OFF_FRAME",
+   "severity": "warning",
+   "path": "panel p4",
+   "message": "the gem held by \"c_match_girl\" would be outside the frame of this close panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a \"reach\" pose to show it in the hand."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u6",
+   "pages": null,
+   "text": "“I will stay with you one night longer,” said the Swallow, “but I cannot pluck out your eye. You would be quite blind then.”\n\n“Swallow, Swallow, little Swallow,” said the Prince, “do as I command you.”\n\nSo he plucked out the Prince’s other eye, and darted down with it. He swooped past the match-girl, and slipped the jewel into the palm of her hand. “What a lovely bit of glass,” cried the little girl; and she ran home, laughing.\n\nThen the Swallow came back to the Prince. “You are blind now,” he said, “so I will stay with you always.”\n\n“No, little Swallow,” said the poor Prince, “you must go away to Egypt.”\n\n“I will stay with you always,” said the Swallow, and he slept at the Prince’s feet.\n\nAll the next day he sat on the Prince’s shoulder, and told him stories of what he had seen in strange lands. He told him of the red ibises, who stand in long rows on the banks of the Nile, and catch gold-fish in their beaks; of the Sphinx, who is as old as the world itself, and lives in the desert, and knows everything; of the merchants, who walk slowly by the side of their camels, and carry amber beads in their hands; of the King of the Mountains of the Moon, who is as black as ebony, and worships a large crystal; of the great green snake that sleeps in a palm-tree, and has twenty priests to feed it with honey-cakes; and of the pygmies who sail over a big lake on large flat leaves, and are always at war with the butterflies.\n\n“Dear little Swallow,” said the Prince, “you tell me of marvellous things, but more marvellous than anything is the suffering of men and of women. There is no Mystery so great as Misery. Fly over my city, little Swallow, and tell me what you see there.”\n\nSo the Swallow flew over the great city, and saw the rich making merry in their beautiful houses, while the beggars were sitting at the gates. He flew into dark lanes, and saw the white faces of starving children looking out listlessly at the black streets. Under the archway of a bridge two little boys were lying in one another’s arms to try and keep themselves warm. “How hungry we are!” they said. “You must not lie here,” shouted the Watchman, and they wandered out into the rain.\n\nThen he flew back and told the Prince what he had seen.\n\n“I am covered with fine gold,” said the Prince, “you must take it off, leaf by leaf, and give it to my poor; the living always think that gold can make them happy.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_match_girl",
+   "name": "The Little Match-girl",
+   "role": "a child who has dropped her matches",
+   "description": "A barefoot child, small even beside the swallow, with no shoes, no stockings and a bare little head; her matches lie spoiled in the gutter and she is crying because her father will beat her.",
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bob",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,554 @@
+{
+ "page_number": 10,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 10,
+  "section_id": "s1",
+  "beat": "All day the Swallow tells the blind Prince of red ibises, the Sphinx and pygmies, and the Prince answers that more marvellous than any of it is human misery and sends him to fly over the city and report; the Swallow sees the rich making merry while beggars sit at the gates and two boys are driven into the rain, and the Prince orders his fine gold taken off leaf by leaf for the poor.",
+  "claims": [
+   "k30",
+   "k31",
+   "k32"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_prince",
+   "c_beggars",
+   "c_watchman"
+  ],
+  "locations": [
+   "l_column_top",
+   "l_city_square",
+   "l_gutter"
+  ],
+  "units": [
+   "s1u6"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k30",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "You tell me of marvellous things, but more marvellous than anything is the suffering of men and of women. There is no Mystery so great as Misery.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k31",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Flying over the city, the Swallow sees the rich making merry while beggars sit at the gates, starving children in dark lanes, and two boys driven out into the rain by the Watchman.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    }
+   ]
+  },
+  {
+   "id": "k32",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince orders the Swallow to take his fine gold off leaf by leaf and give it to the poor, because the living always think gold can make them happy.",
+   "source": [
+    {
+     "unit": "s1u6",
+     "page": 13
+    },
+    {
+     "unit": "s1u7",
+     "page": 13
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 10,
+  "section_id": "s1",
+  "purpose": "The blind Prince hears the Swallow's wonders, names human misery as the greatest mystery, sends him over the city, and orders his fine gold given away leaf by leaf.",
+  "layout": {
+   "template": "establish_6"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The column top high above the city in daylight",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "gentle",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "eyes": "blind",
+       "material": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "All the next day on the column",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Swallow tells the Prince of the wonders he has seen abroad",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "point",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "hand"
+      }
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "gentle",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "blind",
+       "material": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "He told him of the red ibises... of the Sphinx, who is as old as the world itself.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Prince answers that misery is the greatest mystery",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "point",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "eyes": "blind",
+       "material": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "More marvellous than anything is the suffering of men and of women.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Below, the rich make merry while the beggars sit at the gates",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_city_square",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_beggars",
+      "pose": "cower",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_beggars",
+      "text": "The Beggars and Poor of the City",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Fly over my city, he said. The rich make merry; the beggars sit at the gates.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Under a bridge archway the Watchman shouts at two starving boys in the rain",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_gutter",
+    "time": "day",
+    "weather": "rain",
+    "figures": [
+     {
+      "character": "c_beggars",
+      "pose": "cower",
+      "expression": "cry",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_watchman",
+      "pose": "point",
+      "expression": "shout",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "rain"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_watchman",
+      "text": "The Watchman",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     },
+     {
+      "kind": "shout",
+      "speaker": "c_watchman",
+      "text": "You must not lie here!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "Back on the column, the Prince orders his fine gold taken off leaf by leaf for the poor",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "reach",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "blind",
+       "material": "stone"
+      }
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "worried",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "fore",
+      "on": {
+       "target": "c_prince",
+       "part": "feet"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Take it off, leaf by leaf, and give it to my poor.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u6",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u6",
+      "page": 13
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k30",
+   "k31",
+   "k32"
+  ],
+  "claim_map": [
+   {
+    "claim": "k30",
+    "panels": [
+     "p3"
+    ],
+    "how": "The Prince says in his own words that human suffering is more marvellous than anything."
+   },
+   {
+    "claim": "k31",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 names the beggars and shows them at the gates while the rich make merry, with the Prince's order to fly over the city; p5 shows the Watchman driving two boys out into the rain."
+   },
+   {
+    "claim": "k32",
+    "panels": [
+     "p6"
+    ],
+    "how": "The Prince orders his fine gold taken off leaf by leaf and given to the poor, with the Swallow listening at his feet."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u6",
+   "pages": null,
+   "text": "“I will stay with you one night longer,” said the Swallow, “but I cannot pluck out your eye. You would be quite blind then.”\n\n“Swallow, Swallow, little Swallow,” said the Prince, “do as I command you.”\n\nSo he plucked out the Prince’s other eye, and darted down with it. He swooped past the match-girl, and slipped the jewel into the palm of her hand. “What a lovely bit of glass,” cried the little girl; and she ran home, laughing.\n\nThen the Swallow came back to the Prince. “You are blind now,” he said, “so I will stay with you always.”\n\n“No, little Swallow,” said the poor Prince, “you must go away to Egypt.”\n\n“I will stay with you always,” said the Swallow, and he slept at the Prince’s feet.\n\nAll the next day he sat on the Prince’s shoulder, and told him stories of what he had seen in strange lands. He told him of the red ibises, who stand in long rows on the banks of the Nile, and catch gold-fish in their beaks; of the Sphinx, who is as old as the world itself, and lives in the desert, and knows everything; of the merchants, who walk slowly by the side of their camels, and carry amber beads in their hands; of the King of the Mountains of the Moon, who is as black as ebony, and worships a large crystal; of the great green snake that sleeps in a palm-tree, and has twenty priests to feed it with honey-cakes; and of the pygmies who sail over a big lake on large flat leaves, and are always at war with the butterflies.\n\n“Dear little Swallow,” said the Prince, “you tell me of marvellous things, but more marvellous than anything is the suffering of men and of women. There is no Mystery so great as Misery. Fly over my city, little Swallow, and tell me what you see there.”\n\nSo the Swallow flew over the great city, and saw the rich making merry in their beautiful houses, while the beggars were sitting at the gates. He flew into dark lanes, and saw the white faces of starving children looking out listlessly at the black streets. Under the archway of a bridge two little boys were lying in one another’s arms to try and keep themselves warm. “How hungry we are!” they said. “You must not lie here,” shouted the Watchman, and they wandered out into the rain.\n\nThen he flew back and told the Prince what he had seen.\n\n“I am covered with fine gold,” said the Prince, “you must take it off, leaf by leaf, and give it to my poor; the living always think that gold can make them happy.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_watchman",
+   "name": "The Watchman",
+   "role": "a night watchman at the bridge archway",
+   "description": "A broad, heavy policeman in a uniform who shouts at two starving boys lying under a bridge arch to move along, driving them out into the rain.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "heavy",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "dark",
+    "facial_hair": "stubble",
+    "outfit": "uniform",
+    "outfit_tone": "dark",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_beggars",
+   "name": "The Beggars and Poor of the City",
+   "role": "the city's poor who sit at the gates",
+   "description": "Crowds of ragged poor — starving children with white faces in dark lanes, and two little boys lying in each other's arms for warmth.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "townsfolk",
+    "size": "many"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

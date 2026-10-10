@@ -1,0 +1,490 @@
+{
+ "page_number": 10,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 10,
+  "section_id": "s2",
+  "beat": "From the pot the court ladies learn every dish cooking from the chamberlain's to the cobbler's, and the swineherd then builds a rattle playing every waltz and jig tune ever heard, which the Princess buys for a hundred kisses, ten of them her own.",
+  "claims": [
+   "k30",
+   "k31",
+   "k32"
+  ],
+  "cast": [
+   "c_prince",
+   "c_princess",
+   "c_court_ladies"
+  ],
+  "locations": [
+   "l_swineherd_room"
+  ],
+  "units": [
+   "s2u2",
+   "s2u3"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k30",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "From the pot the ladies learn what is cooking at every hearth in the city, from the chamberlain's to the cobbler's.",
+   "source": [
+    {
+     "unit": "s2u2",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k31",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The swineherd builds a rattle that plays all the waltzes and jig tunes ever heard.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k32",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess buys the rattle for a hundred kisses, giving ten herself and requiring the court ladies to supply the rest.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 14
+    },
+    {
+     "unit": "s2u3",
+     "page": 15
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 10,
+  "section_id": "s2",
+  "purpose": "The ladies learn every dish cooking in the city from the pot, and the Princess buys the swineherd's rattle for a hundred kisses of which she gives ten herself.",
+  "layout": {
+   "template": "staggered_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "In the dirty room by the pigsty the ladies crowd round the boiling pot while the swineherd works beside it.",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "kneel",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     },
+     {
+      "character": "c_court_ladies",
+      "pose": "stand",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "bell",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The room by the pigsty",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The little bells on the pot and its rising smoke, which carries every dish in the city.",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "bell",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Hold a finger in that smoke, and you smell what is cooking on every hearth.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The swineherd swings the rattle he has made and names his price: a hundred kisses.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "hold",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     },
+     {
+      "character": "c_princess",
+      "pose": "stand",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "bell",
+      "slot": "center_left",
+      "depth": "mid",
+      "tone": "gold"
+     }
+    ],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "His rattle played all the waltzes and jig tunes ever heard.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 14
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "A hundred kisses from the Princess...",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 14
+     },
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The ladies read the city's dinners off the smell and delight in it.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_court_ladies",
+      "pose": "talk",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_court_ladies",
+      "text": "We know who has soup, and who has pancakes for dinner to-day!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "From the chamberlain's kitchen to the cobbler's.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u2",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u2",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Princess offers ten kisses herself and leans on the ladies to pay the rest.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_swineherd_room",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "talk",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_princess",
+      "text": "Tell him he shall, as on yesterday, have ten kisses from me...",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_princess",
+      "text": "...and may take the rest from the ladies of the court.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 15
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k30",
+   "k31",
+   "k32"
+  ],
+  "claim_map": [
+   {
+    "claim": "k30",
+    "panels": [
+     "p1",
+     "p2",
+     "p4"
+    ],
+    "how": "p1-p2 show the pot's bells and smoke in the room by the pigsty; p4 has the ladies read the city's dinners off the smell and a narration names the chamberlain's and the cobbler's."
+   },
+   {
+    "claim": "k31",
+    "panels": [
+     "p3"
+    ],
+    "how": "The Prince swings the rattle as drawn, and the narration says it played all the waltzes and jig tunes ever heard."
+   },
+   {
+    "claim": "k32",
+    "panels": [
+     "p3",
+     "p5"
+    ],
+    "how": "p3 has the Prince's line naming a hundred kisses from the Princess; p5 has her offer of ten kisses from herself and the rest from the ladies of the court."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "HELD_PROP_OFF_FRAME",
+   "severity": "warning",
+   "path": "panel p3",
+   "message": "the bell held by \"c_prince\" would be outside the frame of this medium panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a \"reach\" pose to show it in the hand."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u2",
+   "pages": null,
+   "text": "“Good day to my lord, the Emperor!” said he. “Can I have employment at the palace?”\n\n“Why, yes,” said the Emperor. “I want some one to take care of the pigs, for we have a great many of them.”\n\nSo the Prince was appointed “Imperial Swineherd.” He had a dirty little room close by the pigsty; and there he sat the whole day, and worked. By the evening he had made a pretty little kitchen-pot. Little bells were hung all round it; and when the pot was boiling, these bells tinkled in the most charming manner, and played the old melody,\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”*\n\n* “Ah! dear Augustine! All is gone, gone, gone!”\n\nBut what was still more curious, whoever held his finger in the smoke of the kitchen-pot, immediately smelt all the dishes that were cooking on every hearth in the city--this, you see, was something quite different from the rose.\n\nNow the Princess happened to walk that way; and when she heard the tune, she stood quite still, and seemed pleased; for she could play “Lieber Augustine”; it was the only piece she knew; and she played it with one finger.\n\n“Why there is my piece,” said the Princess. “That swineherd must certainly have been well educated! Go in and ask him the price of the instrument.”\n\nSo one of the court-ladies must run in; however, she drew on wooden slippers first.\n\n“What will you take for the kitchen-pot?” said the lady.\n\n“I will have ten kisses from the Princess,” said the swineherd.\n\n“Yes, indeed!” said the lady.\n\n“I cannot sell it for less,” rejoined the swineherd.\n\n“He is an impudent fellow!” said the Princess, and she walked on; but when she had gone a little way, the bells tinkled so prettily\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”\n\n“Stay,” said the Princess. “Ask him if he will have ten kisses from the ladies of my court.”\n\n“No, thank you!” said the swineherd. “Ten kisses from the Princess, or I keep the kitchen-pot myself.”\n\n“That must not be, either!” said the Princess. “But do you all stand before me that no one may see us.”\n\nAnd the court-ladies placed themselves in front of her, and spread out their dresses--the swineherd got ten kisses, and the Princess--the kitchen-pot.\n\nThat was delightful! The pot was boiling the whole evening, and the whole of the following day. They knew perfectly well what was cooking at every fire throughout the city, from the chamberlain's to the cobbler's; the court-ladies danced and clapped their hands.\n\n“We know who has soup, and who has pancakes for dinner to-day, who has cutlets, and who has eggs. How interesting!”"
+  },
+  {
+   "id": "s2u3",
+   "pages": null,
+   "text": "“Yes, but keep my secret, for I am an Emperor's daughter.”\n\nThe swineherd--that is to say--the Prince, for no one knew that he was other than an ill-favored swineherd, let not a day pass without working at something; he at last constructed a rattle, which, when it was swung round, played all the waltzes and jig tunes, which have ever been heard since the creation of the world.\n\n“Ah, that is superbe!” said the Princess when she passed by. “I have never heard prettier compositions! Go in and ask him the price of the instrument; but mind, he shall have no more kisses!”\n\n“He will have a hundred kisses from the Princess!” said the lady who had been to ask.\n\n“I think he is not in his right senses!” said the Princess, and walked on, but when she had gone a little way, she stopped again. “One must encourage art,” said she, “I am the Emperor's daughter. Tell him he shall, as on yesterday, have ten kisses from me, and may take the rest from the ladies of the court.”\n\n“Oh--but we should not like that at all!” said they. “What are you muttering?” asked the Princess. “If I can kiss him, surely you can. Remember that you owe everything to me.” So the ladies were obliged to go to him again.\n\n“A hundred kisses from the Princess,” said he, “or else let everyone keep his own!”\n\n“Stand round!” said she; and all the ladies stood round her whilst the kissing was going on.\n\n“What can be the reason for such a crowd close by the pigsty?” said the Emperor, who happened just then to step out on the balcony; he rubbed his eyes, and put on his spectacles. “They are the ladies of the court; I must go down and see what they are about!” So he pulled up his slippers at the heel, for he had trodden them down.\n\nAs soon as he had got into the court-yard, he moved very softly, and the ladies were so much engrossed with counting the kisses, that all might go on fairly, that they did not perceive the Emperor. He rose on his tiptoes.\n\n“What is all this?” said he, when he saw what was going on, and he boxed the Princess's ears with his slipper, just as the swineherd was taking the eighty-sixth kiss.\n\n“March out!” said the Emperor, for he was very angry; and both Princess and swineherd were thrust out of the city.\n\nThe Princess now stood and wept, the swineherd scolded, and the rain poured down.\n\n“Alas! Unhappy creature that I am!” said the Princess. “If I had but married the handsome young Prince! Ah! how unfortunate I am!”\n\nAnd the swineherd went behind a tree, washed the black and brown color from his face, threw off his dirty clothes, and stepped forth in his princely robes; he looked so noble that the Princess could not help bowing before him.\n\n“I am come to despise thee,” said he. “Thou would'st not have an honorable Prince! Thou could'st not prize the rose and the nightingale, but thou wast ready to kiss the swineherd for the sake of a trumpery plaything. Thou art rightly served.”\n\nHe then went back to his own little kingdom, and shut the door of his palace in her face. Now she might well sing,\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_court_ladies",
+   "name": "The court ladies",
+   "role": "the ladies of the court who pay the kisses",
+   "description": "A crowd of finely dressed ladies of the court who chatter French badly, stand in a ring around the Princess while she kisses the swineherd, and count the kisses together.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "nobles",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

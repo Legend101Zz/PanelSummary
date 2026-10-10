@@ -1,0 +1,511 @@
+{
+ "page_number": 1,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 1,
+  "section_id": "s1",
+  "beat": "High above the city the gilded Happy Prince stands on his tall column with sapphires for eyes and a ruby on his sword-hilt, admired by the Town Councillors as beautiful but not quite so useful, while the Charity Children coming out of the cathedral in scarlet cloaks swear he looks like an angel; the page writer letters the title.",
+  "claims": [
+   "k1",
+   "k2",
+   "k4"
+  ],
+  "cast": [
+   "c_prince",
+   "c_councillors",
+   "c_math_master",
+   "c_charity_children"
+  ],
+  "locations": [
+   "l_column_top",
+   "l_cathedral"
+  ],
+  "units": [
+   "s1u1"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k1",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "core",
+   "text": "The statue of the Happy Prince stands high above the city on a tall column, gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k2",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "He is as beautiful as a weathercock; only not quite so useful.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k4",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Charity Children say the statue looks like an angel, and answer the Mathematical Master that they have seen angels in their dreams.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    },
+    {
+     "unit": "s1u1",
+     "page": 4
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 1,
+  "section_id": "s1",
+  "purpose": "The reader sees the gilded Happy Prince high above the city, hears the Councillors call him beautiful but not useful, and hears the Charity Children call him an angel.",
+  "layout": {
+   "template": "staggered_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The city far below, a tall column rising above the rooftops",
+    "shot": "establishing",
+    "angle": "birds_eye",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Happy Prince",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "High above the city, on a tall column.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The gilded statue stands on the column top, glittering",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "gentle",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Gilded all over with thin leaves of fine gold.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "A Town Councillor points up at the statue, admiring it",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_councillors",
+      "pose": "point",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_councillors",
+      "text": "The Town Councillors",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_councillors",
+      "text": "He is as beautiful as a weathercock... only not quite so useful.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The red ruby on the statue's sword-hilt",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "gem",
+      "tone": "black",
+      "slot": "center"
+     },
+     {
+      "prop": "sword",
+      "slot": "center_right"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "For eyes he had two bright sapphires, and a large red ruby glowed on his sword-hilt.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 3
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 3
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Charity Children in scarlet cloaks tell the Mathematical Master the statue is like an angel",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_cathedral",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_charity_children",
+      "pose": "talk",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_math_master",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "Outside the cathedral",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_charity_children",
+      "text": "The Charity Children",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_math_master",
+      "text": "The Mathematical Master",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_charity_children",
+      "text": "He looks just like an angel... ah! but we have, in our dreams.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_math_master",
+      "text": "You have never seen one.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u1",
+       "page": 4
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u1",
+      "page": 4
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k1",
+   "k2",
+   "k4"
+  ],
+  "claim_map": [
+   {
+    "claim": "k1",
+    "panels": [
+     "p1",
+     "p2",
+     "p4"
+    ],
+    "how": "p1 establishes the tall column above the city; p2 shows the gilded statue on top; p4 inserts the sapphires and the ruby on the sword-hilt."
+   },
+   {
+    "claim": "k2",
+    "panels": [
+     "p3"
+    ],
+    "how": "The Councillor points up and says the line nearly verbatim."
+   },
+   {
+    "claim": "k4",
+    "panels": [
+     "p5"
+    ],
+    "how": "The Charity Children in scarlet cloaks say he looks like an angel and answer that they have seen one in their dreams; the Mathematical Master answers they never have."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "48 of 78 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s1u1",
+   "pages": null,
+   "text": "HIGH above the city, on a tall column, stood the statue of the Happy Prince. He was gilded all over with thin leaves of fine gold, for eyes he had two bright sapphires, and a large red ruby glowed on his sword-hilt.\n\nHe was very much admired indeed. “He is as beautiful as a weathercock,” remarked one of the Town Councillors who wished to gain a reputation for having artistic tastes; “only not quite so useful,” he added, fearing lest people should think him unpractical, which he really was not.\n\n“Why can’t you be like the Happy Prince?” asked a sensible mother of her little boy who was crying for the moon. “The Happy Prince never dreams of crying for anything.”\n\n“I am glad there is some one in the world who is quite happy,” muttered a disappointed man as he gazed at the wonderful statue.\n\n“He looks just like an angel,” said the Charity Children as they came out of the cathedral in their bright scarlet cloaks and their clean white pinafores.\n\n“How do you know?” said the Mathematical Master, “you have never seen one.”\n\n“Ah! but we have, in our dreams,” answered the children; and the Mathematical Master frowned and looked very severe, for he did not approve of children dreaming.\n\nOne night there flew over the city a little Swallow. His friends had gone away to Egypt six weeks before, but he had stayed behind, for he was in love with the most beautiful Reed. He had met her early in the spring as he was flying down the river after a big yellow moth, and had been so attracted by her slender waist that he had stopped to talk to her.\n\n“Shall I love you?” said the Swallow, who liked to come to the point at once, and the Reed made him a low bow. So he flew round and round her, touching the water with his wings, and making silver ripples. This was his courtship, and it lasted all through the summer.\n\n“It is a ridiculous attachment,” twittered the other Swallows; “she has no money, and far too many relations”; and indeed the river was quite full of Reeds. Then, when the autumn came they all flew away.\n\nAfter they had gone he felt lonely, and began to tire of his lady-love. “She has no conversation,” he said, “and I am afraid that she is a coquette, for she is always flirting with the wind.” And certainly, whenever the wind blew, the Reed made the most graceful curtseys. “I admit that she is domestic,” he continued, “but I love travelling, and my wife, consequently, should love travelling also.”\n\n“Will you come away with me?” he said finally to her; but the Reed shook her head, she was so attached to her home."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_councillors",
+   "name": "The Town Councillors",
+   "role": "the town's councillors, who praise and agree",
+   "description": "A small group of well-dressed town councillors who admire the statue for show and always echo the Mayor; they are also the ones who condemn it once it is shabby.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_math_master",
+   "name": "The Mathematical Master",
+   "role": "a severe teacher of the Charity Children",
+   "description": "A stern, thin scholar in dark clothes, seen outside the cathedral among the children; he frowns and looks severe because he does not approve of children dreaming.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "dark",
+    "facial_hair": "beard",
+    "outfit": "scholar",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_charity_children",
+   "name": "The Charity Children",
+   "role": "children in scarlet cloaks from the cathedral",
+   "description": "A small group of poor schoolchildren in bright scarlet cloaks and clean white pinafores; they say the statue looks like an angel, which they have seen in their dreams.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "children",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

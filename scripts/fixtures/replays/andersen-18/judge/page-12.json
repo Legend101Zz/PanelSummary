@@ -1,0 +1,335 @@
+{
+ "page_number": 12,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 12,
+  "section_id": "s2",
+  "beat": "In the pouring rain the swineherd washes the false colour from his face, throws off his dirty clothes and steps forth in princely robes; he scorns the Princess for valuing a plaything above an honourable Prince and shuts his palace door in her face.",
+  "claims": [
+   "k35",
+   "k36"
+  ],
+  "cast": [
+   "c_prince",
+   "c_princess"
+  ],
+  "locations": [
+   "l_palace_gate"
+  ],
+  "units": [
+   "s2u3"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k35",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "In the rain the swineherd washes the false colour from his face, throws off his dirty clothes, and appears in princely robes.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  },
+  {
+   "id": "k36",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The revealed Prince scorns the Princess for valuing a plaything over an honourable Prince, and shuts his palace door in her face.",
+   "source": [
+    {
+     "unit": "s2u3",
+     "page": 16
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 12,
+  "section_id": "s2",
+  "purpose": "The swineherd washes off his disguise in the rain, appears in princely robes, scorns the Princess, and slams his palace door in her face.",
+  "layout": {
+   "template": "setup_payoff_3"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The swineherd alone in the downpour, washing the false colour from his face and throwing off his dirty clothes",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_palace_gate",
+    "time": "day",
+    "weather": "rain",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "determined",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "dark",
+       "hair_tone": "mid"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "rain"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "In the rain he washed the black and brown colour from his face.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 16
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "He steps forward out of the rain in princely robes and the Princess bows before him",
+    "shot": "full",
+    "angle": "low",
+    "location": "l_palace_gate",
+    "time": "day",
+    "weather": "rain",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "walk",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "gold",
+       "hair_tone": "light"
+      }
+     },
+     {
+      "character": "c_princess",
+      "pose": "bow",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "rain",
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "He looked so noble that she bowed before him.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 16
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The revealed Prince scorns the weeping Princess and shuts his palace door in her face",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_palace_gate",
+    "time": "day",
+    "weather": "rain",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "point",
+      "expression": "angry",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid",
+      "variant": {
+       "outfit_tone": "gold",
+       "hair_tone": "light"
+      }
+     },
+     {
+      "character": "c_princess",
+      "pose": "cower",
+      "expression": "cry",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "rain",
+     "impact_burst"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "Thou would'st not have an honorable Prince!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u3",
+       "page": 16
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "SLAM",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s2u3",
+       "page": 16
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "He shut his palace door in her face.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u3",
+       "page": 16
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u3",
+      "page": 16
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k35",
+   "k36"
+  ],
+  "claim_map": [
+   {
+    "claim": "k35",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows him in the rain washing the dark colour from his face; p2 shows the same man stepping out in gold princely robes, the change stated in the narration."
+   },
+   {
+    "claim": "k36",
+    "panels": [
+     "p3"
+    ],
+    "how": "the Prince points and says the book's quote scorning her, and the narration and SLAM show him shutting the palace door in her face as she cowers."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s2u3",
+   "pages": null,
+   "text": "“Yes, but keep my secret, for I am an Emperor's daughter.”\n\nThe swineherd--that is to say--the Prince, for no one knew that he was other than an ill-favored swineherd, let not a day pass without working at something; he at last constructed a rattle, which, when it was swung round, played all the waltzes and jig tunes, which have ever been heard since the creation of the world.\n\n“Ah, that is superbe!” said the Princess when she passed by. “I have never heard prettier compositions! Go in and ask him the price of the instrument; but mind, he shall have no more kisses!”\n\n“He will have a hundred kisses from the Princess!” said the lady who had been to ask.\n\n“I think he is not in his right senses!” said the Princess, and walked on, but when she had gone a little way, she stopped again. “One must encourage art,” said she, “I am the Emperor's daughter. Tell him he shall, as on yesterday, have ten kisses from me, and may take the rest from the ladies of the court.”\n\n“Oh--but we should not like that at all!” said they. “What are you muttering?” asked the Princess. “If I can kiss him, surely you can. Remember that you owe everything to me.” So the ladies were obliged to go to him again.\n\n“A hundred kisses from the Princess,” said he, “or else let everyone keep his own!”\n\n“Stand round!” said she; and all the ladies stood round her whilst the kissing was going on.\n\n“What can be the reason for such a crowd close by the pigsty?” said the Emperor, who happened just then to step out on the balcony; he rubbed his eyes, and put on his spectacles. “They are the ladies of the court; I must go down and see what they are about!” So he pulled up his slippers at the heel, for he had trodden them down.\n\nAs soon as he had got into the court-yard, he moved very softly, and the ladies were so much engrossed with counting the kisses, that all might go on fairly, that they did not perceive the Emperor. He rose on his tiptoes.\n\n“What is all this?” said he, when he saw what was going on, and he boxed the Princess's ears with his slipper, just as the swineherd was taking the eighty-sixth kiss.\n\n“March out!” said the Emperor, for he was very angry; and both Princess and swineherd were thrust out of the city.\n\nThe Princess now stood and wept, the swineherd scolded, and the rain poured down.\n\n“Alas! Unhappy creature that I am!” said the Princess. “If I had but married the handsome young Prince! Ah! how unfortunate I am!”\n\nAnd the swineherd went behind a tree, washed the black and brown color from his face, threw off his dirty clothes, and stepped forth in his princely robes; he looked so noble that the Princess could not help bowing before him.\n\n“I am come to despise thee,” said he. “Thou would'st not have an honorable Prince! Thou could'st not prize the rose and the nightingale, but thou wast ready to kiss the swineherd for the sake of a trumpery plaything. Thou art rightly served.”\n\nHe then went back to his own little kingdom, and shut the door of his palace in her face. Now she might well sing,\n\n“Ach! du lieber Augustin, Alles ist weg, weg, weg!”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

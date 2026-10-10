@@ -1,0 +1,466 @@
+{
+ "page_number": 11,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 11,
+  "section_id": "s1",
+  "beat": "Leaf after leaf of gold goes to the poor until the statue looks dull and grey and the children cry that they have bread, then snow and hard frost silver the streets with icicles and skating boys; the Swallow grows colder and colder, picking up crumbs outside the baker's door when the baker is not looking.",
+  "claims": [
+   "k33",
+   "k34",
+   "k35"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_prince",
+   "c_beggars"
+  ],
+  "locations": [
+   "l_column_top",
+   "l_city_square",
+   "l_bakers_door"
+  ],
+  "units": [
+   "s1u7"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k33",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Swallow strips the statue leaf by leaf until the Prince looks dull and grey, and the poor children grow rosier and cry that they have bread now.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 13
+    },
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k34",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "detail",
+   "text": "Snow and then frost come, the streets glisten like silver, icicles hang like crystal daggers, and little boys in scarlet caps skate on the ice.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k35",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Swallow grows colder and colder but stays, picking up crumbs outside the baker's door when the baker is not looking.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 11,
+  "section_id": "s1",
+  "purpose": "The gold is gone, the poor eat, winter silvers the city, and the Swallow stays on, freezing, picking up crumbs.",
+  "layout": {
+   "template": "staggered_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "Swallow carries a leaf of gold away from the statue high on the column",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "day",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_right",
+      "depth": "mid",
+      "holding": "gold_leaf",
+      "holding_tone": "gold"
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "back",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind",
+       "outfit_tone": "gold",
+       "hair_tone": "gold"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "FLAP FLAP",
+      "fidelity": "dramatized"
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The statue stands dull and grey, its gold gone",
+    "shot": "close",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "day",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Leaf after leaf, till he looked dull and grey.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "Rosy beggar children in the street cry that they have bread",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_city_square",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_beggars",
+      "pose": "wave",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "perch",
+      "expression": "gentle",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "on": {
+       "target": "c_beggars",
+       "part": "hand"
+      }
+     }
+    ],
+    "props": [
+     {
+      "prop": "bread",
+      "slot": "center_left"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_beggars",
+      "text": "We have bread now!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 13
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 13
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Hard frost silvers the square; boys skate and icicles hang from the eaves",
+    "shot": "establishing",
+    "angle": "birds_eye",
+    "location": "l_city_square",
+    "time": "day",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_beggars",
+      "pose": "walk",
+      "expression": "happy",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow",
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "Winter. The square, all silver.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Icicles like crystal daggers; boys skate on the ice.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Swallow, shivering, picks up crumbs at the baker's door",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_bakers_door",
+    "time": "day",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "stand",
+      "expression": "tired",
+      "facing": "left",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "thought",
+      "speaker": "c_swallow",
+      "text": "I would not leave you, dear Prince.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k33",
+   "k34",
+   "k35"
+  ],
+  "claim_map": [
+   {
+    "claim": "k33",
+    "panels": [
+     "p1",
+     "p2",
+     "p3"
+    ],
+    "how": "p1 shows the swallow carrying off a gold leaf; p2 shows the statue dull and grey; p3 shows the rosy poor children shouting they have bread."
+   },
+   {
+    "claim": "k34",
+    "panels": [
+     "p4"
+    ],
+    "how": "a snowy establishing shot of the silvered square with skating boys, and a line about icicles like crystal daggers."
+   },
+   {
+    "claim": "k35",
+    "panels": [
+     "p5"
+    ],
+    "how": "the tired Swallow alone at the baker's door, thinking he will not leave the Prince."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u7",
+   "pages": null,
+   "text": "Leaf after leaf of the fine gold the Swallow picked off, till the Happy Prince looked quite dull and grey. Leaf after leaf of the fine gold he brought to the poor, and the children’s faces grew rosier, and they laughed and played games in the street. “We have bread now!” they cried.\n\nThen the snow came, and after the snow came the frost. The streets looked as if they were made of silver, they were so bright and glistening; long icicles like crystal daggers hung down from the eaves of the houses, everybody went about in furs, and the little boys wore scarlet caps and skated on the ice.\n\nThe poor little Swallow grew colder and colder, but he would not leave the Prince, he loved him too well. He picked up crumbs outside the baker’s door when the baker was not looking and tried to keep himself warm by flapping his wings.\n\nBut at last he knew that he was going to die. He had just strength to fly up to the Prince’s shoulder once more. “Goodbye, dear Prince!” he murmured, “will you let me kiss your hand?”\n\n“I am glad that you are going to Egypt at last, little Swallow,” said the Prince, “you have stayed too long here; but you must kiss me on the lips, for I love you.”\n\n“It is not to Egypt that I am going,” said the Swallow. “I am going to the House of Death. Death is the brother of Sleep, is he not?”\n\nAnd he kissed the Happy Prince on the lips, and fell down dead at his feet.\n\nAt that moment a curious crack sounded inside the statue, as if something had broken. The fact is that the leaden heart had snapped right in two. It certainly was a dreadfully hard frost.\n\nEarly the next morning the Mayor was walking in the square below in company with the Town Councillors. As they passed the column he looked up at the statue: “Dear me! how shabby the Happy Prince looks!” he said.\n\n“How shabby indeed!” cried the Town Councillors, who always agreed with the Mayor; and they went up to look at it.\n\n“The ruby has fallen out of his sword, his eyes are gone, and he is golden no longer,” said the Mayor in fact, “he is little better than a beggar!”\n\n“Little better than a beggar,” said the Town Councillors.\n\n“And here is actually a dead bird at his feet!” continued the Mayor. “We must really issue a proclamation that birds are not to be allowed to die here.” And the Town Clerk made a note of the suggestion.\n\nSo they pulled down the statue of the Happy Prince. “As he is no longer beautiful he is no longer useful,” said the Art Professor at the University."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_beggars",
+   "name": "The Beggars and Poor of the City",
+   "role": "the city's poor who sit at the gates",
+   "description": "Crowds of ragged poor — starving children with white faces in dark lanes, and two little boys lying in each other's arms for warmth.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "townsfolk",
+    "size": "many"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}
