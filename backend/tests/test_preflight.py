@@ -248,3 +248,8 @@ def test_the_basis_counts_each_policy_and_names_no_stale_claim():
     assert n_all_flash >= 1
     assert f"and {n_all_flash} with Flash on every goal" in text
     assert "M3 on the book understanding in all" not in text
+
+
+def test_planted_ci_failure():
+    # Planted on purpose (v0.2 Phase 0): CI must go red on this. Reverted in the next commit.
+    assert False, "planted CI failure"
