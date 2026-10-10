@@ -2,70 +2,69 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ApiError, getBook, getEdition, getPreflight, installSample, listSamples, loadPage, type SampleInfo } from "@/lib/api";
-import { OFFLINE_SENTENCE, sampleRunFacts, type SampleRunFacts } from "@/lib/words";
+import { ApiError, getSamplePreview, installSample, type SamplePreview } from "@/lib/api";
+import { OFFLINE_SENTENCE, type SampleRunFacts } from "@/lib/words";
 import { ANDERSEN_FACTS, ANDERSEN_SAMPLE_ID, ANDERSEN_TITLE } from "./sampleFacts";
 
+/** The numbers of the screens, from the read-only preview. The same values the installed edition gives. */
+export function factsFromPreview(p: SamplePreview): SampleRunFacts {
+  return {
+    pages: p.pages_accepted || p.page_total,
+    firstPageSeconds: p.timings.first_page_seconds,
+    firstIsPage1: p.timings.first_is_page_1,
+    totalSeconds: p.timings.total_seconds,
+    costUsd: p.cost_usd,
+    estimate: { pages: p.estimate.estimated_manga_pages, firstPageMin: p.estimate.estimated_minutes.first_page, totalMin: p.estimate.estimated_minutes.total, costUsd: p.estimate.estimated_cost_usd },
+  };
+}
+
 /**
- * The built-in sample. Reads GET /samples. When the sample is installed it reads the real edition and its estimate
- * (no model call). `open` installs the sample (safe to repeat) and opens the reader at page 1.
+ * The built-in sample. It reads GET /samples/{id}/preview: nothing is installed when a screen opens, so the first run
+ * still replaces the empty shelf. `open` installs the sample (safe to repeat, no model call) ONLY when a person clicks,
+ * then opens the reader at page 1 (or the PDF viewer, when `source` is given).
  */
-export function useSample({ install = false }: { install?: boolean } = {}) {
+export function useSample() {
   const router = useRouter();
-  const [info, setInfo] = useState<SampleInfo | null | undefined>(undefined);
-  const [facts, setFacts] = useState<SampleRunFacts>(ANDERSEN_FACTS);
-  const [live, setLive] = useState(false);
-  const [book, setBook] = useState({ pdfPages: 22, sections: 4 });
-  const [svg, setSvg] = useState<string | null>(null);
+  // undefined: loading, null: could not be read
+  const [preview, setPreview] = useState<SamplePreview | null | undefined>(undefined);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
-    listSamples()
-      .then(async (list) => {
-        let first: SampleInfo | null = list[0] ?? null;
-        // the landing needs the real sample on screen: install it (safe to repeat, no model call)
-        if (install && first && !first.installed) {
-          const r = await installSample(first.id).catch(() => null);
-          if (r) first = { ...first, installed: true, book_id: r.book_id, edition_id: r.edition_id };
-        }
-        if (alive) setInfo(first);
-      })
-      .catch(() => alive && setInfo(null));
+    getSamplePreview(ANDERSEN_SAMPLE_ID)
+      .then((p) => alive && setPreview(p))
+      .catch(() => alive && setPreview(null));
     return () => {
       alive = false;
     };
-  }, [install]);
+  }, []);
 
-  useEffect(() => {
-    if (!info?.installed || !info.edition_id || !info.book_id) return;
-    let alive = true;
-    Promise.all([getEdition(info.edition_id), getPreflight(info.book_id), loadPage(info.edition_id, 1), getBook(info.book_id)])
-      .then(([edition, preflight, page, b]) => {
-        if (!alive) return;
-        setFacts(sampleRunFacts(edition, preflight));
-        setBook({ pdfPages: b.page_count, sections: b.section_count });
-        setLive(true);
-        if (page.status === "accepted" && page.svg) setSvg(page.svg);
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, [info]);
+  const open = useCallback(
+    async (opts: { page?: number; source?: number } = {}) => {
+      setOpening(true);
+      setError(null);
+      try {
+        const r = await installSample(ANDERSEN_SAMPLE_ID);
+        const reader = `/books/${r.book_id}/read?edition=${r.edition_id}&page=${opts.page ?? 1}`;
+        router.push(opts.source ? `/books/${r.book_id}/source?page=${opts.source}&from=${encodeURIComponent(reader)}` : reader);
+      } catch (e) {
+        setOpening(false);
+        setError(e instanceof ApiError && e.status === 0 ? OFFLINE_SENTENCE : e instanceof ApiError ? `The sample could not be opened. ${e.message}` : "The sample could not be opened.");
+      }
+    },
+    [router],
+  );
 
-  const open = useCallback(async () => {
-    setOpening(true);
-    setError(null);
-    try {
-      const r = await installSample(info?.id ?? ANDERSEN_SAMPLE_ID);
-      router.push(`/books/${r.book_id}/read?edition=${r.edition_id}&page=1`);
-    } catch (e) {
-      setOpening(false);
-      setError(e instanceof ApiError && e.status === 0 ? OFFLINE_SENTENCE : e instanceof ApiError ? `The sample could not be opened. ${e.message}` : "The sample could not be opened.");
-    }
-  }, [info, router]);
-
-  return { info, title: info?.title ?? ANDERSEN_TITLE, facts, book, live, svg, opening, error, open };
+  return {
+    preview,
+    title: preview?.title ?? ANDERSEN_TITLE,
+    facts: preview ? factsFromPreview(preview) : ANDERSEN_FACTS,
+    book: { pdfPages: preview?.pdf_pages ?? 22, sections: preview?.sections ?? 4 },
+    live: !!preview,
+    svg: preview?.cover_svg ?? null,
+    opening,
+    error,
+    open,
+  };
 }

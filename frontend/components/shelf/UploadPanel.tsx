@@ -14,7 +14,8 @@ export function UploadPanel({ flow, limits, title, className }: { flow: UploadFl
       <DropZone
         className={className}
         title={title}
-        error={phase.kind === "error" ? phase.message : undefined}
+        // the offline sentence is shown once, by the OfflineGate banner of the screen
+        error={phase.kind === "error" && !phase.offline ? phase.message : undefined}
         onFile={(file) => flow.start(file)}
         hint={
           <span className={styles.limits}>

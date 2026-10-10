@@ -159,6 +159,70 @@ def test_install_is_idempotent_and_the_sample_behaves_like_a_book(tmp_path, monk
 
 
 @needs_mongo
+def test_preview_writes_nothing_and_equals_the_installed_edition(tmp_path, monkeypatch):
+    async def scenario(api: httpx.AsyncClient):
+        from datetime import datetime
+
+        from app.db import init_db
+        from app.settings import get_settings
+
+        db = (await init_db())[get_settings().db_name]
+
+        async def snapshot():
+            return {name: await db[name].count_documents({}) for name in sorted(await db.list_collection_names())}
+
+        before = await snapshot()
+        files_before = sorted(p.name for p in tmp_path.rglob("*"))
+        assert (await api.get("/samples/nope/preview")).status_code == 404
+        assert (await api.get("/samples/nope/pdf/page/1")).status_code == 404
+        preview = (await api.get("/samples/andersen/preview")).json()
+        assert (await api.get("/samples/andersen/pdf/page/3")).content.startswith(b"\x89PNG")
+        assert (await api.get("/samples/andersen/pdf/page/99")).status_code == 404
+        assert (await api.get("/samples")).json()[0]["installed"] is False
+        assert await snapshot() == before  # no document written, nothing installed
+        assert sorted(p.name for p in tmp_path.rglob("*")) == files_before  # no file written
+
+        ids = (await api.post("/samples/andersen")).json()
+        edition = (await api.get(f"/editions/{ids['edition_id']}")).json()
+        book = (await api.get(f"/books/{ids['book_id']}")).json()
+        pre = (await api.get(f"/books/{ids['book_id']}/preflight")).json()
+        page1 = (await api.get(f"/editions/{ids['edition_id']}/pages/1")).json()
+
+        assert preview["title"] == book["title"] and preview["author"] == book["author"]
+        assert (preview["pdf_pages"], preview["sections"]) == (book["page_count"], book["section_count"]) == (22, 4)
+        assert (preview["page_total"], preview["pages_accepted"]) == (edition["page_total"], edition["pages_accepted"]) == (18, 18)
+        assert preview["cost_usd"] == edition["totals"]["cost_usd"] == 0.460227
+        for key in ("estimated_manga_pages", "estimated_minutes", "estimated_cost_usd"):
+            assert preview["estimate"][key] == pre[key], key
+        assert preview["cover_svg"] == page1["svg"]
+
+        def secs(a, b):
+            return round((datetime.fromisoformat(b) - datetime.fromisoformat(a)).total_seconds(), 3)
+
+        t = edition["timings"]
+        first = t.get("page_1_at") or t["first_page_at"]
+        assert preview["timings"]["first_page_seconds"] == secs(t.get("generate_started_at") or edition["created_at"], first)
+        assert preview["timings"]["created_to_first_page_seconds"] == secs(edition["created_at"], first)
+        assert preview["timings"]["created_to_finished_seconds"] == secs(edition["created_at"], edition["finished_at"])
+        assert preview["timings"]["total_seconds"] == (edition["active_seconds"] or secs(edition["created_at"], edition["finished_at"]))
+        assert preview["timings"]["first_is_page_1"] is bool(t.get("page_1_at"))
+
+        proof = preview["proof"]
+        panel = next(p for p in page1["panels"] if p["id"] == proof["panel"]["id"])
+        assert proof["page"] == 1 and proof["panel"]["bbox"] == panel["bbox"]
+        assert proof["texts"] == [
+            {k: x.get(k) for k in ("panel", "index", "kind", "speaker", "text", "fidelity")} for x in page1["texts"] if x["panel"] == panel["id"]
+        ] and proof["texts"]
+        assert proof["speakers"] == page1["speakers"]
+        wanted = next(s for s in page1["sources"] if s["panel"] == panel["id"])["source"]
+        assert proof["source_pdf_pages"] == sorted({x["page"] for x in wanted}) and proof["source_pdf_pages"]
+        for thumb in preview["thumbs"]:
+            assert (await api.get(f"/editions/{ids['edition_id']}/pages/{thumb['page']}")).json()["svg"] == thumb["svg"]
+
+    _run(monkeypatch, tmp_path, scenario)
+
+
+@needs_mongo
 def test_install_adopts_a_book_uploaded_from_the_same_pdf(tmp_path, monkeypatch):
     async def scenario(api: httpx.AsyncClient):
         from app.documents import GenerationJob, LibraryBook

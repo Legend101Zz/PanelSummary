@@ -68,7 +68,7 @@ describe("U1 copy", () => {
     expect(withNextStep("The PDF has no extractable text.")).toBe("The PDF has no extractable text. Use a PDF with selectable text.");
     expect(withNextStep("The PDF has no extractable body text")).toBe("The PDF has no extractable body text. Use a PDF with selectable text.");
     expect(withNextStep("FileDataError: Failed to open stream")).toBe("The PDF could not be read. The file may be damaged. Choose another PDF.");
-    expect(withNextStep("That file is not a PDF")).toBe("That file is not a PDF");
+    expect(withNextStep("That file is not a PDF")).toBe("The PDF could not be read. The file may be damaged. Choose another PDF.");
   });
   it("turns the parse message into plain words", () => {
     expect(readSummary("Parsed 22 pages into 4 sections and 10 source units")).toBe("Read 22 PDF pages and found 4 sections.");

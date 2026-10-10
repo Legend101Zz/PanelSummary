@@ -22,7 +22,7 @@ export function SampleCard({ sample }: { sample: ReturnType<typeof useSample> })
         <div className={styles.sampleText}>
           <p className={styles.sampleTitle}>{sample.title}</p>
           <p className={styles.sampleMeta}>{plural(sample.facts.pages, "manga page")}. A first draft.</p>
-          <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read the sample: opening" : undefined} onClick={sample.open}>
+          <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read the sample: opening" : undefined} onClick={() => sample.open()}>
             {sample.opening ? "Opening" : "Read the sample"}
           </Button>
         </div>

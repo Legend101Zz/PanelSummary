@@ -23,6 +23,7 @@ export function FirstRun({ status, onRefresh }: { status: ServerStatus | null | 
   return (
     <main id="main" className={styles.main}>
       <StatusSummary status={status} onRefresh={onRefresh} />
+      {status !== null && flow.phase.kind === "error" && flow.phase.offline ? <OfflineGate onRetry={() => { flow.reset(); onRefresh(); }} /> : null}
       <h1 className={styles.h1}>Your shelf</h1>
       <p className={styles.lede}>{FIRST_RUN_LEDE}</p>
       <div className={styles.firstGrid}>

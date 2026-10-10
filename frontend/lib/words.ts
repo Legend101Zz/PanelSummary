@@ -321,6 +321,7 @@ export function tooLargeText(name: string, bytes: number, maxMb: number): string
 export function withNextStep(message: string): string {
   // a damaged file: the parser's own error text is not for a reader
   if (/FileDataError|Failed to open stream|broken document|cannot open/i.test(message)) return "The PDF could not be read. The file may be damaged. Choose another PDF.";
+  if (/^that file is not a pdf\.?$/i.test(message.trim())) return "The PDF could not be read. The file may be damaged. Choose another PDF.";
   if (/no extractable/i.test(message) && !/selectable text/i.test(message)) return `${message.replace(/\.*$/, ".")} Use a PDF with selectable text.`;
   return message;
 }

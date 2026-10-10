@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Button, PageFrame, TextLink, UploadIcon } from "@/components/ui";
 import { CoverSvg } from "@/components/CoverArt";
 import { SvgPage } from "@/components/SvgPage";
@@ -9,9 +8,9 @@ import { UploadPanel } from "@/components/shelf/UploadPanel";
 import { useSample } from "@/components/shelf/useSample";
 import { useServerStatus } from "@/components/shelf/useServerStatus";
 import { useUploadFlow } from "@/components/shelf/useUploadFlow";
-import { pdfPageUrl } from "@/lib/api";
+import { samplePdfPageUrl } from "@/lib/api";
+import { ANDERSEN_SAMPLE_ID } from "@/components/shelf/sampleFacts";
 import { FALLBACK_LIMITS, FIDELITY_LABEL, GITHUB_URL, plural, sampleLandingSentence, voiceLabel } from "@/lib/words";
-import { useProof } from "./useProof";
 import styles from "./landing.module.css";
 
 const HOW = ["You add the PDF.", "A language model reads the text and writes a plan for each page.", "PanelSummary's own code draws each page."];
@@ -21,17 +20,17 @@ export function LandingScreen() {
   const { status, refresh } = useServerStatus();
   const limits = status?.limits;
   const flow = useUploadFlow(limits?.max_pdf_size_mb);
-  const sample = useSample({ install: true });
-  const { proof, thumbs } = useProof(sample.info);
-  const bookId = sample.info?.book_id;
+  const sample = useSample();
+  const proof = sample.preview?.proof ?? null;
+  const thumbs = sample.preview?.thumbs ?? [];
   const lim = limits ?? FALLBACK_LIMITS;
 
   const panelBox = proof ? proof.panel.bbox : null;
-  const lines = proof ? proof.page.texts.filter((t) => t.panel === proof.panel.id) : [];
+  const lines = proof ? proof.texts : [];
 
   return (
     <main id="main" className={styles.main}>
-      {status === null ? <OfflineGate onRetry={refresh} /> : null}
+      {status === null || (flow.phase.kind === "error" && flow.phase.offline) ? <OfflineGate onRetry={() => { flow.reset(); refresh(); }} /> : null}
       <section className={styles.first} aria-labelledby="land-h">
         <h1 id="land-h" className={styles.h1}>
           Your book&apos;s PDF, drawn as a manga
@@ -42,7 +41,7 @@ export function LandingScreen() {
             <UploadPanel flow={flow} limits={limits} />
             <p className={styles.small}>It runs on your computer. You need your own MiniMax plan and API key.</p>
             <div>
-              <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read a sample: opening" : undefined} onClick={sample.open} iconStart={<UploadIcon size={20} />}>
+              <Button variant="secondary" size="md" loading={sample.opening} accessibleName={sample.opening ? "Read a sample: opening" : undefined} onClick={() => sample.open()} iconStart={<UploadIcon size={20} />}>
                 {sample.opening ? "Opening" : "Read a sample"}
               </Button>
             </div>
@@ -50,26 +49,26 @@ export function LandingScreen() {
           </div>
 
           <figure className={styles.proof}>
-            {proof && panelBox && bookId ? (
+            {proof && panelBox && sample.svg ? (
               <>
                 <figcaption className={styles.proofHead}>Each line says where it comes from</figcaption>
                 <div className={styles.proofRow}>
                   <div className={styles.panelCol}>
                     <div className={styles.panel} style={{ aspectRatio: `${panelBox.w + 20} / ${panelBox.h + 20}` }}>
                       <SvgPage
-                        svg={proof.page.svg ?? ""}
+                        svg={sample.svg}
                         decorative
                         onReady={(root) => root.setAttribute("viewBox", `${panelBox.x - 10} ${panelBox.y - 10} ${panelBox.w + 20} ${panelBox.h + 20}`)}
                       />
                     </div>
                     <p className={styles.cap}>
-                      Manga page {proof.page.page_number}, panel {proof.panel.order + 1}
+                      Manga page {proof.page}, panel {proof.panel.order + 1}
                     </p>
                     <ul className={styles.lines}>
                       {lines.map((t) => (
                         <li key={`${t.panel}-${t.index}`}>
                           <span className={styles.meta}>
-                            {voiceLabel(t.kind, t.speaker, proof.page.speakers)} · {FIDELITY_LABEL[t.fidelity]}
+                            {voiceLabel(t.kind, t.speaker ?? undefined, proof.speakers)} · {FIDELITY_LABEL[t.fidelity]}
                           </span>
                           <span>{t.text}</span>
                         </li>
@@ -79,22 +78,25 @@ export function LandingScreen() {
                   <div className={styles.pdfCol}>
                     <p className={styles.from}>
                       Comes from{" "}
-                      {proof.pdfPages.map((p, i) => (
+                      {proof.source_pdf_pages.map((p, i) => (
                         <span key={p}>
-                          {i > 0 ? (i === proof.pdfPages.length - 1 ? " and " : ", ") : ""}
-                          <TextLink href={`/books/${bookId}/source?page=${p}`}>PDF page {p}</TextLink>
+                          {i > 0 ? (i === proof.source_pdf_pages.length - 1 ? " and " : ", ") : ""}
+                          {/* the PDF viewer needs the book, so this installs the sample first (idempotent), only on this click */}
+                          <button type="button" className={`text-link ${styles.linkButton}`} disabled={sample.opening} onClick={() => sample.open({ source: p })}>
+                            PDF page {p}
+                          </button>
                         </span>
                       ))}
                     </p>
                     <div className={styles.pdf}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={pdfPageUrl(bookId, proof.pdfPages[0] ?? 1)} alt={`PDF page ${proof.pdfPages[0] ?? 1} of ${sample.title}, the page this panel comes from`} />
+                      <img src={samplePdfPageUrl(ANDERSEN_SAMPLE_ID, proof.source_pdf_pages[0] ?? 1)} alt={`PDF page ${proof.source_pdf_pages[0] ?? 1} of ${sample.title}, the page this panel comes from`} />
                     </div>
                   </div>
                 </div>
               </>
             ) : (
-              <p className={styles.small}>{sample.info === null ? "The sample could not be loaded." : "Loading the proof from the sample."}</p>
+              <p className={styles.small}>{sample.preview === null ? "The sample could not be loaded." : "Loading the proof from the sample."}</p>
             )}
           </figure>
         </div>
@@ -127,16 +129,16 @@ export function LandingScreen() {
         <p className={styles.body}>
           {sampleLandingSentence(sample.title, sample.book.sections, sample.book.pdfPages, sample.facts)} A first draft.
         </p>
-        {thumbs.length && bookId && sample.info?.edition_id ? (
+        {thumbs.length ? (
           <ul className={styles.thumbs}>
             {thumbs.map((t) => (
               <li key={t.page}>
-                <Link href={`/books/${bookId}/read?edition=${sample.info!.edition_id}&page=${t.page}`} className={styles.thumb}>
+                <button type="button" className={styles.thumb} disabled={sample.opening} onClick={() => sample.open({ page: t.page })}>
                   <PageFrame state="drawn" variant="thumbnail">
                     <CoverSvg svg={t.svg} />
                   </PageFrame>
                   <span>Manga page {t.page}</span>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
