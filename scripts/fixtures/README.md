@@ -23,7 +23,7 @@ backend/.venv/bin/python scripts/fixtures/seed_states.py \
 
 ## What you get
 
-24 books (23 until track S1 is in): the 15 shelf states, plan review, a `completed_with_failures` edition with 0 missing pages,
+24 books (23 on a backend without track S1): the 15 shelf states, plan review, a `completed_with_failures` edition with 0 missing pages,
 the stress cases (long title, long author, failed book with no author), a 60-page edition with mixed page states, a 150-page
 book over the limit, the 68-page Happy Prince book with its five sections, and the installed Andersen sample.
 

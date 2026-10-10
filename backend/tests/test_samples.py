@@ -120,7 +120,7 @@ def test_install_is_idempotent_and_the_sample_behaves_like_a_book(tmp_path, monk
         # the shelf and the book view
         shelf = (await api.get("/books")).json()
         assert len(shelf) == 1 and shelf[0]["is_sample"] is True
-        assert shelf[0]["latest_edition"] == {"id": ids["edition_id"], "status": "complete", "page_total": 18, "pages_accepted": 18, "provider_stop": None}
+        assert shelf[0]["latest_edition"] == {"id": ids["edition_id"], "status": "complete", "page_total": 18, "pages_accepted": 18, "pages_failed": 0, "provider_stop": None}
         book = (await api.get(f"/books/{ids['book_id']}")).json()
         assert book["is_sample"] is True and book["status"] == "parsed"
         assert (book["page_count"], book["word_count"], book["section_count"]) == (22, 4775, 4)

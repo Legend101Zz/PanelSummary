@@ -54,7 +54,7 @@ Track S2 adds two things: a built-in sample manga, and a seeder that makes a boo
 | 18 | Failed while reading | |
 | 19 | Failed while planning | |
 | 20 | Failed while drawing, 9 of 16 | |
-| 21 | Plan ready to review | `awaiting_plan_review`. Left out until the backend has track S1. Page rows pending; the spend so far is the two receipts. |
+| 21 | Plan ready to review | `awaiting_plan_review`. Left out on a backend without track S1. Page rows pending; the spend so far is the two receipts. |
 | 22 | `completed_with_failures`, 16 of 16, 0 missing | key points not shown (G-O1), computed by the `finalize` formula |
 | 23 | 60-page edition, mixed | 36 accepted, 2 failed, 4 drawing, 18 pending. Needs the export of the 60-page run. |
 | 24 | Drawing, 0 of 16 | cover is the plain sheet |
@@ -78,5 +78,5 @@ Track S2 adds two things: a built-in sample manga, and a seeder that makes a boo
 
 ## Not done
 
-- Book 21 was not seeded or screenshot here, because this branch does not have the status `awaiting_plan_review`. The document shape follows the S1 code (page rows pending, understanding and plan stored, job `succeeded`, `policy.review_plan`), and the status is a valid value there. Verify after the rebase on S1.
-- No screenshot of the new UI. The screens shown are the v0.1 look. They prove that the data loads.
+- Book 21 (`awaiting_plan_review`) is seeded only when the backend knows that status. After the rebase on S1 it was seeded and read through the API (status, 16 pages, spend $0.14864, `draw_estimate_usd` $0.41 to $0.60, plan and 33 cast members).
+- No screenshot of the new UI. The screens shown are the current look of the branch. They prove that the data loads.
