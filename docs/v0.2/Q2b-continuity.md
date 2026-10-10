@@ -164,5 +164,5 @@ New tests: `apps/agent-worker/test/q2b-continuity.test.ts` (places, location che
 
 The `vision` flag skips FIGURE_STATE_MISMATCH for its panel, so the page goal now checks the flag (`visionIssues` in `continuity.ts`):
 
-- VISION_OVERUSED (error): a page of 2 or more panels sets `vision` on more than half of its panels. A page that flags all panels is rejected.
+- VISION_OVERUSED: a page of 2 or more panels sets `vision` on more than half of its panels. It is an error only when the planned beat names none of: afterlife, dream, memory, paradise, heaven, vision (the plan never asked for a vision). When the beat names one, a page may flag every panel (a whole page can be a vision, for example the last page of the Little Match Girl) and nothing is reported. When the planned beat is not available, it is a warning.
 - VISION_NOT_PLANNED (warning): a panel sets `vision`, but the planned beat of the page has none of: afterlife, dream, memory, paradise, heaven, vision. This stays a warning until it is calibrated on judged pages.

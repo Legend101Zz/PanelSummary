@@ -146,6 +146,7 @@ To change a decision, edit its entry in the same change as the code, and give th
 ### D22. A panel flag for the afterlife, dreams and memories (2026-10-10, issue #44, track Q2b)
 - Statement: A panel may set `"vision": "afterlife" | "dream" | "memory"` (`VISIONS` in `packages/manga-render/src/contracts.ts`). `FIGURE_STATE_MISMATCH` skips a panel that has the flag, like a panel with fx `flashback`. The renderer does not read the field, so the SVG does not change and `RENDERER_VERSION` stays.
 - Why: A dead character shown alive in paradise, or a grandmother in a dream, failed the check unless the writer used `flashback`, which also means a different time. `FIGURE_STATE_SEVERITY` stays `"error"`: the flag removes the known false positive (run 8 page 13) and the present-day check stays strict.
+- Statement: `VISION_OVERUSED` (more than half of the panels of a page of 2 or more panels set `vision`) is an error only when the planned beat names none of: afterlife, dream, memory, paradise, heaven, vision. When the beat names one, a page may flag every panel and nothing is reported. When the planned beat is not available, it is a warning. `VISION_NOT_PLANNED` stays a warning.
 - Status: accepted. The page and plan skills tell when to use it.
 
 ### D23. Minor figures come from the page's own text (2026-10-10, issue #44, track Q2b)

@@ -252,8 +252,11 @@ const VISION_WORDS = /afterlife|dream|memory|memories|paradise|heaven|vision/i;
 /**
  * Guard for the `vision` panel flag (Q2b, issue #44). The flag exempts a panel from
  * FIGURE_STATE_MISMATCH, so it must not become a way around the check:
- * - VISION_OVERUSED (error): on a page of 2+ panels, more than half of the panels are flagged
- *   (this includes all of them). A vision is one part of a page, not the page.
+ * - VISION_OVERUSED: on a page of 2+ panels, more than half of the panels are flagged. It is an
+ *   error ONLY when the planned beat names no afterlife, dream, memory, paradise, heaven or vision
+ *   (the plan never asked for a vision: the abuse case). When the beat names a vision, a page may
+ *   flag every panel (a last page can be one vision) and nothing is reported. When the planned
+ *   beat is not available, it is a warning.
  * - VISION_NOT_PLANNED (warning): a panel is flagged but the planned beat of the page does not
  *   name an afterlife, dream, memory, paradise, heaven or vision. The adaptation-plan skill
  *   tells the plan to write that word in the beat. A warning until calibrated on judged pages.
@@ -263,12 +266,13 @@ export function visionIssues(spec: MangaPageSpec, plannedBeat: string | undefine
   const flagged = panels.filter((p) => p?.vision !== undefined);
   if (flagged.length === 0) return [];
   const issues: ValidationIssue[] = [];
-  if (panels.length >= 2 && flagged.length * 2 > panels.length) {
+  const beatNamesVision = plannedBeat !== undefined && VISION_WORDS.test(plannedBeat);
+  if (panels.length >= 2 && flagged.length * 2 > panels.length && !beatNamesVision) {
     issues.push({
       code: "VISION_OVERUSED",
-      severity: "error",
+      severity: plannedBeat === undefined ? "warning" : "error",
       path: "page.panels",
-      message: `${flagged.length} of ${panels.length} panels set "vision" (${flagged.map((p) => p.id).join(", ")}). "vision" is only for the panels that show an afterlife, dream or memory, and at most half of the page. Remove it from the panels that show the story's present, and show each figure as the story state says there.`,
+      message: `${flagged.length} of ${panels.length} panels set "vision" (${flagged.map((p) => p.id).join(", ")}). "vision" is only for the panels that show an afterlife, dream or memory, and the planned beat of this page does not name one. Remove it from the panels that show the story's present, and show each figure as the story state says there.`,
     });
   }
   if (plannedBeat !== undefined && !VISION_WORDS.test(plannedBeat)) {

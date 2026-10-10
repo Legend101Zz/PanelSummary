@@ -173,9 +173,14 @@ describe("vision panels (afterlife, dream, memory)", () => {
     // the state check alone is silenced by the flag ...
     expect(figureStateIssues(all, [girl], looks, "error")).toEqual([]);
     // ... so the guard must catch it
-    expect(visionIssues(all, "She dreams of her grandmother").map((i) => `${i.severity}:${i.code}`)).toEqual(["error:VISION_OVERUSED"]);
-    expect(visionIssues(page(["dream", "dream"]), "dream").map((i) => i.code)).toEqual(["VISION_OVERUSED"]);
-    expect(visionIssues(page(["dream", "dream", undefined]), "dream").map((i) => i.code)).toEqual(["VISION_OVERUSED"]);
+    expect(visionIssues(all, "The Emperor walks in the procession").map((i) => `${i.severity}:${i.code}`)).toEqual(["error:VISION_OVERUSED", "warning:VISION_NOT_PLANNED"]);
+    expect(visionIssues(page(["dream", "dream"]), "The Emperor walks in the procession").map((i) => i.code)).toContain("VISION_OVERUSED");
+    expect(visionIssues(page(["dream", "dream", undefined]), "The Emperor walks in the procession").map((i) => i.code)).toContain("VISION_OVERUSED");
+    // the plan names a vision: a page may flag every panel, no error
+    expect(visionIssues(all, "the grandmother carries her to heaven")).toEqual([]);
+    expect(visionIssues(all, "She dreams of her grandmother")).toEqual([]);
+    // no planned beat: a warning only
+    expect(visionIssues(all, undefined).map((i) => `${i.severity}:${i.code}`)).toEqual(["warning:VISION_OVERUSED"]);
     // one flagged panel of two is allowed; the unflagged panel is still checked by the state check
     expect(visionIssues(page(["dream", undefined]), "dream")).toEqual([]);
     expect(figureStateIssues(page(["dream", undefined]), [girl], looks, "error").map((i) => i.path)).toEqual(["panel p2 figure c_girl"]);
