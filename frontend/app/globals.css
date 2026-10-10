@@ -244,7 +244,7 @@ svg {
   padding: 10px 14px;
   text-decoration: none;
 }
-.skip-link:focus {
+.skip-link:focus-visible {
   top: 12px;
 }
 

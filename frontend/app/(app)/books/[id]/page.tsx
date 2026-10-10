@@ -114,6 +114,19 @@ export default function BookPage() {
   usePoll(loadBook, 2000, parsing);
   const active = isActive(edition?.status);
   usePoll(() => (edition ? loadEdition(edition.id) : undefined), 2000, !!edition && active);
+  // A page opened before Generate (another tab) must notice a run that starts elsewhere: ask for the editions while none is shown.
+  const watchForRun = book?.status === "parsed" && editionsLoaded && !edition;
+  const lookForRun = useCallback(async () => {
+    const first = (await listEditions(bookId))[0];
+    if (first) await loadEdition(first.id);
+  }, [bookId, loadEdition]);
+  usePoll(lookForRun, 5000, watchForRun);
+  useEffect(() => {
+    if (!watchForRun) return;
+    const on = () => lookForRun().catch(() => undefined);
+    window.addEventListener("focus", on);
+    return () => window.removeEventListener("focus", on);
+  }, [watchForRun, lookForRun]);
   const now = useNow(1000, active);
   const stopping = active && (localStop || pending === "cancel" || !!edition?.job?.cancel_requested);
   useEffect(() => {

@@ -11,6 +11,7 @@ import {
   mangaRanges,
   pageCounts,
   pagesSummary,
+  queuedDrawKind,
   runningSeconds,
   scopeOf,
   tookSeconds,
@@ -121,5 +122,22 @@ describe("action errors", () => {
     expect(actionErrorText("generate", "Can't reach the PanelSummary server.", 0)).toBe("Generate did not start. Check that the server is running, then try again.");
     expect(actionErrorText("generate", "A run is not finished.", 409)).toContain("Nothing was started and nothing was spent.");
     expect(actionErrorText("redraw", "Nope", 409, 4)).toBe("Page 4 could not be drawn again. Nope. Try again in a moment.");
+  });
+});
+
+describe("a queued run on an edition with a plan", () => {
+  const q = (pages: ReturnType<typeof pg>[], timings?: { drawing_started_at?: string }, over: object = {}) => ({ status: "queued" as const, has_plan: true, pages, timings, ...over });
+  it("is the first draw right after a plan review is approved (no page, drawing never began)", () => {
+    expect(queuedDrawKind(q([]))).toBe("first");
+    expect(queuedDrawKind(q([pg(1, "pending")]))).toBe("first");
+  });
+  it("is drawing again after a retry (failed page) or after a stop (accepted page, or drawing began)", () => {
+    expect(queuedDrawKind(q([pg(1, "accepted"), pg(2, "failed")]))).toBe("again");
+    expect(queuedDrawKind(q([pg(1, "accepted")]))).toBe("again");
+    expect(queuedDrawKind(q([], { drawing_started_at: "2026-10-10T10:00:00Z" }))).toBe("again");
+  });
+  it("is neither without a plan or when not queued", () => {
+    expect(queuedDrawKind(q([], undefined, { has_plan: false }))).toBeNull();
+    expect(queuedDrawKind(q([], undefined, { status: "drawing" }))).toBeNull();
   });
 });

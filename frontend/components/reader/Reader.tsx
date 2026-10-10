@@ -79,6 +79,28 @@ export function Reader({ bookId }: { bookId: string }) {
   const reduced = useReducedMotion();
   const wide = useMedia("(min-width: 1024px)", true);
 
+  // After a client navigation Next.js focuses the first element, the "Skip to content" link. Move that focus to the main region. A direct load is left alone, so Tab from the top still reaches the skip link.
+  const mainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let tabbed = false; // the viewer pressed Tab on this page: the skip link is theirs
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key === "Tab") tabbed = true;
+    };
+    window.addEventListener("keydown", onKey, true);
+    const focusMain = () => {
+      if (tabbed) return;
+      const a = document.activeElement;
+      if (a instanceof HTMLElement && a.classList.contains("skip-link")) mainRef.current?.focus({ preventScroll: true });
+    };
+    const t = window.setTimeout(focusMain, 0);
+    const f = window.requestAnimationFrame(() => window.requestAnimationFrame(focusMain));
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.clearTimeout(t);
+      window.cancelAnimationFrame(f);
+    };
+  }, []);
+
   // ---------------------------------------------------------------- data
 
   useEffect(() => {
@@ -499,7 +521,7 @@ export function Reader({ bookId }: { bookId: string }) {
         </header>
       ) : null}
 
-      <div className={styles.body}>
+      <div className={styles.body} id="main" role="main" ref={mainRef} tabIndex={-1} style={{ outline: "none" }}>
         <div
           ref={stageRef}
           className={`${styles.stage} ${accepted ? styles.stageInteractive : ""} ${zoomed ? styles.stageZoomed : ""}`}

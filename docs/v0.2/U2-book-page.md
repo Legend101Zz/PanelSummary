@@ -79,3 +79,20 @@ Measured in this run: exactly one Generate button before a run (desktop and phon
 - The 60-page grid uses the 18 real Andersen pages repeated. The beats repeat too.
 - Dark tone strip questions 1 and 2 of the design stay as drawn (owner questions).
 - Owner questions: (a) Is a closed section control acceptable for books inside the limit? (b) Should "Retry failed pages" also show when the status is `completed_with_failures` with no missing page? (c) Keep "sections" in the scope label, or ask the parser for a word such as "tales"?
+
+## Fix wave after Gate 1 (track fx2)
+
+| # | Problem found at Gate 1 | Change |
+|---|---|---|
+| 1 | After "Start reading" the reader's "Skip to content" link had focus and was visible over the back arrow and the title. | The skip link shows on `:focus-visible` only. The reader has a main region (`id="main"`, `tabIndex -1`). After a client navigation, focus moves from the skip link to that region. A direct load is not changed, so Tab from the top still shows the skip link. If the viewer presses Tab on the page, focus is not moved. |
+| 2 | After "Retry failed pages" the card said "Waiting to start", "Running for 1 min 04 s" and "Reading and planning a long book can take 10 minutes or more". | A queued run on an edition with a plan has the headline "Drawing is starting again" (retry, and Resume after a stop or a MiniMax stop). The reading and planning note is not shown when the plan exists. The time line says "Running for … in all" when earlier jobs have time. |
+| 3 | A page opened before Generate did not see the run. | While no edition exists, the page asks for the editions every 5 s, and when the tab becomes visible or gets focus. When Generate is pressed in a stale tab, the server returns the running edition (`already_running`) and the page shows it, with no error. |
+| 4 | The stopped state had no "Stopped at 3 of 16 pages". | The card says "Stopped at {n} of {total} pages" (or "Stopped before drawing") and what Resume does. |
+| 5 | At 390 the card and the bottom bar both had "Page 1 not drawn yet". | At 390 only the bottom bar has it. The card has "Stop drawing". |
+| 6 | An accepted page looked like a waiting page until its SVG loaded. | A neutral loading tile (`Skeleton`) shows in the grid and in the beats list. |
+| 7 | One failed page said "Page N could not be drawn" twice. An unknown raw error was shown as the plain reason. | One failed page: the heading says it, the link says "Open page N in the reader". `plainReason` shows a generic sentence for a text it does not know, and the raw text is behind "Technical detail". The reader uses the same function, so it shows the same generic sentence. |
+| 8 | Plan review (6B): headline, cast and strip. | Headline "The plan is ready: {N} pages". The cast shows name and role for the first 12 characters, then a disclosure for the others. A tone strip of waiting segments shows the planned pages. |
+| 9 | The busy name "Retry failed pages: retrying" was not seen 800 ms after the click. | The busy state is set before the request and stays until the response and the reload of the edition. It is as long as the request. With the resume request delayed by 1.5 s it showed from 19 ms to 1.6 s. With no delay the request is fast and the button is gone soon after the click. No artificial delay was added. |
+
+Copy changes in `frontend/lib/words.ts` (pinned in `words.test.ts`): `stageLine("awaiting_plan_review")`, new `DRAWING_AGAIN`, `stoppedLine`, `stoppedNote`, `UNKNOWN_PAGE_REASON`, and a second argument of `plainReason`.
+Other files touched: `frontend/app/globals.css` (`.skip-link` only) and `frontend/components/reader/Reader.tsx` (focus on entry, and `id="main"` on the existing body element).

@@ -72,7 +72,7 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
     case "planning":
       return "Planning the pages";
     case "awaiting_plan_review":
-      return "Plan ready to review";
+      return total > 0 ? `The plan is ready: ${plural(total, "page")}` : "The plan is ready";
     case "drawing": {
       const drawing = pages.filter((p) => p.status === "drawing").map((p) => p.page_number);
       const next = drawing[0] ?? pages.find((p) => p.status === "pending")?.page_number;
@@ -93,6 +93,23 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
     case "failed":
       return "Drawing stopped with an error";
   }
+}
+
+/** The headline of a queued run on an edition whose plan exists: a retry or a resume. */
+export const DRAWING_AGAIN = "Drawing is starting again";
+
+/** The headline of the FIRST draw, in the moment after a plan review is approved and before page 1 starts. */
+export const DRAWING_STARTING = "Starting to draw";
+
+/** C, stopped by the user: how far the drawing got, and what Resume does. */
+export function stoppedLine(drawn: number, total: number): string {
+  return drawn > 0 ? `Stopped at ${drawn.toLocaleString()} of ${plural(total, "page")}` : "Stopped before drawing";
+}
+
+export function stoppedNote(drawn: number, total: number): string {
+  const rest = Math.max(0, total - drawn);
+  if (drawn > 0 && rest > 0) return `${drawn === 1 ? "The page already drawn stays" : "The pages already drawn stay"}. Resume drawing draws the other ${rest.toLocaleString()}.`;
+  return "Resume drawing starts the drawing again.";
 }
 
 export function listNumbers(ns: number[]): string {
@@ -221,14 +238,16 @@ const FAILURE_REASONS: [RegExp, string][] = [
 ];
 
 /** A short reason a reader can act on. The raw text stays available as `detail`. */
-export function plainReason(raw: string | null | undefined): { plain: string; detail: string | null } {
+export const UNKNOWN_PAGE_REASON = "This page could not be drawn. The technical detail says why.";
+
+/** A failure reason in plain words. A raw text that is not known is never the plain reason: `unknown` (a generic sentence) is, and the raw text is the detail. */
+export function plainReason(raw: string | null | undefined, unknown: string = UNKNOWN_PAGE_REASON): { plain: string; detail: string | null } {
   const text = (raw ?? "").trim();
   if (!text) return { plain: "No reason was recorded for this failure.", detail: null };
   // already a full sentence that a person can read: keep it
   if (text.length > 25 && /^[A-Z].*[.!?]$/.test(text)) return { plain: text, detail: null };
   for (const [re, plain] of FAILURE_REASONS) if (re.test(text)) return { plain, detail: text };
-  // already a sentence a person wrote: keep it as the reason
-  return { plain: /[.!?]$/.test(text) ? text : `${text}.`, detail: null };
+  return { plain: unknown, detail: text };
 }
 
 const roundRange = (r: Range, unit: string, one = unit) => {

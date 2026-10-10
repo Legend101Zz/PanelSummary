@@ -13,6 +13,20 @@ const ms = (iso: string | null | undefined): number | null => {
   return Number.isFinite(t) ? t : null;
 };
 
+/** Drawing was tried before: a page was drawn or failed, or the server recorded when drawing began. */
+export function drawingTried(e: Pick<EditionDetail, "pages" | "timings">): boolean {
+  return e.pages.some((p) => p.status === "accepted" || p.status === "failed") || Boolean(e.timings?.drawing_started_at);
+}
+
+/**
+ * What a queued run on an edition with a plan is: "again" (a retry or a resume, drawing was tried before),
+ * "first" (the first draw, just after the owner approved the plan) or null (not that case).
+ */
+export function queuedDrawKind(e: Pick<EditionDetail, "status" | "has_plan" | "pages" | "timings">): "again" | "first" | null {
+  if (e.status !== "queued" || !e.has_plan) return null;
+  return drawingTried(e) ? "again" : "first";
+}
+
 /** Seconds a run has been going: the time of earlier jobs (a pause before a resume does not count) plus the current job. */
 export function runningSeconds(edition: Pick<EditionDetail, "created_at" | "active_seconds" | "job">, now: number): number | null {
   const base = edition.active_seconds ?? 0;
