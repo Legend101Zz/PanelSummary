@@ -96,3 +96,12 @@ Measured in this run: exactly one Generate button before a run (desktop and phon
 
 Copy changes in `frontend/lib/words.ts` (pinned in `words.test.ts`): `stageLine("awaiting_plan_review")`, new `DRAWING_AGAIN`, `stoppedLine`, `stoppedNote`, `UNKNOWN_PAGE_REASON`, and a second argument of `plainReason`.
 Other files touched: `frontend/app/globals.css` (`.skip-link` only) and `frontend/components/reader/Reader.tsx` (focus on entry, and `id="main"` on the existing body element).
+
+## Final-journey fixes (track fx4)
+
+| # | Problem found in the final journey | Change |
+|---|---|---|
+| 1 | At 1440x900 the yellow page 1 band and "Start reading" were below the first screen (band top at y 865, bottom 953). In a real Chrome window (about 820 px tall) the band was not seen. | While a run is active, on a screen 768 px or wider, the book page is tighter: the cover is 120 px wide (still 2:3), the title is at most 44 px, the card padding, the gaps between its parts and the step gaps are smaller, and the two helper lines are one line ("This page updates itself, so you can leave it open. Four pages are drawn at the same time."). The page does not scroll by itself. The 390 layout is not changed. Measured band: top 721, bottom 809 (light) and 724, 812 (dark) at 1440x900 and 1440x820. |
+| 2 | "Continue from page 29" and "page 8" for pages that were not read. | See the note in `U3-reader.md`. The book page offers "Continue from page N" only when page N is a drawn page of the edition, and it reads the saved page again when the tab is shown or focused. |
+
+The rules sit in `Book.module.css` (`.top[data-live="true"]`, `.liveCard`, `.liveSteps`) and use no new tokens.

@@ -73,3 +73,7 @@ Pure logic is in `components/reader/picker.ts` (grouping, labels, grid moves, ti
 Test data is a fixture: a small server (`Book-Reel-scratch/v02/u3/tools/mock-api.mjs`) that serves real exported pages. The 60-page edition repeats the 18 real pages and is marked "TEST FIXTURE" (invented tale names, pages 12 and 19 failed, pages 58 to 60 not drawn). It is not the backend and not a live run. The journey script (`scripts/acceptance/journey.mjs`) was not run: it needs the full stack. The phone step of that script (tap at (360, 420) moves to the next panel) was reproduced against the fixture and the camera moved.
 
 Before and after pictures: `Book-Reel-scratch/v02/u3/shots/` (`before-*` and `after-*`).
+
+## Saved position (track fx4)
+
+The reader saves the page for "Continue from page N" (`localStorage`, `ps:last-page:<edition>`) only when it shows that page as the current page: the page is loaded, it is drawn or marked "could not be drawn", and it is inside the book (`isReachedPage` in `frontend/lib/position.ts`). Before, the reader saved the number in the address bar at once, also for a page that was not drawn yet or was outside the book. The book page checks the saved page again (`continuePage`) and says "Start reading" when it is not a drawn page. The cause of "page 29" and "page 8" in the final journey was not found: it did not repeat in headless or headed Chrome. This is a defensive rule, not a proven fix. Nothing in the reader's look changed.

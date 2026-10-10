@@ -15,7 +15,7 @@ import {
   type EditionPage,
 } from "@/lib/api";
 import { useMedia, usePoll, useReducedMotion } from "@/lib/hooks";
-import { readPreference, savePosition, savePreference } from "@/lib/position";
+import { isReachedPage, readPreference, savePosition, savePreference } from "@/lib/position";
 import { plainReason, plural, providerStopLines, stageLine, voiceLabel } from "@/lib/words";
 import { SvgPage } from "@/components/SvgPage";
 import { Sheet } from "@/components/Paper";
@@ -181,8 +181,14 @@ export function Reader({ bookId }: { bookId: string }) {
     url.searchParams.set("edition", editionId);
     url.searchParams.set("page", String(pos.page));
     if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url);
-    savePosition(editionId, pos.page);
   }, [editionId, pos.page]);
+
+  // The reading position for "Continue": only a page the reader really shows as the current page (loaded, drawn or marked as failed, inside the book).
+  // Not the number in the address bar, not a page that is only being fetched ahead.
+  const shown = loaded && loaded.n === pos.page && !loaded.missing && !loaded.error ? loaded.page?.status : null;
+  useEffect(() => {
+    if (editionId && isReachedPage(pos.page, total, shown)) savePosition(editionId, pos.page);
+  }, [editionId, pos.page, total, shown]);
 
   // back/forward to an entry with another ?page= while the reader stays mounted
   useEffect(() => {

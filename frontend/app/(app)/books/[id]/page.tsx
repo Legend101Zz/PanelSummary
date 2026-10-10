@@ -24,7 +24,7 @@ import {
   type ServerStatus,
 } from "@/lib/api";
 import { useMedia, useNow, usePoll } from "@/lib/hooks";
-import { readPosition } from "@/lib/position";
+import { continuePage, readPosition } from "@/lib/position";
 import { readReviewPlan } from "@/lib/prefs";
 import { bookFacts } from "@/lib/words";
 import { BottomBar, Button, Card, MomentBand, Notice, Skeleton, StepList, TextLink, PageFrame, RunCard } from "@/components/ui";
@@ -196,9 +196,27 @@ export default function BookPage() {
       .catch(() => undefined);
   }, [edition, page1?.status, coverSvg]);
 
+  // "Continue from page N": the saved page, if it is a drawn page of this book. Read again when this tab is shown or
+  // focused again, because the reader may have saved a newer page in another tab.
+  const readable = edition?.pages.filter((p) => p.status === "accepted" || p.status === "failed").map((p) => p.page_number);
+  const readableKey = readable?.join(",") ?? "";
+  const editionTotal = edition ? edition.page_total || edition.pages.length : 0;
   useEffect(() => {
-    if (edition) setLastRead(readPosition(edition.id));
-  }, [edition?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!edition) return;
+    const read = () => setLastRead(continuePage(readPosition(edition.id), editionTotal, readableKey ? readableKey.split(",").map(Number) : []));
+    read();
+    const onShow = () => {
+      if (document.visibilityState === "visible") read();
+    };
+    window.addEventListener("focus", read);
+    window.addEventListener("pageshow", read);
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      window.removeEventListener("focus", read);
+      window.removeEventListener("pageshow", read);
+      document.removeEventListener("visibilitychange", onShow);
+    };
+  }, [edition?.id, editionTotal, readableKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- actions -----------------------------------------------------------------
   const run = async (kind: ActionKind, work: () => Promise<void>, page?: number) => {
@@ -353,7 +371,7 @@ export default function BookPage() {
         <TextLink href="/" kind="back">Your shelf</TextLink>
       </div>
 
-      <div className={styles.top}>
+      <div className={styles.top} data-live={!!edition && active && !awaiting ? "true" : undefined}>
         <div className={styles.text}>
           <h1 className={styles.title}>{book.title}</h1>
           {book.author ? <p className={styles.author}>{book.author}</p> : null}
