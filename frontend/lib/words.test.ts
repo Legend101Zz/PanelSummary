@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { DRAWING_AGAIN, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -40,6 +40,7 @@ describe("words", () => {
     expect(stoppedNote(3, 16)).toBe("The pages already drawn stay. Resume drawing draws the other 13.");
     expect(stoppedNote(1, 2)).toBe("The page already drawn stays. Resume drawing draws the other 1.");
     expect(DRAWING_AGAIN).toBe("Drawing is starting again");
+    expect(DRAWING_STARTING).toBe("Starting to draw");
   });
   it("does not match 429 inside a longer number", () => {
     expect(plainReason("page 14290 broke").plain).not.toMatch(/busy/);

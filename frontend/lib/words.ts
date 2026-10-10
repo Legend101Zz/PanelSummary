@@ -98,6 +98,9 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
 /** The headline of a queued run on an edition whose plan exists: a retry or a resume. */
 export const DRAWING_AGAIN = "Drawing is starting again";
 
+/** The headline of the FIRST draw, in the moment after a plan review is approved and before page 1 starts. */
+export const DRAWING_STARTING = "Starting to draw";
+
 /** C, stopped by the user: how far the drawing got, and what Resume does. */
 export function stoppedLine(drawn: number, total: number): string {
   return drawn > 0 ? `Stopped at ${drawn.toLocaleString()} of ${plural(total, "page")}` : "Stopped before drawing";

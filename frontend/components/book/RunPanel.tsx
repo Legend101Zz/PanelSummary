@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { BookDetail, EditionDetail, Preflight } from "@/lib/api";
 import { isActive } from "@/lib/api";
-import { DRAWING_AGAIN, failedStageLine, plainReason, stoppedLine, stoppedNote, plural, providerStopHeadline, providerStopLines, scopeLabel, stageLine } from "@/lib/words";
+import { DRAWING_AGAIN, DRAWING_STARTING, failedStageLine, plainReason, stoppedLine, stoppedNote, plural, providerStopHeadline, providerStopLines, scopeLabel, stageLine } from "@/lib/words";
 import {
   Button,
   Disclosure,
@@ -20,7 +20,7 @@ import {
   formatUsd,
   segmentsFromPages,
 } from "@/components/ui";
-import { failedStage, firstPageSeconds, pageCounts, runningSeconds, tookSeconds } from "./bookLogic";
+import { failedStage, firstPageSeconds, pageCounts, queuedDrawKind, runningSeconds, tookSeconds } from "./bookLogic";
 import styles from "./Book.module.css";
 
 export type Pending = "generate" | "cancel" | "resume" | "retry" | "approve" | "redraw" | null;
@@ -68,8 +68,9 @@ export function RunPanel(p: RunPanelProps) {
   const keyPointsLeft = (cov.core_not_conveyed?.length ?? 0) || (cov.required_not_planned?.length ?? 0);
   const gaps = e.status === "completed_with_failures" && missing === 0;
 
-  // A queued run on an edition whose plan exists is a retry or a resume: reading and planning are done, so the card says so.
-  const resuming = active && e.has_plan && e.status === "queued";
+  // A queued run on an edition whose plan exists: "again" (retry or resume, drawing was tried) or "first" (just after plan approval).
+  const drawKind = active ? queuedDrawKind(e) : null;
+  const resuming = drawKind === "again";
 
   // --- headline -------------------------------------------------------------
   let headline: string;
@@ -77,6 +78,7 @@ export function RunPanel(p: RunPanelProps) {
   else if (stop) headline = providerStopHeadline(stop.code);
   else if (e.status === "failed") headline = failedStageLine(failedStage(e));
   else if (resuming) headline = DRAWING_AGAIN;
+  else if (drawKind === "first") headline = DRAWING_STARTING;
   else headline = stageLine(e.status, e.pages, total, { keyPointsLeftOut: keyPointsLeft });
 
   // --- steps ----------------------------------------------------------------
@@ -106,7 +108,7 @@ export function RunPanel(p: RunPanelProps) {
       <span key="t">
         {active ? "Running for " : "Took "}
         <span className={styles.clock}>{formatDuration(secs)}</span>
-        {active && (e.active_seconds ?? 0) > 0 ? " in all" : ""}
+        {active && drawKind !== "first" && (e.active_seconds ?? 0) > 0 ? " in all" : ""}
       </span>,
     );
   }
