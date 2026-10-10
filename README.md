@@ -160,7 +160,7 @@ cd packages/manga-render && npx tsc --noEmit && npx vitest run
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
-GitHub Actions runs the same checks on every pull request into `release/v0.1` and `main`. It
+GitHub Actions runs the same checks on every pull request into `release/v0.1`, `release/v0.2` and `main`. It
 also has a manual lane for a live run with real MiniMax calls. See
 [`docs/launch/CI.md`](docs/launch/CI.md).
 
