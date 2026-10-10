@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { detailText } from "./api";
-import { bookFacts, moneyRange, plainReason, providerStopHeadline, shelfStatus } from "./words";
+import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
   it("shows completed_with_failures in the red tone", () => {
@@ -27,6 +28,20 @@ describe("words", () => {
   it("maps a token limit to a plain sentence", () => {
     expect(plainReason("token limit hit").plain).toMatch(/ran out of room/);
   });
+  it("never shows an unknown raw text as the plain reason", () => {
+    const r = plainReason("replay: page 7 is set to fail (FAIL_PAGES), call 2 of 2");
+    expect(r.plain).toBe(UNKNOWN_PAGE_REASON);
+    expect(r.detail).toBe("replay: page 7 is set to fail (FAIL_PAGES), call 2 of 2");
+    expect(plainReason("odd text", "The model could not finish drawing the pages.").plain).toBe("The model could not finish drawing the pages.");
+  });
+  it("words a stopped run and a run that starts again", () => {
+    expect(stoppedLine(3, 16)).toBe("Stopped at 3 of 16 pages");
+    expect(stoppedLine(0, 16)).toBe("Stopped before drawing");
+    expect(stoppedNote(3, 16)).toBe("The pages already drawn stay. Resume drawing draws the other 13.");
+    expect(stoppedNote(1, 2)).toBe("The page already drawn stays. Resume drawing draws the other 1.");
+    expect(DRAWING_AGAIN).toBe("Drawing is starting again");
+    expect(DRAWING_STARTING).toBe("Starting to draw");
+  });
   it("does not match 429 inside a longer number", () => {
     expect(plainReason("page 14290 broke").plain).not.toMatch(/busy/);
     expect(plainReason("HTTP 429").plain).toMatch(/busy/);
@@ -34,6 +49,12 @@ describe("words", () => {
   it("says manga pages on the cover band for a complete edition", () => {
     const b: any = { status: "parsed", latest_edition: { status: "complete", page_total: 18, pages_accepted: 18 } };
     expect(shelfStatus(b).text).toBe("18 manga pages");
+  });
+  it("words an edition that waits for a plan review, on the shelf and in the stage line", () => {
+    const b: any = { status: "parsed", latest_edition: { status: "awaiting_plan_review", page_total: 16, pages_accepted: 0 } };
+    expect(shelfStatus(b)).toEqual({ text: "Plan ready to review", tone: "quiet" });
+    expect(stageLine("awaiting_plan_review", [], 16)).toBe("The plan is ready: 16 pages");
+    expect(stageLine("awaiting_plan_review", [], 1)).toBe("The plan is ready: 1 page");
   });
   it("marks the PDF page count in the meta line", () => {
     const b: any = { page_count: 22, section_count: 4, word_count: 4775 };
@@ -45,4 +66,157 @@ describe("words", () => {
   it("joins message and blocking reasons with punctuation", () => {
     expect(detailText({ message: "Book too long", blocking_reasons: ["Too many words (50,000)."] })).toBe("Book too long. Too many words (50,000).");
   });
+  it("words the plain reason of a page that failed every check", () => {
+    expect(plainReason("rejected on every submit (max_submits)").plain).toBe("Each version of this page that the model wrote failed the page checks.");
+  });
+  it("says 'Drawn, n key points left out' when every page is drawn (G-O1)", () => {
+    const pages: any[] = [{ page_number: 1, status: "accepted" }, { page_number: 2, status: "accepted" }];
+    expect(stageLine("completed_with_failures", pages, 2, { keyPointsLeftOut: 2 })).toBe("Drawn, 2 key points left out");
+    expect(stageLine("completed_with_failures", pages, 2, { keyPointsLeftOut: 1 })).toBe("Drawn, 1 key point left out");
+    expect(stageLine("completed_with_failures", [{ page_number: 1, status: "failed" }, ...pages] as any, 3)).toBe("Finished, but 1 page is missing");
+  });
+  it("names the stage of a run that stopped with an error", () => {
+    expect(failedStageLine("reading")).toBe("Stopped with an error while reading the book");
+    expect(failedStageLine("planning")).toBe("Stopped with an error while planning the pages");
+    expect(failedStageLine("drawing")).toBe("Stopped with an error while drawing the pages");
+  });
+  it("tells the next step of the three MiniMax stops", () => {
+    const limit = providerStopLines({ code: "PROVIDER_LIMIT", type: "rate_limit_error", message: "Token Plan usage limit reached" }, 11);
+    expect(limit.plain).toContain("11 pages were not tried yet");
+    expect(limit.detail).toBe("rate_limit_error: Token Plan usage limit reached");
+    expect(providerStopLines({ code: "PROVIDER_AUTH" }).next).toBe("Check the MiniMax key on the PanelSummary server (MINIMAX_API_KEY) and your MiniMax plan. Then press Resume drawing.");
+    expect(providerStopLines({ code: "PROVIDER_UNAVAILABLE" }).next).toBe("Wait a few minutes. Then press Resume drawing.");
+  });
+  it("labels what a run draws", () => {
+    expect(scopeLabel(null, 5)).toBeNull();
+    expect(scopeLabel({ section_ids: ["s1"] }, 5)).toBe("Drawing 1 of 5 sections");
+    expect(scopeLabel({ pdf_page_from: 3, pdf_page_to: 40 }, 5)).toBe("PDF pages 3\u201340");
+  });
 });
+
+describe("U1 copy", () => {
+  it("shows every limit before the upload (#49)", () => {
+    expect(limitItems(FALLBACK_LIMITS)).toEqual(["Selectable text, not a scan", "In English", "Up to 60 MB", "Up to 75 PDF pages", "Up to 17,500 words"]);
+    expect(limitsSentence(FALLBACK_LIMITS)).toBe("A PDF with selectable text, in English, up to 60 MB, 75 PDF pages and 17,500 words.");
+    expect(limitItems({ max_pdf_size_mb: 10, max_pdf_pages: 5, max_source_words: 1000 })[2]).toBe("Up to 10 MB");
+  });
+  it("says sections, not chapters, on Add a book", () => {
+    expect(addBookLede(60)).toBe("Choose a PDF with selectable text, up to 60 MB. It is uploaded to your PanelSummary server, which reads its text and finds its sections.");
+  });
+  it("words the upload errors with a next step", () => {
+    expect(notPdfText("notes.txt")).toBe("notes.txt is not a PDF. Choose a .pdf file.");
+    expect(tooLargeText("big.pdf", 72 * 1048576, 60)).toBe("big.pdf is 72 MB. The limit is 60 MB.");
+    expect(withNextStep("The PDF has no extractable text.")).toBe("The PDF has no extractable text. Use a PDF with selectable text.");
+    expect(withNextStep("The PDF has no extractable body text")).toBe("The PDF has no extractable body text. Use a PDF with selectable text.");
+    expect(withNextStep("FileDataError: Failed to open stream")).toBe("The PDF could not be read. The file may be damaged. Choose another PDF.");
+    expect(withNextStep("That file is not a PDF")).toBe("The PDF could not be read. The file may be damaged. Choose another PDF.");
+  });
+  it("turns the parse message into plain words", () => {
+    expect(readSummary("Parsed 22 pages into 4 sections and 10 source units")).toBe("Read 22 PDF pages and found 4 sections.");
+    expect(readSummary("Parsed 1 page into 1 section and 2 source units")).toBe("Read 1 PDF page and found 1 section.");
+    expect(readSummary("Something else")).toBe("Something else");
+  });
+  it("writes the sample run from real fields, with the first page of any number when page_1_at is absent", () => {
+    const edition = {
+      page_total: 18,
+      pages_accepted: 18,
+      created_at: "2026-10-09T10:07:38.810000+00:00",
+      finished_at: "2026-10-09T10:14:46.695000+00:00",
+      active_seconds: null,
+      totals: { cost_usd: 0.460227 },
+      timings: { generate_started_at: "2026-10-09T10:07:39.478000+00:00", first_page_at: "2026-10-09T10:11:26.164000+00:00" },
+    };
+    const pre: any = { estimated_manga_pages: { low: 11, high: 18 }, estimated_minutes: { first_page: { low: 2, high: 31 }, total: { low: 5, high: 58 } }, estimated_cost_usd: { low: 0.33, high: 0.75 } };
+    const f = sampleRunFacts(edition, pre);
+    expect(sampleEstimateSentence(f)).toBe("Before the run, the estimate was 11 to 18 manga pages, page 1 in 2 to 31 min, all pages in 5 to 58 min and $0.33 to $0.75.");
+    expect(sampleRealSentence(f)).toBe("The real run made 18 pages: the first page drawn after 3 min 47 s, all pages after 7 min 08 s and an estimated $0.46 (not a bill).");
+    const withPage1 = sampleRunFacts({ ...edition, timings: { ...edition.timings, page_1_at: "2026-10-09T10:11:37.478000+00:00" } }, null);
+    expect(sampleRealSentence(withPage1)).toContain("page 1 after 3 min 58 s");
+    expect(sampleEstimateSentence(withPage1)).toBeNull();
+    expect(sampleLandingSentence("Four Tales", 4, 22, f)).toBe("Four Tales: 4 sections, 22 PDF pages, 18 manga pages, drawn in 7 min 08 s. The estimate before the run was 5 to 58 min.");
+  });
+  it("words the limits of Settings", () => {
+    expect(limitsSettingsLine({ ...FALLBACK_LIMITS, page_attempts: 2, page_concurrency: 4 })).toBe("A book can be up to 60 MB, 75 PDF pages and 17,500 words. A page gets 2 tries, and 4 pages are drawn at the same time.");
+  });
+});
+
+describe("Gate 1 fix wave copy", () => {
+  it("splits an error text into what happened and the next step", async () => {
+    const w = await import("./words");
+    expect(w.splitNextStep(`big.pdf is 72 MB. The limit is 60 MB. ${w.tooLargeNext(60)}`)).toEqual({ title: "big.pdf is 72 MB. The limit is 60 MB.", next: "Choose a PDF of 60 MB or less." });
+    expect(w.splitNextStep(w.withNextStep("FileDataError: x"))).toEqual({ title: "The PDF could not be read. The file may be damaged.", next: "Choose another PDF." });
+    expect(w.splitNextStep("The server answered 502. Try again in a moment.")).toEqual({ title: "The server answered 502.", next: "Try again in a moment." });
+    expect(w.splitNextStep("Something else")).toEqual({ title: "Something else", next: null });
+  });
+  it("marks the failed limit on its own chip", async () => {
+    const w = await import("./words");
+    expect(w.limitChips(w.FALLBACK_LIMITS).every((c) => !c.failed)).toBe(true);
+    const size = w.limitChips(w.FALLBACK_LIMITS, { limit: "size", fileMb: 72 });
+    expect(size[2]).toEqual({ text: "Up to 60 MB (this file: 72 MB)", failed: true });
+    expect(size.filter((c) => c.failed)).toHaveLength(1);
+    expect(w.limitChips(w.FALLBACK_LIMITS, { limit: "scan" })[0]).toEqual({ text: "Selectable text, not a scan (this file: a scan)", failed: true });
+  });
+  it("shows the thinking level that is sent", async () => {
+    const w = await import("./words");
+    expect(w.thinkingSent("MiniMax-M3.1-Flash-Preview", "off")).toBe("low");
+    expect(w.thinkingSent("MiniMax-M3.1-Flash-Preview", "low")).toBe("low");
+    expect(w.thinkingSent("MiniMax-M3", "off")).toBe("off");
+  });
+});
+
+describe("replay worker status copy", () => {
+  it("says that no key is used, never 'key set', in replay mode", async () => {
+    const w = await import("./words");
+    expect(w.workerStatusLine({ reachable: true, key_set: false, replay: true })).toEqual({ ok: true, text: w.REPLAY_WORKER_LINE });
+    expect(w.REPLAY_WORKER_LINE).toBe("Replay worker: no MiniMax key is used; pages come from a saved run.");
+    expect(w.workerStatusLine({ reachable: true, key_set: true, replay: true }).text).not.toMatch(/key set/i);
+  });
+  it("keeps the real-worker lines", async () => {
+    const w = await import("./words");
+    expect(w.workerStatusLine({ reachable: true, key_set: true, replay: false })).toEqual({ ok: true, text: "MiniMax key set" });
+    expect(w.workerStatusLine({ reachable: true, key_set: false, replay: false })).toEqual({ ok: false, text: "MiniMax key not set" });
+    expect(w.workerStatusLine({ reachable: false, key_set: false, replay: false })).toEqual({ ok: false, text: "Drawing service not reachable" });
+  });
+});
+
+describe("readableReason", () => {
+  const raw = "detail: the Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn claim k41";
+  const claims = new Map([
+    ["k41", "The Cat scorns the Dog"],
+    ["k3", "Short one"],
+    ["k12", "A very long claim text that goes on and on and on well past sixty characters in length"],
+  ]);
+  it("replaces the id with the claim text and drops the prefix", () => {
+    expect(readableReason(raw, claims)).toBe(`The Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn "The Cat scorns the Dog"`);
+  });
+  it("says another key point when the text is not known", () => {
+    const r = readableReason(raw);
+    expect(r).toBe("The Cat's 'very foolish Dog' judgement restates the neighbouring Cat-scorn another key point");
+    expect(r).not.toMatch(/k41/);
+    expect(readableReason(raw, new Map([["k1", "x"]]))).not.toMatch(/k41/);
+  });
+  it("handles a list of ids and shortens long text", () => {
+    expect(readableReason("Same as claims k3 and k12.", claims)).toBe(`Same as "Short one" and "A very long claim text that goes on and on and on well past…".`);
+    expect(readableReason("claims k3 and k12")).toBe("Another key point");
+  });
+  it("handles brackets and bare ids", () => {
+    expect(readableReason("Repeats the point (k3).", claims)).toBe(`Repeats the point "Short one".`);
+    expect(readableReason("Repeats k3 here", claims)).toBe(`Repeats "Short one" here`);
+  });
+  it("keeps a reason with no id", () => {
+    expect(readableReason("Too minor for a page.", claims)).toBe("Too minor for a page.");
+  });
+  it("does not touch words that are not claim ids", () => {
+    expect(readableReason("Good for kids.", claims)).toBe("Good for kids.");
+    expect(readableReason("It is a k9 unit.", claims)).toBe("It is a k9 unit.");
+    expect(readableReason("It is a k9 unit.")).toBe("It is a another key point unit.");
+  });
+});
+
+describe("readableReason, case", () => {
+  it("finds an upper-case id and strips a capitalised machine prefix", () => {
+    const claims = new Map([["k41", "The Cat scorns the Dog"]]);
+    expect(readableReason("Detail: restates Claim K41", claims)).toBe('Restates "The Cat scorns the Dog"');
+  });
+});
+

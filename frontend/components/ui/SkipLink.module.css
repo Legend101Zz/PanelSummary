@@ -1,0 +1,37 @@
+/* Hidden until it has focus. The first Tab stop of every app page. */
+.skip {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip:focus, .skip:focus-visible {
+  z-index: 60;
+  top: 10px;
+  left: max(var(--app-gutter), calc((100% - var(--app-max)) / 2 + var(--app-gutter)));
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-control);
+  background: var(--app-action);
+  color: var(--app-on-action);
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  outline: var(--app-focus-width) solid var(--app-focus);
+  outline-offset: var(--app-focus-offset);
+}

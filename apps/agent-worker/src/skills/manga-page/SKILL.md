@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.8.0
+version: 1.11.0
 ---
 
 # Manga page
@@ -100,6 +100,11 @@ right, top to bottom; `panels` must be listed in that reading order.
   shot. A `wide` panel may carry one short line (8 words or fewer).
 - **Vary the shots.** On a page of 4 or more panels, use at least 3 different shot sizes,
   and never the same shot size three panels in a row.
+- **Never repeat a picture.** Two panels on a page must not share the shot size, the angle,
+  the place and the same figures in the same poses (SAME_SHOT_TWICE). When the next moment
+  looks the same, change what the picture shows: a closer shot, another angle, a new action
+  or object, the listener's reaction. If nothing changes, merge the two panels. Open the
+  page with a picture that differs from the last panel of the previous page.
 - **Move closer as emotion rises**: wide → medium → close, with `extreme_close` only for the
   peak (at most one per page).
 - **Reaction shots.** After an important line or event, cut to the listener's face in
@@ -130,10 +135,16 @@ right, top to bottom; `panels` must be listed in that reading order.
 
 - The art carries action and emotion through `pose`, `expression` and `fx`. If a caption
   only describes what the panel already shows, delete it.
+- **Turn narration into speech or drawn action.** When the book tells an event in narration,
+  draw the event (`pose`, `props`, `fx`) and give the spoken part to the character as
+  `speech`. On a page of more than 40 words, captions and narration together stay at 60% of
+  the words or fewer; aim for half (PROSE_WALL, FIX BEFORE SUBMIT). Count the words before
+  you submit.
 - **Narration** is for what pictures cannot show: time passing, a character's reasoning,
   the book's argument, a narrator's voice worth keeping. Use at most one narration box per
   panel, 20 words or fewer, and normally at most two per page.
 - **Captions** (`caption`) label place and time in 6 words or fewer ("The city, at night").
+  A caption is a label, not a sentence: put a sentence in a balloon or one narration box.
 - **Say the key event.** A death, a marriage, an arrival or a gift the claim names is SAID in a
   caption or line, in the panel that shows it. A closed-eyed face reads as sleep.
 - **State every core claim's facts in lettering** (a caption or a balloon). A name tag or a
@@ -141,7 +152,7 @@ right, top to bottom; `panels` must be listed in that reading order.
   words. (CLAIM_TEXT_THIN.)
 - **Draw the key object or action of the beat**: put it in `props`, in a figure's `holding`, or
   in an `insert` panel. A claim that names a rose, a thorn or a sack needs it drawn.
-  (KEY_PROP_NOT_DRAWN.)
+  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge.
 - **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
   crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the
@@ -162,7 +173,8 @@ right, top to bottom; `panels` must be listed in that reading order.
   the renderer styles the letters.
 - **Never splice** two source spans in one balloon, and never trim a quote's punchline
   ("as beautiful as a weathercock... only not quite so useful"): split a long quote over two
-  balloons.
+  balloons. A quote that stops 2-6 words before the end of its source sentence gets a
+  QUOTE_CLIPPED warning.
 - Every word must earn its place. When in doubt, cut.
 
 ## 7. Speakers and text kinds
@@ -176,9 +188,13 @@ right, top to bottom; `panels` must be listed in that reading order.
 - **A line the book gives to a character is `speech` from that character**, never a narration
   or caption box (SPEECH_IN_NARRATION). Narration is the narrator's voice only.
 - **Ask before answer**: letter the book's lines in the book's order across the panels.
+- **A cast entry with `"minor": true`** is a bit player the cast lacks (the child, one of the
+  workmen), added by the goal. Draw it by its id and give it its line. It has a plain look and
+  no state. Do not borrow another character's figure for it.
 - **Never give a line to a character who is absent, asleep or dead** in this page's source
   units. Draw only the planned cast, and set panels only in the planned locations (a
-  flashback is the exception). (LOCATION_OFF_PLAN.)
+  flashback is the exception). (LOCATION_OFF_PLAN.) A location that lists `units` is used
+  only in those units: put a panel there only when this page's text is in one of them.
 - `speech` for normal lines. `thought` for inner voice. `whisper` for secrets. `shout` for
   raised voices: 8 words or fewer, and rare. `sfx` for sounds: 1-3 punchy words ("FLAP",
   "CRACK", "DRIP"), only for sounds the scene makes, in panels where something happens.
@@ -218,6 +234,12 @@ from an earlier page's picture.
 
 Variant fields: `eyes` (`open`, `closed`, `blind`, `dead`), `material` (a gilded statue stripped of
 its gold is `stone`), `outfit_tone`, `hair_tone`, `tone`. FIGURE_STATE_MISMATCH is an error.
+
+**Afterlife, dream, memory.** When a panel shows what is not the story's present (the dead
+Swallow alive in paradise, the grandmother in the match-girl's vision, a dream), set
+`"vision": "afterlife"`, `"dream"` or `"memory"` on that panel only. Its figures are not held to
+`expected_looks`; letter a caption that says what the reader sees. A flashback to an earlier
+time still uses fx `flashback`. Never use `vision` to avoid a continuity error in the present.
 
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
@@ -355,8 +377,8 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    too much of its panels: fix every named code in one edit and change the structure (more
    panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
 6. **FIX BEFORE SUBMIT** items (CLAIM_TEXT_THIN, KEY_PROP_NOT_DRAWN, SPEECH_IN_NARRATION,
-   DUPLICATE_CAPTION, REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL,
-   SPEAKER_OFF_PANEL_LIMIT, STATUE_LOCATION_SWAPPED) reject your FIRST submit only. Fix them
+   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
+   reject your FIRST submit only. Fix them
    in the same edit; if one cannot be fixed, submit again and it stays a warning.
 7. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
    every error and submit the complete JSON again.

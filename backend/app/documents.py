@@ -7,6 +7,7 @@ Collections (new names, so an older database's v1 documents never collide):
 - edition_artifacts  — accepted book understanding and adaptation plan
 - edition_pages      — one row per planned page; unique (edition_id, page_number)
 - generation_jobs    — leased background jobs (parse, generate)
+- runner_heartbeat   — one document, written by the job runner on every poll
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ EditionStatus = Literal[
     "queued",
     "understanding",
     "planning",
+    "awaiting_plan_review",
     "drawing",
     "complete",
     "completed_with_failures",
@@ -92,6 +94,9 @@ class Edition(Document):
     status: EditionStatus = "queued"
     job_id: Optional[str] = None
     policy: dict[str, Any] = Field(default_factory=dict)
+    # What part of the book this edition draws (D19, amended): None = the whole book (v0.1),
+    # {"section_ids": [...]} or {"pdf_page_from": n, "pdf_page_to": m}.
+    scope: Optional[dict[str, Any]] = None
     understanding_id: Optional[str] = None
     plan_id: Optional[str] = None
     page_total: int = 0
@@ -108,6 +113,9 @@ class Edition(Document):
     provider_stop: Optional[dict[str, Any]] = None
     # Milestones the job runner stamps (generate_started_at, drawing_started_at, first_page_at).
     timings: dict[str, datetime] = Field(default_factory=dict)
+    # Sum of the run times of this edition's jobs (the runner adds each job's time at its end), so
+    # the pause between a stop and a resume does not count. 0 = not recorded (older editions).
+    active_seconds: float = 0.0
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
     finished_at: Optional[datetime] = None
@@ -190,4 +198,16 @@ class GenerationJob(Document):
         ]
 
 
-DOCUMENTS = [LibraryBook, BookSource, Edition, EditionArtifact, EditionPage, GenerationJob]
+class RunnerHeartbeat(Document):
+    """One document: the job runner writes ``at`` on every poll. ``GET /status`` reads it."""
+
+    key: str = "runner"
+    runner_id: str = ""
+    at: datetime = Field(default_factory=utcnow)
+
+    class Settings:
+        name = "runner_heartbeat"
+        indexes = [pymongo.IndexModel([("key", 1)], unique=True)]
+
+
+DOCUMENTS = [LibraryBook, BookSource, Edition, EditionArtifact, EditionPage, GenerationJob, RunnerHeartbeat]

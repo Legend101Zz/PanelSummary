@@ -3,6 +3,8 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { loadSkill } from "../src/skills/load.js";
+
 import type { BookUnderstanding, Claim, MangaPageSpec, PlannedPage, ValidationIssue } from "@panelsummary/manga-render";
 
 import { PAGES, PLAN, UNDERSTANDING } from "../../../packages/manga-render/test/fixtures/happy-prince.js";
@@ -16,9 +18,16 @@ import {
   isRepairOnce,
   keyPropNotDrawnIssues,
   locationOffPlanIssues,
+  QUOTE_CLIP_MAX_TAIL,
+  QUOTE_CLIP_MIN_TAIL,
+  quoteClippedIssues,
   REPAIR_ONCE_CODES,
+  repairOnceIssues,
   repeatNameTagIssues,
+  sameShotTwiceIssues,
+  shotSignature,
   speechInNarrationIssues,
+  sourceWords,
 } from "../src/goals/repair-once.js";
 import type { GoalOptions } from "../src/goals/types.js";
 
@@ -47,17 +56,30 @@ describe("REPAIR_ONCE_CODES", () => {
     expect([...REPAIR_ONCE_CODES].sort()).toEqual(
       [
         "CLAIM_TEXT_THIN",
-        "DUPLICATE_CAPTION",
         "HERO_TOO_SMALL",
         "KEY_PROP_NOT_DRAWN",
         "LOCATION_OFF_PLAN",
+        "PROSE_WALL",
         "REPEAT_NAME_TAG",
-        "SPEAKER_OFF_PANEL_LIMIT",
         "SPEECH_IN_NARRATION",
         "STATUE_LOCATION_SWAPPED",
       ].sort(),
     );
     expect(REPAIR_ONCE_CODES.has("DIALOGUE_ORDER")).toBe(false);
+  });
+
+  it("lists exactly these codes in step 6 of the manga-page skill, and the receipt carries the skill version and hash", async () => {
+    const skill = await loadSkill("manga-page");
+    const step = /FIX BEFORE SUBMIT\*\* items \(([^)]*)\)/.exec(skill.content)?.[1] ?? "";
+    expect(step.split(",").map((c) => c.trim()).sort()).toEqual([...REPAIR_ONCE_CODES].sort());
+    expect(skill.version).toBe("1.11.0");
+    expect(skill.contentHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("keeps the candidates and the demoted codes out of the class (v0.2 calibration)", () => {
+    for (const code of ["SAME_SHOT_TWICE", "QUOTE_CLIPPED", "DIALOGUE_ORDER", "CLAIM_ORDER", "DUPLICATE_CAPTION", "SPEAKER_OFF_PANEL_LIMIT"]) {
+      expect(REPAIR_ONCE_CODES.has(code)).toBe(false);
+    }
   });
 });
 
@@ -165,6 +187,52 @@ describe("repair_once in the page goal", { timeout: 60_000 }, () => {
   });
 });
 
+describe("PROSE_WALL in the page goal (v0.2)", { timeout: 60_000 }, () => {
+  const planned = PLAN.pages.find((p) => p.page_number === 3)!;
+  const FIXTURE_QUOTES = PAGES.flatMap((p) => p.panels.flatMap((x) => (x.text ?? []).filter((t) => t.fidelity === "quote").map((t) => t.text))).join(" ");
+  const prepare = () =>
+    mangaPageGoal.prepare(
+      mangaPageGoal.parseInput({
+        book: { title: "The Happy Prince", author: "Oscar Wilde" },
+        understanding: UNDERSTANDING,
+        plan: PLAN,
+        page_number: 3,
+        units: planned.units.map((id) => ({ id, page_start: 1, page_end: 1, text: FIXTURE_QUOTES })),
+      }),
+      OFF,
+    );
+  const SOURCE = { unit: planned.units[0], page: 1 };
+  /** The fixture page with its CLAIM_TEXT_THIN gap closed; `extra` is lettered in the extreme-close panel. */
+  const fixture = (extra: Record<string, unknown>): MangaPageSpec => {
+    const spec = structuredClone(PAGES.find((p) => p.page_number === 3)!);
+    spec.claim_map = spec.claims.map((c) => ({ claim: c, panels: [spec.panels[0].id], how: "the first panel shows and says it" }));
+    spec.panels[0].text = [...(spec.panels[0].text ?? []), { kind: "caption", text: "The Swallow shelters between the statue's feet and is struck by falling tears.", fidelity: "paraphrase", source: SOURCE } as never];
+    spec.panels[2].text = [...(spec.panels[2].text ?? []), { ...extra, source: SOURCE } as never];
+    return spec;
+  };
+  const run = (prepared: ReturnType<typeof prepare>, tool: string, spec: unknown) =>
+    prepared.tools.find((t) => t.name === tool)!.execute({ [CANDIDATE_ARG]: JSON.stringify(spec) }, undefined);
+  const wall = { kind: "narration", text: "Above the sleeping city the old statue wept for every hungry child he could see below.", fidelity: "paraphrase" };
+  const spoken = { kind: "speech", speaker: "prince", text: "Above the sleeping city I weep for every hungry child I can see.", fidelity: "paraphrase" };
+
+  it("rejects the first submit of a caption wall, and accepts the second with the warning on record", async () => {
+    const prepared = prepare();
+    const first = await run(prepared, "submit_page", fixture(wall));
+    expect(first.accepted).toBeUndefined();
+    expect(first.text).toContain("[FIX BEFORE SUBMIT PROSE_WALL]");
+    expect(first.note).toContain("repair_once=PROSE_WALL");
+    const second = await run(prepared, "submit_page", fixture(wall));
+    expect(second.text).toMatch(/^ACCEPTED/);
+    expect(second.text).toContain("[WARNING PROSE_WALL]");
+  });
+
+  it("accepts a first submit that turns the narration into speech", async () => {
+    const out = await run(prepare(), "submit_page", fixture(spoken));
+    expect(out.text).not.toContain("PROSE_WALL");
+    expect(out.text).toMatch(/^ACCEPTED/);
+  });
+});
+
 describe("CLAIM_TEXT_THIN", () => {
   const core = claim("k1", "A gilded statue of the Happy Prince stands on a tall column above the city, with two bright sapphires for eyes and a large red ruby on his sword-hilt.");
 
@@ -249,5 +317,104 @@ describe("LOCATION_OFF_PLAN and DIALOGUE_ORDER", () => {
     expect(issues[0].severity).toBe("warning");
     const right = page([wrong.panels[1], wrong.panels[0]] as unknown as Record<string, unknown>[]);
     expect(dialogueOrderIssues(right, { units })).toEqual([]);
+  });
+});
+
+describe("SAME_SHOT_TWICE (v0.2, a warning)", () => {
+  const prince = { character: "prince", pose: "stand", expression: "sad", facing: "front", slot: "center", depth: "mid" };
+  const swallow = { character: "swallow", pose: "perch", expression: "sad", facing: "left", slot: "right", depth: "mid" };
+  const two = (a: Record<string, unknown>, b: Record<string, unknown>) => page([panel("p1", { figures: [prince, swallow], ...a }), panel("p2", { figures: [prince, swallow], ...b })]);
+
+  it("flags the second of two panels with the same shot, angle, place and figures in the same poses", () => {
+    const issues = sameShotTwiceIssues(two({}, {}));
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ code: "SAME_SHOT_TWICE", severity: "warning", path: "panel p2" });
+    expect(issues[0].message).toContain("panel p1");
+  });
+
+  it("flags again for every further copy, and finds a copy that is not next to its twin", () => {
+    const three = page([panel("p1", { figures: [prince] }), panel("p2", { shot: "close", figures: [swallow] }), panel("p3", { figures: [prince] }), panel("p4", { figures: [prince] })]);
+    expect(sameShotTwiceIssues(three).map((i) => i.path)).toEqual(["panel p3", "panel p4"]);
+  });
+
+  it("is silent when the shot, the angle, the place, the time, a pose or the cast differs", () => {
+    expect(sameShotTwiceIssues(two({}, { shot: "close" }))).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { angle: "low" }))).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { location: "river" }))).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { time: "night" }))).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { figures: [prince, { ...swallow, pose: "fly" }] }))).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { figures: [prince] }))).toEqual([]);
+  });
+
+  it("treats the other expression or slot as the same picture at the standard level, and as another at the strict level", () => {
+    const other = { figures: [prince, { ...swallow, expression: "happy", slot: "left" }] };
+    expect(sameShotTwiceIssues(two({}, other), { level: "standard" })).toHaveLength(1);
+    expect(sameShotTwiceIssues(two({}, other), { level: "strict" })).toEqual([]);
+    expect(sameShotTwiceIssues(two({}, { figures: [prince, { ...swallow, pose: "fly" }] }), { level: "loose" })).toHaveLength(1);
+  });
+
+  it("compares inserts by their props", () => {
+    const insert = (id: string, prop: string) => panel(id, { shot: "insert", props: [{ prop, slot: "center" }] });
+    expect(sameShotTwiceIssues(page([insert("p1", "gem"), insert("p2", "gem")]))).toHaveLength(1);
+    expect(sameShotTwiceIssues(page([insert("p1", "gem"), insert("p2", "coin")]))).toEqual([]);
+  });
+
+  it("does not change a page's class: a plain warning that is part of repairOnceIssues", () => {
+    expect(isRepairOnce({ code: "SAME_SHOT_TWICE", severity: "warning", path: "panel p2", message: "m" })).toBe(false);
+    const issues = repairOnceIssues(two({}, {}), { claims: [], cast, locations, page: { page_number: 1, section_id: "s1", beat: "", claims: [], cast: [], locations: [], units: [], page_turn_hook: false } as PlannedPage, units: [{ text: "x" }], first_appearances: [] });
+    expect(issues.map((i) => i.code)).toContain("SAME_SHOT_TWICE");
+  });
+
+  it("builds the signature from the picture only", () => {
+    const a = panel("p1", { figures: [prince, swallow] }) as never;
+    const b = panel("p9", { beat: "another beat", figures: [swallow, prince], text: [text("caption", "x")] }) as never;
+    expect(shotSignature(a, "standard")).toBe(shotSignature(b, "standard"));
+  });
+});
+
+describe("QUOTE_CLIPPED (v0.2, a warning)", () => {
+  /** A source sentence of 4 quoted words and `tail` more words; the quote repeats the first 4. */
+  const sourceWith = (tail: number) => [{ text: `“Alpha bravo charlie delta ${Array.from({ length: tail }, (_, i) => `tail${String.fromCharCode(97 + i)}`).join(" ")}.” said the Mayor.` }];
+  const quote = (body: string, extra: Record<string, unknown> = {}) => page([panel("p1", { text: [text("speech", body, { speaker: "prince", fidelity: "quote", ...extra })] })]);
+
+  const units = [{ text: "“He is as beautiful as a weathercock, only not quite so useful,” said one of the Town Councillors." }];
+
+  it("flags a quote that stops before the end of its source sentence, and shows what was left out", () => {
+    const clipped = quoteClippedIssues(quote("He is as beautiful as a weathercock"), { units });
+    expect(clipped).toHaveLength(1);
+    expect(clipped[0]).toMatchObject({ code: "QUOTE_CLIPPED", severity: "warning", path: "panel p1 text 0" });
+    expect(clipped[0].message).toContain("only not quite so useful");
+  });
+
+  it("is silent when the quote reaches the end of the sentence or of the quoted span", () => {
+    expect(quoteClippedIssues(quote("He is as beautiful as a weathercock, only not quite so useful"), { units })).toEqual([]);
+    expect(quoteClippedIssues(quote("As beautiful as a weathercock... only not quite so useful"), { units })).toEqual([]);
+    expect(quoteClippedIssues(quote("Only not quite so useful"), { units })).toEqual([]);
+  });
+
+  it("flags a tail from the minimum to the maximum length and nothing outside it (the threshold edge)", () => {
+    const flagged = (tail: number) => quoteClippedIssues(quote("Alpha bravo charlie delta"), { units: sourceWith(tail) }).length;
+    expect(flagged(QUOTE_CLIP_MIN_TAIL - 1)).toBe(0);
+    expect(flagged(QUOTE_CLIP_MIN_TAIL)).toBe(1);
+    expect(flagged(QUOTE_CLIP_MAX_TAIL)).toBe(1);
+    expect(flagged(QUOTE_CLIP_MAX_TAIL + 1)).toBe(0);
+  });
+
+  it("checks only lines labelled quote, and only when the quote is found once in the source", () => {
+    const units = sourceWith(3);
+    expect(quoteClippedIssues(quote("Alpha bravo charlie delta", { fidelity: "paraphrase" }), { units })).toEqual([]);
+    expect(quoteClippedIssues(quote("Alpha bravo charlie delta"), { units: [...units, ...units] })).toEqual([]);
+    expect(quoteClippedIssues(quote("Alpha bravo charlie echo"), { units })).toEqual([]);
+  });
+
+  it("uses the last fragment of a line cut with an ellipsis", () => {
+    const units = [{ text: "“Hello there my friend, alpha bravo charlie delta tail1 tail2 tail3.”" }];
+    expect(quoteClippedIssues(quote("Hello there my friend... alpha bravo charlie delta"), { units })).toHaveLength(1);
+    expect(quoteClippedIssues(quote("Hello there my friend... alpha bravo charlie delta tail1 tail2 tail3"), { units })).toEqual([]);
+  });
+
+  it("marks sentence ends and closing quotes in the source words", () => {
+    const words = sourceWords([{ text: "“Yes,” said he. It is so! Next" }]);
+    expect(words.map((w) => [w.norm, w.end])).toEqual([["yes", true], ["said", false], ["he", true], ["it", false], ["is", false], ["so", true], ["next", true]]);
   });
 });

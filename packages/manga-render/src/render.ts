@@ -16,6 +16,7 @@ import {
   FIDELITY,
   FX,
   MATERIALS,
+  OUTFITS,
   PAGE_HEIGHT,
   PAGE_MARGIN,
   PAGE_WIDTH,
@@ -57,7 +58,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.5.0";
+export const RENDERER_VERSION = "manga-render/0.6.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -132,6 +133,8 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
       if (bloom) v.bloom = bloom;
       const material = pickOpt(f.variant.material, MATERIALS);
       if (material) v.material = material;
+      const clothes = pickOpt(f.variant.outfit, OUTFITS);
+      if (clothes) v.outfit = clothes;
       const outfit = pickOpt(f.variant.outfit_tone, TONES);
       if (outfit) v.outfit_tone = outfit;
       const hair = pickOpt(f.variant.hair_tone, TONES);

@@ -1,0 +1,74 @@
+.main { max-width: var(--app-max); margin: 0 auto; padding: 8px var(--app-gutter) 72px; box-sizing: border-box; }
+.h1 { margin: 24px 0 8px; font-size: 46px; line-height: 1.1; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.h2 { margin: 0 0 14px; font-size: 22px; line-height: 1.2; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.lede { margin: 0 0 32px; max-width: 46ch; font-size: 18px; color: var(--app-text); }
+.block { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 0 0 24px; max-width: 70ch; }
+.block > :first-child { align-self: stretch; }
+.offline { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 16px; }
+.offline > :first-child { width: 100%; box-sizing: border-box; }
+
+/* The shelf grid: 160 px covers at least, 2 columns at 390 */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 40px 28px; margin: 0; padding: 0; list-style: none; align-items: start; }
+.tile { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-width: 240px; }
+.tileLink { display: flex; flex-direction: column; gap: 8px; color: var(--app-text); text-decoration: none; min-width: 0; }
+.tileLink:hover .tileTitle { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.tileTitle { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; font-size: 18px; line-height: 1.25; font-weight: 800; letter-spacing: var(--app-tracking-heading); overflow-wrap: anywhere; }
+.tileAuthor { font-size: 15px; line-height: 1.35; color: var(--app-text-2); overflow-wrap: anywhere; }
+.sampleMark { align-self: flex-start; padding: 2px 8px; border: var(--app-line-seg) solid var(--app-line-strong); border-radius: var(--app-radius-sm); font-size: 13px; font-weight: 700; }
+.addTile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; aspect-ratio: 2 / 3; padding: 16px; text-align: center; color: var(--app-text); text-decoration: none; border: 2.5px dashed var(--app-line-strong); border-radius: var(--app-radius-card); background: var(--app-surface); }
+.addTile:hover { background: var(--app-action-wash); }
+.addTitle { font-size: 20px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.addHint { font-size: 14px; line-height: 1.4; color: var(--app-text-2); }
+
+@media (max-width: 767px) {
+  .main { padding: 4px var(--app-gutter) 56px; }
+  .h1 { font-size: 36px; margin-top: 16px; }
+  .lede { font-size: 17px; margin-bottom: 24px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px; }
+  .tile { max-width: none; }
+}
+
+/* First run */
+.statusLine { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 14px; color: var(--app-text-2); }
+.statusLine li { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; }
+.statusBad { font-weight: 800; color: var(--app-text); }
+.firstGrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.firstMain { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.costLine { margin: 0; max-width: 62ch; font-size: 15px; line-height: 1.5; color: var(--app-text-2); }
+@media (max-width: 899px) { .firstGrid { grid-template-columns: minmax(0, 1fr); gap: 32px; } }
+.sample { min-width: 0; }
+.sampleRow { display: flex; gap: 16px; align-items: flex-start; }
+.sampleCover { flex: 0 0 96px; width: 96px; }
+.sampleText { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.sampleTitle { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 800; }
+.sampleMeta { margin: 0 0 8px; font-size: 15px; color: var(--app-text-2); }
+
+/* The limits under the drop zone: one fact each, a line each when it wraps */
+.limits { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; }
+.limitsLeft { justify-content: flex-start; }
+.chip, .chipFailed { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.chipFailed { padding: 2px 8px; border-radius: var(--app-radius-sm); background: var(--app-needs-you); color: var(--app-on-fill); font-weight: 700; }
+
+/* The drop zone keeps its dashed edge in the error state (the shared .hasError makes it solid) */
+.zoneDashed.zoneDashed { border: 2.5px dashed var(--app-line-strong); }
+.errTitle, .errNext { display: block; }
+.errNext { margin-top: 2px; font-weight: 400; }
+
+/* Already on the shelf */
+.already { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.alreadyLine { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.alreadyRow { display: flex; gap: 16px; align-items: flex-start; }
+.alreadyCover { flex: 0 0 80px; width: 80px; }
+.alreadyText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.alreadyTitle { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
+.alreadyMeta { margin: 0; font-size: 15px; color: var(--app-text-2); }
+.alreadyActions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+.otherLink { min-height: var(--app-target); padding: 0 4px; background: none; border: 0; font: inherit; font-size: 16px; font-weight: 700; color: var(--app-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* Upload progress card */
+.progress { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.fileName { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 800; overflow-wrap: anywhere; }
+.fileSize { margin: 0 0 16px; font-size: 15px; color: var(--app-text-2); }
+.progress > ol { align-self: stretch; margin-bottom: 12px; }
+.leave { margin: 4px 0 0; font-size: 15px; color: var(--app-text-2); }
+.leave:empty { display: none; }

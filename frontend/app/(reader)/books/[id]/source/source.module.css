@@ -1,0 +1,51 @@
+/* The PDF viewer: always dark, in the reader's family (.app-reading-room remaps the --app-* tokens to the graphite room). */
+.viewer {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 56px minmax(0, 1fr) 60px;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: var(--app-font);
+  font-variant-numeric: var(--app-numbers);
+  line-height: var(--app-leading-body);
+}
+.viewer :focus-visible { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
+
+.topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 0 16px 0 8px; border-bottom: 1px solid var(--app-line); }
+.back { min-width: 0; font-size: 15px; white-space: nowrap; }
+.back > span { white-space: nowrap; }
+.back .short { display: none; }
+.back .long { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.counter { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.of { font-weight: 400; color: var(--app-text-2); }
+
+.stage { position: relative; min-height: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; }
+.figure { display: flex; align-items: flex-start; justify-content: center; width: 100%; height: 100%; margin: 0; }
+.pdf { display: block; max-width: min(100%, 900px); max-height: 100%; width: auto; height: auto; object-fit: contain; background: #fff; }
+
+/* Loading: a quiet page-shaped block with the words "Loading PDF page N". No spinner. */
+.loading { position: relative; height: 100%; max-height: 100%; aspect-ratio: 17 / 22; max-width: min(100%, 900px); }
+.loading > :first-child { display: block; width: 100%; height: 100%; border-radius: var(--app-radius-range); }
+.loadingText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: var(--app-text-2); }
+
+.state { align-self: center; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; width: min(100%, 460px); margin: auto; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+
+.bottombar { position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; border-top: 1px solid var(--app-line); padding: 0 16px; }
+.jump { flex-direction: row !important; align-items: center; gap: 10px !important; }
+.jump label { font-size: 15px !important; }
+.jump input { width: 72px !important; height: 44px !important; text-align: center; }
+.keys { position: absolute; right: 16px; font-size: 13px; color: var(--app-text-2); }
+.range { position: absolute; bottom: 100%; left: 0; right: 0; margin: 0 0 8px; text-align: center; font-size: 15px; font-weight: 800; }
+
+@media (max-width: 1099px) { .keys { display: none; } }
+@media (max-width: 599px) {
+  .back .long { display: none; }
+  .back .short { display: inline; }
+  .topbar { grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding-right: 12px; }
+  .topbar > span:last-child { display: none; }
+  .stage { padding: 12px 8px; }
+  .bottombar { gap: 8px; padding: 0 8px; }
+  .jump label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

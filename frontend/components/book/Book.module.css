@@ -1,0 +1,182 @@
+/* The book page (the control room). App tokens only (--app-*). The reader's tokens are not used here. */
+
+.main { max-width: var(--app-max); margin: 0 auto; padding: 0 var(--app-gutter) 56px; box-sizing: border-box; }
+.backRow { padding: 8px 0 12px; }
+
+/* ----------------------------------------------------------------- hero */
+.top { display: grid; grid-template-columns: 220px minmax(0, 1fr); grid-template-areas: "cover text" "cover logline" "console console"; grid-template-rows: auto 1fr auto; gap: 12px 40px; align-items: start; }
+.text { grid-area: text; align-self: end; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding-bottom: 4px; }
+.cover { grid-area: cover; width: 220px; }
+.console { grid-area: console; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.title { margin: 0; font-size: clamp(34px, 4.6vw, 54px); line-height: 1.05; font-weight: 800; letter-spacing: var(--app-tracking-heading); text-wrap: balance; overflow-wrap: anywhere; }
+.author { margin: 0; font-size: 19px; font-weight: 700; }
+.facts { margin: 0; font-size: 17px; color: var(--app-text-2); }
+.logline { grid-area: logline; align-self: start; margin: 0; font-size: 17px; line-height: 1.55; color: var(--app-text-2); max-width: 56ch; }
+.coverBand { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--app-text-2); }
+.coverBandNeeds { margin: 8px 0 0; padding: 4px 8px; font-size: 13px; font-weight: 700; background: var(--app-needs-you); color: var(--app-on-fill); border-radius: var(--app-radius-sm); display: inline-block; }
+
+@media (max-width: 767px) {
+  .top { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "console" "logline" "cover"; grid-template-rows: none; gap: 16px; }
+  .text { align-self: start; gap: 6px; }
+  .title { font-size: 28px; line-height: 1.08; }
+  .author { font-size: 15px; line-height: 1.35; }
+  .console [role="alert"] p { font-size: 16px; line-height: 1.4; }
+  .facts { font-size: 15px; }
+  .cover { width: 120px; margin-top: 4px; }
+  .backRow { padding-top: 4px; }
+}
+
+/* While a run is active, on a desktop screen: a smaller cover (still 2:3), a tighter run card, so the page 1 band
+   with "Start reading" is in the first screen at 1440x820 (final-journey finding). The phone layout is unchanged. */
+@media (min-width: 768px) {
+  .top[data-live="true"] { grid-template-columns: 120px minmax(0, 1fr); gap: 12px 32px; }
+  .top[data-live="true"] .cover { width: 120px; }
+  .top[data-live="true"] .title { font-size: clamp(32px, 3.4vw, 44px); }
+  .top[data-live="true"] .logline { font-size: 16px; line-height: 1.5; }
+  .top[data-live="true"] .console { gap: 12px; }
+  .liveCard { padding-top: 20px; padding-bottom: 20px; }
+  .top .liveCard > :not(:first-child) { margin-top: 12px; }
+  .liveCard .liveSteps { gap: 4px; }
+}
+
+/* ----------------------------------------------------------------- loading and whole-page errors */
+.skBack { padding: 8px 0 12px; }
+.skRows { display: flex; flex-direction: column; gap: 14px; margin: 18px 0 22px; }
+.missing { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 56px 0; max-width: 34em; }
+.missingTitle { margin: 0; font-size: clamp(34px, 5vw, 54px); line-height: 1.05; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.loadError { display: flex; flex-direction: column; gap: 16px; max-width: 40em; padding-top: 12px; }
+.buttonRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+
+/* ----------------------------------------------------------------- A, the estimate */
+.cardTitle { margin: 0 0 16px; font-size: 26px; line-height: 1.15; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.estimateCard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px 48px; }
+.estimateCard:has(.choose) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+.estimateBody { align-content: start; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 48px; min-width: 0; }
+.estLeft, .estRight { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 0; }
+.estLeft > *, .estRight > * { max-width: 100%; }
+.estLeft .cardTitle { margin-bottom: 4px; }
+.refusal { grid-column: 1 / -1; }
+@media (min-width: 768px) {
+  .estimateCard:not(:has(.choose)) .estimateBody { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+  .estimateCard:not(:has(.choose)) .estRight { padding-top: 46px; }
+}
+.limitNote, .drawsLine, .generateLine, .chooseNote, .overNote, .chooseLead { margin: 0; font-size: 15px; line-height: 1.5; color: var(--app-text-2); }
+.drawsLine { color: var(--app-text); font-weight: 700; }
+.generateLine { max-width: 36em; }
+.chooseToggle { margin-top: -8px; }
+@media (max-width: 767px) {
+  .estimateCard:has(.choose) { grid-template-columns: minmax(0, 1fr); }
+  .cardTitle { font-size: 22px; }
+}
+
+/* ----------------------------------------------------------------- 6A, choose what to draw */
+.choose { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.choose .cardTitle { margin-bottom: 0; }
+.chooseSub { margin: 0; font-size: 15px; font-weight: 800; }
+.sectionList ul { list-style: none; margin: 8px 0 12px; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.sectionList li { border-bottom: var(--app-line-hair) solid var(--app-line); }
+.sectionLabel { display: flex; flex-direction: column; gap: 2px; }
+.sectionPages { font-size: 14px; color: var(--app-text-2); }
+.rangeBox { display: flex; flex-direction: column; gap: 10px; }
+.rangeFields { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-start; }
+.rangeHint { margin: 0; font-size: 15px; font-weight: 700; }
+.meters { display: flex; flex-direction: column; gap: 14px; }
+.overNote { font-weight: 700; color: var(--app-text); }
+
+/* ----------------------------------------------------------------- B and C, the run card */
+.clock { font-variant-numeric: tabular-nums; }
+.timeBelow { margin: 12px 0 0; font-size: 17px; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14px; overflow-wrap: anywhere; margin: 6px 0 0; }
+.result { display: flex; flex-direction: column; gap: 12px; }
+.resultPair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 40px; }
+.resultNote, .gapsNote { margin: 0; font-size: 15px; color: var(--app-text-2); line-height: 1.5; }
+.gapsNote { color: var(--app-text); }
+@media (max-width: 767px) { .resultPair { grid-template-columns: minmax(0, 1fr); } }
+
+.failures { margin-top: 18px; padding-top: 18px; border-top: var(--app-line-hair) solid var(--app-line); }
+.failures + p, .failures ~ p { margin: 12px 0 0; }
+.failuresTitle { margin: 0 0 12px; font-size: 20px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.failures ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.failureRow { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; align-items: start; }
+.failureRow p { margin: 4px 0 0; font-size: 15px; color: var(--app-text); }
+.failureThumb { display: block; width: 56px; }
+
+/* ----------------------------------------------------------------- 6B, review the plan */
+.review { display: flex; flex-direction: column; gap: 22px; }
+.reviewLead { margin: 0; font-size: 18px; }
+.reviewCosts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 28px; font-size: 17px; }
+.reviewCosts > div { display: contents; }
+.reviewCosts dt { color: var(--app-text-2); }
+.reviewCosts dd { margin: 0; font-weight: 700; }
+.reviewHead { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
+.castList { list-style: none; margin: 8px 0 0; padding: 0; columns: 2 280px; column-gap: 32px; font-size: 15px; line-height: 1.45; }
+.castList li { break-inside: avoid; padding: 4px 0; }
+.beatList { list-style: none; margin: 0; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.beatList li { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; padding: 10px 0; border-bottom: var(--app-line-hair) solid var(--app-line); font-size: 15px; line-height: 1.5; }
+.beatNum { font-weight: 800; }
+.omittedList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.5; }
+.omittedList li { display: flex; flex-direction: column; gap: 2px; }
+.omittedList li span { color: var(--app-text-2); }
+
+/* ----------------------------------------------------------------- D, the Pages grid */
+.block { margin-top: 48px; }
+.blockHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 18px; }
+.blockTitle { margin: 0; font-size: 34px; line-height: 1.1; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.blockMeta { margin: 0; font-size: 16px; color: var(--app-text-2); flex: 1 1 260px; }
+.beatSwitch { margin-left: auto; }
+.grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 22px 16px; }
+.cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.cellLink { display: block; text-decoration: none; color: inherit; border-radius: var(--app-radius-range); }
+.cellNum { font-size: 15px; font-weight: 700; }
+@media (max-width: 767px) {
+  .block { margin-top: 36px; }
+  .blockTitle { font-size: 26px; }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 12px; }
+}
+.beats { display: flex; flex-direction: column; gap: 28px; }
+.beatSection { margin: 0 0 8px; font-size: 16px; font-weight: 800; }
+.beatSection span { font-weight: 400; color: var(--app-text-2); }
+.beatList2 { list-style: none; margin: 0; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.beatRow { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 18px; padding: 16px 0; border-bottom: var(--app-line-hair) solid var(--app-line); }
+.beatThumb { display: flex; flex-direction: column; gap: 4px; }
+.beatBody p { margin: 0; font-size: 16px; line-height: 1.55; max-width: 46em; }
+.beatBody .beatState { margin-top: 6px; font-size: 14px; color: var(--app-text-2); }
+.redraw { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; }
+.redrawNote { font-size: 14px; color: var(--app-text-2); }
+
+/* ----------------------------------------------------------------- E and F */
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 48px; align-items: start; }
+.lower:empty { display: none; }
+@media (max-width: 767px) { .lower { grid-template-columns: minmax(0, 1fr); margin-top: 36px; } }
+.contents { padding: 24px 28px; border: var(--app-line-control) solid var(--app-line); border-radius: var(--app-radius-card); background: var(--app-surface); }
+.contentsHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
+.contentsHead .blockTitle { font-size: 28px; }
+.contentsHead .blockMeta { flex: 0 1 auto; }
+.contents ol { list-style: none; margin: 0; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.contents li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 8px 0; min-height: 44px; border-bottom: var(--app-line-hair) solid var(--app-line); box-sizing: border-box; }
+.contents li:last-child { border-bottom: 0; }
+.contentsNum { font-weight: 800; }
+.contentsTitle { font-size: 17px; }
+.contentsLinks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0 16px; }
+.contentsLink { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--app-text); text-decoration: underline; text-underline-offset: 3px; }
+.contentsManga { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--app-text-2); }
+@media (max-width: 767px) {
+  .contents { padding: 18px; }
+  .contents li { grid-template-columns: 24px minmax(0, 1fr); }
+  .contentsLinks { grid-column: 2; justify-content: flex-start; }
+}
+.about { padding: 8px 28px; border: var(--app-line-control) solid var(--app-line); border-radius: var(--app-radius-card); background: var(--app-surface); }
+.aboutBody { padding: 4px 0 18px; font-size: 15px; line-height: 1.55; }
+.aboutBody h3 { margin: 18px 0 6px; font-size: 16px; font-weight: 800; }
+.aboutBody p { margin: 0; }
+.aboutBody ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.aboutBody li span { color: var(--app-text-2); }
+.none { color: var(--app-text-2); }
+@media (max-width: 767px) { .about { padding: 6px 18px; } }
+
+/* ----------------------------------------------------------------- phone bottom bar */
+.barText { margin: 0; font-size: 15px; color: var(--app-text-2); }
+.barSpacer { height: calc(112px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) { .barSpacer { display: none; } }
+
+.barActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }

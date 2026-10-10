@@ -1,0 +1,503 @@
+{
+ "page_number": 7,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 7,
+  "section_id": "s2",
+  "beat": "A poor Prince with a small kingdom offers to marry the Emperor's daughter and sends her a rose tree that bore one rose every five years and a nightingale in silver caskets, but she touches the rose, calls it natural, and refuses to see him.",
+  "claims": [
+   "k21",
+   "k22",
+   "k23"
+  ],
+  "cast": [
+   "c_prince",
+   "c_princess",
+   "c_emperor_s2",
+   "c_court_ladies"
+  ],
+  "locations": [
+   "l_gift_hall",
+   "l_rose_grave"
+  ],
+  "units": [
+   "s2u1"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k21",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "A poor Prince with a small kingdom wishes to marry the Emperor's daughter.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k22",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince sends the Princess a rose tree that bore one flower every five years and a nightingale, in large silver caskets.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k23",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess touches the rose and says it is natural, not made, and she refuses to see the Prince.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 10
+    },
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 7,
+  "section_id": "s2",
+  "purpose": "The poor Prince offers himself and his gifts, but the Princess calls the rose natural and will not see him.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "A rose tree stands on the Prince's father's grave",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_rose_grave",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Swineherd",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Prince by the rose tree offers himself to the Emperor's daughter",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_rose_grave",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "bow",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "right"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_prince",
+      "text": "The poor Prince",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "My kingdom is small, but large enough to marry upon.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The gifts arrive in large silver caskets",
+    "shot": "insert",
+    "angle": "high",
+    "location": "l_gift_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center"
+     },
+     {
+      "prop": "flower",
+      "slot": "center_right"
+     }
+    ],
+    "fx": [
+     "sparkle"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The rose tree and the nightingale were sent to her in large silver caskets.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Princess touches the rose and calls it natural",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_gift_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "stand",
+      "expression": "happy",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_princess",
+      "pose": "reach",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_emperor_s2",
+      "text": "The Emperor",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_princess",
+      "text": "The Emperor's daughter",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_princess",
+      "text": "It is not made at all, it is natural!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 10
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Princess turns away and will not see the Prince",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_gift_hall",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_court_ladies",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_princess",
+      "pose": "arms_crossed",
+      "expression": "angry",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_court_ladies",
+      "text": "The ladies of the court",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 10
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "She positively refused to see the Prince.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k21",
+   "k22",
+   "k23"
+  ],
+  "claim_map": [
+   {
+    "claim": "k21",
+    "panels": [
+     "p2"
+    ],
+    "how": "The poor Prince appears and is lettered as having a small kingdom large enough to marry upon."
+   },
+   {
+    "claim": "k22",
+    "panels": [
+     "p3"
+    ],
+    "how": "An insert of the gifts, with narration naming the rose tree and the nightingale in large silver caskets."
+   },
+   {
+    "claim": "k23",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "The Princess touches the rose and says it is not made at all, it is natural; then she turns away and refuses to see the Prince."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "36 of 55 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u1",
+   "pages": null,
+   "text": "There was once a poor Prince, who had a kingdom. His kingdom was very small, but still quite large enough to marry upon; and he wished to marry.\n\nIt was certainly rather cool of him to say to the Emperor's daughter, “Will you have me?” But so he did; for his name was renowned far and wide; and there were a hundred princesses who would have answered, “Yes!” and “Thank you kindly.” We shall see what this princess said.\n\nListen!\n\nIt happened that where the Prince's father lay buried, there grew a rose tree--a most beautiful rose tree, which blossomed only once in every five years, and even then bore only one flower, but that was a rose! It smelt so sweet that all cares and sorrows were forgotten by him who inhaled its fragrance.\n\nAnd furthermore, the Prince had a nightingale, who could sing in such a manner that it seemed as though all sweet melodies dwelt in her little throat. So the Princess was to have the rose, and the nightingale; and they were accordingly put into large silver caskets, and sent to her.\n\nThe Emperor had them brought into a large hall, where the Princess was playing at “Visiting,” with the ladies of the court; and when she saw the caskets with the presents, she clapped her hands for joy.\n\n“Ah, if it were but a little pussy-cat!” said she; but the rose tree, with its beautiful rose came to view.\n\n“Oh, how prettily it is made!” said all the court ladies.\n\n“It is more than pretty,” said the Emperor, “it is charming!”\n\nBut the Princess touched it, and was almost ready to cry.\n\n“Fie, papa!” said she. “It is not made at all, it is natural!”\n\n“Let us see what is in the other casket, before we get into a bad humor,” said the Emperor. So the nightingale came forth and sang so delightfully that at first no one could say anything ill-humored of her.\n\n“Superbe! Charmant!” exclaimed the ladies; for they all used to chatter French, each one worse than her neighbor.\n\n“How much the bird reminds me of the musical box that belonged to our blessed Empress,” said an old knight. “Oh yes! These are the same tones, the same execution.”\n\n“Yes! yes!” said the Emperor, and he wept like a child at the remembrance.\n\n“I will still hope that it is not a real bird,” said the Princess.\n\n“Yes, it is a real bird,” said those who had brought it. “Well then let the bird fly,” said the Princess; and she positively refused to see the Prince.\n\nHowever, he was not to be discouraged; he daubed his face over brown and black; pulled his cap over his ears, and knocked at the door."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_court_ladies",
+   "name": "The court ladies",
+   "role": "the ladies of the court who pay the kisses",
+   "description": "A crowd of finely dressed ladies of the court who chatter French badly, stand in a ring around the Princess while she kisses the swineherd, and count the kisses together.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "crowd",
+    "crowd": "nobles",
+    "size": "many",
+    "eyes": "open"
+   }
+  },
+  {
+   "id": "c_prince",
+   "name": "The poor Prince (the swineherd)",
+   "role": "the Prince who becomes the Imperial Swineherd",
+   "description": "A tall, slim young Prince with a small kingdom who arrives disguised: face daubed brown and black, cap pulled over his ears, in a dirty little room by the pigsty, making a bell-covered kitchen-pot and then a rattle. At the end he washes the colour off, throws off the dirty clothes and steps forth in princely robes, looking so noble the Princess bows to him; proud, scornful, wounded.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "side_part",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "tunic",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s2u1",
+     "claim": "k26",
+     "set": {
+      "outfit_tone": "dark",
+      "hair_tone": "mid"
+     }
+    },
+    {
+     "at": "s2u3",
+     "claim": "k35",
+     "set": {
+      "outfit_tone": "gold",
+      "hair_tone": "light"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_emperor_s2",
+   "name": "The Emperor",
+   "role": "the Princess's father, who catches the ladies at the pigsty",
+   "description": "An elderly, grey-bearded ruler in a dark robe who watches the doings at the palace from his balcony in spectacles and wooden slippers, then boxes his daughter's ears.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

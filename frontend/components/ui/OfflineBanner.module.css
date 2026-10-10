@@ -1,0 +1,2 @@
+.banner { display: flex; align-items: center; gap: 10px; padding: 10px var(--app-gutter); background: var(--app-needs-you); color: var(--app-on-fill); font-size: 17px; font-weight: 700; line-height: 1.4; }
+.banner svg { flex: 0 0 auto; }

@@ -100,6 +100,19 @@ geometry, so a renderer change does not break it.
 A new deterministic check must be calibrated on judged pages before it becomes an error
 (run 6: a too-strict guard collapsed two tales).
 
+## Hold-out books (v0.2, #50)
+
+Two test books were never used to tune PanelSummary: `just-so-three-tales` (fiction, Kipling) and `self-reliance` (nonfiction, Emerson). Sources, sizes and parse numbers are in `docs/v0.2/E1-holdout-books.md`. The PDFs are in `scripts/acceptance/books/`.
+
+Rules:
+- Never tune on them. Do not read their pages to write a prompt, a skill, a hint or a validation. Do not add them to a fixture set or to `FIT_RUNS`.
+- They measure generalisation. Compare their judge scores with the scores of the tuning books (the two Wilde tales and the Thoreau book). A large gap means the system is fitted to the tuning books.
+- Run each book 2 times where the budget allows (about 1 to 2 USD a run). Run both with the same model policy, and record the policy with the scores.
+- If a hold-out book shows a defect, record the defect. Fix it with a change that is tested on other material. Do not fix it only for this book.
+- If a hold-out book is used to tune, replace it with a new book and say so in `docs/v0.2/E1-holdout-books.md`.
+
+Start a run with `gh workflow run live-journey.yml --ref <branch> -f book=just-so-three-tales` (real spend: only when the owner asks).
+
 ## Files
 
 | File | Use |

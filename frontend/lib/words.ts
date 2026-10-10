@@ -1,5 +1,5 @@
 /** Plain-language wording for statuses, shared by the shelf, book page and reader. */
-import type { Book, EditionDetail, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, ProviderStop, Range, TextKind } from "./api";
+import type { Book, EditionDetail, EditionScope, EditionPageSummary, EditionStatus, Fidelity, LibraryBook, Preflight, ProviderStop, Range, TextKind } from "./api";
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 
@@ -18,6 +18,10 @@ export function shelfStatus(book: LibraryBook): { text: string; tone: Tone } {
       return { text: "Reading the book", tone: "pencil" };
     case "planning":
       return { text: "Planning pages", tone: "pencil" };
+    case "awaiting_plan_review":
+      // Family "Not started" (outline band, tone quiet): nothing is drawn and nothing failed. "Needs you"
+      // has the problem icon and the red tone in SCREENS-AND-STATES, which would call a plan a fault.
+      return { text: "Plan ready to review", tone: "quiet" };
     case "drawing":
       return { text: `${e.pages_accepted} of ${e.page_total} pages drawn`, tone: "pencil" };
     case "complete":
@@ -59,7 +63,7 @@ export function providerStopHeadline(code: string | null | undefined): string {
   }
 }
 
-export function stageLine(status: EditionStatus, pages: EditionPageSummary[], total: number): string {
+export function stageLine(status: EditionStatus, pages: EditionPageSummary[], total: number, opts?: { keyPointsLeftOut?: number }): string {
   switch (status) {
     case "queued":
       return "Waiting to start";
@@ -67,6 +71,8 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
       return "Reading the book";
     case "planning":
       return "Planning the pages";
+    case "awaiting_plan_review":
+      return total > 0 ? `The plan is ready: ${plural(total, "page")}` : "The plan is ready";
     case "drawing": {
       const drawing = pages.filter((p) => p.status === "drawing").map((p) => p.page_number);
       const next = drawing[0] ?? pages.find((p) => p.status === "pending")?.page_number;
@@ -77,13 +83,33 @@ export function stageLine(status: EditionStatus, pages: EditionPageSummary[], to
       return `All ${plural(total, "page")} are drawn`;
     case "completed_with_failures": {
       const missing = pages.filter((p) => p.status !== "accepted").length;
-      return missing > 0 ? `Finished, but ${plural(missing, "page")} ${missing === 1 ? "is" : "are"} missing` : "Finished, with pages missing";
+      if (missing > 0) return `Finished, but ${plural(missing, "page")} ${missing === 1 ? "is" : "are"} missing`;
+      // G-O1: every page is drawn, but the checks left key points out.
+      const left = opts?.keyPointsLeftOut ?? 0;
+      return left > 0 ? `Drawn, ${plural(left, "key point")} left out` : "Drawn, with some key points left out";
     }
     case "cancelled":
       return "Drawing stopped";
     case "failed":
       return "Drawing stopped with an error";
   }
+}
+
+/** The headline of a queued run on an edition whose plan exists: a retry or a resume. */
+export const DRAWING_AGAIN = "Drawing is starting again";
+
+/** The headline of the FIRST draw, in the moment after a plan review is approved and before page 1 starts. */
+export const DRAWING_STARTING = "Starting to draw";
+
+/** C, stopped by the user: how far the drawing got, and what Resume does. */
+export function stoppedLine(drawn: number, total: number): string {
+  return drawn > 0 ? `Stopped at ${drawn.toLocaleString()} of ${plural(total, "page")}` : "Stopped before drawing";
+}
+
+export function stoppedNote(drawn: number, total: number): string {
+  const rest = Math.max(0, total - drawn);
+  if (drawn > 0 && rest > 0) return `${drawn === 1 ? "The page already drawn stays" : "The pages already drawn stay"}. Resume drawing draws the other ${rest.toLocaleString()}.`;
+  return "Resume drawing starts the drawing again.";
 }
 
 export function listNumbers(ns: number[]): string {
@@ -186,7 +212,7 @@ export function providerStopLines(stop: ProviderStop, pendingPages = 0): Provide
       return {
         title: "MiniMax did not accept the key or the plan",
         plain: "MiniMax refused the request, so the drawing stopped. Nothing more was sent." + kept,
-        next: "Check the MiniMax key and plan in the drawing service settings. Then press Resume drawing.",
+        next: "Check the MiniMax key on the PanelSummary server (MINIMAX_API_KEY) and your MiniMax plan. Then press Resume drawing.",
         detail,
       };
     default:
@@ -202,7 +228,7 @@ export function providerStopLines(stop: ProviderStop, pendingPages = 0): Provide
 const FAILURE_REASONS: [RegExp, string][] = [
   [/usage limit|credits|token plan|insufficient_quota|\(2056\)/i, "The MiniMax plan has reached its usage limit. Wait for it to reset or add credits, then press Resume."],
   [/token limit|cut off|max_tokens/i, "The model ran out of room before it finished this page."],
-  [/max_submits|rejected on every|every submit/i, "The model's drawings for this page were rejected every time they were checked."],
+  [/max_submits|rejected on every|every submit/i, "Each version of this page that the model wrote failed the page checks."],
   [/did not fit|overflow|balloon|lettering/i, "The text did not fit on the page."],
   [/timed? ?out|timeout|deadline/i, "The model took too long to answer."],
   [/stopped answering|unreachable|connection (refused|reset|error)|ECONN|worker (stopped|unreachable|not)/i, "The drawing service stopped answering."],
@@ -212,14 +238,16 @@ const FAILURE_REASONS: [RegExp, string][] = [
 ];
 
 /** A short reason a reader can act on. The raw text stays available as `detail`. */
-export function plainReason(raw: string | null | undefined): { plain: string; detail: string | null } {
+export const UNKNOWN_PAGE_REASON = "This page could not be drawn. The technical detail says why.";
+
+/** A failure reason in plain words. A raw text that is not known is never the plain reason: `unknown` (a generic sentence) is, and the raw text is the detail. */
+export function plainReason(raw: string | null | undefined, unknown: string = UNKNOWN_PAGE_REASON): { plain: string; detail: string | null } {
   const text = (raw ?? "").trim();
   if (!text) return { plain: "No reason was recorded for this failure.", detail: null };
   // already a full sentence that a person can read: keep it
   if (text.length > 25 && /^[A-Z].*[.!?]$/.test(text)) return { plain: text, detail: null };
   for (const [re, plain] of FAILURE_REASONS) if (re.test(text)) return { plain, detail: text };
-  // already a sentence a person wrote: keep it as the reason
-  return { plain: /[.!?]$/.test(text) ? text : `${text}.`, detail: null };
+  return { plain: unknown, detail: text };
 }
 
 const roundRange = (r: Range, unit: string, one = unit) => {
@@ -261,4 +289,284 @@ export function splitCostBasis(basis: string | null | undefined): { basis: strin
   const at = text.indexOf("The current policy uses");
   if (at < 0) return { basis: text.replace(/\.*$/, ""), modelNote: null };
   return { basis: text.slice(0, at).trim().replace(/\.*$/, ""), modelNote: text.slice(at).trim() };
+}
+
+// ---------------------------------------------------------------------------
+// U1 screens: shelf, first run, Add a book, landing, Settings, PDF viewer.
+// Copy marked [suggested] in docs/design/SCREENS-AND-STATES.md is listed in docs/v0.2/U1-screens.md.
+// ---------------------------------------------------------------------------
+
+export interface LimitValues {
+  max_pdf_size_mb: number;
+  max_pdf_pages: number;
+  max_source_words: number;
+}
+
+/** The D19 limits. The screens show the values of GET /status and use these when the server cannot say. */
+export const FALLBACK_LIMITS: LimitValues = { max_pdf_size_mb: 60, max_pdf_pages: 75, max_source_words: 17500 };
+
+/** The facts a PDF must meet, in the order of the design. */
+export function limitItems(limits: LimitValues = FALLBACK_LIMITS): string[] {
+  return [
+    "Selectable text, not a scan",
+    "In English",
+    `Up to ${limits.max_pdf_size_mb} MB`,
+    `Up to ${limits.max_pdf_pages} PDF pages`,
+    `Up to ${limits.max_source_words.toLocaleString("en-US")} words`,
+  ];
+}
+
+/** The same limits as one sentence (Add a book, Settings). */
+export function limitsSentence(limits: LimitValues = FALLBACK_LIMITS): string {
+  return `A PDF with selectable text, in English, up to ${limits.max_pdf_size_mb} MB, ${limits.max_pdf_pages} PDF pages and ${limits.max_source_words.toLocaleString("en-US")} words.`;
+}
+
+export const SHELF_LEDE = "Books you have added, and the manga drawn from them.";
+export const SHELF_LOAD_ERROR = "The shelf could not be loaded.";
+export const FIRST_RUN_LEDE = "Nothing is on the shelf yet. Add a book as a PDF with selectable text. PanelSummary reads its sections, and you choose when to draw it as manga.";
+
+export function addBookLede(maxMb: number): string {
+  return `Choose a PDF with selectable text, up to ${maxMb} MB. It is uploaded to your PanelSummary server, which reads its text and finds its sections.`;
+}
+export const ADD_BOOK_NOTE = "Nothing is drawn yet. You start the manga from the book's page when you are ready.";
+
+export const OFFLINE_SENTENCE = "Can't reach the PanelSummary server. Check that it is running (./start.sh).";
+
+export function notPdfText(name: string): string {
+  return `${name} is not a PDF. Choose a .pdf file.`;
+}
+export function tooLargeText(name: string, bytes: number, maxMb: number): string {
+  return `${name} is ${Math.ceil(bytes / 1048576)} MB. The limit is ${maxMb} MB.`;
+}
+
+/** Adds the next step to a server error when the problem is a PDF with no text. */
+export function withNextStep(message: string): string {
+  // a damaged file: the parser's own error text is not for a reader
+  if (/FileDataError|Failed to open stream|broken document|cannot open/i.test(message)) return "The PDF could not be read. The file may be damaged. Choose another PDF.";
+  if (/^that file is not a pdf\.?$/i.test(message.trim())) return "The PDF could not be read. The file may be damaged. Choose another PDF.";
+  if (/no extractable/i.test(message) && !/selectable text/i.test(message)) return `${message.replace(/\.*$/, ".")} Use a PDF with selectable text.`;
+  return message;
+}
+
+/** "Parsed 22 pages into 4 sections and 10 source units" becomes "Read 22 PDF pages and found 4 sections." */
+export function readSummary(jobMessage: string | null | undefined): string {
+  const m = /(\d[\d,]*)\s+pages?\s+into\s+(\d[\d,]*)\s+sections?/i.exec(jobMessage ?? "");
+  if (!m) return (jobMessage ?? "").trim() || "The PDF is read.";
+  const pages = Number(m[1].replace(/,/g, ""));
+  const sections = Number(m[2].replace(/,/g, ""));
+  return `Read ${plural(pages, "PDF page")} and found ${plural(sections, "section")}.`;
+}
+
+export const UPLOAD_SLOW_TEXT = "Still waiting. The PDF is read by the PanelSummary job runner; check that it is running.";
+
+export interface SampleRunFacts {
+  pages: number;
+  firstPageSeconds: number | null;
+  /** True when the first value is page 1 itself (timings.page_1_at). Older runs only know the first page of any number. */
+  firstIsPage1: boolean;
+  totalSeconds: number | null;
+  costUsd: number | null;
+  estimate: { pages: Range; firstPageMin: Range; totalMin: Range; costUsd: Range } | null;
+}
+
+/** Real numbers of the sample edition. Nothing here is typed in: every value comes from the edition and its preflight. */
+export function sampleRunFacts(
+  edition: { page_total: number; pages_accepted: number; created_at: string; finished_at: string | null; active_seconds?: number | null; totals?: { cost_usd: number }; timings?: { generate_started_at?: string; first_page_at?: string; page_1_at?: string } },
+  preflight: Preflight | null,
+): SampleRunFacts {
+  const start = Date.parse(edition.timings?.generate_started_at ?? edition.created_at);
+  const first = edition.timings?.page_1_at ?? edition.timings?.first_page_at;
+  const firstMs = first ? Date.parse(first) - start : NaN;
+  const totalFromDates = edition.finished_at ? (Date.parse(edition.finished_at) - Date.parse(edition.created_at)) / 1000 : NaN;
+  const total = edition.active_seconds ?? (Number.isFinite(totalFromDates) ? totalFromDates : null);
+  return {
+    pages: edition.pages_accepted || edition.page_total,
+    firstPageSeconds: Number.isFinite(firstMs) && firstMs >= 0 ? firstMs / 1000 : null,
+    firstIsPage1: !!edition.timings?.page_1_at,
+    totalSeconds: total,
+    costUsd: edition.totals?.cost_usd ?? null,
+    estimate: preflight
+      ? { pages: preflight.estimated_manga_pages, firstPageMin: preflight.estimated_minutes.first_page, totalMin: preflight.estimated_minutes.total, costUsd: preflight.estimated_cost_usd }
+      : null,
+  };
+}
+
+const money = (n: number) => `$${n.toFixed(2)}`;
+const minRange = (r: Range) => `${Math.max(1, Math.round(r.low))} to ${Math.max(1, Math.round(r.high))} min`;
+
+/** The estimate before the run and the real run, side by side (first run) or as one sentence (landing). */
+export function sampleEstimateSentence(f: SampleRunFacts): string | null {
+  if (!f.estimate) return null;
+  const e = f.estimate;
+  return `Before the run, the estimate was ${Math.round(e.pages.low)} to ${Math.round(e.pages.high)} manga pages, page 1 in ${minRange(e.firstPageMin)}, all pages in ${minRange(e.totalMin)} and ${money(e.costUsd.low)} to ${money(e.costUsd.high)}.`;
+}
+
+export function sampleRealSentence(f: SampleRunFacts): string {
+  const parts: string[] = [];
+  if (f.firstPageSeconds !== null) parts.push(f.firstIsPage1 ? `page 1 after ${formatElapsed(f.firstPageSeconds)}` : `the first page drawn after ${formatElapsed(f.firstPageSeconds)}`);
+  if (f.totalSeconds !== null) parts.push(`all pages after ${formatElapsed(f.totalSeconds)}`);
+  if (f.costUsd !== null) parts.push(`an estimated ${money(f.costUsd)} (not a bill)`);
+  const list = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0] ?? "";
+  return `The real run made ${plural(f.pages, "page")}${list ? `: ${list}` : ""}.`;
+}
+
+/** The landing's sample sentence: "{title}: 4 tales ..." The tale count is the section count of the book. */
+export function sampleLandingSentence(title: string, sections: number, pdfPages: number, f: SampleRunFacts): string {
+  const drawn = f.totalSeconds !== null ? `, drawn in ${formatElapsed(f.totalSeconds)}` : "";
+  const est = f.estimate ? ` The estimate before the run was ${minRange(f.estimate.totalMin)}.` : "";
+  return `${title}: ${plural(sections, "section")}, ${plural(pdfPages, "PDF page")}, ${plural(f.pages, "manga page")}${drawn}.${est}`;
+}
+
+// Settings and about (design section 8). Copy marked [suggested] in the design.
+export const SETTINGS_LEDE = "How this copy of PanelSummary is set up. You can change the theme and the plan review here. The other settings are read-only in this version.";
+export const SETTINGS_SET_NOTE = "\"Set\" is the most the check can say: it cannot see if MiniMax accepts the key. A refused key shows during a run as \"MiniMax refused the key\".";
+export const SETTINGS_MODELS_NOTE =
+  "The column shows what the server sends. The server asks for no thinking on the plan and the pages, but the Flash model cannot turn thinking off, so it is sent \"low\". A retry is sent \"medium\". The owner can set any step to MiniMax-M3 with an environment setting. The app does not change models by itself. Each page gets a PNG preview of itself to check.";
+export const SETTINGS_LEAVES =
+  "The book text and a PNG preview of each drawn page go to MiniMax (api.minimax.io). In the final v0.1 test run, the drawing service contacted no other host. No image-generation model is used. In your browser, the app talks only to your own PanelSummary server.";
+export const SETTINGS_COST = "Costs are estimates at MiniMax-M3 rates, because MiniMax publishes no price for the M3.1 Flash model. They are not a bill.";
+export const SETTINGS_DATA = "On your computer, in MongoDB and the stored PDFs.";
+export const SETTINGS_VERSION = "PanelSummary v0.2. Version 0.1.0 was released on 9 October 2026.";
+export const SETTINGS_CREDITS =
+  "The interface is set in Bricolage Grotesque. The manga lettering uses Comic Neue for balloons and captions and Bangers for sound effects. Bricolage Grotesque, Comic Neue and Bangers are all under the SIL Open Font License. The sample texts are from Project Gutenberg.";
+export const REVIEW_PLAN_NOTE = "When this is on, PanelSummary shows the plan of the pages before it draws, and you press the button to start the drawing. It is off until you turn it on.";
+export const NOT_AVAILABLE = "Not available in this version";
+export const GITHUB_URL = "https://github.com/Legend101Zz/PanelSummary";
+
+export const STEP_NAMES: Record<string, string> = { understanding: "Book understanding", plan: "Page plan", pages: "Page drawing" };
+
+export function limitsSettingsLine(l: LimitValues & { page_attempts: number; page_concurrency: number }): string {
+  return `A book can be up to ${l.max_pdf_size_mb} MB, ${l.max_pdf_pages} PDF pages and ${l.max_source_words.toLocaleString("en-US")} words. A page gets ${l.page_attempts} tries, and ${l.page_concurrency} pages are drawn at the same time.`;
+}
+
+/** The tab title of the PDF viewer (as in v0.1). */
+export const pdfViewerTitle = (title: string | null | undefined, page: number) => (title ? `${title}, PDF page ${page}` : `PDF page ${page}`);
+
+/** The stage an edition was in when it stopped with an error. */
+export type StopStage = "reading" | "planning" | "drawing";
+
+/** "Stopped with an error while reading the book". */
+export function failedStageLine(stage: StopStage): string {
+  const what = stage === "reading" ? "reading the book" : stage === "planning" ? "planning the pages" : "drawing the pages";
+  return `Stopped with an error while ${what}`;
+}
+
+/** What a run draws, in words, for the run card: "Drawing 1 of 5 sections" or "PDF pages 3\u201340". null = the whole book. */
+export function scopeLabel(scope: EditionScope | null | undefined, sectionCount: number): string | null {
+  if (!scope) return null;
+  if ("section_ids" in scope) return `Drawing ${scope.section_ids.length.toLocaleString()} of ${plural(sectionCount, "section")}`;
+  return `PDF pages ${scope.pdf_page_from}\u2013${scope.pdf_page_to}`;
+}
+
+// ---------------------------------------------------------------------------
+// U1 fix wave (Gate 1): Add a book errors, the limit chips, the Settings thinking column.
+// ---------------------------------------------------------------------------
+
+/** The next step after a too-large file. */
+export const tooLargeNext = (maxMb: number) => `Choose a PDF of ${maxMb} MB or less.`;
+/** The next step after a server error that may pass by itself. */
+export const TRY_AGAIN_NEXT = "Try again in a moment.";
+export const NO_JOB_NEXT = "Check that the PanelSummary job runner is running (./start.sh), then try again.";
+export const ALREADY_ON_SHELF = "This book is already on your shelf.";
+
+const NEXT_STEP = /^([\s\S]*?)\s*(Choose a PDF of \d[\d,]* MB or less\.|Use a PDF with selectable text\.|Choose another PDF\.|Choose a \.pdf file\.|Try again in a moment\.|Check that the PanelSummary job runner is running \(\.\/start\.sh\), then try again\.)$/;
+
+/** Splits an error text into what happened and the next step, so the screen can set them on two lines. */
+export function splitNextStep(text: string): { title: string; next: string | null } {
+  const m = NEXT_STEP.exec(text.trim());
+  if (!m || !m[1]) return { title: text.trim(), next: null };
+  return { title: m[1].trim(), next: m[2] };
+}
+
+/** The server says "The server answered 502" for an error without a text. */
+export const serverAnsweredText = (status: number) => `The server answered ${status}.`;
+
+export type FailedLimit = { limit: "size"; fileMb: number } | { limit: "scan" };
+
+/** The five limit chips of the drop zone. The one that failed carries what is true of this file, in the same chip. */
+export function limitChips(limits: LimitValues = FALLBACK_LIMITS, failed?: FailedLimit | null): { text: string; failed: boolean }[] {
+  const items = limitItems(limits);
+  return items.map((text, i) => {
+    if (failed?.limit === "scan" && i === 0) return { text: `${text} (this file: a scan)`, failed: true };
+    if (failed?.limit === "size" && i === 2) return { text: `${text} (this file: ${failed.fileMb} MB)`, failed: true };
+    return { text, failed: false };
+  });
+}
+
+/**
+ * What the worker SENDS as the thinking level. The Flash model cannot turn thinking off, so "off" is sent as "low".
+ * Any other model gets the level as it was asked.
+ */
+export function thinkingSent(model: string, asked: string): string {
+  return asked === "off" && /flash/i.test(model) ? "low" : asked;
+}
+export const AFTER_UPLOAD = "PanelSummary reads the text and finds the sections. Then the book's page opens by itself.";
+
+// ---------------------------------------------------------------------------
+// Release prep: server status when the drawing service is the replay worker.
+// ---------------------------------------------------------------------------
+
+/** Shown on the first run and in Settings when GET /status says worker.replay. No key is used. */
+export const REPLAY_WORKER_LINE = "Replay worker: no MiniMax key is used; pages come from a saved run.";
+
+/** The drawing-service line of the first-run status: ok, and the text. */
+export function workerStatusLine(worker: { reachable: boolean; key_set: boolean; replay?: boolean }): { ok: boolean; text: string } {
+  if (!worker.reachable) return { ok: false, text: "Drawing service not reachable" };
+  if (worker.replay) return { ok: true, text: REPLAY_WORKER_LINE };
+  return worker.key_set ? { ok: true, text: "MiniMax key set" } : { ok: false, text: "MiniMax key not set" };
+}
+
+// ---------------------------------------------------------------------------
+// Release prep: planner reasons are model text. They can name internal claim ids (k41).
+// ---------------------------------------------------------------------------
+
+/** Claim text by id: a Map or a plain object. */
+export type ClaimTexts = ReadonlyMap<string, string> | Readonly<Record<string, string>>;
+
+const CLAIM_ID = "k\\d+";
+// "claim k1", "claims k1 and k2", "(k1)", "k1": one run of ids, with an optional leading "claim"/"claims" and optional brackets.
+const CLAIM_REF = new RegExp(`(\\(\\s*)?\\b(?:claims?\\s+)?(${CLAIM_ID}(?:\\s*(?:,|&|and)\\s*${CLAIM_ID})*)\\b(\\s*\\))?`, "gi");
+
+const ANOTHER_POINT = "another key point";
+
+function claimText(claims: ClaimTexts | undefined, id: string): string | undefined {
+  if (!claims) return undefined;
+  const key = id.toLowerCase(); // claim ids are lower case (k41); the model may write K41
+  const t = claims instanceof Map ? claims.get(key) : (claims as Record<string, string>)[key];
+  return typeof t === "string" && t.trim() ? t.trim() : undefined;
+}
+
+function shortClaim(t: string): string {
+  const s = t.replace(/\s+/g, " ");
+  return s.length > 60 ? `${s.slice(0, 59).trimEnd()}…` : s;
+}
+
+/**
+ * A planner reason for a reader: no internal claim ids and no machine prefix.
+ * With a claim map, only ids the map knows are replaced by the claim text in quotes (about 60 characters);
+ * an unknown id that is written as "claim k9" or "(k9)" becomes "another key point"; a bare unknown id stays.
+ * With no map (or an empty one), every id of the form k<digits> becomes "another key point".
+ */
+export function readableReason(reason: string, claimsById?: ClaimTexts): string {
+  const hasMap = claimsById instanceof Map ? claimsById.size > 0 : !!claimsById && Object.keys(claimsById).length > 0;
+  let out = reason.trim();
+  out = out.replace(CLAIM_REF, (whole, open: string | undefined, ids: string, close: string | undefined) => {
+    const parts = ids.match(new RegExp(CLAIM_ID, "gi")) ?? [];
+    const labelled = /^\(?\s*claims?\s/i.test(whole) || (!!open && !!close);
+    const known = parts.map((id) => claimText(claimsById, id));
+    if (hasMap && !labelled && known.every((k) => k === undefined)) return whole; // "k9 unit" with a map that does not know k9
+    const seen = new Set<string>();
+    const pieces: string[] = [];
+    parts.forEach((id, i) => {
+      const t = known[i];
+      const piece = t ? `"${shortClaim(t)}"` : ANOTHER_POINT;
+      if (!seen.has(piece)) {
+        seen.add(piece);
+        pieces.push(piece);
+      }
+    });
+    return pieces.join(" and ");
+  });
+  out = out.replace(/^[a-z][a-z_-]*:\s+/i, "");
+  return out ? out.charAt(0).toUpperCase() + out.slice(1) : out;
 }

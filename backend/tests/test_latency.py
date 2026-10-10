@@ -79,7 +79,7 @@ def test_pages_start_in_reading_order_and_timings_are_stored(tmp_path, monkeypat
 
                 raw = await Edition.get_motor_collection().find_one({"_id": __import__("bson").ObjectId(edition_id)})
                 t = raw["timings"]
-                assert set(t) == {"generate_started_at", "drawing_started_at", "first_page_at"}
+                assert set(t) == {"generate_started_at", "drawing_started_at", "first_page_at", "page_1_at"}
                 assert t["generate_started_at"] <= t["drawing_started_at"] <= t["first_page_at"] <= raw["finished_at"]
                 # The timings are extra fields; the edition document still loads and saves with them.
                 edition = await Edition.get(edition_id)

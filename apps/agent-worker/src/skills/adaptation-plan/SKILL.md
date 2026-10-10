@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Adaptation plan
@@ -56,7 +56,10 @@ something to *see*.
    section's opening page establishes its setting and introduces its main characters. Keep
    to 4 or fewer speaking characters per page. A change of place or time starts a new
    page: do not plan two locations on one page unless the page is about the journey
-   between them.
+   between them. Pick locations whose `units` include the page's units (the locations list
+   shows them). If the page needs a place the understanding lacks, say it in the beat. When
+   a page shows the afterlife, a dream or a memory, write that word in the beat: the page
+   writer flags those panels.
 7. **Shape each section.** Give a section the four-part shape manga uses: set-up (where,
    who, what is normal) → development → a turn (the reveal, the decision, the twist) → a
    landing (the consequence). In a short section, one page may hold two parts. The turn

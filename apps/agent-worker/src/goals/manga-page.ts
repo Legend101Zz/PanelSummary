@@ -3,6 +3,7 @@ import { castCapabilities, catalog, renderPage, validatePage } from "@panelsumma
 import type {
   AdaptationPlan,
   BookUnderstanding,
+  CastMember,
   Claim,
   MangaPageSpec,
   PlannedPage,
@@ -19,7 +20,8 @@ import { quoteSpeakerIssues } from "./attribution.js";
 import { claimEventIssues, claimOrderIssues } from "./claim-shown.js";
 import { applyRepairOnce, isRepairOnce, repairOnceIssues } from "./repair-once.js";
 import { crowdingAdvice, explainAspect, RepairTracker } from "./repair-hints.js";
-import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, unitOrder, type ExpectedLook } from "./continuity.js";
+import { minorFigures } from "./minor-figures.js";
+import { expectedLooks, expectedLooksForPrompt, claimPages, figureStateIssues, visionIssues, unitOrder, type ExpectedLook } from "./continuity.js";
 
 /** Severity of FIGURE_STATE_MISMATCH, set from calibration (docs/launch/T1-continuity.md). */
 export const FIGURE_STATE_SEVERITY: "error" | "warning" = "error";
@@ -31,7 +33,7 @@ interface UnitText {
   text: string;
 }
 
-interface Input {
+export interface PageInput {
   book: { title: string; author: string; kind: BookUnderstanding["kind"] };
   cast: BookUnderstanding["cast"];
   locations: BookUnderstanding["locations"];
@@ -48,6 +50,8 @@ interface Input {
   order: Map<string, number>;
   /** Expected look patch of each cast member with story states, computed from this page's units. */
   expected_looks: Record<string, ExpectedLook>;
+  /** Minor figures of this page (already part of `cast`): see minor-figures.ts. */
+  minor: CastMember[];
 }
 
 const MAX_PREVIEWS = 4;
@@ -282,7 +286,7 @@ function sectionTitleIssues(spec: MangaPageSpec, opens?: { id: string; title: st
   ];
 }
 
-function introductionIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
+function introductionIssues(spec: MangaPageSpec, input: PageInput): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const lettering = spec.panels
     .flatMap((panel) => panel.text ?? [])
@@ -307,7 +311,7 @@ function introductionIssues(spec: MangaPageSpec, input: Input): ValidationIssue[
   return issues;
 }
 
-function templateIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
+function templateIssues(spec: MangaPageSpec, input: PageInput): ValidationIssue[] {
   if (input.previous?.template && spec.layout?.template && spec.layout.template === input.previous.template) {
     return [
       {
@@ -321,7 +325,38 @@ function templateIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
   return [];
 }
 
-export const mangaPageGoal: GoalDefinition<Input> = {
+/**
+ * Every writer-side page check, after the structural and render issues (`base`). Pure and
+ * deterministic; the page goal and the calibration script (scripts/calibrate-checks.ts) both use it.
+ */
+export function pageIssues(spec: MangaPageSpec, input: PageInput, base: readonly ValidationIssue[]): ValidationIssue[] {
+  const seen = new Set<string>();
+  return [
+    ...base,
+    ...introductionIssues(spec, input),
+    ...templateIssues(spec, input),
+    ...quoteIssues(spec, input.units),
+    ...quoteSpeakerIssues(spec, input.units, input.cast, input.page.section_id),
+    ...sectionTitleIssues(spec, input.opens_section),
+    ...claimMapIssues(spec, input.page.claims),
+    ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
+    ...quoteClaimIssues(spec, input.claims),
+    ...statueStagingIssues(spec, input.cast, input.locations),
+    ...stagingIssues(spec),
+    ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
+    ...visionIssues(spec, input.page.beat),
+    ...claimOrderIssues(spec, input.claims, input.order),
+    ...claimEventIssues(spec, input.claims),
+    ...repairOnceIssues(spec, input),
+  ].filter((issue) => {
+    const key = `${issue.code}|${issue.path}|${issue.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export const mangaPageGoal: GoalDefinition<PageInput> = {
   type: "MANGA_PAGE",
   skillName: "manga-page",
   defaults: {
@@ -345,9 +380,12 @@ export const mangaPageGoal: GoalDefinition<Input> = {
     const nextPlanned = plan.pages[index + 1];
     const previousRendered = record.previous as { template?: string; last_panel?: string } | undefined;
     const book = requireObject(record.book ?? {}, "book");
+    // Bit players the book names on this page and the cast lacks: drawn with a generic look (Q2b).
+    const minor = minorFigures(units, page.section_id, understanding.cast);
     return {
       book: { title: String(book.title ?? understanding.title ?? ""), author: String(book.author ?? understanding.author ?? ""), kind: understanding.kind },
-      cast: understanding.cast,
+      cast: [...understanding.cast, ...minor],
+      minor,
       locations: understanding.locations,
       page,
       total_pages: plan.pages.length,
@@ -373,7 +411,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
     let repairChance = true;
 
     const check = (value: unknown): { issues: ValidationIssue[]; render?: RenderResult } => {
-      const structural = validatePage(value, bookRefs, input.page);
+      const structural = validatePage(value, bookRefs, { ...input.page, cast: [...input.page.cast, ...input.minor.map((m) => m.id)] });
       if (errorsOf(structural).length > 0) {
         const explained = structural.map((issue) => explainAspect(issue, value as MangaPageSpec));
         const loop = tracker.record(explained);
@@ -381,30 +419,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       }
       const spec = value as MangaPageSpec;
       const render = renderPage(spec, bookRefs, { idPrefix: `pg${input.page.page_number}-` });
-      const seen = new Set<string>();
-      const issues = [
-        ...structural,
-        ...render.issues,
-        ...introductionIssues(spec, input),
-        ...templateIssues(spec, input),
-        ...quoteIssues(spec, input.units),
-        ...quoteSpeakerIssues(spec, input.units, input.cast, input.page.section_id),
-        ...sectionTitleIssues(spec, input.opens_section),
-        ...claimMapIssues(spec, input.page.claims),
-        ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
-        ...quoteClaimIssues(spec, input.claims),
-        ...statueStagingIssues(spec, input.cast, input.locations),
-        ...stagingIssues(spec),
-        ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
-        ...claimOrderIssues(spec, input.claims, input.order),
-        ...claimEventIssues(spec, input.claims),
-        ...repairOnceIssues(spec, input),
-      ].filter((issue) => {
-        const key = `${issue.code}|${issue.path}|${issue.message}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      const issues = pageIssues(spec, input, [...structural, ...render.issues]);
       // Page-level advice for a loop of single-error repairs (track F1); never blocks a page.
       const crowding = crowdingAdvice(spec, issues);
       const loop = tracker.record(issues);
@@ -496,11 +511,16 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       dataBlock("trusted_catalog", { limits: vocab.limits, vocabularies: { ...pageVocabulary(), ...vocab.vocabularies }, shots: vocab.shots, text_kinds: vocab.text_kinds, slant: vocab.slant }),
       dataBlock("trusted_cast_capabilities", castCapabilities(input.cast)),
       dataBlock("cast", input.cast),
+      ...(input.minor.length
+        ? [
+            `Minor figures (trusted, in the cast above with "minor": true): the book names ${input.minor.map((m) => m.role).join("; ")} on this page, and the cast has nobody for them. Draw each with their id, in the panel of their line, and give the line to them. They have a plain generic look and no story state.`,
+          ]
+        : []),
       ...(() => {
         const looks = expectedLooksForPrompt(input.expected_looks);
         return looks
           ? [
-              "How these characters look NOW, computed from the story so far (trusted). Put this variant on every figure of the character on this page; where a change happens on this page, draw it from the panel where the text shows it:",
+              "How these characters look NOW, computed from the story so far (trusted). Put this variant on every figure of the character on this page; where a change happens on this page, draw it from the panel where the text shows it. A panel with fx \"flashback\" or with \"vision\" set (afterlife, dream, memory) is not held to it:",
               dataBlock("expected_looks", looks),
             ]
           : [];

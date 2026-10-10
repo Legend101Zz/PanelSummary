@@ -18,7 +18,10 @@
  *
  * Usage:
  *   node scripts/acceptance/journey.mjs --pdf book.pdf --out DIR [--web http://localhost:3100]
- *        [--api http://127.0.0.1:8000] [--pages 4] [--full] [--timeout-min 90]
+ *        [--api http://127.0.0.1:8000] [--pages 4] [--full] [--timeout-min 90] [--replay] [--check-hosts]
+ *
+ * --check-hosts (opt-in): records the host of every request the browser makes and fails the journey if one is not
+ *   the --web or the --api host (no third-party request from the app: fonts, telemetry). Off by default.
  */
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -38,6 +41,10 @@ const PDF = arg("pdf");
 const OUT = arg("out");
 const READ_PAGES = Number(arg("pages", "4"));
 const FULL = arg("full") === "true";
+// --replay: the worker is the offline replay worker (track F1, docs/v0.2/F1-replay-worker.md). Its receipts say
+// provider "replay" and its egress list is empty. Without the flag the live checks below are unchanged.
+const CHECK_HOSTS = arg("check-hosts") === "true";
+const REPLAY = arg("replay") === "true";
 const TIMEOUT_MS = Number(arg("timeout-min", "90")) * 60_000;
 if ((!PDF && !process.argv.includes("--edition")) || !OUT) {
   console.error("usage: --pdf FILE --out DIR [--full]   |   --edition ID --out DIR");
@@ -94,8 +101,28 @@ async function readerMatchesStored(page, editionId, pageNumber) {
 }
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
+// Opt-in host check: every context the journey opens records the host of each request it makes.
+const seenHosts = new Map(); // host -> request count
+if (CHECK_HOSTS) {
+  const newContext = browser.newContext.bind(browser);
+  browser.newContext = async (...a) => {
+    const context = await newContext(...a);
+    context.on("request", (req) => {
+      const u = new URL(req.url());
+      if (!["http:", "https:", "ws:", "wss:"].includes(u.protocol)) return; // data:, blob:, about: leave no machine
+      seenHosts.set(u.host, (seenHosts.get(u.host) ?? 0) + 1);
+    });
+    return context;
+  };
+}
 try {
   await runJourney();
+  if (CHECK_HOSTS) {
+    const allowed = new Set([new URL(WEB).host, new URL(API).host]);
+    const hosts = [...seenHosts.entries()].map(([h, n]) => `${h} x${n}`).join(", ") || "none";
+    const other = [...seenHosts.keys()].filter((h) => !allowed.has(h));
+    check("no request to a host other than --web and --api", other.length === 0 && seenHosts.size > 0, `allowed: ${[...allowed].join(", ")}; seen: ${hosts}${other.length ? `; NOT ALLOWED: ${other.join(", ")}` : ""}`);
+  }
 } catch (error) {
   check("journey ran to the end", false, error instanceof Error ? error.message.split("\n")[0] : String(error));
 } finally {
@@ -273,9 +300,10 @@ async function runJourney() {
   const receipts = await api(`/editions/${edition.id}/receipts`);
   const allowedModels = new Set(["MiniMax-M3", "MiniMax-M3.1-Flash-Preview", "MiniMax-M2.7-highspeed", "MiniMax-M2.7"]);
   const goals = new Set(["BOOK_UNDERSTANDING", "ADAPTATION_PLAN", "MANGA_PAGE"]);
-  check("every model call is a receipted harness goal on an allowed MiniMax model", receipts.calls.length > 0 && receipts.calls.every((c) => c.provider === "minimax" && allowedModels.has(c.model) && goals.has(c.goal_type)), `${receipts.calls.length} calls`);
+  check(REPLAY ? "every call is a receipted replay goal on an allowed model name (no model was called)" : "every model call is a receipted harness goal on an allowed MiniMax model", receipts.calls.length > 0 && receipts.calls.every((c) => c.provider === (REPLAY ? "replay" : "minimax") && allowedModels.has(c.model) && goals.has(c.goal_type)), `${receipts.calls.length} calls`);
   const egressHosts = Object.keys(receipts.worker_egress ?? {});
-  check("worker egress: only the MiniMax API (zero image-model calls)", egressHosts.length > 0 && egressHosts.every((h) => h.startsWith("api.minimax.io/")), JSON.stringify(receipts.worker_egress));
+  if (REPLAY) check("worker egress: none (the replay worker makes no outbound request)", egressHosts.length === 0, JSON.stringify(receipts.worker_egress));
+  else check("worker egress: only the MiniMax API (zero image-model calls)", egressHosts.length > 0 && egressHosts.every((h) => h.startsWith("api.minimax.io/")), JSON.stringify(receipts.worker_egress));
   const accepted = state.pages.filter((p) => p.status === "accepted").length;
   const failed = state.pages.filter((p) => p.status === "failed").length;
   const pageCalls = receipts.calls.filter((c) => c.goal_type === "MANGA_PAGE" && c.state === "SUCCEEDED").length;

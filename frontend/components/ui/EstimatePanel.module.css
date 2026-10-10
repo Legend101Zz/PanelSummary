@@ -1,0 +1,10 @@
+.root { display: block; }
+.list { display: grid; grid-template-columns: max-content 1fr; gap: 8px 40px; margin: 0; font-size: 17px; }
+.list dt { color: var(--app-text-2); }
+.list dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.basis { margin: 14px 0 0; font-size: 15px; line-height: 1.45; color: var(--app-text-2); }
+.detail { margin-top: 2px; }
+@media (max-width: 479px) {
+  .list { grid-template-columns: 1fr; gap: 0; }
+  .list dd { margin-bottom: 8px; }
+}

@@ -149,6 +149,41 @@ export function fitFor(look: HumanLook, pal: Palette, idPrefix: string): Fit {
     case "scholar":
       f = { ...base, sleeveKind: "bell", coat: { hem: 0.95, flare: 0.07, fill: O }, top: O, legs: contrast, upperFrom: 0.2 };
       break;
+    case "underclothes": {
+      // A shirt with elbow sleeves and knee drawers, bare shins and feet. The cloth is a light grey
+      // so that it reads against pale skin (paper white); on dark skin it is paper white.
+      const linen = pal.statue ? pal.mat : pal.skin === PAPER ? toneFill("light", idPrefix) : PAPER;
+      f = {
+        ...base,
+        top: linen,
+        sleeve: linen,
+        sleeveKind: "rolled",
+        forearm: pal.skin,
+        legs: pal.skin,
+        legKind: "hose",
+        shoe: "bare",
+        upperFrom: 0.3,
+        skirt: { hem: 0.4, flare: 0.016, jag: false, fill: linen, waist: 0.3 },
+      };
+      break;
+    }
+    case "undressed": {
+      // Bare chest, arms and legs; short drawers only. No nakedness is drawn: the trunks start at the waist.
+      const linen = pal.statue ? pal.mat : pal.skin === PAPER ? toneFill("light", idPrefix) : PAPER;
+      f = {
+        ...base,
+        top: pal.skin,
+        sleeve: pal.skin,
+        sleeveKind: "long",
+        forearm: pal.skin,
+        legs: pal.skin,
+        legKind: "hose",
+        shoe: "bare",
+        upperFrom: 0.3,
+        skirt: { hem: 0.3, flare: 0.012, jag: false, fill: linen, waist: 0.3 },
+      };
+      break;
+    }
   }
   if (look.accessories.includes("cape") && !f.cape) f.cape = { len: 0.72, fill: pal.statue ? pal.mat : tf("dark"), lining: white, trim: false };
   if (look.accessories.includes("gloves")) f.gloves = pal.statue ? pal.mat : tf("dark");
@@ -466,6 +501,16 @@ export function torsoDetails(c: DetailCtx): string {
       break;
     }
     case "scholar":
+      break;
+    case "underclothes":
+      s += roundCollar(pen, torso, white, w, H);
+      if (!lite) s += surfLine(pen, torso, 0.4, 0.9, 0, w);
+      s += buttons(pen, torso, 0, [0.56, 0.7, 0.84], br * 0.7, INK, 0);
+      s += band(pen, torso, 0.3, 0.33, 0.003 * H, dark, w);
+      break;
+    case "undressed":
+      // a drawn waist line for the top of the drawers; the chest stays bare
+      s += band(pen, torso, 0.3, 0.34, 0.003 * H, dark, w);
       break;
   }
   return s;

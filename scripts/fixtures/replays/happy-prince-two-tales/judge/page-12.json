@@ -1,0 +1,525 @@
+{
+ "page_number": 12,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 12,
+  "section_id": "s1",
+  "beat": "Knowing he is going to die, the Swallow says he is going not to Egypt but to the House of Death, kisses the Prince on the lips as the Prince asks, and falls dead at his feet; at that moment a crack sounds inside the statue as the leaden heart snaps in two in the hard frost.",
+  "claims": [
+   "k36",
+   "k37",
+   "k38"
+  ],
+  "cast": [
+   "c_swallow",
+   "c_prince"
+  ],
+  "locations": [
+   "l_column_top"
+  ],
+  "units": [
+   "s1u7"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k36",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Knowing he is going to die, the Swallow says he is going not to Egypt but to the House of Death, kisses the Prince on the lips and falls down dead at his feet.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k37",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "I am glad that you are going to Egypt at last, little Swallow; you have stayed too long here; but you must kiss me on the lips, for I love you.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  },
+  {
+   "id": "k38",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "At the moment the Swallow dies a crack sounds inside the statue, for the leaden heart has snapped right in two in the dreadfully hard frost.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 12,
+  "section_id": "s1",
+  "purpose": "The Swallow says goodbye, tells the Prince he is going to the House of Death, kisses him and falls dead at his feet, and the leaden heart cracks.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     1,
+     1
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "panel": "p2"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       2,
+       1,
+       2
+      ],
+      "children": [
+       {
+        "panel": "p3"
+       },
+       {
+        "panel": "p4"
+       },
+       {
+        "panel": "p5"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The tired Swallow flutters up to the Prince's shoulder and says goodbye.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "tired",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "fore",
+      "variant": {
+       "eyes": "open"
+      }
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "Goodbye, dear Prince! ... will you let me kiss your hand?",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Prince bends his stone head and tells the Swallow to kiss him on the lips.",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "think",
+      "expression": "love",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     },
+     {
+      "character": "c_swallow",
+      "pose": "fly",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "left",
+      "depth": "fore",
+      "variant": {
+       "eyes": "open"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "I am glad that you are going to Egypt at last, little Swallow...",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince",
+      "text": "...you must kiss me on the lips, for I love you.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Swallow answers that he is going not to Egypt but to the House of Death.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "talk",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid",
+      "variant": {
+       "eyes": "open"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_swallow",
+      "text": "I am not going to Egypt. I am going to the House of Death.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Swallow rises to kiss the Happy Prince on the lips.",
+    "shot": "full",
+    "angle": "eye",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "material": "stone",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     },
+     {
+      "character": "c_swallow",
+      "pose": "reach",
+      "expression": "love",
+      "facing": "right",
+      "slot": "center",
+      "depth": "fore",
+      "variant": {
+       "eyes": "open"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "He kissed the Prince on the lips.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Swallow lies dead at the statue's feet as a crack sounds inside the stone.",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_column_top",
+    "time": "night",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_swallow",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "left",
+      "slot": "left",
+      "depth": "fore",
+      "variant": {
+       "eyes": "dead"
+      }
+     },
+     {
+      "character": "c_prince",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "right",
+      "depth": "mid",
+      "variant": {
+       "material": "bronze",
+       "eyes": "blind",
+       "outfit_tone": "stone",
+       "hair_tone": "stone"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "impact_burst"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The leaden heart had snapped right in two.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "CRACK",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k36",
+   "k37",
+   "k38"
+  ],
+  "claim_map": [
+   {
+    "claim": "k36",
+    "panels": [
+     "p3",
+     "p4",
+     "p5"
+    ],
+    "how": "p3 the Swallow says he is going to the House of Death, p4 he kisses the Prince on the lips, p5 he lies dead at the statue's feet."
+   },
+   {
+    "claim": "k37",
+    "panels": [
+     "p2"
+    ],
+    "how": "the Prince says it verbatim in two balloons, glad the Swallow goes to Egypt at last and asking to be kissed on the lips because he loves him."
+   },
+   {
+    "claim": "k38",
+    "panels": [
+     "p5"
+    ],
+    "how": "a CRACK sounds inside the statue as the Swallow lies dead, with the line that the leaden heart had snapped right in two."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u7",
+   "pages": null,
+   "text": "Leaf after leaf of the fine gold the Swallow picked off, till the Happy Prince looked quite dull and grey. Leaf after leaf of the fine gold he brought to the poor, and the children’s faces grew rosier, and they laughed and played games in the street. “We have bread now!” they cried.\n\nThen the snow came, and after the snow came the frost. The streets looked as if they were made of silver, they were so bright and glistening; long icicles like crystal daggers hung down from the eaves of the houses, everybody went about in furs, and the little boys wore scarlet caps and skated on the ice.\n\nThe poor little Swallow grew colder and colder, but he would not leave the Prince, he loved him too well. He picked up crumbs outside the baker’s door when the baker was not looking and tried to keep himself warm by flapping his wings.\n\nBut at last he knew that he was going to die. He had just strength to fly up to the Prince’s shoulder once more. “Goodbye, dear Prince!” he murmured, “will you let me kiss your hand?”\n\n“I am glad that you are going to Egypt at last, little Swallow,” said the Prince, “you have stayed too long here; but you must kiss me on the lips, for I love you.”\n\n“It is not to Egypt that I am going,” said the Swallow. “I am going to the House of Death. Death is the brother of Sleep, is he not?”\n\nAnd he kissed the Happy Prince on the lips, and fell down dead at his feet.\n\nAt that moment a curious crack sounded inside the statue, as if something had broken. The fact is that the leaden heart had snapped right in two. It certainly was a dreadfully hard frost.\n\nEarly the next morning the Mayor was walking in the square below in company with the Town Councillors. As they passed the column he looked up at the statue: “Dear me! how shabby the Happy Prince looks!” he said.\n\n“How shabby indeed!” cried the Town Councillors, who always agreed with the Mayor; and they went up to look at it.\n\n“The ruby has fallen out of his sword, his eyes are gone, and he is golden no longer,” said the Mayor in fact, “he is little better than a beggar!”\n\n“Little better than a beggar,” said the Town Councillors.\n\n“And here is actually a dead bird at his feet!” continued the Mayor. “We must really issue a proclamation that birds are not to be allowed to die here.” And the Town Clerk made a note of the suggestion.\n\nSo they pulled down the statue of the Happy Prince. “As he is no longer beautiful he is no longer useful,” said the Art Professor at the University."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_prince",
+   "name": "The Happy Prince",
+   "role": "the gilded statue of a prince, set on a tall column above the city",
+   "description": "A statue the size of a standing man, raised on a tall column high above the city; small enough that a swallow sleeps between his feet. He begins gilded all over with thin leaves of fine gold, with two bright sapphires for eyes and a large red ruby on his sword-hilt; after giving everything away he is dull and grey, then broken up and melted, and only his snapped leaden heart survives. Gentle, sorrowful, commanding.",
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "armor",
+    "outfit_tone": "gold",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "gold"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u5",
+     "claim": "k22",
+     "set": {
+      "material": "stone",
+      "eyes": "one_blind"
+     }
+    },
+    {
+     "at": "s1u6",
+     "claim": "k27",
+     "set": {
+      "eyes": "blind"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k33",
+     "set": {
+      "outfit_tone": "stone",
+      "hair_tone": "stone",
+      "material": "stone"
+     }
+    },
+    {
+     "at": "s1u7",
+     "claim": "k38",
+     "set": {
+      "material": "bronze"
+     }
+    }
+   ]
+  }
+ ]
+}

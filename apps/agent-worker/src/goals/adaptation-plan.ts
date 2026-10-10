@@ -6,6 +6,7 @@ import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.j
 import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { planOrderIssues } from "./claim-shown.js";
 import { unitOrder } from "./continuity.js";
+import { planPlaceIssues } from "./places.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 
 interface Input {
@@ -61,6 +62,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
           });
         }
         issues.push(...planOrderIssues(parsed.value as AdaptationPlan, understanding.claims, unitOrder(understanding.sections ?? [])));
+        issues.push(...planPlaceIssues(parsed.value, understanding));
         const sectionsOf = new Map(understanding.cast.map((c) => [c.id, c.sections]));
         ((parsed.value as AdaptationPlan)?.pages ?? []).forEach((page) => {
           for (const id of page?.cast ?? []) {
@@ -95,7 +97,7 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
       unitIndex(book),
       "</goal>",
       dataBlock("book_understanding_cast", understanding.cast.map((c) => ({ id: c.id, name: c.name, role: c.role }))),
-      dataBlock("book_understanding_locations", understanding.locations.map((l) => ({ id: l.id, name: l.name }))),
+      dataBlock("book_understanding_locations", understanding.locations.map((l) => ({ id: l.id, name: l.name, environment: l.environment, units: (l as { units?: unknown }).units }))),
       dataBlock("book_understanding_sections", understanding.sections),
       dataBlock("book_understanding_claims", claims),
       sourceBlock(book.units),

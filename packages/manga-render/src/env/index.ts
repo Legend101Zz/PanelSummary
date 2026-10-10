@@ -19,7 +19,8 @@ import { drawSky, drawWeather } from "./sky.js";
 import { drawFeatures, type Sites } from "./features.js";
 import { church, citySquare, cottage, market, mill, rooftops, street, townHall } from "./scenes-town.js";
 import { abstractField, countryRoad, ditch, moor, forest, garden, meadow, pond, riverbank, seaside, skyScene, voidScene } from "./scenes-nature.js";
-import { classroom, courtroom, forge, garret, jailCell, palaceHall, roomPoor, roomRich, study } from "./scenes-interior.js";
+import { dustheap, paradise } from "./scenes-story.js";
+import { classroom, courtroom, forge, foundry, garret, jailCell, palaceHall, roomPoor, roomRich, study } from "./scenes-interior.js";
 
 interface ShotCfg {
   fov: number;
@@ -55,7 +56,7 @@ const ANGLE_CFG: Record<EnvironmentRequest["angle"], AngleCfg> = {
   birds_eye: { theta: -68, horizon: null, hMul: 6.5, ground: 0.64 },
 };
 
-const INTERIORS: ReadonlySet<Environment> = new Set(["forge", "room_poor", "room_rich", "garret", "palace_hall", "jail_cell", "courtroom", "study", "classroom"]);
+const INTERIORS: ReadonlySet<Environment> = new Set(["forge", "foundry", "room_poor", "room_rich", "garret", "palace_hall", "jail_cell", "courtroom", "study", "classroom"]);
 
 type Scene = (st: Stage) => Sites;
 
@@ -87,6 +88,9 @@ const SCENES: Record<Environment, Scene> = {
   moor,
   ditch,
   forge,
+  foundry,
+  dustheap,
+  paradise,
   abstract: abstractField,
   void: voidScene,
 };
@@ -112,6 +116,7 @@ const ROOM_HEIGHT: Partial<Record<Environment, number>> = {
   study: 3,
   classroom: 3.4,
   forge: 4.4,
+  foundry: 4.4,
 };
 
 export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage {

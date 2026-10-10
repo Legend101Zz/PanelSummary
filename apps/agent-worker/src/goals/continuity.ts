@@ -189,8 +189,10 @@ export function figureStateIssues(
   // Highest step of a change-on-this-page already shown, per character and field.
   const reached = new Map<string, number>();
   for (const panel of spec.panels ?? []) {
-    // A flashback shows the past: looks there follow their own time.
-    if ((panel.fx ?? []).includes("flashback" as never)) continue;
+    // A flashback shows the past: looks there follow their own time. A panel flagged `vision`
+    // (afterlife, dream, memory) shows what is not the story's present: a dead character may be
+    // alive there (Q2b, issue #44). Both are skipped.
+    if ((panel.fx ?? []).includes("flashback" as never) || panel.vision !== undefined) continue;
     for (const fig of panel.figures ?? []) {
       const expected = looks[fig?.character];
       const member = byId.get(fig?.character);
@@ -245,12 +247,52 @@ export function figureStateIssues(
   return issues;
 }
 
+const VISION_WORDS = /afterlife|dream|memory|memories|paradise|heaven|vision/i;
+
+/**
+ * Guard for the `vision` panel flag (Q2b, issue #44). The flag exempts a panel from
+ * FIGURE_STATE_MISMATCH, so it must not become a way around the check:
+ * - VISION_OVERUSED: on a page of 2+ panels, more than half of the panels are flagged. It is an
+ *   error ONLY when the planned beat names no afterlife, dream, memory, paradise, heaven or vision
+ *   (the plan never asked for a vision: the abuse case). When the beat names a vision, a page may
+ *   flag every panel (a last page can be one vision) and nothing is reported. When the planned
+ *   beat is not available, it is a warning.
+ * - VISION_NOT_PLANNED (warning): a panel is flagged but the planned beat of the page does not
+ *   name an afterlife, dream, memory, paradise, heaven or vision. The adaptation-plan skill
+ *   tells the plan to write that word in the beat. A warning until calibrated on judged pages.
+ */
+export function visionIssues(spec: MangaPageSpec, plannedBeat: string | undefined): ValidationIssue[] {
+  const panels = spec.panels ?? [];
+  const flagged = panels.filter((p) => p?.vision !== undefined);
+  if (flagged.length === 0) return [];
+  const issues: ValidationIssue[] = [];
+  const beatNamesVision = plannedBeat !== undefined && VISION_WORDS.test(plannedBeat);
+  if (panels.length >= 2 && flagged.length * 2 > panels.length && !beatNamesVision) {
+    issues.push({
+      code: "VISION_OVERUSED",
+      severity: plannedBeat === undefined ? "warning" : "error",
+      path: "page.panels",
+      message: `${flagged.length} of ${panels.length} panels set "vision" (${flagged.map((p) => p.id).join(", ")}). "vision" is only for the panels that show an afterlife, dream or memory, and the planned beat of this page does not name one. Remove it from the panels that show the story's present, and show each figure as the story state says there.`,
+    });
+  }
+  if (plannedBeat !== undefined && !VISION_WORDS.test(plannedBeat)) {
+    issues.push({
+      code: "VISION_NOT_PLANNED",
+      severity: "warning",
+      path: `panel ${flagged[0].id}`,
+      message: `"vision" is set, but the planned beat of this page does not name an afterlife, dream, memory, paradise, heaven or vision. Set "vision" only where the plan says the page shows one.`,
+    });
+  }
+  return issues;
+}
+
 // ---------------------------------------------------------------------------
 // Understanding side: shape and drawability of `states`
 // ---------------------------------------------------------------------------
 
 const KNOWN_VALUES: Record<string, readonly string[]> = {
   material: C.MATERIALS,
+  outfit: C.OUTFITS,
   outfit_tone: C.TONES,
   hair_tone: C.TONES,
   tone: C.TONES,

@@ -1,0 +1,60 @@
+.zone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 36px 28px;
+  box-sizing: border-box;
+  border: 2.5px dashed var(--app-line-strong);
+  border-radius: var(--app-radius-card);
+  background: var(--app-surface);
+  color: var(--app-text);
+  overflow: hidden;
+}
+.over { border: var(--app-line-now) dashed var(--app-action); background: var(--app-action-wash); }
+.hasError { border: var(--app-line-control) solid var(--app-line); padding: 0; align-items: stretch; text-align: left; }
+.errorBlock { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; background: var(--app-needs-you); color: var(--app-on-fill); font-size: 17px; font-weight: 700; line-height: 1.4; }
+.errorBlock svg { flex: 0 0 auto; margin-top: 2px; }
+.errorBody { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 20px; }
+.title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.over .title { color: var(--app-action); }
+.sub { margin: -4px 0 0; font-size: 15px; color: var(--app-text-2); }
+.hint { margin: 0; max-width: 40ch; font-size: 15px; line-height: 1.45; color: var(--app-text-2); }
+.over .hint { color: var(--app-text); }
+.icon { color: inherit; }
+
+/* The real file input: visually hidden, still focusable and still in the page. */
+.input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.choose {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-control);
+  background: var(--app-action);
+  color: var(--app-on-action);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.choose:hover { background: var(--app-action-hover); }
+.choose:active { background: var(--app-action-pressed); }
+.choose:has(.input:focus-visible) { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
+.choose[aria-disabled="true"] { background: transparent; color: var(--app-text-2); border-width: var(--app-line-seg); border-color: var(--app-text-2); cursor: not-allowed; }
+.extra { margin: 0; font-size: 15px; font-weight: 700; }
+
+.errorActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.chooseSecondary { background: transparent; color: var(--app-text); }
+.chooseSecondary:hover { background: var(--app-action-wash); }
+.chooseSecondary:active { background: var(--app-action-wash-2); }
+
+.over .choose { display: none; }

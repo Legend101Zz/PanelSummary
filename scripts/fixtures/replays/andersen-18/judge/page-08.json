@@ -1,0 +1,471 @@
+{
+ "page_number": 8,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 8,
+  "section_id": "s2",
+  "beat": "The nightingale sings so sweetly that an old knight names the Empress's musical box and the Emperor weeps like a child, yet the Princess insists it is a real bird and again refuses him, so the Prince daubs his face brown and black and knocks at the palace door for employment.",
+  "claims": [
+   "k24",
+   "k25",
+   "k26"
+  ],
+  "cast": [
+   "c_nightingale",
+   "c_knight",
+   "c_emperor_s2",
+   "c_princess"
+  ],
+  "locations": [
+   "l_gift_hall",
+   "l_palace_gate"
+  ],
+  "units": [
+   "s2u1"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k24",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "supporting",
+   "text": "How much the bird reminds me of the musical box that belonged to our blessed Empress.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k25",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The nightingale sings so sweetly that the Emperor weeps, but the Princess insists it is a real bird and again refuses to see him.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k26",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince daubs his face brown and black, pulls his cap over his ears, and knocks at the palace door for employment.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 11
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 8,
+  "section_id": "s2",
+  "purpose": "The Nightingale's song makes the court weep and the Princess refuse him, so the Prince disguises himself and knocks at the palace door.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The nightingale sings in the great hall of gifts",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_gift_hall",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "center",
+      "depth": "fore"
+     },
+     {
+      "character": "c_princess",
+      "pose": "sit",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "left",
+      "depth": "back"
+     },
+     {
+      "character": "c_knight",
+      "pose": "stand",
+      "expression": "gentle",
+      "facing": "right",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_nightingale",
+      "text": "The Nightingale",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The old knight names the Empress's musical box",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_gift_hall",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_knight",
+      "pose": "point",
+      "expression": "love",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "happy",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid",
+      "on": {
+       "target": "c_knight",
+       "part": "hand"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_knight",
+      "text": "The old knight",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_knight",
+      "text": "How much the bird reminds me of the musical box that belonged to our blessed Empress.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The Emperor weeps like a child",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_gift_hall",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_emperor_s2",
+      "pose": "cover_face",
+      "expression": "cry",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "The Emperor wept like a child.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Princess insists it is a real bird and refuses him",
+    "shot": "medium",
+    "angle": "high",
+    "location": "l_gift_hall",
+    "time": "night",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_princess",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines",
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_princess",
+      "text": "It is a real bird! Well then let it fly -- I refuse to see the Prince.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The disguised Prince knocks at the closed palace door",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_palace_gate",
+    "time": "night",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "key",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "He daubed his face brown and black, pulled his cap over his ears, and knocked at the door.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     },
+     {
+      "kind": "sfx",
+      "text": "KNOCK",
+      "fidelity": "dramatized",
+      "source": {
+       "unit": "s2u1",
+       "page": 11
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 11
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k24",
+   "k25",
+   "k26"
+  ],
+  "claim_map": [
+   {
+    "claim": "k24",
+    "panels": [
+     "p2"
+    ],
+    "how": "the old knight points at the bird and says the line about the Empress's musical box"
+   },
+   {
+    "claim": "k25",
+    "panels": [
+     "p1",
+     "p3",
+     "p4"
+    ],
+    "how": "the nightingale sings in the hall, the Emperor weeps, and the Princess says it is a real bird and refuses to see the Prince"
+   },
+   {
+    "claim": "k26",
+    "panels": [
+     "p5"
+    ],
+    "how": "the closed palace door, the narration of the brown-and-black face and cap, and the KNOCK sound"
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [
+  {
+   "code": "FIGURE_OVERLAP",
+   "severity": "warning",
+   "path": "panel p2 figure 1",
+   "message": "two figures share slot \"left\" at depth \"mid\" and will overlap; move one to another slot or depth."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s2u1",
+   "pages": null,
+   "text": "There was once a poor Prince, who had a kingdom. His kingdom was very small, but still quite large enough to marry upon; and he wished to marry.\n\nIt was certainly rather cool of him to say to the Emperor's daughter, “Will you have me?” But so he did; for his name was renowned far and wide; and there were a hundred princesses who would have answered, “Yes!” and “Thank you kindly.” We shall see what this princess said.\n\nListen!\n\nIt happened that where the Prince's father lay buried, there grew a rose tree--a most beautiful rose tree, which blossomed only once in every five years, and even then bore only one flower, but that was a rose! It smelt so sweet that all cares and sorrows were forgotten by him who inhaled its fragrance.\n\nAnd furthermore, the Prince had a nightingale, who could sing in such a manner that it seemed as though all sweet melodies dwelt in her little throat. So the Princess was to have the rose, and the nightingale; and they were accordingly put into large silver caskets, and sent to her.\n\nThe Emperor had them brought into a large hall, where the Princess was playing at “Visiting,” with the ladies of the court; and when she saw the caskets with the presents, she clapped her hands for joy.\n\n“Ah, if it were but a little pussy-cat!” said she; but the rose tree, with its beautiful rose came to view.\n\n“Oh, how prettily it is made!” said all the court ladies.\n\n“It is more than pretty,” said the Emperor, “it is charming!”\n\nBut the Princess touched it, and was almost ready to cry.\n\n“Fie, papa!” said she. “It is not made at all, it is natural!”\n\n“Let us see what is in the other casket, before we get into a bad humor,” said the Emperor. So the nightingale came forth and sang so delightfully that at first no one could say anything ill-humored of her.\n\n“Superbe! Charmant!” exclaimed the ladies; for they all used to chatter French, each one worse than her neighbor.\n\n“How much the bird reminds me of the musical box that belonged to our blessed Empress,” said an old knight. “Oh yes! These are the same tones, the same execution.”\n\n“Yes! yes!” said the Emperor, and he wept like a child at the remembrance.\n\n“I will still hope that it is not a real bird,” said the Princess.\n\n“Yes, it is a real bird,” said those who had brought it. “Well then let the bird fly,” said the Princess; and she positively refused to see the Prince.\n\nHowever, he was not to be discouraged; he daubed his face over brown and black; pulled his cap over his ears, and knocked at the door."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_knight",
+   "name": "The old knight",
+   "role": "the old knight who remembers the Empress's musical box",
+   "description": "A tall, thin, bald old knight of the court who compares the nightingale to the musical box of the late Empress and weeps at the memory.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "suit",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "sword_belt"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_princess",
+   "name": "The Emperor's daughter",
+   "role": "the shallow Princess who buys the pot and the rattle",
+   "description": "A young woman of medium height with long wavy fair hair, a pale gown and a small crown, who plays at 'Visiting' with her ladies and can play only one tune on the piano. She is vain, capricious and given to pleasure, and weeps only when she is turned out of the city.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "gold",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The nightingale",
+   "role": "the Prince's gift bird that sings in the great hall",
+   "description": "A small dark nightingale carried in a silver casket and released to sing; barely larger than a girl's hand, perched in the hall while the court weeps.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "dark"
+   }
+  },
+  {
+   "id": "c_emperor_s2",
+   "name": "The Emperor",
+   "role": "the Princess's father, who catches the ladies at the pigsty",
+   "description": "An elderly, grey-bearded ruler in a dark robe who watches the doings at the palace from his balcony in spectacles and wooden slippers, then boxes his daughter's ears.",
+   "sections": [
+    "s2"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "white",
+    "facial_hair": "beard",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "crown",
+    "accessories": [
+     "medal",
+     "glasses"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

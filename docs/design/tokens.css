@@ -1,0 +1,294 @@
+/* PanelSummary v0.2 · tokens.css
+ * App tokens for the shelf, Add a book, the book page, the landing page, first run, Settings and the error pages.
+ * Every app colour has a role name with the --app- prefix, and each value is written once.
+ * Light values are the default. A role that changes in dark has a -dark twin; the twins are mapped
+ * under :root[data-theme="dark"] and under prefers-color-scheme for :root:not([data-theme="light"]).
+ * The reader (/books/{id}/read) and the PDF viewer ignore the theme. The reader tokens stay in
+ * globals.css with their names and values unchanged (see the block at the end of this file); this
+ * file does not redefine any of them. */
+
+/* Which v0.1 token each app token replaces on the non-reader screens.
+ * Checked against frontend/app/globals.css and the CSS modules of v0.1.0 (2026-10-10).
+ * The reader keeps every v0.1 token with its name and value. "new" means v0.1 had no token for it.
+ *
+ * app token                  replaces (what v0.1 used it for)
+ * -------------------------  ------------------------------------------------------------
+ * --app-bg                   --board (the page ground in body)
+ * --app-surface              --sheet used as a card or tile ground (Paper card, upload tile, book page);
+ *                            --sheet itself stays: it is the manga paper colour #fbfaf6
+ * --app-surface-2            --board-deep
+ * --app-text                 --ink (text on app pages)
+ * --app-text-2               --ink-2 (.muted, lede), --ink-3 (disabled text, hints)
+ * --app-line                 --rule (hairlines and row rules; the value changes from light grey to ink)
+ * --app-line-strong          --ink as a border (the .btn edge)
+ * --app-action               --ink as the fill of the primary button (.btn-ink), and --pencil-ink
+ *                            (focus ring, active stage text, accent text)
+ * --app-action-hover         new (v0.1 hard-coded #2c2c2c on .btn-ink:hover)
+ * --app-action-pressed       new (v0.1 moved the button 1 px down on :active)
+ * --app-on-action            --sheet (the text colour of .btn-ink)
+ * --app-action-wash          --pencil-wash (drag-over ground, pencil notice), and the .btn hover ground
+ * --app-action-wash-2        new
+ * --app-on-fill              new (v0.1 hard-coded #fff on the red-pen bar; white on coral fails contrast)
+ * --app-track                new (v0.1 drew an empty segment as --sheet with a 1 px --pencil edge)
+ * --app-done                 new
+ * --app-needs-you            --redpen (text, failed segment, red-pen bar) and --redpen-wash (notice ground)
+ * --app-moment               new
+ * --app-tone                 --pencil (the hatch of the segment that is drawing; screentone dots replace it)
+ * --app-note                 --ink as an inverse block (.obi_ink in components/Paper.module.css)
+ * --app-on-note              --sheet (the text colour of .obi_ink)
+ * --app-page-edge            new (v0.1 gave page thumbnails a soft shadow, not an edge)
+ * --app-blank                --sheet used as an empty cover (the Paper "manuscript sheet")
+ * --app-skeleton             new
+ * --app-scrim                new
+ * --app-focus                --pencil-ink (the :focus-visible outline in globals.css)
+ * --app-font                 --font-ui and --font-title (Zen Kaku Gothic New and Shippori Mincho B1 leave
+ *                            the app pages; Bricolage Grotesque replaces both)
+ * --app-gutter               --gutter (v0.1: clamp(16px, 4vw, 48px); v0.2: 40px, 16px below 768px)
+ * --app-max                  the 1200px max-width in .site-header and .page-main (v0.2: 1240px)
+ * --app-moment-ease          --ease for the page 1 moment only; the value differs. The reader keeps --ease.
+ *                            v0.1 also used --ease for 120 ms hover transitions and the indeterminate
+ *                            sweep; v0.2 removes that motion.
+ *
+ * v0.1 app-only rules that the --app-* tokens replace:
+ *   app/library.module.css (shelf), app/upload/upload.module.css (upload), app/books/[id]/book.module.css
+ *   (book page and its segments), and in globals.css: .site-header, .wordmark, .page-main, .page-title,
+ *   .section-title, .muted, .notice, .notice-pencil, .text-link, .btn-quiet, .skip-link.
+ * Rules the reader still uses stay unchanged: .btn, .btn-ink, .btn-redpen, the Sheet card
+ * (components/Paper.tsx), the line icons, SvgPage, and the PageThumb styles used in the reader.
+ */
+
+@font-face {
+  /* Self-hosted variable font, all three axes: opsz 12–96, wdth 75–100, wght 200–800. SIL Open Font License. */
+  font-family: "Bricolage Grotesque";
+  src: url("/fonts/BricolageGrotesque-VF.woff2") format("woff2-variations"), url("/fonts/BricolageGrotesque-VF.woff2") format("woff2");
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Colour roles: light (default) */
+  --app-bg: #F4F5F0;                 /* Page ground */
+  --app-surface: #FFFFFF;            /* Cards, inputs, controls */
+  --app-surface-2: #ECEEE7;          /* Raised: notes, an option that is off */
+  --app-text: #121212;               /* Body text, headings, drawn segments */
+  --app-text-2: #4A4D52;             /* Secondary text */
+  --app-line: #121212;               /* Card edges and rules */
+  --app-line-strong: #121212;        /* Control outlines, segment edges */
+  --app-action: #2F43D9;             /* The action: primary button, checked and chosen controls, the drawing-now frame, focus ring */
+  --app-action-hover: #2536B8;       /* Primary button, hover */
+  --app-action-pressed: #1C2B99;     /* Primary button, pressed */
+  --app-on-action: #FFFFFF;          /* Text and icons on the action colour */
+  --app-action-wash: #E5E8FB;        /* Hover fill for secondary and quiet controls; drop place while dragging */
+  --app-action-wash-2: #DCE0F7;      /* Pressed fill for secondary and quiet controls */
+  --app-on-fill: #121212;            /* Text and icons on done, needs-you and moment fills */
+  --app-track: #868A90;              /* Empty part of a progress bar or meter; the estimate range bar */
+  --app-done: #5CC6A0;               /* Complete band */
+  --app-needs-you: #EE6A45;          /* Coral: something needs the person (fill only, never white text) */
+  --app-moment: #F7DD5A;             /* Yellow: the page 1 moment only */
+  --app-tone: #121212;               /* Screentone dots: tone strip, waiting and drawing tiles */
+  --app-note: #121212;               /* Inverse note block ("This page updates itself") */
+  --app-on-note: #FFFFFF;            /* Text on the note block */
+  --app-page-edge: #121212;          /* Edge of a manga page on the ground (none on graphite) */
+  --app-blank: #FFFFFF;              /* A cover with no art */
+  --app-skeleton: #EAECE5;           /* Loading placeholders */
+  --app-scrim: rgba(18, 18, 18, 0.5); /* Behind the phone menu */
+  --app-focus: var(--app-action);    /* Focus ring, 2 px, 2 px offset */
+  --app-focus-on-moment: var(--app-on-fill); /* Focus ring inside the yellow band */
+
+  /* Dark twins: the reading-room values (Choice 1, item 13). Only the roles that change. */
+  --app-bg-dark: #26272A; /* = the reader's --graphite, on purpose: dark app pages are the reading room the reader lives in */
+  --app-surface-dark: #2E2F33;
+  --app-surface-2-dark: #383A3F;
+  --app-text-dark: #ECEBE6;
+  --app-text-2-dark: #B4B5B8;
+  --app-line-dark: #82858B;
+  --app-line-strong-dark: #ECEBE6;
+  --app-action-dark: #9AA4FF;
+  --app-action-hover-dark: #B8BEFF;
+  --app-action-pressed-dark: #CDD1FF;
+  --app-on-action-dark: #17181A;
+  --app-action-wash-dark: #363C60;
+  --app-action-wash-2-dark: #3D4470;
+  --app-on-fill-dark: #17181A;
+  --app-track-dark: #7A7D83;
+  --app-done-dark: #4FB591;
+  --app-needs-you-dark: #E8704C;
+  --app-moment-dark: #E2C752;
+  --app-tone-dark: #ECEBE6;
+  --app-note-dark: #383A3F;
+  --app-on-note-dark: #ECEBE6;
+  --app-page-edge-dark: transparent;
+  --app-blank-dark: #383A3F;
+  --app-skeleton-dark: #2F3034;
+  --app-scrim-dark: rgba(23, 24, 26, 0.6);
+
+  /* Type */
+  --app-font: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --app-leading-body: 1.5;
+  --app-leading-body-dark: 1.6;
+  --app-tracking-body: 0;
+  --app-tracking-body-dark: 0.01em;
+  --app-tracking-heading: -0.02em;
+  --app-numbers: tabular-nums;          /* every time, cost, count and page number */
+
+  /* Space: a 4 px base */
+  --app-space-1: 4px;   --app-space-2: 8px;   --app-space-3: 12px;  --app-space-4: 16px;
+  --app-space-5: 20px;  --app-space-6: 24px;  --app-space-7: 28px;  --app-space-8: 32px;
+  --app-space-10: 40px; --app-space-12: 48px; --app-space-14: 56px; --app-space-16: 64px;
+  --app-space-18: 72px; --app-space-24: 96px;
+  --app-gutter: 40px;                   /* 16px below 768px; replaces --gutter on app pages */
+  --app-max: 1240px;
+  --app-target: 44px;                   /* the smallest target */
+
+  /* Radii */
+  --app-radius-mark: 2px;     /* progress segments, ticks */
+  --app-radius-range: 3px;    /* estimate range bar */
+  --app-radius-sm: 6px;       /* checkbox, skeleton lines */
+  --app-radius-input: 10px;   /* number box, page frames in a grid */
+  --app-radius-cover: 12px;   /* skeleton cover */
+  --app-radius-control: 14px; /* buttons, segmented controls, notices */
+  --app-radius-card: 22px;    /* cards */
+  --app-radius-full: 9999px;  /* meter tracks, the switch knob */
+
+  /* Outline widths */
+  --app-line-hair: 1px;       /* rules, page edges, thin segments, meter over-limit edge */
+  --app-line-seg: 1.5px;      /* drawn, waiting and failed segments; disabled buttons */
+  --app-line-control: 2px;    /* cards, buttons, inputs, checkboxes */
+  --app-line-error: 2.5px;    /* invalid number box */
+  --app-line-now: 3px;        /* the segment that is drawing now */
+
+  /* Focus ring */
+  --app-focus-width: 2px;
+  --app-focus-offset: 2px;
+
+  /* Motion: the page 1 moment is the only authored motion */
+  --app-moment-duration: 400ms;
+  --app-moment-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] {
+  --app-bg: var(--app-bg-dark);
+  --app-surface: var(--app-surface-dark);
+  --app-surface-2: var(--app-surface-2-dark);
+  --app-text: var(--app-text-dark);
+  --app-text-2: var(--app-text-2-dark);
+  --app-line: var(--app-line-dark);
+  --app-line-strong: var(--app-line-strong-dark);
+  --app-action: var(--app-action-dark);
+  --app-action-hover: var(--app-action-hover-dark);
+  --app-action-pressed: var(--app-action-pressed-dark);
+  --app-on-action: var(--app-on-action-dark);
+  --app-action-wash: var(--app-action-wash-dark);
+  --app-action-wash-2: var(--app-action-wash-2-dark);
+  --app-on-fill: var(--app-on-fill-dark);
+  --app-track: var(--app-track-dark);
+  --app-done: var(--app-done-dark);
+  --app-needs-you: var(--app-needs-you-dark);
+  --app-moment: var(--app-moment-dark);
+  --app-tone: var(--app-tone-dark);
+  --app-note: var(--app-note-dark);
+  --app-on-note: var(--app-on-note-dark);
+  --app-page-edge: var(--app-page-edge-dark);
+  --app-blank: var(--app-blank-dark);
+  --app-skeleton: var(--app-skeleton-dark);
+  --app-scrim: var(--app-scrim-dark);
+  --app-focus: var(--app-action);
+  --app-focus-on-moment: var(--app-on-fill);
+  --app-leading-body: var(--app-leading-body-dark);
+  --app-tracking-body: var(--app-tracking-body-dark);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --app-bg: var(--app-bg-dark);
+    --app-surface: var(--app-surface-dark);
+    --app-surface-2: var(--app-surface-2-dark);
+    --app-text: var(--app-text-dark);
+    --app-text-2: var(--app-text-2-dark);
+    --app-line: var(--app-line-dark);
+    --app-line-strong: var(--app-line-strong-dark);
+    --app-action: var(--app-action-dark);
+    --app-action-hover: var(--app-action-hover-dark);
+    --app-action-pressed: var(--app-action-pressed-dark);
+    --app-on-action: var(--app-on-action-dark);
+    --app-action-wash: var(--app-action-wash-dark);
+    --app-action-wash-2: var(--app-action-wash-2-dark);
+    --app-on-fill: var(--app-on-fill-dark);
+    --app-track: var(--app-track-dark);
+    --app-done: var(--app-done-dark);
+    --app-needs-you: var(--app-needs-you-dark);
+    --app-moment: var(--app-moment-dark);
+    --app-tone: var(--app-tone-dark);
+    --app-note: var(--app-note-dark);
+    --app-on-note: var(--app-on-note-dark);
+    --app-page-edge: var(--app-page-edge-dark);
+    --app-blank: var(--app-blank-dark);
+    --app-skeleton: var(--app-skeleton-dark);
+    --app-scrim: var(--app-scrim-dark);
+    --app-focus: var(--app-action);
+    --app-focus-on-moment: var(--app-on-fill);
+    --app-leading-body: var(--app-leading-body-dark);
+    --app-tracking-body: var(--app-tracking-body-dark);
+    color-scheme: dark;
+  }
+}
+
+/* The PDF viewer ignores the theme: it sits in the reader's room and always uses the dark twins. */
+.app-reading-room {
+  --app-bg: var(--app-bg-dark);
+  --app-surface: var(--app-surface-dark);
+  --app-surface-2: var(--app-surface-2-dark);
+  --app-text: var(--app-text-dark);
+  --app-text-2: var(--app-text-2-dark);
+  --app-line: var(--app-line-dark);
+  --app-line-strong: var(--app-line-strong-dark);
+  --app-action: var(--app-action-dark);
+  --app-action-hover: var(--app-action-hover-dark);
+  --app-action-pressed: var(--app-action-pressed-dark);
+  --app-on-action: var(--app-on-action-dark);
+  --app-action-wash: var(--app-action-wash-dark);
+  --app-action-wash-2: var(--app-action-wash-2-dark);
+  --app-on-fill: var(--app-on-fill-dark);
+  --app-track: var(--app-track-dark);
+  --app-done: var(--app-done-dark);
+  --app-needs-you: var(--app-needs-you-dark);
+  --app-moment: var(--app-moment-dark);
+  --app-tone: var(--app-tone-dark);
+  --app-note: var(--app-note-dark);
+  --app-on-note: var(--app-on-note-dark);
+  --app-page-edge: var(--app-page-edge-dark);
+  --app-blank: var(--app-blank-dark);
+  --app-skeleton: var(--app-skeleton-dark);
+  --app-scrim: var(--app-scrim-dark);
+  --app-focus: var(--app-action);
+  --app-focus-on-moment: var(--app-on-fill);
+  --app-leading-body: var(--app-leading-body-dark);
+  --app-tracking-body: var(--app-tracking-body-dark);
+  color-scheme: dark;
+}
+
+/* The app layout root. The reader layout does not use this class, so it keeps its own room. */
+.app-root { font-family: var(--app-font); font-optical-sizing: auto; font-variant-numeric: var(--app-numbers); background: var(--app-bg); color: var(--app-text); line-height: var(--app-leading-body); letter-spacing: var(--app-tracking-body); }
+.app-root :focus-visible { outline: var(--app-focus-width) solid var(--app-focus); outline-offset: var(--app-focus-offset); }
+.app-moment :focus-visible { outline-color: var(--app-focus-on-moment); }
+
+/* The page 1 moment: the yellow fill grows from the left once, when page 1 is drawn. Nothing else moves. */
+.app-moment__fill { transform-origin: left center; transform: scaleX(1); transition: transform var(--app-moment-duration) var(--app-moment-ease); }
+.app-moment__fill[data-phase="before"] { transform: scaleX(0); }
+@media (prefers-reduced-motion: reduce) {
+  .app-moment__fill { transition: none; } /* the band is filled at once; the words and the live region are the same */
+}
+
+/* Reader tokens: KEEP these names, values and drawings unchanged. They live in globals.css, not here.
+   The reader also keeps .btn, .btn-ink, .btn-redpen, the Sheet card (components/Paper.tsx) and its line icons
+   (back arrow, previous, next, page, panels, sources, zoom reset, close).
+   --board #eceeef  --board-deep #dfe3e5  --sheet #fbfaf6  --ink #141414  --ink-2 #464a4f  --ink-3 #62666c
+   --rule #c9ced1  --pencil #69b7dd  --pencil-wash #dcedf6  --pencil-ink #1b6590  --redpen #c22e21
+   --redpen-wash #f6e2df  --graphite #26272a  --graphite-2 #333438  --graphite-3 #45474c
+   --on-graphite #ecebe6  --on-graphite-2 #a9abaf  --font-title  --font-ui  --page-ratio 1000 / 1500
+   --ease cubic-bezier(0.2, 0.7, 0.2, 1)  --gutter clamp(16px, 4vw, 48px) */

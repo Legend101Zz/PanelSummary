@@ -13,7 +13,7 @@
  *  - Previews show these issues as "fix before submit" until the chance is used.
  *
  * Which codes are in the list is decided by calibration on judged pages
- * (scripts/calibrate-w2w.ts), not by guesswork.
+ * (scripts/calibrate-checks.ts, rule in docs/v0.2/Q2a-writer-checks.md), not by guesswork.
  */
 import type { BookUnderstanding, Claim, MangaPageSpec, PlannedPage, ValidationIssue } from "@panelsummary/manga-render";
 
@@ -25,12 +25,12 @@ export const REPAIR_ONCE_CODES: ReadonlySet<string> = new Set([
   "CLAIM_TEXT_THIN",
   "KEY_PROP_NOT_DRAWN",
   "SPEECH_IN_NARRATION",
-  "DUPLICATE_CAPTION",
   "REPEAT_NAME_TAG",
   "LOCATION_OFF_PLAN",
   "HERO_TOO_SMALL",
-  "SPEAKER_OFF_PANEL_LIMIT",
   "STATUE_LOCATION_SWAPPED",
+  // v0.2 (docs/v0.2/Q2a-writer-checks.md): the renderer's caption-wall warning, promoted on 319 judged pages.
+  "PROSE_WALL",
 ]);
 
 export const isRepairOnce = (issue: ValidationIssue): boolean => issue.severity === "warning" && REPAIR_ONCE_CODES.has(issue.code);
@@ -163,7 +163,6 @@ const PROP_TRIGGERS: Record<string, string[]> = {
   feather: ["feather", "feathers"],
   bell: ["bell", "bells"],
   flag: ["flag", "banner"],
-  gold_leaf: ["leaf"],
   thorn: ["thorn", "thorns"],
   axe: ["axe"],
   firework: ["firework", "fireworks"],
@@ -351,7 +350,144 @@ export function dialogueOrderIssues(spec: MangaPageSpec, ctx: Pick<RepairOnceCon
   return issues;
 }
 
-/** All writer-side repair_once checks plus the dialogue-order warning. */
+// ---------------------------------------------------------------------------
+// SAME_SHOT_TWICE: two panels of one page show the same picture (v0.2, issue #43)
+// ---------------------------------------------------------------------------
+
+/**
+ * How much two panels must share to count as the same picture.
+ *  - "standard": shot size, camera angle, place, time, weather, and the same figures in the same poses (and props).
+ *  - "strict": standard, plus the same slot, facing and expression for every figure.
+ *  - "loose": shot size, place and the same cast, whatever the poses.
+ */
+export type SameShotLevel = "strict" | "standard" | "loose";
+
+export function shotSignature(panel: MangaPageSpec["panels"][number], level: SameShotLevel): string {
+  const figures = (panel.figures ?? []).filter((f) => f && typeof f.character === "string");
+  const figureKey = (f: (typeof figures)[number]) =>
+    level === "loose"
+      ? f.character
+      : level === "standard"
+        ? `${f.character}:${f.pose}`
+        : `${f.character}:${f.pose}:${f.expression}:${f.facing}:${f.slot}`;
+  const parts = [panel.shot, panel.location, figures.map(figureKey).sort().join("+")];
+  if (level !== "loose") parts.push(panel.angle ?? "", panel.time ?? "", panel.weather ?? "");
+  // A panel with no figure (an insert) is the same picture only when it shows the same props.
+  if (figures.length === 0 || level === "strict") parts.push((panel.props ?? []).map((p) => p?.prop).sort().join("+"));
+  return parts.join("|");
+}
+
+/** Level used by the page goal. Set from calibration (docs/v0.2/Q2a-writer-checks.md). */
+export const SAME_SHOT_LEVEL: SameShotLevel = "standard";
+
+export function sameShotTwiceIssues(spec: MangaPageSpec, options: { level?: SameShotLevel } = {}): ValidationIssue[] {
+  const level = options.level ?? SAME_SHOT_LEVEL;
+  const seen = new Map<string, string>();
+  const issues: ValidationIssue[] = [];
+  for (const panel of spec.panels ?? []) {
+    if (!panel || typeof panel.shot !== "string") continue;
+    const key = shotSignature(panel, level);
+    const first = seen.get(key);
+    if (first === undefined) {
+      seen.set(key, panel.id);
+      continue;
+    }
+    issues.push({
+      code: "SAME_SHOT_TWICE",
+      severity: "warning",
+      path: `panel ${panel.id}`,
+      message: `panel ${panel.id} shows the same picture as panel ${first}: the same "${panel.shot}" shot, the same place and the same figures in the same poses. Readers see a repeat. Change the shot size or the angle, show another action or object, or merge the two panels.`,
+    });
+  }
+  return issues;
+}
+
+// ---------------------------------------------------------------------------
+// QUOTE_CLIPPED: a quote stops before the punchline of its source sentence (v0.2, issue #45)
+// ---------------------------------------------------------------------------
+
+/** Words of the source sentence that may be left out after a quote before the quote counts as clipped. Set from calibration. */
+export const QUOTE_CLIP_MIN_TAIL = 2;
+/** A longer cut is a deliberate shortening of a long sentence, not a clipped punchline. Set from calibration. */
+export const QUOTE_CLIP_MAX_TAIL = 6;
+
+interface SourceWord {
+  norm: string;
+  /** The word ends a sentence or a quoted span. */
+  end: boolean;
+}
+
+/** The source as normalized words, each with a flag for the end of a sentence or of a quoted span. */
+export function sourceWords(units: readonly { text: string }[]): SourceWord[] {
+  const out: SourceWord[] = [];
+  for (const unit of units) {
+    const tokens = unit.text.replace(/[\uFB00-\uFB06]/g, (m) => m.normalize("NFKC")).split(/\s+/).filter(Boolean);
+    for (const token of tokens) {
+      const end = /[.!?\u2026][)\]]?["\u201d\u2019']*$/.test(token) || /[\u201d"]$/.test(token);
+      const norm = wordsOf(token).join(" ");
+      if (norm === "") {
+        if (end && out.length > 0) out[out.length - 1].end = true;
+        continue;
+      }
+      for (const w of norm.split(" ")) out.push({ norm: w, end: false });
+      out[out.length - 1].end = end;
+    }
+    if (out.length > 0) out[out.length - 1].end = true;
+  }
+  return out;
+}
+
+/** Where `fragment` (normalized words) occurs once in the source; -1 when it is missing or ambiguous. */
+function findSequence(words: readonly SourceWord[], fragment: readonly string[]): number {
+  let found = -1;
+  for (let i = 0; i + fragment.length <= words.length; i += 1) {
+    if (fragment.every((w, k) => words[i + k].norm === w)) {
+      if (found >= 0) return -1;
+      found = i;
+    }
+  }
+  return found;
+}
+
+export function quoteClippedIssues(
+  spec: MangaPageSpec,
+  ctx: Pick<RepairOnceContext, "units">,
+  options: { minTail?: number; maxTail?: number } = {},
+): ValidationIssue[] {
+  const minTail = options.minTail ?? QUOTE_CLIP_MIN_TAIL;
+  const maxTail = options.maxTail ?? QUOTE_CLIP_MAX_TAIL;
+  const words = sourceWords(ctx.units);
+  const issues: ValidationIssue[] = [];
+  for (const { text, path } of allTexts(spec)) {
+    if (text.fidelity !== "quote") continue;
+    const fragments = text.text.split(/\.\.\.|\u2026|--|\u2014/).map((f) => wordsOf(f)).filter((f) => f.length >= 4);
+    const last = fragments[fragments.length - 1];
+    if (!last) continue;
+    const at = findSequence(words, last);
+    if (at < 0) continue;
+    const endIndex = at + last.length - 1;
+    if (words[endIndex].end) continue;
+    let tail = 0;
+    let i = endIndex + 1;
+    while (i < words.length && tail < 40) {
+      tail += 1;
+      if (words[i].end) break;
+      i += 1;
+    }
+    if (i >= words.length || tail < minTail || tail > maxTail) continue;
+    const rest = words.slice(endIndex + 1, endIndex + 1 + tail).map((w) => w.norm).join(" ");
+    const ending = last.slice(-4).join(" ");
+    issues.push({
+      code: "QUOTE_CLIPPED",
+      severity: "warning",
+      path,
+      message: `this quote ends "...${ending}", but its source sentence goes on: "${rest.slice(0, 80)}". The end of a sentence is often its punchline. Keep the end of the sentence, or split the line over two balloons.`,
+    });
+  }
+  return issues;
+}
+
+/** All writer-side repair_once checks plus the plain warnings (dialogue order, same shot twice, clipped quote). */
 export function repairOnceIssues(spec: MangaPageSpec, ctx: RepairOnceContext): ValidationIssue[] {
   return [
     ...claimTextThinIssues(spec, ctx),
@@ -361,5 +497,7 @@ export function repairOnceIssues(spec: MangaPageSpec, ctx: RepairOnceContext): V
     ...repeatNameTagIssues(spec, ctx),
     ...locationOffPlanIssues(spec, ctx),
     ...dialogueOrderIssues(spec, ctx),
+    ...sameShotTwiceIssues(spec),
+    ...quoteClippedIssues(spec, ctx),
   ];
 }

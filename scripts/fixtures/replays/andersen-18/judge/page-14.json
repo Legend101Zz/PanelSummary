@@ -1,0 +1,473 @@
+{
+ "page_number": 14,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 14,
+  "section_id": "s3",
+  "beat": "The Queen-mother silently lays three peas on the bedstead under twenty mattresses and twenty feather beds; the Princess reports something hard beneath her and is black and blue, proving her delicacy, so the Prince marries her and the three peas go into the cabinet of curiosities.",
+  "claims": [
+   "k39",
+   "k40",
+   "k41"
+  ],
+  "cast": [
+   "c_queen_mother",
+   "c_princess_s3",
+   "c_prince_s3"
+  ],
+  "locations": [
+   "l_bedroom",
+   "l_cabinet"
+  ],
+  "units": [
+   "s3u1"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k39",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Queen-mother silently lays three little peas on the bedstead under twenty mattresses and twenty feather beds.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k40",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Princess reports she slept badly and felt something hard under her, black and blue all over.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k41",
+   "section_id": "s3",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Prince marries her, convinced she is real, and the three peas are put in the cabinet of curiosities.",
+   "source": [
+    {
+     "unit": "s3u1",
+     "page": 18
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 14,
+  "section_id": "s3",
+  "purpose": "The Queen-mother's silent test works: the Princess feels the peas through the piled bedding, so the Prince marries her and the peas go into the cabinet.",
+  "layout": {
+   "template": "staggered_6"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Queen-mother quietly strips the great bed and lays three peas on the bare bedstead.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_bedroom",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_queen_mother",
+      "pose": "kneel",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "feather",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Princess's bedroom",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 17
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_queen_mother",
+      "text": "The Queen-mother",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "Close on the three little peas lying on the bare boards of the bedstead.",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_bedroom",
+    "time": "night",
+    "figures": [],
+    "props": [
+     {
+      "prop": "gem",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Three little peas on the bedstead.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s3u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The peas vanish beneath twenty mattresses and twenty feather beds piled high.",
+    "shot": "wide",
+    "angle": "low",
+    "location": "l_bedroom",
+    "time": "night",
+    "figures": [
+     {
+      "character": "c_queen_mother",
+      "pose": "carry",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "feather",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Twenty mattresses, then twenty feather beds on top.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "Next morning the Princess, black and blue, says she felt something hard under her.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_bedroom",
+    "time": "day",
+    "figures": [
+     {
+      "character": "c_princess_s3",
+      "pose": "sit",
+      "expression": "pain",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "feather",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_princess_s3",
+      "text": "Oh, very badly indeed!... I had something hard under me, and am all over black and blue.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s3u1",
+       "page": 18
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 18
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Prince looks at her bruises and declares his doubt over.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_cabinet",
+    "time": "day",
+    "figures": [
+     {
+      "character": "c_prince_s3",
+      "pose": "point",
+      "expression": "determined",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_princess_s3",
+      "pose": "stand",
+      "expression": "sad",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The cabinet of curiosities",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 18
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_prince_s3",
+      "text": "Now I am sure. She is a real Princess!",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 18
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 18
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The three peas rest in the cabinet, still there to be seen.",
+    "shot": "insert",
+    "angle": "eye",
+    "location": "l_cabinet",
+    "time": "day",
+    "figures": [],
+    "props": [
+     {
+      "prop": "gem",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "He made her his wife, and the three peas were put in the cabinet, where they still lie, unless lost.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s3u1",
+       "page": 18
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s3u1",
+      "page": 18
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k39",
+   "k40",
+   "k41"
+  ],
+  "claim_map": [
+   {
+    "claim": "k39",
+    "panels": [
+     "p1",
+     "p2",
+     "p3"
+    ],
+    "how": "p1 shows the Queen-mother named at the stripped bed; p2 is the insert of three peas on the bedstead; p3 shows twenty mattresses and twenty feather beds piled over them, and both facts are lettered."
+   },
+   {
+    "claim": "k40",
+    "panels": [
+     "p4"
+    ],
+    "how": "the Princess sits bruised by the piled bed and says in the book's words that she slept badly, had something hard under her, and is black and blue."
+   },
+   {
+    "claim": "k41",
+    "panels": [
+     "p5",
+     "p6"
+    ],
+    "how": "p5 the Prince says she is a real Princess before the cabinet of curiosities; p6's narration says he made her his wife and the peas were put in the cabinet, where they still lie."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "43 of 69 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s3u1",
+   "pages": null,
+   "text": "There was once a Prince who wished to marry a Princess; but then she must be a real Princess. He travelled all over the world in hopes of finding such a lady; but there was always something wrong. Princesses he found in plenty; but whether they were real Princesses it was impossible for him to decide, for now one thing, now another, seemed to him not quite right about the ladies. At last he returned to his palace quite cast down, because he wished so much to have a real Princess for his wife.\n\nOne evening a fearful tempest arose, it thundered and lightened, and the rain poured down from the sky in torrents: besides, it was as dark as pitch. All at once there was heard a violent knocking at the door, and the old King, the Prince's father, went out himself to open it.\n\nIt was a Princess who was standing outside the door. What with the rain and the wind, she was in a sad condition; the water trickled down from her hair, and her clothes clung to her body. She said she was a real Princess.\n\n“Ah! we shall soon see that!” thought the old Queen-mother; however, she said not a word of what she was going to do; but went quietly into the bedroom, took all the bed-clothes off the bed, and put three little peas on the bedstead. She then laid twenty mattresses one upon another over the three peas, and put twenty feather beds over the mattresses.\n\nUpon this bed the Princess was to pass the night.\n\nThe next morning she was asked how she had slept. “Oh, very badly indeed!” she replied. “I have scarcely closed my eyes the whole night through. I do not know what was in my bed, but I had something hard under me, and am all over black and blue. It has hurt me so much!”\n\nNow it was plain that the lady must be a real Princess, since she had been able to feel the three little peas through the twenty mattresses and twenty feather beds. None but a real Princess could have had such a delicate sense of feeling.\n\nThe Prince accordingly made her his wife; being now convinced that he had found a real Princess. The three peas were however put into the cabinet of curiosities, where they are still to be seen, provided they are not lost.\n\nWasn't this a lady of real delicacy?"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_queen_mother",
+   "name": "The Queen-mother",
+   "role": "the old Queen-mother who lays the three peas",
+   "description": "A small, elderly woman with white hair who thinks 'Ah! we shall soon see that!' but says nothing, then quietly strips the bed and lays three peas on the bedstead.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "bun",
+    "hair_tone": "white",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_princess_s3",
+   "name": "The real Princess",
+   "role": "the drenched woman who claims to be a real Princess",
+   "description": "A tall, slim young woman in a white gown, soaked by rain and wind so that her clothes cling to her body and water runs from her hair; she complains of the hard thing in her bed.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "fem",
+    "hair": "long_straight",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "gown",
+    "outfit_tone": "white",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_prince_s3",
+   "name": "The Prince",
+   "role": "the Prince searching the world for a real Princess",
+   "description": "A young, tall, slim Prince who rides through the world unable to decide which ladies are real Princesses, and returns to his palace cast down.",
+   "sections": [
+    "s3"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "adult",
+    "build": "slim",
+    "height": "tall",
+    "frame": "masc",
+    "hair": "short",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "royal",
+    "outfit_tone": "light",
+    "headwear": "crown",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  }
+ ]
+}

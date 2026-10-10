@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     page_retry_thinking: str | None = None
     retry_thinking: str | None = None
 
+    # --- plan review (D24): when true, a new edition stops after the plan and waits for approval,
+    # unless the request says otherwise. Off by default: the v0.1 flow does not change.
+    plan_review_default: bool = False
+
     # --- job runner ---
     job_lease_seconds: int = 90
     job_poll_seconds: float = 1.5

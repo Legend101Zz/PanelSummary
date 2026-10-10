@@ -1,0 +1,19 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--app-target);
+  height: var(--app-target);
+  padding: 0;
+  box-sizing: border-box;
+  border: var(--app-line-control) solid var(--app-line-strong);
+  border-radius: var(--app-radius-control);
+  background: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover { background: var(--app-action-wash); }
+.btn[aria-pressed="true"] { background: var(--app-action); color: var(--app-on-action); }
+.btn[aria-pressed="true"]:hover { background: var(--app-action-hover); }
+.btn:disabled { background: transparent; color: var(--app-text-2); border-width: var(--app-line-seg); border-color: var(--app-text-2); cursor: not-allowed; }

@@ -1,0 +1,637 @@
+{
+ "page_number": 13,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 13,
+  "section_id": "s1",
+  "beat": "The Mayor and the Town Councillors find the statue shabby, its ruby and eyes gone, with a dead bird at its feet, order a proclamation against birds dying there, pull the statue down as no longer useful, melt it, and quarrel endlessly over the Mayor's proposal that the new statue be of himself.",
+  "claims": [
+   "k39",
+   "k40",
+   "k41"
+  ],
+  "cast": [
+   "c_mayor",
+   "c_councillors",
+   "c_art_professor",
+   "c_swallow"
+  ],
+  "locations": [
+   "l_city_square",
+   "l_column_top",
+   "l_foundry"
+  ],
+  "units": [
+   "s1u7",
+   "s1u8"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k39",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Mayor and the Town Councillors find the statue shabby, missing its ruby and eyes, with a dead bird at its feet, and order a proclamation that birds are not to be allowed to die there.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 14
+    },
+    {
+     "unit": "s1u7",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k40",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "As he is no longer beautiful he is no longer useful.",
+   "source": [
+    {
+     "unit": "s1u7",
+     "page": 15
+    }
+   ]
+  },
+  {
+   "id": "k41",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Mayor proposes that the new statue be of himself, and the Town Councillors quarrel over the proposal without ever agreeing.",
+   "source": [
+    {
+     "unit": "s1u8",
+     "page": 15
+    },
+    {
+     "unit": "s1u8",
+     "page": 16
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 13,
+  "section_id": "s1",
+  "purpose": "The city turns on the shabby statue: the Mayor condemns it, orders a proclamation against dying birds, the Art Professor pronounces it useless, and the Mayor proposes a statue of himself that the councillors will never agree on.",
+  "layout": {
+   "tree": {
+    "split": "rows",
+    "sizes": [
+     1,
+     2.2,
+     1.7
+    ],
+    "children": [
+     {
+      "panel": "p1"
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1,
+       1,
+       1
+      ],
+      "children": [
+       {
+        "panel": "p2"
+       },
+       {
+        "panel": "p3"
+       },
+       {
+        "panel": "p4"
+       }
+      ]
+     },
+     {
+      "split": "cols",
+      "sizes": [
+       1.4,
+       1.4,
+       1.4
+      ],
+      "children": [
+       {
+        "panel": "p5"
+       },
+       {
+        "panel": "p6"
+       },
+       {
+        "panel": "p7"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "Wide of the frosted square: the Mayor and councillors below the tall column, the dead swallow lying at the statue's feet.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_city_square",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_mayor",
+      "pose": "walk",
+      "expression": "worried",
+      "facing": "front",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_councillors",
+      "pose": "walk",
+      "expression": "neutral",
+      "facing": "front",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_swallow",
+      "pose": "lie",
+      "expression": "asleep",
+      "facing": "front",
+      "slot": "center",
+      "depth": "back",
+      "variant": {
+       "eyes": "dead"
+      },
+      "on": {
+       "target": "statue_column"
+      }
+     }
+    ],
+    "props": [],
+    "fx": [
+     "wind"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_mayor",
+      "text": "The Mayor, in the square",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Mayor stops and points up at the dull grey statue.",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_city_square",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_mayor",
+      "pose": "point",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_mayor",
+      "text": "how shabby the Happy Prince looks!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The councillors crowd in, looking up, agreeing loudly.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_city_square",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_councillors",
+      "pose": "talk",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_mayor",
+      "pose": "stand",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "left",
+      "depth": "fore"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_councillors",
+      "text": "How shabby indeed!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Mayor points up at the sword-hilt and the empty eyes.",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_city_square",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_mayor",
+      "pose": "point",
+      "expression": "angry",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_mayor",
+      "text": "The ruby has fallen out... he is golden no longer.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Mayor notices the dead bird at the statue's feet and orders a proclamation against it.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_city_square",
+    "time": "dawn",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_mayor",
+      "pose": "talk",
+      "expression": "angry",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_councillors",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "anger_mark"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_mayor",
+      "text": "actually a dead bird at his feet!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_mayor",
+      "text": "No birds to die here.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 14
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 14
+     }
+    ]
+   },
+   {
+    "id": "p6",
+    "beat": "The Art Professor delivers his verdict on the useless statue.",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_city_square",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_art_professor",
+      "pose": "talk",
+      "expression": "neutral",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_art_professor",
+      "text": "The Art Professor",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s1u7",
+       "page": 15
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_art_professor",
+      "text": "As he is no longer beautiful he is no longer useful.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u7",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u7",
+      "page": 15
+     }
+    ]
+   },
+   {
+    "id": "p7",
+    "beat": "The Mayor lifts his chin and proposes a statue of himself; the councillors break into quarrelling.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_city_square",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_mayor",
+      "pose": "arms_crossed",
+      "expression": "smug",
+      "facing": "right",
+      "slot": "left",
+      "depth": "fore"
+     },
+     {
+      "character": "c_councillors",
+      "pose": "talk",
+      "expression": "angry",
+      "facing": "left",
+      "slot": "right",
+      "depth": "back"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "anger_mark",
+     "impact_burst"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_mayor",
+      "text": "Another statue--and it shall be a statue of myself.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 15
+      }
+     },
+     {
+      "kind": "speech",
+      "speaker": "c_councillors",
+      "text": "Of myself!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s1u8",
+       "page": 15
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s1u8",
+      "page": 15
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k39",
+   "k40",
+   "k41"
+  ],
+  "claim_map": [
+   {
+    "claim": "k39",
+    "panels": [
+     "p1",
+     "p2",
+     "p3",
+     "p4",
+     "p5"
+    ],
+    "how": "p1 shows the dead swallow at the statue's feet in the square; p2-p3 the Mayor calls it shabby and the councillors agree; p4 he names the lost ruby and the lost gold; p5 he names the dead bird and orders the proclamation."
+   },
+   {
+    "claim": "k40",
+    "panels": [
+     "p6"
+    ],
+    "how": "The Art Professor is named and says the line verbatim."
+   },
+   {
+    "claim": "k41",
+    "panels": [
+     "p7"
+    ],
+    "how": "The Mayor proposes a statue of himself; the councillors answer 'Of myself!' and quarrel."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s1u7",
+   "pages": null,
+   "text": "Leaf after leaf of the fine gold the Swallow picked off, till the Happy Prince looked quite dull and grey. Leaf after leaf of the fine gold he brought to the poor, and the children’s faces grew rosier, and they laughed and played games in the street. “We have bread now!” they cried.\n\nThen the snow came, and after the snow came the frost. The streets looked as if they were made of silver, they were so bright and glistening; long icicles like crystal daggers hung down from the eaves of the houses, everybody went about in furs, and the little boys wore scarlet caps and skated on the ice.\n\nThe poor little Swallow grew colder and colder, but he would not leave the Prince, he loved him too well. He picked up crumbs outside the baker’s door when the baker was not looking and tried to keep himself warm by flapping his wings.\n\nBut at last he knew that he was going to die. He had just strength to fly up to the Prince’s shoulder once more. “Goodbye, dear Prince!” he murmured, “will you let me kiss your hand?”\n\n“I am glad that you are going to Egypt at last, little Swallow,” said the Prince, “you have stayed too long here; but you must kiss me on the lips, for I love you.”\n\n“It is not to Egypt that I am going,” said the Swallow. “I am going to the House of Death. Death is the brother of Sleep, is he not?”\n\nAnd he kissed the Happy Prince on the lips, and fell down dead at his feet.\n\nAt that moment a curious crack sounded inside the statue, as if something had broken. The fact is that the leaden heart had snapped right in two. It certainly was a dreadfully hard frost.\n\nEarly the next morning the Mayor was walking in the square below in company with the Town Councillors. As they passed the column he looked up at the statue: “Dear me! how shabby the Happy Prince looks!” he said.\n\n“How shabby indeed!” cried the Town Councillors, who always agreed with the Mayor; and they went up to look at it.\n\n“The ruby has fallen out of his sword, his eyes are gone, and he is golden no longer,” said the Mayor in fact, “he is little better than a beggar!”\n\n“Little better than a beggar,” said the Town Councillors.\n\n“And here is actually a dead bird at his feet!” continued the Mayor. “We must really issue a proclamation that birds are not to be allowed to die here.” And the Town Clerk made a note of the suggestion.\n\nSo they pulled down the statue of the Happy Prince. “As he is no longer beautiful he is no longer useful,” said the Art Professor at the University."
+  },
+  {
+   "id": "s1u8",
+   "pages": null,
+   "text": "Then they melted the statue in a furnace, and the Mayor held a meeting of the Corporation to decide what was to be done with the metal. “We must have another statue, of course,” he said, “and it shall be a statue of myself.”\n\n“Of myself,” said each of the Town Councillors, and they quarrelled. When I last heard of them they were quarrelling still.\n\n“What a strange thing!” said the overseer of the workmen at the foundry. “This broken lead heart will not melt in the furnace. We must throw it away.” So they threw it on a dustheap where the dead Swallow was also lying.\n\n“Bring me the two most precious things in the city,” said God to one of His Angels; and the Angel brought Him the leaden heart and the dead bird.\n\n“You have rightly chosen,” said God, “for in my garden of Paradise this little bird shall sing for evermore, and in my city of gold the Happy Prince shall praise me.”"
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_art_professor",
+   "name": "The Art Professor",
+   "role": "a professor of art at the University",
+   "description": "A dry, severe man of letters who pronounces that the statue, no longer beautiful, is no longer useful, and so is pulled down.",
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "average",
+    "height": "average",
+    "frame": "masc",
+    "hair": "long_straight",
+    "hair_tone": "white",
+    "facial_hair": "long_beard",
+    "outfit": "scholar",
+    "outfit_tone": "dark",
+    "headwear": "cap",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_councillors",
+   "name": "The Town Councillors",
+   "role": "the town's councillors, who praise and agree",
+   "description": "A small group of well-dressed town councillors who admire the statue for show and always echo the Mayor; they are also the ones who condemn it once it is shabby.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "officials",
+    "size": "few"
+   },
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_swallow",
+   "name": "The Swallow",
+   "role": "a little swallow, messenger and lover",
+   "description": "A small swallow, small enough to alight between the Happy Prince's feet and to cup a jewel the size of his own head; in the autumn he is a free bird flying to Egypt, by winter a self-appointed messenger who sleeps at the statue's feet and steals crumbs at a baker's door. Cheerful, talkative, warm-hearted, and slowly worn down by the cold.",
+   "look": {
+    "kind": "bird",
+    "species": "swallow",
+    "tone": "dark"
+   },
+   "sections": [
+    "s1"
+   ],
+   "states": [
+    {
+     "at": "s1u7",
+     "claim": "k36",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  },
+  {
+   "id": "c_mayor",
+   "name": "The Mayor",
+   "role": "the city's Mayor",
+   "description": "A heavy, well-fed older man in a robe of office with a chain of office, who walks the square with the councillors, calls the statue shabby, orders it pulled down, and proposes a statue of himself. Pompous, self-serving, practical.",
+   "look": {
+    "kind": "human",
+    "age": "elder",
+    "build": "heavy",
+    "height": "average",
+    "frame": "masc",
+    "hair": "bald",
+    "hair_tone": "white",
+    "facial_hair": "mustache",
+    "outfit": "robe",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [
+     "medal",
+     "necklace"
+    ],
+    "skin": "mid",
+    "material": "flesh"
+   },
+   "sections": [
+    "s1"
+   ]
+  }
+ ]
+}

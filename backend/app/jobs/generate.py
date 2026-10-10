@@ -30,6 +30,7 @@ from app.documents import (
     utcnow,
 )
 from app.jobs.runner import JobCancelled, JobContext, ProviderStop
+from app.scope import resolve_scope, scope_of
 from app.settings import get_settings
 from app.worker_client import WorkerOutcome, WorkerUnavailable, cancel_run, run_goal
 
@@ -162,15 +163,18 @@ async def _call(ctx: JobContext, goal_type: str, run_id: str, payload: dict[str,
     raise RuntimeError("unreachable")
 
 
-def _book_payload(book: LibraryBook, source: BookSource) -> dict[str, Any]:
+def _book_payload(book: LibraryBook, source: BookSource, scope: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    """The book as the worker receives it. With a scope (D19, amended) only the scoped sections and
+    units go in; the units keep their PDF page numbers, so source grounding is the same."""
+    resolved = resolve_scope(source.sections, source.units, source.page_count, **scope_of(scope))
     return {
         "title": source.title or book.title,
         "author": source.author or book.author,
         "page_count": source.page_count,
-        "sections": source.sections,
+        "sections": resolved.sections,
         "units": [
             {k: unit[k] for k in ("id", "section_id", "page_start", "page_end", "text")}
-            for unit in source.units
+            for unit in resolved.units
         ],
     }
 
@@ -312,7 +316,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
 
     # 1. Book understanding (whole text, one MiniMax session).
     await _set_edition(edition, status="understanding", error=None)
-    book_payload = _book_payload(book, source)
+    book_payload = _book_payload(book, source, edition.scope)
     understanding_artifact = await _artifact_stage(
         ctx,
         edition,
@@ -342,8 +346,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     )
     plan = plan_artifact.content
     planned_pages: list[dict[str, Any]] = plan["pages"]
-    await _set_edition(edition, plan_id=str(plan_artifact.id), page_total=len(planned_pages), status="drawing", pages_failed=0)
-    await _mark_timing(str(edition.id), "drawing_started_at")
+    await _set_edition(edition, plan_id=str(plan_artifact.id), page_total=len(planned_pages), pages_failed=0)
 
     # 3. Page rows (unique per edition + page number).
     collection = EditionPage.get_motor_collection()
@@ -370,6 +373,16 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
             },
             upsert=True,
         )
+    # Plan review (D24): the understanding and the plan are stored and the page rows exist. Stop here
+    # and wait for approval. No page call is made and nothing more is spent. The job ends
+    # "succeeded"; the edition status is what says it waits.
+    if policy.get("review_plan") and not policy.get("plan_approved"):
+        await _set_edition(edition, status="awaiting_plan_review")
+        await ctx.event("plan", f"Plan ready to review: {len(planned_pages)} pages")
+        return "succeeded", f"Plan ready to review: {len(planned_pages)} pages"
+    await _set_edition(edition, status="drawing")
+    await _mark_timing(str(edition.id), "drawing_started_at")
+
     # Pages left "drawing" by a dead runner go back to pending.
     await collection.update_many({"edition_id": str(edition.id), "status": "drawing"}, {"$set": {"status": "pending"}})
     # A resumed edition retries failed pages with a fresh attempt budget.
@@ -450,6 +463,8 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
                     progress["done"] += 1
                     # The moment a page first becomes readable in the reader (the stored page is final).
                     await _mark_timing(str(edition.id), "first_page_at")
+                    if number == 1:
+                        await _mark_timing(str(edition.id), "page_1_at")
                     await Edition.get_motor_collection().update_one(
                         {"_id": edition.id}, {"$set": {"pages_accepted": progress["done"], "updated_at": utcnow()}}
                     )
@@ -492,7 +507,7 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
         raise breaker["stop"]
 
     # 4. Coverage + final status.
-    return await finalize(edition, understanding, plan, [str(section["id"]) for section in source.sections])
+    return await finalize(edition, understanding, plan, [str(section["id"]) for section in book_payload["sections"]])
 
 
 async def finalize(

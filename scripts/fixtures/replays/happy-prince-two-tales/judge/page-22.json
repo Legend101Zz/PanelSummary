@@ -1,0 +1,407 @@
+{
+ "page_number": 22,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 22,
+  "section_id": "s2",
+  "beat": "Anger at her scorn the Student throws the rose into the street, where a cart-wheel crushes it in the gutter, and she retorts that he is only a Student without even silver buckles to his shoes; walking away he pronounces Love quite unpractical and not half so useful as Logic, and goes back to his room to study Metaphysics.",
+  "claims": [
+   "k67",
+   "k68",
+   "k69"
+  ],
+  "cast": [
+   "c_student",
+   "c_profs_daughter"
+  ],
+  "locations": [
+   "l_professor_door",
+   "l_gutter",
+   "l_student_window"
+  ],
+  "units": [
+   "s2u5"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k67",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Student angrily throws the rose into the street, where it falls into the gutter and a cart-wheel goes over it.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 25
+    },
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  },
+  {
+   "id": "k68",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "Who are you? Only a Student. Why, I don't believe you have even got silver buckles to your shoes as the Chamberlain's nephew has.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  },
+  {
+   "id": "k69",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "It is not half as useful as Logic, for it does not prove anything. I shall go back to Philosophy and study Metaphysics.",
+   "source": [
+    {
+     "unit": "s2u5",
+     "page": 26
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 22,
+  "section_id": "s2",
+  "purpose": "The Student hurls the rose into the gutter where a cart-wheel crushes it, is told he is only a Student with no silver buckles, and walks away rejecting Love for Logic and Metaphysics.",
+  "layout": {
+   "template": "staggered_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The Student flings the rose down past the doorway into the street",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_professor_door",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "reach",
+      "expression": "angry",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     },
+     {
+      "character": "c_profs_daughter",
+      "pose": "sit",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines"
+    ],
+    "text": [
+     {
+      "kind": "shout",
+      "speaker": "c_student",
+      "text": "You are very ungrateful!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 25
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The rose lands in the gutter and a cart-wheel rolls over it",
+    "shot": "insert",
+    "angle": "high",
+    "location": "l_gutter",
+    "time": "day",
+    "weather": "clear",
+    "figures": [],
+    "props": [
+     {
+      "prop": "rose",
+      "slot": "center",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [
+     "impact_burst"
+    ],
+    "text": [
+     {
+      "kind": "sfx",
+      "text": "CRACK",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "It fell into the gutter, and a cart-wheel went over it.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 25
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 25
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "The girl looks down at him and tells him what he is",
+    "shot": "medium",
+    "angle": "low",
+    "location": "l_professor_door",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_profs_daughter",
+      "pose": "stand",
+      "expression": "smug",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_student",
+      "pose": "stand",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_profs_daughter",
+      "text": "Who are you? Only a Student. ...I don't believe you have even got silver buckles to your shoes.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 26
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 26
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Student turns away down the street, condemning Love",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_gutter",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "walk",
+      "expression": "sad",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "What a silly thing Love is... it is not half as useful as Logic.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 26
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 26
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Back in his room he opens a great dusty book to read",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_student_window",
+    "time": "day",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "sit",
+      "expression": "determined",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [
+     {
+      "prop": "book",
+      "slot": "center_right",
+      "depth": "mid",
+      "tone": "mid"
+     }
+    ],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "I shall go back to Philosophy and study Metaphysics.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u5",
+       "page": 26
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u5",
+      "page": 26
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k67",
+   "k68",
+   "k69"
+  ],
+  "claim_map": [
+   {
+    "claim": "k67",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows him hurling the rose down; p2 the crushed rose in the gutter, named in the lettering as the cart-wheel going over it."
+   },
+   {
+    "claim": "k68",
+    "panels": [
+     "p3"
+    ],
+    "how": "the girl tells him, 'Only a Student,' and adds he has not even silver buckles to his shoes."
+   },
+   {
+    "claim": "k69",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 he calls Love not half so useful as Logic; p5 he returns to his room and says he will study Metaphysics."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s2u5",
+   "pages": null,
+   "text": "“Look, look!” cried the Tree, “the rose is finished now”; but the Nightingale made no answer, for she was lying dead in the long grass, with the thorn in her heart.\n\nAnd at noon the Student opened his window and looked out.\n\n“Why, what a wonderful piece of luck!” he cried; “here is a red rose! I have never seen any rose like it in all my life. It is so beautiful that I am sure it has a long Latin name”; and he leaned down and plucked it.\n\nThen he put on his hat, and ran up to the Professor’s house with the rose in his hand.\n\nThe daughter of the Professor was sitting in the doorway winding blue silk on a reel, and her little dog was lying at her feet.\n\n“You said that you would dance with me if I brought you a red rose,” cried the Student. “Here is the reddest rose in all the world. You will wear it to-night next your heart, and as we dance together it will tell you how I love you.”\n\nBut the girl frowned.\n\n“I am afraid it will not go with my dress,” she answered; “and, besides, the Chamberlain’s nephew has sent me some real jewels, and everybody knows that jewels cost far more than flowers.”\n\n“Well, upon my word, you are very ungrateful,” said the Student angrily; and he threw the rose into the street, where it fell into the gutter, and a cart-wheel went over it.\n\n“Ungrateful!” said the girl. “I tell you what, you are very rude; and, after all, who are you? Only a Student. Why, I don’t believe you have even got silver buckles to your shoes as the Chamberlain’s nephew has”; and she got up from her chair and went into the house.\n\n“What a silly thing Love is,” said the Student as he walked away. “It is not half as useful as Logic, for it does not prove anything, and it is always telling one of things that are not going to happen, and making one believe things that are not true. In fact, it is quite unpractical, and, as in this age to be practical is everything, I shall go back to Philosophy and study Metaphysics.”\n\nSo he returned to his room and pulled out a great dusty book, and began to read."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_student",
+   "name": "The Young Student",
+   "role": "a lover in a garden, writer of a note-book",
+   "description": "A young lover, slight and boyish, with dark hyacinth-blossom hair, red lips and beautiful eyes pale as ivory; he lies on the grass weeping, writes in a note-book, and ends by rejecting Love for Logic and Metaphysics.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_profs_daughter",
+   "name": "The Professor's Daughter",
+   "role": "the girl in the doorway with the blue silk",
+   "description": "A young woman sitting in the doorway of the Professor's house winding blue silk on a reel, with her little dog at her feet; scornful, and dressed for the Chamberlain's ball.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "fem",
+    "hair": "long_straight",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "dress",
+    "outfit_tone": "gold",
+    "headwear": "bonnet",
+    "accessories": [
+     "necklace"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  }
+ ]
+}

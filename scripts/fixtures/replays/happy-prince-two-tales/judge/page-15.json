@@ -1,0 +1,394 @@
+{
+ "page_number": 15,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 15,
+  "section_id": "s2",
+  "beat": "In the Student's garden a young man weeps because there is no red rose in it all, and the Nightingale in the holm-oak above realises she has sung of this true lover every night without knowing him; he fears that without a rose for the Prince's ball his love will pass him by and his heart will break.",
+  "claims": [
+   "k44",
+   "k45",
+   "k46"
+  ],
+  "cast": [
+   "c_student",
+   "c_nightingale"
+  ],
+  "locations": [
+   "l_garden",
+   "l_oak_branch"
+  ],
+  "units": [
+   "s2u1"
+  ],
+  "page_turn_hook": true
+ },
+ "claims": [
+  {
+   "id": "k44",
+   "section_id": "s2",
+   "kind": "quote",
+   "importance": "core",
+   "text": "No red rose in all my garden! Ah, on what little things does happiness depend!",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 17
+    }
+   ]
+  },
+  {
+   "id": "k45",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Nightingale hears the Student weeping and recognises him as the true lover she has sung of night after night without knowing him.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 17
+    },
+    {
+     "unit": "s2u1",
+     "page": 18
+    }
+   ]
+  },
+  {
+   "id": "k46",
+   "section_id": "s2",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Student says that unless he brings a red rose to the Prince's ball, his love will pass him by and his heart will break.",
+   "source": [
+    {
+     "unit": "s2u1",
+     "page": 18
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 15,
+  "section_id": "s2",
+  "purpose": "The reader learns that the weeping Student has no red rose for his love, and that the Nightingale above realises he is the true lover she has sung of.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "The garden at dusk: grass-plot, rose-trees, an old oak, a young man lying weeping on the grass.",
+    "shot": "establishing",
+    "angle": "high",
+    "location": "l_garden",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "lie",
+      "expression": "cry",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "The Nightingale and the Rose",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 17
+      }
+     },
+     {
+      "kind": "caption",
+      "about": "c_student",
+      "text": "The Young Student",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "The Student weeps into the grass and cries out that there is no red rose.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "cover_face",
+      "expression": "cry",
+      "facing": "front",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "No red rose in all my garden!",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "In the holm-oak nest the Nightingale looks out through the leaves and recognises him.",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_oak_branch",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "surprised",
+      "facing": "left",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "soft_glow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_nightingale",
+      "text": "The Nightingale",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s2u1",
+       "page": 17
+      }
+     },
+     {
+      "kind": "thought",
+      "speaker": "c_nightingale",
+      "text": "Here at last is a true lover... Night after night have I sung of him, though I knew him not.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 17
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 17
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "The Student throws back his head and says his love will pass him by and his heart will break.",
+    "shot": "close",
+    "angle": "eye",
+    "location": "l_garden",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_student",
+      "pose": "kneel",
+      "expression": "pain",
+      "facing": "right",
+      "slot": "center_right",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "speech",
+      "speaker": "c_student",
+      "text": "She will pass me by... my heart will break.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 18
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 18
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "The Nightingale's face hardens with purpose as she looks down at the roses below.",
+    "shot": "close",
+    "angle": "high",
+    "location": "l_oak_branch",
+    "time": "dusk",
+    "weather": "clear",
+    "figures": [
+     {
+      "character": "c_nightingale",
+      "pose": "perch",
+      "expression": "determined",
+      "facing": "left",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "focus_lines"
+    ],
+    "text": [
+     {
+      "kind": "thought",
+      "speaker": "c_nightingale",
+      "text": "What I sing of, he suffers.",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s2u1",
+       "page": 18
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s2u1",
+      "page": 18
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k44",
+   "k45",
+   "k46"
+  ],
+  "claim_map": [
+   {
+    "claim": "k44",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 shows the Student lying weeping in a garden of roses with no red one; p2 letters his cry that there is no red rose in all his garden."
+   },
+   {
+    "claim": "k45",
+    "panels": [
+     "p3",
+     "p5"
+    ],
+    "how": "p3 names the Nightingale in her nest and letters her realisation that she has sung of him night after night without knowing him; p5 keeps her looking down at him."
+   },
+   {
+    "claim": "k46",
+    "panels": [
+     "p4"
+    ],
+    "how": "p4 shows him in close-up as he says she will pass him by and his heart will break."
+   }
+  ],
+  "page_turn_hook": true
+ },
+ "warnings": [],
+ "source_units": [
+  {
+   "id": "s2u1",
+   "pages": null,
+   "text": "“SHE said that she would dance with me if I brought her red roses,” cried the young Student; “but in all my garden there is no red rose.”\n\nFrom her nest in the holm-oak tree the Nightingale heard him, and she looked out through the leaves, and wondered.\n\n“No red rose in all my garden!” he cried, and his beautiful eyes filled with tears. “Ah, on what little things does happiness depend! I have read all that the wise men have written, and all the secrets of philosophy are mine, yet for want of a red rose is my life made wretched.”\n\n“Here at last is a true lover,” said the Nightingale. “Night after night have I sung of him, though I knew him not: night after night have I told his story to the stars, and now I see him. His hair is dark as the hyacinth-blossom, and his lips are red as the rose of his desire; but passion has made his face like pale ivory, and sorrow has set her seal upon his brow.”\n\n“The Prince gives a ball to-morrow night,” murmured the young Student, “and my love will be of the company. If I bring her a red rose she will dance with me till dawn. If I bring her a red rose, I shall hold her in my arms, and she will lean her head upon my shoulder, and her hand will be clasped in mine. But there is no red rose in my garden, so I shall sit lonely, and she will pass me by. She will have no heed of me, and my heart will break.”\n\n“Here indeed is the true lover,” said the Nightingale. “What I sing of, he suffers—what is joy to me, to him is pain. Surely Love is a wonderful thing. It is more precious than emeralds, and dearer than fine opals. Pearls and pomegranates cannot buy it, nor is it set forth in the marketplace. It may not be purchased of the merchants, nor can it be weighed out in the balance for gold.”\n\n“The musicians will sit in their gallery,” said the young Student, “and play upon their stringed instruments, and my love will dance to the sound of the harp and the violin. She will dance so lightly that her feet will not touch the floor, and the courtiers in their gay dresses will throng round her. But with me she will not dance, for I have no red rose to give her”; and he flung himself down on the grass, and buried his face in his hands, and wept.\n\n“Why is he weeping?” asked a little Green Lizard, as he ran past him with his tail in the air."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_student",
+   "name": "The Young Student",
+   "role": "a lover in a garden, writer of a note-book",
+   "description": "A young lover, slight and boyish, with dark hyacinth-blossom hair, red lips and beautiful eyes pale as ivory; he lies on the grass weeping, writes in a note-book, and ends by rejecting Love for Logic and Metaphysics.",
+   "look": {
+    "kind": "human",
+    "age": "teen",
+    "build": "slim",
+    "height": "average",
+    "frame": "masc",
+    "hair": "messy",
+    "hair_tone": "dark",
+    "facial_hair": "none",
+    "outfit": "shirt_trousers",
+    "outfit_tone": "light",
+    "headwear": "none",
+    "accessories": [
+     "satchel"
+    ],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "sections": [
+    "s2"
+   ]
+  },
+  {
+   "id": "c_nightingale",
+   "name": "The Nightingale",
+   "role": "a bird who sings to a thorn to make a rose",
+   "description": "A small nightingale, brown-winged and small enough to nest in the branches of an oak tree; she throws her shadow across the garden, sings all night with her breast against a thorn, and lies dead in the long grass with the thorn in her heart.",
+   "look": {
+    "kind": "bird",
+    "species": "nightingale",
+    "tone": "mid"
+   },
+   "sections": [
+    "s2"
+   ],
+   "states": [
+    {
+     "at": "s2u5",
+     "claim": "k63",
+     "set": {
+      "eyes": "dead"
+     }
+    }
+   ]
+  }
+ ]
+}

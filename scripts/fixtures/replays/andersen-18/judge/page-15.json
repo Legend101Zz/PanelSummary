@@ -1,0 +1,445 @@
+{
+ "page_number": 15,
+ "status": "accepted",
+ "error": null,
+ "planned": {
+  "page_number": 15,
+  "section_id": "s4",
+  "beat": "On the snow-dark last evening of the year the poor little Match Girl scuffs along the street in her mother's far-too-large slippers, loses one to the street and the other to an urchin, and walks on with red and blue naked feet, her bundle of matches unsold all day.",
+  "claims": [
+   "k43",
+   "k44",
+   "k45"
+  ],
+  "cast": [
+   "c_match_girl",
+   "c_urchin",
+   "c_matches"
+  ],
+  "locations": [
+   "l_new_year_street"
+  ],
+  "units": [
+   "s4u1"
+  ],
+  "page_turn_hook": false
+ },
+ "claims": [
+  {
+   "id": "k43",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "On the last evening of the year a poor little girl walks a snowy dark street in her mother's far-too-large slippers.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k44",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "She loses one slipper in the street and an urchin runs off with the other to use as a cradle.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  },
+  {
+   "id": "k45",
+   "section_id": "s4",
+   "kind": "event",
+   "importance": "core",
+   "text": "Nobody buys her matches all day and she carries the bundle in an old apron, with red and blue naked feet.",
+   "source": [
+    {
+     "unit": "s4u1",
+     "page": 19
+    }
+   ]
+  }
+ ],
+ "spec": {
+  "schema": "manga-page.v1",
+  "page_number": 15,
+  "section_id": "s4",
+  "purpose": "The little Match Girl walks the snowy New Year's Eve street in her mother's huge slippers, loses both to a carriage and an urchin, and goes on barefoot with her unsold matches.",
+  "layout": {
+   "template": "establish_5"
+  },
+  "panels": [
+   {
+    "id": "p1",
+    "beat": "A dark snowing street on the last evening of the year, windows candlelit, a small girl trudging across it",
+    "shot": "establishing",
+    "angle": "eye",
+    "location": "l_new_year_street",
+    "time": "dusk",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "walk",
+      "expression": "tired",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow",
+     "dark_mood"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "about": "c_match_girl",
+      "text": "The Little Match Girl",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     },
+     {
+      "kind": "caption",
+      "text": "The last evening of the year",
+      "fidelity": "quote",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "beat": "She scuffles across the street, her mother's far-too-large slippers flopping on her feet",
+    "shot": "wide",
+    "angle": "eye",
+    "location": "l_new_year_street",
+    "time": "dusk",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "walk",
+      "expression": "worried",
+      "facing": "right",
+      "slot": "center",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Her mother's slippers were far too large for her.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "beat": "An urchin seizes the second slipper and runs off with it under his arm",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_new_year_street",
+    "time": "dusk",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_urchin",
+      "pose": "run",
+      "expression": "laugh",
+      "facing": "left",
+      "slot": "right",
+      "depth": "mid"
+     },
+     {
+      "character": "c_match_girl",
+      "pose": "reach",
+      "expression": "surprised",
+      "facing": "right",
+      "slot": "left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "speed_lines",
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "One slipper was gone. The urchin ran off with the other for a cradle.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p4",
+    "beat": "She stands in the street holding the bundle of matches in her hand, unsold",
+    "shot": "medium",
+    "angle": "eye",
+    "location": "l_new_year_street",
+    "time": "dusk",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "hold",
+      "expression": "sad",
+      "facing": "front",
+      "slot": "center_left",
+      "depth": "mid",
+      "holding": "matches",
+      "holding_tone": "light"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "caption",
+      "text": "Her bundle of matches, unsold",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     },
+     {
+      "kind": "narration",
+      "text": "Nobody bought one all day.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 19
+     }
+    ]
+   },
+   {
+    "id": "p5",
+    "beat": "Close on her bare feet, red and blue with cold, as she limps on",
+    "shot": "close",
+    "angle": "high",
+    "location": "l_new_year_street",
+    "time": "dusk",
+    "weather": "snow",
+    "figures": [
+     {
+      "character": "c_match_girl",
+      "pose": "walk",
+      "expression": "pain",
+      "facing": "right",
+      "slot": "center_left",
+      "depth": "mid"
+     }
+    ],
+    "props": [],
+    "fx": [
+     "snow"
+    ],
+    "text": [
+     {
+      "kind": "narration",
+      "text": "Her tiny naked feet were red and blue with cold.",
+      "fidelity": "paraphrase",
+      "source": {
+       "unit": "s4u1",
+       "page": 19
+      }
+     }
+    ],
+    "source": [
+     {
+      "unit": "s4u1",
+      "page": 19
+     }
+    ]
+   }
+  ],
+  "claims": [
+   "k43",
+   "k44",
+   "k45"
+  ],
+  "claim_map": [
+   {
+    "claim": "k43",
+    "panels": [
+     "p1",
+     "p2"
+    ],
+    "how": "p1 captions the last evening of the year on a dark snowing street and names the Match Girl; p2 says the slippers were her mother's and far too large."
+   },
+   {
+    "claim": "k44",
+    "panels": [
+     "p3"
+    ],
+    "how": "the urchin figure grabs the slipper and runs off, with narration that he took it for a cradle."
+   },
+   {
+    "claim": "k45",
+    "panels": [
+     "p4",
+     "p5"
+    ],
+    "how": "p4 draws the bundle of matches in her hand with lettering that nobody bought one all day; p5 shows her bare feet red and blue with cold."
+   }
+  ],
+  "page_turn_hook": false
+ },
+ "warnings": [
+  {
+   "code": "PROSE_WALL",
+   "severity": "warning",
+   "path": "page",
+   "message": "53 of 53 words are narration or captions; turn what characters say or do into speech and action, and keep narration for what pictures cannot show."
+  },
+  {
+   "code": "PLANNED_CAST_MISSING",
+   "severity": "warning",
+   "path": "page",
+   "message": "planned cast not drawn on this page: c_matches."
+  },
+  {
+   "code": "HELD_PROP_OFF_FRAME",
+   "severity": "warning",
+   "path": "panel p4",
+   "message": "the matches held by \"c_match_girl\" would be outside the frame of this medium panel, so it is drawn in front of the figure. Use a wider shot, a slot nearer the centre or a \"reach\" pose to show it in the hand."
+  }
+ ],
+ "source_units": [
+  {
+   "id": "s4u1",
+   "pages": null,
+   "text": "Most terribly cold it was; it snowed, and was nearly quite dark, and evening--the last evening of the year. In this cold and darkness there went along the street a poor little girl, bareheaded, and with naked feet. When she left home she had slippers on, it is true; but what was the good of that? They were very large slippers, which her mother had hitherto worn; so large were they; and the poor little thing lost them as she scuffled away across the street, because of two carriages that rolled by dreadfully fast.\n\nOne slipper was nowhere to be found; the other had been laid hold of by an urchin, and off he ran with it; he thought it would do capitally for a cradle when he some day or other should have children himself. So the little maiden walked on with her tiny naked feet, that were quite red and blue from cold. She carried a quantity of matches in an old apron, and she held a bundle of them in her hand. Nobody had bought anything of her the whole livelong day; no one had given her a single farthing.\n\nShe crept along trembling with cold and hunger--a very picture of sorrow, the poor little thing!\n\nThe flakes of snow covered her long fair hair, which fell in beautiful curls around her neck; but of that, of course, she never once now thought. From all the windows the candles were gleaming, and it smelt so deliciously of roast goose, for you know it was New Year's Eve; yes, of that she thought.\n\nIn a corner formed by two houses, of which one advanced more than the other, she seated herself down and cowered together. Her little feet she had drawn close up to her, but she grew colder and colder, and to go home she did not venture, for she had not sold any matches and could not bring a farthing of money: from her father she would certainly get blows, and at home it was cold too, for above her she had only the roof, through which the wind whistled, even though the largest cracks were stopped up with straw and rags.\n\nHer little hands were almost numbed with cold. Oh! a match might afford her a world of comfort, if she only dared take a single one out of the bundle, draw it against the wall, and warm her fingers by it. She drew one out. “Rischt!” how it blazed, how it burnt! It was a warm, bright flame, like a candle, as she held her hands over it: it was a wonderful light. It seemed really to the little maiden as though she were sitting before a large iron stove, with burnished brass feet and a brass ornament at top. The fire burned with such blessed influence; it warmed so delightfully. The little girl had already stretched out her feet to warm them too; but--the small flame went out, the stove vanished: she had only the remains of the burnt-out match in her hand."
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_matches",
+   "name": "The bundle of matches",
+   "role": "the matches the girl carries and burns",
+   "description": "A small paper bundle of matches, sold all day without a single purchaser and burnt down one by one against the wall; the only thing the girl owns.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "object",
+    "shape": "candle",
+    "tone": "light",
+    "face": false
+   }
+  },
+  {
+   "id": "c_urchin",
+   "name": "The urchin",
+   "role": "the boy who runs off with her slipper",
+   "description": "A small barefoot boy who grabs the girl's second slipper and runs off, thinking it will do for a cradle when he has children of his own.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "masc",
+    "hair": "spiky",
+    "hair_tone": "mid",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "dark",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   }
+  },
+  {
+   "id": "c_match_girl",
+   "name": "The little Match Girl",
+   "role": "the poor girl selling matches on New Year's Eve",
+   "description": "A small, thin child with long fair curls falling to her neck, bareheaded and barefoot, in an old apron she uses to carry matches. She crouches in a corner between two houses, lights matches against the wall and at dawn is found frozen against it with rosy cheeks and a smiling mouth; timid, cold, hungry, yet radiant in her visions.",
+   "sections": [
+    "s4"
+   ],
+   "look": {
+    "kind": "human",
+    "age": "child",
+    "build": "slim",
+    "height": "short",
+    "frame": "fem",
+    "hair": "long_wavy",
+    "hair_tone": "light",
+    "facial_hair": "none",
+    "outfit": "rags",
+    "outfit_tone": "mid",
+    "headwear": "none",
+    "accessories": [],
+    "skin": "light",
+    "material": "flesh"
+   },
+   "states": [
+    {
+     "at": "s4u2",
+     "claim": "k53",
+     "set": {
+      "eyes": "dead",
+      "outfit_tone": "white"
+     }
+    }
+   ]
+  }
+ ]
+}

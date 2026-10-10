@@ -1,0 +1,8 @@
+.eyebrow { margin: 0 0 8px; font-size: 14px; font-weight: 800; color: var(--app-text-2); }
+.headline { margin: 0; font-size: 30px; line-height: 1.15; font-weight: 800; letter-spacing: var(--app-tracking-heading); text-wrap: balance; }
+.notice { margin-top: 20px; margin-left: calc(-1 * var(--card-pad-x)); margin-right: calc(-1 * var(--card-pad-x)); }
+.slot { margin-top: 18px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; margin-top: 22px; }
+.notes { margin-top: 16px; font-size: 15px; line-height: 1.45; color: var(--app-text-2); }
+.time { margin: 12px 0 0; font-size: 17px; line-height: 1.45; }
+@media (max-width: 767px) { .headline { font-size: 26px; } }

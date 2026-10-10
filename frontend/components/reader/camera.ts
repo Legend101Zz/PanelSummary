@@ -37,18 +37,76 @@ export function pageCam(stage: Size, pad: number): Cam {
   return camAt(PAGE.w / 2, PAGE.h / 2, fitScale(PAGE, stage, pad), stage);
 }
 
+/** Page scale (px per page unit) the reader aims for on a wide screen: the smallest lettering (22 units) is then about 15 px. */
+export const READ_SCALE = 0.7;
+/** The most the page is ever magnified, in px per page unit relative to the whole-page fit. */
+export const MAX_FIT_MULTIPLE = 5;
+
+export type PageView = "read" | "whole";
+
 /**
- * Page zoomed by `zoom` (1 = fitted) around the requested centre, clamped so
- * the page cannot be dragged away from the stage.
+ * Scale at rest (zoom 1). "whole" fits the whole page (the v0.1 view). "read"
+ * fills the stage width up to READ_SCALE and lets the page scroll up and down;
+ * it never goes below the whole-page fit, so a phone (width-limited) is
+ * unchanged.
  */
-export function zoomCam(stage: Size, pad: number, zoom: number, cx: number, cy: number): { cam: Cam; cx: number; cy: number } {
-  const scale = fitScale(PAGE, stage, pad) * zoom;
+export function restScale(stage: Size, pad: number, view: PageView = "read"): number {
+  const fit = fitScale(PAGE, stage, pad);
+  if (view === "whole") return fit;
+  return Math.max(fit, Math.min((stage.w - 2 * pad) / PAGE.w, READ_SCALE));
+}
+
+/** True when the page at `scale` is taller or wider than the stage, so it has to be moved. */
+export function overflows(stage: Size, scale: number): boolean {
+  return PAGE.h * scale > stage.h + 0.5 || PAGE.w * scale > stage.w + 0.5;
+}
+
+/** Highest zoom (relative to `base`) allowed. */
+export function maxZoom(stage: Size, pad: number, base: number): number {
+  return Math.max(1, (fitScale(PAGE, stage, pad) * MAX_FIT_MULTIPLE) / base);
+}
+
+/**
+ * Page zoomed by `zoom` (1 = `base` scale, default the whole-page fit) around
+ * the requested centre, clamped so the page cannot be dragged away from the
+ * stage. `pad` px of graphite may show beyond the page edge.
+ */
+export function zoomCam(
+  stage: Size,
+  pad: number,
+  zoom: number,
+  cx: number,
+  cy: number,
+  base: number = fitScale(PAGE, stage, pad),
+): { cam: Cam; cx: number; cy: number } {
+  const scale = base * zoom;
   const vw = stage.w / scale;
   const vh = stage.h / scale;
-  const clamp = (c: number, view: number, size: number) => (view >= size ? size / 2 : Math.min(size - view / 2, Math.max(view / 2, c)));
+  const m = pad / scale;
+  const clamp = (c: number, view: number, size: number) =>
+    view >= size + 2 * m - 0.01 ? size / 2 : Math.min(size + m - view / 2, Math.max(view / 2 - m, c));
   const x = clamp(cx, vw, PAGE.w);
   const y = clamp(cy, vh, PAGE.h);
   return { cam: camAt(x, y, scale, stage), cx: x, cy: y };
+}
+
+/**
+ * Scroll the page up or down by `fraction` of the stage height. `atEdge` is
+ * true when the page was already at that end (the caller may turn the page).
+ */
+export function scrollStep(
+  stage: Size,
+  pad: number,
+  base: number,
+  zoom: { z: number; cx: number; cy: number },
+  dir: 1 | -1,
+  fraction: number,
+): { zoom: { z: number; cx: number; cy: number }; atEdge: boolean } {
+  const scale = base * zoom.z;
+  const here = zoomCam(stage, pad, zoom.z, zoom.cx, zoom.cy, base);
+  const target = zoomCam(stage, pad, zoom.z, here.cx, here.cy + (dir * fraction * stage.h) / scale, base);
+  const atEdge = Math.abs(target.cy - here.cy) < 0.5;
+  return { zoom: { z: zoom.z, cx: target.cx, cy: target.cy }, atEdge };
 }
 
 /** A panel's bounding box with breathing room, fitted; never more than `maxZoom` x the page fit. */
