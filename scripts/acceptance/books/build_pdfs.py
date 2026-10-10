@@ -102,7 +102,58 @@ def civil_disobedience() -> None:
     render("On the Duty of Civil Disobedience", "Henry David Thoreau (1849)", chapters, HERE / "civil-disobedience.pdf")
 
 
+def prose_blocks(block: str) -> list[str]:
+    """Like paragraphs(), but drop verse (blocks whose lines are all indented), footnote marks and rules."""
+    kept = []
+    for para in re.split(r"\n\s*\n", block):
+        lines = [ln for ln in para.splitlines() if ln.strip()]
+        if not lines or all(ln.startswith("   ") for ln in lines):
+            continue
+        kept.append(para)
+    out = paragraphs("\n\n".join(kept))
+    return [re.sub(r"\[\d+\]", "", p).strip() for p in out if not p.startswith("[Footnote")]
+
+
+def just_so_stories() -> None:
+    """Hold-out fiction (#50): three Kipling tales from Just So Stories (PG 2781)."""
+    body = body_of((HERE / "pg2781.txt").read_text(encoding="utf-8"))
+    order = [  # all headings of the book, in order; the chosen tales end where the next heading begins
+        "HOW THE WHALE GOT HIS THROAT", "HOW THE CAMEL GOT HIS HUMP", "HOW THE RHINOCEROS GOT HIS SKIN",
+        "HOW THE LEOPARD GOT HIS SPOTS", "THE ELEPHANT\u2019S CHILD", "THE SING-SONG OF OLD MAN KANGAROO",
+        "THE BEGINNING OF THE ARMADILLOS", "HOW THE FIRST LETTER WAS WRITTEN", "HOW THE ALPHABET WAS MADE",
+        "THE CRAB THAT PLAYED WITH THE SEA", "THE CAT THAT WALKED BY HIMSELF", "THE BUTTERFLY THAT STAMPED",
+    ]
+    idx = [body.index(f"\n{t}\n") for t in order]
+    idx.append(len(body))
+    chosen = {
+        "THE ELEPHANT\u2019S CHILD": "The Elephant\u2019s Child",
+        "HOW THE FIRST LETTER WAS WRITTEN": "How the First Letter Was Written",
+        "THE CAT THAT WALKED BY HIMSELF": "The Cat That Walked by Himself",
+    }
+    chapters = []
+    for i, t in enumerate(order):
+        if t in chosen:
+            chapters.append((chosen[t], prose_blocks(body[idx[i] + len(t) + 2 : idx[i + 1]])))
+    render("Three Just So Stories", "Rudyard Kipling (1902)", chapters, HERE / "just-so-three-tales.pdf")
+
+
+def self_reliance() -> None:
+    """Hold-out nonfiction (#50): Emerson, Self-Reliance (from PG 16643, Essays: First Series)."""
+    body = body_of((HERE / "pg16643.txt").read_text(encoding="utf-8"))
+    start = body.index("\nSELF-RELIANCE\n\n\"Ne te")
+    end = body.index("\nFRIENDSHIP.[278]")
+    text = body[start + len("\nSELF-RELIANCE\n") : end]
+    paras = [p for p in prose_blocks(text) if not p.startswith("*")]
+    n = len(paras)
+    cut = [0, n // 3, 2 * n // 3, n]
+    names = ["Part One", "Part Two", "Part Three"]
+    chapters = [(names[i], paras[cut[i] : cut[i + 1]]) for i in range(3)]
+    render("Self-Reliance", "Ralph Waldo Emerson (1841)", chapters, HERE / "self-reliance.pdf")
+
+
 if __name__ == "__main__":
     happy_prince()
     civil_disobedience()
+    just_so_stories()
+    self_reliance()
     sys.exit(0)
