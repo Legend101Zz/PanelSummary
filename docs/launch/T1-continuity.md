@@ -257,3 +257,11 @@ Risks to watch in the first live run:
 - New: `src/goals/continuity.ts`, `src/goals/claim-shown.ts`, `scripts/calibrate-t1.ts`, `test/continuity.test.ts`, `test/fixtures/run8-states.ts`, this file.
 - Changed: `src/goals/{book-understanding,attribution,manga-page,adaptation-plan}.ts`, `src/skills/{book-understanding,manga-page,adaptation-plan}/SKILL.md`.
 - Not touched: `vocabulary.ts`, the default-model lines, `server.test.ts`, `goals.test.ts`, the CLAUDE.md "Language" section.
+
+## 10. v0.2 follow-up (track Q2b, issue #44)
+
+Q2b closes open problems 3 (afterlife and dream scenes) and 5 (a minor figure cast by the page goal), and starts the location check. Details, tables and decisions are in `docs/v0.2/Q2b-continuity.md`.
+
+- A panel may set `"vision": "afterlife" | "dream" | "memory"`. `FIGURE_STATE_MISMATCH` skips it, like a `flashback` panel. Run 8 page 13 (Prince and Swallow alive in Paradise) went from 3 hits to 0 in the simulation.
+- The page goal adds a generic minor figure for a person the page text names and the cast lacks.
+- A location may list `units`. The plan check for it is a warning.

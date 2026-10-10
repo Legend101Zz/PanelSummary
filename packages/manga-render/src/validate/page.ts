@@ -23,6 +23,7 @@ import {
   TEXT_KINDS,
   TIMES,
   TONES,
+  VISIONS,
   WEATHERS,
   type CastMember,
   type CharacterLook,
@@ -59,7 +60,7 @@ export const WORD_LIMITS = {
 export const SPEAKER_KINDS: readonly TextKind[] = ["speech", "thought", "shout", "whisper"];
 
 const PAGE_KEYS = ["schema", "page_number", "section_id", "purpose", "layout", "panels", "claims", "claim_map", "page_turn_hook"];
-const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather", "figures", "props", "fx", "text", "source"];
+const PANEL_KEYS = ["id", "beat", "shot", "angle", "location", "time", "weather", "figures", "props", "fx", "vision", "text", "source"];
 const FIGURE_KEYS = ["character", "variant", "pose", "expression", "facing", "slot", "depth", "holding", "holding_tone", "on"];
 const VARIANT_KEYS = ["eyes", "bloom", "material", "outfit_tone", "hair_tone", "tone"];
 /** Props too big to hold in a hand: draw them as a prop beside the figure. */
@@ -176,6 +177,7 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
       checkEnum(raw, "angle", ANGLES, issues, path);
       checkEnum(raw, "time", TIMES, issues, path, false);
       checkEnum(raw, "weather", WEATHERS, issues, path, false);
+      checkEnum(raw, "vision", VISIONS, issues, path, false);
       const loc = reqString(raw, "location", issues, path, "a location id from the book");
       if (loc && !locationIds.has(loc)) {
         issues.error("UNKNOWN_LOCATION", path, `location "${loc}" is not in the book; use one of: ${listValues([...locationIds])}.`);
