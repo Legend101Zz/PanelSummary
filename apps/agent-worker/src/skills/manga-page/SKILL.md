@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.9.0
+version: 1.10.0
 ---
 
 # Manga page
@@ -100,6 +100,11 @@ right, top to bottom; `panels` must be listed in that reading order.
   shot. A `wide` panel may carry one short line (8 words or fewer).
 - **Vary the shots.** On a page of 4 or more panels, use at least 3 different shot sizes,
   and never the same shot size three panels in a row.
+- **Never repeat a picture.** Two panels on a page must not share the shot size, the angle,
+  the place and the same figures in the same poses (SAME_SHOT_TWICE). When the next moment
+  looks the same, change what the picture shows: a closer shot, another angle, a new action
+  or object, the listener's reaction. If nothing changes, merge the two panels. Open the
+  page with a picture that differs from the last panel of the previous page.
 - **Move closer as emotion rises**: wide → medium → close, with `extreme_close` only for the
   peak (at most one per page).
 - **Reaction shots.** After an important line or event, cut to the listener's face in
@@ -130,10 +135,16 @@ right, top to bottom; `panels` must be listed in that reading order.
 
 - The art carries action and emotion through `pose`, `expression` and `fx`. If a caption
   only describes what the panel already shows, delete it.
+- **Turn narration into speech or drawn action.** When the book tells an event in narration,
+  draw the event (`pose`, `props`, `fx`) and give the spoken part to the character as
+  `speech`. On a page of more than 40 words, captions and narration together stay at 60% of
+  the words or fewer; aim for half (PROSE_WALL, FIX BEFORE SUBMIT). Count the words before
+  you submit.
 - **Narration** is for what pictures cannot show: time passing, a character's reasoning,
   the book's argument, a narrator's voice worth keeping. Use at most one narration box per
   panel, 20 words or fewer, and normally at most two per page.
 - **Captions** (`caption`) label place and time in 6 words or fewer ("The city, at night").
+  A caption is a label, not a sentence: put a sentence in a balloon or one narration box.
 - **Say the key event.** A death, a marriage, an arrival or a gift the claim names is SAID in a
   caption or line, in the panel that shows it. A closed-eyed face reads as sleep.
 - **State every core claim's facts in lettering** (a caption or a balloon). A name tag or a
@@ -162,7 +173,8 @@ right, top to bottom; `panels` must be listed in that reading order.
   the renderer styles the letters.
 - **Never splice** two source spans in one balloon, and never trim a quote's punchline
   ("as beautiful as a weathercock... only not quite so useful"): split a long quote over two
-  balloons.
+  balloons. A quote that stops 2-6 words before the end of its source sentence gets a
+  QUOTE_CLIPPED warning.
 - Every word must earn its place. When in doubt, cut.
 
 ## 7. Speakers and text kinds
@@ -365,8 +377,8 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    too much of its panels: fix every named code in one edit and change the structure (more
    panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
 6. **FIX BEFORE SUBMIT** items (CLAIM_TEXT_THIN, KEY_PROP_NOT_DRAWN, SPEECH_IN_NARRATION,
-   DUPLICATE_CAPTION, REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL,
-   SPEAKER_OFF_PANEL_LIMIT, STATUE_LOCATION_SWAPPED) reject your FIRST submit only. Fix them
+   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
+   reject your FIRST submit only. Fix them
    in the same edit; if one cannot be fixed, submit again and it stays a warning.
 7. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix
    every error and submit the complete JSON again.

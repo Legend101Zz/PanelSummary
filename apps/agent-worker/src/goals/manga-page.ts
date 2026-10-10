@@ -33,7 +33,7 @@ interface UnitText {
   text: string;
 }
 
-interface Input {
+export interface PageInput {
   book: { title: string; author: string; kind: BookUnderstanding["kind"] };
   cast: BookUnderstanding["cast"];
   locations: BookUnderstanding["locations"];
@@ -286,7 +286,7 @@ function sectionTitleIssues(spec: MangaPageSpec, opens?: { id: string; title: st
   ];
 }
 
-function introductionIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
+function introductionIssues(spec: MangaPageSpec, input: PageInput): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const lettering = spec.panels
     .flatMap((panel) => panel.text ?? [])
@@ -311,7 +311,7 @@ function introductionIssues(spec: MangaPageSpec, input: Input): ValidationIssue[
   return issues;
 }
 
-function templateIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
+function templateIssues(spec: MangaPageSpec, input: PageInput): ValidationIssue[] {
   if (input.previous?.template && spec.layout?.template && spec.layout.template === input.previous.template) {
     return [
       {
@@ -325,7 +325,38 @@ function templateIssues(spec: MangaPageSpec, input: Input): ValidationIssue[] {
   return [];
 }
 
-export const mangaPageGoal: GoalDefinition<Input> = {
+/**
+ * Every writer-side page check, after the structural and render issues (`base`). Pure and
+ * deterministic; the page goal and the calibration script (scripts/calibrate-checks.ts) both use it.
+ */
+export function pageIssues(spec: MangaPageSpec, input: PageInput, base: readonly ValidationIssue[]): ValidationIssue[] {
+  const seen = new Set<string>();
+  return [
+    ...base,
+    ...introductionIssues(spec, input),
+    ...templateIssues(spec, input),
+    ...quoteIssues(spec, input.units),
+    ...quoteSpeakerIssues(spec, input.units, input.cast, input.page.section_id),
+    ...sectionTitleIssues(spec, input.opens_section),
+    ...claimMapIssues(spec, input.page.claims),
+    ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
+    ...quoteClaimIssues(spec, input.claims),
+    ...statueStagingIssues(spec, input.cast, input.locations),
+    ...stagingIssues(spec),
+    ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
+    ...visionIssues(spec, input.page.beat),
+    ...claimOrderIssues(spec, input.claims, input.order),
+    ...claimEventIssues(spec, input.claims),
+    ...repairOnceIssues(spec, input),
+  ].filter((issue) => {
+    const key = `${issue.code}|${issue.path}|${issue.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export const mangaPageGoal: GoalDefinition<PageInput> = {
   type: "MANGA_PAGE",
   skillName: "manga-page",
   defaults: {
@@ -388,31 +419,7 @@ export const mangaPageGoal: GoalDefinition<Input> = {
       }
       const spec = value as MangaPageSpec;
       const render = renderPage(spec, bookRefs, { idPrefix: `pg${input.page.page_number}-` });
-      const seen = new Set<string>();
-      const issues = [
-        ...structural,
-        ...render.issues,
-        ...introductionIssues(spec, input),
-        ...templateIssues(spec, input),
-        ...quoteIssues(spec, input.units),
-        ...quoteSpeakerIssues(spec, input.units, input.cast, input.page.section_id),
-        ...sectionTitleIssues(spec, input.opens_section),
-        ...claimMapIssues(spec, input.page.claims),
-        ...claimEvidenceIssues(spec, input.claims, input.cast, input.locations),
-        ...quoteClaimIssues(spec, input.claims),
-        ...statueStagingIssues(spec, input.cast, input.locations),
-        ...stagingIssues(spec),
-        ...figureStateIssues(spec, input.cast, input.expected_looks, FIGURE_STATE_SEVERITY),
-        ...visionIssues(spec, input.page.beat),
-        ...claimOrderIssues(spec, input.claims, input.order),
-        ...claimEventIssues(spec, input.claims),
-        ...repairOnceIssues(spec, input),
-      ].filter((issue) => {
-        const key = `${issue.code}|${issue.path}|${issue.message}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
+      const issues = pageIssues(spec, input, [...structural, ...render.issues]);
       // Page-level advice for a loop of single-error repairs (track F1); never blocks a page.
       const crowding = crowdingAdvice(spec, issues);
       const loop = tracker.record(issues);
