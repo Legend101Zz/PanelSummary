@@ -14,7 +14,7 @@
   .seg { height: 24px; }
 }
 .dense .seg { height: 20px; border-width: var(--app-line-hair); border-radius: var(--app-radius-mark); }
-.drawn { background: var(--app-text); }
+.drawn { background: var(--app-seg-drawn); }
 .drawing {
   border: var(--app-line-now) solid var(--app-action);
   background-color: var(--app-surface);
@@ -24,7 +24,7 @@
 .dense .drawing { border-width: 2px; }
 .waiting {
   background-color: var(--app-surface);
-  background-image: radial-gradient(circle at 3px 3px, var(--app-tone) 0, var(--app-tone) 0.95px, transparent 1.15px);
+  background-image: radial-gradient(circle at 3px 3px, var(--app-seg-wait-tone) 0, var(--app-seg-wait-tone) 0.95px, transparent 1.15px);
   background-size: 6px 6px;
 }
 .failed { background: var(--app-needs-you); }

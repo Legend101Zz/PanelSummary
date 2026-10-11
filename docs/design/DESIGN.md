@@ -40,6 +40,10 @@ colors:
   app-moment-dark: "#E2C752"
   app-tone: "#121212"
   app-tone-dark: "#ECEBE6"
+  app-seg-drawn: "#121212"
+  app-seg-drawn-dark: "#B4B5B8"
+  app-seg-wait-tone: "#121212"
+  app-seg-wait-tone-dark: "transparent"
   app-note: "#121212"
   app-note-dark: "#383A3F"
   app-on-note: "#FFFFFF"
@@ -527,6 +531,8 @@ State fills. Text on them is always `app-on-fill`, never white: white on #EE6A45
 ### Tertiary
 - `app-moment` #F7DD5A → `app-moment-dark` #E2C752: the yellow of the page 1 moment, and nothing else.
 - `app-tone` #121212 → `app-tone-dark` #ECEBE6: screentone dots.
+- `app-seg-drawn` #121212 → `app-seg-drawn-dark` #B4B5B8: a drawn tone-strip segment (grey in dark, owner 11 October 2026).
+- `app-seg-wait-tone` #121212 → `app-seg-wait-tone-dark` transparent: the dots of a waiting tone-strip segment (none in dark, owner 11 October 2026).
 
 ### Neutral
 - `app-bg` #F4F5F0 → `app-bg-dark` #26272A: the page ground. In dark it is the reader's graphite on purpose, so the app and the reader are one room.
@@ -617,7 +623,7 @@ Icons are line drawings on a 20 by 20 grid with round caps and joins, no fills (
 
 **Notices**: needs-you (coral with a problem icon), note (`app-note`), info and wait (`app-surface-2` with an icon), and the moment (yellow, page 1 only). 14px corners outside cards.
 
-**Progress strip**: one segment per page. Drawn: solid `app-text`. Drawing now: dense screentone inside a 3px `app-action` frame. Waiting: fine screentone inside a 1.5px edge. Could not be drawn: `app-needs-you` with an `app-on-fill` diagonal. A legend names every state in words. In the dark theme the strip keeps the same rules: drawn is solid `app-text` (paper #ECEBE6), and waiting is fine screentone inside an edge. Two questions are open for the owner and are not decided: whether drawn segments in dark should be grey #B4B5B8 instead of paper, and whether waiting segments in dark should be outline-only with no dots (a drawing segment next to a waiting one is under 3:1 by colour alone). See "Open owner questions" in `docs/design/README.md`.
+**Progress strip**: one segment per page. Drawn: solid `app-text`. Drawing now: dense screentone inside a 3px `app-action` frame. Waiting: fine screentone inside a 1.5px edge. Could not be drawn: `app-needs-you` with an `app-on-fill` diagonal. A legend names every state in words. The strip uses two roles of its own: `app-seg-drawn` for a drawn segment and `app-seg-wait-tone` for the dots of a waiting segment. In the light theme both are ink #121212. In the dark theme (owner decision, 11 October 2026): a drawn segment is grey #B4B5B8, not paper, so the manga pages stay the only paper-bright things; a waiting segment is an outline only, with no dots, so a drawing segment (dense dots in a 3px `app-action` frame) and a waiting segment differ by shape and not only by colour.
 
 **Meters and progress bars**: an `app-text` fill on an `app-track` track with full rounding; the part over a limit is `app-needs-you` behind a 2px `app-on-fill` edge, and the value is written in words beside the bar.
 
