@@ -2,6 +2,8 @@
   "name": "panelsummary",
   "version": "0.1.0",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": "Mrigesh Thakur (https://github.com/Legend101Zz)",
   "packageManager": "pnpm@10.15.1",
   "engines": {
     "node": ">=22.19.0"
