@@ -62,7 +62,8 @@ and gives some abstract ideas a drawn form.
 
 ### *Who Moved My Cheese?*, Spencer Johnson (1998)
 
-A modern business parable. 39 PDF pages → 44 manga pages in 9 min 9 s (page 1 after 3 min 34 s), about $1.01.
+A modern business parable. 39 PDF pages → 44 manga pages in 9 min 9 s (page 1 after 3 min 34 s, as the book page
+shows them), about $1.01.
 The pages show 114 of the book's 129 key points; the plan left out 15 on purpose and says why.
 
 | Hem: "I like it here. It's comfortable." | Haw, alone in the Maze |
@@ -75,8 +76,9 @@ The pages show 114 of the book's 129 key points; the plan left out 15 on purpose
 
 **What still goes wrong.** The drawing vocabulary is closed. When a book needs something that is not in it, the app
 can choose a confident wrong match: in *Just So Stories* a cave became a modern room, and in *Who Moved My Cheese?*
-the cheese is a loaf of bread on several pages and the Maze is an empty plain. The fix (a neutral fallback, not a list of new
-objects) is issue [#81](https://github.com/Legend101Zz/PanelSummary/issues/81) for v0.3.
+the cheese is a loaf of bread on several pages and the Maze is an empty plain. Issue
+[#81](https://github.com/Legend101Zz/PanelSummary/issues/81) holds the fix for v0.3. The fix is a neutral fallback, not a
+list of new objects.
 
 ## The app
 
