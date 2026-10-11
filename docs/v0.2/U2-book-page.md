@@ -77,7 +77,7 @@ Measured in this run: exactly one Generate button before a run (desktop and phon
 - No live run. No call went to MiniMax. The screens use seeded data, not a real run. A fixture is not the live journey.
 - "Continue with the next section" (G-S1c) has no API, so it is not built.
 - The 60-page grid uses the 18 real Andersen pages repeated. The beats repeat too.
-- Dark tone strip questions 1 and 2 of the design stay as drawn (owner questions).
+- Dark tone strip questions 1 and 2 of the design stay as drawn (owner questions). The owner answered yes to both on 11 October 2026; the change is in `release/v0.3`.
 - Owner questions: (a) Is a closed section control acceptable for books inside the limit? (b) Should "Retry failed pages" also show when the status is `completed_with_failures` with no missing page? (c) Keep "sections" in the scope label, or ask the parser for a word such as "tales"?
 
 ## Fix wave after Gate 1 (track fx2)
