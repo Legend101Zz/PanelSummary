@@ -1,24 +1,68 @@
+<div align="center">
+
+<img src="docs/images/logo.svg" width="88" height="88" alt="PanelSummary logo: four manga panels on a blue tile">
+
 # PanelSummary
 
-**Turn a book PDF into a manga that you read in your browser.** Upload the PDF, press
-**Generate manga**, and start reading page 1 a few minutes later.
+**Turn a book PDF into a manga that you read in your browser.**
 
-PanelSummary reads the whole book, plans how it becomes pages, and writes each page as a
-structured plan (panels, camera, characters, lettering). A deterministic renderer draws
-every page as ink-and-screentone SVG: characters, places, props, effects, balloons and
-lettering are all code. **No image-generation model is used.** Every page records which parts
-of the book it adapts, and the reader can show them.
+<a href="https://github.com/Legend101Zz/PanelSummary/releases/tag/v0.2.0"><img alt="Release v0.2.0" src="https://img.shields.io/github/v/release/Legend101Zz/PanelSummary?label=release&color=2F43D9"></a>
+<a href="https://github.com/Legend101Zz/PanelSummary/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Legend101Zz/PanelSummary/actions/workflows/ci.yml/badge.svg"></a>
+<a href="LICENSE.md"><img alt="License: PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-EE6A45"></a>
+<a href="#how-it-works"><img alt="Art: deterministic SVG, no image models" src="https://img.shields.io/badge/art-deterministic%20SVG%2C%20no%20image%20models-121212"></a>
+<br>
+<img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
+<img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white">
+<img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white">
+<img alt="Node 22.19 or newer" src="https://img.shields.io/badge/Node-22.19%2B-5FA04E?logo=nodedotjs&logoColor=white">
+<img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-local-47A248?logo=mongodb&logoColor=white">
+<img alt="Model: MiniMax M3.1 Flash" src="https://img.shields.io/badge/model-MiniMax%20M3.1%20Flash-6B4FBB">
+
+[Why](#why-panelsummary) · [Features](#features) · [Examples](#examples) · [The app](#the-app) ·
+[How it works](#how-it-works) · [Quality](#quality) · [Quick start](#quick-start) · [Roadmap](#roadmap) · [License](#license)
 
 | *The Happy Prince*, Oscar Wilde | *Self-Reliance*, Ralph Waldo Emerson | *Just So Stories*, Rudyard Kipling |
 |---|---|---|
 | ![The Happy Prince weeps on his column while the Swallow watches.](docs/images/examples/wilde-happy-prince-p05.webp) | ![Emerson: "A foolish consistency is the hobgoblin of little minds."](docs/images/examples/emerson-self-reliance-p11.webp) | ![The Cat that walked by himself, with the Man, the Dog and the Baby.](docs/images/examples/kipling-just-so-p35.webp) |
 
-**Version 0.2** ([release notes](docs/launch/RELEASE-NOTES-v0.2.0.md)) has a new app interface, a choice of what part
-of the book to draw, an optional review of the plan before drawing, a built-in sample, a larger reader page on desktop
-and a page picker. [`docs/v0.2/README.md`](docs/v0.2/README.md) lists the v0.2 documents.
+<sub>Real pages from real runs. Every page is drawn by code as SVG; no image model is used.</sub>
 
-[Examples](#examples) · [The app](#the-app) · [How it works](#how-it-works) · [Quality](#quality) ·
-[Run it](#run-it) · [Try it without a MiniMax key](#try-it-without-a-minimax-key) · [Limits](#limits)
+</div>
+
+## Why PanelSummary
+
+> I started building this for myself because I was tired of reading books, but somehow I never get tired of
+> reading manga (lol).
+>
+> So I thought, why not turn books into manga?
+>
+> — **Mrigesh Thakur**, creator of PanelSummary
+
+And that is what PanelSummary does. Give it a book PDF, and it turns the book into a manga-style experience that you
+read right in your browser. It reads the whole book, plans how the book becomes pages, and writes each page as a
+structured plan: panels, camera, characters and lettering. A deterministic renderer then draws every page as
+ink-and-screentone SVG. Characters, places, props, effects, balloons and lettering are all code. Every page records
+which parts of the book it adapts, and the reader can show them.
+
+## Features
+
+- **A whole book in one run.** Up to 75 PDF pages and 17,500 words per run. In the v0.2 runs a book took 6 to 15
+  minutes, and page 1 was ready after about 2 to 5 minutes. A longer book can be drawn one part at a time.
+- **Drawn by code, not by an image model.** The art is deterministic SVG: the same page plan always gives the same
+  page. The only model is a text model (MiniMax), and it goes through one sealed worker.
+- **Faithful to the book.** Every lettered line is labelled quote, paraphrase, dramatized or metaphor. Every panel
+  cites its PDF pages. The reader's Sources drawer shows them.
+- **Honest about failure.** A page that cannot be drawn is shown as failed, with its reason. "Retry failed pages"
+  redraws only those pages. Nothing accepted is paid for twice.
+- **A reader made for manga.** Page mode on a desktop, panel-by-panel mode on a phone, a page picker for long books,
+  and a light and a dark theme.
+- **Runs on your computer.** Your books and pages stay in a local database. Only the book text and page previews go
+  to MiniMax, through the worker. The app makes no other third-party request and has no telemetry.
+- **Low cost.** A whole book cost about $0.70 to $1.90 in the v0.2 runs (estimates at MiniMax-M3 rates, not a bill).
+
+**Version 0.2** ([release notes](docs/launch/RELEASE-NOTES-v0.2.0.md)) added the new app interface, a choice of what
+part of the book to draw, an optional review of the plan before drawing, a built-in sample, a larger reader page on
+desktop and a page picker. [`docs/v0.2/README.md`](docs/v0.2/README.md) lists the v0.2 documents.
 
 ## Examples
 
@@ -93,7 +137,7 @@ list of new objects.
 ![The reader on a desktop at 1440 pixels wide: page 1, the Page, Panels and Sources modes, and All pages.](docs/images/v0.2/reader.png)
 
 These screenshots are from a real v0.2 run of "Three Just So Stories" (35 pages), on a desktop
-browser at 1440 pixels wide. [Using it](#using-it) describes each screen.
+browser at 1440 pixels wide. [Using PanelSummary](#using-panelsummary) describes each screen.
 
 ## How it works
 
@@ -155,7 +199,9 @@ judge-page): a hero drawn as a speck or cut off 0.62 → 0.35, a balloon tail at
 label clutter 0.20 → 0.08, repeated panels 0.17 → 0.08. **On fiction that it was never tuned on, v0.2 is not yet
 better than v0.1**, because of the closed vocabulary (see [Examples](#examples)). That is the first aim of v0.3.
 
-## Requirements
+## Quick start
+
+### Requirements
 
 - macOS or Linux.
 - Node 22.19 or newer, and pnpm 10.15.1 (`corepack enable` gives you the pinned pnpm).
@@ -169,7 +215,7 @@ better than v0.1**, because of the closed vocabulary (see [Examples](#examples))
 - No key is needed to read the built-in sample or to run the replay worker. See
   [Try it without a MiniMax key](#try-it-without-a-minimax-key).
 
-## Run it
+### Install and run
 
 ```sh
 git clone https://github.com/Legend101Zz/PanelSummary
@@ -234,7 +280,7 @@ Generation policy lives in `backend/app/settings.py` (environment-overridable, f
 `PAGE_MODEL`, `PAGE_THINKING`, `PAGE_VISION`, `PAGE_CONCURRENCY`, `PLAN_REVIEW_DEFAULT`) and is
 recorded on every edition. See D13 in `docs/decisions.md` for the current values and the reasons.
 
-## Try it without a MiniMax key
+### Try it without a MiniMax key
 
 The replay worker answers like the real worker, but it plays back a saved run. The whole journey
 (upload, parse, Generate, the run card, the reader) runs through the real backend and the real
@@ -258,7 +304,7 @@ with `./stop.sh`.
 
 In replay mode the first-run status line and Settings say "Replay worker: no MiniMax key is used; pages come from a saved run." instead of "MiniMax key set".
 
-## Using it
+## Using PanelSummary
 
 1. **First run.** On an empty shelf the app shows three facts in one line: the server is reachable,
    the job runner runs, and the MiniMax key is set or not set. Below are a drop zone with every
@@ -313,7 +359,9 @@ red "N of M drawn, K missing" and the edition ends `completed_with_failures`. In
 page shows "This page could not be drawn", the reason, the number of failed pages, a "Retry
 failed pages" button and a link back to the book. Retry redraws only the failed pages.
 
-## Verify
+## Development
+
+### Verify
 
 No model calls, no spend. The backend tests need a MongoDB. They use
 `$TEST_MONGODB_URL` (default `mongodb://127.0.0.1:27018`) and create their own databases. If you
@@ -353,7 +401,7 @@ also has a manual lane for a live run with real MiniMax calls. See
   [`docs/launch/EVAL.md`](docs/launch/EVAL.md).
 
 
-## Repository layout
+### Repository layout
 
 ```text
 backend/            FastAPI API, job runner, PDF parser (Python); backend/samples/ holds the built-in sample
@@ -399,3 +447,54 @@ The limits that the tracks measured are listed here. The detail is in
 - **What leaves the computer.** Only the book text and page previews go to MiniMax, through the
   worker. The app makes no other third-party request: the fonts are in the repository and
   Next.js telemetry is off.
+
+## Roadmap
+
+v0.3 has one goal: **better manga on books that nobody tuned on**, measured on new books that nobody has seen
+before, against v0.2.0, with the same judge panel. The first issues:
+
+- [#81](https://github.com/Legend101Zz/PanelSummary/issues/81): when a book needs a place, a prop or an animal that
+  the drawing vocabulary does not have, draw a neutral fallback, not a confident wrong match.
+- [#90](https://github.com/Legend101Zz/PanelSummary/issues/90): the camera push-in must not crop a figure out of a panel.
+- [#96](https://github.com/Legend101Zz/PanelSummary/issues/96): sealed hold-out books and one protocol to measure
+  the result.
+- [#80](https://github.com/Legend101Zz/PanelSummary/issues/80): continue with the next section of a longer book,
+  with the same cast and looks.
+
+All open v0.3 work has the label [`v0.3`](https://github.com/Legend101Zz/PanelSummary/issues?q=is%3Aissue+is%3Aopen+label%3Av0.3).
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Open an
+[issue](https://github.com/Legend101Zz/PanelSummary/issues) first for a large change. Run the checks in
+[Verify](#verify) before you send a pull request. Read the [License](#license) before you use the code.
+
+## License
+
+Copyright © 2026 **Mrigesh Thakur** ([@Legend101Zz](https://github.com/Legend101Zz)). All rights not granted by the
+license are reserved.
+
+PanelSummary is **source-available** under the [PolyForm Noncommercial License 1.0.0](LICENSE.md).
+
+- **You may** read, run, change and share the code for any **noncommercial** purpose. Examples: personal use,
+  study, research, hobby projects, and use by a charity, a school, a public research body or a government body.
+- **You may not** use it for a commercial purpose without written permission from the owner. Examples: sell the
+  software or a changed copy, sell a hosted service or a product built on it, or use it to earn money in a business.
+- **A commercial license** is possible. Contact Mrigesh Thakur through [GitHub](https://github.com/Legend101Zz).
+- When you share the code, include [`LICENSE.md`](LICENSE.md) and its `Required Notice:` line.
+
+This is not an OSI-approved open-source license, because it does not allow commercial use.
+
+Some parts have their own licenses, and those licenses apply to them:
+
+- The fonts in `frontend/public/fonts/` and `packages/manga-render/fonts/`: SIL Open Font License 1.1 (the `OFL-*.txt`
+  files next to them).
+- `.claude/skills/simple-english/`: MIT License (its own `LICENSE` file).
+- The books in `scripts/acceptance/books/` are public-domain texts from Project Gutenberg.
+- The two *Who Moved My Cheese?* example pages are © 1998 Spencer Johnson (see the note in [Examples](#examples)).
+
+---
+
+<div align="center">
+<sub>Made by <a href="https://github.com/Legend101Zz">Mrigesh Thakur</a>, for people who would rather read manga.</sub>
+</div>
