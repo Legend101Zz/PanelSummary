@@ -487,8 +487,9 @@ This is not an OSI-approved open-source license, because it does not allow comme
 
 Some parts have their own licenses, and those licenses apply to them:
 
-- The fonts in `frontend/public/fonts/` and `packages/manga-render/fonts/`: SIL Open Font License 1.1 (the `OFL-*.txt`
-  files next to them).
+- The fonts: SIL Open Font License 1.1. The license text is next to each font family, in an `OFL-*.txt` file:
+  Bricolage Grotesque, Bangers and Comic Neue in `frontend/public/fonts/`; Shippori Mincho B1 and Zen Kaku Gothic New
+  in `frontend/public/fonts/ui/`; Bangers and Comic Neue in `packages/manga-render/fonts/`.
 - `.claude/skills/simple-english/`: MIT License (its own `LICENSE` file).
 - The books in `scripts/acceptance/books/` are public-domain texts from Project Gutenberg.
 - The two *Who Moved My Cheese?* example pages are © 1998 Spencer Johnson (see the note in [Examples](#examples)).
