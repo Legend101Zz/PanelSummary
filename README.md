@@ -1,20 +1,97 @@
-# PanelSummary (BookReel)
+# PanelSummary
 
-Upload a book PDF, press **Generate manga**, and read a source-grounded manga adaptation of it.
+**Turn a book PDF into a manga that you read in your browser.** Upload the PDF, press
+**Generate manga**, and start reading page 1 a few minutes later.
 
 PanelSummary reads the whole book, plans how it becomes pages, and writes each page as a
 structured plan (panels, camera, characters, lettering). A deterministic renderer draws
 every page as ink-and-screentone SVG: characters, places, props, effects, balloons and
-lettering are all code. No image-generation model is used. Every page records which parts
+lettering are all code. **No image-generation model is used.** Every page records which parts
 of the book it adapts, and the reader can show them.
 
-This is version 0.2. It has a new app interface, a choice of what part of the book to draw,
-an optional review of the plan before drawing, a built-in sample, a larger reader page on
-desktop and a page picker. [`docs/v0.2/README.md`](docs/v0.2/README.md) lists the v0.2 documents.
+| *The Happy Prince*, Oscar Wilde | *Self-Reliance*, Ralph Waldo Emerson | *Just So Stories*, Rudyard Kipling |
+|---|---|---|
+| ![The Happy Prince weeps on his column while the Swallow watches.](docs/images/examples/wilde-happy-prince-p05.webp) | ![Emerson: "A foolish consistency is the hobgoblin of little minds."](docs/images/examples/emerson-self-reliance-p11.webp) | ![The Cat that walked by himself, with the Man, the Dog and the Baby.](docs/images/examples/kipling-just-so-p35.webp) |
+
+**Version 0.2** ([release notes](docs/launch/RELEASE-NOTES-v0.2.0.md)) has a new app interface, a choice of what part
+of the book to draw, an optional review of the plan before drawing, a built-in sample, a larger reader page on desktop
+and a page picker. [`docs/v0.2/README.md`](docs/v0.2/README.md) lists the v0.2 documents.
+
+[Examples](#examples) · [The app](#the-app) · [How it works](#how-it-works) · [Quality](#quality) ·
+[Run it](#run-it) · [Try it without a MiniMax key](#try-it-without-a-minimax-key) · [Limits](#limits)
+
+## Examples
+
+These are real pages from real v0.2 runs. Nothing is retouched: each image is the SVG page that the app
+stored, drawn to an image. Each run drew the whole book in one go. Costs are estimates at MiniMax-M3 rates,
+not a bill.
+
+### *The Happy Prince and Other Tales*, Oscar Wilde (1888)
+
+68 PDF pages → 60 of 61 manga pages in 14 min 42 s, about $1.88. One page failed and the app shows it as failed,
+with its reason.
+
+| "The Happy Prince" | "The Selfish Giant" |
+|---|---|
+| ![The Happy Prince weeps; the Swallow asks why.](docs/images/examples/wilde-happy-prince-p05.webp) | ![The Selfish Giant's garden in winter, and the little boy who cannot reach the tree.](docs/images/examples/wilde-selfish-giant-p33.webp) |
+
+### *Three Just So Stories*, Rudyard Kipling (1902)
+
+38 PDF pages → 35 manga pages in 7 min 44 s, about $0.99. This book was never used to tune the app.
+
+| "The Cat that Walked by Himself" | "How the First Letter was Written" |
+|---|---|
+| ![The Cat, the Man, the Dog and the Baby: "And so shall all proper Dogs do after me!"](docs/images/examples/kipling-just-so-p35.webp) | ![Taffy and her father Tegumai by the Wagai river.](docs/images/examples/kipling-just-so-p13.webp) |
+
+### *Self-Reliance*, Ralph Waldo Emerson (1841)
+
+An essay with no story. 36 manga pages in 6 min 41 s, about $0.82. The app turns the argument into scenes
+and gives some abstract ideas a drawn form.
+
+| "A foolish consistency…" | "There is simply the rose" |
+|---|---|
+| ![Emerson: "A foolish consistency is the hobgoblin of little minds."](docs/images/examples/emerson-self-reliance-p11.webp) | ![Roses under his window: "This bloom remembers older blooms."](docs/images/examples/emerson-self-reliance-p20.webp) |
+
+### *On the Duty of Civil Disobedience*, Henry David Thoreau (1849)
+
+36 manga pages in 8 min 11 s, about $0.81.
+
+| "The right is not won by counting heads" | "Serve it with your conscience" |
+|---|---|
+| ![Thoreau at his desk and the ballot box.](docs/images/examples/thoreau-civil-disobedience-p12.webp) | ![The State and Conscience as drawn characters.](docs/images/examples/thoreau-civil-disobedience-p07.webp) |
+
+### *Who Moved My Cheese?*, Spencer Johnson (1998)
+
+A modern business parable. 39 PDF pages → 44 manga pages in 9 min 9 s (page 1 after 3 min 34 s), about $1.01.
+The pages show 114 of the book's 129 key points; the plan left out 15 on purpose and says why.
+
+| Hem: "I like it here. It's comfortable." | Haw, alone in the Maze |
+|---|---|
+| ![Haw wants to go; Hem says no and stays at the empty Cheese Station C.](docs/images/examples/johnson-who-moved-my-cheese-p13.webp) | ![Haw in the Maze hears a movement and hopes it is his friend Hem.](docs/images/examples/johnson-who-moved-my-cheese-p28.webp) |
+
+> *Who Moved My Cheese?* © 1998 Spencer Johnson. The book is under copyright. These two pages were made from the
+> owner's own copy, only to show what the app does with a modern nonfiction book. They are not licensed for reuse.
+> The other books on this page are in the public domain.
+
+**What still goes wrong.** The drawing vocabulary is closed. When a book needs something that is not in it, the app
+can choose a confident wrong match: in *Just So Stories* a cave became a modern room, and in *Who Moved My Cheese?*
+the cheese is a loaf of bread on several pages and the Maze is an empty plain. The fix (a neutral fallback, not a list of new
+objects) is issue [#81](https://github.com/Legend101Zz/PanelSummary/issues/81) for v0.3.
+
+## The app
 
 | The first run | The shelf |
 |---|---|
 | ![The first run: status line, drop zone with the limits, and the sample.](docs/images/v0.2/first-run.png) | ![The shelf with one finished book and the Add a book tile.](docs/images/v0.2/shelf.png) |
+
+| Drawing | Finished (dark) |
+|---|---|
+| ![The run card with the tone strip, and the yellow page 1 band.](docs/images/v0.2/book-drawing.png) | ![A finished book in the dark theme, with the result lines.](docs/images/v0.2/book-complete-dark.png) |
+
+![The reader on a desktop at 1440 pixels wide: page 1, the Page, Panels and Sources modes, and All pages.](docs/images/v0.2/reader.png)
+
+These screenshots are from a real v0.2 run of "Three Just So Stories" (35 pages), on a desktop
+browser at 1440 pixels wide. [Using it](#using-it) describes each screen.
 
 ## How it works
 
@@ -53,6 +130,28 @@ decision D13 in [`docs/decisions.md`](docs/decisions.md). That file also holds e
 decision and its reason. The launch notes are indexed in
 [`docs/launch/README.md`](docs/launch/README.md). The v0.2 documents are indexed in
 [`docs/v0.2/README.md`](docs/v0.2/README.md).
+
+## Quality
+
+A panel of three AI judges (Claude Sonnet, the same prompt and rubric for every run) scores every page from 1 to 5
+on eight criteria, such as legibility, fidelity to the book and continuity. A page passes the strict ship bar when no
+criterion is below 3, legibility and fidelity are 4 or more, and the mean is 3.5 or more. A failed page counts as 0.
+The judges are AI, not readers, and each book has one or two runs. The full results are in
+[`docs/v0.2/GATES.md`](docs/v0.2/GATES.md).
+
+| Book | v0.1.0 | v0.2.0 |
+|---|---|---|
+| Two Wilde tales (used for tuning) | 2–4 of 22 pages at the strict bar, mean 3.42–3.49 | **6 of 22, mean 3.60** |
+| *The Happy Prince and Other Tales* (used for tuning) | 7 of 46, mean 3.52 | **20 of 61, mean 3.55** |
+| *Self-Reliance* (never used for tuning) | — | 11 of 38 and 8 of 36, means 3.55 and 3.60 |
+| *Civil Disobedience* | — | 11 of 36, mean 3.53 |
+| *Just So Stories* (never used for tuning) | 4 of 30, mean 3.38 | 1–2 per run, means 3.40–3.44 (three runs) |
+| *Who Moved My Cheese?* (never used for tuning) | — | 8 of 44, mean 3.56 |
+
+On the long Wilde book, the defects that v0.2 aimed at fell by half or more (blocker and major defects per
+judge-page): a hero drawn as a speck or cut off 0.62 → 0.35, a balloon tail at the wrong figure 0.22 → 0.11,
+label clutter 0.20 → 0.08, repeated panels 0.17 → 0.08. **On fiction that it was never tuned on, v0.2 is not yet
+better than v0.1**, because of the closed vocabulary (see [Examples](#examples)). That is the first aim of v0.3.
 
 ## Requirements
 
@@ -204,15 +303,6 @@ In replay mode the first-run status line and Settings say "Replay worker: no Min
     Hans Christian Andersen" (18 pages, public-domain text). It makes no model call. It is a real
     v0.1 run, so it shows the run's real cost and time, and it is a first draft.
 
-| Drawing | Finished (dark) |
-|---|---|
-| ![The run card with the tone strip, and the yellow page 1 band.](docs/images/v0.2/book-drawing.png) | ![A finished book in the dark theme, with the result lines.](docs/images/v0.2/book-complete-dark.png) |
-
-![The reader on a desktop at 1440 pixels wide: page 1, the Page, Panels and Sources modes, and All pages.](docs/images/v0.2/reader.png)
-
-These screenshots are from a real v0.2 run of "Three Just So Stories" (35 pages), on a desktop
-browser at 1440 pixels wide.
-
 ### What a failed page looks like
 
 A page that fails every attempt is never hidden. On the book page it shows in the list of failed
@@ -275,7 +365,7 @@ scripts/acceptance/ live journey, run export, test books and the quality judge h
 scripts/fixtures/   state seeder (seed_states.py) and the saved runs for the replay worker
 .github/workflows/  CI (ci.yml) and the manual live lane (live-journey.yml)
 docs/               decisions.md, design/ (v0.2 design), v0.2/ (v0.2 track notes), launch/ (v0.1 notes),
-                    rebuild/ (evidence), images/v0.2/ (README screenshots)
+                    rebuild/ (evidence), images/v0.2/ (README screenshots), images/examples/ (README example pages)
 ```
 
 ## Limits
