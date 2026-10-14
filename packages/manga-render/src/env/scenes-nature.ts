@@ -715,7 +715,10 @@ export function abstractField(st: Stage): Sites {
   }
   add(st, LAYER.sky, 0, s);
   st.anchors.focus = { x: cx, y: cy };
-  return { interior: false, wallSlots: [], spots: [], centre: { x: 0, z: st.zmid + 4 }, backZ: st.zmid + 8, span: [-5, 5] };
+  // the site plan serves the features a location lists (v0.3): bands (a high wall) span the whole view
+  const backZ = st.zmid + 8;
+  const [xa, xb] = xRangeAt(st.cam, backZ);
+  return { interior: false, wallSlots: [], spots: [], centre: { x: 0, z: st.zmid + 4 }, backZ, span: [Math.min(-5, xa - 2), Math.max(5, xb + 2)] };
 }
 
 export function voidScene(st: Stage): Sites {

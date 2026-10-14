@@ -9,6 +9,7 @@
 import { createHash } from "node:crypto";
 import {
   ANGLES,
+  ARCHETYPE_SPECIES,
   DEPTHS,
   EXPRESSIONS,
   EYE_STATES,
@@ -24,6 +25,7 @@ import {
   PLANT_BLOOMS,
   POSES,
   PROPS,
+  PROP_LABEL_MAX,
   SHOTS,
   SLOTS,
   TEXT_KINDS,
@@ -49,7 +51,7 @@ import {
 import { compileLayout } from "./layout/index.js";
 import { composePanel, type ComposedPanel, type FigurePlacement, type PropPlacement } from "./scene/index.js";
 import type { Placed } from "./lettering/place.js";
-import { estimateTextArea, letterPanel } from "./lettering/index.js";
+import { estimateTextArea, inferNameTag, letterPanel } from "./lettering/index.js";
 import { countWords } from "./lettering/breaking.js";
 import { validatePage, type BookRefs } from "./validate/index.js";
 import { rig } from "./rig/index.js";
@@ -58,7 +60,7 @@ import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.6.1";
+export const RENDERER_VERSION = "manga-render/0.7.0";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -154,6 +156,11 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
       if (depth) out.depth = depth;
       const tone = pickOpt(p.tone, TONES);
       if (tone) out.tone = tone;
+      // a neutral prop's name tag: plain text, cut to the limit (validation reports a longer one)
+      if (typeof p.label === "string") {
+        const label = p.label.replace(/[<>&\u0000-\u001f]/g, "").trim().slice(0, PROP_LABEL_MAX).trim();
+        if (label) out.label = label;
+      }
       return out;
     });
   const fx = (Array.isArray(r.fx) ? r.fx : []).filter((e): e is (typeof FX)[number] => pickOpt(e, FX) !== undefined);
@@ -190,6 +197,15 @@ function sanitizePanel(raw: unknown, index: number, castById: Map<string, CastMe
   const weather = pickOpt(r.weather, WEATHERS);
   if (weather) panel.weather = weather;
   return panel;
+}
+
+/** Longest name tag drawn for a stand-in figure. */
+const ARCHETYPE_TAG_MAX = 40;
+
+function isArchetypeLook(look: CastMember["look"] | undefined): boolean {
+  if (!look) return false;
+  if (look.kind === "animal" || look.kind === "bird") return (ARCHETYPE_SPECIES as readonly string[]).includes(look.species);
+  return false;
 }
 
 /** Per-panel internals exposed for tests, debugging overlays and critique tools. */
@@ -259,6 +275,23 @@ export function renderPageDetailed(
     for (const f of c.figures) drawnAt.set(f.character, [...(drawnAt.get(f.character) ?? []), i]);
   });
 
+  // v0.3 (#81): a stand-in (an archetype species) gets its cast name as a name tag in the first panel of
+  // the page where it is drawn, unless the writer already named it. Deterministic, never over a face.
+  const archetypeTags = new Map<number, TextSpec[]>();
+  {
+    const ids: string[] = [];
+    for (const c of composed) for (const f of c.figures) if (!ids.includes(f.character)) ids.push(f.character);
+    for (const id of ids) {
+      const member = castById.get(id);
+      if (!member || !isArchetypeLook(member.look)) continue;
+      const name = (member.name ?? "").trim().slice(0, ARCHETYPE_TAG_MAX) || id;
+      const named = panels.some((p) => p.text.some((t) => t.kind === "caption" && (t.about === id || (t.about === undefined && inferNameTag(t.text, { [id]: name }) === id))));
+      if (named) continue;
+      const first = composed.findIndex((c) => c.figures.some((f) => f.character === id && !f.headCropped));
+      if (first < 0) continue;
+      archetypeTags.set(first, [...(archetypeTags.get(first) ?? []), { kind: "caption", text: name, about: id, fidelity: "dramatized" }]);
+    }
+  }
   const balloonLayers: string[] = [];
   const sfxLayers: string[] = [];
   const texts: RenderedText[] = [];
@@ -289,11 +322,11 @@ export function renderPageDetailed(
       }
       if (best) offPanel[t.speaker] = best;
     }
-    const lettered = letterPanel({
+    const letterInput = (extra: readonly TextSpec[]): Parameters<typeof letterPanel>[0] => ({
       panelId: panel.id,
       polygon: geo.polygon,
       bbox: geo.bbox,
-      texts: panel.text,
+      texts: extra.length > 0 ? [...panel.text, ...extra] : panel.text,
       speakers: inFrame.map((f) => ({ character: f.character, head: f.head, headRadius: f.headRadius, mouth: f.mouth, body: f.body, ...(f.pose ? { pose: f.pose } : {}) })),
       heads: inFrame.map((f) => ({ character: f.character, center: f.head, radius: f.headRadius })),
       bodies: c.figures.map((f) => f.body),
@@ -310,6 +343,26 @@ export function renderPageDetailed(
       panelIndex: i,
       names: Object.fromEntries(inFrame.map((f) => [f.character, castById.get(f.character)?.name ?? f.character])),
     });
+    const tags = archetypeTags.get(i) ?? [];
+    let lettered = letterPanel(letterInput(tags));
+    if (tags.length > 0) {
+      // a name tag that does not fit is dropped (never an error: the page is right without it)
+      const own = (x: ValidationIssue): boolean => {
+        const m = /text (\d+)$/.exec(x.path);
+        return m !== null && Number(m[1]) >= panel.text.length;
+      };
+      if (lettered.issues.some((x) => x.severity === "error" && own(x))) {
+        lettered = letterPanel(letterInput([]));
+        issues.push({
+          code: "ARCHETYPE_LABEL_DROPPED",
+          severity: "warning",
+          path: `panel ${panel.id}`,
+          message: `the name tag of ${tags.map((t) => `"${t.text}"`).join(", ")} had no free place in this panel, so it is not drawn. Give the panel more room or fewer texts.`,
+        });
+      } else {
+        lettered = { ...lettered, texts: lettered.texts.filter((t) => t.index < panel.text.length) };
+      }
+    }
     issues.push(...lettered.issues);
     texts.push(...lettered.texts);
     details.push({

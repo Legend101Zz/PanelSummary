@@ -66,7 +66,7 @@ interface Spec {
   legL: number;
   eyeR: number; // × hr
   belly: "white" | "light" | "same";
-  marks: "swallow" | "nightingale" | "sparrow" | "linnet" | "dove" | "crow" | "owl" | "duck";
+  marks: "swallow" | "nightingale" | "sparrow" | "linnet" | "dove" | "crow" | "owl" | "duck" | "plain";
 }
 
 const SPECS: Record<Species, Spec> = {
@@ -78,6 +78,8 @@ const SPECS: Record<Species, Spec> = {
   crow: { h: 25, a: 7.2, b: 4.2, tilt: 24, hr: 4.2, hx: 0.8, hy: 1.0, beak: "heavy", beakL: 3.4, tail: "wedge", tailL: 7.5, tailW: 4.0, tailDroop: 10, wingL: 16, pointed: false, fold: 0.55, legL: 4.8, eyeR: 0.34, belly: "same", marks: "crow" },
   owl: { h: 25, a: 8.4, b: 6.6, tilt: 78, hr: 6.6, hx: 0.9, hy: 0.0, beak: "hook", beakL: 1.8, tail: "short", tailL: 3.0, tailW: 4.5, tailDroop: 0, wingL: 18, pointed: false, fold: 0.1, legL: 2.2, eyeR: 0.3, belly: "light", marks: "owl" },
   duck: { h: 30, a: 10.5, b: 5.6, tilt: 4, hr: 4.5, hx: 0.74, hy: 1.55, beak: "bill", beakL: 4.2, tail: "duck", tailL: 3.8, tailW: 3.4, tailDroop: -28, wingL: 18, pointed: false, fold: 0.1, legL: 4.2, eyeR: 0.32, belly: "light", marks: "duck" },
+  // v0.3 (#81): a neutral tall bird (long legs, long neck, thin beak), one flat tone, no species marks
+  bird_tall: { h: 112, a: 17, b: 9.5, tilt: 12, hr: 8.6, hx: 0.8, hy: 3.5, beak: "thin", beakL: 6.4, tail: "round", tailL: 10, tailW: 6, tailDroop: 8, wingL: 34, pointed: false, fold: 0.3, legL: 44, eyeR: 0.34, belly: "light", marks: "plain" },
 };
 
 const BIRD_POSES: readonly Pose[] = [

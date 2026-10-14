@@ -2,7 +2,7 @@
  * Rig dispatcher: routes a CharacterLook to its kind's rig. Kind rigs live in
  * sibling files and may be replaced independently.
  */
-import type { CharacterLook, Expression, Facing, Point, Pose } from "../contracts.js";
+import { LOOK_SCALE_MAX, LOOK_SCALE_MIN, type CharacterLook, type Expression, type Facing, type Point, type Pose } from "../contracts.js";
 import type { DrawContext, FigureAnchors, FigureDrawing, FigureRequest, RigModule } from "../internal.js";
 import { INK, STROKE, toneFill } from "../style.js";
 import { n } from "../svg.js";
@@ -146,23 +146,75 @@ function n4(v: number): string {
  * other pose or kind it is the ground point {0, 0}.
  */
 export function seatContact(look: CharacterLook, pose: Pose, facing: Facing, seed: number, expression: Expression = "neutral"): Point {
-  if (look.kind === "human" && pose === "sit") return humanSeatContact(look, facing, seed, expression);
+  if (look.kind === "human" && pose === "sit") {
+    const c = humanSeatContact(look, facing, seed, expression);
+    const k = drawFactor(look);
+    return k === 1 ? c : { x: c.x * k, y: c.y * k };
+  }
   return { x: 0, y: 0 };
+}
+
+/**
+ * Size of a look (v0.3, #81). `look.scale` is the figure's height relative to an
+ * adult human (1.0 = 100 figure units); absent, the rig's own nominal height holds.
+ * The scale is clamped to the allowed range so a bad value never breaks a drawing
+ * (validation reports it).
+ */
+function lookScale(look: CharacterLook): number | undefined {
+  const v = (look as { scale?: unknown }).scale;
+  if (typeof v !== "number" || !Number.isFinite(v)) return undefined;
+  return Math.min(LOOK_SCALE_MAX, Math.max(LOOK_SCALE_MIN, v));
+}
+
+function targetHeight(look: CharacterLook): number {
+  const s = lookScale(look);
+  return s !== undefined ? 100 * s : rigFor(look).nominalHeight(look);
+}
+
+/** Factor from the height the rig draws at to the height the look has (1 for every look without scale or neutral reuse). */
+function drawFactor(look: CharacterLook): number {
+  const r = rigFor(look);
+  const native = r.nativeHeight ? r.nativeHeight(look) : r.nominalHeight(look);
+  const k = targetHeight(look) / native;
+  return Number.isFinite(k) && k > 0 && Math.abs(k - 1) > 1e-9 ? k : 1;
+}
+
+function scaleDrawing(d: FigureDrawing, k: number): FigureDrawing {
+  const a = d.anchors;
+  const p = (q: Point): Point => ({ x: q.x * k, y: q.y * k });
+  const anchors: FigureAnchors = {
+    head: p(a.head),
+    headRadius: a.headRadius * k,
+    mouth: p(a.mouth),
+    ...(a.hand ? { hand: p(a.hand) } : {}),
+    top: a.top * k,
+    left: a.left * k,
+    right: a.right * k,
+    waist: a.waist * k,
+    shoulders: a.shoulders * k,
+  };
+  return { ...d, svg: `<g transform="scale(${n4(k)})">${d.svg}</g>`, anchors };
 }
 
 export const rig: RigModule = {
   supportedPoses: (look: CharacterLook): readonly Pose[] => rigFor(look).supportedPoses(look),
   supportedExpressions: (look: CharacterLook): readonly Expression[] => rigFor(look).supportedExpressions(look),
-  nominalHeight: (look: CharacterLook): number => rigFor(look).nominalHeight(look),
+  nominalHeight: (look: CharacterLook): number => targetHeight(look),
   /**
    * Draw through the kind's rig, add creature acting, and compact the path
    * data (relative commands on a grid of 0.01 figure units, 0.1 when the
-   * figure is drawn at or below page scale).
+   * figure is drawn at or below page scale). A look with `scale` (and a neutral
+   * long_low or swimmer) is drawn at its own size and then scaled, with the line
+   * width divided by the factor so the outline keeps its weight.
    */
   draw: (request: FigureRequest, ctx: DrawContext): FigureDrawing => {
-    const d = actCreature(rigFor(request.look).draw(request, ctx), request);
-    const dec = request.lineWidth >= STROKE.figureOutline ? 1 : 2;
-    const svg = request.pose === "lie" ? contactShadow(d.anchors, request.lineWidth, ctx.idPrefix) + d.svg : d.svg;
-    return { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
+    const k = drawFactor(request.look);
+    const lineWidth = request.lineWidth / k;
+    const inner: FigureRequest = k === 1 ? request : { ...request, lineWidth };
+    const d = actCreature(rigFor(request.look).draw(inner, ctx), request);
+    const dec = lineWidth >= STROKE.figureOutline ? 1 : 2;
+    const svg = request.pose === "lie" ? contactShadow(d.anchors, lineWidth, ctx.idPrefix) + d.svg : d.svg;
+    const out: FigureDrawing = { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
+    return k === 1 ? out : scaleDrawing(out, k);
   },
 };

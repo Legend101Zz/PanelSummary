@@ -225,6 +225,15 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Evidence: `docs/v0.3/U1-ui.md` (measurements, screenshots). The reader tokens and the page SVG did not change.
 - Status: accepted for v0.3.
 
+### D29. Neutral stand-ins by body plan, kind of place and shape; labels; renderer 0.7.0 (2026-10-14, issue #81, track D1a)
+- D4 stays (deterministic SVG), and D3 stays (no image model). The renderer is `manga-render/0.7.0`. Old stored pages keep their SVG.
+- Statement: When no named item fits, the renderer draws a neutral stand-in and labels it, instead of a confident wrong match. A stand-in is a body plan, a size, a kind of place or a shape, never one species or one book. `animal` species `quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer` and `bird` species `bird_tall` draw one flat tone, plain ears and tail, no species marks, the usual faces and every pose of their rig. Environments `generic_room`, `generic_hall`, `generic_passage`, `generic_rough` and `generic_outdoor` have no furniture and draw the features of their location. Props `thing_long`, `thing_round`, `thing_block`, `thing_flat` and `thing_heap` are plain shapes toned by `tone`.
+- Statement: Every look kind takes an optional `scale` (0.05 to 4.0, adult person = 1.0). Absent, a look keeps its exact size. A value outside the range is the error `LOOK_SCALE_RANGE`.
+- Statement: Labels. An archetype figure gets its cast name as a name tag in the first panel of each page where it is drawn, unless the writer already named it on that page. A neutral prop takes `PropSpec.label` (at most 24 characters, plain text), drawn as a name tag beside the prop. A `thing_*` prop without a label is the warning `NEUTRAL_PROP_UNLABELLED` (D26: a new check is a warning until it is calibrated on judged pages). A tag that has no free place is dropped with a warning (`ARCHETYPE_LABEL_DROPPED`, `PROP_LABEL_DROPPED`), never an error.
+- Statement: Four general fixes ship with it. `abstract` draws the features its location lists (`void` stays blank). "Small" for the camera follows the nominal height (under 45 figure units, or any look with `scale` under that), not the kind, so a horse or a bear is not boosted as a small creature. A rat or a mouse that sits, talks, points or waves sits hunched with its tail out, not upright like a bear. The word "blade" no longer makes a beat mention a sword.
+- Why: `docs/v0.3/D1-diagnosis.md` found that 85 percent of the wrong cast, places and props have no item in the closed vocabulary (class V), so the model had to choose the nearest item and nothing marked it as a stand-in. Adding one item for each new book does not stop the next book. A neutral body plan, kind of place and shape does.
+- Status: accepted for the next live run. The measured effect on judged pages is in `docs/v0.3/D1a-renderer.md`. Whether the labelled stand-ins score better than the wrong matches is a prediction until the orchestrator verifies it on a live run with a judge panel.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

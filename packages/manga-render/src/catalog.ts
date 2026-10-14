@@ -65,6 +65,33 @@ export const TEXT_KIND_GUIDE: Record<C.TextKind, string> = {
   sfx: 'drawn sound effect lettering, 1-3 sound words (no speaker), e.g. "FLAP FLAP". Placed in free space near the action, never over a face; it may break the panel border in panels with impact_burst or speed_lines.',
 };
 
+/** The optional look.scale field, as the writer sees it (v0.3, #81). */
+const SCALE_FIELD = `optional number ${C.LOOK_SCALE_MIN}-${C.LOOK_SCALE_MAX}: the figure's height relative to an adult person (1 = an adult, 0.15 = about knee high, 2 = twice as tall). Leave it out for the usual size of the look. Use it for a creature or a people of unusual size (a very small folk, a very large animal).`;
+
+/**
+ * Plain descriptions of the neutral stand-ins (v0.3, #81). When no named species, place or prop fits, choose the
+ * neutral value of the right body plan, kind of place or shape, and name the real thing (a cast name, a prop label).
+ * A neutral value is honest: it never draws a wrong animal, room or object with confidence.
+ */
+export const STAND_IN_NOTES: Record<string, string> = {
+  "animal.quad_small": "four-legged body, small (like a hare or a rodent), one flat tone, plain ears and tail, no species marks",
+  "animal.quad_medium": "four-legged body, medium (like a dog or a deer), one flat tone, plain ears and tail, no species marks",
+  "animal.quad_large": "four-legged body, large (like a cow or bigger), one flat tone, plain ears and tail, no mane, horns or trunk",
+  "animal.long_low": "long low body with a long tail (a reptile, a snake, a crawler); use look.scale for a big or a small one",
+  "animal.swimmer": "a water animal body (fish-shaped); use look.scale for a big one",
+  "bird.bird_tall": "a tall bird with long legs and a long neck, one flat tone, no species marks",
+  "environment.generic_room": "a plain room: floor, walls, one window, no furniture",
+  "environment.generic_hall": "a wide, high hall: flagged floor, tall windows, no chandelier and no furniture",
+  "environment.generic_passage": "a narrow, long passage in perspective with stone walls (a corridor, a tunnel, a lane of a maze)",
+  "environment.generic_rough": "rough stone walls and a dark ceiling with hanging teeth, bare earth floor (a cave, a burrow, a dungeon)",
+  "environment.generic_outdoor": "an open place: ground line, horizon, sky, a few stones and bushes (a camp, a clearing, a field)",
+  "prop.thing_long": "a long rounded shape (a bone, a spear, a stick, a tool)",
+  "prop.thing_round": "a round shape (a fruit, a ball, a stone, a wheel)",
+  "prop.thing_block": "a solid block shape (a loaf, a box, a crate, a wedge)",
+  "prop.thing_flat": "a thin flat slab (a sheet, a board, bark, a tablet)",
+  "prop.thing_heap": "a pile of anything (rubble, grain, cheese, grass)",
+};
+
 /** Optional fields that stage figures and colour key props (shown to the page writer). */
 export const FIELD_GUIDE: Record<string, string> = {
   "figure.on":
@@ -75,6 +102,9 @@ export const FIELD_GUIDE: Record<string, string> = {
   "figure.holding": "a prop in the figure's hand (or beak). Do not also list it in the panel's props: it is drawn once, in the hand. A figure posed \"carry\" (or \"hold\") with no holding takes the panel's first carriable prop into its arms, and the beat's subject takes a prop the beat says it goes \"with\". Wheelbarrows and other big things are props beside a figure, not held.",
   "figure.holding_tone": "tone of the held prop, so key objects stay distinct across pages (a ruby \"black\", a sapphire \"mid\").",
   "prop.tone": "tone variant of a prop on the ground or in an insert (ruby vs sapphire).",
+  "look.scale": SCALE_FIELD,
+  "prop.label": `neutral props (thing_*) only, but allowed on any prop: plain text, at most ${C.PROP_LABEL_MAX} characters (e.g. "bone", "the cheese"). Drawn as a small name tag beside the prop. A neutral prop without a label is a warning (NEUTRAL_PROP_UNLABELLED): the reader would see an unnamed shape.`,
+  "figure.archetype_tag": "a cast member of a neutral species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) gets its cast name as a name tag in the first panel of each page where it is drawn, unless you already put a name-tag caption (text.about) for it on that page.",
   "text.about": "captions only: the cast id this caption names; drawn as a name tag beside that character.",
   "pose.sit": "a sitter always gets a seat: a bench outdoors, a chair indoors, a throne in a palace hall (none when staged with \"on\").",
   "pose.lie": "lies horizontally on the ground (or in the location's bed), inside the frame; in medium and close shots the face sits in the panel's upper middle, the body runs out toward the nearer edge, and a band of ground lies under it.",
@@ -96,11 +126,17 @@ export const ERROR_GUIDE: Record<string, string> = {
   KEY_PROP_COVERED: "text had to cover the prop the beat is about: shorten the text, give the panel more room, or show the object in an insert.",
   VARIANT_FIELD_INVALID: "a look variant sets a field the character's kind does not have (material only for people; tone only for creatures, objects and plants).",
   TEXT_GLYPH_MISSING: "the lettering font has no glyph for a character (it would print as an empty box): write it with plain letters and punctuation.",
+  LOOK_SCALE_RANGE: `a look's "scale" is not a number from ${C.LOOK_SCALE_MIN} to ${C.LOOK_SCALE_MAX}: use a value in that range, or leave "scale" out.`,
+  PROP_LABEL_TOO_LONG: `a prop "label" has more than ${C.PROP_LABEL_MAX} characters: use a short name.`,
+  PROP_LABEL_MARKUP: 'a prop "label" has < > & or a control character: use plain text.',
   TEXT_DOES_NOT_FIT: "the text does not fit at the minimum size without covering a face or another text: shorten it or give the panel more room.",
 };
 
 /** Warnings the renderer may return, and what to change (errors are always fixable from their message). */
 export const WARNING_GUIDE: Record<string, string> = {
+  NEUTRAL_PROP_UNLABELLED: 'a neutral thing_* prop has no "label": add a short name so the reader sees what it is.',
+  PROP_LABEL_DROPPED: "the name tag of a prop had no free place beside it (clear of faces, inside the frame): use a wider shot or fewer figures.",
+  ARCHETYPE_LABEL_DROPPED: "the automatic name tag of a neutral figure had no free place in its panel: give the panel more room or fewer texts.",
   FACE_COVERED: "a figure covers another figure's face and could not be moved aside: use other slots, a wider shot, or fewer figures.",
   DUPLICATE_PROP: "a panel prop repeats a figure's held prop; it is drawn once, in the hand. Drop one of them.",
   HOLDING_TOO_LARGE: "a wheelbarrow or other big thing cannot be held: make it a prop beside the figure.",
@@ -144,6 +180,8 @@ export interface Catalog {
   warnings: Record<string, string>;
   /** Rejecting errors from drawing and lettering (beyond the vocabulary checks). */
   errors: Record<string, string>;
+  /** Plain descriptions of the neutral stand-in values (key "<list>.<value>"). Choose one when no named value fits. */
+  stand_ins: Record<string, string>;
   /** Look-variant fields each look kind accepts, and the eye states. */
   variants: { fields: Record<string, readonly string[]>; eyes: readonly string[] };
 }
@@ -186,7 +224,7 @@ export function catalog(): Catalog {
   for (const kind of C.LOOK_KINDS) {
     const look = REPRESENTATIVE_LOOKS[kind];
     looks[kind] = {
-      fields: lookFields[kind],
+      fields: { ...lookFields[kind], scale: SCALE_FIELD },
       poses: safe(() => rig.supportedPoses(look)),
       expressions: safe(() => rig.supportedExpressions(look)),
     };
@@ -253,6 +291,7 @@ export function catalog(): Catalog {
     fields: FIELD_GUIDE,
     warnings: WARNING_GUIDE,
     errors: ERROR_GUIDE,
+    stand_ins: STAND_IN_NOTES,
     variants: {
       fields: Object.fromEntries(C.LOOK_KINDS.map((k) => [k, variantFieldsFor(k)])),
       eyes: C.EYE_STATES,

@@ -13,7 +13,7 @@ import type { FigureSpec, PanelSpec, Pose, PropId, PropSpec, Tone, ValidationIss
 
 /** Words a beat may use for each prop (the id itself always counts). */
 export const PROP_WORDS: Partial<Record<PropId, readonly string[]>> = {
-  sword: ["sword", "swords", "sword-hilt", "blade"],
+  sword: ["sword", "swords", "sword-hilt"],
   gem: ["gem", "gems", "ruby", "rubies", "sapphire", "sapphires", "jewel", "jewels", "diamond", "emerald"],
   coin: ["coin", "penny", "pennies"],
   coins_pile: ["coins", "treasure"],
@@ -58,10 +58,16 @@ export const PROP_WORDS: Partial<Record<PropId, readonly string[]>> = {
   angel: ["angel", "angels", "cherub"],
   loom: ["loom", "looms"],
   sledge: ["sledge", "sledges", "sleigh", "sleighs"],
+  // v0.3 (#81): neutral things, named by shape (never by one book's object)
+  thing_long: ["bone", "bones", "spear", "spears", "pole", "rod", "tool", "club"],
+  thing_round: ["ball", "fruit", "stone", "pebble", "apple", "orange", "melon"],
+  thing_block: ["block", "box", "crate", "chest", "brick", "wedge"],
+  thing_flat: ["board", "plank", "tablet", "slab", "slate", "bark", "sheet"],
+  thing_heap: ["pile", "heap", "mound", "stack"],
 };
 
 /** Props too big or too fixed to be picked up by a carrying figure. */
-const NOT_CARRIED: ReadonlySet<PropId> = new Set(["wheelbarrow", "ballot_box", "coins_pile", "chains", "sign", "stove", "loom", "angel", "sledge"]);
+const NOT_CARRIED: ReadonlySet<PropId> = new Set(["wheelbarrow", "ballot_box", "coins_pile", "chains", "sign", "stove", "loom", "angel", "sledge", "thing_heap"]);
 
 function wordsFor(prop: PropId): readonly string[] {
   return PROP_WORDS[prop] ?? [prop.replace(/_/g, " ")];

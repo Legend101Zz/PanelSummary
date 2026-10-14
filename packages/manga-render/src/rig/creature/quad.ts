@@ -38,7 +38,7 @@ import {
 import { EXPR, drawFace, mouthOpen } from "./face.js";
 import { polyPath } from "../../svg.js";
 
-export type QuadSpecies = "rat" | "mouse" | "cat" | "dog" | "fox" | "rabbit" | "horse" | "bear";
+export type QuadSpecies = "rat" | "mouse" | "cat" | "dog" | "fox" | "rabbit" | "horse" | "bear" | "quad_small" | "quad_medium" | "quad_large";
 
 interface QuadSpec {
   h: number;
@@ -72,6 +72,10 @@ export const QUAD: Record<QuadSpecies, QuadSpec> = {
   rabbit: { h: 22, legF: 5.2, legH: 7, bodyL: 9.5, chest: 5.2, hip: 6.8, legW: 2.3, paw: 1.4, R: 5.2, muz: { l: 1.8, h: 3.4, drop: 0.35, round: 0.9 }, neck: { l: 2.2, ang: 42, w: 4.4 }, ears: { kind: "long", size: 10 }, tail: { kind: "puff", l: 2.8, w: 2.8 }, eye: 0.36, whiskers: true, mane: false, hoof: false, longFoot: true, fluffy: false, nose: 0.4 },
   horse: { h: 160, legF: 78, legH: 82, bodyL: 70, chest: 30, hip: 28, legW: 12.5, paw: 6.4, R: 16, muz: { l: 34, h: 19, drop: 0.45, round: 0.9 }, neck: { l: 40, ang: 62, w: 30 }, ears: { kind: "horse", size: 11 }, tail: { kind: "horse", l: 64, w: 16 }, eye: 0.24, whiskers: false, mane: true, hoof: true, longFoot: false, fluffy: false, nose: 0.3 },
   bear: { h: 120, legF: 50, legH: 52, bodyL: 64, chest: 31, hip: 29, legW: 18, paw: 9.5, R: 26, muz: { l: 12, h: 14, drop: 0.35, round: 0.6 }, neck: { l: 12, ang: 22, w: 26 }, ears: { kind: "bear", size: 7.5 }, tail: { kind: "stub", l: 6, w: 7 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: true, fluffy: true, nose: 0.65 },
+  // v0.3 (#81): neutral body plans. One flat tone, plain round ears, a plain tail, no species marks.
+  quad_small: { h: 25, legF: 8.2, legH: 9.4, bodyL: 13, chest: 5.6, hip: 6.2, legW: 2.4, paw: 1.5, R: 5.6, muz: { l: 2.8, h: 3.6, drop: 0.35, round: 0.8 }, neck: { l: 2.6, ang: 44, w: 4.8 }, ears: { kind: "round", size: 3.2 }, tail: { kind: "dog", l: 7, w: 2 }, eye: 0.34, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
+  quad_medium: { h: 60, legF: 28, legH: 29, bodyL: 34, chest: 12.5, hip: 11, legW: 6.2, paw: 3.6, R: 11.5, muz: { l: 8, h: 7.5, drop: 0.35, round: 0.7 }, neck: { l: 11, ang: 48, w: 10.5 }, ears: { kind: "round", size: 6.4 }, tail: { kind: "dog", l: 16, w: 4.4 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
+  quad_large: { h: 170, legF: 94, legH: 96, bodyL: 98, chest: 44, hip: 42, legW: 22, paw: 12, R: 28, muz: { l: 22, h: 20, drop: 0.35, round: 0.7 }, neck: { l: 24, ang: 34, w: 30 }, ears: { kind: "round", size: 13 }, tail: { kind: "dog", l: 34, w: 9 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
 };
 
 const SIT_POSES: readonly Pose[] = ["sit", "talk", "wave", "point", "think", "hold"];
@@ -119,9 +123,13 @@ function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
   if (sit) {
     // haunches on the ground, spine raised
     const upright = sp === "rat" || sp === "mouse" || sp === "bear" || sp === "rabbit";
-    const ang = (upright ? 70 : 52) * DEG;
+    // v0.3 (#81): a rat or a mouse sits hunched on its haunches with a short rounded back and the
+    // tail curled out behind, not bolt upright like a bear (the shared spine made them read as bears)
+    const rodent = sp === "rat" || sp === "mouse";
+    const ang = (rodent ? 52 : upright ? 70 : 52) * DEG;
     const J = P(-L * 0.12, -s.hip * 0.95);
-    const S = addP(J, P(Math.cos(ang) * L * 0.95, -Math.sin(ang) * L * 0.95));
+    const spine = rodent ? 0.72 : 0.95;
+    const S = addP(J, P(Math.cos(ang) * L * spine, -Math.sin(ang) * L * spine));
     const reach = upright ? s.legF * 0.55 : s.legF * 1.05;
     const g: QPose["gesture"] = pose === "talk" || pose === "wave" || pose === "point" || pose === "think" || pose === "hold" ? pose : null;
     return {
@@ -130,7 +138,7 @@ function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
       J,
       sitting: true,
       gesture: g,
-      neckAng: s.neck.ang + (upright ? 25 : 12),
+      neckAng: s.neck.ang + (rodent ? 14 : upright ? 25 : 12),
       headTilt: pose === "think" ? 14 : 4,
       feet: {
         nf: upright ? P(S.x + reach * 0.35, S.y + reach) : P(S.x + s.paw * 0.4, 0),
