@@ -12,7 +12,7 @@ import type {
 } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
-import { candidateParameters, dataBlock, FIX_BEFORE_SUBMIT, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { candidateParameters, dataBlock, FIX_BEFORE_SUBMIT, errorsOf, formatIssues, parseCandidate, rejectedValueNote, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
@@ -461,7 +461,7 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
         if (render) parts.push(`Layout:\n${layoutReport(render)}`);
         const images = render && options.vision ? [{ data: svgToPng(render.svg, { width: 800 }).toString("base64"), mimeType: "image/png" as const }] : undefined;
         if (images) parts.push("The rendered page is attached. Judge it as a reader: reading order, who is speaking, legibility, whether the art carries the beat.");
-        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
+        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${rejectedValueNote(errorsOf(issues))}` };
       },
     };
 
@@ -480,7 +480,7 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
         if (render) repairChance = false;
         const once = chance ? checked.issues.filter(isRepairOnce).map((issue) => issue.code) : [];
         const onceNote = once.length ? ` repair_once=${[...new Set(once)].join(",")}` : "";
-        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${onceNote}` };
+        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${rejectedValueNote(errorsOf(issues))}${onceNote}` };
         const spec = parsed.value as MangaPageSpec;
         lastRender = { spec, render: { ...render, issues } };
         const warnings = warningsOf(issues);

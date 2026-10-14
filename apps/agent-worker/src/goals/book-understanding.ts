@@ -6,7 +6,9 @@ import { loneSpeakerIssues, loneSpeakers, speakerCastIssues, speakerList } from 
 import { stateIssues, unitOrder } from "./continuity.js";
 import { placeIssues } from "./places.js";
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
-import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejectedValueNote, rejection, sourceBlock, warningsOf } from "./common.js";
+
+export { rejectedValueNote };
 import { mergePrior, parsePrior, priorForPrompt, type PriorUnderstanding } from "./prior-understanding.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { ARCHETYPE_SPECIES, GENERIC_ENVIRONMENTS, NEUTRAL_PROPS, lookVocabulary, standInVocabulary } from "./vocabulary.js";
@@ -306,25 +308,6 @@ export function withWantedContext(issues: ValidationIssue[], value: unknown): Va
     }
     return issue;
   });
-}
-
-/**
- * The first rejected field of a submission, for the tool-call note (ENUM_INVALID or FIELD_MISSING):
- * `first_rejected=cast c1.look.species="elephant"`. The value is model output and untrusted:
- * plain text only, at most 40 characters.
- */
-export function rejectedValueNote(issues: readonly ValidationIssue[]): string {
-  const issue = issues.find((i) => i.severity === "error" && (i.code === "ENUM_INVALID" || i.code === "FIELD_MISSING"));
-  if (!issue) return "";
-  const plain = (text: string, max: number) => text.replace(/[^\p{L}\p{N} _.,'\u2019:-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max);
-  if (issue.code === "FIELD_MISSING") {
-    const key = /missing required field "([^"]{1,40})"/.exec(issue.message)?.[1];
-    return ` first_rejected=${plain(`${issue.path}${key ? `.${key}` : ""}`, 60)} (missing)`;
-  }
-  const m = /^(\S+) (.*) is not allowed/s.exec(issue.message);
-  if (!m) return ` first_rejected=${plain(issue.path, 60)}`;
-  const raw = m[2].replace(/^"(.*)"$/s, "$1");
-  return ` first_rejected=${plain(`${issue.path}.${m[1]}`, 60)}=${plain(raw, 40)}`;
 }
 
 /** Books above this size need a chunked understanding pass (not implemented: fail visibly). */

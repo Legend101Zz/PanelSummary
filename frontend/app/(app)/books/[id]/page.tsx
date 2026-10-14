@@ -558,7 +558,7 @@ export default function BookPage() {
       ) : null}
 
       <div className={styles.lower}>
-        <Contents bookId={bookId} book={book} edition={edition} />
+        <Contents bookId={bookId} book={book} edition={edition} parts={parts} />
         {edition && !active && !awaiting && edition.pages_accepted + edition.pages_failed > 0 ? <About edition={edition} /> : null}
       </div>
 

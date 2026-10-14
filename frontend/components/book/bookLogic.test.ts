@@ -9,6 +9,7 @@ import {
   groupBySection,
   limitState,
   mangaRanges,
+  seriesRanges,
   pageCounts,
   pagesSummary,
   queuedDrawKind,
@@ -166,5 +167,36 @@ describe("continue with the next section", () => {
     expect(showParts(undefined)).toBe(false);
     expect(showParts([1])).toBe(false);
     expect(showParts([1, 2])).toBe(true);
+  });
+});
+
+describe("Contents ranges of a continued book", () => {
+  const part = (n: number, edition_id: string, section_ids: string[], first: number, last: number | null) => ({
+    part: n, edition_id, status: "complete" as const, scope: null, section_ids, section_titles: [], first_page_number: first,
+    last_page_number: last, page_total: 0, pages_accepted: 0, pages_failed: 0,
+  });
+  const two = { book_id: "b", parts: [part(1, "e1", ["s1"], 1, 9), part(2, "e2", ["s2", "s3"], 10, 19)], remaining: [], can_continue: false, continue_from: null };
+  const e2 = { id: "e2", pages: [pg(1, "accepted", "s2"), pg(2, "accepted", "s2"), pg(3, "accepted", "s3"), pg(4, "accepted", "s3"), pg(5, "accepted", "s3"), pg(6, "accepted", "s3"), pg(7, "accepted", "s3"), pg(8, "accepted", "s3"), pg(9, "accepted", "s3"), pg(10, "accepted", "s3")] };
+  it("shows part 1's range under its section, in the series numbers", () => {
+    const r = seriesRanges(two, e2);
+    expect(r.get("s1")).toEqual([1, 9]);
+  });
+  it("moves the shown part's sections to the series numbers", () => {
+    const r = seriesRanges(two, e2);
+    expect(r.get("s2")).toEqual([10, 11]);
+    expect(r.get("s3")).toEqual([12, 19]);
+  });
+  it("uses the part range when the shown edition is not that part", () => {
+    expect(seriesRanges(two, { id: "e1", pages: [] }).get("s2")).toEqual([10, 19]);
+  });
+  it("skips a part whose plan does not exist yet", () => {
+    const p = { ...two, parts: [two.parts[0], part(2, "e2", ["s2"], 10, null)] };
+    expect(seriesRanges(p, { id: "e2", pages: [] }).has("s2")).toBe(false);
+  });
+  it("changes nothing for one edition or no parts data", () => {
+    const one = { ...two, parts: [two.parts[0]] };
+    const e1 = { id: "e1", pages: [pg(1, "accepted", "s1"), pg(2, "accepted", "s1")] };
+    expect(seriesRanges(one, e1).get("s1")).toEqual([1, 2]);
+    expect(seriesRanges(null, e1).get("s1")).toEqual([1, 2]);
   });
 });

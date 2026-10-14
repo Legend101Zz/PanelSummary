@@ -1,4 +1,4 @@
-// The shared UI components of PanelSummary v0.2. The contract is in README.md.
+// The shared UI components of PanelSummary v0.3. The contract is in README.md.
 export * from "./icons";
 export { cx } from "./cx";
 export * from "./format";
