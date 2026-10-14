@@ -98,7 +98,7 @@ const MOVES: Record<string, string> = {
   TAIL_CROSSES_TEXT: "put at most 2 texts in the panel, or move one to another panel",
   TAIL_CROSSES_FACE: "put the speakers left to right in speaking order",
   KEY_PROP_COVERED: "shorten the text or show the object in an insert panel",
-  SPEAKER_TOO_SMALL: "draw the speaker in a medium or close shot (a small creature also needs depth \"fore\"), or move the line to a caption",
+  SPEAKER_TOO_SMALL: "draw the speaker in a closer shot (a medium or close shot; a small creature also needs depth \"fore\"), put fewer figures in the panel so the camera can come in on the speaker, or move the line to a caption",
   CHARACTER_NOT_INTRODUCED: "name the character in a caption (a name tag with \"about\")",
   QUOTE_NOT_IN_SOURCE: "copy the book's words exactly, or label the line \"paraphrase\" with a source",
 };
