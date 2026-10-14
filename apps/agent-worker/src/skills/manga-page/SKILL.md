@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.14.0
+version: 1.15.0
 ---
 
 # Manga page
@@ -428,7 +428,7 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    too much of its panels: fix every named code in one edit and change the structure (more
    panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
 6. **FIX BEFORE SUBMIT** items (CLAIM_TEXT_THIN, KEY_PROP_NOT_DRAWN, SPEECH_IN_NARRATION,
-   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
+   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, FIGURE_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
    reject your FIRST submit only. Fix them
    in the same edit; if one cannot be fixed, submit again and it stays a warning.
 7. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix

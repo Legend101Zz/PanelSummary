@@ -28,6 +28,8 @@ export const REPAIR_ONCE_CODES: ReadonlySet<string> = new Set([
   "REPEAT_NAME_TAG",
   "LOCATION_OFF_PLAN",
   "HERO_TOO_SMALL",
+  // v0.3 (docs/v0.3/D2-push.md, Gate 2a): a planned figure under 15% of the panel height, calibrated on 370 judged pages.
+  "FIGURE_TOO_SMALL",
   "STATUE_LOCATION_SWAPPED",
   // v0.2 (docs/v0.2/Q2a-writer-checks.md): the renderer's caption-wall warning, promoted on 319 judged pages.
   "PROSE_WALL",

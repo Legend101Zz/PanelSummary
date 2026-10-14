@@ -324,7 +324,7 @@ describe("minor figures", () => {
 
 describe("skills", () => {
   const rules: Array<[string, string, RegExp[]]> = [
-    ["manga-page", "1.14.0", [/"vision": "afterlife"/, /"minor": true/, /lists `units`/]],
+    ["manga-page", "1.15.0", [/"vision": "afterlife"/, /"minor": true/, /lists `units`/]],
     ["book-understanding", "1.14.0", [/Places per unit/, /Map by where the people stand/, /every location has `units`/, /"units": \["s1u1", "s1u2"\]/]],
     ["adaptation-plan", "1.8.0", [/whose `units` include the page's units/, /afterlife, a dream or a memory/]],
   ];

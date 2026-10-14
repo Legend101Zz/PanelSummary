@@ -162,6 +162,7 @@ export const WARNING_GUIDE: Record<string, string> = {
   FIGURE_HEAD_PARTLY_CLIPPED: "less than 60% of a figure's head is inside the frame, so the face is cut: use a wider shot, another slot, or fewer figures.",
   TAIL_CROSSES_PROP: "a tail runs over a prop, so the line may read as the prop's: move the speaker or the prop, or use a closer shot of the speaker.",
   SPEAKER_OFF_PANEL_LIMIT: "more than one spoken line on the page has a speaker who is not drawn in its panel, or a speaker is not drawn on the page at all: draw the speaker, or make the line a caption.",
+  FIGURE_TOO_SMALL: "a planned figure is under 15% of the height of its panel (not an establishing shot), so it reads as a speck: use a closer shot for it, put fewer figures in the panel, or give it a panel of its own.",
   HERO_TOO_SMALL: "the subject of the beat fills less than a quarter of its panel (or has a head radius under 8) even after the camera pushed in, so it will not read: use a medium or close shot for it, or give it a panel of its own.",
   SUBJECT_TOO_SMALL: "a figure held on another's hand or shoulder is too small to read in this shot: use a full or medium shot.",
   NAME_TAG_AMBIGUOUS: "a name tag sits as close to another character as to the one it names: give that character a slot apart.",

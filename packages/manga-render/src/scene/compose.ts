@@ -200,6 +200,16 @@ export const MAX_FX = 3;
 export const SPEAKER_MIN_HEAD_RADIUS = 22;
 /** A planned figure whose head circle is less than this share inside the panel gets FIGURE_HEAD_PARTLY_CLIPPED (a warning, D31). */
 export const HEAD_PARTLY_CLIPPED_SHARE = 0.6;
+/**
+ * v0.3 (Gate 2a, docs/v0.3/D2-push.md): a planned figure whose body is under this share of the panel
+ * height, in any shot but an establishing, extreme close or insert shot, is flagged (FIGURE_TOO_SMALL).
+ * Calibrated on 370 judged pages (D26: E 53, P 83%, L +27 points, C 9%).
+ */
+export const FIGURE_MIN_HEIGHT_SHARE = 0.15;
+/** The shots where a small figure is on purpose (or the camera fills the panel), so FIGURE_TOO_SMALL does not apply. */
+export function figureSizeIsChecked(shot: string): boolean {
+  return shot !== "establishing" && shot !== "extreme_close" && shot !== "insert";
+}
 export const LOD_FULL_RADIUS = 30;
 export const LOD_REDUCED_RADIUS = 18;
 /** A figure staged on another's hand, shoulder or head must read at least this big (page units). */
@@ -1956,6 +1966,24 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           severity: "warning",
           path: ipath,
           message: `"${fp.character}", the subject of this beat, fills only ${Math.round(share * 100)}% of this ${shot} panel (head radius ${Math.round(fp.headRadius)} units) even after the camera pushed in, and will not read. Use a medium or close shot for the subject, or a panel of its own.`,
+        });
+      }
+    }
+  }
+  // a planned figure that is a speck in a panel that is not an establishing shot (v0.3, Gate 2a): a warning that
+  // the writer repairs once (REPAIR_ONCE_CODES). A figure that HERO_TOO_SMALL or SPEAKER_TOO_SMALL already names is not named twice.
+  if (figureSizeIsChecked(shot)) {
+    for (const fp of figures) {
+      if (fp.headCropped) continue;
+      if (heroes.has(fp.figureIndex) && !speakers.has(fp.character) && issues.some((i) => i.code === "HERO_TOO_SMALL" && i.path === ipath && i.message.startsWith(`"${fp.character}"`))) continue;
+      if (speakers.has(fp.character) && fp.headRadius < SPEAKER_MIN_HEAD_RADIUS) continue;
+      const heightShare = Math.min(fp.body.h, box.h) / box.h;
+      if (heightShare < FIGURE_MIN_HEIGHT_SHARE) {
+        issues.push({
+          code: "FIGURE_TOO_SMALL",
+          severity: "warning",
+          path: ipath,
+          message: `"${fp.character}" is only ${Math.round(heightShare * 100)}% of the height of this ${shot} panel (head radius ${Math.round(fp.headRadius)} units) and will read as a speck. Use a closer shot for it, put fewer figures in the panel so the camera can come in, or give it a panel of its own.`,
         });
       }
     }
