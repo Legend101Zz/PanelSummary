@@ -153,7 +153,7 @@ In `Book-Reel-scratch/v03/d1r/contact/`:
 1. `1-archetypes-3-poses.png`: the six archetypes in three poses beside an adult.
 2. `2-generic-environments.png`: the five generic backdrops and `abstract`, without and with features.
 3. `3-neutral-props-labels.png`: the five `thing_*` props with labels, one page.
-4. `4-tuning-*`: two pages of *Just So Stories* (final-journey-2 pages 4 and 21) before (0.6.0) and after, with an
+4. `4-tuning-*`: two pages of *Just So Stories* (final-journey-2 pages 4 and 21) unedited and edited (both with the 0.7.0 renderer), with an
    edited copy of the spec: the Elephant's Child as `quad_large` at scale 1.7, the Crocodile and the Python as
    `long_low`, the cave as `generic_rough` with the blade-bone as a labelled `thing_long`.
 
