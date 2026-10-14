@@ -47,10 +47,12 @@ needs_mongo = pytest.mark.skipif(not _mongo_up(), reason="no MongoDB for the API
 # --- estimator: the ranges must contain every measured run ---
 
 
-def test_the_fit_has_the_v02_runs_and_only_the_current_policy():
+def test_the_fit_has_the_v02_and_v03_runs_and_only_the_current_policy():
     # 1 v0.1 run with Flash on every goal, 10 v0.2 runs (live lane 1-6 and 8, 2 final journeys, the v0.1.0
-    # hold-out journey) and the owner's private book (numbers only). Nothing else may be in the ranges.
-    assert len(FIT_RUNS) == 12
+    # hold-out journey), the owner's private book (numbers only) and 6 complete v0.3 runs (Gate 1, 1b, 2a).
+    # Nothing else may be in the ranges.
+    assert len(FIT_RUNS) == 18
+    assert sum(run.name.startswith("v0.3 ") for run in FIT_RUNS) == 6
     assert {run.name for run in FIT_RUNS} >= {"understanding A/B, all Flash", "v0.2 private book (numbers only)"}
     assert all(run.policy == CURRENT_POLICY for run in FIT_RUNS)
     assert len({run.name for run in FIT_RUNS}) == len(FIT_RUNS)
@@ -99,14 +101,21 @@ def test_the_ranges_are_the_envelope_of_the_runs_widened_by_the_stated_margin():
     draw = [run.draw_cost_usd / run.manga_pages for run in FIT_RUNS if run.draw_cost_usd is not None]
     assert pf.DRAW_COST_PER_PAGE_LOW <= min(draw) and pf.DRAW_COST_PER_PAGE_LOW >= min(draw) / slack
     assert pf.DRAW_COST_PER_PAGE_HIGH >= max(draw) and pf.DRAW_COST_PER_PAGE_HIGH <= max(draw) * slack
-    # First page: the base after the per-word term, over the 11 v0.2 runs (the v0.1 run is the slow hour).
-    bases = [run.first_page_s - pf.FIRST_PAGE_S_PER_WORD * run.words for run in FIT_RUNS if run.name.startswith("v0")]
+    # First page: the base after the per-word term, over all fit runs (the slow v0.1 hour is inside it).
+    bases = [run.first_page_s - pf.FIRST_PAGE_S_PER_WORD * run.words for run in FIT_RUNS]
     assert pf.FIRST_PAGE_BASE_S_LOW <= min(bases) and pf.FIRST_PAGE_BASE_S_HIGH >= max(bases)
     assert min(bases) - 1 <= pf.FIRST_PAGE_BASE_S_LOW and pf.FIRST_PAGE_BASE_S_HIGH <= max(bases) + 1
-    # The slow-hour extra is just enough for the one run that needed it, with the margin to spare.
-    slow = next(run for run in FIT_RUNS if run.name == "understanding A/B, all Flash")
-    need = slow.first_page_s - pf.FIRST_PAGE_S_PER_WORD * slow.words - pf.FIRST_PAGE_BASE_S_HIGH
-    assert need <= pf.UNDERSTANDING_SLOW_HOUR_EXTRA_S <= need * 1.1
+    # Cost factors: the smallest and the largest ratio of a measured cost to the cost model at the
+    # low and the high page count of the range, widened by the margin (rounded outward, 0.01 slack).
+    low, high = [], []
+    for run in FIT_RUNS:
+        kwords = run.words / 1000
+        pages = estimate(run.words, run.sections)["estimated_manga_pages"]
+        model = lambda n: pf.COST_PER_KWORD * kwords + pf.COST_PER_PAGE * n  # noqa: E731
+        low.append(run.cost_usd / model(pages["low"]))
+        high.append(run.cost_usd / model(pages["high"]))
+    assert pf.COST_LOW_FACTOR <= min(low) * (1 - MARGIN) + 0.005
+    assert pf.COST_HIGH_FACTOR >= max(high) * (1 + MARGIN) and pf.COST_HIGH_FACTOR <= max(high) * (1 + MARGIN) + 0.01
 
 
 def test_ranges_are_ordered_and_grow_with_the_book():
@@ -182,7 +191,7 @@ def test_build_preflight_shape_and_basis():
     # The basis says what the range rests on: the runs with Flash on every goal.
     basis = out["estimated_cost_usd"]["basis"]
     assert f"{len(FIT_RUNS)} measured runs with Flash on every goal" in basis
-    assert "6 books of 26 to 68 PDF pages" in basis
+    assert "9 books of 26 to 68 PDF pages" in basis
     # The ranges are fitted on the all-Flash policy (D13). Any other policy must say it was not measured.
     for models in (("MiniMax-M3",) * 3, ("MiniMax-M3", "MiniMax-M3", "MiniMax-M3.1-Flash-Preview")):
         s2 = Settings(_env_file=None, understanding_model=models[0], plan_model=models[1], page_model=models[2])

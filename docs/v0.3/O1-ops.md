@@ -270,3 +270,66 @@ Commands and counts are in the PR body. Short form:
 - `cd backend && TEST_MONGODB_URL=mongodb://127.0.0.1:27150 .venv/bin/python -m pytest -q`: 112 passed.
 - `... pytest tests/test_preflight.py -q`: 37 passed, 0 skipped (the 2 API tests ran against the owned mongod).
 - Replay stack on ports 3250, 8150, 8850, 27150 (`PANELSUMMARY_REPLAY_WORKER=scripts/fixtures/replays/happy-prince-two-tales ./start.sh`), the two-tale PDF uploaded through `POST /upload`, `GET /books/{id}/preflight` before and after (section 1.4). The stack was stopped with `./stop.sh`; ports 3250, 8150, 8850 and 27150 were free afterwards.
+
+## 5. v0.3 runs added to the fit (issue #88)
+
+Date: 2026-10-14. Branch `v03/fit-v03`. No model call was made. The numbers come from the run
+summaries of the 6 complete v0.3 runs (label, PDF pages, words, sections, planned pages, first
+page time, total time, cost). Scripts and output: `Book-Reel-scratch/v03/fit/` (`fit.py`, `cmp.py`, `cmp.out`).
+
+### 5.1 The 6 runs (policy Flash on every goal)
+
+"First page" is `created_to_first_page_s` and "All pages" is `created_to_finished_s`, as for the v0.2 runs.
+The summaries have no understanding time and no page receipts, so those two fields are empty in `FIT_RUNS`.
+That means the draw cost range (0.0187 to 0.0363 usd per page) has no v0.3 data. It did not change.
+
+| Run | PDF pages | Words | Sections | Planned pages | First page s | All pages s | s per further page | Cost usd |
+|---|---|---|---|---|---|---|---|---|
+| two-tale (Gate 1) | 26 | 5,794 | 2 | 22 | 179 | 483 | 14.5 | 0.71 |
+| two-tale (Gate 1b) | 26 | 5,794 | 2 | 22 | 245 | 676 | 20.5 | 1.03 |
+| Just So (Gate 1b) | 38 | 9,419 | 3 | 35 | 153 | 456 | 8.9 | 0.94 |
+| sealed fiction 1 (Gate 2a) | 39 | 7,306 | 13 | 28 | 463 | 857 | 14.6 | 1.18 |
+| sealed fiction 2 (Gate 2a) | 45 | 10,767 | 8 | 41 | 309 | 679 | 9.3 | 1.13 |
+| sealed nonfiction (Gate 2a) | 34 | 8,699 | 3 | 31 | 156 | 473 | 10.6 | 0.89 |
+
+### 5.2 What the v0.3 runs changed
+
+Same rule as section 1.2: a range is the envelope of all measured runs, widened by 10 percent, rounded outward.
+
+| Constant | Before (12 runs) | After (18 runs) | Why |
+|---|---|---|---|
+| `PAGES_PER_KWORD_LOW` / `HIGH` | 2.75 / 4.3 | 2.75 / 4.3 | v0.3 runs are 3.56 to 3.83 pages per 1,000 words, inside 3.08 to 3.88 |
+| `COST_PER_KWORD`, `COST_PER_PAGE` | 0.0075, 0.0265 | same | No page receipts for the new runs, so a and b cannot be fitted again |
+| `COST_LOW_FACTOR` | 0.93 | 0.93 | Smallest ratio is 1.04 (unchanged) |
+| `COST_HIGH_FACTOR` | 1.32 | 1.81 | Largest ratio went from 1.20 to 1.64 (two-tale Gate 1b: 26 calls, $1.03 for 22 pages) |
+| `FIRST_PAGE_BASE_S_HIGH` | 165, plus 220 for the slow hour | 405, no extra | Largest base is 404 s (sealed fiction 1, 13 sections). It is above the v0.1 slow-hour run (381 s), so the extra is not needed any more |
+| `UNDERSTANDING_SLOW_HOUR_EXTRA_S` | 220 | removed | See above |
+| `PAGE_S_HIGH` | 19.3 | 22.6 | Largest value went from 17.5 to 20.5 s per further page |
+| `PAGE_S_LOW`, `FIRST_PAGE_BASE_S_LOW`, `FAILED_PAGE_TAIL_S_HIGH`, draw cost | - | unchanged | No v0.3 run is outside them |
+
+The old ranges (section 1) contain 16 of the 18 runs in every range. Two v0.3 runs are above the old cost
+high bound: two-tale Gate 1b ($1.03, bound $0.83) and sealed fiction 1 ($1.18, bound $1.13 for 28 pages).
+All times and page counts of the v0.3 runs were already inside the old ranges. With the new ranges all 18 runs are inside every range.
+
+### 5.3 Before and after for a 9,419-word, 3-section book (Just So)
+
+| | Before | After |
+|---|---|---|
+| Pages | 25 to 36 | 25 to 36 |
+| Cost | $0.68 to $1.35 | $0.68 to $1.85 |
+| First page | 1 to 9 min | 1 to 9 min |
+| All pages | 4 to 25 min | 4 to 27 min |
+
+Other books (before, then after):
+
+| Book | Words | Sections | Cost | First page (min) | All pages (min) |
+|---|---|---|---|---|---|
+| two tales | 5,794 | 2 | $0.41 to $0.83, then $0.41 to $1.13 | 1 to 8, then 1 to 9 | 2 to 20, then 2 to 21 |
+| 68-page book | 16,159 | 5 | $1.20 to $2.33, then $1.20 to $3.19 | 2 to 10, then 2 to 10 | 7 to 34, then 7 to 38 |
+
+### 5.4 Limits of this fit
+
+- The cost high bound is set by one run (two-tale Gate 1b). The same book cost $0.71 in Gate 1. The high end is wider because of one dear run; more v0.3 runs can narrow it.
+- The first-page high base is set by one run with 13 sections (463 s). The model has no term for sections. With only 6 runs, a section term would be a guess, so none was added.
+- The cost basis text in the UI counts runs and books from `FIT_RUNS`: it now says "18 measured runs" and "9 books of 26 to 68 PDF pages".
+- The v0.3 run summaries were used as given. The first drawn page was not checked to be page 1, and the "page 1" time was not used.
