@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.13.0
+version: 1.14.0
 ---
 
 # Manga page
@@ -304,6 +304,10 @@ draw a neutral stand-in and say so. Never draw a thing as another thing.
   Give it a `label`: the object's name in the book's words, at most 24 characters
   (`{"prop": "thing_long", "label": "walking stick"}`). Keep the same shape and label every time
   the object appears. A prop of the list is right only when it is that very object.
+- **Labels are for `thing_*` props only.** The renderer ignores a `label` on any other prop. The
+  colour or the name of a named prop goes in the art (`tone`) or in the dialogue, never in a
+  label. Three things the story tells apart (three trees of different colours) are three cast
+  members or props, each with its own `tone`, never one with a label on each.
 - **Creatures.** When a cast member is a neutral archetype (its `fit` is `none` in the
   understanding), the renderer draws its name tag. Do not add a second one with a caption.
   Use the member's cast `name` in the lettering as the book does; do not rename it.
@@ -347,6 +351,11 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 - **When the previous page ended on a hook**, open with the answer: the first panel is
   large (about 40% of the page or more), and it is not a copy of the previous page's last
   panel.
+- **Never repeat across the turn.** The goal tells you whether the previous page ended on a
+  planned hook, and gives its beat. The pages are written in parallel and you cannot see that
+  page's spec. Your first panel never repeats the previous page's hook line or its last
+  picture: it answers the hook, or it moves on to the next event. On page 1 there is nothing
+  to answer.
 
 ## Truth
 

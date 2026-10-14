@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.6.0
+version: 1.7.0
 ---
 
 # Adaptation plan
@@ -69,14 +69,17 @@ something to *see*.
 8. **Rhythm.**
    - Alternate quieter set-up pages with action or revelation pages. Never plan three
      high-intensity pages in a row, or more than three quiet ones.
-   - Give every page that does not close a section a turn hook: set `page_turn_hook: true`
-     and write the hook in the beat. A hook is a question the page leaves open, a reveal held
-     back, or a change that is about to happen. Judges gave pages with a hook a page-turn
-     score about 0.3 higher than pages without one. A page that closes a section ends on its
-     landing instead (see the last bullet).
-   - Put the hook on the page *before* the reveal. The next page's beat begins with the
-     answer. Take the hook from the book: a question a character asks, a threat, a sentence
-     that stops before its answer. Do not plan an invented line to make a hook.
+   - Plan a turn hook where the story has one: set `page_turn_hook: true` and write the hook in
+     the beat. A hook is a question the page leaves open, a reveal held back, or a change that
+     is about to happen. That is about one page in two to four, never forced and never on every
+     page. Measured: forcing a hook on every page (18 of 22 pages) did not raise the page-turn
+     score and made the next page repeat the hook line. A page that closes a section ends on
+     its landing instead (see the last bullet).
+   - The page after a hook ANSWERS it or MOVES ON. Its beat never repeats the hook line or the
+     picture the hook page ends on, and no two neighbouring pages have the same beat text. Pages
+     are written in parallel: the page writer sees only your beat of the previous page. Take the
+     hook from the book: a question a character asks, a threat, a sentence that stops before its
+     answer. Do not plan an invented line to make a hook.
    - Give big moments (a revelation, a death, a transformation, the climax) a page of
      their own. It may be a 1-2 panel page, so plan fewer claims there.
    - The book's last page, and the last page of each section, end on one strong image and a

@@ -213,3 +213,18 @@ Skill sizes: manga-page 22,846 to 24,548 bytes, adaptation-plan 6,589 to 7,105. 
 2. The judges read the page warnings, so a check that is also a warning is easy to confirm. `QUOTE_CLIPPED` is one case. `PROSE_WALL` (in `repair_once`) is named in 37 defects. Do you want the D26 numbers of the `repair_once` codes calculated again without the defects that name the code?
 3. Do you want a backend change (`editions.py`, 3 lines) that names the `m_` ids in `speakers`? It fixes the Reader and the drawer at once and lets the frontend change go.
 4. The renderer draws a cave as a modern room (14 defects, 15 pages, on the Just So runs). Is this for the renderer track of v0.3?
+
+## Gate 1 fixes (track fxw, issue #82)
+
+Source: `Book-Reel-scratch/v03/gate1-analysis-public.md` (causes A1 and A3 and the A2 scale rule). Same book, same model, renderer 0.6.0 against 0.7.0.
+
+What Gate 1 measured about the W1 hook rule: hooks 10 to 18 of 22 pages, page-turn mean 3.56 to 3.48, pages that gained a hook +0.07, pages that had one in both runs -0.25, repeated panels 0.12 to 0.21, and 3 of 12 adjacent hook pairs that share a unit repeat the hook line on the next page (v0.2: 0 of 5). Section 3 of this note read a 0.32 link between a planned hook and the score; the link was selection, not a gain from forcing hooks.
+
+Changes:
+1. `adaptation-plan` 1.7.0. A hook where the story has one, about every 2 to 4 pages, never forced. The page after a hook answers it or moves on. No two neighbouring pages have the same beat text.
+2. `PAGE_TURN_HOOK_MISSING` is removed (`src/goals/page-turn.ts`). It pushed a hook on every page, and the Gate 1 measurement does not support it. New plan warning `PLAN_BEAT_REPEATED`: two consecutive pages with the same beat text (case, spaces and end punctuation ignored). The two-tale Gate 1 plan has none.
+3. The page goal gets the previous page's planned beat and `planned_hook` (from the plan, `previous.planned_hook`; nothing for page 1). The prompt says: the page before ends on a planned hook, do not repeat it. `manga-page` 1.14.0 has the rule "Never repeat across the turn" in section 10. The written spec of the previous page is still not given.
+4. `manga-page` 1.14.0, "When no item fits": a `label` is for `thing_*` props only (the renderer ignores it on other props). Colour or the name of a named prop goes in the art (`tone`) or the dialogue. Three things the story tells apart are three cast members or props, each with its own `tone`. (`book-understanding` 1.13.0 says the same for the cast.)
+
+Tests: `test/gate1-fixes.test.ts` (the page goal input has the previous page's planned hook for page N > 1 and nothing for page 1; the prompt text; the skill rules) and `test/w1-writer.test.ts` (the plan checks). Skill growth: +1,919 bytes in three skills (49,358 to 51,277); the limit in `continuity.test.ts` is 1.50 (measured 51,277 / 34,494 = 1.4865).
+Not measured: the effect on judged pages. A live Gate 1 run must show it. The catalog text of `prop.label` in `packages/manga-render/src/catalog.ts` still says "allowed on any prop"; it belongs to the renderer track.

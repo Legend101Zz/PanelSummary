@@ -1,5 +1,5 @@
 import { DEFAULT_GOAL_MODEL } from "@panelsummary/agent-runtime";
-import { catalog, validateUnderstanding } from "@panelsummary/manga-render";
+import { catalog, PROP_WORDS, validateUnderstanding } from "@panelsummary/manga-render";
 import type { BookUnderstanding, ValidationIssue } from "@panelsummary/manga-render";
 
 import { loneSpeakerIssues, loneSpeakers, speakerCastIssues, speakerList } from "./attribution.js";
@@ -9,7 +9,7 @@ import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.j
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { mergePrior, parsePrior, priorForPrompt, type PriorUnderstanding } from "./prior-understanding.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
-import { ARCHETYPE_SPECIES, GENERIC_ENVIRONMENTS, lookVocabulary, standInVocabulary } from "./vocabulary.js";
+import { ARCHETYPE_SPECIES, GENERIC_ENVIRONMENTS, NEUTRAL_PROPS, lookVocabulary, standInVocabulary } from "./vocabulary.js";
 
 /**
  * Looks that contradict the character's own description. A statue (or carving,
@@ -177,7 +177,7 @@ export function issueNote(issues: readonly ValidationIssue[]): string {
 // D30: the understanding says what it could not map (fit, wanted, unmapped)
 // ---------------------------------------------------------------------------
 
-type FitEntry = { id?: string; name?: string; fit?: unknown; wanted?: unknown; look?: { kind?: string; species?: string }; environment?: string };
+type FitEntry = { id?: string; name?: string; fit?: unknown; wanted?: unknown; look?: { kind?: string; species?: string; scale?: unknown; height?: string }; environment?: string };
 
 /**
  * Checks on `fit` and `wanted`. No word lists: whether a look suits a description cannot be
@@ -216,6 +216,68 @@ export function standInIssues(value: unknown): ValidationIssue[] {
     if (!place || typeof place !== "object") continue;
     const env = place.environment;
     check(place, `location ${place.id ?? "?"}`, env && (GENERIC_ENVIRONMENTS as readonly string[]).includes(env) ? env : undefined);
+  }
+  return issues;
+}
+
+/**
+ * Gate 1 fixes (D30, track fxw). Three checks, none of them a word list for one book.
+ * - CROWD_STAND_IN (error): a `crowd` draws people only, so a `crowd` member that the model itself
+ *   reports as `fit` near or none is always a wrong match (the group is not people, or not these
+ *   people). The M1 live run cast an animal family as a human crowd with fit near.
+ * - SCALE_NOT_USED (warning): the renderer uses `look.scale` only on a neutral archetype species and
+ *   on a human below 1.0. Gate 1: the model set a real-world size on almost every member (a swallow
+ *   0.08, a prince 2.0) and the birds were drawn as specks. A scale the renderer ignores is shown on the receipt.
+ * - UNMAPPED_HAS_ITEM (warning): an `unmapped` prop whose `wanted` names a thing the renderer has a
+ *   prop item for (the renderer's PROP_WORDS) would show a false stand-in in the reader.
+ */
+export function gate1Issues(value: unknown, skipCastIds: ReadonlySet<string> = new Set()): ValidationIssue[] {
+  const u = value as { cast?: FitEntry[]; unmapped?: Array<{ type?: unknown; ref?: unknown; wanted?: unknown; used?: unknown }> };
+  const issues: ValidationIssue[] = [];
+  for (const member of Array.isArray(u?.cast) ? u.cast : []) {
+    // A continuation (D38): the earlier parts' cast is copied unchanged and cannot be repaired here.
+    if (!member || typeof member !== "object" || skipCastIds.has(String(member.id))) continue;
+    const look = member.look;
+    const path = `cast ${member.id ?? "?"}`;
+    if (look?.kind === "crowd" && (member.fit === "near" || member.fit === "none")) {
+      issues.push({
+        code: "CROWD_STAND_IN",
+        severity: "error",
+        path,
+        message: `${member.id} is a "crowd" with fit "${member.fit}": a crowd draws people only, so it is the wrong match for this group (it is not people, or not these people). For a group of animals use one animal member (a neutral archetype such as quad_small, quad_medium, quad_large, long_low, swimmer or bird_tall if no species fits) with fit and wanted. Keep "crowd" for a group of people that the book says are a crowd.`,
+      });
+    }
+    if (look && look.scale !== undefined) {
+      const species = typeof look.species === "string" ? look.species : undefined;
+      const archetype = species !== undefined && (ARCHETYPE_SPECIES as readonly string[]).includes(species);
+      const scale = typeof look.scale === "number" ? look.scale : NaN;
+      const humanTiny = look.kind === "human" && scale < 1;
+      if (!archetype && !humanTiny) {
+        const why =
+          look.kind === "human"
+            ? `a human of scale 1.0 or more is drawn at the usual size: for a big person set "height": "giant" and leave "scale" out`
+            : species !== undefined
+              ? `a named species is drawn at a readable size already: leave "scale" out (use it only on a neutral archetype, or on a human the book says is tiny)`
+              : `the renderer ignores "scale" on this look: leave it out`;
+        issues.push({ code: "SCALE_NOT_USED", severity: "warning", path: `${path}.look`, message: `${member.id} sets look.scale ${String(look.scale)}, but the renderer does not use it: ${why}.` });
+      }
+    }
+  }
+  const words = Object.entries(PROP_WORDS)
+    .filter(([id]) => !(NEUTRAL_PROPS as readonly string[]).includes(id))
+    .flatMap(([id, list]) => [id.replace(/_/g, " "), ...(list ?? [])].map((word) => [word, id] as const));
+  for (const [index, entry] of (Array.isArray(u?.unmapped) ? u.unmapped : []).entries()) {
+    if (!entry || entry.type !== "prop" || typeof entry.wanted !== "string") continue;
+    const wanted = entry.wanted.toLowerCase();
+    const hit = words.find(([word]) => new RegExp(`(^|[^a-z])${word.replace(/[-\s]/g, "[-\\s]")}($|[^a-z])`).test(wanted));
+    if (hit) {
+      issues.push({
+        code: "UNMAPPED_HAS_ITEM",
+        severity: "warning",
+        path: `unmapped ${index}`,
+        message: `unmapped prop "${entry.wanted.slice(0, 40)}" is a thing that has a prop item ("${hit[1]}", for the word "${hit[0]}"): the reader would show a false stand-in. Remove the entry; the page writers use "${hit[1]}". List only things that no prop is.`,
+      });
+    }
   }
   return issues;
 }
@@ -298,6 +360,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     let current: Record<string, unknown> | undefined;
     const order = unitOrder(book.sections.map((section) => ({ units: section.unit_ids })));
     const stickyStatues = new Set<string>();
+    const priorCastIds = new Set((prior?.cast ?? []).map((member) => String((member as { id?: unknown }).id)));
     // D38: the units a prior location already has point to earlier parts and are valid by construction.
     const priorPlaceUnits = new Map((prior?.locations ?? []).map((place) => [place.id, Array.isArray(place.units) ? (place.units as string[]) : []] as const));
     const judge = (candidate: unknown) => {
@@ -305,7 +368,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       // The checks see the new states only: the `at` of an earlier state points to a unit of an earlier part.
       const checked = prior ? mergePrior(candidate, prior, { keepPriorStates: false }) : { merged: candidate, issues: [] as ValidationIssue[] };
       const value = checked.merged;
-      const issues = [...checked.issues, ...withWantedContext(validateUnderstanding(value, unitIds), value), ...lookSenseIssues(value, stickyStatues, prior?.sections.map((section) => section.id) ?? []), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds, true, priorPlaceUnits), ...sectionCoverageIssues(value, book), ...standInIssues(value)];
+      const issues = [...checked.issues, ...withWantedContext(validateUnderstanding(value, unitIds), value), ...lookSenseIssues(value, stickyStatues, prior?.sections.map((section) => section.id) ?? []), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds, true, priorPlaceUnits), ...sectionCoverageIssues(value, book), ...standInIssues(value), ...gate1Issues(value, priorCastIds)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

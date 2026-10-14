@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.12.0
+version: 1.13.0
 ---
 
 # Book understanding
@@ -86,7 +86,9 @@ in the next) are two cast members with different ids and sections; the plan may 
 character on pages of its own sections.
 
 **Groups.** `crowd` draws people only. A group of animals or plants (ducklings, sheep, the
-rose-trees) is one `bird`/`animal`/`plant` member. A giant has `"height": "giant"`.
+rose-trees) is one `bird`/`animal`/`plant` member. A giant has `"height": "giant"`. When the
+book tells several things apart by colour or name (three kites, one red, one white, one gold),
+make one cast member for each, with its own `tone`: page writers cannot separate them by a label.
 
 **Everyone who speaks or acts on the page is cast.** Page writers can only draw cast
 members; anyone missing from the cast becomes a narration box. That includes personified
@@ -206,15 +208,23 @@ so report it.
    `generic_outdoor`) and put what the scene needs in `features`. Set `"fit": "none"` and
    `"wanted"`: the thing in the book's own words, at most 40 characters ("an old camel",
    "a ruined tower"). The renderer draws a name tag for an archetype.
-3. **Size.** When the book gives a size that the usual size contradicts (a person "no taller than
-   a cup", a giant "as tall as a house"), set `look.scale` (a factor of an adult human, 0.05-4.0). Leave it out otherwise.
+3. **Size.** Leave `look.scale` out by default. The renderer already draws each named species at
+   a readable size and ignores `scale` there (the receipt shows SCALE_NOT_USED). Set it only (a) on
+   a neutral archetype stand-in, to give its size relative to a person (0.5 = half a person; a
+   `quad_large` stand-in for a very big animal), or (b) on a human that the book says is tiny
+   (below 1.0: "no taller than a cup"). Never give the real-world size of a named animal or bird
+   (a sparrow is not 0.08): a small bird stays small by its species. A big person uses
+   `"height": "giant"`, never `scale` above 1.0.
 4. **Never the wrong kind.** Never draw an animal as a person or a person as an animal. A
    stand-in of the right body plan is better than a close face of the wrong kind.
-5. **A group of animals is one animal member**, never a `crowd` (`crowd` draws people only).
+5. **A group of animals is one animal member**, never a `crowd` (`crowd` draws people only). A
+   `crowd` with `fit` near or none is an error (CROWD_STAND_IN): use one animal member, an
+   archetype if no species fits, with `fit` and `wanted`.
 6. **Objects.** List in `unmapped` the important objects of the book (a central object, a key
    plot object) that no prop fits, as `{"type": "prop", "wanted": "…", "used": "thing_…"}` with the
    neutral shape that matches (`thing_long`, `thing_round`, `thing_block`, `thing_flat`,
-   `thing_heap`). Page writers draw that shape with a label. Also list each cast member and
+   `thing_heap`). Page writers draw that shape with a label. Do not list a thing that has a prop
+   item (UNMAPPED_HAS_ITEM): a jewel is a `gem` and a heart is a `heart`, not a `thing_round`. Also list each cast member and
    place with `fit: "none"`, with its `ref`.
 
 Do not stretch a name to make an item fit, and do not use `fit: "none"` when an item of the same
