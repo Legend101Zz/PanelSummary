@@ -30,7 +30,7 @@ export { segmentsFromPages, describeSegments, summaryLine, formatPageList, count
 export type { SegmentState } from "./toneStripLogic";
 export { StepList } from "./StepList";
 export { stepStates } from "./steps";
-export { ResultLine } from "./ResultLine";
+export { ResultLine, OUTSIDE_ABOVE, OUTSIDE_BELOW, OUTSIDE_COST } from "./ResultLine";
 export { EstimatePanel } from "./EstimatePanel";
 export { Card } from "./Card";
 export { RunCard } from "./RunCard";

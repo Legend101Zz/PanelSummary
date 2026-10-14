@@ -11,6 +11,7 @@ import {
   Notice,
   PageFrame,
   ResultLine,
+  OUTSIDE_COST,
   RunCard,
   StepList,
   TextLink,
@@ -40,6 +41,8 @@ export interface RunPanelProps {
   pending: Pending;
   readHref: string;
   readLabel: string;
+  /** "Your place is saved in this browser only." shown with "Continue from page N". */
+  readHint: string | null;
   canRead: boolean;
   /** Animate the page 1 band: true only when page 1 became ready while this page was open. */
   animateMoment: boolean;
@@ -138,6 +141,8 @@ export function RunPanel(p: RunPanelProps) {
     notes.push(<p key="n1">{same ? `This page updates itself, so you can leave it open. ${same}` : "This page updates itself, so you can leave it open."}</p>);
   }
 
+  if (p.readHint && p.canRead) notes.push(<p key="place">{p.readHint}</p>);
+
   // --- actions --------------------------------------------------------------
   const read = (variant: "primary" | "secondary") => (
     <Button key="read" variant={variant} size="md" href={p.readHref} iconEnd={<span aria-hidden="true">{"→"}</span>}>
@@ -182,21 +187,27 @@ export function RunPanel(p: RunPanelProps) {
   } else if (e.status === "complete") {
     if (p.canRead) actions.push(read("primary"));
   } else if (e.status === "completed_with_failures") {
+    // The owner default (#94): "Retry failed pages" shows for every run that ended with failures, also when no page is missing
+    // (every page is drawn, key points were left out). With a missing page it is the primary button; with none, reading is.
+    const retryBtn = (variant: "primary" | "secondary") => (
+      <Button
+        key="retry"
+        variant={variant}
+        size="md"
+        onClick={p.onRetry}
+        loading={p.pending === "retry"}
+        accessibleName={p.pending === "retry" ? "Retry failed pages: retrying" : undefined}
+      >
+        {p.pending === "retry" ? "Retrying" : "Retry failed pages"}
+      </Button>
+    );
     if (missing > 0) {
-      actions.push(
-        <Button
-          key="retry"
-          variant="primary"
-          size="md"
-          onClick={p.onRetry}
-          loading={p.pending === "retry"}
-          accessibleName={p.pending === "retry" ? "Retry failed pages: retrying" : undefined}
-        >
-          {p.pending === "retry" ? "Retrying" : "Retry failed pages"}
-        </Button>,
-      );
+      actions.push(retryBtn("primary"));
       if (p.canRead) actions.push(read("secondary"));
-    } else if (p.canRead) actions.push(read("primary"));
+    } else {
+      if (p.canRead) actions.push(read("primary"));
+      actions.push(retryBtn("secondary"));
+    }
   } else if (e.status === "cancelled" || e.status === "failed") {
     actions.push(resumeBtn("primary"));
     if (p.canRead) actions.push(read("secondary"));
@@ -277,6 +288,8 @@ export function RunPanel(p: RunPanelProps) {
   let footnote: ReactNode = null;
   if (e.status === "completed_with_failures" && missing > 0) {
     footnote = <p>Choose Retry failed pages above to try them again. The pages that are drawn stay as they are.</p>;
+  } else if (e.status === "completed_with_failures") {
+    footnote = <p>Retry failed pages tries the run again. The pages that are drawn stay as they are.</p>;
   } else if (active && counts.failed > 0) {
     footnote = <p>{e.status === "drawing" ? "You can retry failed pages when the rest are drawn." : "Drawing is starting again, and these pages will be tried again."}</p>;
   }
@@ -365,6 +378,7 @@ function Result({ edition: e, preflight, gaps, keyPointsLeft }: { edition: Editi
                 actualLabel={formatUsd(cost)}
                 lowLabel={formatUsd(costRange.low)}
                 highLabel={formatUsd(costRange.high)}
+                outsideWords={OUTSIDE_COST}
               />
             ) : null}
           </div>

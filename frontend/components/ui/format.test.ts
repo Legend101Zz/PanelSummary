@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clamp01, formatCount, formatDuration, formatDurationRange, formatPercent, formatUsd, formatUsdRange, meterParts, pluralize, rangePosition } from "./format";
+import { clamp01, formatCount, formatDuration, formatDurationRange, formatPercent, formatUsd, formatUsdRange, meterParts, pluralize, rangePosition, rangeSide } from "./format";
 import { drawnFraction, familyForTone, shelfBandExamples } from "./statusBandLogic";
 import { stepStates } from "./steps";
 
@@ -35,6 +35,13 @@ describe("format", () => {
     expect(rangePosition(10, 20, 20)).toEqual({ fraction: 0, align: "start" });
     expect(rangePosition(0, 100, 200).fraction).toBe(0);
     expect(rangePosition(900, 100, 200).fraction).toBe(1);
+  });
+  it("says when the actual value is outside the estimate range", () => {
+    expect(rangeSide(360, 540, 4380)).toBe("below");
+    expect(rangeSide(5000, 540, 4380)).toBe("above");
+    expect(rangeSide(540, 540, 4380)).toBe("within");
+    expect(rangeSide(4380, 540, 4380)).toBe("within");
+    expect(rangeSide(1800, 540, 4380)).toBe("within");
   });
   it("splits a meter into fill and over-limit parts", () => {
     expect(meterParts(5794, 17500)).toMatchObject({ isOver: false, over: 0 });

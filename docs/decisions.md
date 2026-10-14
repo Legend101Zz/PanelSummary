@@ -219,6 +219,12 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Receipts: the note of a rejected understanding submission names the first rejected field and value (plain text, 40 characters at most).
 - Status: accepted. Skills: `manga-page` 1.12.0 and `book-understanding` 1.10.0. Notes: `docs/v0.3/D1b-understanding.md`.
 
+### D37. The reader opens at the read size at 1440x900 (2026-10-14, issue #93, track U1)
+- Statement: The reader opens a page at the read size (0.7 px per page unit on a wide screen) and shows the top of the page. It does not fit the page height on open. The "Whole page" chip floats beside the page only when the graphite beside the page is 176 px wide or more; on a narrower stage it is in the bottom bar. It never covers the art.
+- Why: Measured at 1440x900 on a 22-page replay run: the smallest balloon or caption text is 15.4 px at the read size and 10.68 px when the page height is fitted. The rule was to fit the page only if the smallest text stays at 14 px or more.
+- Evidence: `docs/v0.3/U1-ui.md` (measurements, screenshots). The reader tokens and the page SVG did not change.
+- Status: accepted for v0.3.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

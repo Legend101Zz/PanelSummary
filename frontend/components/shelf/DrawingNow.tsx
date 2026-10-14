@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ApiError, resumeEdition, type EditionDetail, type LibraryBook } from "@/lib/api";
 import { ArrowRightIcon, Button, Notice, RetryIcon, TextLink, ToneStrip, segmentsFromPages } from "@/components/ui";
-import { plural, providerStopShort, shelfStatus } from "@/lib/words";
-import { drawingNowKind, type DrawingNowRun } from "./drawingNowLogic";
+import { shelfStatus } from "@/lib/words";
+import { drawingNowKind, drawingNowWords, type DrawingNowRun } from "./drawingNowLogic";
 import styles from "./drawingNow.module.css";
 
 /**
@@ -26,11 +26,13 @@ export function DrawingNowCard({ run, onChanged }: { run: DrawingNowRun; onChang
   const stopped = kind === "stopped";
   const stop = book.latest_edition.provider_stop;
   const headingId = `dn-${book.id}`;
-  const line = stopped
-    ? `${stop ? `${providerStopShort(stop.code)}. ` : ""}${total ? `${accepted} of ${plural(total, "page")} drawn.` : "Nothing was drawn."}`
-    : total
-      ? `${accepted} of ${total} drawn`
-      : shelfStatus(book).text;
+  const { eyebrow, line } = drawingNowWords(
+    book.latest_edition.status,
+    accepted,
+    total,
+    stop?.code,
+    total ? `${accepted} of ${total} drawn` : shelfStatus(book).text,
+  );
   const readHref = `/books/${book.id}/read?edition=${book.latest_edition.id}&page=1`;
 
   async function resume() {
@@ -49,7 +51,7 @@ export function DrawingNowCard({ run, onChanged }: { run: DrawingNowRun; onChang
   return (
     <section className={styles.card} aria-labelledby={headingId}>
       <div className={styles.head}>
-        <p className={styles.eyebrow}>{stopped ? "Drawing stopped" : "Drawing now"}</p>
+        <p className={styles.eyebrow}>{eyebrow}</p>
         <h2 id={headingId} className={styles.title}>
           {book.title}
         </h2>
