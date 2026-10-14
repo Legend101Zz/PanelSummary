@@ -95,8 +95,9 @@ beat that says "bone" or "pile" makes the prop a key prop (lettering keeps off i
 ## What changed on existing pages (measured)
 
 Method: 341 judged pages of ten saved runs (`Book-Reel-scratch/v02/live/run1..run8` where a judge folder exists,
-`final-journey`, `final-journey-2`, `v01-holdout`) were rendered with 0.6.0 (the base of this branch) and with 0.7.0. The SVG
-of each page was compared byte for byte.
+`final-journey`, `final-journey-2`, `v01-holdout`) were rendered with `release/v0.3` at `9312d14` (renderer 0.6.1, with
+the D2 camera push) and with this branch (0.7.0). The SVG of each page was compared byte for byte, and the issues
+(errors and warnings) of each page were compared.
 
 | Result | Pages |
 |---|---|
@@ -107,26 +108,36 @@ of each page was compared byte for byte.
 | Changed by the sword words | 1 (run 6 page 23: the blade-bone beat no longer names a sword) |
 | Abstract features | 0 pages (no judged page has an abstract place with features) |
 
-Error counts on the 341 pages (page has at least one error): 6 before, 13 after. No error was removed.
-Seven pages gain an error, all from the horse change:
-`live/run6` page 1 `BALLOON_TALL`, page 10 `TEXT_DOES_NOT_FIT`; `final-journey` page 2 `FACE_COVERED`, page 26
-`TEXT_DOES_NOT_FIT`; `final-journey-2` pages 3, 7 and 9 `BALLOON_TALL`. No `FIGURE_*`, `SPEAKER_*` or
-`HERO_TOO_SMALL` error appears. Warnings change on 7 pages: `FIGURE_CLIPPED` is new on run 6 page 2, and
-`FIGURE_HEAD_CLIPPED` or `FIGURE_CLIPPED` is gone on 6 pages. These seven pages were accepted with the old
-renderer. In a live run the writer gets the error and repairs the page. This is the price of the horse no longer
-being boosted: a small creature that speaks beside a horse now gets less room. The owner can ask to keep the old rule
-for animals of 45 or more by changing `SMALL_NOMINAL` in `scene/compose.ts`.
+Pages with at least one error: 25 before, 24 after.
 
-A page with none of the new values and none of these four causes is byte for byte as in 0.6.0. The gold test
-`test/gold-0.7.0.test.ts` pins the 52 pages of the Happy Prince fixture and of run 8 against the 0.6.0 hashes
-(`test/fixtures/gold-0.6.0.json`): 51 are identical, 1 changes on purpose (run 8 page 26: the Water-rat talks).
-`structural-metrics --fixtures` gives the same numbers as 0.6.0 (46 pages, 204 panels, text over head 28, text
+One guard of track D2 changed: `test/push-bounds.test.ts` asks for a body share of 0.15 for every planned figure. Two
+horse examples (final-journey-2 page 1 panel 2, run 6 page 7 panel 1) now show 0.10, because the horse is no
+longer small and its close-up fills the panel with the head. The body-share bound is now 0.08. The head checks of
+the test (95 percent of the head circle inside, no `FIGURE_CLIPPED`) are unchanged and pass.
+
+- Five pages gain an error, all from the horse change: `live/run6` page 1 `BALLOON_TALL`; `final-journey` page 2
+  `FACE_COVERED`, page 26 `TEXT_DOES_NOT_FIT`; `final-journey-2` pages 3 and 9 `BALLOON_TALL`. A small creature that
+  speaks beside a horse now gets less room for its balloon. In a live run the writer gets the error and repairs
+  the page.
+- Six pages lose an error, also from the horse change: `SPEAKER_TOO_SMALL` on `live/run6` pages 5 and 7,
+  `final-journey-2` pages 3, 4 and 8, and `v01-holdout` page 1 (also `TAIL_CROSSES_TEXT`). The horse is no longer
+  treated as a small creature, so the speaker beside it is no longer shrunk.
+- No new `FIGURE_*`, `SPEAKER_*` or `HERO_TOO_SMALL` error appears. One warning is new: `FIGURE_CLIPPED` on
+  `live/run6` page 2.
+- Against 0.6.0 (before D2) the same change gave 6 pages with errors before and 13 after (seven pages gained
+  an error). D2's push already removes some of them. The owner can ask to keep the old rule for animals of 45 or
+  more by changing `SMALL_NOMINAL` in `scene/compose.ts`.
+
+A page with none of the new values and none of these four causes is byte for byte as in 0.6.1. The gold test
+`test/gold-0.7.0.test.ts` pins the 52 pages of the Happy Prince fixture and of run 8 against the 0.6.1 hashes
+(`test/fixtures/gold-0.6.1.json`): 51 are identical, 1 changes on purpose (run 8 page 26: the Water-rat talks).
+`structural-metrics --fixtures` gives the same numbers as the base (46 pages, 204 panels, text over head 29, text
 overlaps 13, order breaks 5).
 
 ## Verification
 
 ```sh
-cd packages/manga-render && npx tsc --noEmit && npx vitest run     # 15 files, 919 tests pass
+cd packages/manga-render && npx tsc --noEmit && npx vitest run     # 16 files, 934 tests pass
 cd apps/agent-worker && npx tsc --noEmit && npx vitest run          # 10 files, 191 tests pass
 cd packages/manga-render && npx tsx scripts/structural-metrics.ts --fixtures
 ```

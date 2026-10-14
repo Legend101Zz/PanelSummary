@@ -73,7 +73,9 @@ describe("worked examples: every planned figure keeps its head in the panel (#90
           expect(fp!.headCropped, `${pf.character} headCropped`).toBeFalsy();
           expect(circleShareInside(fp!.head, fp!.headRadius, d!.bbox), `${pf.character} head share`).toBeGreaterThanOrEqual(0.95);
           const inside = inter(fp!.body, d!.bbox) / Math.max(1, fp!.body.w * fp!.body.h);
-          expect(inside, `${pf.character} body share`).toBeGreaterThanOrEqual(0.15);
+          // v0.3 D1a (#81): a horse is no longer a "small creature" for the camera, so in a close shot its head fills the
+          // panel and its body is mostly out of frame (10 percent in two examples). The head check above is the guard.
+          expect(inside, `${pf.character} body share`).toBeGreaterThanOrEqual(0.08);
         }
         for (const pl of d!.placed) if (pl.tail) expect(pl.tail.offPanel, "a tail is not off the panel").toBeFalsy();
         const codes = r.result.issues.filter((i) => i.path === `panel ${pid}` || i.path.startsWith(`panel ${pid} `)).map((i) => i.code);
