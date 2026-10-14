@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.9.0
+version: 1.10.0
 ---
 
 # Book understanding
@@ -23,9 +23,13 @@ recoverable from your descriptions.
   "cast": [{ "id": "c_swallow", "name": "The Swallow", "role": "…", "description": "…", "look": { "kind": "bird", "species": "swallow", "tone": "dark" }, "sections": ["s1"] }],
   "locations": [{ "id": "l_square", "name": "…", "environment": "city_square", "features": ["statue_column"], "units": ["s1u1", "s1u2"], "description": "…" }],
   "claims": [{ "id": "k1", "section_id": "s1", "kind": "event", "importance": "core", "text": "…", "source": [{ "unit": "s1u1", "page": 3 }] }],
-  "themes": ["…"]
+  "themes": ["…"],
+  "unmapped": [{ "type": "cast | place | prop", "ref": "c_… or l_… (not for props)", "wanted": "the thing in the book's words", "used": "the neutral item used" }]
 }
 ```
+
+`fit`, `wanted` (on cast members and locations) and `unmapped` are optional: they report what
+no item fits (see "When no item fits").
 
 - `sections`: exactly the section ids given, in order, each listing all of its unit ids.
 - Ids: lowercase, `c_…` for cast, `l_…` for locations, `k…` for claims; unique.
@@ -95,7 +99,7 @@ narrator is a cast member when they speak to the reader, people in anecdotes are
 and abstract forces the argument personifies may be `emblem` members (the State, the
 Law, Money, Conscience) — those are explanatory metaphors, say so in `description`.
 
-`look` uses only the trusted vocabulary. Choose values in this order:
+`look` uses only the trusted vocabulary (and `"fit"`/`"wanted"` tell what it could not map: see "When no item fits"). Choose values in this order:
 
 1. What the text says (a gilded statue → `material: "gold"`; a giant → `height: "giant"`;
    a bird → `bird` with its species; a talking firework → `object` `rocket`/`wheel`/`firecracker`;
@@ -185,6 +189,36 @@ giant's garden, bars for a jail).
   `high_wall`.
 - **Merge, don't multiply.** Two mentions of the same place are one location. A place seen
   only in a sentence of narration does not need an entry.
+
+## When no item fits
+
+The `look` and `environment` vocabularies are closed. A thing of the book may have no item. Do not
+pick a wrong match and say nothing. A reader of the adaptation sees what was drawn as a stand-in,
+so report it.
+
+1. **Same kind of thing only.** Use the closest item only when it is the same kind of thing as the
+   book's (a mouse for a mouse, a rat for a rat). A near match like this gets `"fit": "near"` and
+   `"wanted"`. An exact match gets `"fit": "exact"` or no `fit`.
+2. **Otherwise a neutral stand-in.** For an animal with no species item, choose the neutral
+   archetype for its body plan (`quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer`,
+   `bird_tall`; see `stand_in_vocabulary`). For a place, choose the generic environment for its
+   kind of place (`generic_room`, `generic_hall`, `generic_passage`, `generic_rough`,
+   `generic_outdoor`) and put what the scene needs in `features`. Set `"fit": "none"` and
+   `"wanted"`: the thing in the book's own words, at most 40 characters ("a young elephant",
+   "the maze"). The renderer draws a name tag for an archetype.
+3. **Size.** When the book gives a size that the usual size contradicts (a person "the size of a
+   mouse"), set `look.scale` (a factor of an adult human, 0.05-4.0). Leave it out otherwise.
+4. **Never the wrong kind.** Never draw an animal as a person or a person as an animal. A
+   stand-in of the right body plan is better than a close face of the wrong kind.
+5. **A group of animals is one animal member**, never a `crowd` (`crowd` draws people only).
+6. **Objects.** List in `unmapped` the important objects of the book (a central object, a key
+   plot object) that no prop fits, as `{"type": "prop", "wanted": "…", "used": "thing_…"}` with the
+   neutral shape that matches (`thing_long`, `thing_round`, `thing_block`, `thing_flat`,
+   `thing_heap`). Page writers draw that shape with a label. Also list each cast member and
+   place with `fit: "none"`, with its `ref`.
+
+Do not stretch a name to make an item fit, and do not use `fit: "none"` when an item of the same
+kind exists.
 
 ## Themes
 

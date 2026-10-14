@@ -552,3 +552,17 @@ export interface SamplePreview {
 export const getSamplePreview = (id: string) => request<SamplePreview>(`/samples/${encodeURIComponent(id)}/preview`);
 /** A PDF page of the sample as a PNG, read from the package (no install). */
 export const samplePdfPageUrl = (id: string, page: number) => `${API_URL}/samples/${encodeURIComponent(id)}/pdf/page/${page}`;
+
+/** D30: a thing of the book that no drawing item fits, as the edition view reports it. */
+export interface StandIn {
+  type: "cast" | "place" | "prop";
+  name: string;
+  wanted: string;
+  used: string;
+  fit: "near" | "none";
+}
+
+// Declaration merging: the edition view's `book` carries the stand-ins (empty for most books; absent in older editions).
+export interface EditionBook {
+  stand_ins?: StandIn[];
+}

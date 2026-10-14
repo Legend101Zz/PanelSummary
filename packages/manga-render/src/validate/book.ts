@@ -6,12 +6,14 @@ import {
   CLAIM_KINDS,
   ENV_FEATURES,
   ENVIRONMENTS,
+  FITS,
+  WANTED_MAX,
   type AdaptationPlan,
   type BookUnderstanding,
   type ValidationIssue,
 } from "../contracts.js";
 import { validateLook } from "./look.js";
-import { checkEnum, checkSourceRef, isRecord, Issues, listValues, reqArray, reqBoolean, reqString, show, toSet, warnUnknownKeys } from "./util.js";
+import { checkEnum, checkSourceRef, isRecord, Issues, listValues, reqArray, reqBoolean, reqString, show, toSet, typeName, warnUnknownKeys } from "./util.js";
 
 export const MAX_CLAIMS_PER_PAGE = 4;
 
@@ -48,7 +50,7 @@ export function validateUnderstanding(u: unknown, knownUnitIds: Iterable<string>
   reqString(u, "author", issues, "understanding");
   checkEnum(u, "kind", ["fiction", "nonfiction", "mixed"] as const, issues, "understanding");
   reqString(u, "logline", issues, "understanding", "one sentence");
-  warnUnknownKeys(u, ["schema", "title", "author", "kind", "logline", "sections", "cast", "locations", "claims", "themes"], issues, "understanding");
+  warnUnknownKeys(u, ["schema", "title", "author", "kind", "logline", "sections", "cast", "locations", "claims", "themes", "unmapped"], issues, "understanding");
 
   const sections = uniqueIds(reqArray(u, "sections", issues, "understanding") ?? [], "section", issues, "understanding.sections");
   if (sections.size === 0) issues.error("SECTIONS_EMPTY", "understanding.sections", "list at least one section (in book order).");
@@ -72,6 +74,7 @@ export function validateUnderstanding(u: unknown, knownUnitIds: Iterable<string>
     reqString(c, "role", issues, path);
     reqString(c, "description", issues, path);
     validateLook(c.look, issues, `${path}.look`);
+    checkFit(c, issues, path);
   }
 
   const locations = uniqueIds(reqArray(u, "locations", issues, "understanding") ?? [], "location", issues, "understanding.locations");
@@ -80,6 +83,7 @@ export function validateUnderstanding(u: unknown, knownUnitIds: Iterable<string>
     reqString(l, "name", issues, path);
     reqString(l, "description", issues, path);
     checkEnum(l, "environment", ENVIRONMENTS, issues, path);
+    checkFit(l, issues, path);
     const feats = reqArray(l, "features", issues, path, `from: ${listValues(ENV_FEATURES)}`);
     feats?.forEach((f, i) => {
       if (typeof f !== "string" || !(ENV_FEATURES as readonly string[]).includes(f)) {
@@ -104,7 +108,42 @@ export function validateUnderstanding(u: unknown, knownUnitIds: Iterable<string>
   themes?.forEach((t, i) => {
     if (typeof t !== "string" || t.trim() === "") issues.error("FIELD_TYPE", `understanding.themes[${i}]`, "themes must be non-empty strings.");
   });
+  checkUnmapped(u.unmapped, new Set(cast.keys()), new Set(locations.keys()), issues);
   return issues.list;
+}
+
+/** Optional `fit` and `wanted` of a cast member or a location (D30). */
+function checkFit(obj: Record<string, unknown>, issues: Issues, path: string): void {
+  checkEnum(obj, "fit", FITS, issues, path, false);
+  const wanted = obj.wanted;
+  if (wanted === undefined) return;
+  if (typeof wanted !== "string") issues.error("FIELD_TYPE", path, `"wanted" must be a string, got ${typeName(wanted)} ${show(wanted)}.`);
+  else if (wanted.length > WANTED_MAX) issues.warn("WANTED_LONG", path, `"wanted" has ${wanted.length} characters; keep it to ${WANTED_MAX} or fewer (the thing in the book's own words).`);
+}
+
+/** The optional top-level `unmapped` list (D30). Malformed entries are warnings: the list is a report, not drawing data. */
+function checkUnmapped(value: unknown, castIds: Set<string>, locationIds: Set<string>, issues: Issues): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value)) {
+    issues.warn("FIELD_TYPE", "understanding.unmapped", `"unmapped" must be an array of {type, ref?, wanted, used}, got ${typeName(value)}.`);
+    return;
+  }
+  value.forEach((item, i) => {
+    const path = `understanding.unmapped[${i}]`;
+    if (!isRecord(item)) {
+      issues.warn("FIELD_TYPE", path, `each unmapped entry must be an object {type, ref?, wanted, used}, got ${show(item)}.`);
+      return;
+    }
+    const type = item.type;
+    if (type !== "cast" && type !== "place" && type !== "prop") issues.warn("ENUM_INVALID", path, `type ${show(type)} is not allowed; use one of: cast, place, prop.`);
+    for (const key of ["wanted", "used"] as const) {
+      if (typeof item[key] !== "string" || (item[key] as string).trim() === "") issues.warn("FIELD_MISSING", path, `an unmapped entry needs a non-empty string "${key}".`);
+    }
+    const ref = item.ref;
+    if (ref !== undefined && (typeof ref !== "string" || !(type === "cast" ? castIds.has(ref) : type === "place" ? locationIds.has(ref) : true))) {
+      issues.warn("UNKNOWN_REF", path, `ref ${show(ref)} is not a ${type === "place" ? "location" : "cast"} id of this understanding.`);
+    }
+  });
 }
 
 export function validatePlan(plan: unknown, understanding: BookUnderstanding, knownUnitIds: Iterable<string>): ValidationIssue[] {

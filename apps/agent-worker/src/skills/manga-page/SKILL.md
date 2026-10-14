@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.11.0
+version: 1.12.0
 ---
 
 # Manga page
@@ -152,7 +152,9 @@ right, top to bottom; `panels` must be listed in that reading order.
   words. (CLAIM_TEXT_THIN.)
 - **Draw the key object or action of the beat**: put it in `props`, in a figure's `holding`, or
   in an `insert` panel. A claim that names a rose, a thorn or a sack needs it drawn.
-  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge.
+  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge. Neutral shapes
+  for an object no named prop is: thing_long, thing_round, thing_block, thing_flat, thing_heap (see
+  "When no item fits").
 - **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
   crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the
@@ -275,6 +277,24 @@ change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
   DUPLICATE_CAPTION).
 - **The statue is always on its column**: use a location with `statue_column`, never a street
   or a room (STATUE_LOCATION_SWAPPED).
+
+## When no item fits
+
+The vocabulary is closed. When the book needs an object, a creature or a place that no item is,
+draw a neutral stand-in and say so. Never draw a thing as another thing.
+
+- **Objects.** Never draw an object as another object (no bread for cheese, no sword for a bone).
+  Use the shape that matches it: `thing_long` (bone, spear, stick), `thing_round` (fruit, ball,
+  stone), `thing_block` (loaf, box, wedge), `thing_flat` (sheet, board), `thing_heap` (a pile).
+  Give it a `label`: the object's name in the book's words, at most 24 characters
+  (`{"prop": "thing_long", "label": "blade-bone"}`). Keep the same shape and label every time
+  the object appears. A prop of the list is right only when it is that very object.
+- **Creatures.** When a cast member is a neutral archetype (its `fit` is `none` in the
+  understanding), the renderer draws its name tag. Do not add a second one with a caption.
+  Use the member's cast `name` in the lettering as the book does; do not rename it.
+- **Places.** For a real place the vocabulary lacks, use the location the understanding gives
+  (a `generic_*` environment). Prefer it to `abstract`: a generic environment draws the
+  location's `features` (a high wall, a door), `abstract` does not.
 
 ## 9. FX
 
