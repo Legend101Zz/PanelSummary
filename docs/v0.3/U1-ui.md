@@ -97,7 +97,7 @@ f. The section control stays closed for a book inside the limit (default of #94)
 ## Verification
 
 - `cd frontend && npx tsc --noEmit`: no output (clean).
-- `cd frontend && npm test`: 13 test files, 134 tests, all pass. New: `ResultLine.test.tsx` (5), `camera.test.ts` (3), and cases in `format.test.ts`, `words.test.ts`, `bandForBook.test.ts`, `drawingNowLogic.test.ts`. `frontend/vitest.config.ts` is new (automatic JSX transform for the render tests).
+- `cd frontend && npm test`: 14 test files, 142 tests, all pass (after the rebase on the W1, D1b and D2 merges). New: `ResultLine.test.tsx` (5), `camera.test.ts` (3), and cases in `format.test.ts`, `words.test.ts`, `bandForBook.test.ts`, `drawingNowLogic.test.ts`. `frontend/vitest.config.ts` is new (automatic JSX transform for the render tests).
 - `cd frontend && npm run build` (dev server stopped): passes.
 - `node scripts/acceptance/journey.mjs --pdf <copy of happy-prince-two-tales.pdf> --out journey-after --full --replay --check-hosts --web http://127.0.0.1:3240 --api http://127.0.0.1:8140`: **62 of 62 PASS**, host check: only 127.0.0.1:3240 and 127.0.0.1:8140. The baseline on the unchanged base was also 62 of 62. The PDF is a copy with one extra comment line, because the upload dedupes by hash and the baseline run had already used the original.
 - Test hooks: the journey checks one "Generate manga" button, the upload input and the automatic move, "could not be drawn", "Sources" and `#source-drawer`, and the URLs. `tokens.css` is untouched.

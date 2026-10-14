@@ -617,6 +617,7 @@ export function standInDetail(row: StandInRow): string {
   const used = usedWords(row.used);
   if (row.fit === "near") return `drawn as ${used}`;
   return row.type === "place" ? used : `${used}, labelled`;
+}
 
 /**
  * The reading place is kept in this browser only (localStorage), so another browser or device says "Start reading".

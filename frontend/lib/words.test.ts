@@ -239,6 +239,8 @@ describe("stand-ins (D30)", () => {
   it("keeps the section title and note short and plain", () => {
     expect(STAND_INS_TITLE).toBe("Drawn as stand-ins");
     expect(STAND_INS_NOTE.length).toBeLessThan(200);
+  });
+});
 
 describe("readButton (one rule for the read button label)", () => {
   it("says Continue only when this browser has a saved place on page 2 or later, and then says where it is kept", () => {
