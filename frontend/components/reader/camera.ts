@@ -56,6 +56,14 @@ export function restScale(stage: Size, pad: number, view: PageView = "read"): nu
   return Math.max(fit, Math.min((stage.w - 2 * pad) / PAGE.w, READ_SCALE));
 }
 
+/** Room at each side of the page (px) that the "Whole page" chip needs to sit beside the art: the chip, its 16 px edge and a gap. */
+export const CHIP_ROOM = 176;
+
+/** True when the "Whole page" chip can float beside the page at `scale` (nothing under it but the graphite). */
+export function chipBesidePage(stage: Size, scale: number): boolean {
+  return (stage.w - PAGE.w * scale) / 2 >= CHIP_ROOM;
+}
+
 /** True when the page at `scale` is taller or wider than the stage, so it has to be moved. */
 export function overflows(stage: Size, scale: number): boolean {
   return PAGE.h * scale > stage.h + 0.5 || PAGE.w * scale > stage.w + 0.5;

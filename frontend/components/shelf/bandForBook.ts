@@ -10,6 +10,8 @@ export function bandForBook(book: LibraryBook): BandSpec {
   if (book.status === "parsed" && e?.status === "completed_with_failures" && e.page_total > 0 && e.pages_accepted >= e.page_total && !e.pages_failed) {
     return { family: "drawn", text: plural(e.page_total, "manga page") };
   }
+  // Nothing is drawn and nothing failed: the plan waits for the viewer. Its own family, so it is not read as "not started" (#89).
+  if (book.status === "parsed" && e?.status === "awaiting_plan_review") return { family: "review", text: shelfStatus(book).text };
   const s = shelfStatus(book);
   const family = familyForTone(s.tone);
   const fraction = family === "progress" && book.status === "parsed" && e?.status === "drawing" ? drawnFraction(e.pages_accepted, e.page_total) : undefined;

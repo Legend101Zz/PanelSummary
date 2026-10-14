@@ -143,7 +143,7 @@ Board: Comp-RunCard.
 - `RunCard` is a layout shell. It holds no logic. Slots: `eyebrow`, `headline` (a polite live region), `notice`, `steps`, `strip`, `children`, `time`, `actions`, `notes`.
 
 ### BottomBar
-- Props: `children` (one primary action), `narrowOnly` (default true: hidden from 768 px), `reserveSpace` (default true: adds a spacer so the bar covers no content).
+- Props: `children` (one primary action), `narrowOnly` (default true: hidden from 768 px), `reserveSpace` (default true: the bar measures its height and sets `--app-bar-h` on the document; the app frame pads its bottom by that value, so the bar covers no content and not the footer, also when the bar is taller, for example the page 1 band with two buttons).
 - Fixed to the bottom, with the safe-area padding of a phone.
 
 ### DropZone

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STAND_INS_NOTE, STAND_INS_TITLE, standInDetail, usedWords } from "./words";
 import { detailText } from "./api";
-import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine, readButton } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -239,5 +239,14 @@ describe("stand-ins (D30)", () => {
   it("keeps the section title and note short and plain", () => {
     expect(STAND_INS_TITLE).toBe("Drawn as stand-ins");
     expect(STAND_INS_NOTE.length).toBeLessThan(200);
+
+describe("readButton (one rule for the read button label)", () => {
+  it("says Continue only when this browser has a saved place on page 2 or later, and then says where it is kept", () => {
+    expect(readButton(5)).toEqual({ label: "Continue from page 5", hint: "Your place is saved in this browser only." });
+    expect(readButton(2).label).toBe("Continue from page 2");
+  });
+  it("says Start reading with no hint when this browser has no place or the place is page 1", () => {
+    expect(readButton(null)).toEqual({ label: "Start reading", hint: null });
+    expect(readButton(1)).toEqual({ label: "Start reading", hint: null });
   });
 });

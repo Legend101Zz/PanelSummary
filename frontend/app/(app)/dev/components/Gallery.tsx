@@ -271,6 +271,10 @@ export function Gallery() {
               <StatusBand family={b.family} text={b.text} fraction={b.fraction} />
             </div>
           ))}
+          <div className={styles.band}>
+            <Cap>plan_review</Cap>
+            <StatusBand family="review" text="Plan ready to review" />
+          </div>
         </div>
       </Section>
 

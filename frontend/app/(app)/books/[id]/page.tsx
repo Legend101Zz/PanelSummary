@@ -26,7 +26,7 @@ import {
 import { useMedia, useNow, usePoll } from "@/lib/hooks";
 import { continuePage, readPosition } from "@/lib/position";
 import { readReviewPlan } from "@/lib/prefs";
-import { bookFacts } from "@/lib/words";
+import { bookFacts, readButton } from "@/lib/words";
 import { BottomBar, Button, Card, MomentBand, Notice, Skeleton, StepList, TextLink, PageFrame, RunCard } from "@/components/ui";
 import { SvgPage } from "@/components/SvgPage";
 import { BookSkeleton } from "@/components/book/BookSkeleton";
@@ -331,7 +331,7 @@ export default function BookPage() {
   const acceptedCount = edition?.pages.filter((p) => p.status === "accepted").length ?? 0;
   const canRead = !!edition && (page1?.status === "accepted" || (!isActive(edition.status) && acceptedCount > 0));
   const readHref = edition ? `/books/${bookId}/read?edition=${edition.id}&page=${lastRead ?? 1}` : "#";
-  const readLabel = lastRead && lastRead > 1 ? `Continue from page ${lastRead}` : "Start reading";
+  const { label: readLabel, hint: readHint } = readButton(lastRead);
   const awaiting = edition?.status === "awaiting_plan_review";
   const unreadable = book.status === "failed";
   const reading = book.status === "uploaded" || book.status === "parsing";
@@ -474,6 +474,7 @@ export default function BookPage() {
               pending={pending}
               readHref={readHref}
               readLabel={readLabel}
+              readHint={readHint}
               canRead={canRead}
               animateMoment={initialReady.current === false}
               narrow={narrow}
@@ -512,7 +513,7 @@ export default function BookPage() {
 
       {showBar ? (
         <>
-          <BottomBar reserveSpace={false}>
+          <BottomBar>
             {reading || unreadable || showEstimate ? (
               generateButton
             ) : awaiting ? (
@@ -528,7 +529,6 @@ export default function BookPage() {
               </>
             )}
           </BottomBar>
-          <div className={styles.barSpacer} aria-hidden="true" />
         </>
       ) : null}
     </main>

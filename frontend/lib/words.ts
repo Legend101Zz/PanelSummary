@@ -617,4 +617,15 @@ export function standInDetail(row: StandInRow): string {
   const used = usedWords(row.used);
   if (row.fit === "near") return `drawn as ${used}`;
   return row.type === "place" ? used : `${used}, labelled`;
+
+/**
+ * The reading place is kept in this browser only (localStorage), so another browser or device says "Start reading".
+ * One rule, said in words: the book page offers "Continue from page N" only when this browser has a saved place, and then adds this line.
+ */
+export const READING_PLACE_HINT = "Your place is saved in this browser only.";
+
+/** The label of the read button, and the hint that goes with it. `lastRead` is the saved page of this browser (a drawn page 2 or later) or null. */
+export function readButton(lastRead: number | null): { label: string; hint: string | null } {
+  if (lastRead !== null && lastRead > 1) return { label: `Continue from page ${lastRead}`, hint: READING_PLACE_HINT };
+  return { label: "Start reading", hint: null };
 }

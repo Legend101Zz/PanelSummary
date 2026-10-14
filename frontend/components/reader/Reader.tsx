@@ -20,7 +20,7 @@ import { plainReason, plural, providerStopLines, stageLine, voiceLabel } from "@
 import { SvgPage } from "@/components/SvgPage";
 import { Sheet } from "@/components/Paper";
 import { ArrowLeft, ChevronLeft, ChevronRight, PageIcon, PanelsIcon, SourceIcon, ZoomReset } from "@/components/Icons";
-import { PAGE, maxZoom, overflows, panelCam, restScale, scrollStep, toPage, useCameraRig, zoomCam, type PageView, type Size } from "./camera";
+import { PAGE, chipBesidePage, maxZoom, overflows, panelCam, restScale, scrollStep, toPage, useCameraRig, zoomCam, type PageView, type Size } from "./camera";
 import { PagePicker } from "./PagePicker";
 import { groupPages, pageLabel, ticksAreButtons } from "./picker";
 import { SourceDrawer } from "./SourceDrawer";
@@ -305,6 +305,12 @@ export function Reader({ bookId }: { bookId: string }) {
 
   const zoomed = mode === "page" && accepted && zoom.z > 1.001;
   const panable = mode === "page" && accepted && !!stage && overflows(stage, base * zoom.z);
+  // The page opens at the read size and scrolls (#93 item 1, option B; docs/v0.3/U1-ui.md). The "Whole page" chip floats beside the page
+  // only where the graphite beside it is wide enough. On a narrower stage it sits in the bottom bar, so it never covers the art.
+  const chipBeside = !!stage && !zoomed && chipBesidePage(stage, base);
+  const chipInBar = mode === "page" && accepted && scrolls && !chipBeside;
+  const atTop = !!targetCam && !zoomed && targetCam.y < 1;
+  const toggleView = () => chooseView(view === "whole" ? "read" : "whole");
 
   /** Zoom to `z` keeping the page point under stage pixel (px, py) where it is. */
   const setZoomAt = useCallback(
@@ -569,19 +575,23 @@ export function Reader({ bookId }: { bookId: string }) {
             />
           )}
 
-          {mode === "page" && accepted && (zoomed || scrolls) ? (
+          {mode === "page" && accepted && (zoomed || (scrolls && chipBeside)) ? (
             <div className={styles.viewTools}>
-              {zoomed ? (
-                <button type="button" className={styles.fitBtn} onClick={resetZoom}>
-                  <ZoomReset />
-                  {view === "whole" ? "Fit page" : "Reset zoom"}
-                </button>
-              ) : null}
-              {scrolls ? (
-                <button type="button" className={styles.fitBtn} aria-pressed={view === "whole"} onClick={() => chooseView(view === "whole" ? "read" : "whole")}>
-                  {view === "whole" ? "Read size" : "Whole page"}
-                </button>
-              ) : null}
+              {scrolls && chipBeside && atTop && view === "read" ? <p className={styles.viewHint}>Top of the page. Scroll down to read on.</p> : null}
+              <div className={styles.viewButtons}>
+                {zoomed ? (
+                  <button type="button" className={styles.fitBtn} onClick={resetZoom}>
+                    <ZoomReset />
+                    {view === "whole" ? "Fit page" : "Reset zoom"}
+                  </button>
+                ) : null}
+                {scrolls && chipBeside ? (
+                  <button type="button" className={styles.fitBtn} aria-pressed={view === "whole"} onClick={toggleView}>
+                    <PageIcon />
+                    {view === "whole" ? "Read size" : "Whole page"}
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
@@ -642,6 +652,12 @@ export function Reader({ bookId }: { bookId: string }) {
                   })}
                 </div>
               )}
+              {chipInBar ? (
+                <button type="button" className={styles.pickerBtn} aria-pressed={view === "whole"} onClick={toggleView}>
+                  <PageIcon />
+                  {view === "whole" ? "Read size" : "Whole page"}
+                </button>
+              ) : null}
               <button
                 ref={pickerButtonRef}
                 type="button"

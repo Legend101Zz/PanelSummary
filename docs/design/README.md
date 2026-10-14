@@ -137,6 +137,8 @@ Keep this copy in the build. The owner has not approved it yet. The exact words 
 - The limits line on the landing page. Its frame text says "Choosing sections of a longer book is planned". Sections are built in v0.2, so the words need a change.
 - Every other string marked **[suggested]** in `SCREENS-AND-STATES.md`.
 
+**Accepted by default in v0.3 (#94).** The owner has not answered the copy questions in #94, so the default applies: the shipped copy stays as it is, including every line of the list above (the opening phrase, the Not found, crash and tab-title lines, the No estimate line, "Four pages are drawn at the same time.", "MiniMax: key refused", "MiniMax: no answer", the first-run and sample sentences and the new `lib/words.ts` lines). The same default keeps "sections" in the scope label. Track U1, 2026-10-14.
+
 ## Answered owner questions
 
 1. In the dark theme, should drawn tone-strip segments be grey #B4B5B8 instead of paper #ECEBE6? **Yes** (owner, 11 October 2026).

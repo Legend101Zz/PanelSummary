@@ -6,7 +6,7 @@ import type { BandFamily } from "./statusBandLogic";
 import styles from "./StatusBand.module.css";
 
 export interface StatusBandProps {
-  /** drawn: solid band with a check. progress: outlined thin line (filled or dashed). needs: coral with a problem icon. outline: outlined band (not started, or stopped by you). */
+  /** drawn: solid band with a check. progress: outlined thin line (filled or dashed). needs: coral with a problem icon. outline: outlined band (not started, or stopped by you). review: the plan waits for you (heavy action-colour edge). */
   family: BandFamily;
   /** The state in words (13 px or more, two lines at most in a 160 px cover). */
   text: string;
@@ -29,6 +29,9 @@ export function StatusBand({ family, text, fraction, className }: StatusBandProp
         </span>
       </div>
     );
+  }
+  if (family === "review") {
+    return <div className={cx(styles.band, styles.review, className)}>{text}</div>;
   }
   if (family === "outline") {
     return <div className={cx(styles.band, styles.outline, className)}>{text}</div>;
