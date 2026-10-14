@@ -100,7 +100,9 @@ describe("archetype figures", () => {
       expect(row.mane, sp).toBe(false);
       expect(row.hoof, sp).toBe(false);
       expect(row.whiskers, sp).toBe(false);
-      expect(row.ears.kind, sp).toBe("round");
+      // a plain pointed ear and a long muzzle: round ears and a short muzzle read as a bear (review fix)
+      expect(row.ears.kind, sp).toBe("tri");
+      expect(row.muz.l / row.R, sp).toBeGreaterThan(0.85);
       expect(row.tail.kind, sp).toBe("dog");
     }
   });

@@ -24,7 +24,7 @@ Nothing is for one book. Each new value is a body plan, a size, a kind of place 
 | `swimmer` | `animal` | 45 | the fish drawing at 2.25 times its size |
 | `bird_tall` | `bird` | 112 | the bird rig: long legs (44), long neck, thin beak, round tail |
 
-- One flat tone (the look's `tone`). Plain round ears and a plain tail on the quadrupeds. No mane, horn, trunk, hoof,
+- One flat tone (the look's `tone`). Small plain pointed ears, a long plain muzzle, no bear chest and a plain tail on the quadrupeds. No mane, horn, trunk, hoof,
   whiskers or stripes. `long_low` keeps the small back spots of the lizard drawing.
 - The usual face and all 18 expressions. Poses: the quadruped rig (13 poses), the lizard rig (7), the fish rig (7),
   the bird rig (16).

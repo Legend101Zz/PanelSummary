@@ -72,10 +72,10 @@ export const QUAD: Record<QuadSpecies, QuadSpec> = {
   rabbit: { h: 22, legF: 5.2, legH: 7, bodyL: 9.5, chest: 5.2, hip: 6.8, legW: 2.3, paw: 1.4, R: 5.2, muz: { l: 1.8, h: 3.4, drop: 0.35, round: 0.9 }, neck: { l: 2.2, ang: 42, w: 4.4 }, ears: { kind: "long", size: 10 }, tail: { kind: "puff", l: 2.8, w: 2.8 }, eye: 0.36, whiskers: true, mane: false, hoof: false, longFoot: true, fluffy: false, nose: 0.4 },
   horse: { h: 160, legF: 78, legH: 82, bodyL: 70, chest: 30, hip: 28, legW: 12.5, paw: 6.4, R: 16, muz: { l: 34, h: 19, drop: 0.45, round: 0.9 }, neck: { l: 40, ang: 62, w: 30 }, ears: { kind: "horse", size: 11 }, tail: { kind: "horse", l: 64, w: 16 }, eye: 0.24, whiskers: false, mane: true, hoof: true, longFoot: false, fluffy: false, nose: 0.3 },
   bear: { h: 120, legF: 50, legH: 52, bodyL: 64, chest: 31, hip: 29, legW: 18, paw: 9.5, R: 26, muz: { l: 12, h: 14, drop: 0.35, round: 0.6 }, neck: { l: 12, ang: 22, w: 26 }, ears: { kind: "bear", size: 7.5 }, tail: { kind: "stub", l: 6, w: 7 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: true, fluffy: true, nose: 0.65 },
-  // v0.3 (#81): neutral body plans. One flat tone, plain round ears, a plain tail, no species marks.
-  quad_small: { h: 25, legF: 8.2, legH: 9.4, bodyL: 13, chest: 5.6, hip: 6.2, legW: 2.4, paw: 1.5, R: 5.6, muz: { l: 2.8, h: 3.6, drop: 0.35, round: 0.8 }, neck: { l: 2.6, ang: 44, w: 4.8 }, ears: { kind: "round", size: 3.2 }, tail: { kind: "dog", l: 7, w: 2 }, eye: 0.34, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
-  quad_medium: { h: 60, legF: 28, legH: 29, bodyL: 34, chest: 12.5, hip: 11, legW: 6.2, paw: 3.6, R: 11.5, muz: { l: 8, h: 7.5, drop: 0.35, round: 0.7 }, neck: { l: 11, ang: 48, w: 10.5 }, ears: { kind: "round", size: 6.4 }, tail: { kind: "dog", l: 16, w: 4.4 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
-  quad_large: { h: 170, legF: 94, legH: 96, bodyL: 98, chest: 44, hip: 42, legW: 22, paw: 12, R: 28, muz: { l: 22, h: 20, drop: 0.35, round: 0.7 }, neck: { l: 24, ang: 34, w: 30 }, ears: { kind: "round", size: 13 }, tail: { kind: "dog", l: 34, w: 9 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
+  // v0.3 (#81): neutral body plans. One flat tone, small plain pointed ears, a long plain muzzle (round ears and a short muzzle read as a bear), a plain tail, no species marks.
+  quad_small: { h: 25, legF: 8.2, legH: 9.4, bodyL: 13, chest: 4.6, hip: 5.2, legW: 2.2, paw: 1.5, R: 5.2, muz: { l: 5.0, h: 3.0, drop: 0.3, round: 0.4 }, neck: { l: 2.8, ang: 46, w: 4.2 }, ears: { kind: "tri", size: 4.6 }, tail: { kind: "dog", l: 7, w: 2 }, eye: 0.34, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
+  quad_medium: { h: 60, legF: 28, legH: 29, bodyL: 34, chest: 10.5, hip: 9.5, legW: 5.4, paw: 3.4, R: 10.5, muz: { l: 12, h: 6.2, drop: 0.3, round: 0.4 }, neck: { l: 12, ang: 50, w: 9 }, ears: { kind: "tri", size: 9 }, tail: { kind: "dog", l: 16, w: 4.4 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
+  quad_large: { h: 170, legF: 94, legH: 96, bodyL: 98, chest: 34, hip: 32, legW: 17, paw: 10, R: 24, muz: { l: 34, h: 16, drop: 0.3, round: 0.4 }, neck: { l: 30, ang: 42, w: 22 }, ears: { kind: "tri", size: 17 }, tail: { kind: "dog", l: 34, w: 9 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
 };
 
 const SIT_POSES: readonly Pose[] = ["sit", "talk", "wave", "point", "think", "hold"];
@@ -661,8 +661,9 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   const sitting = SIT_POSES.includes(pose) && sp !== "horse";
   const lying = pose === "lie" || pose === "cower";
   const R = s.R;
-  const cw = Math.max(s.chest, s.hip) * 1.15; // half width of chest
-  const legH = lying ? s.paw * 1.5 : sitting ? s.legF * 0.5 : s.legF * 0.6;
+  const neutral = sp.startsWith("quad_");
+  const cw = Math.max(s.chest, s.hip) * (neutral ? 0.9 : 1.15); // half width of chest
+  const legH = lying ? s.paw * 1.5 : sitting && !neutral ? s.legF * 0.5 : s.legF * 0.6;
   const chestY = -legH - s.chest * 0.6;
   const bodyTop = chestY - s.chest * 0.9;
   // hind quarters behind (visible at the sides)
@@ -686,7 +687,7 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   }
   // chest / body
   sk.shape(blobD([P(0, bodyTop), P(cw, chestY - s.chest * 0.3), P(cw * 0.95, chestY + s.chest * 0.6), P(0, chestY + s.chest * 1.0), P(-cw * 0.95, chestY + s.chest * 0.6), P(-cw, chestY - s.chest * 0.3)], 0.5), fur, { edge: false });
-  if (!back && sp !== "horse") sk.shape(blobD([P(0, bodyTop + s.chest * 0.5), P(cw * 0.55, chestY), P(0, chestY + s.chest * 0.9), P(-cw * 0.55, chestY)], 0.5), fillOf(lighter(tone), pen), { edge: false });
+  if (!back && sp !== "horse" && !neutral) sk.shape(blobD([P(0, bodyTop + s.chest * 0.5), P(cw * 0.55, chestY), P(0, chestY + s.chest * 0.9), P(-cw * 0.55, chestY)], 0.5), fillOf(lighter(tone), pen), { edge: false });
   if (back && s.tail.kind === "puff") sk.shape(circleD(P(0, hy - s.hip * 0.3), s.tail.l), fillOf("white", pen));
   if (back && s.tail.kind === "stub") sk.shape(circleD(P(0, hy - s.hip * 0.3), s.tail.l * 0.6), fur);
   // front legs
@@ -730,10 +731,10 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   let mouth = P(0, Hc.y + R * 0.6);
   if (!back) {
     const M = s.muz;
-    const mh = sp === "horse" ? R * 0.8 : M.h * 0.95;
-    const mw = sp === "horse" ? R * 0.72 : Math.max(M.h * 0.75, R * 0.45);
+    const mh = sp === "horse" ? R * 0.8 : neutral ? R * 0.85 : M.h * 0.95;
+    const mw = sp === "horse" ? R * 0.72 : neutral ? R * 0.46 : Math.max(M.h * 0.75, R * 0.45);
     const mc = P(0, Hc.y + R * 0.35 + (sp === "horse" ? R * 1.75 : 0));
-    sk.shape(ellipseD(mc, mw, mh * 0.62), fillOf(sp === "horse" ? lighter(tone) === "white" ? "light" : lighter(tone) : sp === "rat" || sp === "mouse" ? tone : "white", pen), { edge: pen.dw });
+    sk.shape(ellipseD(mc, mw, mh * 0.62), fillOf(sp === "horse" ? lighter(tone) === "white" ? "light" : lighter(tone) : sp === "rat" || sp === "mouse" || neutral ? tone : "white", pen), { edge: pen.dw });
     const nr = Math.max(mw * 0.28, R * 0.1) * s.nose;
     if (sp === "horse") {
       for (const side of [-1, 1]) sk.fill(ellipseD(P(side * mw * 0.45, mc.y + mh * 0.25), nr * 0.9, nr * 1.2));
