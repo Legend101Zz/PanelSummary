@@ -113,6 +113,29 @@ Rules:
 
 Start a run with `gh workflow run live-journey.yml --ref <branch> -f book=just-so-three-tales` (real spend: only when the owner asks).
 
+## Defect kinds and comparing runs (v0.3, #92)
+
+The tools are in `scripts/acceptance/judge/`. They need no model call.
+
+- `kinds.py`: the v0.1 classifier. It sorts a defect text into 21 kinds with keyword rules. The rules are
+  unchanged since v0.1. Do not edit them: all published rates use them.
+- `kinds_rates.py`: the rate of each kind, blocker plus major defects per judge-page. Example:
+  `python3 scripts/acceptance/judge/kinds_rates.py scripts/acceptance/judge/fixtures/v01-gate2-flash.json.gz`
+  gives hero a speck or cropped 0.62, tail at the wrong figure 0.22, label clutter 0.20, repeated panels 0.17.
+- `fixtures/`: the judgments of the 13 runs behind the v0.1 and v0.2 numbers. A test reproduces the
+  published rates (`docs/v0.2/GATES.md`) from them.
+- `compare_runs.py`: the table of the v0.3 hold-out protocol. It compares runs per book and version,
+  with the pooled mean (failed pages as 0), the spread of the run means, the strict count, the criteria
+  and the defect rates, and a delta against a base version per book and per group of books.
+
+Kind names for the gate measures: hero a speck or cropped = `hero_tiny`; key prop not drawn =
+`key_prop_not_drawn`; wrong setting = `setting_wrong`; tail at the wrong figure = `tail_wrong`; label
+clutter = `label_clutter`; repeated panels = `repeat_variety`. Details and an example command are in
+`scripts/acceptance/README.md`.
+
+An AI judge panel is not a reader. A rate from 3 judges on one run has noise: compare runs of the same
+book and the same panel, and use the spread when a book has 2 or more runs.
+
 ## Files
 
 | File | Use |
@@ -122,4 +145,8 @@ Start a run with `gh workflow run live-journey.yml --ref <branch> -f book=just-s
 | `scripts/acceptance/judge/aggregate.py` | Panel means, ship bar, defects, comparison |
 | `scripts/acceptance/judge/test_aggregate.py` | Unit tests, including the prompt copy and the baseline |
 | `scripts/acceptance/judge/check-workflow.mjs` | Offline run of the workflow script with a fake agent |
+| `scripts/acceptance/judge/kinds.py`, `kinds_rates.py` | Defect-kind classifier and the rate script |
+| `scripts/acceptance/judge/compare_runs.py`, `fixture.py`, `make_fixture.py` | Run comparison, fixture reader, fixture maker |
+| `scripts/acceptance/judge/fixtures/` | Judgments of the v0.1 and v0.2 runs (see its README) |
+| `scripts/acceptance/judge/test_kinds.py`, `test_compare_runs.py` | Tests that reproduce the published rates and numbers |
 | `docs/rebuild/baselines/run8.{json,md}` | Baseline |
