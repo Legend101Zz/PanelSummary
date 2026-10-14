@@ -228,3 +228,142 @@ Changes:
 
 Tests: `test/gate1-fixes.test.ts` (the page goal input has the previous page's planned hook for page N > 1 and nothing for page 1; the prompt text; the skill rules) and `test/w1-writer.test.ts` (the plan checks). Skill growth: +1,919 bytes in three skills (49,358 to 51,277); the limit in `continuity.test.ts` is 1.50 (measured 51,277 / 34,494 = 1.4865).
 Not measured: the effect on judged pages. A live Gate 1 run must show it. The catalog text of `prop.label` in `packages/manga-render/src/catalog.ts` still says "allowed on any prop"; it belongs to the renderer track.
+
+## Gate 1b: plan density (track dens, issues #82 and #87 follow-up)
+
+Cause (docs: `Book-Reel-scratch/v03/gate1b-analysis-public.md`, recommendations 3 and 4): the two-tale Gate 1b run had 77 claims (the other runs 56-57), so the plan put 3 claims on 19 of 22 pages (v0.2: 8) and left out places that the beat names. This section measures two plan checks on judged pages, with the D26 rule (docs/v0.2/Q2a-writer-checks.md: E at least 10 flagged pages, P at least 60% hit, L at least 20 points over the unflagged pages, C at most 25% of the judged-good pages flagged).
+
+### Data and method
+- 12 runs with `plan.json`, `understanding.json` and judgments: v0.2 run2-run6, run8, final-journey, final-journey-2, v01-holdout (the v0.2 folder `Book-Reel-scratch/v02`), and v0.3 two-tale (Gate 1), two-tale-1b, justso-1b. 400 judged pages, 182 of them judged good (page mean 3.5 or more and no criterion below 3: the Q2a rule). The `cheese` run and every sealed, gates and baseline folder were not read.
+- Per page: the claims the plan puts on it by importance, the beat length in words, the judged page mean (mean of the 8 criteria and the judges), and the defect kinds of `scripts/acceptance/judge/kinds.py` (non-minor defects only).
+- The hit, set before the measurement: a prose, overload or claim-not-stated defect of any judge (kinds `label_clutter`, `plan_overload`, `claim_not_stated`) OR a page mean below 3.5. I also show each half of the hit alone.
+- Scripts: `apps/agent-worker/scripts/calibrate-dens.ts` (flags; it imports the helpers of `src/goals/plan-density.ts`, so the table and the check are the same code) and `scripts/calibrate-dens-join.py` (D26 join). Output of this run: `Book-Reel-scratch/v03/dens/tables.txt` (flags in `flags.json`).
+- Candidate rules: (a) 3 or more claims; (b) 3 or more claims with at least 1 supporting or detail claim; (b2) 3 or more claims with at least 2 supporting or detail claims; (b3) 4 or more claims; (b4) 3 or more claims with at least 1 detail claim; (c) a beat longer than N words; (d) 3 or more claims and a beat longer than 60 words. (b2), (b3), (b4) and (d) are my additions to the three candidates of the task.
+
+### Result in short
+1. No candidate passes D26 on the hit set before the measurement. The base rate of that hit is high (75% of all judged pages), so L stays under 20 points for every candidate (best: 10 to 19 points). The rule that comes closest, (b2), has P 87%, L 13, C 7%, E 38.
+2. On one half of the hit (page mean below 3.5) (b2) passes all four tests (E 38, P 66%, L 22 points, C 7%, Fisher p 0.007). That is the best of 33 combinations (11 candidates, 3 hits) that I looked at, and it fails on the other two hits. I do not call it a pass. A repeat on the next live runs is the test.
+3. So nothing is promoted to an error. The density rule is a WARNING (`PLAN_PAGE_DENSE`, rule (b2)) and the skill says it in words (adaptation-plan 1.8.0). The beat length (c) and the 4-claim rule (b3, 4 pages only) are not added.
+4. The place check (`PLAN_PLACE_NOT_LISTED`) is not better than chance at predicting a `setting_wrong` defect (37% against 33%, Fisher p 0.31). It stays a warning.
+5. The claim count alone is a weak signal. Pages by claims: 1 claim 3.51, 2 claims 3.52, 3 claims 3.47; the strict-ship share (any judge) is 80%, 78%, 84%. The Gate 1b analysis ties the two-tale loss to 3-claim pages with long beats and missing places in one run; these rules do not isolate that on 400 pages, and the other runs do not show it as strongly.
+
+### Tables
+#### Data: 400 judged pages (182 judged good, 302 hit = prose/overload/claim-not-stated defect or mean < 3.5; 278 by defect kind, 182 by mean < 3.5)
+runs: {'run2': 22, 'run3': 61, 'run4': 38, 'run5': 36, 'run6': 34, 'run8': 36, 'fj': 35, 'fj2': 29, 'v01': 30, 'tt': 22, 'tt1b': 22, 'js1b': 35}
+
+#### Pages by claim count (all judged pages)
+claims | pages | mean | beat_without_prose_wall | strict-ship share (any judge) | hit% | label_clutter pages | plan_overload pages | claim_not_stated pages | mean beat words
+0 | 1 | 3.667 | 4 | 100% | 100% | 0 | 0 | 1 | 34
+1 | 81 | 3.512 | 3.374 | 80% | 67% | 27 | 2 | 42 | 37.654
+2 | 149 | 3.515 | 3.456 | 78% | 74% | 37 | 3 | 88 | 42.034
+3 | 165 | 3.466 | 3.358 | 84% | 81% | 50 | 9 | 118 | 49.345
+4 | 4 | 3.375 | 3.417 | 100% | 100% | 1 | 1 | 4 | 49.75
+
+#### Pages with 3+ claims by number of non-core claims
+non-core 0: 50 pages, mean 3.538, prose wall 3.4, hit 78%
+non-core 1: 81 pages, mean 3.434, prose wall 3.333, hit 80%
+non-core 2: 36 pages, mean 3.453, prose wall 3.361, hit 86%
+non-core 3+: 2 pages, mean 3.062, prose wall 3.333, hit 100%
+
+#### D26, hit = prose / overload / claim-not-stated defect, or page mean < 3.5 (the task's hit)
+| candidate | E | P | L | C | page mean flagged vs unflagged | D26 |
+|---|---|---|---|---|---|---|
+| (a) 3 or more claims | E 169 ok | P 81% (137/169) ok | base 71%, L 10 pt FAIL | C 77/182 = 42% FAIL | mean 3.464 vs 3.514 | fail (Fisher p 0.017) |
+| (b) 3 or more claims, at least 1 supporting or detail | E 119 ok | P 82% (98/119) ok | base 73%, L 10 pt FAIL | C 47/182 = 26% FAIL | mean 3.433 vs 3.519 | fail (Fisher p 0.024) |
+| (b2) 3 or more claims, at least 2 supporting or detail | E 38 ok | P 87% (33/38) ok | base 74%, L 13 pt FAIL | C 12/182 = 7% ok | mean 3.432 vs 3.5 | fail (Fisher p 0.060) |
+| (b3) 4 or more claims | E 4 FAIL | P 100% (4/4) ok | base 75%, L 25 pt ok | C 0/182 = 0% ok | mean 3.375 vs 3.494 | fail (Fisher p 0.323) |
+| (b4) 3 or more claims, at least 1 detail | E 13 ok | P 62% (8/13) ok | base 76%, L -14 pt FAIL | C 6/182 = 3% ok | mean 3.564 vs 3.491 | fail (Fisher p 0.930) |
+| (c) beat longer than 50 words | E 111 ok | P 89% (99/111) ok | base 70%, L 19 pt FAIL | C 44/182 = 24% ok | mean 3.469 vs 3.502 | fail (Fisher p 0.000) |
+| (c) beat longer than 60 words | E 40 ok | P 92% (37/40) ok | base 74%, L 19 pt FAIL | C 13/182 = 7% ok | mean 3.427 vs 3.5 | fail (Fisher p 0.004) |
+| (c) beat longer than 65 words | E 23 ok | P 91% (21/23) ok | base 75%, L 17 pt FAIL | C 10/182 = 5% ok | mean 3.502 vs 3.493 | fail (Fisher p 0.050) |
+| (c) beat longer than 70 words | E 10 ok | P 80% (8/10) ok | base 75%, L 5 pt FAIL | C 3/182 = 2% ok | mean 3.513 vs 3.493 | fail (Fisher p 0.540) |
+| (c) beat longer than 80 words | 0 | - | - | - | - | - |
+| (d) 3 or more claims and beat longer than 60 words | E 30 ok | P 90% (27/30) ok | base 74%, L 16 pt FAIL | C 11/182 = 6% ok | mean 3.428 vs 3.498 | fail (Fisher p 0.037) |
+
+#### D26, hit = prose / overload / claim-not-stated defect only
+| candidate | E | P | L | C | page mean flagged vs unflagged | D26 |
+|---|---|---|---|---|---|---|
+| (a) 3 or more claims | E 169 ok | P 77% (130/169) ok | base 64%, L 13 pt FAIL | C 77/182 = 42% FAIL | mean 3.464 vs 3.514 | fail (Fisher p 0.004) |
+| (b) 3 or more claims, at least 1 supporting or detail | E 119 ok | P 78% (93/119) ok | base 66%, L 12 pt FAIL | C 47/182 = 26% FAIL | mean 3.433 vs 3.519 | fail (Fisher p 0.009) |
+| (b2) 3 or more claims, at least 2 supporting or detail | E 38 ok | P 79% (30/38) ok | base 69%, L 10 pt FAIL | C 12/182 = 7% ok | mean 3.432 vs 3.5 | fail (Fisher p 0.125) |
+| (b3) 4 or more claims | E 4 FAIL | P 100% (4/4) ok | base 69%, L 31 pt ok | C 0/182 = 0% ok | mean 3.375 vs 3.494 | fail (Fisher p 0.232) |
+| (b4) 3 or more claims, at least 1 detail | E 13 ok | P 54% (7/13) FAIL | base 70%, L -16 pt FAIL | C 6/182 = 3% ok | mean 3.564 vs 3.491 | fail (Fisher p 0.936) |
+| (c) beat longer than 50 words | E 111 ok | P 82% (91/111) ok | base 65%, L 17 pt FAIL | C 44/182 = 24% ok | mean 3.469 vs 3.502 | fail (Fisher p 0.000) |
+| (c) beat longer than 60 words | E 40 ok | P 88% (35/40) ok | base 68%, L 20 pt FAIL | C 13/182 = 7% ok | mean 3.427 vs 3.5 | fail (Fisher p 0.005) |
+| (c) beat longer than 65 words | E 23 ok | P 87% (20/23) ok | base 68%, L 19 pt FAIL | C 10/182 = 5% ok | mean 3.502 vs 3.493 | fail (Fisher p 0.044) |
+| (c) beat longer than 70 words | E 10 ok | P 80% (8/10) ok | base 69%, L 11 pt FAIL | C 3/182 = 2% ok | mean 3.513 vs 3.493 | fail (Fisher p 0.367) |
+| (c) beat longer than 80 words | 0 | - | - | - | - | - |
+| (d) 3 or more claims and beat longer than 60 words | E 30 ok | P 83% (25/30) ok | base 68%, L 15 pt FAIL | C 11/182 = 6% ok | mean 3.428 vs 3.498 | fail (Fisher p 0.061) |
+
+#### D26, hit = page mean < 3.5 only
+| candidate | E | P | L | C | page mean flagged vs unflagged | D26 |
+|---|---|---|---|---|---|---|
+| (a) 3 or more claims | E 169 ok | P 47% (79/169) FAIL | base 45%, L 2 pt FAIL | C 77/182 = 42% FAIL | mean 3.464 vs 3.514 | fail (Fisher p 0.372) |
+| (b) 3 or more claims, at least 1 supporting or detail | E 119 ok | P 53% (63/119) FAIL | base 42%, L 11 pt FAIL | C 47/182 = 26% FAIL | mean 3.433 vs 3.519 | fail (Fisher p 0.033) |
+| (b2) 3 or more claims, at least 2 supporting or detail | E 38 ok | P 66% (25/38) ok | base 43%, L 22 pt ok | C 12/182 = 7% ok | mean 3.432 vs 3.5 | PASS (Fisher p 0.007) |
+| (b3) 4 or more claims | E 4 FAIL | P 100% (4/4) ok | base 45%, L 55 pt ok | C 0/182 = 0% ok | mean 3.375 vs 3.494 | fail (Fisher p 0.042) |
+| (b4) 3 or more claims, at least 1 detail | E 13 ok | P 38% (5/13) FAIL | base 46%, L -7 pt FAIL | C 6/182 = 3% ok | mean 3.564 vs 3.491 | fail (Fisher p 0.787) |
+| (c) beat longer than 50 words | E 111 ok | P 51% (57/111) FAIL | base 43%, L 8 pt FAIL | C 44/182 = 24% ok | mean 3.469 vs 3.502 | fail (Fisher p 0.090) |
+| (c) beat longer than 60 words | E 40 ok | P 55% (22/40) FAIL | base 44%, L 11 pt FAIL | C 13/182 = 7% ok | mean 3.427 vs 3.5 | fail (Fisher p 0.135) |
+| (c) beat longer than 65 words | E 23 ok | P 48% (11/23) FAIL | base 45%, L 2 pt FAIL | C 10/182 = 5% ok | mean 3.502 vs 3.493 | fail (Fisher p 0.492) |
+| (c) beat longer than 70 words | E 10 ok | P 50% (5/10) FAIL | base 45%, L 5 pt FAIL | C 3/182 = 2% ok | mean 3.513 vs 3.493 | fail (Fisher p 0.509) |
+| (c) beat longer than 80 words | 0 | - | - | - | - | - |
+| (d) 3 or more claims and beat longer than 60 words | E 30 ok | P 53% (16/30) FAIL | base 45%, L 8 pt FAIL | C 11/182 = 6% ok | mean 3.428 vs 3.498 | fail (Fisher p 0.240) |
+
+#### Per run: candidate (b) and (a), P of the task's hit (flagged pages) vs unflagged
+run | pages | (a) flagged: n, hit% | (a) unflagged hit% | (b) flagged: n, hit% | (b) unflagged hit%
+run2 | 22 | 9, 100% | 54% | 6, 100% | 62%
+run3 | 61 | 20, 70% | 59% | 14, 71% | 60%
+run4 | 38 | 30, 70% | 50% | 21, 71% | 59%
+run5 | 36 | 22, 77% | 64% | 18, 89% | 56%
+run6 | 34 | 13, 92% | 86% | 11, 91% | 87%
+run8 | 36 | 19, 68% | 53% | 15, 67% | 57%
+fj | 35 | 16, 88% | 89% | 12, 92% | 87%
+fj2 | 29 | 5, 100% | 75% | 3, 100% | 77%
+v01 | 30 | 2, 100% | 79% | 0, - | 80%
+tt | 22 | 13, 92% | 67% | 9, 89% | 77%
+tt1b | 22 | 19, 89% | 100% | 10, 90% | 92%
+js1b | 35 | 1, 100% | 82% | 0, - | 83%
+
+#### Leave-one-run-out for (b): P and L when the run is left out
+without run2: E 113, P 81%, base 73%
+without run3: E 105, P 84%, base 75%
+without run4: E 98, P 85%, base 73%
+without run5: E 101, P 81%, base 74%
+without run6: E 108, P 81%, base 71%
+without run8: E 104, P 85%, base 74%
+without fj: E 107, P 81%, base 71%
+without fj2: E 116, P 82%, base 72%
+without v01: E 119, P 82%, base 72%
+without tt: E 110, P 82%, base 72%
+without tt1b: E 109, P 82%, base 72%
+without js1b: E 119, P 82%, base 71%
+
+#### PLAN_PLACE_NOT_LISTED (the beat names a location that the page does not list)
+| variant | pages flagged | setting_wrong in flagged | setting_wrong in unflagged | 2x2 + Fisher p | D26 vs setting_wrong |
+| name words (all) | 200 | 65/200 = 32% | 72/200 = 36% | flagged+hit 65, flagged+no 135, unflagged+hit 72, unflagged+no 128; p = 0.800 | |
+| D26 name words (all) (hit = setting_wrong) | E 200 ok | P 32% (65/200) FAIL | base 36%, L -3 pt FAIL | C 93/182 = 51% FAIL | mean 3.499 vs 3.487 | fail (Fisher p 0.800) |
+| D26 name words (all) (hit = task hit) | E 200 ok | P 74% (148/200) ok | base 77%, L -3 pt FAIL | C 93/182 = 51% FAIL | mean 3.499 vs 3.487 | fail (Fisher p 0.792) |
+| D26 name words (all) (hit = setting_wrong or mean < 3.5) | E 200 ok | P 59% (118/200) FAIL | base 62%, L -4 pt FAIL | C 93/182 = 51% FAIL | mean 3.499 vs 3.487 | fail (Fisher p 0.794) |
+| name words, cast-name words ignored | 95 | 35/95 = 37% | 102/305 = 33% | flagged+hit 35, flagged+no 60, unflagged+hit 102, unflagged+no 203; p = 0.312 | |
+| D26 name words, cast-name words ignored (hit = setting_wrong) | E 95 ok | P 37% (35/95) FAIL | base 33%, L 3 pt FAIL | C 39/182 = 21% ok | mean 3.498 vs 3.492 | fail (Fisher p 0.312) |
+| D26 name words, cast-name words ignored (hit = task hit) | E 95 ok | P 83% (79/95) ok | base 73%, L 10 pt FAIL | C 39/182 = 21% ok | mean 3.498 vs 3.492 | fail (Fisher p 0.030) |
+| D26 name words, cast-name words ignored (hit = setting_wrong or mean < 3.5) | E 95 ok | P 62% (59/95) ok | base 60%, L 2 pt FAIL | C 39/182 = 21% ok | mean 3.498 vs 3.492 | fail (Fisher p 0.427) |
+
+
+
+### What I shipped and why
+- `PLAN_PAGE_DENSE` (warning, `src/goals/plan-density.ts`): 3 or more claims, at least 2 of them supporting or detail. It flags 38 of 400 judged pages (9.5%), so it is quiet on a normal plan. Message: "this page has N claims (c core, s supporting, d detail) ... Move K to a neighbouring page with room, or omit it with a reason. Never drop a core claim." It names only the claims that are not core. It is not an error: the planner cannot always move a claim (the page budget uses core claims / 3 as the minimum, `pageBudget`), and the measured link is weak.
+- `PLAN_PLACE_NOT_LISTED` (warning): the beat holds the name of a location of the understanding or a distinctive word of it (longer than 3 letters, not a generic word such as hall, room, street, no plural s, a word start) that the page's `locations` do not list. Words that a cast name holds ("student" in "The Student") are ignored: that variant is 24% of the judged pages (95 of 400) against 50% for the plain variant (200 of 400), and the plain variant is no better than chance (32% against 36%). The check works for any book: it uses only the understanding's own names. It does not replace `PLAN_PLACE_UNLISTED` (units-based).
+- adaptation-plan 1.8.0 (+482 bytes): rule 2 "at most 2 claims on a page; a third only when all three are short core claims and the page has no other load; move a supporting or detail claim or omit it with a reason; never drop a core claim", and rule 6 "every place in `locations` must be one the beat names, and the reverse". Skill total 52059 bytes (1.5093 of the T1 baseline); the limit in `continuity.test.ts` goes from 1.51 to 1.52 with a comment. Pins updated in `gate1-fixes`, `w1-writer`, `q2b-continuity` and `continuity` tests.
+- Both warnings are kept on record in the `submit_plan` reply (the planner sees them with ACCEPTED; there is no repair loop for a warning).
+
+### Not done
+- The effect on a live run is not measured. A warning and a skill sentence have no offline measurement; the next live two-tale run is the test. The rule 2 sentence is stricter than the old text ("at most 3"); with the page budget minimum of core / 3 a plan with many core claims may exceed the page cap. Owner question: should `pageBudget` use core / 2.5?
+- The plan-level density guard of the Gate 1b recommendation 4 (drop detail, then supporting claims when the covered claims per page are above 2.6) is not built: it changes which claims a book keeps (the coverage ledger) and needs the owner's decision.
+- Narration words per page are not in the judged data of this table (the Gate 1b analysis has them: 26 words on 3-claim pages against 17).
+
+### Verification (Gate 1b: plan density)
+- `cd apps/agent-worker && npx tsc --noEmit`: no error. `npx vitest run`: 17 files, 265 tests passed (12 are new, in `test/plan-density.test.ts`).
+- Replay journey on my own stack (web 3276, api 8176, worker 8876, mongo 27176, db `v03_dens`, replay package `happy-prince-two-tales`): `node scripts/acceptance/journey.mjs --pdf scripts/acceptance/books/happy-prince-two-tales.pdf --out <scratch>/journey --web http://127.0.0.1:3276 --api http://127.0.0.1:8176 --full --replay --check-hosts`: 62 PASS, 0 FAIL, 22 accepted pages. The replay worker returns the saved plan, so this run does not run the new plan checks; it shows that nothing else broke. The checks run in the unit tests and in the calibration over the saved plans.
+- Stack stopped with `./stop.sh`; the four ports are free.

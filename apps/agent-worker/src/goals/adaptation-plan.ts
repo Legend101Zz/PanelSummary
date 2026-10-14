@@ -7,6 +7,7 @@ import { candidateParameters, dataBlock, errorsOf, formatIssues, parseCandidate,
 import { planOrderIssues } from "./claim-shown.js";
 import { unitOrder } from "./continuity.js";
 import { pageTurnHookIssues } from "./page-turn.js";
+import { planDensityIssues, planPlaceNamedIssues } from "./plan-density.js";
 import { planPlaceIssues } from "./places.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 
@@ -65,6 +66,8 @@ export const adaptationPlanGoal: GoalDefinition<Input> = {
         issues.push(...planOrderIssues(parsed.value as AdaptationPlan, understanding.claims, unitOrder(understanding.sections ?? [])));
         issues.push(...planPlaceIssues(parsed.value, understanding));
         issues.push(...pageTurnHookIssues(parsed.value));
+        issues.push(...planDensityIssues(parsed.value, understanding));
+        issues.push(...planPlaceNamedIssues(parsed.value, understanding));
         const sectionsOf = new Map(understanding.cast.map((c) => [c.id, c.sections]));
         ((parsed.value as AdaptationPlan)?.pages ?? []).forEach((page) => {
           for (const id of page?.cast ?? []) {

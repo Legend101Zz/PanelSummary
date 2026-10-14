@@ -326,7 +326,7 @@ describe("skills", () => {
   const rules: Array<[string, string, RegExp[]]> = [
     ["manga-page", "1.14.0", [/"vision": "afterlife"/, /"minor": true/, /lists `units`/]],
     ["book-understanding", "1.14.0", [/Places per unit/, /Map by where the people stand/, /every location has `units`/, /"units": \["s1u1", "s1u2"\]/]],
-    ["adaptation-plan", "1.7.0", [/whose `units` include the page's units/, /afterlife, a dream or a memory/]],
+    ["adaptation-plan", "1.8.0", [/whose `units` include the page's units/, /afterlife, a dream or a memory/]],
   ];
   for (const [name, version, patterns] of rules) {
     it(`${name} ${version} carries the Q2b rules`, async () => {
