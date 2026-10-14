@@ -192,23 +192,14 @@ To change a decision, edit its entry in the same change as the code, and give th
 - `HERO_TOO_SMALL` (warning) now uses the same measure: under 25 percent of the panel after the push. Calibration: `docs/v0.2/Q1-renderer.md`.
 - Status: accepted for the next live run. Skills: `manga-page` 1.11.0 and `book-understanding` 1.9.0.
 
-### D35. No wall-clock limit for a failing page attempt (2026-10-14, issue #84, track O1)
-- Statement: PanelSummary adds no new limit on the duration of one page attempt. The existing limit stays (`PAGE_LIMITS.timeoutMs`, 720 s, and the submit limit of 8). `settings.py` gets no new value.
-- Why: The measurement of 11 v0.2 runs (388 page attempts, all Flash) found a longest attempt of 126 s (385 accepted: median 34 s, P90 60 s; 3 failed: 93 to 126 s, all stopped by the submit limit). A limit of 180 s or more changes no attempt and saves 0 s in every run. A limit of 120 s would cut one accepted page (126 s, score 3.75) to save 6 s. The earlier tail (failed attempts of 199 to 611 s) was in M3 runs before the F1 fix and did not come back. Data: `docs/v0.3/O1-ops.md` section 2.
-- Status: accepted. Re-open if a measured run has a page attempt above 300 s that then fails.
-
-### D36. No second host in v0.3: the plan headroom endpoint is not called (2026-10-14, issue #85, track O1)
-- Statement: The worker talks only to `api.minimax.io` (D2). It does not call `GET https://www.minimax.io/v1/token_plan/remains`, and the preflight shows no plan headroom. The claim "the app talks only to api.minimax.io" stays.
-- Why: The endpoint is on a second host (`www.minimax.io`). The owner did not approve a second host for v0.3. MiniMax still publishes no price for MiniMax-M3.1-Flash-Preview (checked 2026-10-14 on the pay-as-you-go page, the rate-limit page and the M Plan pages), so costs stay estimates at M3 rates (the recorded cost equals the M3 Standard rates to the cent). Data: `docs/v0.3/O1-ops.md` section 3.
-- For v0.4 the owner decides: (1) whether a second host is acceptable, with the egress claim changed to name it and say it is read-only for the plan endpoint; (2) if yes, the call goes in the worker only, uses the existing key handling, never logs the key or headers, and its host appears in `/internal/v2/egress`; (3) if no, the preflight stays an estimate.
-- Status: accepted for v0.3.
-
-### D31. A camera push keeps every planned figure in the panel (2026-10-14, issue #90, track D2)
-- Statement: Both camera pushes (the speaker readability push and the #42 size-floor push) use one bounded search. A push is as large as it can be while the head of every planned figure of the panel stays inside the panel (2.5 percent margin). If no factor works, the camera does not push. A planned figure is never "cropped on purpose" by a push; only a crowd, an extra or the statue top may be.
-- Statement: Before a speaker push, figures that stand too far apart are moved closer together horizontally (same order, same facing). A speaker who still cannot reach the size floor keeps `SPEAKER_TOO_SMALL` (an error): the writer repairs it with a closer shot of the speaker or fewer figures in the panel.
-- Statement: New warning `FIGURE_HEAD_PARTLY_CLIPPED` (under 60 percent of a planned head circle inside the panel; not for extreme_close). It is a warning until it is calibrated (D26). `FIGURE_HEAD_CLIPPED` is unchanged.
-- Why: On 290 judged pages the old speaker push lost or cut 19 of 21 figures (hero, speaker and other planned figures), and a prototype showed the trade-off: bounded pushes leave small-headed speakers small. Measured numbers: `docs/v0.3/D2-push.md`.
-- Status: proposed in the D2 pull request (renderer 0.6.1). The residual `SPEAKER_TOO_SMALL` (13 of 290 pages) is for the orchestrator to accept.
+### D29. Neutral stand-ins by body plan, kind of place and shape; labels; renderer 0.7.0 (2026-10-14, issue #81, track D1a)
+- D4 stays (deterministic SVG), and D3 stays (no image model). The renderer is `manga-render/0.7.0`. Old stored pages keep their SVG.
+- Statement: When no named item fits, the renderer draws a neutral stand-in and labels it, instead of a confident wrong match. A stand-in is a body plan, a size, a kind of place or a shape, never one species or one book. `animal` species `quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer` and `bird` species `bird_tall` draw one flat tone, plain ears and tail, no species marks, the usual faces and every pose of their rig. Environments `generic_room`, `generic_hall`, `generic_passage`, `generic_rough` and `generic_outdoor` have no furniture and draw the features of their location. Props `thing_long`, `thing_round`, `thing_block`, `thing_flat` and `thing_heap` are plain shapes toned by `tone`.
+- Statement: Every look kind takes an optional `scale` (0.05 to 4.0, adult person = 1.0). Absent, a look keeps its exact size. A value outside the range is the error `LOOK_SCALE_RANGE`.
+- Statement: Labels. An archetype figure gets its cast name as a name tag in the first panel of each page where it is drawn, unless the writer already named it on that page. A neutral prop takes `PropSpec.label` (at most 24 characters, plain text), drawn as a name tag beside the prop. A `thing_*` prop without a label is the warning `NEUTRAL_PROP_UNLABELLED` (D26: a new check is a warning until it is calibrated on judged pages). A tag that has no free place is dropped with a warning (`ARCHETYPE_LABEL_DROPPED`, `PROP_LABEL_DROPPED`), never an error.
+- Statement: Four general fixes ship with it. `abstract` draws the features its location lists (`void` stays blank). "Small" for the camera follows the nominal height (under 45 figure units, or any look with `scale` under that), not the kind, so a horse or a bear is not boosted as a small creature. A rat or a mouse that sits, talks, points or waves sits hunched with its tail out, not upright like a bear. The word "blade" no longer makes a beat mention a sword.
+- Why: `docs/v0.3/D1-diagnosis.md` found that 85 percent of the wrong cast, places and props have no item in the closed vocabulary (class V), so the model had to choose the nearest item and nothing marked it as a stand-in. Adding one item for each new book does not stop the next book. A neutral body plan, kind of place and shape does.
+- Status: accepted for the next live run. The measured effect on judged pages is in `docs/v0.3/D1a-renderer.md`. Whether the labelled stand-ins score better than the wrong matches is a prediction until the orchestrator verifies it on a live run with a judge panel.
 
 ### D30. The understanding reports stand-ins (2026-10-14, issue #81, track D1b)
 - D4 stays (deterministic SVG) and the vocabulary stays closed. When no item fits a thing of the book, the understanding chooses a neutral stand-in (D1a draws it) and says so. It never picks a near item silently, and it never draws an animal as a person or a person as an animal.
@@ -219,36 +210,12 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Receipts: the note of a rejected understanding submission names the first rejected field and value (plain text, 40 characters at most).
 - Status: accepted. Skills: `manga-page` 1.12.0 and `book-understanding` 1.10.0. Notes: `docs/v0.3/D1b-understanding.md`.
 
-### D37. The reader opens at the read size at 1440x900 (2026-10-14, issue #93, track U1)
-- Statement: The reader opens a page at the read size (0.7 px per page unit on a wide screen) and shows the top of the page. It does not fit the page height on open. The "Whole page" chip floats beside the page only when the graphite beside the page is 176 px wide or more; on a narrower stage it is in the bottom bar. It never covers the art.
-- Why: Measured at 1440x900 on a 22-page replay run: the smallest balloon or caption text is 15.4 px at the read size and 10.68 px when the page height is fitted. The rule was to fit the page only if the smallest text stays at 14 px or more.
-- Evidence: `docs/v0.3/U1-ui.md` (measurements, screenshots). The reader tokens and the page SVG did not change.
-- Status: accepted for v0.3.
-
-### D29. Neutral stand-ins by body plan, kind of place and shape; labels; renderer 0.7.0 (2026-10-14, issue #81, track D1a)
-- D4 stays (deterministic SVG), and D3 stays (no image model). The renderer is `manga-render/0.7.0`. Old stored pages keep their SVG.
-- Statement: When no named item fits, the renderer draws a neutral stand-in and labels it, instead of a confident wrong match. A stand-in is a body plan, a size, a kind of place or a shape, never one species or one book. `animal` species `quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer` and `bird` species `bird_tall` draw one flat tone, plain ears and tail, no species marks, the usual faces and every pose of their rig. Environments `generic_room`, `generic_hall`, `generic_passage`, `generic_rough` and `generic_outdoor` have no furniture and draw the features of their location. Props `thing_long`, `thing_round`, `thing_block`, `thing_flat` and `thing_heap` are plain shapes toned by `tone`.
-- Statement: Every look kind takes an optional `scale` (0.05 to 4.0, adult person = 1.0). Absent, a look keeps its exact size. A value outside the range is the error `LOOK_SCALE_RANGE`.
-- Statement: Labels. An archetype figure gets its cast name as a name tag in the first panel of each page where it is drawn, unless the writer already named it on that page. A neutral prop takes `PropSpec.label` (at most 24 characters, plain text), drawn as a name tag beside the prop. A `thing_*` prop without a label is the warning `NEUTRAL_PROP_UNLABELLED` (D26: a new check is a warning until it is calibrated on judged pages). A tag that has no free place is dropped with a warning (`ARCHETYPE_LABEL_DROPPED`, `PROP_LABEL_DROPPED`), never an error.
-- Statement: Four general fixes ship with it. `abstract` draws the features its location lists (`void` stays blank). "Small" for the camera follows the nominal height (under 45 figure units, or any look with `scale` under that), not the kind, so a horse or a bear is not boosted as a small creature. A rat or a mouse that sits, talks, points or waves sits hunched with its tail out, not upright like a bear. The word "blade" no longer makes a beat mention a sword.
-- Why: `docs/v0.3/D1-diagnosis.md` found that 85 percent of the wrong cast, places and props have no item in the closed vocabulary (class V), so the model had to choose the nearest item and nothing marked it as a stand-in. Adding one item for each new book does not stop the next book. A neutral body plan, kind of place and shape does.
-- Status: accepted for the next live run. The measured effect on judged pages is in `docs/v0.3/D1a-renderer.md`. Whether the labelled stand-ins score better than the wrong matches is a prediction until the orchestrator verifies it on a live run with a judge panel.
-
-## Superseded (history only)
-
-- ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.
-- ADR-005: `RenderedPage`, `MangaManifest` and `ReelSpec` as seams. Replaced by the `manga-page.v1` spec and the persisted SVG (D4).
-- ADR-006: Remotion reel rendering. The reel lane and `reel-renderer/` are removed.
-- ADR-007: Pydantic-led JSON Schema in `packages/contracts`. Removed. The renderer contracts (`packages/manga-render/src/contracts.ts`) are the source now.
-- ADR-008: separate Celery and reel-render workers. Removed. Its agent-worker rule stays in D2 and D6.
-- ADR-009: Python as the layout compiler. The compiler is TypeScript now. Its principles stay in D4 and D9.
-- ADR-011: the byte-compare guard for compiled context in the v1 pipeline. Removed with v1. Its principle stays in D11.
-- ADR-012: the domain-tool broker, goal policies and the service-token pair for tools. Replaced by D6.
-- Per-purpose model modes (`direction`, `page_writing`, `thumbnail` on speed or quality). Replaced by D13.
-- Session 8 lane B (paste one generated panel into compiled geometry). Replaced by D3 and D4. Lesson kept: placement by code bound content to the right panel; one-shot page images did not.
-- Image budgets (`none | sprites_only | budgeted | full_panel_art`). Removed with D3.
-- The v1 deprecation plan of issue #15. The rebuild removed v1 directly on 2026-09-25.
-- The owner-requested database wipe (2026-08-09). History only.
+### D31. A camera push keeps every planned figure in the panel (2026-10-14, issue #90, track D2)
+- Statement: Both camera pushes (the speaker readability push and the #42 size-floor push) use one bounded search. A push is as large as it can be while the head of every planned figure of the panel stays inside the panel (2.5 percent margin). If no factor works, the camera does not push. A planned figure is never "cropped on purpose" by a push; only a crowd, an extra or the statue top may be.
+- Statement: Before a speaker push, figures that stand too far apart are moved closer together horizontally (same order, same facing). A speaker who still cannot reach the size floor keeps `SPEAKER_TOO_SMALL` (an error): the writer repairs it with a closer shot of the speaker or fewer figures in the panel.
+- Statement: New warning `FIGURE_HEAD_PARTLY_CLIPPED` (under 60 percent of a planned head circle inside the panel; not for extreme_close). It is a warning until it is calibrated (D26). `FIGURE_HEAD_CLIPPED` is unchanged.
+- Why: On 290 judged pages the old speaker push lost or cut 19 of 21 figures (hero, speaker and other planned figures), and a prototype showed the trade-off: bounded pushes leave small-headed speakers small. Measured numbers: `docs/v0.3/D2-push.md`.
+- Status: accepted (2026-10-14, the orchestrator). The residual `SPEAKER_TOO_SMALL` (13 of 290 judged v0.2 pages) stays an error: the page writer sees it in its preview and repairs it with a closer shot of the speaker or fewer figures. The alternative before this change was a hero cropped out of the panel. Gate 1 and Gate 2 measure the cost (failed pages, repair rounds). Renderer 0.6.1, then 0.7.0 with D29.
 
 ### D32. Page turn: guidance and a plan warning, no page check (2026-10-14, issue #82, track W1)
 - Statement: The plan skill (1.6.0) asks for a turn hook on every page that does not close a section. The page skill (1.12.0) puts the hook in the last panel, never in an early one, and never invented. The plan goal adds the warning `PAGE_TURN_HOOK_MISSING` (more than 25% of such pages without a hook, at least 4 such pages). It is a warning because it fails the D26 cost test (38% of the judged-good pages).
@@ -267,6 +234,23 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: On 290 judged pages with model-written units, `PLAN_LOCATION_NOT_IN_UNITS` flags 16 pages, 4 with a setting complaint (25%) against 34% on the others (one-sided Fisher p = 0.84): not better than chance, so no promotion (the #94 rule). On the Just So runs the largest class of continuity complaints is place (18 of 55; 14 owned by the renderer), then scale (13) and identity (9).
 - Status: accepted. The drawer change is frontend only. A backend change that names the `m_` ids in `speakers` would also fix the Reader. Tables: `docs/v0.3/W1-writer.md` section 5.
 
+### D35. No wall-clock limit for a failing page attempt (2026-10-14, issue #84, track O1)
+- Statement: PanelSummary adds no new limit on the duration of one page attempt. The existing limit stays (`PAGE_LIMITS.timeoutMs`, 720 s, and the submit limit of 8). `settings.py` gets no new value.
+- Why: The measurement of 11 v0.2 runs (388 page attempts, all Flash) found a longest attempt of 126 s (385 accepted: median 34 s, P90 60 s; 3 failed: 93 to 126 s, all stopped by the submit limit). A limit of 180 s or more changes no attempt and saves 0 s in every run. A limit of 120 s would cut one accepted page (126 s, score 3.75) to save 6 s. The earlier tail (failed attempts of 199 to 611 s) was in M3 runs before the F1 fix and did not come back. Data: `docs/v0.3/O1-ops.md` section 2.
+- Status: accepted. Re-open if a measured run has a page attempt above 300 s that then fails.
+
+### D36. No second host in v0.3: the plan headroom endpoint is not called (2026-10-14, issue #85, track O1)
+- Statement: The worker talks only to `api.minimax.io` (D2). It does not call `GET https://www.minimax.io/v1/token_plan/remains`, and the preflight shows no plan headroom. The claim "the app talks only to api.minimax.io" stays.
+- Why: The endpoint is on a second host (`www.minimax.io`). The owner did not approve a second host for v0.3. MiniMax still publishes no price for MiniMax-M3.1-Flash-Preview (checked 2026-10-14 on the pay-as-you-go page, the rate-limit page and the M Plan pages), so costs stay estimates at M3 rates (the recorded cost equals the M3 Standard rates to the cent). Data: `docs/v0.3/O1-ops.md` section 3.
+- For v0.4 the owner decides: (1) whether a second host is acceptable, with the egress claim changed to name it and say it is read-only for the plan endpoint; (2) if yes, the call goes in the worker only, uses the existing key handling, never logs the key or headers, and its host appears in `/internal/v2/egress`; (3) if no, the preflight stays an estimate.
+- Status: accepted for v0.3.
+
+### D37. The reader opens at the read size at 1440x900 (2026-10-14, issue #93, track U1)
+- Statement: The reader opens a page at the read size (0.7 px per page unit on a wide screen) and shows the top of the page. It does not fit the page height on open. The "Whole page" chip floats beside the page only when the graphite beside the page is 176 px wide or more; on a narrower stage it is in the bottom bar. It never covers the art.
+- Why: Measured at 1440x900 on a 22-page replay run: the smallest balloon or caption text is 15.4 px at the read size and 10.68 px when the page height is fitted. The rule was to fit the page only if the smallest text stays at 14 px or more.
+- Evidence: `docs/v0.3/U1-ui.md` (measurements, screenshots). The reader tokens and the page SVG did not change.
+- Status: accepted for v0.3.
+
 ### D38. Continue with the next section: a versioned understanding, a prior input, a deterministic merge (2026-10-14, issue #80, track M1)
 - Statement: Each accepted understanding is stored with its book in `book_understandings {book_id, version, understanding, edition_id, scope, prior_version}`. The version counts from 1 for each book. There is one row for each edition. An edition records `understanding_version` (the prior version it used, or none) and `understanding_version_produced`.
 - Statement: `POST /books/{id}/editions` accepts `continue_from` (a finished edition of the same book) with a scope. The worker request of the understanding then has a `prior` input: the understanding that the earlier edition produced. The prior is data from an earlier model output. It is in its own escaped block (`<prior_understanding>`), never in the instructions.
@@ -279,3 +263,19 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Statement: An edition records `continues_edition_id` and `first_page_number` (the first page number of the earlier part plus its page count). The reader is frozen (v0.3 plan section 4.3), so it keeps numbering each edition from 1. The book page shows the parts as one series ("Part 2 · pages 23–40") with a link to the reader of each part, and a control "Continue with the next section" that never has the words "Generate manga".
 - Why: One reader over several editions would change the reader and its URLs, which are test hooks. This differs from the issue text, which asks for continuing numbers in the reader.
 - Status: accepted. The owner can ask for series numbers in the reader later.
+
+## Superseded (history only)
+
+- ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.
+- ADR-005: `RenderedPage`, `MangaManifest` and `ReelSpec` as seams. Replaced by the `manga-page.v1` spec and the persisted SVG (D4).
+- ADR-006: Remotion reel rendering. The reel lane and `reel-renderer/` are removed.
+- ADR-007: Pydantic-led JSON Schema in `packages/contracts`. Removed. The renderer contracts (`packages/manga-render/src/contracts.ts`) are the source now.
+- ADR-008: separate Celery and reel-render workers. Removed. Its agent-worker rule stays in D2 and D6.
+- ADR-009: Python as the layout compiler. The compiler is TypeScript now. Its principles stay in D4 and D9.
+- ADR-011: the byte-compare guard for compiled context in the v1 pipeline. Removed with v1. Its principle stays in D11.
+- ADR-012: the domain-tool broker, goal policies and the service-token pair for tools. Replaced by D6.
+- Per-purpose model modes (`direction`, `page_writing`, `thumbnail` on speed or quality). Replaced by D13.
+- Session 8 lane B (paste one generated panel into compiled geometry). Replaced by D3 and D4. Lesson kept: placement by code bound content to the right panel; one-shot page images did not.
+- Image budgets (`none | sprites_only | budgeted | full_panel_art`). Removed with D3.
+- The v1 deprecation plan of issue #15. The rebuild removed v1 directly on 2026-09-25.
+- The owner-requested database wipe (2026-08-09). History only.
