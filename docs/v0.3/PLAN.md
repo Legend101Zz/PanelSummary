@@ -195,3 +195,9 @@ The sealed gate, the final journey and honest reporting are never cut.
 | 2026-10-14 12:39 | The v0.2.0 baseline runs on the sealed books started (local stack, ports 3290/8190/8890/27190), one at a time, each judged by the panel. |
 | 2026-10-14 12:44 | Wave 1 started: D1a, D1b, D2, W1, then U1. PR #101 (O1) reviewed: APPROVE; D24 amended for the new draw estimate. |
 | 2026-10-14 12:48 | PR #102 (this plan) opened; tracker issue #103. |
+| 2026-10-14 12:52 | PR #101 (O1) merged (`264f655`); PR #102 (plan) merged (`1ae58d9`). |
+| 2026-10-14 13:00–13:24 | PR #105 (D2) merged (`9312d14`). PR #104 (D1b) merged (`66a8be9`) after the orchestrator replaced tuning- and seen-book examples in the model-facing skill text with neutral ones. PR #106 (W1) merged (`98e6b8b`); `manga-page` skill 1.13.0, skill-size limit 1.42. |
+| 2026-10-14 13:35 | PR #107 (U1) merged (`df843ae`). Process-safety incident: the U1 implementer ran `pkill -f xxxx` (a forbidden command; it matched no process; the owner's Hermes bridge was alive). A sweep of every agent transcript found no other forbidden call. |
+| 2026-10-14 13:53 | PR #109 (M1, #80) merged (`f87d26e`). |
+| 2026-10-14 14:02 | PR #108 (D1a, renderer 0.7.0) merged (`b02bc17`) after two extra review rounds on the archetype shapes (the first versions read as a bear, then as a wolf). Gate 1 dispatched on `b02bc17`: live runs 38576965161 (two-tale book) and 38577002483 (*Just So*). The M1 live measurement started (local). |
+| 2026-10-14 14:10 | Decisions D29–D39 sorted above "Superseded"; D31 accepted: the residual `SPEAKER_TOO_SMALL` stays an error, measured at the gates. |
