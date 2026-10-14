@@ -100,9 +100,17 @@ describe("archetype figures", () => {
       expect(row.mane, sp).toBe(false);
       expect(row.hoof, sp).toBe(false);
       expect(row.whiskers, sp).toBe(false);
-      // a plain pointed ear and a long muzzle: round ears and a short muzzle read as a bear (review fix)
-      expect(row.ears.kind, sp).toBe("tri");
-      expect(row.muz.l / row.R, sp).toBeGreaterThan(0.85);
+      // quad_small is a small plain rodent-like body (plain pointed ear, long muzzle). quad_medium has small plain
+      // ears and a shorter muzzle (a long muzzle with pointed ears read as a dog). quad_large is a neutral HEAVY
+      // body: small flat-oval ears, a short broad blunt muzzle (a pointed snout read as a wolf), thick pillar legs.
+      expect(row.ears.kind, sp).toBe(sp === "quad_small" ? "tri" : "small");
+      if (sp === "quad_small") expect(row.muz.l / row.R, sp).toBeGreaterThan(0.85);
+      else expect(row.muz.l / row.R, sp).toBeLessThan(1);
+      if (sp === "quad_large") {
+        expect(row.muz.h / row.R, sp).toBeGreaterThan(0.8); // broad, not pointed
+        expect(row.legW / row.legF, sp).toBeGreaterThan(0.15); // pillar legs
+        expect(row.chest / row.legF, sp).toBeGreaterThan(0.3); // deep body
+      }
       expect(row.tail.kind, sp).toBe("dog");
     }
   });
