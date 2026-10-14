@@ -16,10 +16,12 @@ import { groundDepthAt, makeCamera } from "./camera.js";
 import { LAYER, add, boxRect, compose, palette, pathEl, type Stage } from "./stage.js";
 import { compactSvg, cullOutside } from "./compact.js";
 import { drawSky, drawWeather } from "./sky.js";
+import { drawGround } from "./ground.js";
 import { drawFeatures, type Sites } from "./features.js";
 import { church, citySquare, cottage, market, mill, rooftops, street, townHall } from "./scenes-town.js";
 import { abstractField, countryRoad, ditch, moor, forest, garden, meadow, pond, riverbank, seaside, skyScene, voidScene } from "./scenes-nature.js";
 import { dustheap, paradise } from "./scenes-story.js";
+import { genericHall, genericOutdoor, genericPassage, genericRough, genericRoom } from "./scenes-generic.js";
 import { classroom, courtroom, forge, foundry, garret, jailCell, palaceHall, roomPoor, roomRich, study } from "./scenes-interior.js";
 
 interface ShotCfg {
@@ -56,7 +58,7 @@ const ANGLE_CFG: Record<EnvironmentRequest["angle"], AngleCfg> = {
   birds_eye: { theta: -68, horizon: null, hMul: 6.5, ground: 0.64 },
 };
 
-const INTERIORS: ReadonlySet<Environment> = new Set(["forge", "foundry", "room_poor", "room_rich", "garret", "palace_hall", "jail_cell", "courtroom", "study", "classroom"]);
+const INTERIORS: ReadonlySet<Environment> = new Set(["forge", "foundry", "generic_room", "generic_hall", "generic_passage", "generic_rough", "room_poor", "room_rich", "garret", "palace_hall", "jail_cell", "courtroom", "study", "classroom"]);
 
 type Scene = (st: Stage) => Sites;
 
@@ -91,6 +93,11 @@ const SCENES: Record<Environment, Scene> = {
   foundry,
   dustheap,
   paradise,
+  generic_room: genericRoom,
+  generic_hall: genericHall,
+  generic_passage: genericPassage,
+  generic_rough: genericRough,
+  generic_outdoor: genericOutdoor,
   abstract: abstractField,
   void: voidScene,
 };
@@ -117,6 +124,10 @@ const ROOM_HEIGHT: Partial<Record<Environment, number>> = {
   classroom: 3.4,
   forge: 4.4,
   foundry: 4.4,
+  generic_room: 2.8,
+  generic_hall: 5.2,
+  generic_passage: 2.8,
+  generic_rough: 3.6,
 };
 
 export function buildStage(request: EnvironmentRequest, ctx: DrawContext): Stage {
@@ -269,6 +280,12 @@ export const environments: EnvironmentModule = {
     if (INTERIORS.has(request.environment)) add(st, LAYER.sky, 0, boxRect(st, st.pal.night ? toneFill("black", st.p) : PAPER));
     else if (!skyLess && request.environment !== "sky") drawSky(st);
     const sites = scene(st);
+    // v0.3 (#81): an abstract place that lists features (a high wall, a door, trees) draws them; void stays blank
+    if (request.environment === "abstract" && request.features.length > 0) {
+      // the features stand on a plain ground, not in the air of a backing
+      drawGround(st, "plain", { fill: st.pal.night ? toneFill("dark", st.p) : toneFill("light", st.p) });
+      drawFeatures(st, request.features, sites);
+    }
     if (!skyLess) {
       drawFeatures(st, request.features, sites);
       if (st.weather === "fog") {

@@ -25,7 +25,16 @@ const HEIGHTS: Record<Species, number> = {
   horse: 160,
   bear: 120,
   fish: 20,
+  // v0.3 (#81): neutral body plans (nominal heights in figure units, adult = 100)
+  quad_small: 25,
+  quad_medium: 60,
+  quad_large: 170,
+  long_low: 40,
+  swimmer: 45,
 };
+
+/** Height of the drawing itself when a neutral species reuses a smaller drawing (see nativeHeight). */
+const NATIVE: Partial<Record<Species, number>> = { long_low: 10, swimmer: 20 };
 
 function isQuad(sp: Species): sp is QuadSpecies {
   return sp in QUAD;
@@ -34,7 +43,7 @@ function isQuad(sp: Species): sp is QuadSpecies {
 function poses(sp: Species): readonly Pose[] {
   if (isQuad(sp)) return quadPoses(sp);
   if (sp === "frog") return FROG_POSES;
-  if (sp === "lizard") return LIZARD_POSES;
+  if (sp === "lizard" || sp === "long_low") return LIZARD_POSES;
   return FISH_POSES;
 }
 
@@ -42,6 +51,7 @@ export const animalRig: KindRig<AnimalLook> = {
   supportedPoses: (look) => poses(look.species),
   supportedExpressions: () => ALL_EXPRESSIONS,
   nominalHeight: (look) => HEIGHTS[look.species] ?? 30,
+  nativeHeight: (look) => NATIVE[look.species] ?? HEIGHTS[look.species] ?? 30,
   draw(request: FigureRequest & { look: AnimalLook }, ctx: DrawContext): FigureDrawing {
     const { look } = request;
     const sp = look.species;
@@ -52,7 +62,7 @@ export const animalRig: KindRig<AnimalLook> = {
     let built: AnimalBuilt;
     if (isQuad(sp)) built = drawQuad(sp, look.tone, pose, request.expression, facing, pen, request.seed);
     else if (sp === "frog") built = drawFrog(look.tone, pose, request.expression, facing, pen);
-    else if (sp === "lizard") built = drawLizard(look.tone, pose, request.expression, facing, pen);
+    else if (sp === "lizard" || sp === "long_low") built = drawLizard(look.tone, pose, request.expression, facing, pen);
     else built = drawFish(look.tone, pose, request.expression, facing, pen);
     const anchors = anchorsFrom(built.sk, {
       head: built.head,

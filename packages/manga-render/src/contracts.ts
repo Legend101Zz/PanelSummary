@@ -215,6 +215,11 @@ export const MATERIALS = ["flesh", "stone", "gold", "bronze"] as const;
 
 export interface HumanLook {
   kind: "human";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   age: (typeof HUMAN_AGES)[number];
   build: (typeof HUMAN_BUILDS)[number];
   height: (typeof HUMAN_HEIGHTS)[number];
@@ -240,9 +245,16 @@ export const BIRD_SPECIES = [
   "crow",
   "owl",
   "duck",
+  // v0.3 (#81): a neutral tall bird (long legs, long neck) for a bird that no species fits
+  "bird_tall",
 ] as const;
 export interface BirdLook {
   kind: "bird";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   species: (typeof BIRD_SPECIES)[number];
   tone: Tone;
 }
@@ -259,9 +271,25 @@ export const ANIMAL_SPECIES = [
   "horse",
   "bear",
   "fish",
+  // v0.3 (#81): neutral body plans for an animal that no species fits (one flat tone, no species marks)
+  "quad_small",
+  "quad_medium",
+  "quad_large",
+  "long_low",
+  "swimmer",
 ] as const;
+/** The neutral stand-in species: body plans, not animals. A cast member of one of these gets a name tag. */
+export const ARCHETYPE_SPECIES = ["quad_small", "quad_medium", "quad_large", "long_low", "swimmer", "bird_tall"] as const;
+/** Smallest and largest look.scale. */
+export const LOOK_SCALE_MIN = 0.05;
+export const LOOK_SCALE_MAX = 4;
 export interface AnimalLook {
   kind: "animal";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   species: (typeof ANIMAL_SPECIES)[number];
   tone: Tone;
 }
@@ -269,6 +297,11 @@ export interface AnimalLook {
 export const INSECT_SPECIES = ["butterfly", "dragonfly", "bee"] as const;
 export interface InsectLook {
   kind: "insect";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   species: (typeof INSECT_SPECIES)[number];
   tone: Tone;
 }
@@ -292,6 +325,11 @@ export const OBJECT_SHAPES = [
 ] as const;
 export interface ObjectLook {
   kind: "object";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   shape: (typeof OBJECT_SHAPES)[number];
   tone: Tone;
   face: boolean;
@@ -309,6 +347,11 @@ export const PLANT_BLOOMS = ["full", "buds", "single", "bare"] as const;
 export type PlantBloom = (typeof PLANT_BLOOMS)[number];
 export interface PlantLook {
   kind: "plant";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   species: (typeof PLANT_SPECIES)[number];
   tone: Tone;
   face: boolean;
@@ -320,6 +363,11 @@ export interface PlantLook {
 export const SPIRIT_TYPES = ["wind", "frost", "snow", "hail", "sun", "moon", "fire", "rain"] as const;
 export interface SpiritLook {
   kind: "spirit";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   element: (typeof SPIRIT_TYPES)[number];
 }
 
@@ -327,6 +375,11 @@ export interface SpiritLook {
 export const CROWD_TYPES = ["townsfolk", "children", "soldiers", "officials", "workers", "nobles"] as const;
 export interface CrowdLook {
   kind: "crowd";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   crowd: (typeof CROWD_TYPES)[number];
   size: "few" | "many";
   /**
@@ -353,6 +406,11 @@ export const EMBLEMS = [
 ] as const;
 export interface EmblemLook {
   kind: "emblem";
+  /**
+   * Optional size relative to an adult human (1.0 = 100 figure units), 0.05 to 4.0 (v0.3, #81).
+   * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
+   */
+  scale?: number;
   emblem: (typeof EMBLEMS)[number];
 }
 
@@ -413,6 +471,12 @@ export const ENVIRONMENTS = [
   "foundry",
   "dustheap",
   "paradise",
+  // v0.3 (#81): neutral backdrops by kind of place
+  "generic_room",
+  "generic_hall",
+  "generic_passage",
+  "generic_rough",
+  "generic_outdoor",
   "abstract",
   "void",
 ] as const;
@@ -492,7 +556,16 @@ export const PROPS = [
   "angel",
   "loom",
   "sledge",
+  // v0.3 (#81): neutral things by shape
+  "thing_long",
+  "thing_round",
+  "thing_block",
+  "thing_flat",
+  "thing_heap",
 ] as const;
+/** The neutral props: a shape, not an object. Give each a PropSpec.label. */
+export const NEUTRAL_PROPS = ["thing_long", "thing_round", "thing_block", "thing_flat", "thing_heap"] as const;
+export const PROP_LABEL_MAX = 24;
 export type PropId = (typeof PROPS)[number];
 
 export const FX = [
@@ -634,6 +707,8 @@ export interface PropSpec {
   depth?: Depth;
   /** Tone variant so key objects stay distinct (ruby vs sapphire). */
   tone?: Tone;
+  /** Plain text, at most 24 characters: a small name tag beside the prop (for a neutral thing_* prop). */
+  label?: string;
 }
 
 export interface PanelSpec {

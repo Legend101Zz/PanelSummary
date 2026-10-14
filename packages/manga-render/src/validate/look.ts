@@ -14,6 +14,8 @@ import {
   HUMAN_HEIGHTS,
   INSECT_SPECIES,
   LOOK_KINDS,
+  LOOK_SCALE_MAX,
+  LOOK_SCALE_MIN,
   MATERIALS,
   OBJECT_SHAPES,
   OUTFITS,
@@ -90,7 +92,14 @@ export function validateLook(look: unknown, issues: Issues, path: string): look 
   if (kind === "crowd" && look.count !== undefined && !(typeof look.count === "number" && Number.isInteger(look.count) && look.count >= 1 && look.count <= 8)) {
     issues.error("FIELD_TYPE", path, `crowd look "count" must be a whole number from 1 to 8 (an exact head count), got ${show(look.count)}. Leave it out to let "size" decide.`);
   }
-  warnUnknownKeys(look, ["kind", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : []), ...(kind === "crowd" ? ["count"] : [])], issues, path);
+  if (look.scale !== undefined && !(typeof look.scale === "number" && Number.isFinite(look.scale) && look.scale >= LOOK_SCALE_MIN && look.scale <= LOOK_SCALE_MAX)) {
+    issues.error(
+      "LOOK_SCALE_RANGE",
+      path,
+      `look "scale" is ${show(look.scale)}, which is not allowed; use a number from ${LOOK_SCALE_MIN} to ${LOOK_SCALE_MAX} (the figure height relative to an adult person: 1 is an adult, 0.5 is half as tall, 3 is three times as tall), or leave "scale" out for the usual size.`,
+    );
+  }
+  warnUnknownKeys(look, ["kind", "scale", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : []), ...(kind === "crowd" ? ["count"] : [])], issues, path);
   const after = issues.list.filter((i) => i.severity === "error").length;
   return after === before;
 }

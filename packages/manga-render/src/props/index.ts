@@ -1133,6 +1133,76 @@ const SPECS: Record<PropId, Spec> = {
       return `<g transform="translate(-4 0)">${s}</g>`;
     },
   },
+  // v0.3 (#81): neutral things by shape. Plain, toned by `tone`, named by PropSpec.label.
+  thing_long: {
+    h: 7,
+    w: 42,
+    grip: { x: 0, y: -3.5 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a long rounded bar lying on the ground, a little thicker at the near end
+      const bar = `${M(-20, -1.6)}${Q(-21.6, -3.4, -20, -5.2)}${Lto(18.4, -6.4)}${Q(21.4, -6.8, 21.4, -3.6)}${Q(21.4, -0.6, 18.4, -0.8)}Z`;
+      let s = P(bar, bodyOf(k, g.light), k.lw);
+      if (!k.simple) {
+        s += L(`${M(-17, -4.8)}${Lto(16, -5.6)}`, k.dw * 0.8, PAPER);
+        s += L(`${M(-8, -1.4)}${Lto(10, -1.2)}`, k.dw * 0.7);
+      }
+      return s;
+    },
+  },
+  thing_round: {
+    h: 12,
+    w: 12,
+    grip: { x: 0, y: -6 },
+    draw: (k) => {
+      const g = G(k.p);
+      let s = C(0, -6, 5.8, bodyOf(k, g.light), k.lw);
+      if (!k.simple) s += L(`${M(-3.4, -8.2)}${Q(-2.2, -10.2, 0.4, -10.6)}`, k.dw * 1.1, darkBody(k) ? PAPER : INK) + F(`${M(2, -2.2)}${Q(4.4, -3.2, 4.8, -5.6)}${Q(5.6, -2.2, 2, -0.6)}Z`, g.dark);
+      return s;
+    },
+  },
+  thing_block: {
+    h: 14,
+    w: 22,
+    grip: { x: 0, y: -6 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a solid block seen from the front-left: front face, top face, side face
+      let s = P(poly(-9, -1, 5, -1, 5, -10, -9, -10), bodyOf(k, g.light), k.lw);
+      s += P(poly(5, -1, 10, -3.2, 10, -12.2, 5, -10), g.mid, k.lw);
+      s += P(poly(-9, -10, 5, -10, 10, -12.2, -4, -12.2), g.dots, k.lw);
+      if (!k.simple) s += L(`${M(-6.4, -7.4)}${Lto(2.4, -7.4)}`, k.dw * 0.8);
+      return s;
+    },
+  },
+  thing_flat: {
+    h: 7,
+    w: 28,
+    grip: { x: 0, y: -3 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a thin flat slab lying down: top face and a front edge
+      let s = P(poly(-13, -3.2, 9, -3.2, 14, -6.4, -8, -6.4), bodyOf(k, g.light), k.lw);
+      s += P(poly(-13, -3.2, 9, -3.2, 9, -0.8, -13, -0.8), g.mid, k.lw);
+      s += P(poly(9, -3.2, 14, -6.4, 14, -4, 9, -0.8), g.dark, k.lw);
+      if (!k.simple) s += L(`${M(-7, -4.6)}${Lto(6, -4.6)}${M(-5, -5.6)}${Lto(4, -5.6)}`, k.dw * 0.7);
+      return s;
+    },
+  },
+  thing_heap: {
+    h: 14,
+    w: 28,
+    grip: { x: 0, y: -7 },
+    draw: (k) => {
+      const g = G(k.p);
+      // a mound of lumps: back row, then a front row
+      const lump = (x: number, y: number, r: number, f: string) => E(x, y, r, r * 0.86, f, k.lw);
+      let s = lump(-4, -9, 5, g.mid) + lump(5, -8.4, 5.2, g.mid) + lump(0, -11, 4, g.light);
+      s += lump(-10, -4.2, 4.6, bodyOf(k, g.light)) + lump(-2, -4, 5, bodyOf(k, g.light)) + lump(7, -3.8, 4.8, bodyOf(k, g.light)) + lump(13, -2.6, 3.4, bodyOf(k, g.light));
+      if (!k.simple) s += L(`${M(-12, -5.6)}${Q(-11, -7, -9, -6.8)}${M(5.4, -5)}${Q(6.6, -6.2, 8.6, -5.4)}`, k.dw * 0.7);
+      return s;
+    },
+  },
 };
 
 export function propSpec(prop: PropId): { h: number; w: number; grip: Point } {

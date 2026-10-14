@@ -63,6 +63,7 @@ import { adoptFragment, rescaleTones } from "./ids.js";
 import { castWithVariant } from "./looks.js";
 import { resolveLocation } from "./places.js";
 import { planProps, type HeldProp } from "./props.js";
+import { placePropLabel } from "./prop-label.js";
 import { clearShift, covers, shifted, type Placement } from "./safety.js";
 import {
   ADULT_SEAT_Y,
@@ -137,6 +138,8 @@ export interface PropPlacement {
   key: boolean;
   /** Held by this character (in the hand or arms). */
   heldBy?: string;
+  /** The name tag drawn beside the prop (PropSpec.label of a neutral prop). */
+  label?: string;
 }
 
 export interface ComposedPanel {
@@ -253,6 +256,16 @@ const GESTURE_POSES = new Set<Pose>(["point", "reach", "wave", "hold", "carry"])
 const TALL_HEADWEAR = new Set(["top_hat", "crown", "wide_hat", "helmet", "hood", "wreath", "bonnet"]);
 const SPEAKING = new Set(["speech", "thought", "shout", "whisper"]);
 const SMALL_KINDS = new Set(["bird", "insect", "animal"]);
+/**
+ * v0.3 (#81): "small" (boosted near the camera, may perch, speaks only close) follows the figure's
+ * nominal height, not its kind: a creature (or any look with `scale`) under 45 figure units is small;
+ * a horse, a bear or a quad_large is not.
+ */
+const SMALL_NOMINAL = 45;
+export function isSmallFigure(look: CharacterLook, nominal: number): boolean {
+  const sized = SMALL_KINDS.has(look.kind) || (look as { scale?: unknown }).scale !== undefined;
+  return sized && nominal < SMALL_NOMINAL;
+}
 
 /** Does this character wear headwear that rises well above the head circle? */
 function tallHat(cast: CastMember): boolean {
@@ -606,7 +619,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       staging: { type: "ground" },
       mirror: (spec.facing === "left") !== rtl,
       lying,
-      small: SMALL_KINDS.has(cast.look.kind),
+      small: isSmallFigure(cast.look, nominal),
       ...(held ? { held } : {}),
     });
   });
@@ -1719,7 +1732,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         const c1 = toPage({ x: ox - prop.width / 2, y: oy - prop.height });
         const c2 = toPage({ x: ox + prop.width / 2, y: oy });
         const pb = { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), w: Math.abs(c2.x - c1.x), h: Math.abs(c2.y - c1.y) };
-        propPlacements.push({ prop: f.held.prop, box: pb, key: propPlan.key.has(f.held.prop), heldBy: f.cast.id });
+        propPlacements.push({ prop: f.held.prop, box: pb, key: propPlan.key.has(f.held.prop), heldBy: f.cast.id, ...(f.held.source?.spec.label ? { label: f.held.source.spec.label } : {}) });
       }
     }
     const sx = f.mirror ? -fr.scale : fr.scale;
@@ -1995,7 +2008,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           const ph = probe.height * scale;
           const pb = { x: ox - pw / 2, y: oy - ph, w: pw, h: ph };
           obstacles.push(pb);
-          propPlacements.push({ prop: propId, box: pb, key: true });
+          propPlacements.push({ prop: propId, box: pb, key: true, ...(first && first.prop === propId && first.label ? { label: first.label } : {}) });
         }
       }
     }
@@ -2071,7 +2084,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       if (key) layers.fore.push(g);
       else layers[d].unshift(g);
       const pb = { x: x - w / 2, y: base - h, w, h };
-      propPlacements.push({ prop: p.prop, box: pb, key });
+      propPlacements.push({ prop: p.prop, box: pb, key, ...(p.label ? { label: p.label } : {}) });
       const inFrame = overlapArea(pb, box) / Math.max(1, boxArea(pb));
       const behind = key ? 0 : figures.reduce((sum, f) => sum + overlapArea(pb, f.body), 0) / Math.max(1, boxArea(pb));
       if (inFrame < 0.4 || behind > 0.75) {
@@ -2083,6 +2096,35 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         });
       }
     }
+  }
+
+  // --- name tags of neutral props (PropSpec.label): beside the prop, clear of faces, lettering keeps off them
+  let labelSvg = "";
+  {
+    const taken: Box[] = [];
+    const faces = figures.filter((f) => !f.headCropped).map((f) => ({ center: f.head, radius: f.headRadius }));
+    propPlacements.forEach((pp, k) => {
+      if (!pp.label) return;
+      const placed = placePropLabel(pp.label, pp.box, {
+        panel: box,
+        heads: faces,
+        bodies: figures.map((f) => f.body),
+        taken: [...propPlacements.filter((_, j) => j !== k).map((q) => q.box), ...taken],
+        seed: hashString(`${panel.id}|proplabel|${k}`),
+      });
+      if (!placed) {
+        issues.push({
+          code: "PROP_LABEL_DROPPED",
+          severity: "warning",
+          path: `${ipath} prop ${k}`,
+          message: `the name tag "${pp.label}" of the prop "${pp.prop}" has no free place beside it in this ${shot} panel (clear of faces and inside the frame), so it is not drawn. Use a wider shot or a panel with fewer figures.`,
+        });
+        return;
+      }
+      taken.push(placed.box);
+      labelSvg += placed.svg;
+    });
+    obstacles.push(...taken);
   }
 
   // --- where the panel's sound comes from (for SFX) ---------------------------
@@ -2138,6 +2180,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     layers.mid.join(""),
     layers.fore.join(""),
     insertSvg,
+    labelSvg,
   ].join("");
   let overSvg = overFx.join("");
   let placedFigures = figures;

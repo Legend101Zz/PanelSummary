@@ -148,7 +148,8 @@ describe("creature rigs", () => {
 
   it("standing height is close to the nominal height", () => {
     for (const c of cases) {
-      const h = c.rig.nominalHeight(c.look);
+      // the neutral long_low and swimmer reuse a smaller drawing: compare with the height it is drawn at
+      const h = c.rig.nativeHeight ? c.rig.nativeHeight(c.look) : c.rig.nominalHeight(c.look);
       const d = draw(c, "stand", "neutral", "right");
       const drawn = -d.anchors.top;
       expect(drawn / h, `${c.name}: drawn ${drawn.toFixed(1)} vs nominal ${h}`).toBeGreaterThan(0.6);
@@ -251,7 +252,10 @@ describe("creature acting (dispatcher)", () => {
         const req = { look: c.look, pose: "stand" as Pose, expression: e, facing: "right" as Facing, lineWidth: 0.2, seed: 5 };
         const d = rig.draw(req, ctx());
         const a = d.anchors;
-        const o = c.rig.draw(req, ctx()).anchors;
+        const o0 = c.rig.draw(req, ctx()).anchors;
+        // the dispatcher scales a neutral reuse (long_low, swimmer) from the drawing height to the nominal height
+        const k = c.rig.nativeHeight ? rig.nominalHeight(c.look) / c.rig.nativeHeight(c.look) : 1;
+        const o = { ...o0, head: { x: o0.head.x * k, y: o0.head.y * k }, mouth: { x: o0.mouth.x * k, y: o0.mouth.y * k }, left: o0.left * k, right: o0.right * k };
         expect(a.top, c.name).toBeLessThan(0);
         expect(a.left, c.name).toBeLessThan(a.right);
         // the lean is rigid (plus a slight squash): the mouth keeps its place on the face
