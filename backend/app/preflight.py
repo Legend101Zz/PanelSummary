@@ -70,6 +70,15 @@ FIT_RUNS: tuple[FitRun, ...] = (
     FitRun("v0.1.0 hold-out, just-so", 38, 9419, 3, 30, 0.80, 121, 427, 58, _ALL_FLASH, 0.743),
     # The owner's private book: only its numbers are kept here, never its text.
     FitRun("v0.2 private book (numbers only)", 39, 11339, 3, 44, 1.01, 197, 551, 87, _ALL_FLASH, 0.941),
+    # Measured 2026-10-14 (v0.3 code, Gate 1, 1b and 2a; numbers from the run exports, docs/v0.3/O1-ops.md section 2).
+    # first_page_s is created_to_first_page_s, finish_s is created_to_finished_s, as for the v0.2 runs.
+    # The exports have no understanding time and no page receipts, so those two are None.
+    FitRun("v0.3 two-tale (Gate 1)", 26, 5794, 2, 22, 0.71, 179, 483, None, _ALL_FLASH),
+    FitRun("v0.3 two-tale (Gate 1b)", 26, 5794, 2, 22, 1.03, 245, 676, None, _ALL_FLASH),
+    FitRun("v0.3 Just So (Gate 1b)", 38, 9419, 3, 35, 0.94, 153, 456, None, _ALL_FLASH),
+    FitRun("v0.3 sealed fiction 1 (Gate 2a)", 39, 7306, 13, 28, 1.18, 463, 857, None, _ALL_FLASH),
+    FitRun("v0.3 sealed fiction 2 (Gate 2a)", 45, 10767, 8, 41, 1.13, 309, 679, None, _ALL_FLASH),
+    FitRun("v0.3 sealed nonfiction (Gate 2a)", 34, 8699, 3, 31, 0.89, 156, 473, None, _ALL_FLASH),
 )
 
 # Earlier runs with MiniMax-M3 on at least one goal (v0.1 and the model A/B). They are kept for the
@@ -92,7 +101,7 @@ EARLIER_RUNS: tuple[FitRun, ...] = (
 # The margin of every range: the envelope of the fit runs, widened outward by 10 %.
 MARGIN = 0.10
 
-# Manga pages per 1,000 words. Measured 3.08 to 3.88 (12 runs). Widened by the margin: 2.77 and 4.27,
+# Manga pages per 1,000 words. Measured 3.08 to 3.88 (18 runs). Widened by the margin: 2.77 and 4.27,
 # rounded outward to 2.75 and 4.3.
 PAGES_PER_KWORD_LOW = 2.75
 PAGES_PER_KWORD_HIGH = 4.3
@@ -100,11 +109,11 @@ PAGES_PER_KWORD_HIGH = 4.3
 # Cost model: usd = a * kwords + b * pages, at M3 rates. The understanding and the plan cost
 # 0.0044 to 0.0104 usd per 1,000 words; the page receipts cost 0.0208 to 0.0329 usd per page.
 # The factors are the smallest and the largest ratio of a measured cost to the cost model at the
-# low and the high page count of the range (1.04 and 1.20), widened by the margin (0.93 and 1.32).
+# low and the high page count of the range (1.04 and 1.20), widened by the margin (0.93 and 1.81).
 COST_PER_KWORD = 0.0075
 COST_PER_PAGE = 0.0265
 COST_LOW_FACTOR = 0.93
-COST_HIGH_FACTOR = 1.32
+COST_HIGH_FACTOR = 1.81
 
 # The drawing part alone (plan review, D24): the page receipts cost 0.0208 to 0.0329 usd per page.
 # Widened by the margin and rounded outward.
@@ -112,16 +121,15 @@ DRAW_COST_PER_PAGE_LOW = 0.0187
 DRAW_COST_PER_PAGE_HIGH = 0.0363
 
 # Time to the first page = FIRST_PAGE_S_PER_WORD * words + a base (understanding, plan and page 1).
-# The base was 28 to 165 s in the 11 v0.2 runs. The one v0.1 Flash run needed 220 s more
-# (a slow understanding hour: 132 s for 5,794 words, 0.023 s per word; the v0.2 runs were
-# 0.004 to 0.015). That extra stays in the high bound. The margin widens both ends.
+# The base was 28 to 404 s in the 18 runs (the v0.2 runs 28 to 165 s; the v0.1 run with a slow
+# understanding hour 381 s; a v0.3 book with 13 sections 404 s). The high base is the largest one,
+# rounded outward. The margin widens both ends.
 FIRST_PAGE_S_PER_WORD = 0.008
 FIRST_PAGE_BASE_S_LOW = 28
-FIRST_PAGE_BASE_S_HIGH = 165
-UNDERSTANDING_SLOW_HOUR_EXTRA_S = 220
-# Drawing: seconds per further page (4 pages in parallel). Measured 7.7 to 17.5. Widened by the margin.
+FIRST_PAGE_BASE_S_HIGH = 405
+# Drawing: seconds per further page (4 pages in parallel). Measured 7.7 to 20.5. Widened by the margin.
 PAGE_S_LOW = 6.9
-PAGE_S_HIGH = 19.3
+PAGE_S_HIGH = 22.6
 # One page that fails twice held a slot for 245 s in the v0.2 runs (gate 2, page 42: 119 s and 126 s,
 # both stopped by the submit limit). Widened by the margin. The pre-F1 M3 run had 1,114 s (not in the fit).
 FAILED_PAGE_TAIL_S_HIGH = 270
@@ -187,7 +195,7 @@ def estimate(source_words: int, sections: int) -> dict[str, Any]:
 
     base = FIRST_PAGE_S_PER_WORD * source_words
     first_low = (base + FIRST_PAGE_BASE_S_LOW) * (1 - MARGIN)
-    first_high = (base + FIRST_PAGE_BASE_S_HIGH + UNDERSTANDING_SLOW_HOUR_EXTRA_S) * (1 + MARGIN)
+    first_high = (base + FIRST_PAGE_BASE_S_HIGH) * (1 + MARGIN)
     total_low = first_low + max(pages_low - 1, 0) * PAGE_S_LOW
     total_high = first_high + max(pages_high - 1, 0) * PAGE_S_HIGH + FAILED_PAGE_TAIL_S_HIGH
 
