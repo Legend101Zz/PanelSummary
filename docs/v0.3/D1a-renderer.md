@@ -137,8 +137,8 @@ overlaps 13, order breaks 5).
 ## Verification
 
 ```sh
-cd packages/manga-render && npx tsc --noEmit && npx vitest run     # 16 files, 934 tests pass
-cd apps/agent-worker && npx tsc --noEmit && npx vitest run          # 10 files, 191 tests pass
+cd packages/manga-render && npx tsc --noEmit && npx vitest run     # 17 files, 938 tests pass
+cd apps/agent-worker && npx tsc --noEmit && npx vitest run          # 11 files, 210 tests pass
 cd packages/manga-render && npx tsx scripts/structural-metrics.ts --fixtures
 ```
 
