@@ -277,3 +277,10 @@ describe("continue with the next section (M1)", () => {
     expect(partStatusWord("failed", 0)).toBe("Stopped");
   });
 });
+
+describe("version text", () => {
+  it("names v0.3 and the v0.2.0 release date", async () => {
+    const w = await import("./words");
+    expect(w.SETTINGS_VERSION).toBe("PanelSummary v0.3. Version 0.2.0 was released on 10 October 2026.");
+  });
+});

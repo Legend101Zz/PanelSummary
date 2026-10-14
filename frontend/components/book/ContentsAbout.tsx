@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import type { BookDetail, EditionDetail } from "@/lib/api";
+import type { BookDetail, BookParts, EditionDetail } from "@/lib/api";
 import { plural, formatTokens, readableReason, STAND_INS_NOTE, STAND_INS_TITLE, standInDetail } from "@/lib/words";
 import { Disclosure } from "@/components/ui";
-import { mangaRanges, pdfRange } from "./bookLogic";
+import { pdfRange, seriesRanges } from "./bookLogic";
 import styles from "./Book.module.css";
 
 /** E. Contents: one row for each section, with its PDF pages and, once the plan exists, its manga pages. */
-export function Contents({ bookId, book, edition }: { bookId: string; book: BookDetail; edition: EditionDetail | null }) {
+export function Contents({ bookId, book, edition, parts }: { bookId: string; book: BookDetail; edition: EditionDetail | null; parts?: BookParts | null }) {
   if (book.sections.length === 0) return null;
-  const ranges = edition ? mangaRanges(edition.pages) : new Map<string, [number, number]>();
+  const ranges = seriesRanges(parts, edition);
   // The plan names its own section ids (s1, s2 ...). They match the book's section ids when the run drew the whole book.
   return (
     <section className={styles.contents} aria-labelledby="contents-title">

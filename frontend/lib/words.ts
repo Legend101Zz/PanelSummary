@@ -426,7 +426,7 @@ export const SETTINGS_LEAVES =
   "The book text and a PNG preview of each drawn page go to MiniMax (api.minimax.io). In the final v0.1 test run, the drawing service contacted no other host. No image-generation model is used. In your browser, the app talks only to your own PanelSummary server.";
 export const SETTINGS_COST = "Costs are estimates at MiniMax-M3 rates, because MiniMax publishes no price for the M3.1 Flash model. They are not a bill.";
 export const SETTINGS_DATA = "On your computer, in MongoDB and the stored PDFs.";
-export const SETTINGS_VERSION = "PanelSummary v0.2. Version 0.1.0 was released on 9 October 2026.";
+export const SETTINGS_VERSION = "PanelSummary v0.3. Version 0.2.0 was released on 10 October 2026.";
 export const SETTINGS_CREDITS =
   "The interface is set in Bricolage Grotesque. The manga lettering uses Comic Neue for balloons and captions and Bangers for sound effects. Bricolage Grotesque, Comic Neue and Bangers are all under the SIL Open Font License. The sample texts are from Project Gutenberg.";
 export const REVIEW_PLAN_NOTE = "When this is on, PanelSummary shows the plan of the pages before it draws, and you press the button to start the drawing. It is off until you turn it on.";

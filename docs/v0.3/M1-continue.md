@@ -52,7 +52,6 @@ The issue asks for page numbers that continue. The reader is frozen, so it numbe
 - No live run. The orchestrator makes it.
 - The replay worker cannot serve a scoped run (its book check needs all sections), so the screenshots use a state seeded in the database from the installed Andersen sample (parts made from its edition, with the real API and the real page).
 - `allow_overlap` (a way to draw a scope again on purpose) is not built.
-- The Contents list still shows manga pages of the newest edition only, with its own numbering.
 
 ## Live finding and fix (first live run, release/v0.3 at b02bc17)
 
@@ -70,3 +69,8 @@ Resume: `POST /editions/{id}/resume` on a failed part 2 queues the same edition.
 Tests that would have caught it: `apps/agent-worker/test/m1-continue-realistic.test.ts`. Its fixture, `test/fixtures/m1-part1-understanding.json`, is the real part 1 understanding of the tuning book (Kipling, public domain). Without the fix, 5 of its 8 tests fail, and the crash shows as the TypeError above.
 
 Not done: no live run after the fix. The orchestrator resumes part 2.
+
+## Contents ranges for a continued book (polish follow-up)
+
+The live run showed the Contents list with a range only under the newest part. Now, with two parts or more, each section that a part drew shows the range of that part in the series numbers (the same numbers as "Parts of the book": part 1 "manga pages 1–9", part 2 "manga pages 10–19"). In the part that is shown, a section keeps its own range, moved to the series numbers. With one part nothing changes. The logic is `seriesRanges` in `frontend/components/book/bookLogic.ts`. It reads `GET /books/{id}/parts`; no backend change. If a part has several sections, the sections that are not in the shown part show the range of the whole part.
+
