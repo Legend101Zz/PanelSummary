@@ -206,6 +206,10 @@ export const HEAD_PARTLY_CLIPPED_SHARE = 0.6;
  * Calibrated on 370 judged pages (D26: E 53, P 83%, L +27 points, C 9%).
  */
 export const FIGURE_MIN_HEIGHT_SHARE = 0.15;
+/** The shots where a small figure is on purpose (or the camera fills the panel), so FIGURE_TOO_SMALL does not apply. */
+export function figureSizeIsChecked(shot: string): boolean {
+  return shot !== "establishing" && shot !== "extreme_close" && shot !== "insert";
+}
 export const LOD_FULL_RADIUS = 30;
 export const LOD_REDUCED_RADIUS = 18;
 /** A figure staged on another's hand, shoulder or head must read at least this big (page units). */
@@ -1968,7 +1972,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
   }
   // a planned figure that is a speck in a panel that is not an establishing shot (v0.3, Gate 2a): a warning that
   // the writer repairs once (REPAIR_ONCE_CODES). A figure that HERO_TOO_SMALL or SPEAKER_TOO_SMALL already names is not named twice.
-  if (shot !== "establishing" && shot !== "extreme_close" && shot !== "insert") {
+  if (figureSizeIsChecked(shot)) {
     for (const fp of figures) {
       if (fp.headCropped) continue;
       if (heroes.has(fp.figureIndex) && !speakers.has(fp.character) && issues.some((i) => i.code === "HERO_TOO_SMALL" && i.path === ipath && i.message.startsWith(`"${fp.character}"`))) continue;

@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { CastMember, MangaPageSpec, PlannedPage } from "../src/contracts.js";
 import { catalog, renderPageDetailed } from "../src/index.js";
-import { FIGURE_MIN_HEIGHT_SHARE } from "../src/scene/compose.js";
+import { FIGURE_MIN_HEIGHT_SHARE, figureSizeIsChecked } from "../src/scene/compose.js";
 
 interface Fx {
   run: string;
@@ -66,6 +66,7 @@ describe("FIGURE_TOO_SMALL (v0.3, Gate 2a)", () => {
           else {
             const other = r.result.issues.some((x) => (x.code === "HERO_TOO_SMALL" || x.code === "SPEAKER_TOO_SMALL") && x.path === path && x.message.includes(`"${fp.character}"`));
             if (!other) expect(named.has(fp.character), `${f.run} p${f.page} ${path} ${fp.character} is a speck`).toBe(true);
+            else expect(named.has(fp.character), `${f.run} p${f.page} ${path} ${fp.character} is already named by another code`).toBe(false);
           }
         }
         if (!exempt) {
@@ -78,12 +79,76 @@ describe("FIGURE_TOO_SMALL (v0.3, Gate 2a)", () => {
     }
   });
 
+  it("never names a figure twice: a speck that HERO_TOO_SMALL or SPEAKER_TOO_SMALL names is not named again (real pages and re-shot variants)", () => {
+    const seen = { HERO_TOO_SMALL: 0, SPEAKER_TOO_SMALL: 0 };
+    const check = (f: Fx, r: ReturnType<typeof render>, label: string) => {
+      r.details.forEach((d, i) => {
+        const panel = (f.spec.panels[i] ?? {}) as { id?: string; shot?: string };
+        const path = `panel ${panel.id ?? `#${i}`}`;
+        if (panel.shot === "establishing" || panel.shot === "extreme_close" || panel.shot === "insert") return;
+        const ftsNamed = new Set(r.result.issues.filter((x) => x.code === "FIGURE_TOO_SMALL" && x.path === path).map((x) => NAMED.exec(x.message)?.[1]));
+        for (const fp of d.figures) {
+          if (fp.headCropped || Math.min(fp.body.h, d.bbox.h) / d.bbox.h >= FIGURE_MIN_HEIGHT_SHARE) continue;
+          for (const code of ["HERO_TOO_SMALL", "SPEAKER_TOO_SMALL"] as const) {
+            if (r.result.issues.some((x) => x.code === code && x.path === path && x.message.includes(`"${fp.character}"`))) {
+              seen[code]++;
+              expect(ftsNamed.has(fp.character), `${label} ${path} ${fp.character} already named by ${code}`).toBe(false);
+            }
+          }
+        }
+      });
+    };
+    for (const { f, r } of ALL) check(f, r, `${f.run} p${f.page}`);
+    // Variants: the same pages with every non-exempt panel re-shot, so more heroes and speakers end up as specks.
+    const pages = ALL.map(({ f }) => f);
+    for (const shot of ["wide", "full", "medium"]) {
+      for (const depth of ["back", "mid"]) {
+        for (const f of pages) {
+          const g = clone(f);
+          g.spec.panels.forEach((p: any) => {
+            if (p.shot === "establishing" || p.shot === "extreme_close" || p.shot === "insert") return;
+            p.shot = shot;
+            for (const fg of p.figures ?? []) if (!fg.on) fg.depth = depth;
+          });
+          check(g, render(g), `${f.run} p${f.page} as ${shot}/${depth}`);
+        }
+      }
+    }
+    expect(seen.HERO_TOO_SMALL).toBeGreaterThanOrEqual(1);
+    expect(seen.SPEAKER_TOO_SMALL).toBeGreaterThanOrEqual(1);
+  }, 120_000);
+
   it("never flags a figure in an establishing shot (small on purpose)", () => {
     const est = small.filter((s) => s.shot === "establishing");
     expect(est.length).toBeGreaterThan(0); // the fixture has specks in establishing shots
     for (const s of est) {
       const path = `panel ${s.panel}`;
       expect(s.r.result.issues.some((i) => i.code === "FIGURE_TOO_SMALL" && i.path === path)).toBe(false);
+    }
+  });
+
+  it("the exempt shots are exactly establishing, extreme_close and insert", () => {
+    // In these shots the renderer never draws a figure under 15% (probe: 217 figures, 0 under), so the guard is pinned here directly.
+    for (const shot of ["establishing", "extreme_close", "insert"]) expect(figureSizeIsChecked(shot), shot).toBe(false);
+    for (const shot of ["wide", "full", "medium", "close"]) expect(figureSizeIsChecked(shot), shot).toBe(true);
+  });
+
+  it("never flags a figure in an extreme close or insert shot, even a small one (synthetic: the speck panels with the shot changed)", () => {
+    const speckPages = ALL.filter(({ r }) => r.result.issues.some((i) => i.code === "FIGURE_TOO_SMALL")).map(({ f }) => f);
+    for (const shot of ["extreme_close", "insert"]) {
+      let panelsChanged = 0;
+      for (const f of speckPages) {
+        const g = clone(f);
+        const base = ALL.find((a) => a.f === f)!.r;
+        const idx = new Set(base.result.issues.filter((i) => i.code === "FIGURE_TOO_SMALL").map((i) => i.path));
+        g.spec.panels.forEach((p: any, i: number) => {
+          if (idx.has(`panel ${p.id ?? `#${i}`}`)) { p.shot = shot; panelsChanged++; }
+        });
+        const out = render(g);
+        const bad = out.result.issues.filter((i) => i.code === "FIGURE_TOO_SMALL" && idx.has(i.path ?? ""));
+        expect(bad.map((b) => b.path), `${f.run} p${f.page} as ${shot}`).toEqual([]);
+      }
+      expect(panelsChanged).toBeGreaterThanOrEqual(5);
     }
   });
 
