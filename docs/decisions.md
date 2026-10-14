@@ -203,6 +203,13 @@ To change a decision, edit its entry in the same change as the code, and give th
 - For v0.4 the owner decides: (1) whether a second host is acceptable, with the egress claim changed to name it and say it is read-only for the plan endpoint; (2) if yes, the call goes in the worker only, uses the existing key handling, never logs the key or headers, and its host appears in `/internal/v2/egress`; (3) if no, the preflight stays an estimate.
 - Status: accepted for v0.3.
 
+### D31. A camera push keeps every planned figure in the panel (2026-10-14, issue #90, track D2)
+- Statement: Both camera pushes (the speaker readability push and the #42 size-floor push) use one bounded search. A push is as large as it can be while the head of every planned figure of the panel stays inside the panel (2.5 percent margin). If no factor works, the camera does not push. A planned figure is never "cropped on purpose" by a push; only a crowd, an extra or the statue top may be.
+- Statement: Before a speaker push, figures that stand too far apart are moved closer together horizontally (same order, same facing). A speaker who still cannot reach the size floor keeps `SPEAKER_TOO_SMALL` (an error): the writer repairs it with a closer shot of the speaker or fewer figures in the panel.
+- Statement: New warning `FIGURE_HEAD_PARTLY_CLIPPED` (under 60 percent of a planned head circle inside the panel; not for extreme_close). It is a warning until it is calibrated (D26). `FIGURE_HEAD_CLIPPED` is unchanged.
+- Why: On 290 judged pages the old speaker push lost or cut 19 of 21 figures (hero, speaker and other planned figures), and a prototype showed the trade-off: bounded pushes leave small-headed speakers small. Measured numbers: `docs/v0.3/D2-push.md`.
+- Status: proposed in the D2 pull request (renderer 0.6.1). The residual `SPEAKER_TOO_SMALL` (13 of 290 pages) is for the orchestrator to accept.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

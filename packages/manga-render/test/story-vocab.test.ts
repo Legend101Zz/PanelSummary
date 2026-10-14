@@ -35,8 +35,8 @@ describe("the closed vocabulary lists the new names", () => {
     expect(c.looks.human.fields.outfit).toEqual(expect.arrayContaining([...NEW_OUTFITS]));
     expect(c.variants.fields.human).toContain("outfit");
   });
-  it("is renderer 0.6.0", () => {
-    expect(RENDERER_VERSION).toBe("manga-render/0.6.0");
+  it("is renderer 0.6.1", () => {
+    expect(RENDERER_VERSION).toBe("manga-render/0.6.1");
   });
   it("the renderer can draw every name of every closed list (no name is allowed and undrawable)", () => {
     for (const p of PROPS) expect(() => props.draw(p, 0.5, ctx()), `prop ${p}`).not.toThrow();
