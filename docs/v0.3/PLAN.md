@@ -166,8 +166,33 @@ is the run's own estimate at MiniMax-M3 rates (`totals.cost_usd`), not a bill.
 
 | # | Started (UTC) | Run | Code | Book | Purpose | Pages and time | Estimated cost | Result |
 |---|---|---|---|---|---|---|---|---|
+| 1 | 2026-10-14 ~12:40 | local (v03-base020, 3290) | tag v0.2.0 @ 39324cf | *Jataka Tales* (sealed f1) | v0.2.0 baseline, run 1 | 34/34, 0 failed; first page 428 s, all 799 s; 36 calls | $1.06 | journey PASSED; egress api.minimax.io only |
+| 2 | 2026-10-14 ~12:55 | local | tag v0.2.0 | *Indian Why Stories* (sealed f2) | v0.2.0 baseline, run 1 | 41/41, 0 failed; first page 421 s, all 869 s; 43 calls | $1.19 | journey PASSED; egress api.minimax.io only |
+| 3 | 2026-10-14 ~13:15 | local | tag v0.2.0 | *On a Piece of Chalk* (sealed n1) | v0.2.0 baseline, run 1 | 33/33, 0 failed; first page 267 s, all 575 s; 35 calls | $0.76 | journey PASSED |
+| 4 | 2026-10-14 ~13:30 | local | tag v0.2.0 | *Jataka Tales* (sealed f1) | v0.2.0 baseline, run 2 | 28/28, 0 failed; first page 566 s, all 978 s; 30 calls | $1.12 | journey PASSED |
+| 5 | 2026-10-14 ~13:47 | local | tag v0.2.0 | *Indian Why Stories* (sealed f2) | v0.2.0 baseline, run 2 | 36/36, 0 failed; first page 267 s, all 605 s; 38 calls | $0.90 | journey PASSED |
+| 6 | 2026-10-14 ~14:00 | local | tag v0.2.0 | *On a Piece of Chalk* (sealed n1) | v0.2.0 baseline, run 2 | 28/28, 0 failed; first page 139 s, all 609 s; 31 calls (1 failed call) | $0.73 | journey PASSED |
+| 7 | 2026-10-14 14:04 | local (v03-gate, 3280) | release/v0.3 @ b02bc17 | just-so-three-tales, section 1 | M1 live: part 1 | 9/9, 0 failed; about 3 min 20 s; 11 calls | $0.24 | complete |
+| 8 | 2026-10-14 14:08 | local | release/v0.3 @ b02bc17 | just-so-three-tales, section 2, continue_from part 1 | M1 live: part 2 | 0 pages; understanding failed after 2 attempts (PLACE_UNITS_INVALID on the merged prior locations) | $0.10 | FAILED: M1 bug, fix track m1fix |
+| 9 | 2026-10-14 14:02 | GH 38576965161 | release/v0.3 @ b02bc17 | happy-prince-two-tales | GATE 1 (tuning) | 22/22, 0 failed; first page 179 s, all 483 s; 24 calls | $0.71 | journey PASSED; judged: mean 3.53, strict 4/22 (v0.2: 3.60, 6/22) |
+| 10 | 2026-10-14 14:12 | GH 38577002483 | release/v0.3 @ b02bc17 | just-so-three-tales | GATE 1 (tuning) | 18 of 35 drawn; edition FAILED: MiniMax overloaded (2064/529) from page 20; page 9 submit limit (lettering) | $0.74 | provider outage: re-run later |
+| 11 | 2026-10-14 14:26 | local (v03-gate, 3280) | release/v0.3 @ 6fdb036 | just-so-three-tales, section 2 (resume of #8) | M1 live: part 2 after the fix (#111) | 10/10, 0 failed; about 7 min 47 s; 12 calls | $0.27 | complete; prior cast 9/9 and places 3/3 kept equal; 7 new cast, 3 new places; first_page_number 10 |
+| 12 | 2026-10-14 15:00 | GH 38585510402 | release/v0.3 @ 839d032 | happy-prince-two-tales | GATE 1b (tuning, after Wave 2) | 22/22, 0 failed; first page 245 s, all 676 s; 26 calls (2 failed, retried) | $1.03 | journey PASSED |
+| 13 | 2026-10-14 15:12 | GH 38585554450 | release/v0.3 @ 839d032 | just-so-three-tales | GATE 1b (tuning, after Wave 2) | 35/35, 0 failed; first page 153 s, all 456 s; 37 calls | $0.94 | journey PASSED |
+| 14 | 2026-10-14 ~16:00 | local (v03-gate, 3280) | release/v0.3 @ f58801b | *Jataka Tales* (sealed f1) | GATE 2a, v0.3 candidate 1, run 1 | 28/28, 0 failed; first page 463 s, all 857 s; 31 calls (1 failed, retried) | $1.18 | judged: mean 3.59 (v0.2.0 3.44-3.48) |
+| 15 | 2026-10-14 ~16:16 | local | release/v0.3 @ f58801b | *Indian Why Stories* (sealed f2) | GATE 2a, candidate 1, run 1 | 41/41, 0 failed; first page 309 s, all 679 s; 43 calls | $1.13 | judged: mean 3.43 (v0.2.0 3.44) |
+| 16 | 2026-10-14 ~16:30 | local | release/v0.3 @ f58801b | *On a Piece of Chalk* (sealed n1) | GATE 2a, candidate 1, run 1 | 31/31, 0 failed; first page 156 s, all 473 s; 33 calls | $0.89 | judged: mean 3.37 (v0.2.0 3.35-3.49) |
+| 17 | 2026-10-14 17:32 | local (v03-fj, 3285) | release/v0.3 @ 45ab575 | *Jataka Tales* (sealed f1) | FINAL JOURNEY attempt 1 (UI, headed Chrome) | 11 of 38; edition FAILED at 17:43: MiniMax token plan limit (2062) | $0.52 | stopped by the provider; redo after the reset |
+| 18 | 2026-10-14 17:32 | local (v03-gate, 3280) | release/v0.3 @ 45ab575 | *Indian Why Stories* (sealed f2) | GATE 2b run 2 | 14 of 40; FAILED: token plan limit (2062) | $0.47 | stopped by the provider |
+| 19 | 2026-10-14 17:35 | GH 38607407443 | release/v0.3 @ 45ab575 | happy-prince-and-other-tales (68 pp) | GATE 2 tuning guard | 11 of 62; FAILED: token plan limit (2062) | $0.53 | stopped by the provider |
+| 20 | 2026-10-14 17:40 | local | release/v0.3 @ 45ab575 | *On a Piece of Chalk* (sealed n1) | GATE 2b run 2 | 6 of 31; FAILED: token plan limit (2062) | $0.22 | stopped by the provider |
+| 21 | 2026-10-14 17:42 | GH 38607551249 | release/v0.3 @ 45ab575 | self-reliance | GATE 2 seen book | 1 of 38; FAILED: token plan limit (2062) | $0.09 | stopped by the provider |
+| 22 | 2026-10-14 17:45 | local | release/v0.3 @ 45ab575 | Cheese (private, local) | GATE 2 seen book | 0 pages; the run was stopped by the orchestrator in understanding (token plan limit) | ~$0 | not counted |
+| 23 | 2026-10-14 18:32 | GH 38616099546 | release/v0.3 @ 26dfd3b | happy-prince-and-other-tales (68 pp) | GATE 2 tuning guard (also the quota probe) | 61/61, 0 failed; first page 296 s, all 789 s; 63 calls | $1.98 | journey PASSED |
+| 24 | 2026-10-14 18:47 | local (v03-fj, 3285) | release/v0.3 @ 26dfd3b | *Jataka Tales* (sealed f1) | FINAL JOURNEY attempt 2 (UI, headed Chrome) | 18 of 28; stopped at ~19:00: MiniMax token plan limit (2056/429) | $0.66 | journey Q1-Q3 PASS, Q4 PARTIAL; edition resumable |
+| 25 | 2026-10-14 19:03 | local (v03-gate, 3280) | release/v0.3 @ 26dfd3b | *Indian Why Stories* (sealed f2) | GATE 2b run 2 (retry) | 0 pages (understanding blocked by the limit); stopped by the orchestrator | ~$0 | resumable |
 
-Running total: $0 of $50.
+Running total: about $17.46 of $50 (sum of the run estimates at MiniMax-M3 rates, not a bill) over 25 paid run starts. The binding limit was the MiniMax token plan, not the dollar cap: it stopped 7 runs (rows 17–22, 24–25).
 
 ## 8. Cut list (drop in this order if the build is late)
 
@@ -201,3 +226,12 @@ The sealed gate, the final journey and honest reporting are never cut.
 | 2026-10-14 13:53 | PR #109 (M1, #80) merged (`f87d26e`). |
 | 2026-10-14 14:02 | PR #108 (D1a, renderer 0.7.0) merged (`b02bc17`) after two extra review rounds on the archetype shapes (the first versions read as a bear, then as a wolf). Gate 1 dispatched on `b02bc17`: live runs 38576965161 (two-tale book) and 38577002483 (*Just So*). The M1 live measurement started (local). |
 | 2026-10-14 14:10 | Decisions D29–D39 sorted above "Superseded"; D31 accepted: the residual `SPEAKER_TOO_SMALL` stays an error, measured at the gates. |
+| 2026-10-14 14:12–14:30 | Gate 1 (first pass): two-tale 3.53 (v0.2 3.60), continuity −0.26; *Just So* stopped at page 20 on a MiniMax outage (2064/529). The M1 live run found a continuation bug (`PLACE_UNITS_INVALID` on merged prior places); fixed in PR #111 and the resumed part 2 completed (10/10). |
+| 2026-10-14 14:35–15:00 | Wave 2 from the Gate 1 analysis: PR #112 (writer: scale rule, `CROWD_STAND_IN`, hooks where the story has one, the previous page's planned hook as data), #113 (renderer 0.7.1: `scale` only on stand-ins and tiny people, labels only on neutral props), #114 (renderer 0.7.2: archetype body marks). |
+| 2026-10-14 15:00–15:40 | Gate 1b on `839d032`: *Just So* 3.46 (v0.2 3.40–3.44), strict 4; two-tale 3.43 (v0.2 3.60). Analysis: the two-tale drop came mostly from that run's plan (77 claims, 3 claims on 19 of 22 pages), not from the Wave 2 code. PR #115 (polish, version 0.3.0), #116 (plan density and plan places warnings; nothing passed D26 to become an error). |
+| 2026-10-14 16:00–16:48 | Gate 2a on `f58801b`: one v0.3 run per sealed book, judged. Fiction pooled +0.04 mean, key prop not drawn −21%, wrong setting −26%, hero a speck or cropped flat. The pass bar was not met on this candidate. |
+| 2026-10-14 16:55–17:31 | Fix cycle from tuning data only: PR #117 (`FIGURE_TOO_SMALL` in `repair_once`, D26: E 53, P 83%, L +27, C 9%). Final code `45ab575`. Gate 2b started: sealed f2 and n1 second runs, the Cheese PDF (local), the 68-page tuning guard and *Self-Reliance* (CI), and the final journey on sealed f1 through the UI. |
+| 2026-10-14 17:32–17:45 | Gate 2b and the final journey started on `45ab575`; the MiniMax token plan limit (2062) stopped every run in flight at 17:40. PR #118 (the v0.3 runs in the estimate fit) merged (`26dfd3b`). |
+| 2026-10-14 18:32–19:05 | The plan came back: the 68-page guard completed (61/61; mean 3.54, strict 9/61). The final journey attempt 2 drew 18 of 28 pages before the limit (2056) stopped it again; questions 1–3 PASS, question 4 PARTIAL. |
+| 2026-10-14 19:25 | The owner decided: release v0.3.0 with the Gate 2 result stated plainly; resume the final journey first (tag with the partial journey if the plan stays blocked past about 22:30 UTC); v0.4 paces paid runs (≤ 6–8 per 5-hour window). v0.4 issues #120–#130 opened. |
+| 2026-10-14 19:30 | A resume of the final journey through the UI was refused by the plan limit on its first call (no cost). PR #119 (the sealed books into `scripts/acceptance/books/`, titles in `HOLDOUT.md`) merged (`935fc79`). |
