@@ -17,6 +17,9 @@ import {
   tookSeconds,
   toggleSection,
   usageOf,
+  continueBody,
+  continueSelection,
+  showParts,
   WHOLE_BOOK,
 } from "./bookLogic";
 
@@ -139,5 +142,29 @@ describe("a queued run on an edition with a plan", () => {
   it("is neither without a plan or when not queued", () => {
     expect(queuedDrawKind(q([], undefined, { has_plan: false }))).toBeNull();
     expect(queuedDrawKind(q([], undefined, { status: "drawing" }))).toBeNull();
+  });
+});
+
+describe("continue with the next section", () => {
+  const remaining = [
+    { id: "s2", title: "Two", page_start: 3, page_end: 4, word_count: 300 },
+    { id: "s3", title: "Three", page_start: 5, page_end: 6, word_count: 300 },
+    { id: "s4", title: "Four", page_start: 7, page_end: 8, word_count: 300 },
+  ];
+  it("starts with the next section and keeps a chosen set in book order", () => {
+    expect(continueSelection(null, remaining)).toEqual(["s2"]);
+    expect(continueSelection(["s4", "s3"], remaining)).toEqual(["s3", "s4"]);
+    expect(continueSelection(["s1"], remaining)).toEqual([]);
+    expect(continueSelection(null, [])).toEqual([]);
+  });
+  it("builds the body with continue_from, the sections and the review preference only when it is set", () => {
+    expect(continueBody("e1", ["s2"])).toEqual({ continue_from: "e1", section_ids: ["s2"] });
+    expect(continueBody("e1", ["s2"], false)).toEqual({ continue_from: "e1", section_ids: ["s2"], review_plan: false });
+    expect(continueBody("e1", ["s2"], null)).toEqual({ continue_from: "e1", section_ids: ["s2"] });
+  });
+  it("shows the parts list from two parts", () => {
+    expect(showParts(undefined)).toBe(false);
+    expect(showParts([1])).toBe(false);
+    expect(showParts([1, 2])).toBe(true);
   });
 });

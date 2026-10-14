@@ -1,5 +1,5 @@
 // Pure logic of the book page (the control room). No React, no fetch: the page and its parts call these.
-import type { BookDetail, BookSection, EditionDetail, EditionPageSummary, EditionScope, Preflight, Timings } from "../../lib/api";
+import type { BookDetail, BookRemaining, BookSection, GenerateBody, EditionDetail, EditionPageSummary, EditionScope, Preflight, Timings } from "../../lib/api";
 import { formatPageList } from "../ui/toneStripLogic";
 import { plural, type StopStage } from "../../lib/words";
 
@@ -281,3 +281,24 @@ export function actionErrorText(kind: ActionKind, reason: string, status: number
   const why = status !== 0 && reason.trim() ? ` ${reason.trim().replace(/\.?$/, ".")}` : "";
   return `${what}${why}${next}`.replace(/\s+/g, " ");
 }
+
+// ---------------------------------------------------------------------------
+// Continue with the next section (D38, D39)
+// ---------------------------------------------------------------------------
+
+/** The sections the Continue control starts with: the first one that remains, or the chosen ones kept in book order. */
+export function continueSelection(chosen: readonly string[] | null, remaining: readonly BookRemaining[]): string[] {
+  if (chosen === null) return remaining.length > 0 ? [remaining[0].id] : [];
+  const set = new Set(chosen);
+  return remaining.filter((s) => set.has(s.id)).map((s) => s.id);
+}
+
+/** The body of the Continue call: the finished edition, the chosen sections and the plan review preference. */
+export function continueBody(continueFrom: string, sectionIds: readonly string[], review?: boolean | null): GenerateBody {
+  const body: GenerateBody = { continue_from: continueFrom, section_ids: [...sectionIds] };
+  if (review !== undefined && review !== null) body.review_plan = review;
+  return body;
+}
+
+/** Whether the parts list is worth showing: two parts or more. One part is the edition the page already shows. */
+export const showParts = (parts: readonly unknown[] | undefined): boolean => (parts?.length ?? 0) >= 2;

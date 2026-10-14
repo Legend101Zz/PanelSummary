@@ -630,3 +630,37 @@ export function readButton(lastRead: number | null): { label: string; hint: stri
   if (lastRead !== null && lastRead > 1) return { label: `Continue from page ${lastRead}`, hint: READING_PLACE_HINT };
   return { label: "Start reading", hint: null };
 }
+
+// ---------------------------------------------------------------------------
+// M1: continue with the next section (D38, D39). None of these words is "Generate manga" (the test hook).
+// ---------------------------------------------------------------------------
+
+/** "Part 2 · pages 23–40": a part of the book in the series numbering. The reader numbers each edition from 1. */
+export function partLabel(part: number, first: number, last: number | null): string {
+  const pages = last === null ? `from page ${first}` : first === last ? `page ${first}` : `pages ${first}–${last}`;
+  return `Part ${part} · ${pages}`;
+}
+
+export const PARTS_TITLE = "Parts of the book";
+export const PARTS_NOTE = "Each part is read on its own, and its pages count from 1 in the reader. Here the pages continue from part to part.";
+export const CONTINUE_TITLE = "Continue with the next section";
+export const CONTINUE_LEAD = "The next part keeps the same cast, the same looks and the same places as the parts before it.";
+export const CONTINUE_CHOOSE = "Choose other sections";
+export const CONTINUE_CHOOSE_DONE = "Use the next section";
+export const CONTINUE_CHOOSE_LEGEND = "Sections after the last part";
+
+/** The label of the Continue button: one section by its title, or a count. Never "Generate manga". */
+export function continueLabel(titles: string[]): string {
+  if (titles.length === 0) return "Choose a section to continue";
+  return titles.length === 1 ? `Continue with “${titles[0]}”` : `Continue with ${titles.length} sections`;
+}
+
+/** The status of a part in one short phrase, for the parts list. A complete part has none. */
+export function partStatusWord(status: string, failed: number): string | null {
+  if (status === "complete") return null;
+  if (status === "completed_with_failures") return failed > 0 ? `${plural(failed, "page")} not drawn` : "Some points are not covered";
+  if (status === "failed") return "Stopped";
+  if (status === "cancelled") return "Cancelled";
+  if (status === "awaiting_plan_review") return "Waiting for your review";
+  return "Drawing";
+}
