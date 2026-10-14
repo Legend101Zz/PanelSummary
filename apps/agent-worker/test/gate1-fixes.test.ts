@@ -133,7 +133,7 @@ describe("vocabulary and skills", () => {
     expect(plan.content).toMatch(/never forced and never on every\s+page/);
     expect(plan.content).not.toMatch(/Give every page that does not close a section a turn hook/);
     const page = await loadSkill("manga-page");
-    expect(page.version).toBe("1.14.0");
+    expect(page.version).toBe("1.15.0");
     expect(page.content).toMatch(/Never repeat across the turn/);
     expect(page.content).toMatch(/Labels are for `thing_\*` props only/);
   });

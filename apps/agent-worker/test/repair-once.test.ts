@@ -57,6 +57,7 @@ describe("REPAIR_ONCE_CODES", () => {
     expect([...REPAIR_ONCE_CODES].sort()).toEqual(
       [
         "CLAIM_TEXT_THIN",
+        "FIGURE_TOO_SMALL",
         "HERO_TOO_SMALL",
         "KEY_PROP_NOT_DRAWN",
         "LOCATION_OFF_PLAN",
@@ -73,7 +74,7 @@ describe("REPAIR_ONCE_CODES", () => {
     const skill = await loadSkill("manga-page");
     const step = /FIX BEFORE SUBMIT\*\* items \(([^)]*)\)/.exec(skill.content)?.[1] ?? "";
     expect(step.split(",").map((c) => c.trim()).sort()).toEqual([...REPAIR_ONCE_CODES].sort());
-    expect(skill.version).toBe("1.14.0");
+    expect(skill.version).toBe("1.15.0");
     expect(skill.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
