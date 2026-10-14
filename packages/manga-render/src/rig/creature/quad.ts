@@ -72,10 +72,10 @@ export const QUAD: Record<QuadSpecies, QuadSpec> = {
   rabbit: { h: 22, legF: 5.2, legH: 7, bodyL: 9.5, chest: 5.2, hip: 6.8, legW: 2.3, paw: 1.4, R: 5.2, muz: { l: 1.8, h: 3.4, drop: 0.35, round: 0.9 }, neck: { l: 2.2, ang: 42, w: 4.4 }, ears: { kind: "long", size: 10 }, tail: { kind: "puff", l: 2.8, w: 2.8 }, eye: 0.36, whiskers: true, mane: false, hoof: false, longFoot: true, fluffy: false, nose: 0.4 },
   horse: { h: 160, legF: 78, legH: 82, bodyL: 70, chest: 30, hip: 28, legW: 12.5, paw: 6.4, R: 16, muz: { l: 34, h: 19, drop: 0.45, round: 0.9 }, neck: { l: 40, ang: 62, w: 30 }, ears: { kind: "horse", size: 11 }, tail: { kind: "horse", l: 64, w: 16 }, eye: 0.24, whiskers: false, mane: true, hoof: true, longFoot: false, fluffy: false, nose: 0.3 },
   bear: { h: 120, legF: 50, legH: 52, bodyL: 64, chest: 31, hip: 29, legW: 18, paw: 9.5, R: 26, muz: { l: 12, h: 14, drop: 0.35, round: 0.6 }, neck: { l: 12, ang: 22, w: 26 }, ears: { kind: "bear", size: 7.5 }, tail: { kind: "stub", l: 6, w: 7 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: true, fluffy: true, nose: 0.65 },
-  // v0.3 (#81): neutral body plans. One flat tone, small plain pointed ears, a long plain muzzle (round ears and a short muzzle read as a bear), a plain tail, no species marks.
+  // v0.3 (#81): neutral body plans. quad_medium = a plain medium four-legged animal (a level body, slim straight legs, an oval head with a modest tapered muzzle, small ears at the back, a short tail); quad_large = a plain heavy herbivore (a long low barrel, short thick pillar legs, a short neck that goes forward, a boxy head held below the back line, small flat ears at the back, a thin hanging tail). Drawn by the `boxy` branches. One flat tone, small plain pointed ears, a long plain muzzle (round ears and a short muzzle read as a bear), a plain tail, no species marks.
   quad_small: { h: 25, legF: 8.2, legH: 9.4, bodyL: 13, chest: 4.6, hip: 5.2, legW: 2.2, paw: 1.5, R: 5.2, muz: { l: 5.0, h: 3.0, drop: 0.3, round: 0.4 }, neck: { l: 2.8, ang: 46, w: 4.2 }, ears: { kind: "tri", size: 4.6 }, tail: { kind: "dog", l: 7, w: 2 }, eye: 0.34, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
-  quad_medium: { h: 60, legF: 28, legH: 29, bodyL: 34, chest: 10.5, hip: 9.5, legW: 5.4, paw: 3.4, R: 10.5, muz: { l: 8.5, h: 7.2, drop: 0.32, round: 0.6 }, neck: { l: 12, ang: 46, w: 10 }, ears: { kind: "small", size: 7 }, tail: { kind: "dog", l: 16, w: 4.4 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
-  quad_large: { h: 170, legF: 100, legH: 100, bodyL: 96, chest: 33, hip: 31, legW: 19, paw: 13, R: 27, muz: { l: 22, h: 25, drop: 0.35, round: 0.7 }, neck: { l: 20, ang: 36, w: 34 }, ears: { kind: "small", size: 15 }, tail: { kind: "dog", l: 32, w: 4.5 }, eye: 0.2, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
+  quad_medium: { h: 60, legF: 40, legH: 40, bodyL: 46, chest: 13, hip: 12, legW: 5.2, paw: 3.4, R: 8.2, muz: { l: 18, h: 7, drop: 0.1, round: 0.6 }, neck: { l: 21, ang: 56, w: 9 }, ears: { kind: "small", size: 6 }, tail: { kind: "dog", l: 9, w: 3 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
+  quad_large: { h: 170, legF: 87, legH: 87, bodyL: 120, chest: 37, hip: 36, legW: 23, paw: 13, R: 22, muz: { l: 44, h: 24, drop: 0.1, round: 0.3 }, neck: { l: 28, ang: 0, w: 46 }, ears: { kind: "small", size: 14 }, tail: { kind: "dog", l: 34, w: 4 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
 };
 
 const SIT_POSES: readonly Pose[] = ["sit", "talk", "wave", "point", "think", "hold"];
@@ -96,13 +96,38 @@ interface QPose {
   earsBack: boolean;
   sitting: boolean;
   lying: boolean;
+  rest: boolean; // belly-down rest of a boxy quad_* (legs folded under, head up)
   flip: boolean; // upside down (fall)
+}
+
+function isBoxy(sp: QuadSpecies): boolean {
+  return sp === "quad_large" || sp === "quad_medium";
+}
+
+/** Belly-down rest of a boxy quad_*: the body low on the ground, the legs folded under, the head up and forward. */
+function restPose(s: QuadSpec, base: QPose, pose: Pose): QPose {
+  const L = s.bodyL;
+  const S = P(L / 2, -s.chest * 1.0);
+  const J = P(-L / 2, -s.hip * 1.0);
+  return {
+    ...base,
+    S,
+    J,
+    lying: true,
+    rest: true,
+    gesture: null,
+    feet: { nf: P(S.x + s.chest * 1.2, 0), ff: P(S.x + s.chest * 0.8, 0), nh: P(J.x + s.hip * 1.3, 0), fh: P(J.x + s.hip * 0.9, 0) },
+    neckAng: s.neck.ang + (s.neck.ang > 30 ? 6 : 14),
+    headTilt: pose === "think" ? 8 : 0,
+    tailMode: "down",
+  };
 }
 
 function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
   const L = s.bodyL;
   const sit = SIT_POSES.includes(pose) && sp !== "horse";
   const heavy = sp === "quad_large";
+  const boxy = isBoxy(sp);
   const base: QPose = {
     S: P(L / 2, -s.legF),
     J: P(-L / 2, -s.legH),
@@ -115,12 +140,14 @@ function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
     gesture: null,
     neckAng: s.neck.ang,
     headTilt: 0,
-    tailMode: sp === "fox" || sp === "rat" || sp === "mouse" || heavy ? "down" : sp === "horse" ? "flow" : "up",
+    tailMode: sp === "fox" || sp === "rat" || sp === "mouse" || boxy ? "down" : sp === "horse" ? "flow" : "up",
     earsBack: false,
     sitting: false,
     lying: false,
+    rest: false,
     flip: false,
   };
+  if (sit && boxy) return restPose(s, base, pose);
   if (sit) {
     // haunches on the ground, spine raised
     const upright = sp === "rat" || sp === "mouse" || sp === "bear" || sp === "rabbit";
@@ -152,17 +179,19 @@ function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
     };
   }
   switch (pose) {
-    case "walk":
+    case "walk": {
+      const st = boxy ? 0.5 : 1; // a pillar-legged body takes short steps
       return {
         ...base,
         feet: {
-          nf: P(L / 2 + s.legF * 0.32, 0),
-          ff: P(L / 2 - s.legF * 0.22, -s.legF * 0.12),
-          nh: P(-L / 2 - s.legH * 0.28, -s.legH * 0.08),
-          fh: P(-L / 2 + s.legH * 0.25, 0),
+          nf: P(L / 2 + s.legF * 0.32 * st, 0),
+          ff: P(L / 2 - s.legF * 0.22 * st, -s.legF * 0.12 * st),
+          nh: P(-L / 2 - s.legH * 0.28 * st, -s.legH * 0.08 * st),
+          fh: P(-L / 2 + s.legH * 0.25 * st, 0),
         },
         neckAng: s.neck.ang - 6,
       };
+    }
     case "run": {
       const S = P(L / 2 + s.legF * 0.1, -s.legF * 1.02);
       const J = P(-L / 2 + s.legF * 0.1, -s.legH * 1.0);
@@ -202,6 +231,7 @@ function solvePose(sp: QuadSpecies, s: QuadSpec, pose: Pose): QPose {
       };
     }
     case "lie": {
+      if (boxy) return restPose(s, base, pose);
       const S = P(L / 2, -s.chest * 1.0);
       const J = P(-L / 2, -s.hip * 0.95);
       return {
@@ -299,7 +329,7 @@ export function drawQuad(
   seed: number,
 ): AnimalBuilt {
   const s = QUAD[sp];
-  if (facing !== "right") return drawQuadFront(sp, s, tone, pose, expression, facing === "back", pen);
+  if (facing !== "right") return isBoxy(sp) ? drawBoxyFront(sp, s, tone, pose, expression, facing === "back", pen) : drawQuadFront(sp, s, tone, pose, expression, facing === "back", pen);
   const q = solvePose(sp, s, pose);
   const sk = new Sketch(pen);
   const rand = charRand(seed, `quad-${sp}`);
@@ -309,6 +339,7 @@ export function drawQuad(
   const pale = fillOf(lighter(tone), pen);
   const flip = q.flip;
   const heavy = sp === "quad_large";
+  const boxy = isBoxy(sp);
   // spine frame
   const spine = Math.atan2(q.S.y - q.J.y, q.S.x - q.J.x);
   const mid = lerpP(q.S, q.J, 0.5);
@@ -331,7 +362,22 @@ export function drawQuad(
     const onGround = !flip && footIn.y > -s.paw;
     const foot = onGround ? P(footIn.x, footIn.y - (s.hoof ? s.paw * 1.05 : s.paw * 0.55)) : footIn;
     const fill = far ? farFur : fur;
-    const lw = s.legW * (front ? 1 : 1.15);
+    const lw = s.legW * (front || boxy ? 1 : 1.15);
+    if (boxy && q.rest) {
+      // belly-down rest: the fore leg folded forward along the ground, the hind leg a round haunch with the foot flat
+      if (front) {
+        const y0 = -s.legW * 0.46;
+        const x0 = q.S.x - s.chest * 0.25 + (far ? -s.chest * 0.1 : 0);
+        const x1 = q.S.x + s.chest * (far ? 0.85 : 1.1);
+        sk.shape(taperD([P(x0, y0), P(x1, y0)], [s.legW * 0.92, s.legW * 0.9], { samples: 2 }), fill, { edge: false });
+        sk.shape(ellipseD(P(x1, -s.paw * 0.55), s.paw * 1.15, s.paw * 0.6), fill);
+      } else {
+        const hc = P(q.J.x + s.hip * (far ? 0.3 : 0.45), -s.hip * 0.8);
+        sk.shape(ellipseD(hc, s.hip * 1.0, s.hip * 0.8), fill, { edge: false });
+        if (!far) sk.shape(ellipseD(P(hc.x + s.hip * 0.8, -s.paw * 0.6), s.paw * 1.5, s.paw * 0.6), fill);
+      }
+      return;
+    }
     if (!front && q.sitting) {
       // folded hind leg: round haunch + long foot flat on the ground
       const hc = P(q.J.x + s.hip * (far ? 0.25 : 0.4), -s.hip * 0.85);
@@ -343,7 +389,13 @@ export function drawQuad(
       if (!far) sk.line(curveD([P(hc.x - s.hip * 0.6, hc.y - s.hip * 0.55), P(hc.x + s.hip * 0.25, hc.y - s.hip * 0.7), P(hc.x + s.hip * 0.9, hc.y + s.hip * 0.05)]), pen.dw, { halo: dark });
       return;
     }
-    if (front) {
+    if (boxy) {
+      // v0.3 (#81): straight pillar legs (no hock, no claws): the same leg for the fore and the hind pair
+      const len = ((front ? s.legF - s.chest * 0.25 : s.legH - s.hip * 0.1) - s.paw * 0.55) * 1.005;
+      const knee = ik(top, foot, len * 0.5, len * 0.5, (flip ? 1 : -1) * (front ? 1 : -1));
+      const w = heavy ? [lw, lw, lw] : [lw * 1.15, lw * 0.85, lw * 0.75];
+      sk.shape(taperD([top, knee, foot], w, { samples: 5 }), fill, { edge: false });
+    } else if (front) {
       const len = Math.max(lenF0, 1e-3);
       const knee = ik(top, foot, len * 0.5, len * 0.5, flip ? 1 : -1);
       sk.shape(taperD([top, knee, foot], s.hoof ? [lw * 1.7, lw * 0.72, lw * 0.6] : heavy ? [lw * 1.2, lw * 1.0, lw * 0.95] : [lw * 1.55, lw * 0.85, lw * 0.74], { samples: 5 }), fill, { edge: false });
@@ -359,10 +411,10 @@ export function drawQuad(
       const fy = onGround ? 0 : foot.y + hw * 1.05;
       sk.shape(polyPath([P(foot.x - hw * 0.8, fy - hw * 1.2), P(foot.x + hw * 0.7, fy - hw * 1.2), P(foot.x + hw * 1.0, fy), P(foot.x - hw * 0.9, fy)], true), fillOf("dark", pen));
     } else {
-      const pl = s.paw * (s.longFoot && !front ? 1.9 : heavy ? 1.6 : 1.25);
+      const pl = s.paw * (s.longFoot && !front ? 1.9 : heavy ? 1.7 : 1.25);
       const pc = onGround ? P(foot.x + pl * 0.35, -s.paw * 0.62) : P(foot.x + pl * 0.35, foot.y);
       sk.shape(ellipseD(pc, pl, s.paw * 0.62), fill);
-      if (!far && s.paw > 1.2 && !heavy) {
+      if (!far && s.paw > 1.2 && !boxy) {
         for (const t of [0.25, 0.65]) sk.line(lineD([P(pc.x + pl * t, pc.y + s.paw * 0.6), P(pc.x + pl * t, pc.y + s.paw * 0.05)]), pen.fw, { halo: dark });
       }
     }
@@ -430,13 +482,13 @@ export function drawQuad(
     at(q.S, cD * 0.95, cD * 0.05),
     at(q.S, cD * 0.35, -cD * 0.85),
     at(q.S, -cD * 0.35, -cD * 1.0),
-    at(mid, 0, -(cD + hD) * 0.43),
+    at(mid, 0, -(cD + hD) * (boxy ? 0.5 : 0.43)),
     at(q.J, hD * 0.3, -hD * 0.98),
     at(q.J, -hD * 0.55, -hD * 0.85),
     at(q.J, -hD * 1.0, -hD * 0.05),
     at(q.J, -hD * 0.55, hD * 0.8),
     at(q.J, hD * 0.25, hD * 0.95),
-    at(mid, 0, (cD + hD) * 0.4),
+    at(mid, 0, (cD + hD) * (boxy ? 0.5 : 0.4)),
     at(q.S, -cD * 0.1, cD * 0.95),
     at(q.S, cD * 0.6, cD * 0.75),
   ];
@@ -448,7 +500,7 @@ export function drawQuad(
   sk.shape(blobD(bodyPts, 0.5), fur, { edge: false });
   // belly / chest pale patch
   const bellyPts = [at(q.S, cD * 0.92, cD * 0.1), at(q.S, cD * 0.55, cD * 0.8), at(q.S, -cD * 0.2, cD * 0.92), at(mid, 0, (cD + hD) * 0.36), at(q.J, hD * 0.5, hD * 0.75), at(mid, 0, (cD + hD) * 0.18), at(q.S, cD * 0.3, cD * 0.35)];
-  if (sp !== "horse" && sp !== "bear" && !heavy && !flip) sk.shape(blobD(bellyPts, 0.5), pale, { edge: false });
+  if (sp !== "horse" && sp !== "bear" && !boxy && !flip) sk.shape(blobD(bellyPts, 0.5), pale, { edge: false });
   // haunch/thigh line
   if (q.sitting) sk.line(curveD([at(q.J, hD * 0.55, -hD * 0.55), at(q.J, hD * 0.9, hD * 0.2), P(q.J.x + hD * 1.0, -s.paw)]), pen.dw, { halo: dark });
   else sk.line(curveD([at(q.J, hD * 0.1, -hD * 0.6), at(q.J, hD * 0.55, -hD * 0.05), at(q.J, hD * 0.35, hD * 0.6)]), pen.dw, { halo: dark });
@@ -491,6 +543,33 @@ export function drawQuad(
     for (let i = steps; i >= 0; i -= 1) pts.push(polar(lerpP(w0, w1, i / steps), nw * 0.18, out + Math.PI));
     sk.shape(polyPath(pts, true), fillOf(darker(tone), pen), { edge: false });
   }
+  // v0.3 (#81): the head of a boxy quad_*: a rounded box longer than tall (quad_large: a broad flat blunt muzzle end;
+  // quad_medium: an oval head with a modest tapered muzzle), held at or below the back line, a nostril dot, a small mouth line
+  function drawBoxyHead(): void {
+    const heavyHead = sp === "quad_large";
+    const upper = heavyHead
+      ? [[-0.95, 0.3], [-0.98, -0.3], [-0.55, -0.72], [0.5, -0.8], [1.6, -0.68], [2.08, -0.45], [2.16, -0.05], [2.12, 0.3]]
+      : [[-0.9, 0.2], [-0.88, -0.4], [-0.35, -0.82], [0.6, -0.78], [1.5, -0.42], [2.2, -0.14], [2.4, 0.06], [2.32, 0.2]];
+    const lower = heavyHead
+      ? [[-0.9, 0.3], [2.1, 0.3], [2.14, 0.6], [1.95, 0.8], [0.4, 0.86], [-0.5, 0.82], [-0.95, 0.55]]
+      : [[-0.8, 0.2], [2.25, 0.2], [2.15, 0.45], [1.2, 0.7], [0.1, 0.86], [-0.65, 0.62]];
+    const tipX = heavyHead ? 2.12 : 2.34;
+    const pt = (a: number[]) => hp(R * a[0], R * a[1]);
+    if (open > 0.05) {
+      const inside = [hp(R * 0.5, mouthLineY), hp(R * tipX, mouthLineY), jaw(hp(R * tipX, mouthLineY + R * 0.04)), jaw(hp(R * 0.5, mouthLineY + R * 0.08))];
+      sk.shape(polyPath(inside, true), INK, { edge: false });
+    }
+    sk.shape(blobD(lower.map((a) => jaw(pt(a))), 0.4), fur, { edge: false });
+    sk.shape(blobD(upper.map(pt), 0.4), fur, { edge: false });
+    // nostril
+    const nc = hp(R * (tipX - 0.2), -R * (heavyHead ? 0.2 : 0.02));
+    sk.shape(blobD(ellipsePts(P(0, 0), R * (heavyHead ? 0.1 : 0.2), R * (heavyHead ? 0.14 : 0.16), 10).map((p) => addP(nc, rotP(p, headDir))), 0.5), INK, { outline: false });
+    // mouth line + expression corner
+    const corner = hp(R * 0.75, mouthLineY - x.curve * R * 0.12 * (open > 0.3 ? 0.4 : 1));
+    const ml = [hp(R * (tipX - 0.03), mouthLineY), hp(R * 1.5, mouthLineY + R * 0.03), corner];
+    sk.line(curveD(ml), pen.dw * 1.2, { halo: dark });
+    if (x.mouth === "grit" && open <= 0.05) sk.line(lineD([hp(R * 1.0, mouthLineY + R * 0.12), hp(R * 1.9, mouthLineY + R * 0.12)]), pen.fw, { halo: dark });
+  }
   // ears (far ear first, behind skull)
   const earFill = fur;
   const innerEar = fillOf(dark ? "mid" : "light", pen);
@@ -530,21 +609,25 @@ export function drawQuad(
   const es = s.ears.size;
   const earAngFar = (s.ears.kind === "small" ? -105 : s.ears.kind === "long" ? -118 : s.ears.kind === "flop" ? -150 : -125) * DEG + headDir;
   const earAngNear = (s.ears.kind === "small" ? -82 : s.ears.kind === "long" ? -95 : s.ears.kind === "flop" ? -60 : -78) * DEG + headDir;
-  ear(hp(-R * 0.55, -R * 0.55), earAngFar, es * 0.92, true);
+  if (!boxy) ear(hp(-R * 0.55, -R * 0.55), earAngFar, es * 0.92, true);
+  else ear(hp(-R * 0.72, -R * 0.12), (-176 * DEG) + headDir, es, true);
   // skull + muzzle
   const M = s.muz;
   const drop = M.drop * R;
   const open = pose === "hold" ? 0.25 : mouthOpen(expression, pose === "talk" || q.gesture === "talk");
   const x = EXPR[expression];
   const horse = sp === "horse";
+  const mouthLineY = boxy ? R * (heavy ? 0.3 : 0.2) : drop + M.h * 0.28;
+  const jawOpen = open * (boxy ? 16 : 22) * DEG;
+  const jawPivot = boxy ? hp(-R * 0.2, mouthLineY) : hp(R * 0.2, drop + M.h * 0.28);
+  const jaw = (p: Point) => rotP(p, jawOpen, jawPivot);
+  if (boxy) drawBoxyHead();
+  else drawFurHead();
+  function drawFurHead(): void {
   const tip = horse ? hp(R * 0.5 + M.l * 1.03, drop + M.h * 0.1) : hp(R * 0.55 + M.l, drop - M.h * 0.1);
   const muzTop = horse
     ? [hp(R * 0.05, -R * 0.75), hp(R * 0.5 + M.l * 0.5, drop - M.h * 0.6), hp(R * 0.5 + M.l * 0.9, drop - M.h * 0.52), hp(R * 0.5 + M.l * 1.06, drop - M.h * 0.18), tip]
     : [hp(R * 0.2, -R * 0.45 + drop * 0.5), hp(R * 0.5 + M.l * 0.55, drop - M.h * 0.5 + M.l * 0.02), hp(R * 0.5 + M.l, drop - M.h * (0.35 - M.round * 0.1)), tip];
-  const jawOpen = open * 22 * DEG;
-  const jawPivot = hp(R * 0.2, drop + M.h * 0.28);
-  const jaw = (p: Point) => rotP(p, jawOpen, jawPivot);
-  const mouthLineY = drop + M.h * 0.28;
   const upperPts = [...muzTop, hp(R * 0.5 + M.l * 1.0, mouthLineY), hp(R * 0.3, mouthLineY + M.h * 0.05), hp(R * 0.0, drop + M.h * 0.2)];
   const lowerPts = [hp(R * 0.25, mouthLineY), hp(R * 0.45 + M.l * 0.85, mouthLineY + M.h * 0.02), hp(R * 0.4 + M.l * 0.75, mouthLineY + M.h * 0.32), hp(R * 0.3, drop + M.h * 0.62), hp(-R * 0.1, drop + M.h * 0.5)].map(jaw);
   if (open > 0.05) {
@@ -603,14 +686,16 @@ export function drawQuad(
       sk.line(quadD(w0, addP(w0, rotP(P(R * dx * 0.5, R * dy * 0.3 - R * 0.1), headDir)), addP(w0, rotP(P(R * dx, R * dy * 0.6), headDir))), pen.fw);
     }
   }
+  }
   // near ear on top: round ears (rat, mouse, bear) sit on the skull's
   // back-top edge in three-quarter view (on the crown they read as a coin)
-  if (s.ears.kind === "round" || s.ears.kind === "bear") ear(hp(-R * 0.36, -R * 0.62), (-112 * DEG) + headDir, es * 0.95, false);
+  if (boxy) ear(hp(-R * 0.62, -R * 0.12), (-168 * DEG) + headDir, es, false);
+  else if (s.ears.kind === "round" || s.ears.kind === "bear") ear(hp(-R * 0.36, -R * 0.62), (-112 * DEG) + headDir, es * 0.95, false);
   else if (s.ears.kind === "small") ear(hp(-R * 0.38, -R * 0.55), (-128 * DEG) + headDir, es, false);
   else ear(hp(R * 0.1, -R * 0.75), earAngNear, es, false);
   // face: three-quarter eyes on the skull
   const faceSvg = drawFace(
-    { c: sp === "horse" ? addP(hp(R * 0.1, -R * 0.2), P(0, 0)) : hp(R * 0.18, -R * 0.12), gap: R * 0.36, eyeR: R * s.eye * (sp === "horse" ? 1.05 : 1), turn: 0.55, pen, headR: R, brows: true, dark, rot: sp === "horse" ? headDir * 0.25 : headDir },
+    { c: sp === "horse" ? addP(hp(R * 0.1, -R * 0.2), P(0, 0)) : boxy ? hp(R * 0.78, -R * 0.2) : hp(R * 0.18, -R * 0.12), gap: boxy ? R * 0.3 : R * 0.36, eyeR: R * s.eye * (sp === "horse" ? 1.05 : 1), turn: boxy ? 0.8 : 0.55, pen, headR: R, brows: true, dark, rot: sp === "horse" ? headDir * 0.25 : headDir },
     expression,
   );
   sk.raw(faceSvg);
@@ -645,7 +730,7 @@ export function drawQuad(
   if (q.gesture === "hold" || pose === "hold") {
     hand = hp(R * 0.5 + M.l * 0.8, mouthLineY + M.h * 0.1);
   }
-  const mouth = hp(R * 0.45 + M.l * 0.85, mouthLineY);
+  const mouth = boxy ? hp(R * 1.9, mouthLineY) : hp(R * 0.45 + M.l * 0.85, mouthLineY);
   const waist = at(mid, 0, 0).y;
   return { sk, head: Hc, headR: R, mouth, hand, waist: Math.min(waist, -s.paw), shoulders: Math.min(q.S.y, Hc.y + R) };
 }
@@ -762,4 +847,81 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   }
   const waist = chestY + s.chest * 0.5;
   return { sk, head: Hc, headR: R, mouth, hand, waist, shoulders: bodyTop };
+}
+
+// ---------------------------------------------------------------------------
+// Front / back view of a boxy quad_* (v0.3 #81)
+//
+// quad_large: a wide low boxy head in front of a wide barrel; four short pillar legs all visible (the fore pair in
+// front, the hind pair at the outer sides behind); the head is level with or below the top of the body outline.
+// quad_medium: a narrow oval face in front of a narrow body on four slim legs; the neck carries the head a little above the back.
+
+function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, expression: Expression, back: boolean, pen: Pen): AnimalBuilt {
+  const sk = new Sketch(pen);
+  const fur = fillOf(tone, pen);
+  const farFur = fillOf(darker(tone), pen);
+  const dark = isDark(tone);
+  const large = sp === "quad_large";
+  const lying = pose === "lie" || pose === "cower";
+  const R = s.R;
+  const cw = s.chest * (large ? 1.0 : 0.8); // half width of the barrel
+  const barrelH = s.chest * 2;
+  const legLen = lying ? s.paw * 1.4 : s.legF - s.chest;
+  const bodyBot = -legLen;
+  const bodyTop = bodyBot - barrelH;
+  const lw = s.legW;
+  const legW = large ? [lw, lw, lw] : [lw * 1.15, lw * 0.85, lw * 0.75];
+  // hind legs behind, at the outer sides
+  if (!lying) {
+    for (const side of [-1, 1]) {
+      sk.shape(taperD([P(side * cw * 0.84, bodyBot - s.hip * 0.4), P(side * cw * 0.84, -s.paw * 0.55)], [legW[0], legW[2]], { samples: 2 }), farFur, { edge: false });
+      sk.shape(ellipseD(P(side * cw * 0.84, -s.paw * 0.55), s.paw * (large ? 1.2 : 0.95), s.paw * 0.58), farFur);
+    }
+  }
+  // tail: hangs behind the rump (seen from behind), thin and short
+  if (back) sk.shape(taperD([P(0, bodyTop + barrelH * 0.2), P(s.tail.w * 0.4, bodyTop + barrelH * 0.2 + s.tail.l * 0.5), P(0, bodyTop + barrelH * 0.2 + s.tail.l)], [s.tail.w * 1.1, s.tail.w * 0.8, s.tail.w * 0.4], { samples: 4 }), fur);
+  // barrel
+  const t = bodyTop;
+  const b = bodyBot;
+  sk.shape(
+    blobD([P(0, t), P(cw * 0.78, t + barrelH * 0.07), P(cw, t + barrelH * 0.3), P(cw, b - barrelH * 0.25), P(cw * 0.8, b - barrelH * 0.02), P(0, b + barrelH * 0.02), P(-cw * 0.8, b - barrelH * 0.02), P(-cw, b - barrelH * 0.25), P(-cw, t + barrelH * 0.3), P(-cw * 0.78, t + barrelH * 0.07)], 0.4),
+    fur,
+    { edge: false },
+  );
+  // fore legs
+  sk.layer();
+  for (const side of [-1, 1]) {
+    const x = side * cw * (large ? 0.5 : 0.52);
+    if (!lying) sk.shape(taperD([P(x, bodyBot - s.chest * 0.3), P(x, -s.paw * 0.55)], [legW[0], legW[2]], { samples: 2 }), fur, { edge: false });
+    sk.shape(ellipseD(P(x, -s.paw * 0.55), s.paw * (large ? 1.25 : 0.95), s.paw * 0.58), fur);
+  }
+  // head
+  const hw = large ? R * 1.2 : R * 0.78;
+  const hh = large ? R * 0.82 : R * 1.08;
+  const Hc = large ? P(0, bodyTop + hh * 1.12) : P(0, bodyTop - R * 0.2);
+  let mouth = P(0, Hc.y + hh * 0.6);
+  if (!large) sk.shape(taperD([P(0, bodyTop + barrelH * 0.3), Hc], [cw * 0.95, hw * 1.0], { samples: 2 }), fur, { edge: false });
+  const es = s.ears.size;
+  for (const side of [-1, 1]) sk.shape(ellipseD(P(side * (hw + es * 0.38), Hc.y - hh * 0.2), es * 0.55, es * 0.34), side === 1 ? fur : farFur);
+  if (large) {
+    const h = hh;
+    sk.shape(blobD([P(-hw * 0.5, Hc.y - h), P(hw * 0.5, Hc.y - h), P(hw, Hc.y - h * 0.6), P(hw * 1.02, Hc.y + h * 0.35), P(hw * 0.85, Hc.y + h), P(-hw * 0.85, Hc.y + h), P(-hw * 1.02, Hc.y + h * 0.35), P(-hw, Hc.y - h * 0.6)], 0.4), fur, { edge: pen.dw });
+  } else {
+    sk.shape(blobD([P(0, Hc.y - hh), P(hw * 0.92, Hc.y - hh * 0.45), P(hw * 0.72, Hc.y + hh * 0.55), P(0, Hc.y + hh), P(-hw * 0.72, Hc.y + hh * 0.55), P(-hw * 0.92, Hc.y - hh * 0.45)], 0.5), fur, { edge: pen.dw });
+  }
+  if (!back) {
+    const mc = P(0, Hc.y + hh * (large ? 0.42 : 0.55));
+    const mw = hw * (large ? 0.68 : 0.46);
+    const mh = hh * (large ? 0.46 : 0.4);
+    sk.shape(ellipseD(mc, mw, mh), fur, { edge: large ? false : pen.dw });
+    const nr = Math.max(mw * 0.16, R * 0.1) * s.nose * 1.4;
+    if (large) for (const side of [-1, 1]) sk.fill(ellipseD(P(side * mw * 0.45, mc.y - mh * 0.2), nr * 0.9, nr * 1.2));
+    else sk.shape(blobD([P(-nr * 1.1, mc.y - mh * 0.45), P(nr * 1.1, mc.y - mh * 0.45), P(0, mc.y + mh * 0.05)], 0.6), INK, { outline: false });
+    const open = mouthOpen(expression, pose === "talk");
+    const eyeY = Hc.y - hh * (large ? 0.25 : 0.3);
+    const mouthY = mc.y + mh * 0.62;
+    sk.raw(drawFace({ c: P(0, eyeY), gap: large ? R * 1.25 : R * 0.6, eyeR: R * s.eye, turn: 0, pen, headR: R, dark, mouth: { dy: mouthY - eyeY, w: mw * 0.5 }, talking: pose === "talk" || open > 0.5 }, expression));
+    mouth = P(0, mouthY);
+  }
+  return { sk, head: Hc, headR: R, mouth, hand: undefined, waist: bodyBot - s.chest, shoulders: bodyTop };
 }

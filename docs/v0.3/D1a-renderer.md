@@ -18,8 +18,8 @@ Nothing is for one book. Each new value is a body plan, a size, a kind of place 
 | Value | Kind | Nominal height | Drawn with |
 |---|---|---|---|
 | `quad_small` | `animal` | 25 | a row of the QUAD table (`rig/creature/quad.ts`): small, like a hare or a rodent |
-| `quad_medium` | `animal` | 60 | a QUAD row: medium, like a dog or a deer |
-| `quad_large` | `animal` | 170 | a QUAD row: a neutral heavy body, a big plain four-legged animal (stands about 155 tall, 223 long) |
+| `quad_medium` | `animal` | 60 | a QUAD row: a plain medium four-legged animal (stands about 53 tall, about 70 long) |
+| `quad_large` | `animal` | 170 | a QUAD row: a neutral heavy body, a big plain four-legged animal (stands about 125 tall at the back line, about 190 long) |
 | `long_low` | `animal` | 40 | the lizard drawing at 4 times its size: long and low, about 160 long |
 | `swimmer` | `animal` | 45 | the fish drawing at 2.25 times its size |
 | `bird_tall` | `bird` | 112 | the bird rig: long legs (44), long neck, thin beak, round tail |
@@ -27,11 +27,21 @@ Nothing is for one book. Each new value is a body plan, a size, a kind of place 
 - One flat tone (the look's `tone`). No mane, horn, trunk, hoof, whiskers or stripes.
   Each quadruped body plan reads as no one species:
   `quad_small` is a small rodent-like body (plain pointed ears, a plain tail).
-  `quad_medium` is a plain medium quadruped with small flat-oval ears and a short muzzle.
-  `quad_large` is a heavy body: a deep barrel, four thick straight pillar legs with wide flat feet (no paw, no claw),
-  a short thick neck, a large blunt head with a short broad muzzle, small flat-oval ears and a short thin hanging tail.
-  A heavy body sits low on its haunches (a low back, no raised paw). Many large animals in stories are heavy and
-  blunt-headed, so a pointed snout (wolf) or pointed ears (cat) would name a wrong species with confidence.
+  `quad_medium` is a plain medium four-legged animal (the shared outline of a goat, a deer and a dog): a level body
+  about 1.4 times the shoulder height, legs about 53% of the shoulder height, slim straight legs, a medium neck that
+  goes up and forward, an oval head longer than tall with a modest tapered muzzle, small flat-oval ears at the back
+  of the head, a short hanging tail.
+  `quad_large` is a plain heavy herbivore (the shared outline of a cow, a hippo and a rhino): a long, nearly horizontal
+  barrel (about 1.6 times the shoulder height long, a straight back), short legs (about 40% of the shoulder height) that
+  are straight pillars of one width with wide flat feet (no paw, no claw, no bend), a short thick neck that goes
+  forward, a boxy head longer than tall with a broad flat blunt muzzle held below the back line, small flat-oval
+  ears at the back of the head (never on top of the skull), and a short thin hanging tail.
+  `sit` (and `lie`) of `quad_medium` and `quad_large` is a belly-down rest: the body low on the ground, the legs folded
+  under, the head up and forward, no raised paw (never an upright sit). Many large animals in stories are heavy and
+  blunt-headed, so a pointed snout (wolf), a round face with round ears (bear) or an upright back (ape) would name a wrong species with confidence.
+  Front view of `quad_large`: a wide low boxy head in front of a wide barrel, four short pillar legs all visible (the
+  fore pair in front, the hind pair at the outer sides behind), the head level with or below the top of the body.
+  Front view of `quad_medium`: a narrow oval face on a short neck in front of a narrow body on four slim legs.
   In the front and back view a `quad_*` body always stands on four legs, with the head in front of the body, whatever
   the pose (no sitting upright, no raised paw: that read as a lucky cat). The `talk` pose shows in the face only. `long_low` keeps the small back spots of the lizard drawing.
 - The usual face and all 18 expressions. Poses: the quadruped rig (13 poses), the lizard rig (7), the fish rig (7),

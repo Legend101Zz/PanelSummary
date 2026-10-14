@@ -100,19 +100,48 @@ describe("archetype figures", () => {
       expect(row.mane, sp).toBe(false);
       expect(row.hoof, sp).toBe(false);
       expect(row.whiskers, sp).toBe(false);
-      // quad_small is a small plain rodent-like body (plain pointed ear, long muzzle). quad_medium has small plain
-      // ears and a shorter muzzle (a long muzzle with pointed ears read as a dog). quad_large is a neutral HEAVY
-      // body: small flat-oval ears, a short broad blunt muzzle (a pointed snout read as a wolf), thick pillar legs.
+      // quad_small is a small plain rodent-like body (plain pointed ear, long muzzle). quad_medium and quad_large
+      // are the "boxy" plans: small flat-oval ears at the back of the head (never a round or pointed ear on top of the skull).
       expect(row.ears.kind, sp).toBe(sp === "quad_small" ? "tri" : "small");
       if (sp === "quad_small") expect(row.muz.l / row.R, sp).toBeGreaterThan(0.85);
-      else expect(row.muz.l / row.R, sp).toBeLessThan(1);
+      if (sp !== "quad_small") expect(row.muz.l / row.R, sp).toBeGreaterThan(1.8); // a head longer than tall: a boxy or tapered muzzle, not a bear face
+      // shoulder height = the top of the back line; the body is longer than tall and the legs are a share of the shoulder height
+      const sh = row.legF + row.chest;
+      const bodyLen = row.bodyL + row.chest + row.hip;
+      const legShare = (row.legF - row.chest) / sh;
       if (sp === "quad_large") {
-        expect(row.muz.h / row.R, sp).toBeGreaterThan(0.8); // broad, not pointed
-        expect(row.legW / row.legF, sp).toBeGreaterThan(0.15); // pillar legs
-        expect(row.chest / row.legF, sp).toBeGreaterThan(0.3); // deep body
+        expect(bodyLen / sh, sp).toBeGreaterThanOrEqual(1.5); // a long barrel
+        expect(legShare, sp).toBeLessThanOrEqual(0.45); // short legs
+        expect(row.legW / row.legF, sp).toBeGreaterThan(0.2); // pillar legs
+        expect(row.neck.ang, sp).toBeLessThan(25); // a short thick neck that goes forward
+        expect(row.neck.w / row.R, sp).toBeGreaterThan(2); // thick
+        expect(row.tail.w, sp).toBeLessThan(6); // thin
+      }
+      if (sp === "quad_medium") {
+        expect(bodyLen / sh, sp).toBeGreaterThanOrEqual(1.3);
+        expect(legShare, sp).toBeGreaterThanOrEqual(0.45);
+        expect(legShare, sp).toBeLessThanOrEqual(0.56);
+        expect(row.legW / row.legF, sp).toBeLessThan(0.15); // slim legs
+        expect(row.tail.l, sp).toBeLessThan(12); // a short tail
       }
       expect(row.tail.kind, sp).toBe("dog");
     }
+  });
+  it("quad_large reads as a heavy herbivore: a long low body, the head at or below the back line, four pillar legs in the front view", async () => {
+    const { QUAD } = await import("../src/rig/creature/quad.js");
+    const row = QUAD.quad_large;
+    const sh = row.legF + row.chest;
+    const side = draw(lookOf("quad_large"), "stand");
+    // the figure is not taller than its back line plus a little (no head or ear held above the back)
+    expect(-side.anchors.top, "top of the figure").toBeLessThanOrEqual(sh * 1.08);
+    expect(side.anchors.head.y - side.anchors.headRadius * 0.85, "head top below the back line").toBeGreaterThanOrEqual(-sh);
+    expect((side.anchors.right - side.anchors.left) / -side.anchors.top, "longer than tall").toBeGreaterThan(1.4);
+    const front = draw(lookOf("quad_large"), "stand", "front");
+    expect(-front.anchors.top, "front: the head is not above the body").toBeLessThanOrEqual(sh * 1.08);
+    // a belly-down rest, never an upright sit: the sit is lower than half the standing height
+    const sit = draw(lookOf("quad_large"), "sit");
+    expect(-sit.anchors.top, "rest height").toBeLessThan(0.7 * sh);
+    expect((sit.anchors.right - sit.anchors.left) / -sit.anchors.top, "rest is long and low").toBeGreaterThan(2);
   });
   it("the capabilities list the size and mark a stand-in", () => {
     const cast = [
