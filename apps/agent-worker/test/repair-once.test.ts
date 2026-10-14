@@ -73,7 +73,7 @@ describe("REPAIR_ONCE_CODES", () => {
     const skill = await loadSkill("manga-page");
     const step = /FIX BEFORE SUBMIT\*\* items \(([^)]*)\)/.exec(skill.content)?.[1] ?? "";
     expect(step.split(",").map((c) => c.trim()).sort()).toEqual([...REPAIR_ONCE_CODES].sort());
-    expect(skill.version).toBe("1.12.0");
+    expect(skill.version).toBe("1.13.0");
     expect(skill.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
@@ -416,7 +416,7 @@ describe("SAME_SHOT_TWICE (v0.2, a warning)", () => {
   });
 });
 
-describe("QUOTE_CLIPPED (v0.2, a warning)", () => {
+describe("QUOTE_CLIPPED (v0.2 function; the page goal stopped running it in v0.3, D33)", () => {
   /** A source sentence of 4 quoted words and `tail` more words; the quote repeats the first 4. */
   const sourceWith = (tail: number) => [{ text: `“Alpha bravo charlie delta ${Array.from({ length: tail }, (_, i) => `tail${String.fromCharCode(97 + i)}`).join(" ")}.” said the Mayor.` }];
   const quote = (body: string, extra: Record<string, unknown> = {}) => page([panel("p1", { text: [text("speech", body, { speaker: "prince", fidelity: "quote", ...extra })] })]);

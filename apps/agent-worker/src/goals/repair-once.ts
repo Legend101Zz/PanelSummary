@@ -446,7 +446,9 @@ export function sameShotTwiceIssues(spec: MangaPageSpec, options: { level?: Same
 }
 
 // ---------------------------------------------------------------------------
-// QUOTE_CLIPPED: a quote stops before the punchline of its source sentence (v0.2, issue #45)
+// QUOTE_CLIPPED: a quote stops before the punchline of its source sentence (v0.2, issue #45).
+// Not run by the page goal since v0.3 (D33, issue #83): the second measurement found no signal once the
+// judges' echoes of the warning are left out. The function stays for the calibration scripts.
 // ---------------------------------------------------------------------------
 
 /** Words of the source sentence that may be left out after a quote before the quote counts as clipped. Set from calibration. */
@@ -530,7 +532,7 @@ export function quoteClippedIssues(
   return issues;
 }
 
-/** All writer-side repair_once checks plus the plain warnings (dialogue order, same shot twice, clipped quote). */
+/** All writer-side repair_once checks plus the plain warnings (dialogue order, same shot twice). QUOTE_CLIPPED is not run here since v0.3 (D33). */
 export function repairOnceIssues(spec: MangaPageSpec, ctx: RepairOnceContext): ValidationIssue[] {
   return [
     ...claimTextThinIssues(spec, ctx),
@@ -541,6 +543,5 @@ export function repairOnceIssues(spec: MangaPageSpec, ctx: RepairOnceContext): V
     ...locationOffPlanIssues(spec, ctx),
     ...dialogueOrderIssues(spec, ctx),
     ...sameShotTwiceIssues(spec),
-    ...quoteClippedIssues(spec, ctx),
   ];
 }

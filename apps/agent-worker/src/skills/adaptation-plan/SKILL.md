@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Adaptation plan
@@ -56,7 +56,9 @@ something to *see*.
    section's opening page establishes its setting and introduces its main characters. Keep
    to 4 or fewer speaking characters per page. A change of place or time starts a new
    page: do not plan two locations on one page unless the page is about the journey
-   between them. Pick locations whose `units` include the page's units (the locations list
+   between them. Name in the beat where the source puts the action and when: inside or
+   outside, at the bank or on the road, by day or at night. The page writer stages the beat
+   from that. Pick locations whose `units` include the page's units (the locations list
    shows them). If the page needs a place the understanding lacks, say it in the beat. When
    a page shows the afterlife, a dream or a memory, write that word in the beat: the page
    writer flags those panels.
@@ -67,11 +69,14 @@ something to *see*.
 8. **Rhythm.**
    - Alternate quieter set-up pages with action or revelation pages. Never plan three
      high-intensity pages in a row, or more than three quiet ones.
-   - Mark `page_turn_hook: true` on pages that end on a question, a threat, a reveal or a
-     decision, so the reader turns the page to find out. Aim for a hook every 2-4 pages
-     and at the end of each section except the last.
+   - Give every page that does not close a section a turn hook: set `page_turn_hook: true`
+     and write the hook in the beat. A hook is a question the page leaves open, a reveal held
+     back, or a change that is about to happen. Judges gave pages with a hook a page-turn
+     score about 0.3 higher than pages without one. A page that closes a section ends on its
+     landing instead (see the last bullet).
    - Put the hook on the page *before* the reveal. The next page's beat begins with the
-     answer.
+     answer. Take the hook from the book: a question a character asks, a threat, a sentence
+     that stops before its answer. Do not plan an invented line to make a hook.
    - Give big moments (a revelation, a death, a transformation, the climax) a page of
      their own. It may be a 1-2 panel page, so plan fewer claims there.
    - The book's last page, and the last page of each section, end on one strong image and a
