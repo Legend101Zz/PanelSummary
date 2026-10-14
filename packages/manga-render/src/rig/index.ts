@@ -2,7 +2,7 @@
  * Rig dispatcher: routes a CharacterLook to its kind's rig. Kind rigs live in
  * sibling files and may be replaced independently.
  */
-import { LOOK_SCALE_MAX, LOOK_SCALE_MIN, type CharacterLook, type Expression, type Facing, type Point, type Pose } from "../contracts.js";
+import { ARCHETYPE_SPECIES, LOOK_SCALE_MAX, LOOK_SCALE_MIN, type CharacterLook, type Expression, type Facing, type Point, type Pose } from "../contracts.js";
 import type { DrawContext, FigureAnchors, FigureDrawing, FigureRequest, RigModule } from "../internal.js";
 import { INK, STROKE, toneFill } from "../style.js";
 import { n } from "../svg.js";
@@ -154,16 +154,41 @@ export function seatContact(look: CharacterLook, pose: Pose, facing: Facing, see
   return { x: 0, y: 0 };
 }
 
+/** Smallest scale that is drawn (v0.3 Gate 1 fix A2): a smaller applied scale is drawn at this value. */
+export const LOOK_SCALE_FLOOR = 0.12;
+
+/** What the renderer does with a look's `scale` (v0.3 Gate 1 fix A2, D29). */
+export interface LookScaleResolution {
+  /** The scale that is drawn; absent when the look keeps its usual size. */
+  applied?: number;
+  /** The look has a scale that the renderer ignores (a named species, or a person of normal size or bigger). */
+  ignored: boolean;
+  /** The scale was smaller than LOOK_SCALE_FLOOR and is drawn at the floor. */
+  floored: boolean;
+}
+
 /**
- * Size of a look (v0.3, #81). `look.scale` is the figure's height relative to an
- * adult human (1.0 = 100 figure units); absent, the rig's own nominal height holds.
- * The scale is clamped to the allowed range so a bad value never breaks a drawing
- * (validation reports it).
+ * `look.scale` is the size of a STAND-IN, not a real-world size. It applies only to
+ * (a) the six archetype species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) and
+ * (b) a human, and then only to make the person smaller (scale below 1; a bigger person uses `height: giant`).
+ * Every other look keeps its readable nominal size and the scale is ignored. An applied scale below
+ * LOOK_SCALE_FLOOR is drawn at the floor, so a stand-in is never a speck. The value is clamped to the
+ * allowed range first (validation reports a bad value).
  */
-function lookScale(look: CharacterLook): number | undefined {
+export function resolveLookScale(look: CharacterLook): LookScaleResolution {
   const v = (look as { scale?: unknown }).scale;
-  if (typeof v !== "number" || !Number.isFinite(v)) return undefined;
-  return Math.min(LOOK_SCALE_MAX, Math.max(LOOK_SCALE_MIN, v));
+  if (typeof v !== "number" || !Number.isFinite(v)) return { ignored: false, floored: false };
+  const s = Math.min(LOOK_SCALE_MAX, Math.max(LOOK_SCALE_MIN, v));
+  const species = (look as { species?: unknown }).species;
+  const archetype = (look.kind === "animal" || look.kind === "bird") && typeof species === "string" && (ARCHETYPE_SPECIES as readonly string[]).includes(species);
+  const smallPerson = look.kind === "human" && s < 1;
+  if (!archetype && !smallPerson) return { ignored: true, floored: false };
+  if (s < LOOK_SCALE_FLOOR) return { applied: LOOK_SCALE_FLOOR, ignored: false, floored: true };
+  return { applied: s, ignored: false, floored: false };
+}
+
+function lookScale(look: CharacterLook): number | undefined {
+  return resolveLookScale(look).applied;
 }
 
 function targetHeight(look: CharacterLook): number {

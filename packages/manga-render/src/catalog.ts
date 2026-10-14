@@ -10,7 +10,7 @@ import { MAX_FIGURES, MAX_FX, MAX_PROPS, SPEAKER_MIN_HEAD_RADIUS, STAGING_FEATUR
 import { KIND_STYLES, MAX_BALLOON_LINES, minFontSize } from "./lettering/styles.js";
 import { HOOK_PAYOFF_MIN_SHARE, WORD_LIMITS } from "./validate/page.js";
 import { MAX_CLAIMS_PER_PAGE } from "./validate/book.js";
-import { rig } from "./rig/index.js";
+import { LOOK_SCALE_FLOOR, rig } from "./rig/index.js";
 import { RENDERER_VERSION } from "./render.js";
 import { variantFieldsFor } from "./scene/looks.js";
 
@@ -66,7 +66,7 @@ export const TEXT_KIND_GUIDE: Record<C.TextKind, string> = {
 };
 
 /** The optional look.scale field, as the writer sees it (v0.3, #81). */
-const SCALE_FIELD = `optional number ${C.LOOK_SCALE_MIN}-${C.LOOK_SCALE_MAX}: the figure's height relative to an adult person (1 = an adult, 0.15 = about knee high, 2 = twice as tall). Leave it out for the usual size of the look. Use it for a creature or a people of unusual size (a very small folk, a very large animal).`;
+const SCALE_FIELD = `optional number ${C.LOOK_SCALE_MIN}-${C.LOOK_SCALE_MAX}: the size of a STAND-IN, as a height relative to an adult person (1 = an adult, 0.5 = half as tall). It applies only to a neutral species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) and to a person who is smaller than an adult (0.12 up to, but not including, 1). On every other look (a named animal, bird or insect, an object, a plant, a spirit, a crowd, an emblem) and for a person of 1 or more, the renderer ignores it (warning LOOK_SCALE_IGNORED): a named species is already drawn at a size that reads in a panel; for a giant person use height "giant". A scale under ${LOOK_SCALE_FLOOR} is drawn at ${LOOK_SCALE_FLOOR} (warning LOOK_SCALE_FLOOR). It is not a real-world size: do not set it to make a swallow small beside a statue.`;
 
 /**
  * Plain descriptions of the neutral stand-ins (v0.3, #81). When no named species, place or prop fits, choose the
@@ -103,7 +103,7 @@ export const FIELD_GUIDE: Record<string, string> = {
   "figure.holding_tone": "tone of the held prop, so key objects stay distinct across pages (a ruby \"black\", a sapphire \"mid\").",
   "prop.tone": "tone variant of a prop on the ground or in an insert (ruby vs sapphire).",
   "look.scale": SCALE_FIELD,
-  "prop.label": `neutral props (thing_*) only, but allowed on any prop: plain text, at most ${C.PROP_LABEL_MAX} characters (e.g. "bone", "the cheese"). Drawn as a small name tag beside the prop. A neutral prop without a label is a warning (NEUTRAL_PROP_UNLABELLED): the reader would see an unnamed shape.`,
+  "prop.label": `for the five neutral props (thing_long, thing_round, thing_block, thing_flat, thing_heap) ONLY: plain text, at most ${C.PROP_LABEL_MAX} characters (e.g. "bone", "the cheese"). Drawn as a small name tag beside the prop. On any other prop the renderer ignores the label (warning PROP_LABEL_IGNORED): a named prop needs no label, and a colour is shown with "tone" or with a cast member of its own. A neutral prop without a label is a warning (NEUTRAL_PROP_UNLABELLED): the reader would see an unnamed shape.`,
   "figure.archetype_tag": "a cast member of a neutral species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) gets its cast name as a name tag in the first panel of each page where it is drawn, unless you already put a name-tag caption (text.about) for it on that page.",
   "text.about": "captions only: the cast id this caption names; drawn as a name tag beside that character.",
   "pose.sit": "a sitter always gets a seat: a bench outdoors, a chair indoors, a throne in a palace hall (none when staged with \"on\").",
@@ -135,6 +135,9 @@ export const ERROR_GUIDE: Record<string, string> = {
 /** Warnings the renderer may return, and what to change (errors are always fixable from their message). */
 export const WARNING_GUIDE: Record<string, string> = {
   NEUTRAL_PROP_UNLABELLED: 'a neutral thing_* prop has no "label": add a short name so the reader sees what it is.',
+  LOOK_SCALE_IGNORED: 'a look\'s "scale" is ignored: it sizes only a neutral stand-in species or a person smaller than 1. Remove it; a named species keeps its readable size, and a giant person uses height "giant".',
+  LOOK_SCALE_FLOOR: `a look's "scale" is under ${LOOK_SCALE_FLOOR}: it is drawn at the floor so the figure is not a speck. Use the floor value or more.`,
+  PROP_LABEL_IGNORED: 'a "label" on a named prop is not drawn (only thing_long, thing_round, thing_block, thing_flat and thing_heap show a name tag): remove the label.',
   PROP_LABEL_DROPPED: "the name tag of a prop had no free place beside it (clear of faces, inside the frame): use a wider shot or fewer figures.",
   ARCHETYPE_LABEL_DROPPED: "the automatic name tag of a neutral figure had no free place in its panel: give the panel more room or fewer texts.",
   FACE_COVERED: "a figure covers another figure's face and could not be moved aside: use other slots, a wider shot, or fewer figures.",

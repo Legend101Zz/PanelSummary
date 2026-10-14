@@ -1,6 +1,6 @@
 # D1a: renderer stand-ins (issue #81, renderer part)
 
-Track D1a. Renderer `manga-render/0.7.0`. Decision D29 in `docs/decisions.md`.
+Track D1a. Renderer `manga-render/0.7.0`; 0.7.1 adds the Gate 1 fixes (section "Gate 1 fixes"). Decision D29 in `docs/decisions.md`.
 The understanding and page-writer side is track D1b. It uses the exact names in this note.
 
 ## Problem
@@ -52,6 +52,7 @@ Nothing is for one book. Each new value is a body plan, a size, a kind of place 
 ### `look.scale`
 
 - Optional number on every look kind. Range 0.05 to 4.0. A person who is an adult is 1.0 (100 figure units).
+  Since 0.7.1 the renderer applies it only to a stand-in species and to a person under 1.0; see "Gate 1 fixes".
 - Absent: the look keeps its exact size and its exact drawing. Present: `nominalHeight` is 100 x scale.
   The rig draws the look at its own size and the dispatcher (`rig/index.ts`) scales the group. The line width is
   divided by the factor, so the outline keeps its weight on the page. A scale that equals the usual size
@@ -174,6 +175,84 @@ In `Book-Reel-scratch/v03/d1r/contact/`:
 4. `4-tuning-*`: two pages of *Just So Stories* (final-journey-2 pages 4 and 21) unedited and edited (both with the 0.7.0 renderer), with an
    edited copy of the spec: the Elephant's Child as `quad_large` at scale 1.7, the Crocodile and the Python as
    `long_low`, the cave as `generic_rough` with the blade-bone as a labelled `thing_long`.
+
+## Gate 1 fixes (renderer 0.7.1, track fxr, issues #81 and #90)
+
+Gate 1 on the two-tale book scored 3.53 (v0.2: 3.60). Two causes were on the renderer side
+(`gate1-analysis-public.md`: A2 and A3). Both fixes are general: they use the kind and the species of a look and
+the prop id, never a book.
+
+### A2: `look.scale` sizes a stand-in only
+
+The understanding had set a real-world `scale` on almost every cast member (Swallow 0.08, Nightingale 0.07,
+Butterfly 0.06, Lizard 0.1, Prince 2.0). The named species have sizes that read in a panel, so these values made specks.
+
+| Look | What the renderer does with `scale` |
+|---|---|
+| `quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer`, `bird_tall` | applied (it sets the stand-in size) |
+| `human`, scale from 0.12 up to but not including 1.0 | applied (a person the size of a mouse) |
+| `human`, scale 1.0 or more | ignored, warning `LOOK_SCALE_IGNORED`; use `height: giant` |
+| any other look (named animal, bird, insect, object, plant, spirit, crowd, emblem) | ignored, warning `LOOK_SCALE_IGNORED` |
+| applied scale under 0.12 | drawn at 0.12, warning `LOOK_SCALE_FLOOR` |
+
+`LOOK_SCALE_RANGE` (0.05 to 4.0) is unchanged and still an error. The code is `resolveLookScale` in `rig/index.ts`;
+`nominalHeight`, `draw`, the "small figure" test of the camera (`isSmallFigure`) and the capabilities all use it.
+The warnings are added once for each cast member that is drawn on the page (`renderPageDetailed`).
+
+### A3: a label only on a neutral prop
+
+`PropSpec.label` is drawn only on `thing_long`, `thing_round`, `thing_block`, `thing_flat` and `thing_heap`. On any other
+prop the label is ignored and the warning `PROP_LABEL_IGNORED` is added. It is a warning, so a page is not sent for repair.
+The catalog text of `prop.label` says so.
+
+### Measurement
+
+Method: the page specs of the Gate 1 export (`export/judge/page-NN.json`, status accepted) are rendered with
+`export/understanding.json` (cast and locations) by the renderer 0.7.0 (`git archive` of this branch before the change)
+and by 0.7.1. No planned page is given. Script: `Book-Reel-scratch/v03/fxr/measure.mts`. All numbers below were measured in this run.
+
+Two-tale book, 22 pages, 117 panels:
+
+| Measure | 0.7.0 | 0.7.1 |
+|---|---|---|
+| `HERO_TOO_SMALL` | 2 | 0 |
+| `SPEAKER_TOO_SMALL` (error) | 0 | 1 (page 5) |
+| `FIGURE_CLIPPED` | 1 | 1 |
+| other `FIGURE_*` | 0 | 0 |
+| Panels with a figure under 10% of the panel height | 5 (5 pages) | 4 (4 pages) |
+| Panels with a figure of cast scale 0.1 or less (the 6 birds, insect and lizard): count | 65 on 18 pages | 65 on 18 pages |
+| the same figures, share of the panel height: lowest, median | 0.020, 0.278 | 0.049, 0.348 |
+| the same figures under 10% / under 15% of the panel height | 4 / 9 | 3 / 7 |
+| Pages with an error | 0 | 2 (page 5 `SPEAKER_TOO_SMALL`, page 18 `KEY_PROP_COVERED`) |
+| `LOOK_SCALE_IGNORED` | 0 | 32 |
+| `PROP_LABEL_IGNORED` | 0 | 8 (pages 7, 16, 17 x4, 22 x2) |
+
+Pages whose SVG changes: 20 of 22 (all except 14 and 21). Reasons: every changed page except 22 draws a cast member whose scale is ignored: the
+Prince (2.0 becomes the usual tall person), the Swallow, the Nightingale, the Butterfly, the Lizard or the Sparrows. Page 22 changes only because a label
+is dropped from a named prop; pages 7, 16 and 17 have both (labels on rose x6, gem, book). The warning count above is the list: page
+by page it is in `out/two-tale-new/summary.json`.
+
+Two pages gain an error that the old render hid. Both are existing rules, not new checks:
+- Page 5, panel 6 (wide): the Prince speaks and now has the usual person size (before: 200 units). His head radius is 13 units (the floor is 22), so `SPEAKER_TOO_SMALL` (D31 keeps it as an error: the writer repairs it with a closer shot).
+- Page 18, panel 6: the Nightingale is 64 units high (before 34), takes more room and the speech balloon now covers the thorn (`KEY_PROP_COVERED`).
+Page 20 loses both `HERO_TOO_SMALL` warnings and gains `SFX_OVER_SUBJECT` (warning). Page 2 gains `FACE_COVERED` (warning). In a live run these are repair rounds, not failures. The cost is in Gate 2.
+
+Viewed as pictures (before and after): page 4 (the Swallow at the Prince's feet is readable, the column and the sky are in
+the frame), page 5 (the Swallow in the last panel is a bird, not a speck; the Prince is smaller in the wide panel), page 20 (the Nightingale is a
+bird on the tree and in the last panel it is close to the rose-tree). Pictures: `Book-Reel-scratch/v03/fxr/out/two-tale-base/` and `two-tale-new/`.
+
+Just So Stories (partial run, 18 pages with a spec, 88 panels): 12 cast members have a scale. 8 of 12 are archetype species
+(`quad_large` 0.5, 1.5, 2 and 1.3, `bird_tall` 1.3, `quad_medium` 0.9, `long_low` 0.6 and 1.1). Every page that draws one of
+them and no named animal with a scale (pages 1, 3 to 8 and 10) is byte for byte the same as in 0.7.0: the stand-ins are
+still drawn at their scaled size. Pages 2 and 11 change because a named bird with a scale (the Kolokolo, a sparrow at 0.15)
+now keeps its usual size (the mouse, the bat and the horse are in no spec of the partial run); pages 13, 16, 18 and 19 change because
+a label on a named prop is dropped (5 warnings). `HERO_TOO_SMALL` 0 and 0, `SPEAKER_TOO_SMALL` 0 and 0, `FIGURE_CLIPPED` 2 and 2,
+panels with a figure under 10%: 7 and 7. Warnings added: `LOOK_SCALE_IGNORED` 2, `PROP_LABEL_IGNORED` 5.
+
+Gold test: `test/gold-0.7.0.test.ts` still passes unchanged. The 52 pages of the Happy Prince fixture and of run 8 have no
+scale and no label on a named prop, so they render as in 0.7.0.
+
+Not measured: the effect on the judge scores. That needs a live run with the judge panel (the orchestrator starts it).
 
 ## What the renderer does not do
 

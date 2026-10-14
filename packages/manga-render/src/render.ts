@@ -54,13 +54,13 @@ import type { Placed } from "./lettering/place.js";
 import { estimateTextArea, inferNameTag, letterPanel } from "./lettering/index.js";
 import { countWords } from "./lettering/breaking.js";
 import { validatePage, type BookRefs } from "./validate/index.js";
-import { rig } from "./rig/index.js";
+import { LOOK_SCALE_FLOOR, resolveLookScale, rig } from "./rig/index.js";
 import { hashString } from "./prng.js";
 import { INK, PAGE_BG, STROKE, toneDefs } from "./style.js";
 import { esc, n, polyPath } from "./svg.js";
 import { FONT_FAMILY } from "./fonts.js";
 
-export const RENDERER_VERSION = "manga-render/0.7.0";
+export const RENDERER_VERSION = "manga-render/0.7.1";
 
 export interface RenderOptions {
   /** Prefix for every id on the page (pages are inlined in one DOM). Default "pg<N>-". */
@@ -268,6 +268,38 @@ export function renderPageDetailed(
     issues.push(...c.issues);
     composed.push(c);
   });
+
+  // v0.3 Gate 1 fix A2 (D29): look.scale is the size of a stand-in. Say so when the renderer ignores or floors it.
+  {
+    const drawn: string[] = [];
+    for (const c of composed) for (const f of c.figures) if (!drawn.includes(f.character)) drawn.push(f.character);
+    for (const id of drawn) {
+      const member = castById.get(id);
+      if (!member || !isRecord(member.look)) continue;
+      let r;
+      try {
+        r = resolveLookScale(member.look);
+      } catch {
+        continue;
+      }
+      const scale = (member.look as { scale?: unknown }).scale;
+      if (r.ignored) {
+        issues.push({
+          code: "LOOK_SCALE_IGNORED",
+          severity: "warning",
+          path: `cast ${id}`,
+          message: `the "scale" ${String(scale)} of "${id}" is ignored: "scale" sizes only a neutral stand-in species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) or makes a person smaller than 1. A named animal, bird or thing keeps its readable size; for a giant person use height "giant". Remove "scale".`,
+        });
+      } else if (r.floored) {
+        issues.push({
+          code: "LOOK_SCALE_FLOOR",
+          severity: "warning",
+          path: `cast ${id}`,
+          message: `the "scale" ${String(scale)} of "${id}" is below ${LOOK_SCALE_FLOOR}, so it is drawn at ${LOOK_SCALE_FLOOR}: a smaller figure would be a speck. Use ${LOOK_SCALE_FLOOR} or more.`,
+        });
+      }
+    }
+  }
 
   // where each character is drawn on the page (for off-panel tails)
   const drawnAt = new Map<string, number[]>();

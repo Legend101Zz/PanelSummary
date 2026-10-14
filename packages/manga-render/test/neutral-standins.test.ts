@@ -11,7 +11,7 @@ import { ANIMAL_SPECIES, ARCHETYPE_SPECIES, BIRD_SPECIES, ENVIRONMENTS, NEUTRAL_
 import { RENDERER_VERSION, catalog, castCapabilities, renderPageDetailed, validatePage } from "../src/index.js";
 import { environments } from "../src/env/index.js";
 import { props } from "../src/props/index.js";
-import { rig } from "../src/rig/index.js";
+import { resolveLookScale, rig } from "../src/rig/index.js";
 import { isSmallFigure } from "../src/scene/compose.js";
 import { beatMentions } from "../src/scene/props.js";
 import { validateLook } from "../src/validate/look.js";
@@ -48,8 +48,8 @@ describe("the contracts list the stand-ins", () => {
     expect(c.warnings.NEUTRAL_PROP_UNLABELLED).toBeDefined();
     expect(c.errors.LOOK_SCALE_RANGE).toBeDefined();
   });
-  it("is renderer 0.7.0", () => {
-    expect(RENDERER_VERSION).toBe("manga-render/0.7.0");
+  it("is renderer 0.7.1", () => {
+    expect(RENDERER_VERSION).toBe("manga-render/0.7.1");
   });
 });
 
@@ -157,13 +157,19 @@ describe("archetype figures", () => {
 });
 
 describe("look.scale", () => {
-  it("nominal height is 100 x scale for every kind; absent keeps the usual size", () => {
-    const kinds: CharacterLook[] = [HUMAN, lookOf("dog"), lookOf("swallow" as never), { kind: "plant", species: "tree", tone: "mid", face: true }, { kind: "object", shape: "lamp", tone: "light", face: true }];
-    for (const k of kinds) {
+  it("nominal height is 100 x scale for a stand-in and for a smaller person; every other look ignores the scale (Gate 1 fix A2)", () => {
+    const applied: CharacterLook[] = [HUMAN, lookOf("quad_large"), lookOf("quad_small"), lookOf("long_low"), lookOf("swimmer"), lookOf("bird_tall"), lookOf("quad_medium")];
+    for (const k of applied) {
       const base = rig.nominalHeight(k);
+      const scale = k.kind === "human" ? 0.5 : 2.5;
+      expect(rig.nominalHeight({ ...k, scale } as CharacterLook), `${k.kind}`).toBe(100 * scale);
       expect(rig.nominalHeight({ ...k, scale: 0.5 } as CharacterLook)).toBe(50);
-      expect(rig.nominalHeight({ ...k, scale: 2.5 } as CharacterLook)).toBe(250);
       expect(rig.nominalHeight(k)).toBe(base);
+    }
+    const ignored: CharacterLook[] = [lookOf("dog"), lookOf("swallow" as never), lookOf("horse"), { kind: "plant", species: "tree", tone: "mid", face: true }, { kind: "object", shape: "lamp", tone: "light", face: true }, { kind: "insect", species: "butterfly", tone: "light" } as CharacterLook];
+    for (const k of ignored) {
+      const base = rig.nominalHeight(k);
+      for (const scale of [0.06, 0.5, 2.5]) expect(rig.nominalHeight({ ...k, scale } as CharacterLook), `${k.kind} ${scale}`).toBe(base);
     }
   });
   it("a look without scale draws byte for byte as before; a scale equal to the usual size changes nothing", () => {
@@ -171,7 +177,7 @@ describe("look.scale", () => {
     expect(draw({ ...dog, scale: 0.4 } as CharacterLook, "stand").svg).toBe(draw(dog, "stand").svg);
   });
   it("the figure is drawn at the scaled height with the outline weight kept", () => {
-    for (const [scale, base] of [[0.15, HUMAN], [1.7, lookOf("quad_large")], [0.3, lookOf("dog")]] as const) {
+    for (const [scale, base] of [[0.15, HUMAN], [1.7, lookOf("quad_large")], [0.3, lookOf("quad_small")]] as const) {
       const look = { ...base, scale } as CharacterLook;
       const plain = draw(base, "stand", "right", 0.4);
       const d = draw(look, "stand", "right", 0.4);
@@ -448,7 +454,9 @@ describe("general fixes", () => {
     expect(small(lookOf("quad_small"))).toBe(true);
     expect(small({ kind: "bird", species: "swallow", tone: "mid" } as CharacterLook)).toBe(true);
     expect(small({ ...HUMAN, scale: 0.14 } as CharacterLook)).toBe(true);
-    expect(small({ ...lookOf("dog"), scale: 1.5 } as CharacterLook)).toBe(false);
+    expect(small({ ...lookOf("dog"), scale: 1.5 } as CharacterLook)).toBe(true); // a named dog ignores the scale
+    expect(small({ ...lookOf("quad_medium"), scale: 1.5 } as CharacterLook)).toBe(false);
+    expect(small({ ...HUMAN, scale: 1.5 } as CharacterLook)).toBe(false); // a person of 1 or more ignores it
     // people, plants, objects without a scale are never small (as before)
     expect(small(HUMAN)).toBe(false);
     expect(small({ kind: "plant", species: "daisy", tone: "light", face: true } as CharacterLook)).toBe(false);
@@ -464,5 +472,133 @@ describe("general fixes", () => {
     // a bear (and a rabbit) keeps its upright sit
     const bearSit = draw(lookOf("bear"), "sit").anchors;
     expect(-bearSit.top / -draw(lookOf("bear"), "stand").anchors.top).toBeGreaterThan(1.3);
+  });
+});
+
+// --- v0.3 Gate 1 fixes (renderer 0.7.1): look.scale bounded, labels only on neutral props -------------------
+describe("Gate 1 fix A2: look.scale sizes a stand-in, not a named species", () => {
+  const SIX = ["quad_small", "quad_medium", "quad_large", "long_low", "swimmer", "bird_tall"] as const;
+  it("resolveLookScale: applied for the six archetypes, for a person under 1, ignored elsewhere, floored under 0.12", () => {
+    for (const sp of SIX) {
+      expect(resolveLookScale({ ...lookOf(sp), scale: 0.6 } as CharacterLook), sp).toEqual({ applied: 0.6, ignored: false, floored: false });
+      expect(resolveLookScale({ ...lookOf(sp), scale: 0.07 } as CharacterLook), `${sp} floor`).toEqual({ applied: 0.12, ignored: false, floored: true });
+      expect(resolveLookScale({ ...lookOf(sp), scale: 3 } as CharacterLook), `${sp} big`).toEqual({ applied: 3, ignored: false, floored: false });
+    }
+    expect(resolveLookScale({ ...HUMAN, scale: 0.12 } as CharacterLook)).toEqual({ applied: 0.12, ignored: false, floored: false });
+    expect(resolveLookScale({ ...HUMAN, scale: 0.99 } as CharacterLook).applied).toBe(0.99);
+    expect(resolveLookScale({ ...HUMAN, scale: 0.05 } as CharacterLook)).toEqual({ applied: 0.12, ignored: false, floored: true });
+    for (const s of [1, 2, 4]) expect(resolveLookScale({ ...HUMAN, scale: s } as CharacterLook), `human ${s}`).toEqual({ ignored: true, floored: false });
+    const others = [({ kind: "bird", species: "swallow", tone: "mid" } as CharacterLook), ({ kind: "bird", species: "nightingale", tone: "mid" } as CharacterLook), lookOf("lizard"), lookOf("dog"), lookOf("horse"), { kind: "insect", species: "butterfly", tone: "light" }, { kind: "object", shape: "lamp", tone: "light", face: true }, { kind: "plant", species: "tree", tone: "mid", face: true }, { kind: "spirit", element: "wind" }, { kind: "crowd", crowd: "townsfolk", size: "few" }, { kind: "emblem", emblem: "heart" }] as unknown as CharacterLook[];
+    for (const o of others) expect(resolveLookScale({ ...o, scale: 0.07 } as CharacterLook), `${o.kind}`).toEqual({ ignored: true, floored: false });
+    expect(resolveLookScale(lookOf("dog"))).toEqual({ ignored: false, floored: false });
+  });
+  it("a named bird keeps its readable size whatever the scale; a stand-in is drawn at the floor, never smaller", () => {
+    const swallow = ({ kind: "bird", species: "swallow", tone: "mid" } as CharacterLook);
+    expect(rig.nominalHeight({ ...swallow, scale: 0.08 } as CharacterLook)).toBe(rig.nominalHeight(swallow));
+    expect(draw({ ...swallow, scale: 0.08 } as CharacterLook, "stand").svg).toBe(draw(swallow, "stand").svg);
+    expect(rig.nominalHeight({ ...lookOf("bird_tall"), scale: 0.06 } as CharacterLook)).toBe(12);
+    expect(rig.nominalHeight({ ...HUMAN, scale: 0.05 } as CharacterLook)).toBe(12);
+    // a person of 2.0 is a person of the usual size (a giant uses height "giant")
+    expect(rig.nominalHeight({ ...HUMAN, scale: 2 } as CharacterLook)).toBe(rig.nominalHeight(HUMAN));
+    // a mouse-sized person is drawn at 0.3
+    expect(rig.nominalHeight({ ...HUMAN, scale: 0.3 } as CharacterLook)).toBe(30);
+  });
+  const cast2: CastMember[] = [
+    { id: "pr", name: "The Prince", role: "statue", description: "d", look: look({ scale: 2 }) },
+    { id: "sw", name: "The Swallow", role: "bird", description: "d", look: { kind: "bird", species: "swallow", tone: "mid", scale: 0.08 } as CharacterLook },
+    { id: "bu", name: "The Butterfly", role: "insect", description: "d", look: { kind: "insect", species: "butterfly", tone: "light", scale: 0.06 } as CharacterLook },
+    { id: "st", name: "The Stilt", role: "bird", description: "d", look: { kind: "bird", species: "bird_tall", tone: "mid", scale: 0.05 } as CharacterLook },
+    { id: "mi", name: "Thumb", role: "tiny person", description: "d", look: look({ scale: 0.3 }) },
+    { id: "ok", name: "The Kid", role: "child", description: "d", look: look({ age: "child" }) },
+  ];
+  const book2 = { cast: cast2, locations: LOCS };
+  const scalePage = () =>
+    page([
+      panel("p1", "field", "wide", [fig({ character: "pr", slot: "left" }), fig({ character: "sw", slot: "center" }), fig({ character: "bu", slot: "center_right" })], "The prince and the swallow."),
+      panel("p2", "field", "medium", [fig({ character: "st", slot: "left" }), fig({ character: "mi", slot: "center" }), fig({ character: "ok", slot: "right" })], "A stilt bird, a tiny person and a kid."),
+    ]);
+  const warn = (r: ReturnType<typeof renderPageDetailed>["result"], code: string) => r.issues.filter((i) => i.code === code);
+  it("the renderer warns LOOK_SCALE_IGNORED with the cast id, and LOOK_SCALE_FLOOR for a floored stand-in; never an error", () => {
+    const { result } = renderPageDetailed(scalePage(), book2);
+    const ignored = warn(result, "LOOK_SCALE_IGNORED");
+    expect(ignored.map((i) => i.path).sort()).toEqual(["cast bu", "cast pr", "cast sw"]);
+    for (const i of ignored) expect(i.severity).toBe("warning");
+    const floored = warn(result, "LOOK_SCALE_FLOOR");
+    expect(floored.map((i) => i.path)).toEqual(["cast st"]);
+    expect(floored[0].severity).toBe("warning");
+    expect(result.issues.filter((i) => i.severity === "error" && /LOOK_SCALE/.test(i.code))).toEqual([]);
+    // a person under 1 (applied) and a kid (no scale) raise nothing
+    expect(ignored.concat(floored).some((i) => i.path === "cast mi" || i.path === "cast ok")).toBe(false);
+    // the warning shows once for each cast member, not once for each panel
+    expect(warn(renderPageDetailed(scalePage(), book2).result, "LOOK_SCALE_IGNORED").length).toBe(3);
+  });
+  it("a cast member that is not on the page raises no scale warning; the guides document the new codes", () => {
+    const onlyKid = page([panel("p1", "field", "medium", [fig({ character: "ok" })], "The kid.")]);
+    const { result } = renderPageDetailed(onlyKid, book2);
+    expect(result.issues.filter((i) => /^LOOK_SCALE/.test(i.code))).toEqual([]);
+    const c = catalog();
+    for (const k of ["LOOK_SCALE_IGNORED", "LOOK_SCALE_FLOOR", "PROP_LABEL_IGNORED"]) expect(c.warnings[k], k).toBeDefined();
+    expect(c.fields["look.scale"]).toMatch(/STAND-IN/);
+  });
+  it("the page with a bad scale on a swallow draws the swallow exactly as a page without scale, and is deterministic", () => {
+    const plainCast = cast2.map((m) => ({ ...m, look: { ...(m.look as object), scale: undefined } }) as CastMember);
+    const withScale = renderPageDetailed(scalePage(), book2).result.svg;
+    expect(renderPageDetailed(scalePage(), book2).result.svg).toBe(withScale);
+    // the ignored scales (prince, swallow, butterfly) change nothing in the drawing; the floored stilt and the small person do
+    const keep = cast2.map((m) => (["pr", "sw", "bu"].includes(m.id) ? ({ ...m, look: { ...(m.look as object), scale: undefined } } as CastMember) : m));
+    const one = page([panel("p1", "field", "wide", [fig({ character: "pr", slot: "left" }), fig({ character: "sw", slot: "center" }), fig({ character: "bu", slot: "center_right" })], "The prince and the swallow.")]);
+    expect(renderPageDetailed(one, book2).result.svg).toBe(renderPageDetailed(one, { cast: plainCast, locations: LOCS }).result.svg);
+    expect(renderPageDetailed(scalePage(), { cast: keep, locations: LOCS }).result.svg).toBe(withScale);
+  });
+  it("a stand-in at its scale is still drawn at that size in the panel (a quad_large at 1.7 is taller than the kid)", () => {
+    const cast3: CastMember[] = [
+      { id: "big", name: "The Big One", role: "beast", description: "d", look: { kind: "animal", species: "quad_large", tone: "mid", scale: 1.7 } as CharacterLook },
+      { id: "tiny", name: "The Tiny One", role: "beast", description: "d", look: { kind: "animal", species: "quad_small", tone: "mid", scale: 0.12 } as CharacterLook },
+      cast2[5],
+    ];
+    const spec = page([panel("p1", "field", "wide", [fig({ character: "big", slot: "left" }), fig({ character: "ok", slot: "center" }), fig({ character: "tiny", slot: "right" })], "A big one, a kid and a tiny one.")]);
+    const { result, details } = renderPageDetailed(spec, { cast: cast3, locations: LOCS });
+    const h = (id: string) => details[0].figures.find((f) => f.character === id)!.body.h;
+    expect(h("big")).toBeGreaterThan(h("ok"));
+    expect(h("tiny")).toBeLessThan(h("ok"));
+    expect(result.issues.filter((i) => /^LOOK_SCALE/.test(i.code))).toEqual([]);
+  });
+});
+
+describe("Gate 1 fix A3: a label is drawn only on a neutral prop", () => {
+  const one = (prop: string, label: string | undefined, panelCount = 1) =>
+    page(
+      Array.from({ length: panelCount }, (_, i) =>
+        panel(`p${i + 1}`, "field", "medium", [fig({ character: "kid", slot: "left" })], "The kid finds it.", { props: [{ prop, slot: "center_right", ...(label !== undefined ? { label } : {}) }] as never }),
+      ),
+    );
+  it("each of the five neutral props still draws its label", () => {
+    for (const p of NEUTRAL_PROPS) {
+      const { result, details } = renderPageDetailed(one(p, "bone"), BOOK);
+      expect(countText(result.svg, "bone"), p).toBe(1);
+      expect(details[0].props.find((q) => q.prop === p)?.label).toBe("bone");
+      expect(result.issues.filter((i) => i.code === "PROP_LABEL_IGNORED"), p).toEqual([]);
+    }
+  });
+  it("a named prop ignores its label (a warning, never an error) and the SVG is the same as without the label", () => {
+    for (const p of ["rose", "gem", "book", "bread", "heart"]) {
+      if (!(PROPS as readonly string[]).includes(p)) continue;
+      const withLabel = renderPageDetailed(one(p, "white roses"), BOOK);
+      expect(countText(withLabel.result.svg, "white roses"), p).toBe(0);
+      const w = withLabel.result.issues.filter((i) => i.code === "PROP_LABEL_IGNORED");
+      expect(w.length, p).toBe(1);
+      expect(w[0].severity).toBe("warning");
+      expect(w[0].message).toContain(p);
+      expect(withLabel.result.issues.some((i) => i.severity === "error")).toBe(false);
+      expect(withLabel.details[0].props.find((q) => q.prop === p)?.label).toBe("white roses");
+      expect(withLabel.result.svg).toBe(renderPageDetailed(one(p, undefined), BOOK).result.svg);
+      // validation still passes: no repair round
+      expect(codes(one(p, "white roses"), "error")).toEqual([]);
+    }
+  });
+  it("it is deterministic, and the catalog text says neutral props only", () => {
+    expect(renderPageDetailed(one("rose", "x"), BOOK).result.svg).toBe(renderPageDetailed(one("rose", "x"), BOOK).result.svg);
+    expect(catalog().fields["prop.label"]).toMatch(/ONLY/);
+    expect(catalog().fields["prop.label"]).toMatch(/PROP_LABEL_IGNORED/);
   });
 });
