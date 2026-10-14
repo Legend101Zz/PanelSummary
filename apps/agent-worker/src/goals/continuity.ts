@@ -77,7 +77,7 @@ export function statesOf(member: Pick<CastMember, "id"> & { states?: unknown }, 
 /** Value of a look field before any state applies: eyes are open, other fields come from the cast look. */
 export function baseValue(member: CastMember, field: string): string | undefined {
   if (field === "eyes") return "open";
-  const value = (member.look as unknown as Record<string, unknown>)[field];
+  const value = (member.look as unknown as Record<string, unknown> | undefined)?.[field];
   return typeof value === "string" ? value : undefined;
 }
 

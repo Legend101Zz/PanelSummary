@@ -298,12 +298,14 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     let current: Record<string, unknown> | undefined;
     const order = unitOrder(book.sections.map((section) => ({ units: section.unit_ids })));
     const stickyStatues = new Set<string>();
+    // D38: the units a prior location already has point to earlier parts and are valid by construction.
+    const priorPlaceUnits = new Map((prior?.locations ?? []).map((place) => [place.id, Array.isArray(place.units) ? (place.units as string[]) : []] as const));
     const judge = (candidate: unknown) => {
       // D38: with a prior, the prior cast and locations are copied unchanged into the candidate before every check.
       // The checks see the new states only: the `at` of an earlier state points to a unit of an earlier part.
       const checked = prior ? mergePrior(candidate, prior, { keepPriorStates: false }) : { merged: candidate, issues: [] as ValidationIssue[] };
       const value = checked.merged;
-      const issues = [...checked.issues, ...withWantedContext(validateUnderstanding(value, unitIds), value), ...lookSenseIssues(value, stickyStatues, prior?.sections.map((section) => section.id) ?? []), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds), ...sectionCoverageIssues(value, book), ...standInIssues(value)];
+      const issues = [...checked.issues, ...withWantedContext(validateUnderstanding(value, unitIds), value), ...lookSenseIssues(value, stickyStatues, prior?.sections.map((section) => section.id) ?? []), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds, true, priorPlaceUnits), ...sectionCoverageIssues(value, book), ...standInIssues(value)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,

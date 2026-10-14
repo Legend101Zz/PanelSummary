@@ -22,10 +22,12 @@ class ContinueWorker(journey.FakeWorker):
         super().__init__(*args, **kwargs)
         self.priors: list = []  # the `prior` of each understanding request (None when there was none)
         self.plan_understandings: list = []
+        self.fail_understanding = False  # every understanding request fails while this is set
 
     async def runs(self, request: Request):
         body = await request.json()
         data = body["input"]
+        self.fail_understanding_once = self.fail_understanding_once or (self.fail_understanding and body["goal_type"] == "BOOK_UNDERSTANDING")
         if body["goal_type"] == "BOOK_UNDERSTANDING":
             self.priors.append(data.get("prior"))
         if body["goal_type"] == "ADAPTATION_PLAN":
@@ -214,5 +216,35 @@ def test_an_edition_from_before_d38_gets_its_understanding_version_when_continue
         e2 = (await api.get(f"/editions/{part2}")).json()
         assert e2["status"] == "complete" and worker.priors[1]["understanding"]["cast"][0]["id"] == "c_a"
         assert e2["understanding_version"] == 1 and e2["understanding_version_produced"] == 2
+
+    _run(tmp_path, monkeypatch, scenario)
+
+
+def test_a_failed_continuation_can_be_resumed_with_the_same_prior(tmp_path, monkeypatch):
+    """#80 live finding: part 2 failed in the understanding. Resume re-runs it with the same prior, no new 422."""
+    monkeypatch.setattr(journey, "FakeWorker", ContinueWorker)
+
+    async def scenario(api, worker, book):
+        from app.jobs.runner import claim_job, execute
+
+        bid = book["id"]
+        part1 = await _drive(api, bid, {"section_ids": ["s1"]})
+        worker.fail_understanding = True  # part 2: the understanding fails
+        part2 = await _drive(api, bid, {"section_ids": ["s2"], "continue_from": part1})
+        failed = (await api.get(f"/editions/{part2}")).json()
+        assert failed["status"] == "failed" and failed["understanding_version_produced"] is None
+        tried = len(worker.priors)  # the job may try the understanding more than once before it fails
+        assert tried >= 2 and all(p["edition_id"] == part1 for p in worker.priors[1:])
+
+        worker.fail_understanding = False
+        resumed = await api.post(f"/editions/{part2}/resume")
+        assert resumed.status_code == 200  # no 422: the scope overlaps nothing, and the edition's own scope is not a repeat
+        await execute(await claim_job())
+        done = (await api.get(f"/editions/{part2}")).json()
+        assert done["status"] == "complete"
+        # The understanding ran again with the same prior (version 1 of part 1) and the same scope.
+        assert len(worker.priors) == tried + 1 and worker.priors[-1] == worker.priors[1]
+        assert worker.understanding_inputs[1]["sections"] == ["s2"]  # (the failed request is not recorded by the base worker)
+        assert (done["continues_edition_id"], done["understanding_version"], done["understanding_version_produced"]) == (part1, 1, 2)
 
     _run(tmp_path, monkeypatch, scenario)
