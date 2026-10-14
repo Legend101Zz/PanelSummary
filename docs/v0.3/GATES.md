@@ -110,19 +110,28 @@ Guard (PLAN §6): mean not below 3.50 — met (3.54); strict count not below 16/
 | v0.3 candidate 1 | 1–18 | 3.60 | 4 | 0.67 | 0.20 | 0.70 |
 | **v0.3 final** | 1–18 | **3.55** | 4 | **0.59** | **0.07** | 0.74 |
 
+**Sealed fiction 1, the complete final journey** (attempt 2 + the resume, 27 judged pages): mean **3.54**, strict 4, key
+prop not drawn 0.53, wrong setting 0.09, hero a speck or cropped 0.69. With candidate 1 this gives two full v0.3 runs on
+this book: **3.57 (3.54–3.59) against 3.46 (3.44–3.48) for v0.2.0 (+0.10, beyond the spread).**
+
+**Sealed fiction pooled** (v0.3: 3 runs, 96 pages; v0.2.0: 4 runs, 139 pages): mean **3.51 against 3.45 (+0.06)**;
+strict per run 6/1/4 against 1/7/6/5; key prop not drawn 0.58 against 0.76 (**−24%**); wrong setting 0.13 against 0.19
+(**−32%**); hero a speck or cropped 0.70 against 0.69 (flat); continuity +0.12; fidelity +0.19; no criterion more than
+0.2 below v0.2.0 (legibility −0.12 is the largest drop).
+
 Not measured on the final code (stopped by the token plan): the second runs of sealed fiction 2 and the sealed
 nonfiction book, the Cheese PDF and *Self-Reliance*.
 
 ### 4.3 Gate 2 verdict
 
 **The pass bar is not met.** What the measurements support:
-- On sealed fiction 1 (animal fables) v0.3 is better than v0.2.0 in two independent runs (3.59 and 3.55 against
-  3.43–3.49), with fewer key props left undrawn and fewer wrong settings.
+- On sealed fiction 1 (animal fables) v0.3 is better than v0.2.0 in two independent full runs (3.59 and 3.54 against
+  3.44–3.48; +0.10), with fewer key props left undrawn and fewer wrong settings.
 - On sealed fiction 2 v0.3 is equal (3.43 against 3.44), with fewer key props left undrawn (0.59 against 0.75) but
   fewer pages at the strict bar.
 - On the sealed nonfiction book v0.3 is 0.06 lower, inside v0.2.0's own spread.
-- Over the sealed fiction books: key prop not drawn −21% and wrong setting −26%; a key figure tiny or cropped is not
-  lower.
+- Over the sealed fiction books (3 v0.3 runs): mean +0.06 (the bar is +0.08); key prop not drawn −24% and wrong
+  setting −32% (the bar is −25% each); a key figure tiny or cropped is not lower; fewer pages at the strict bar.
 - On the 68-page tuning book the mean holds (3.54 against 3.55) but fewer pages pass the strict bar (9 against 20).
 - The release notes say this plainly. Under §7.2 the owner decides before the tag.
 
@@ -131,19 +140,21 @@ nonfiction book, the Cheese PDF and *Self-Reliance*.
 Attempt 1 (`45ab575`, 17:32 UTC): the token plan limit (2062) stopped the edition at page 11 of 38. Attempt 2
 (`26dfd3b`, 18:47 UTC, fresh DB `v03_final_2`, headed system Chrome, *Jataka Tales*, real worker, one Generate press):
 the token plan limit (2056) stopped it at 18 of 28 pages. A resume through the UI (one press of "Resume drawing",
-19:30 UTC) was refused on its first call by the same limit. FJ_RESUME_RESULT
+19:30 UTC) was refused on its first call by the same limit. **A second resume press at 21:03 UTC was accepted: the edition
+finished complete, 28 of 28 pages, 0 failed, 121 s after the press ($0.97 for the whole edition).** The journey therefore
+also shows the product's failure path end to end: a visible provider stop, then a resume through the UI.
 
 | Question | Verdict | Evidence (`gates/final-journey-2/REPORT.md`) |
 |---|---|---|
 | 1. Open the app (first run, then the shelf) | PASS | status line, drop zone with the limits, sample card |
 | 2. Add a book → the estimate → Generate manga | PASS | the app moved to the book page by itself in 3.5 s; exactly 1 "Generate manga" button at 1440 and 390; the estimate says "not a bill" |
 | 3. Does the run card tell the truth? | PASS | truth table 22 of 24 moments OK (2 were 0.6–0.7 s poll lag); the page 1 band showed 0.3–0.7 s after page 1 was accepted; the provider stop is shown honestly (one wording problem: "10 pages were not tried yet" although page 18 was tried and refused) |
-| 4. Start reading → the book's own cast, places and props (or labelled stand-ins), readable on a desktop | PARTIAL | the reader works: the first view at 1440×900 as D37, text 15–21 px, Sources drawer, picker, ArrowRight, tap-to-advance at 390, Back; the reader shows the persisted SVG (hash checked on pages 1 and 19; 18 of 18 stored hashes match). The drawing is weak: animals are generic stand-ins that the judges read as other animals (a monkey as a goat, crocodiles as salamanders on land) and the places are European towns for a tale set in ancient India. The edition is not complete. |
+| 4. Start reading → the book's own cast, places and props (or labelled stand-ins), readable on a desktop | PARTIAL (reader PASS, drawing weak) | the reader works: the first view at 1440×900 as D37, text 15–21 px, Sources drawer, picker, ArrowRight, tap-to-advance at 390, Back; the reader shows the persisted SVG (DOM SVG = stored SVG on pages 1, 19, 20 and 25; 28 of 28 stored hashes match). The drawing is weak: animals are generic stand-ins that the judges read as other animals (a monkey as a goat, crocodiles as salamanders on land) and the places are European towns for a tale set in ancient India. Worst pages: 15, 3, 26, 23/24, 17; best: 28, 20. |
 
-Architecture (for the 18 drawn pages): the parse and generate jobs with stage events; receipts all
+Architecture (all 28 pages): the parse and generate jobs with stage events; receipts all
 `MiniMax-M3.1-Flash-Preview`, `image_models` none; worker egress only `api.minimax.io`; `edition_pages` with SVG,
 `svg_hash` = sha256(svg), `manga-render/0.7.2`; the reader shows the persisted SVG; browser hosts only `127.0.0.1:3285` and
-`127.0.0.1:8185`. Dark theme checked on the shelf, the book page and the reader handover. Judged pages 1–18: §4.2.
+`127.0.0.1:8185`. Dark theme checked on the shelf, the book page and the reader handover. Judged: 27 of the 28 pages (page 18 was drawn during the resume and not judged); the numbers are in §4.2.
 
 ## 6. Provider limits seen in this build
 
@@ -155,4 +166,5 @@ Architecture (for the 18 drawn pages): the parse and generate jobs with stage ev
 
 ## 7. Spend
 
-SPEND
+25 paid run starts and 2 resumes, about $17.77 at MiniMax-M3 rates (not a bill), against the cap of $50. The ledger is
+in `PLAN.md` §7. The binding limit was the MiniMax token plan.

@@ -13,17 +13,17 @@ v0.2.0 on the same books. Details: `docs/v0.3/GATES.md`.
 
 | Book (class) | v0.2.0 | v0.3 | Key prop not drawn | Wrong setting | Hero a speck or cropped |
 |---|---|---|---|---|---|
-| *Jataka Tales*, 13 animal fables (sealed fiction) | 3.44–3.48 (2 runs) | **3.59** and **3.55** (2 runs, the second on pages 1–18) | 0.78 → 0.62 / 0.59 | 0.18 → 0.13 / 0.07 | 0.75 → 0.76 / 0.74 |
+| *Jataka Tales*, 13 animal fables (sealed fiction) | 3.44–3.48 (2 runs) | **3.59** and **3.54** (2 runs) | 0.78 → 0.62 / 0.53 | 0.18 → 0.13 / 0.09 | 0.75 → 0.76 / 0.69 |
 | *Indian Why Stories*, 8 stories (sealed fiction) | 3.44 (2 runs) | 3.43 | 0.75 → 0.59 | 0.21 → 0.15 | 0.64 → 0.67 |
 | *On a Piece of Chalk* (sealed nonfiction) | 3.35–3.49 | 3.37 | 0.48 → 0.45 | 0.23 → 0.22 | 0.48 → 0.46 |
-| **Sealed fiction pooled** | **3.45** | **3.49** (+0.04) | **−21%** | **−26%** | flat |
+| **Sealed fiction pooled** | **3.45** | **3.51** (+0.06) | **−24%** | **−32%** | flat |
 | *Just So Stories* (tuning; the #81 diagnosis book) | 3.40–3.44 (3 runs) | 3.46 | 0.75 → 0.62 | 0.15 → 0.19 | 0.65 → 0.52 |
 | Two-tale Wilde (tuning) | 3.60 | 3.53 and 3.43 (2 runs) | 0.50 → 0.70 / 0.74 | 0.14 → 0.27 / 0.35 | 0.55 → 0.61 / 0.62 |
 | 68-page Wilde (tuning guard) | 3.55, 20/61 strict | 3.54, 9/61 strict | 0.43 → 0.51 | 0.20 → 0.20 | 0.35 → 0.43 |
 
 **The v0.3 bar was not met.** The plan asked for a mean higher than v0.2.0 by at least 0.08 on the sealed fiction
 books, more pages at the strict bar, and key prop not drawn, wrong setting and a tiny or cropped figure each down by a
-quarter. v0.3 reached +0.04, fewer strict pages, key prop −21%, wrong setting −26%, and no change on tiny or cropped
+quarter. v0.3 reached +0.06, fewer strict pages, key prop −24%, wrong setting −32%, and no change on tiny or cropped
 figures. On the 68-page tuning book the mean holds but fewer pages pass the strict bar (9 against 20).
 
 What the numbers do show: the neutral stand-ins work where the book needs them. On the animal-fable book v0.3 is better
@@ -78,7 +78,7 @@ and the second runs of two sealed books (#126). The owner decided to release v0.
 
 ## Cost and time
 
-- 25 paid run starts during the build, about $17.46 at MiniMax-M3 rates (not a bill; MiniMax publishes no price for
+- 25 paid run starts and 2 resumes during the build, about $17.77 at MiniMax-M3 rates (not a bill; MiniMax publishes no price for
   the Flash model, D36). The binding limit was the MiniMax token plan: it stopped 7 runs (the runs show the stop and can
   be resumed).
 - v0.3 runs use 30–60% more tokens than v0.2 runs (longer skill text, more repair rounds). A 34-page book cost
@@ -94,8 +94,10 @@ and the second runs of two sealed books (#126). The owner decided to release v0.
 - The reader numbers each part of a continued book from 1 (the reader was frozen; the book page shows the series
   numbers, #128); its Page/Panels/Sources controls are 40 px (#127).
 - The run card says "10 pages were not tried yet" after a provider stop although one of them was tried and refused.
-- The final journey (a sealed book through the UI, `docs/v0.3/GATES.md` §5): questions 1–3 PASS, question 4 PARTIAL;
-  the token plan stopped the edition at 18 of 28 pages. FJ_NOTE
+- The final journey (a sealed book through the UI, `docs/v0.3/GATES.md` §5): questions 1–3 PASS; question 4 PASS for
+  the reader and PARTIAL for the drawing. The token plan stopped the edition at page 18; a resume through the UI finished
+  it (28 of 28 pages, 0 failed). The run card then said "10 pages were not tried yet" although one was tried and refused,
+  and it gives no hint of when the limit resets.
 
 ## Moved to v0.4
 

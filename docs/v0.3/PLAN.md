@@ -191,8 +191,9 @@ is the run's own estimate at MiniMax-M3 rates (`totals.cost_usd`), not a bill.
 | 23 | 2026-10-14 18:32 | GH 38616099546 | release/v0.3 @ 26dfd3b | happy-prince-and-other-tales (68 pp) | GATE 2 tuning guard (also the quota probe) | 61/61, 0 failed; first page 296 s, all 789 s; 63 calls | $1.98 | journey PASSED |
 | 24 | 2026-10-14 18:47 | local (v03-fj, 3285) | release/v0.3 @ 26dfd3b | *Jataka Tales* (sealed f1) | FINAL JOURNEY attempt 2 (UI, headed Chrome) | 18 of 28; stopped at ~19:00: MiniMax token plan limit (2056/429) | $0.66 | journey Q1-Q3 PASS, Q4 PARTIAL; edition resumable |
 | 25 | 2026-10-14 19:03 | local (v03-gate, 3280) | release/v0.3 @ 26dfd3b | *Indian Why Stories* (sealed f2) | GATE 2b run 2 (retry) | 0 pages (understanding blocked by the limit); stopped by the orchestrator | ~$0 | resumable |
+| 26 | 2026-10-14 21:03 | local (v03-fj, 3285) | release/v0.3 @ 26dfd3b | *Jataka Tales* (sealed f1) | FINAL JOURNEY: resume of #24 through the UI (press 2; press 1 at 19:30 was refused at no cost) | 28/28 complete, 0 failed; 121 s after the press | $0.31 | journey Q1–Q3 PASS, Q4 PASS (reader) / PARTIAL (drawing) |
 
-Running total: about $17.46 of $50 (sum of the run estimates at MiniMax-M3 rates, not a bill) over 25 paid run starts. The binding limit was the MiniMax token plan, not the dollar cap: it stopped 7 runs (rows 17–22, 24–25).
+Running total: about $17.77 of $50 (sum of the run estimates at MiniMax-M3 rates, not a bill) over 25 paid run starts and 2 resumes. The binding limit was the MiniMax token plan, not the dollar cap: it stopped 7 runs (rows 17–22, 24–25).
 
 ## 8. Cut list (drop in this order if the build is late)
 
@@ -235,3 +236,4 @@ The sealed gate, the final journey and honest reporting are never cut.
 | 2026-10-14 18:32–19:05 | The plan came back: the 68-page guard completed (61/61; mean 3.54, strict 9/61). The final journey attempt 2 drew 18 of 28 pages before the limit (2056) stopped it again; questions 1–3 PASS, question 4 PARTIAL. |
 | 2026-10-14 19:25 | The owner decided: release v0.3.0 with the Gate 2 result stated plainly; resume the final journey first (tag with the partial journey if the plan stays blocked past about 22:30 UTC); v0.4 paces paid runs (≤ 6–8 per 5-hour window). v0.4 issues #120–#130 opened. |
 | 2026-10-14 19:30 | A resume of the final journey through the UI was refused by the plan limit on its first call (no cost). PR #119 (the sealed books into `scripts/acceptance/books/`, titles in `HOLDOUT.md`) merged (`935fc79`). |
+| 2026-10-14 21:03–21:15 | The final journey's second resume press was accepted: 28/28 pages, 0 failed. Gate 2 final: sealed fiction +0.06 (bar +0.08), key prop −24%, wrong setting −32%, tiny or cropped flat; *Jataka Tales* +0.10 over two full runs. Release of v0.3.0 as the owner decided. |
