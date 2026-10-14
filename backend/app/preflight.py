@@ -109,7 +109,7 @@ PAGES_PER_KWORD_HIGH = 4.3
 # Cost model: usd = a * kwords + b * pages, at M3 rates. The understanding and the plan cost
 # 0.0044 to 0.0104 usd per 1,000 words; the page receipts cost 0.0208 to 0.0329 usd per page.
 # The factors are the smallest and the largest ratio of a measured cost to the cost model at the
-# low and the high page count of the range (1.04 and 1.20), widened by the margin (0.93 and 1.81).
+# low and the high page count of the range (1.04 and 1.64), widened by the margin (0.93 and 1.81).
 COST_PER_KWORD = 0.0075
 COST_PER_PAGE = 0.0265
 COST_LOW_FACTOR = 0.93
