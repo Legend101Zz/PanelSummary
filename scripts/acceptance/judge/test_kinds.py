@@ -33,6 +33,13 @@ class ClassifierRules(unittest.TestCase):
             "quote_clipped", "label_clutter", "cast_crowd", "repeat_variety", "plan_overload", "fidelity_label",
             "page_missing", "balloon_covers", "pose_unreadable"])
 
+    def test_rule_table_is_pinned(self):
+        # SHA-256 of repr(K) of the original launch/clusters/kinds2.py. A changed keyword, order or
+        # title fails here. Change this value only with a new classifier version (see the module docstring).
+        import hashlib
+        self.assertEqual(hashlib.sha256(repr(kinds.K).encode()).hexdigest(),
+                         "d61d75ad42cfc399af545576955f7fb0ba6a5fd8635852e655478f621632f8a9")
+
     def test_labels(self):
         self.assertEqual(kinds.labels({"what": "The prince is a tiny speck, cropped at the edge."}), ["hero_tiny"])
         self.assertIn("tail_wrong", kinds.labels({"what": "SPEAKER_OFF_PANEL on p3"}))
