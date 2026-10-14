@@ -18,6 +18,9 @@ on:
           - civil-disobedience
           - just-so-three-tales
           - self-reliance
+          - jataka-tales-thirteen
+          - indian-why-stories-eight
+          - on-a-piece-of-chalk
           - other (use book_path)
       book_path:
         description: Path of a PDF in the repo (used only when book is "other")

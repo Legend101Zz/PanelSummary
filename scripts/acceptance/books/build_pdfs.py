@@ -151,9 +151,95 @@ def self_reliance() -> None:
     render("Self-Reliance", "Ralph Waldo Emerson (1841)", chapters, HERE / "self-reliance.pdf")
 
 
+def _prose(block: str) -> list[str]:
+    """prose_blocks() without illustration marks, footnotes and footnote marks (hold-out books of v0.3)."""
+    block = re.sub(r"\[Illustration[^\]]*\]", "", block)
+    block = re.sub(r"\[Footnote[^\]]*\]", "", block, flags=re.S)
+    return [re.sub(r"\[\d+\]", "", p).strip() for p in prose_blocks(block) if p.strip()]
+
+
+_SMALL = {"the", "and", "of", "to", "a", "for", "in"}
+
+
+def _nice(t: str) -> str:
+    words = t.lower().replace("'", "\u2019").split()
+    out = " ".join(w if (0 < i and w in _SMALL) else w[:1].upper() + w[1:] for i, w in enumerate(words))
+    return out.replace("Girly-face", "Girly-Face").replace("Water-sprite", "Water-Sprite")
+
+
+def jataka_tales(out_dir: Path = HERE) -> None:
+    """Hold-out fiction (v0.3, #96): 13 of the 18 tales of Thirteen Jataka Tales (PG 62514)."""
+    body = body_of((HERE / "pg62514.txt").read_text(encoding="utf-8"))
+    body = body[body.index("\nI\n\nTHE MONKEY AND THE CROCODILE"):]
+    allh = [("I", "THE MONKEY AND THE CROCODILE"), ("II", "HOW THE TURTLE SAVED HIS OWN LIFE"), ("III", "THE MERCHANT OF SERI"),
+            ("IV", "THE TURTLE WHO COULDN'T STOP TALKING"), ("V", "THE OX WHO WON THE FORFEIT"), ("VI", "THE SANDY ROAD"),
+            ("VII", "THE QUARREL OF THE QUAILS"), ("VIII", "THE MEASURE OF RICE"), ("IX", "THE FOOLISH, TIMID RABBIT"),
+            ("X", "THE WISE AND THE FOOLISH MERCHANT"), ("XI", "THE ELEPHANT GIRLY-FACE"), ("XII", "THE BANYAN DEER"),
+            ("XIII", "THE PRINCES AND THE WATER-SPRITE"), ("XIV", "THE KING'S WHITE ELEPHANT"), ("XV", "THE OX WHO ENVIED THE PIG"),
+            ("XVI", "GRANNY'S BLACKIE"), ("XVII", "THE CRAB AND THE CRANE"), ("XVIII", "WHY THE OWL IS NOT KING OF THE BIRDS")]
+    idx = [body.index(f"\n{r}\n\n{t}\n") for r, t in allh] + [body.index("THE END")]
+    chosen = {"I", "II", "IV", "V", "VI", "VII", "IX", "XI", "XII", "XIII", "XIV", "XVII", "XVIII"}
+    chapters = []
+    for i, (r, t) in enumerate(allh):
+        if r in chosen:
+            chunk = body[idx[i] + len(f"\n{r}\n\n{t}\n"): idx[i + 1]]
+            chunk = re.sub(r"\n\s*PART (I|II)\s*\n", "\n\n", chunk)
+            chapters.append((_nice(t), _prose(chunk)))
+    render("Thirteen Jataka Tales", "Retold by Ellen C. Babbitt (1912)", chapters, out_dir / "jataka-tales-thirteen.pdf")
+
+
+def indian_why_stories(out_dir: Path = HERE) -> None:
+    """Hold-out fiction (v0.3, #96): 8 tales of Linderman, Indian Why Stories (PG 606)."""
+    body = body_of((HERE / "pg606.txt").read_text(encoding="utf-8"))
+    body = body[body.index("\nWHY THE CHIPMUNK'S BACK IS STRIPED\n"):]
+    allh = ["WHY THE CHIPMUNK'S BACK IS STRIPED", "HOW THE DUCKS GOT THEIR FINE FEATHERS", "WHY THE KINGFISHER ALWAYS WEARS A WAR-BONNET",
+            "WHY THE CURLEW'S BILL IS LONG AND CROOKED", "OLD-MAN REMAKES THE WORLD", "WHY BLACKFEET NEVER KILL MICE",
+            "OLD-MAN STEALS THE SUN'S LEGGINGS", "OLD-MAN AND HIS CONSCIENCE", "OLD-MAN'S TREACHERY",
+            "WHY THE NIGHT-HAWK'S WINGS ARE BEAUTIFUL", "WHY THE MOUNTAIN-LION IS LONG AND LEAN", "THE FIRE-LEGGINGS",
+            "THE MOON AND THE GREAT SNAKE", "WHY THE DEER HAS NO GALL"]
+    fox = "OLD-MAN AND THE FOX"
+    # the first heading starts the body; the others are found after two blank lines
+    pos = [body.index(f"\n\n\n{h}\n") if i else 0 for i, h in enumerate(allh)]
+    pos.append(body.index(f"\n\n\n{fox}\n"))
+    chosen = {"WHY THE CHIPMUNK'S BACK IS STRIPED": "Why the Chipmunk\u2019s Back Is Striped",
+              "HOW THE DUCKS GOT THEIR FINE FEATHERS": "How the Ducks Got Their Fine Feathers",
+              "WHY THE KINGFISHER ALWAYS WEARS A WAR-BONNET": "Why the Kingfisher Always Wears a War-Bonnet",
+              "WHY THE CURLEW'S BILL IS LONG AND CROOKED": "Why the Curlew\u2019s Bill Is Long and Crooked",
+              "WHY THE NIGHT-HAWK'S WINGS ARE BEAUTIFUL": "Why the Night-Hawk\u2019s Wings Are Beautiful",
+              "WHY THE MOUNTAIN-LION IS LONG AND LEAN": "Why the Mountain-Lion Is Long and Lean",
+              "THE MOON AND THE GREAT SNAKE": "The Moon and the Great Snake"}
+    chapters = []
+    for i, h in enumerate(allh):
+        if h in chosen:
+            chunk = body[pos[i] + len(f"\n\n\n{h}\n") if i else len(f"\n{h}\n"): pos[i + 1]]
+            chapters.append((chosen[h], _prose(chunk)))
+    fi = body.index(f"\n\n\n{fox}\n")
+    nxt = body.index("\n\n\nWHY THE BIRCH-TREE")
+    chapters.append(("Old-Man and the Fox", _prose(body[fi + len(fox) + 4: nxt])))
+    render("Seven Why Stories and a Trickster Tale", "Frank B. Linderman (1915)", chapters, out_dir / "indian-why-stories-eight.pdf")
+
+
+def piece_of_chalk(out_dir: Path = HERE) -> None:
+    """Hold-out nonfiction (v0.3, #96): Huxley, On a Piece of Chalk (PG 16729, Lay Sermons, chapter IX)."""
+    body = body_of((HERE / "pg16729.txt").read_text(encoding="utf-8"))
+    head = "\nON A PIECE OF CHALK.\n\nA LECTURE TO WORKING MEN.\n"
+    s = body.index(head)
+    e = body.index("\nGEOLOGICAL CONTEMPORANEITY AND PERSISTENT TYPES OF LIFE.\n")
+    paras = [p for p in _prose(body[s + len(head): e])
+             if not p.startswith("*") and p != "X." and not p.startswith("See Appendix") and not p.startswith('"Elements of Geology')]
+    n = len(paras)
+    cut = [0, n // 3, 2 * n // 3, n]
+    names = ["Part One", "Part Two", "Part Three"]
+    render("On a Piece of Chalk", "Thomas Henry Huxley (1868)", [(names[i], paras[cut[i]:cut[i + 1]]) for i in range(3)],
+           out_dir / "on-a-piece-of-chalk.pdf")
+
+
 if __name__ == "__main__":
     happy_prince()
     civil_disobedience()
     just_so_stories()
     self_reliance()
+    jataka_tales()
+    indian_why_stories()
+    piece_of_chalk()
     sys.exit(0)
