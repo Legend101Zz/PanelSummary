@@ -129,12 +129,13 @@ describe("the plan goal keeps both as warnings on record", () => {
 });
 
 describe("adaptation-plan 1.8.0 states the density rule", () => {
-  it("says at most 2 claims, when a third is allowed, and what to move", async () => {
+  it("prefers at most 2 claims, allows a third when the budget needs it, and says what to move", async () => {
     const skill = await loadSkill("adaptation-plan");
     expect(skill.version).toBe("1.8.0");
     expect(skill.content).toMatch(/at most 2 claims on a page/);
-    expect(skill.content).toMatch(/third only when all three are short\s+`core` claims/);
+    expect(skill.content).toMatch(/A third is fine when the claims are short\s+`core` claims, or when the page budget leaves no room/);
     expect(skill.content).toMatch(/never drop a\s+`core` claim/);
-    expect(skill.content).toMatch(/every place in `locations` must be one the beat names/);
+    expect(skill.content).toMatch(/List every place the beat names in `locations`\./);
+    expect(skill.content).not.toMatch(/must be one the beat names/);
   });
 });
