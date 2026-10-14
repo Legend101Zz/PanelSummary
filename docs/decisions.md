@@ -160,7 +160,7 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Statement: An edition can stop after the plan and wait. `POST /books/{id}/editions` takes `review_plan` (true or false). When it is missing, the setting `PLAN_REVIEW_DEFAULT` decides (default false, so the v0.1 flow and `journey.mjs` do not change). The choice is recorded in `policy.review_plan`.
 - Statement: When the edition waits, the understanding and the plan are stored, the page rows and beats exist, and the status is `awaiting_plan_review`. The job ends `succeeded`. No page call is made. The status is not an active status for the runner, but `POST /books/{id}/editions` returns the waiting edition (`already_running`) and does not start a second one.
 - Statement: `POST /editions/{id}/approve-plan` records `policy.plan_approved` and queues a resume job. It reuses the understanding and the plan, so only the pages are paid for. It gives 409 when the edition does not wait. `POST /editions/{id}/cancel` on a waiting edition sets `cancelled`. `resume` and page redraw give 409 while the plan waits.
-- Statement: While it waits, the edition view adds `draw_estimate_usd {low, high}` (the page term of the cost model, `COST_PER_PAGE` with the low and high factors, times `page_total`) and `plan_omitted [{claim, reason}]`. `book.claims` gives the claim text. The money spent so far is `totals.cost_usd`.
+- Statement: While it waits, the edition view adds `draw_estimate_usd {low, high}` (the page term of the cost model times `page_total`; since v0.3 (issue #88, `docs/v0.3/O1-ops.md`) it uses the measured page-receipt cost per page, `DRAW_COST_PER_PAGE_LOW` and `DRAW_COST_PER_PAGE_HIGH`, not `COST_PER_PAGE` with the factors) and `plan_omitted [{claim, reason}]`. `book.claims` gives the claim text. The money spent so far is `totals.cost_usd`.
 - Why: The plan is the cheapest point to catch a wrong cut. The owner decided to build it as a setting that is off by default.
 - Status: accepted. D12 and D13 hold: every call before and after the review has its receipt and the recorded policy.
 
@@ -191,6 +191,17 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Tail rule changed: a tail still stops about halfway to the mouth, except when that tip would end between two faces. Then it runs on to just outside its own speaker's head circle.
 - `HERO_TOO_SMALL` (warning) now uses the same measure: under 25 percent of the panel after the push. Calibration: `docs/v0.2/Q1-renderer.md`.
 - Status: accepted for the next live run. Skills: `manga-page` 1.11.0 and `book-understanding` 1.9.0.
+
+### D35. No wall-clock limit for a failing page attempt (2026-10-14, issue #84, track O1)
+- Statement: PanelSummary adds no new limit on the duration of one page attempt. The existing limit stays (`PAGE_LIMITS.timeoutMs`, 720 s, and the submit limit of 8). `settings.py` gets no new value.
+- Why: The measurement of 11 v0.2 runs (388 page attempts, all Flash) found a longest attempt of 126 s (385 accepted: median 34 s, P90 60 s; 3 failed: 93 to 126 s, all stopped by the submit limit). A limit of 180 s or more changes no attempt and saves 0 s in every run. A limit of 120 s would cut one accepted page (126 s, score 3.75) to save 6 s. The earlier tail (failed attempts of 199 to 611 s) was in M3 runs before the F1 fix and did not come back. Data: `docs/v0.3/O1-ops.md` section 2.
+- Status: accepted. Re-open if a measured run has a page attempt above 300 s that then fails.
+
+### D36. No second host in v0.3: the plan headroom endpoint is not called (2026-10-14, issue #85, track O1)
+- Statement: The worker talks only to `api.minimax.io` (D2). It does not call `GET https://www.minimax.io/v1/token_plan/remains`, and the preflight shows no plan headroom. The claim "the app talks only to api.minimax.io" stays.
+- Why: The endpoint is on a second host (`www.minimax.io`). The owner did not approve a second host for v0.3. MiniMax still publishes no price for MiniMax-M3.1-Flash-Preview (checked 2026-10-14 on the pay-as-you-go page, the rate-limit page and the M Plan pages), so costs stay estimates at M3 rates (the recorded cost equals the M3 Standard rates to the cent). Data: `docs/v0.3/O1-ops.md` section 3.
+- For v0.4 the owner decides: (1) whether a second host is acceptable, with the egress claim changed to name it and say it is read-only for the plan endpoint; (2) if yes, the call goes in the worker only, uses the existing key handling, never logs the key or headers, and its host appears in `/internal/v2/egress`; (3) if no, the preflight stays an estimate.
+- Status: accepted for v0.3.
 
 ## Superseded (history only)
 
