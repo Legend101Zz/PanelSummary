@@ -12,6 +12,8 @@ export interface CastCapability {
   nominal_height?: number;
   /** Set for a neutral stand-in species: it is drawn with a name tag (the renderer adds it). */
   stand_in?: boolean;
+  /** The body marks the look asks for (look.marks), when it is a stand-in. */
+  marks?: string[];
 }
 
 export function castCapabilities(cast: readonly CastMember[]): CastCapability[] {
@@ -27,7 +29,8 @@ export function castCapabilities(cast: readonly CastMember[]): CastCapability[] 
       // An invalid look is reported by validation; nothing is drawable.
     }
     const look = member.look as { kind?: string; species?: string } | undefined;
+    const marks = Array.isArray((member.look as { marks?: unknown })?.marks) ? ((member.look as { marks: unknown[] }).marks.filter((m) => typeof m === "string") as string[]) : [];
     const standIn = (look?.kind === "animal" || look?.kind === "bird") && (ARCHETYPE_SPECIES as readonly string[]).includes(look.species ?? "");
-    return { id: member.id, name: member.name, kind: member.look?.kind ?? "unknown", poses, expressions, ...(nominal !== undefined ? { nominal_height: Math.round(nominal * 10) / 10 } : {}), ...(standIn ? { stand_in: true } : {}) };
+    return { id: member.id, name: member.name, kind: member.look?.kind ?? "unknown", poses, expressions, ...(nominal !== undefined ? { nominal_height: Math.round(nominal * 10) / 10 } : {}), ...(standIn ? { stand_in: true } : {}), ...(standIn && marks.length > 0 ? { marks } : {}) };
   });
 }

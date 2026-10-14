@@ -1,6 +1,6 @@
 ---
 name: book-understanding
-version: 1.13.0
+version: 1.14.0
 ---
 
 # Book understanding
@@ -207,7 +207,10 @@ so report it.
    kind of place (`generic_room`, `generic_hall`, `generic_passage`, `generic_rough`,
    `generic_outdoor`) and put what the scene needs in `features`. Set `"fit": "none"` and
    `"wanted"`: the thing in the book's own words, at most 40 characters ("an old camel",
-   "a ruined tower"). The renderer draws a name tag for an archetype.
+   "a ruined tower"). The renderer draws a name tag for an archetype. Give an animal archetype
+   `marks` for what the book says about its body, at most 3 (`long_neck`, `long_nose`, `horns`,
+   `big_ears`, `long_tail`; see `stand_in_vocabulary`): a tall long-necked browser is `quad_large`
+   with `long_neck`. Marks are only for archetypes; a named species needs none.
 3. **Size.** Leave `look.scale` out by default. The renderer already draws each named species at
    a readable size and ignores `scale` there (the receipt shows SCALE_NOT_USED). Set it only (a) on
    a neutral archetype stand-in, to give its size relative to a person (0.5 = half a person; a

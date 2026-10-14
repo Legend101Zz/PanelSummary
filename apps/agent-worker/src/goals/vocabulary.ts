@@ -3,6 +3,14 @@ import * as C from "@panelsummary/manga-render/contracts";
 
 /** Neutral archetype species, by body plan (D1a draws them; D30 asks the model to say when it uses one). */
 export const ARCHETYPE_SPECIES = ["quad_small", "quad_medium", "quad_large", "long_low", "swimmer", "bird_tall"] as const;
+/** Body marks of a neutral stand-in (D1a Marks, renderer 0.7.2): one plain line each. */
+export const MARK_MEANINGS = {
+  long_neck: "a neck 2-3 times longer, the head held high (a tall browser, a long-necked bird)",
+  long_nose: "a long flexible nose or snout tube hanging from the face",
+  horns: "two short horns on the head",
+  big_ears: "large flat ears at the sides of the head",
+  long_tail: "a long tail",
+} as const;
 /** Neutral backdrops by kind of place. */
 export const GENERIC_ENVIRONMENTS = ["generic_room", "generic_hall", "generic_passage", "generic_rough", "generic_outdoor"] as const;
 /** Neutral props by shape. */
@@ -53,6 +61,8 @@ export function standInVocabulary() {
     ...((C.ANIMAL_SPECIES as readonly string[]).includes("quad_large")
       ? { look_scale: "optional number 0.05-4.0. Leave it out by default. The renderer uses it only on a neutral archetype species (size relative to an adult human: 0.5 = half the height of a person) and on a human below 1.0 (a person the book says is tiny). It ignores it on a named animal or bird species (each is drawn at a readable size already) and on a human of 1.0 or more (use height: giant for a big person)." }
       : {}),
+    look_marks: `optional list of at most ${C.LOOK_MARKS_MAX} body marks on an animal or bird look whose species is a neutral stand-in (${ARCHETYPE_SPECIES.join(", ")}); it tells apart animals that share a body plan. Leave it out for the plain body.`,
+    marks_by_meaning: shown(MARK_MEANINGS, C.LOOK_MARKS),
     fit: `optional on cast and locations: ${C.FITS.join(" | ")}. exact = the item is the thing; near = the same kind of thing; none = a neutral stand-in.`,
     wanted: `needed when fit is near or none: the thing in the book's own words, at most ${C.WANTED_MAX} characters ("an old camel").`,
     unmapped: 'optional top-level list of {"type": "cast" | "place" | "prop", "ref": "<cast or location id>", "wanted": "...", "used": "..."}: things that no item fits, and the neutral item used.',

@@ -48,8 +48,8 @@ describe("the contracts list the stand-ins", () => {
     expect(c.warnings.NEUTRAL_PROP_UNLABELLED).toBeDefined();
     expect(c.errors.LOOK_SCALE_RANGE).toBeDefined();
   });
-  it("is renderer 0.7.1", () => {
-    expect(RENDERER_VERSION).toBe("manga-render/0.7.1");
+  it("is renderer 0.7.2", () => {
+    expect(RENDERER_VERSION).toBe("manga-render/0.7.2");
   });
 });
 

@@ -49,6 +49,30 @@ Nothing is for one book. Each new value is a body plan, a size, a kind of place 
 - Why six and not seven: the diagnosis names no need for a seventh body plan. `scale` gives the size.
 - `ARCHETYPE_SPECIES` in `contracts.ts` lists the six.
 
+### Marks (`look.marks`, renderer 0.7.2)
+
+Gate 1 on the Just So tuning book showed that the neutral stand-ins are no longer wrong animals, but the judges could not tell them apart or match them to the book ("the Giraffe has no long neck", "the Elephant's Child has no visible boot-nose", "the Hippo aunt is near-identical to the child", "the Ostrich reads as a penguin"). An animal or bird look whose species is a stand-in now takes an optional `marks` list.
+
+| Mark | What it draws | Where |
+| --- | --- | --- |
+| `long_neck` | a neck 2 to 4 times longer, the head held high | quad_*: longer neck at a steeper angle, a tall column in the front view. bird_tall: the head higher on a long neck. long_low, swimmer: the head carried up on a neck |
+| `long_nose` | a long flexible tube from the face, hanging down (it never goes below the ground) | the same tube in every archetype; in the front view it hangs over the chest |
+| `horns` | two short horns on the head, paler than the body | every archetype |
+| `big_ears` | large flat ears with a paler inner part | at the back of the head (side view), at both sides (front view) |
+| `long_tail` | a long tail | quad_*: a thin tail down to near the ground (also at the side in the front view); bird_tall: long tail feathers; long_low: a longer tail; swimmer: a long tail stalk and fin |
+
+Rules:
+- Only on the six archetype species. On another species the validator gives the error `LOOK_MARKS_NOT_ARCHETYPE`, and the rig ignores the marks. An unknown mark is `ENUM_INVALID`. More than 3 marks is `LOOK_MARKS_TOO_MANY`. A mark listed twice is a warning (`DUPLICATE_VALUE`). An empty list is the same as no list.
+- Absent marks draw exactly the 0.7.x figure (the gold files of `gold-0.7.0.test.ts` do not change).
+- A mark is drawn in every pose and in the front and back view, in the same flat neutral style as the plain body (same outline, one tone; horns and the inner ear are paler).
+- `long_neck` makes the figure taller. `nominalHeight` and `nativeHeight` grow by a measured factor (quad_small 1.42, quad_medium 1.53, quad_large 1.61, long_low 1.67, swimmer 1.53, bird_tall 1.39). With `look.scale` the total height, neck included, is 100 x scale. The test checks the factors against the drawn height.
+- Combinations render (for example quad_large + long_nose + big_ears, quad_large + long_neck + horns + long_tail).
+- Code: `rig/creature/marks.ts` (flags and shared shapes), `rig/creature/quad.ts` (`applyQuadMarks`), `rig/bird.ts` (`applyBirdMarks`), `rig/creature/critters.ts` (`headMarks`).
+- Vocabulary: `catalog().looks.animal.fields.marks` and `.bird.fields.marks`, `castCapabilities()[].marks`, and the `look_marks` and `marks_by_meaning` lines of `standInVocabulary()` in the agent worker. The skill text that tells the model when to use a mark is added by the orchestrator.
+- Evidence: contact sheets in the scratch directory of track mk (`sheets/archetype-<species>.png`, each mark and three combinations in stand, walk, talk and front view beside an adult person) and three re-rendered Just So tuning pages (`justso/page-N-with.png` against `page-N-plain.png`).
+
+Marks do not make an animal a species. A quad_large with `long_nose` and `big_ears` is a heavy neutral body with a nose and ears. The name tag still tells what it is.
+
 ### `look.scale`
 
 - Optional number on every look kind. Range 0.05 to 4.0. A person who is an adult is 1.0 (100 figure units).
