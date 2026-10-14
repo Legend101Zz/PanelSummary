@@ -37,6 +37,7 @@ import {
 } from "./common.js";
 import { EXPR, drawFace, mouthOpen } from "./face.js";
 import { polyPath } from "../../svg.js";
+import { type Marks, NO_MARKS, anyMark, hangingTube, hornFill } from "./marks.js";
 
 export type QuadSpecies = "rat" | "mouse" | "cat" | "dog" | "fox" | "rabbit" | "horse" | "bear" | "quad_small" | "quad_medium" | "quad_large";
 
@@ -77,6 +78,25 @@ export const QUAD: Record<QuadSpecies, QuadSpec> = {
   quad_medium: { h: 60, legF: 40, legH: 40, bodyL: 46, chest: 13, hip: 12, legW: 5.2, paw: 3.4, R: 8.2, muz: { l: 18, h: 7, drop: 0.1, round: 0.6 }, neck: { l: 21, ang: 56, w: 9 }, ears: { kind: "small", size: 6 }, tail: { kind: "dog", l: 9, w: 3 }, eye: 0.3, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.6 },
   quad_large: { h: 170, legF: 87, legH: 87, bodyL: 120, chest: 37, hip: 36, legW: 23, paw: 13, R: 22, muz: { l: 44, h: 24, drop: 0.1, round: 0.3 }, neck: { l: 28, ang: 0, w: 46 }, ears: { kind: "small", size: 14 }, tail: { kind: "dog", l: 34, w: 4 }, eye: 0.26, whiskers: false, mane: false, hoof: false, longFoot: false, fluffy: false, nose: 0.5 },
 };
+
+/**
+ * Body marks of a neutral quad (v0.3, #81, renderer 0.7.2): long_neck (a neck 2-3 times longer, the head held high)
+ * and long_tail change the proportions of the spec; the other marks are drawn as extra parts in drawQuad.
+ * No mark returns the spec itself, so the plain drawing is exactly the 0.7.x drawing.
+ */
+function applyQuadMarks(sp: QuadSpecies, s0: QuadSpec, m: Marks): QuadSpec {
+  if (!m.neck && !m.tail) return s0;
+  const s: QuadSpec = { ...s0, neck: { ...s0.neck }, tail: { ...s0.tail } };
+  if (m.neck) {
+    const k = sp === "quad_large" ? 3.6 : sp === "quad_medium" ? 2.8 : 4.2;
+    s.neck = { l: s0.neck.l * k, ang: Math.max(s0.neck.ang, 66), w: s0.neck.w * (sp === "quad_large" ? 0.46 : 0.6) };
+  }
+  if (m.tail) {
+    const k = sp === "quad_large" ? 2.4 : sp === "quad_medium" ? 3.4 : 2.8;
+    s.tail = { kind: "dog", l: s0.tail.l * k, w: s0.tail.w * 1.5 };
+  }
+  return s;
+}
 
 const SIT_POSES: readonly Pose[] = ["sit", "talk", "wave", "point", "think", "hold"];
 
@@ -327,9 +347,10 @@ export function drawQuad(
   facing: "right" | "front" | "back",
   pen: Pen,
   seed: number,
+  m: Marks = NO_MARKS,
 ): AnimalBuilt {
-  const s = QUAD[sp];
-  if (facing !== "right") return isBoxy(sp) ? drawBoxyFront(sp, s, tone, pose, expression, facing === "back", pen) : drawQuadFront(sp, s, tone, pose, expression, facing === "back", pen);
+  const s = applyQuadMarks(sp, QUAD[sp], m);
+  if (facing !== "right") return isBoxy(sp) ? drawBoxyFront(sp, s, tone, pose, expression, facing === "back", pen, m) : drawQuadFront(sp, s, tone, pose, expression, facing === "back", pen, m);
   const q = solvePose(sp, s, pose);
   const sk = new Sketch(pen);
   const rand = charRand(seed, `quad-${sp}`);
@@ -445,6 +466,8 @@ export function drawQuad(
   }
   if (T.kind === "horse") tailSpine = [tb, addP(tb, P(-T.l * 0.2, T.l * 0.25)), addP(tb, P(-T.l * 0.3, T.l * 0.65)), addP(tb, P(-T.l * 0.22, T.l * 0.95))];
   if (q.tailMode === "lift" && T.kind === "horse") tailSpine = [tb, addP(tb, P(-T.l * 0.45, T.l * 0.05)), addP(tb, P(-T.l * 0.85, T.l * 0.2))];
+  // v0.3 (#81) long_tail: a boxy body's long tail hangs down behind the rump (a thin line the length of the legs)
+  if (m.tail && boxy && (q.tailMode === "down" || q.tailMode === "tuck")) tailSpine = [tb, addP(tb, P(-T.l * 0.07, T.l * 0.3)), addP(tb, P(-T.l * 0.1, T.l * 0.64)), addP(tb, P(T.l * 0.0, T.l * 0.97))];
   // keep tails above the ground
   tailSpine = tailSpine.map((p) => P(p.x, Math.min(p.y, -T.w * 0.6)));
   if (flip) tailSpine = tailSpine.map((p, i) => (i === 0 ? p : P(p.x, Math.min(p.y, tb.y + (p.y - tb.y) * -0.5))));
@@ -570,6 +593,26 @@ export function drawQuad(
     sk.line(curveD(ml), pen.dw * 1.2, { halo: dark });
     if (x.mouth === "grit" && open <= 0.05) sk.line(lineD([hp(R * 1.0, mouthLineY + R * 0.12), hp(R * 1.9, mouthLineY + R * 0.12)]), pen.fw, { halo: dark });
   }
+  // v0.3 (#81) marks on the head: horns, big ears (the flaps sit at the back of the head), a long nose
+  const hornF = hornFill(tone, pen);
+  const horn = (bx: number, lean: number) => {
+    const topY = boxy ? -0.7 : -0.85;
+    const pts = [hp(R * bx, R * topY), hp(R * (bx + lean * 0.45), R * (topY - 0.62)), hp(R * (bx + lean + 0.1), R * (topY - 1.2))];
+    sk.shape(taperD(pts, [R * 0.55, R * 0.38, R * 0.06], { samples: 5 }), hornF);
+  };
+  const bigEar = (far: boolean) => {
+    const o = far ? P(0.42, -0.3) : P(0, 0);
+    const flap: Array<[number, number]> = [[-0.45, -0.55], [-1.15, -1.2], [-2.0, -1.0], [-2.3, -0.05], [-1.95, 1.0], [-1.1, 1.4], [-0.5, 0.6]];
+    sk.shape(blobD(flap.map(([fx, fy]) => hp(R * (fx + o.x), R * (fy + o.y))), 0.45), far ? farFur : fur);
+    if (!far) {
+      const inner: Array<[number, number]> = [[-0.75, -0.3], [-1.2, -0.8], [-1.8, -0.6], [-1.95, 0.0], [-1.65, 0.7], [-1.1, 0.95], [-0.8, 0.4]];
+      sk.shape(blobD(inner.map(([fx, fy]) => hp(R * fx, R * fy)), 0.45), innerEar, { edge: pen.fw });
+    }
+  };
+  if (m.horns) {
+    horn(0.42, -0.34);
+    horn(-0.18, -0.34);
+  }
   // ears (far ear first, behind skull)
   const earFill = fur;
   const innerEar = fillOf(dark ? "mid" : "light", pen);
@@ -609,7 +652,8 @@ export function drawQuad(
   const es = s.ears.size;
   const earAngFar = (s.ears.kind === "small" ? -105 : s.ears.kind === "long" ? -118 : s.ears.kind === "flop" ? -150 : -125) * DEG + headDir;
   const earAngNear = (s.ears.kind === "small" ? -82 : s.ears.kind === "long" ? -95 : s.ears.kind === "flop" ? -60 : -78) * DEG + headDir;
-  if (!boxy) ear(hp(-R * 0.55, -R * 0.55), earAngFar, es * 0.92, true);
+  if (m.ears) bigEar(true);
+  else if (!boxy) ear(hp(-R * 0.55, -R * 0.55), earAngFar, es * 0.92, true);
   else ear(hp(-R * 0.72, -R * 0.12), (-176 * DEG) + headDir, es, true);
   // skull + muzzle
   const M = s.muz;
@@ -623,6 +667,21 @@ export function drawQuad(
   const jaw = (p: Point) => rotP(p, jawOpen, jawPivot);
   if (boxy) drawBoxyHead();
   else drawFurHead();
+  // v0.3 (#81) long_nose: a long flexible tube from the front of the face, hanging down (never below the ground)
+  if (m.nose) {
+    const root = boxy ? hp(R * ((sp === "quad_large" ? 2.12 : 2.34) - 0.25), R * (heavy ? -0.1 : -0.02)) : hp(R * 0.5 + M.l * 0.9, drop - M.h * 0.2);
+    const wRoot = boxy ? R * (heavy ? 0.74 : 0.52) : Math.max(M.h * 0.8, R * 0.34);
+    const len = R * (boxy ? (heavy ? 3.7 : 3.4) : 3.2);
+    const t = hangingTube(root, headDir + 0.45, Math.PI / 2 - 0.3, len, -wRoot * 0.3);
+    sk.shape(taperD(t.spine, [wRoot, wRoot * 0.86, wRoot * 0.72, wRoot * 0.62, wRoot * 0.58], { samples: 4 }), fur, { edge: false });
+    const tipP = t.spine[t.spine.length - 1];
+    sk.shape(blobD(ellipsePts(P(0, 0), wRoot * 0.16, wRoot * 0.12, 10).map((p) => addP(polar(tipP, wRoot * 0.2, t.endAngle), rotP(p, t.endAngle))), 0.5), INK, { outline: false });
+    for (const f of [3, 5]) {
+      const c = t.spine[f];
+      const a = Math.atan2(t.spine[f + 1].y - t.spine[f - 1].y, t.spine[f + 1].x - t.spine[f - 1].x) + Math.PI / 2;
+      sk.line(lineD([polar(c, wRoot * 0.3, a), polar(c, -wRoot * 0.3, a)]), pen.fw, { halo: dark });
+    }
+  }
   function drawFurHead(): void {
   const tip = horse ? hp(R * 0.5 + M.l * 1.03, drop + M.h * 0.1) : hp(R * 0.55 + M.l, drop - M.h * 0.1);
   const muzTop = horse
@@ -689,7 +748,8 @@ export function drawQuad(
   }
   // near ear on top: round ears (rat, mouse, bear) sit on the skull's
   // back-top edge in three-quarter view (on the crown they read as a coin)
-  if (boxy) ear(hp(-R * 0.62, -R * 0.12), (-168 * DEG) + headDir, es, false);
+  if (m.ears) bigEar(false);
+  else if (boxy) ear(hp(-R * 0.62, -R * 0.12), (-168 * DEG) + headDir, es, false);
   else if (s.ears.kind === "round" || s.ears.kind === "bear") ear(hp(-R * 0.36, -R * 0.62), (-112 * DEG) + headDir, es * 0.95, false);
   else if (s.ears.kind === "small") ear(hp(-R * 0.38, -R * 0.55), (-128 * DEG) + headDir, es, false);
   else ear(hp(R * 0.1, -R * 0.75), earAngNear, es, false);
@@ -746,7 +806,7 @@ function taperDfox(spine: Point[], w: number): { body: string; tip: string } {
 // ---------------------------------------------------------------------------
 // Front / back views
 
-function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, expression: Expression, back: boolean, pen: Pen): AnimalBuilt {
+function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, expression: Expression, back: boolean, pen: Pen, m: Marks = NO_MARKS): AnimalBuilt {
   const sk = new Sketch(pen);
   const fur = fillOf(tone, pen);
   const farFur = fillOf(darker(tone), pen);
@@ -801,10 +861,21 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   }
   // head
   const neckUp = sp === "horse" ? s.neck.l * 0.8 : sp === "bear" ? R * 0.4 : neutral ? -R * 0.15 : R * 0.6;
-  const Hc = P(0, bodyTop - neckUp);
+  // v0.3 (#81) long_neck: the head is carried on a tall tapered column
+  const Hc = P(0, bodyTop - neckUp - (m.neck ? R * 2.6 : 0));
   if (sp === "horse") sk.shape(taperD([P(0, chestY), Hc], [cw * 1.3, R * 1.3], { samples: 2 }), fur, { edge: false });
+  if (m.neck) sk.shape(taperD([P(0, chestY - s.chest * 0.3), Hc], [R * 1.5, R * 1.1], { samples: 3 }), fur, { edge: false });
   const es = s.ears.size;
-  for (const side of [-1, 1]) {
+  if (m.horns) {
+    for (const side of [-1, 1]) sk.shape(taperD([P(side * R * 0.5, Hc.y - R * 0.78), P(side * R * 0.62, Hc.y - R * 1.4), P(side * R * 0.48, Hc.y - R * 2.0)], [R * 0.55, R * 0.38, R * 0.06], { samples: 5 }), hornFill(tone, pen));
+  }
+  if (m.ears) {
+    for (const side of [-1, 1]) {
+      const c = P(side * R * 1.7, Hc.y - R * 0.1);
+      sk.shape(ellipseD(c, R * 0.85, R * 1.2), side === 1 ? fur : farFur);
+      sk.shape(ellipseD(c, R * 0.5, R * 0.85), fillOf(dark ? "mid" : "light", pen), { edge: pen.fw });
+    }
+  } else for (const side of [-1, 1]) {
     const base = P(side * R * 0.6, Hc.y - R * 0.6);
     const E = s.ears.kind;
     if (E === "small") {
@@ -841,6 +912,16 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
     const open = mouthOpen(expression, pose === "talk");
     sk.raw(drawFace({ c: P(0, Hc.y - R * 0.18), gap: R * 0.4, eyeR: R * s.eye, turn: 0, pen, headR: R, dark, mouth: { dy: mc.y + mh * 0.3 - (Hc.y - R * 0.18), w: mw * 0.55 }, talking: pose === "talk" || open > 0.5 }, expression));
     mouth = P(0, mc.y + mh * 0.3);
+    // v0.3 (#81) long_nose: a tube hangs from the muzzle down over the chest (never below the ground)
+    if (m.nose) {
+      const root = P(0, mc.y - mh * 0.2);
+      const wRoot = Math.max(mw * 1.2, R * 0.6);
+      const len = Math.min(R * 2.6, -wRoot * 0.3 - root.y);
+      const sp3 = [root, P(wRoot * 0.08, root.y + len * 0.34), P(-wRoot * 0.06, root.y + len * 0.68), P(wRoot * 0.04, root.y + len)];
+      sk.shape(taperD(sp3, [wRoot, wRoot * 0.8, wRoot * 0.66, wRoot * 0.6], { samples: 4 }), fillOf(lighter(tone), pen), { edge: pen.dw });
+      sk.shape(blobD(ellipsePts(P(0, 0), wRoot * 0.2, wRoot * 0.13, 10).map((p) => addP(P(sp3[3].x, sp3[3].y - wRoot * 0.12), p)), 0.5), INK, { outline: false });
+      for (const f of [0.45, 0.72]) sk.line(lineD([P(sp3[3].x - wRoot * 0.28, root.y + len * f), P(sp3[3].x + wRoot * 0.28, root.y + len * f)]), pen.fw, { halo: dark });
+    }
     if (s.whiskers) {
       for (const side of [-1, 1]) for (const dy of [-0.15, 0.1]) sk.line(lineD([P(side * mw * 0.7, mc.y + dy * mh), P(side * (mw + R * 0.7), mc.y + dy * mh * 2 - R * 0.05)]), pen.fw);
     }
@@ -856,7 +937,7 @@ function drawQuadFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
 // front, the hind pair at the outer sides behind); the head is level with or below the top of the body outline.
 // quad_medium: a narrow oval face in front of a narrow body on four slim legs; the neck carries the head a little above the back.
 
-function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, expression: Expression, back: boolean, pen: Pen): AnimalBuilt {
+function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, expression: Expression, back: boolean, pen: Pen, m: Marks = NO_MARKS): AnimalBuilt {
   const sk = new Sketch(pen);
   const fur = fillOf(tone, pen);
   const farFur = fillOf(darker(tone), pen);
@@ -878,8 +959,16 @@ function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
       sk.shape(ellipseD(P(side * cw * 0.84, -s.paw * 0.55), s.paw * (large ? 1.2 : 0.95), s.paw * 0.58), farFur);
     }
   }
-  // tail: hangs behind the rump (seen from behind), thin and short
-  if (back) sk.shape(taperD([P(0, bodyTop + barrelH * 0.2), P(s.tail.w * 0.4, bodyTop + barrelH * 0.2 + s.tail.l * 0.5), P(0, bodyTop + barrelH * 0.2 + s.tail.l)], [s.tail.w * 1.1, s.tail.w * 0.8, s.tail.w * 0.4], { samples: 4 }), fur);
+  // tail: hangs behind the rump (seen from behind), thin and short (a long_tail hangs in front of the rump, below)
+  const tailD = taperD([P(0, bodyTop + barrelH * 0.2), P(s.tail.w * 0.4, bodyTop + barrelH * 0.2 + s.tail.l * 0.5), P(0, bodyTop + barrelH * 0.2 + s.tail.l)], [s.tail.w * 1.1, s.tail.w * 0.8, s.tail.w * 0.4], { samples: 4 });
+  if (back && !m.tail) sk.shape(tailD, fur);
+  // v0.3 (#81) long_tail, seen from the front: the tail hangs at the side of the rump
+  if (m.tail && !back) {
+    const x0 = -cw * 0.88;
+    const y0 = bodyTop + barrelH * 0.4;
+    const l = Math.min(s.tail.l * 0.85, -y0 - s.paw * 1.5);
+    sk.shape(taperD([P(x0, y0), P(x0 - cw * 0.3, y0 + l * 0.35), P(x0 - cw * 0.22, y0 + l * 0.7), P(x0 - cw * 0.3, y0 + l)], [s.tail.w * 1.1, s.tail.w * 0.9, s.tail.w * 0.6, s.tail.w * 0.4], { samples: 4 }), fur);
+  }
   // barrel
   const t = bodyTop;
   const b = bodyBot;
@@ -888,6 +977,7 @@ function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
     fur,
     { edge: false },
   );
+  if (back && m.tail) sk.shape(tailD, fur);
   // fore legs
   sk.layer();
   for (const side of [-1, 1]) {
@@ -898,11 +988,26 @@ function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
   // head
   const hw = large ? R * 1.2 : R * 0.78;
   const hh = large ? R * 0.82 : R * 1.08;
-  const Hc = large ? P(0, bodyTop + hh * 1.12) : P(0, bodyTop - R * 0.2);
+  // v0.3 (#81) long_neck: the head is carried on a tall tapered column
+  const neckUp = m.neck ? R * (large ? 2.7 : 2.4) : 0;
+  const Hc = large ? P(0, bodyTop + hh * 1.12 - neckUp) : P(0, bodyTop - R * 0.2 - neckUp);
   let mouth = P(0, Hc.y + hh * 0.6);
-  if (!large) sk.shape(taperD([P(0, bodyTop + barrelH * 0.3), Hc], [cw * 0.95, hw * 1.0], { samples: 2 }), fur, { edge: false });
+  if (m.neck) sk.shape(taperD([P(0, bodyTop + barrelH * 0.35), Hc], large ? [R * 1.5, R * 1.05] : [R * 1.3, R * 0.95], { samples: 3 }), fur, { edge: false });
+  else if (!large) sk.shape(taperD([P(0, bodyTop + barrelH * 0.3), Hc], [cw * 0.95, hw * 1.0], { samples: 2 }), fur, { edge: false });
   const es = s.ears.size;
-  for (const side of [-1, 1]) sk.shape(ellipseD(P(side * (hw + es * 0.38), Hc.y - hh * 0.2), es * 0.55, es * 0.34), side === 1 ? fur : farFur);
+  if (m.horns) {
+    for (const side of [-1, 1]) {
+      const b0 = P(side * hw * 0.52, Hc.y - hh * 0.8);
+      sk.shape(taperD([b0, P(side * hw * 0.64, Hc.y - hh * 0.8 - R * 0.6), P(side * hw * 0.5, Hc.y - hh * 0.8 - R * 1.2)], [R * 0.55, R * 0.38, R * 0.06], { samples: 5 }), hornFill(tone, pen));
+    }
+  }
+  for (const side of [-1, 1]) {
+    if (m.ears) {
+      const c = P(side * (hw + R * 0.8), Hc.y - hh * 0.05);
+      sk.shape(ellipseD(c, R * 0.85, R * 1.2), side === 1 ? fur : farFur);
+      sk.shape(ellipseD(c, R * 0.5, R * 0.85), fillOf(dark ? "mid" : "light", pen), { edge: pen.fw });
+    } else sk.shape(ellipseD(P(side * (hw + es * 0.38), Hc.y - hh * 0.2), es * 0.55, es * 0.34), side === 1 ? fur : farFur);
+  }
   if (large) {
     const h = hh;
     sk.shape(blobD([P(-hw * 0.5, Hc.y - h), P(hw * 0.5, Hc.y - h), P(hw, Hc.y - h * 0.6), P(hw * 1.02, Hc.y + h * 0.35), P(hw * 0.85, Hc.y + h), P(-hw * 0.85, Hc.y + h), P(-hw * 1.02, Hc.y + h * 0.35), P(-hw, Hc.y - h * 0.6)], 0.4), fur, { edge: pen.dw });
@@ -922,6 +1027,16 @@ function drawBoxyFront(sp: QuadSpecies, s: QuadSpec, tone: Tone, pose: Pose, exp
     const mouthY = mc.y + mh * 0.62;
     sk.raw(drawFace({ c: P(0, eyeY), gap: large ? R * 1.25 : R * 0.6, eyeR: R * s.eye, turn: 0, pen, headR: R, dark, mouth: { dy: mouthY - eyeY, w: mw * 0.5 }, talking: pose === "talk" || open > 0.5 }, expression));
     mouth = P(0, mouthY);
+    // v0.3 (#81) long_nose: a tube hangs from the muzzle down over the chest (never below the ground)
+    if (m.nose) {
+      const root = P(0, mc.y - mh * 0.25);
+      const wRoot = mw * 1.25;
+      const len = Math.min(R * (large ? 2.6 : 2.3), -wRoot * 0.3 - root.y);
+      const sp3 = [root, P(wRoot * 0.08, root.y + len * 0.34), P(-wRoot * 0.06, root.y + len * 0.68), P(wRoot * 0.04, root.y + len)];
+      sk.shape(taperD(sp3, [wRoot, wRoot * 0.8, wRoot * 0.66, wRoot * 0.6], { samples: 4 }), fillOf(lighter(tone), pen), { edge: pen.dw });
+      sk.shape(blobD(ellipsePts(P(0, 0), wRoot * 0.2, wRoot * 0.13, 10).map((p) => addP(P(sp3[3].x, sp3[3].y - wRoot * 0.12), p)), 0.5), INK, { outline: false });
+      for (const f of [0.45, 0.72]) sk.line(lineD([P(sp3[3].x - wRoot * 0.28, root.y + len * f), P(sp3[3].x + wRoot * 0.28, root.y + len * f)]), pen.fw, { halo: dark });
+    }
   }
   return { sk, head: Hc, headR: R, mouth, hand: undefined, waist: bodyBot - s.chest, shoulders: bodyTop };
 }

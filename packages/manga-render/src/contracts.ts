@@ -255,9 +255,19 @@ export interface BirdLook {
    * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
    */
   scale?: number;
+  /** Optional body marks, only for the neutral stand-in species (see LOOK_MARKS). Absent = the plain drawing. */
+  marks?: LookMark[];
   species: (typeof BIRD_SPECIES)[number];
   tone: Tone;
 }
+
+/**
+ * Body marks of a neutral stand-in (v0.3, #81, renderer 0.7.2): what makes a plain body tell apart. Only on the
+ * archetype species (ARCHETYPE_SPECIES), at most LOOK_MARKS_MAX of them. Drawn flat and neutral by the archetype's rig.
+ */
+export const LOOK_MARKS = ["long_neck", "long_nose", "horns", "big_ears", "long_tail"] as const;
+export type LookMark = (typeof LOOK_MARKS)[number];
+export const LOOK_MARKS_MAX = 3;
 
 export const ANIMAL_SPECIES = [
   "rat",
@@ -290,6 +300,8 @@ export interface AnimalLook {
    * Absent: the look keeps its usual size. Present: the figure is drawn at 100 x scale.
    */
   scale?: number;
+  /** Optional body marks, only for the neutral stand-in species (see LOOK_MARKS). Absent = the plain drawing. */
+  marks?: LookMark[];
   species: (typeof ANIMAL_SPECIES)[number];
   tone: Tone;
 }

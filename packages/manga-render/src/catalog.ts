@@ -65,6 +65,16 @@ export const TEXT_KIND_GUIDE: Record<C.TextKind, string> = {
   sfx: 'drawn sound effect lettering, 1-3 sound words (no speaker), e.g. "FLAP FLAP". Placed in free space near the action, never over a face; it may break the panel border in panels with impact_burst or speed_lines.',
 };
 
+/** The optional look.marks field (v0.3, #81, renderer 0.7.2): what makes a neutral stand-in tell apart. */
+export const MARKS_MEANING: Record<C.LookMark, string> = {
+  long_neck: "a neck 2-3 times longer, the head held high (a tall browser, a long-necked bird)",
+  long_nose: "a long flexible nose or snout tube hanging from the face (a trunk, a snout)",
+  horns: "two short horns on the head",
+  big_ears: "large flat ears at the sides of the head",
+  long_tail: "a long tail",
+};
+const MARKS_FIELD = `optional list of at most ${C.LOOK_MARKS_MAX} of: ${C.LOOK_MARKS.map((m) => `${m} (${MARKS_MEANING[m]})`).join("; ")}. Only on a neutral stand-in species (${C.ARCHETYPE_SPECIES.join(", ")}); it is an error (LOOK_MARKS_NOT_ARCHETYPE) on any other. Use it to tell animals apart that share a body plan (a tall browsing animal is quad_large + long_neck; a heavy long-nosed animal is quad_large + long_nose + big_ears; a large ostrich-like bird is bird_tall + long_neck). Leave it out for the plain body.`;
+
 /** The optional look.scale field, as the writer sees it (v0.3, #81). */
 const SCALE_FIELD = `optional number ${C.LOOK_SCALE_MIN}-${C.LOOK_SCALE_MAX}: the size of a STAND-IN, as a height relative to an adult person (1 = an adult, 0.5 = half as tall). It applies only to a neutral species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) and to a person who is smaller than an adult (0.12 up to, but not including, 1). On every other look (a named animal, bird or insect, an object, a plant, a spirit, a crowd, an emblem) and for a person of 1 or more, the renderer ignores it (warning LOOK_SCALE_IGNORED): a named species is already drawn at a size that reads in a panel; for a giant person use height "giant". A scale under ${LOOK_SCALE_FLOOR} is drawn at ${LOOK_SCALE_FLOOR} (warning LOOK_SCALE_FLOOR). It is not a real-world size: do not set it to make a swallow small beside a statue.`;
 
@@ -76,7 +86,7 @@ const SCALE_FIELD = `optional number ${C.LOOK_SCALE_MIN}-${C.LOOK_SCALE_MAX}: th
 export const STAND_IN_NOTES: Record<string, string> = {
   "animal.quad_small": "four-legged body, small (like a hare or a rodent), one flat tone, plain ears and tail, no species marks",
   "animal.quad_medium": "four-legged body, medium (like a dog or a deer), one flat tone, plain ears and tail, no species marks",
-  "animal.quad_large": "four-legged body, large (like a cow or bigger), one flat tone, plain ears and tail, no mane, horns or trunk",
+  "animal.quad_large": "four-legged body, large (like a cow or bigger), one flat tone, plain ears and tail, no mane, horns or trunk unless look.marks adds them",
   "animal.long_low": "long low body with a long tail (a reptile, a snake, a crawler); use look.scale for a big or a small one",
   "animal.swimmer": "a water animal body (fish-shaped); use look.scale for a big one",
   "bird.bird_tall": "a tall bird with long legs and a long neck, one flat tone, no species marks",
@@ -103,6 +113,7 @@ export const FIELD_GUIDE: Record<string, string> = {
   "figure.holding_tone": "tone of the held prop, so key objects stay distinct across pages (a ruby \"black\", a sapphire \"mid\").",
   "prop.tone": "tone variant of a prop on the ground or in an insert (ruby vs sapphire).",
   "look.scale": SCALE_FIELD,
+  "look.marks": MARKS_FIELD,
   "prop.label": `for the five neutral props (thing_long, thing_round, thing_block, thing_flat, thing_heap) ONLY: plain text, at most ${C.PROP_LABEL_MAX} characters (e.g. "bone", "the cheese"). Drawn as a small name tag beside the prop. On any other prop the renderer ignores the label (warning PROP_LABEL_IGNORED): a named prop needs no label, and a colour is shown with "tone" or with a cast member of its own. A neutral prop without a label is a warning (NEUTRAL_PROP_UNLABELLED): the reader would see an unnamed shape.`,
   "figure.archetype_tag": "a cast member of a neutral species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) gets its cast name as a name tag in the first panel of each page where it is drawn, unless you already put a name-tag caption (text.about) for it on that page.",
   "text.about": "captions only: the cast id this caption names; drawn as a name tag beside that character.",
@@ -126,6 +137,8 @@ export const ERROR_GUIDE: Record<string, string> = {
   KEY_PROP_COVERED: "text had to cover the prop the beat is about: shorten the text, give the panel more room, or show the object in an insert.",
   VARIANT_FIELD_INVALID: "a look variant sets a field the character's kind does not have (material only for people; tone only for creatures, objects and plants).",
   TEXT_GLYPH_MISSING: "the lettering font has no glyph for a character (it would print as an empty box): write it with plain letters and punctuation.",
+  LOOK_MARKS_NOT_ARCHETYPE: `a look's "marks" is on a species that is not a neutral stand-in (${C.ARCHETYPE_SPECIES.join(", ")}): remove "marks", or use the neutral species that fits.`,
+  LOOK_MARKS_TOO_MANY: `a look's "marks" lists more than ${C.LOOK_MARKS_MAX} marks: keep the ones that tell this animal apart.`,
   LOOK_SCALE_RANGE: `a look's "scale" is not a number from ${C.LOOK_SCALE_MIN} to ${C.LOOK_SCALE_MAX}: use a value in that range, or leave "scale" out.`,
   PROP_LABEL_TOO_LONG: `a prop "label" has more than ${C.PROP_LABEL_MAX} characters: use a short name.`,
   PROP_LABEL_MARKUP: 'a prop "label" has < > & or a control character: use plain text.',
@@ -227,7 +240,7 @@ export function catalog(): Catalog {
   for (const kind of C.LOOK_KINDS) {
     const look = REPRESENTATIVE_LOOKS[kind];
     looks[kind] = {
-      fields: { ...lookFields[kind], scale: SCALE_FIELD },
+      fields: { ...lookFields[kind], scale: SCALE_FIELD, ...(kind === "animal" || kind === "bird" ? { marks: MARKS_FIELD } : {}) },
       poses: safe(() => rig.supportedPoses(look)),
       expressions: safe(() => rig.supportedExpressions(look)),
     };
