@@ -30,6 +30,7 @@
  *  5. draw back → mid → fore with seats, beds, ground bands, speaker halos,
  *     held props in the hand and ground props at the figures' scale.
  */
+import { NEUTRAL_PROPS } from "../contracts.js";
 import type {
   Angle,
   Box,
@@ -52,7 +53,7 @@ import type {
   ValidationIssue,
 } from "../contracts.js";
 import type { DrawContext, EnvironmentDrawing, FigureAnchors, FigureDrawing, FigureRequest, PropDrawing } from "../internal.js";
-import { rig } from "../rig/index.js";
+import { resolveLookScale, rig } from "../rig/index.js";
 import { environments } from "../env/index.js";
 import { props as propModule } from "../props/index.js";
 import { fx as fxModule } from "../fx/index.js";
@@ -263,7 +264,7 @@ const SMALL_KINDS = new Set(["bird", "insect", "animal"]);
  */
 const SMALL_NOMINAL = 45;
 export function isSmallFigure(look: CharacterLook, nominal: number): boolean {
-  const sized = SMALL_KINDS.has(look.kind) || (look as { scale?: unknown }).scale !== undefined;
+  const sized = SMALL_KINDS.has(look.kind) || resolveLookScale(look).applied !== undefined;
   return sized && nominal < SMALL_NOMINAL;
 }
 
@@ -2105,6 +2106,16 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     const faces = figures.filter((f) => !f.headCropped).map((f) => ({ center: f.head, radius: f.headRadius }));
     propPlacements.forEach((pp, k) => {
       if (!pp.label) return;
+      // v0.3 Gate 1 fix A3 (D29): a name tag is drawn only on the five neutral props; a named prop already has its look
+      if (!(NEUTRAL_PROPS as readonly string[]).includes(pp.prop)) {
+        issues.push({
+          code: "PROP_LABEL_IGNORED",
+          severity: "warning",
+          path: `${ipath} prop ${k}`,
+          message: `the label "${pp.label}" on the prop "${pp.prop}" is not drawn: only a neutral prop (thing_long, thing_round, thing_block, thing_flat, thing_heap) shows a name tag. Remove the label; to show a colour or a name, use a cast member with its own tone.`,
+        });
+        return;
+      }
       const placed = placePropLabel(pp.label, pp.box, {
         panel: box,
         heads: faces,
