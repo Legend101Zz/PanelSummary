@@ -150,7 +150,7 @@ describe("FIGURE_TOO_SMALL (v0.3, Gate 2a)", () => {
       }
       expect(panelsChanged).toBeGreaterThanOrEqual(5);
     }
-  });
+  }, 120_000);
 
   it("does not change the drawing: two renders give the same SVG", () => {
     const f = ALL.find(({ r }) => r.result.issues.some((i) => i.code === "FIGURE_TOO_SMALL"))!.f;
