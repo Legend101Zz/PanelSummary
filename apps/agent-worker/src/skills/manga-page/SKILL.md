@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.12.0
+version: 1.13.0
 ---
 
 # Manga page
@@ -175,8 +175,16 @@ right, top to bottom; `panels` must be listed in that reading order.
   the renderer styles the letters.
 - **Never splice** two source spans in one balloon, and never trim a quote's punchline
   ("as beautiful as a weathercock... only not quite so useful"): split a long quote over two
-  balloons. A quote that stops 2-6 words before the end of its source sentence gets a
-  QUOTE_CLIPPED warning.
+  balloons.
+- **Cut a quote at the edges of a clause.** Start where a sentence or a clause starts, stop
+  where one stops, and write "..." at every cut. A quote that starts or stops in the middle
+  of a thought is the cut that judges name most. If the cut loses the point, quote a shorter
+  whole sentence, or paraphrase.
+- **Label by what you wrote.** Five or more words of the book in a row, in the book's order,
+  make a `quote`. A `paraphrase` is your own shorter words. `dramatized` is for a line the
+  source says was spoken but gives no words for, and judges name it more than any other
+  label: never use it for a planned claim, and never to turn the narrator's report into a
+  character's speech.
 - Every word must earn its place. When in doubt, cut.
 
 ## 7. Speakers and text kinds
@@ -242,6 +250,13 @@ Swallow alive in paradise, the grandmother in the match-girl's vision, a dream),
 `"vision": "afterlife"`, `"dream"` or `"memory"` on that panel only. Its figures are not held to
 `expected_looks`; letter a caption that says what the reader sees. A flashback to an earlier
 time still uses fx `flashback`. Never use `vision` to avoid a continuity error in the present.
+
+**Stage each panel where and when the source puts it.** Read the unit text for the panel:
+inside or outside, at the bank or on the road, by day or at night. Use the planned location
+that the text names for that panel. A panel "outside the house" does not use the house's
+interior location, and a character the source keeps outside is not drawn inside. A caption
+that names a time or a place ("that evening", "on the road") must come from the source and
+agree with the panel's `time` and `location`; if the source gives none, letter none.
 
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
@@ -319,12 +334,19 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 
 ## 10. Page turns
 
-- **When `page_turn_hook` is true**, the last panel holds a question, a threat, a decision,
-  or a face reacting to something not yet shown. Make that panel small or medium, never
+- **When `page_turn_hook` is true**, the last panel holds the hook: a question the page
+  leaves open, a reveal held back, or a change that is about to happen. Show it in words (a
+  line that stops before its answer) or in the picture (a face reacting to something not
+  yet shown, a door opening, a shape in the dark). Make that panel small or medium, never
   the page's big panel, and do not show the answer on this page.
+- **Never spend the hook early.** Do not put the question or the reveal in panels 1-3 and
+  then end on a quiet panel: the turn needs the open question to be the last thing the
+  reader sees. Take the hook from the book (a question a character asks, a sentence that
+  stops, a threat). Do not invent a thought or a line to make one.
 - **Last page of a section:** end on one large panel, then one small reaction panel.
 - **When the previous page ended on a hook**, open with the answer: the first panel is
-  large (about 40% of the page or more).
+  large (about 40% of the page or more), and it is not a copy of the previous page's last
+  panel.
 
 ## Truth
 

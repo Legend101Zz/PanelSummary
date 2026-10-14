@@ -234,3 +234,20 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Image budgets (`none | sprites_only | budgeted | full_panel_art`). Removed with D3.
 - The v1 deprecation plan of issue #15. The rebuild removed v1 directly on 2026-09-25.
 - The owner-requested database wipe (2026-08-09). History only.
+
+### D32. Page turn: guidance and a plan warning, no page check (2026-10-14, issue #82, track W1)
+- Statement: The plan skill (1.6.0) asks for a turn hook on every page that does not close a section. The page skill (1.12.0) puts the hook in the last panel, never in an early one, and never invented. The plan goal adds the warning `PAGE_TURN_HOOK_MISSING` (more than 25% of such pages without a hook, at least 4 such pages). It is a warning because it fails the D26 cost test (38% of the judged-good pages).
+- Statement: No page check for the last panel is added. The page goal does not receive the previous page spec.
+- Why: On 320 judged pages of 9 runs, a page that does not close a section has a page-turn mean of 3.49 with a planned hook and 3.18 without (95% interval of the difference 0.23 to 0.40, the sign holds in 9 of 9 runs). Properties of the last panel (a question, the last planned claim, dialogue, a close shot, a hook spent early) show differences of 0.01 to 0.12 and fail P and L. A gain from the previous page spec cannot be measured offline.
+- Status: accepted for the next live run. The effect is not measured; a live run and a judge panel must verify it, including the layout cost of more hooks. Tables: `docs/v0.3/W1-writer.md` section 3.
+
+### D33. Fidelity labels: no new label, `QUOTE_CLIPPED` is not run (2026-10-14, issue #83, track W1)
+- Statement: There is no label `quote (cut)` and no new rule for trimmed quotes or near-verbatim paraphrases. The page goal no longer runs `QUOTE_CLIPPED` (the function stays for the calibration scripts). The skill keeps "never splice, never trim the punchline" and adds where to cut and how to label.
+- Statement: A calibration hit leaves out the judge defects that name the check code. The judges read the page warnings, and 10% of the major and blocker defects name a code.
+- Why: `QUOTE_CLIPPED` hit 55% against a 27% base on its face. All 26 pages whose defects name the code are among its 31 flagged pages. Without those defects: 32% against 26% (window 2 to 6) and 33% against 26% (window 3 to 6), no signal, as in v0.2. A cut quote is cited twice as often as a plain one (20% against 10%), but 26% of the quotes have a cut, a page-level rule flags 46% of the good pages, and pages with a cut quote do not score lower on fidelity (3.60 against 3.49). A label would be a contract change in `packages/manga-render`.
+- Status: accepted. The #94 default (remove it if there is again no signal) is applied. Tables: `docs/v0.3/W1-writer.md` section 4.
+
+### D34. Continuity follow-ups: the location check stays a warning, minor speakers get names (2026-10-14, issue #87, track W1)
+- Statement: `PLAN_LOCATION_NOT_IN_UNITS` and `PLAN_PLACE_UNLISTED` stay warnings. The Sources drawer shows the name of a minor speaker ("A watchman") from the figure id instead of "Someone". The plan and page skills tell the writer to stage each panel where and when the source puts it.
+- Why: On 290 judged pages with model-written units, `PLAN_LOCATION_NOT_IN_UNITS` flags 16 pages, 4 with a setting complaint (25%) against 34% on the others (one-sided Fisher p = 0.84): not better than chance, so no promotion (the #94 rule). On the Just So runs the largest class of continuity complaints is place (18 of 55; 14 owned by the renderer), then scale (13) and identity (9).
+- Status: accepted. The drawer change is frontend only. A backend change that names the `m_` ids in `speakers` would also fix the Reader. Tables: `docs/v0.3/W1-writer.md` section 5.

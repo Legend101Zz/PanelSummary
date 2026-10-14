@@ -5,7 +5,7 @@ import { forwardRef, useEffect, useRef } from "react";
 import type { EditionPage, Fidelity, SourceRef } from "@/lib/api";
 import { FIDELITY_HINT, FIDELITY_LABEL, voiceLabel } from "@/lib/words";
 import { Close } from "@/components/Icons";
-import { transcript, uniquePages } from "./transcript";
+import { speakerNames, transcript, uniquePages } from "./transcript";
 import styles from "./reader.module.css";
 
 interface Props {
@@ -50,6 +50,7 @@ export const SourceDrawer = forwardRef<HTMLHeadingElement, Props>(function Sourc
   };
 
   const panels = page?.status === "accepted" ? transcript(page) : [];
+  const names = speakerNames(page);
 
   return (
     <div className={styles.drawerInner}>
@@ -101,7 +102,7 @@ export const SourceDrawer = forwardRef<HTMLHeadingElement, Props>(function Sourc
                     {texts.map((t) => (
                       <li key={t.index} className={`${styles.line} ${styles[`fid_${t.fidelity}`] ?? ""}`}>
                         <span className={styles.lineMeta}>
-                          <span className={styles.voice}>{voiceLabel(t.kind, t.speaker, page?.speakers ?? {})}</span>
+                          <span className={styles.voice}>{voiceLabel(t.kind, t.speaker, names)}</span>
                           <span className={styles.fidelity}>{FIDELITY_LABEL[t.fidelity as Fidelity] ?? t.fidelity}</span>
                         </span>
                         <span className={t.kind === "sfx" ? styles.lineSfx : styles.lineText}>{t.text}</span>
