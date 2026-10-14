@@ -41,6 +41,7 @@ import {
 } from "./creature/common.js";
 import { ALL_EXPRESSIONS, EXPR, drawFace, mouthOpen } from "./creature/face.js";
 import { polyPath } from "../svg.js";
+import { type Marks, hornFill, marksOf } from "./creature/marks.js";
 
 type Species = BirdLook["species"];
 type TailKind = "fork" | "round" | "notch" | "fan" | "short" | "duck" | "wedge";
@@ -66,7 +67,7 @@ interface Spec {
   legL: number;
   eyeR: number; // × hr
   belly: "white" | "light" | "same";
-  marks: "swallow" | "nightingale" | "sparrow" | "linnet" | "dove" | "crow" | "owl" | "duck";
+  marks: "swallow" | "nightingale" | "sparrow" | "linnet" | "dove" | "crow" | "owl" | "duck" | "plain";
 }
 
 const SPECS: Record<Species, Spec> = {
@@ -78,7 +79,29 @@ const SPECS: Record<Species, Spec> = {
   crow: { h: 25, a: 7.2, b: 4.2, tilt: 24, hr: 4.2, hx: 0.8, hy: 1.0, beak: "heavy", beakL: 3.4, tail: "wedge", tailL: 7.5, tailW: 4.0, tailDroop: 10, wingL: 16, pointed: false, fold: 0.55, legL: 4.8, eyeR: 0.34, belly: "same", marks: "crow" },
   owl: { h: 25, a: 8.4, b: 6.6, tilt: 78, hr: 6.6, hx: 0.9, hy: 0.0, beak: "hook", beakL: 1.8, tail: "short", tailL: 3.0, tailW: 4.5, tailDroop: 0, wingL: 18, pointed: false, fold: 0.1, legL: 2.2, eyeR: 0.3, belly: "light", marks: "owl" },
   duck: { h: 30, a: 10.5, b: 5.6, tilt: 4, hr: 4.5, hx: 0.74, hy: 1.55, beak: "bill", beakL: 4.2, tail: "duck", tailL: 3.8, tailW: 3.4, tailDroop: -28, wingL: 18, pointed: false, fold: 0.1, legL: 4.2, eyeR: 0.32, belly: "light", marks: "duck" },
+  // v0.3 (#81): a neutral tall bird (long legs, long neck, thin beak), one flat tone, no species marks
+  bird_tall: { h: 112, a: 17, b: 9.5, tilt: 12, hr: 8.6, hx: 0.8, hy: 3.5, beak: "thin", beakL: 6.4, tail: "round", tailL: 10, tailW: 6, tailDroop: 8, wingL: 34, pointed: false, fold: 0.3, legL: 44, eyeR: 0.34, belly: "light", marks: "plain" },
 };
+
+/**
+ * Body marks of the neutral tall bird (v0.3, #81, renderer 0.7.2): long_neck (the head held much higher on a long
+ * neck), long_nose (a long thin bill), long_tail (long tail feathers) change the spec; horns and big_ears are
+ * extra parts drawn on the head in drawProfile. No mark returns the spec itself (the 0.7.x drawing).
+ */
+function applyBirdMarks(s0: Spec, m: Marks): Spec {
+  if (!m.neck && !m.nose && !m.tail) return s0;
+  const s: Spec = { ...s0 };
+  if (m.neck) {
+    s.hy = s0.hy * 2.05;
+    s.h = s0.h * 1.39; // measured: the drawn height with the mark over the plain one (test/archetype-marks.test.ts)
+  }
+  if (m.nose) s.beakL = s0.beakL * 2.9;
+  if (m.tail) {
+    s.tailL = s0.tailL * 2.5;
+    s.tailW = s0.tailW * 0.8;
+  }
+  return s;
+}
 
 const BIRD_POSES: readonly Pose[] = [
   "stand",
@@ -454,6 +477,28 @@ function drawProfile(sp: Species, s: Spec, look: BirdLook, pose: Pose, expressio
   sk.shape(bodyD, plum, { edge: false });
   if (sp === "duck" || s.hy > 1.5) sk.shape(blobD(neck, 0.5), plum, { edge: false });
   sk.shape(circleD(H0, hr), plum, { edge: false });
+  // v0.3 (#81) horns (two short spikes on the crown) and big_ears (flat flaps at the sides of the head)
+  const bm = marksOf(look);
+  if (bm.horns) {
+    const hf = hornFill(look.tone, pen);
+    for (const [bx, lean] of view === "side" ? ([[0.35, -0.3], [-0.2, -0.3]] as const) : ([[0.45, 0.25], [-0.45, -0.25]] as const)) {
+      sk.shape(taperD([hpt(hr * bx, -hr * 0.8), hpt(hr * (bx + lean * 0.5), -hr * 1.35), hpt(hr * (bx + lean), -hr * 2.0)], [hr * 0.5, hr * 0.34, hr * 0.06], { samples: 5 }), hf);
+    }
+  }
+  if (bm.ears) {
+    const innerF = fillOf(dark ? "mid" : "light", pen);
+    const flap = (c: Point, rx: number, ry: number, far: boolean) => {
+      sk.shape(blobD(ellipsePts(P(0, 0), rx, ry, 14).map((p) => addP(c, p)), 0.5), far ? fillOf(darker(look.tone), pen) : plum);
+      if (!far) sk.shape(blobD(ellipsePts(P(0, 0), rx * 0.55, ry * 0.7, 12).map((p) => addP(c, p)), 0.5), innerF, { edge: pen.fw });
+    };
+    if (view === "side") {
+      flap(hpt(-hr * 1.25, -hr * 0.2), hr * 0.95, hr * 1.35, true);
+      flap(hpt(-hr * 1.0, hr * 0.0), hr * 0.95, hr * 1.35, false);
+    } else {
+      flap(addP(H0, P(-hr * 1.55, -hr * 0.1)), hr * 0.9, hr * 1.3, false);
+      flap(addP(H0, P(hr * 1.55, -hr * 0.1)), hr * 0.9, hr * 1.3, false);
+    }
+  }
   // belly: lower part of the body egg below a line along the axis
   if (s.belly !== "same" || s.marks === "dove") {
     const cut = (sp === "owl" ? -0.2 : 0.1) * b;
@@ -798,10 +843,10 @@ function drawFrontBack(sp: Species, s: Spec, look: BirdLook, pose: Pose, express
 export const birdRig: KindRig<BirdLook> = {
   supportedPoses: () => BIRD_POSES,
   supportedExpressions: () => ALL_EXPRESSIONS,
-  nominalHeight: (look) => SPECS[look.species].h,
+  nominalHeight: (look) => (SPECS[look.species] ? applyBirdMarks(SPECS[look.species], marksOf(look)).h : 20),
   draw(request: FigureRequest & { look: BirdLook }, ctx: DrawContext): FigureDrawing {
     const look = request.look;
-    const s = SPECS[look.species];
+    const s = SPECS[look.species] && applyBirdMarks(SPECS[look.species], marksOf(look));
     if (!s) throw new Error(`unknown bird species ${String(look.species)}`);
     const pose: Pose = BIRD_POSES.includes(request.pose) ? request.pose : "stand";
     const pen = makePen(request.lineWidth, ctx.idPrefix, request);

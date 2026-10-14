@@ -74,7 +74,7 @@ Owner decisions of 10 October 2026:
 | 1 | Cover with no art | A plain sheet with a solid 1 px edge, no text, no screentone. Title and author once, under it. The skeleton (no edge, no text) looks different. This follows Choice 2, item 5. | `DESIGN.md` Components, Skeleton |
 | 2 | Choose sections at 390 | The one "Generate manga" button stays in the fixed bottom bar while sections are chosen. | `DESIGN.md`, `SCREENS-AND-STATES.md` |
 | 3 | Phone page 1 band | It lives in the bottom bar (Round 2b). | `DESIGN.md` Moment band |
-| 4 | Dark tone strip | Drawn is solid app-text. Waiting is fine tone inside an edge. Two questions stay open (below). | `DESIGN.md` Progress strip |
+| 4 | Dark tone strip | v0.2.0: drawn is solid app-text, waiting is fine tone inside an edge. Owner answers of 11 October 2026 (below): drawn is grey #B4B5B8, waiting is an outline only (in `release/v0.3`). | `DESIGN.md` Progress strip |
 | 5 | Hook names while busy | "Generate manga: starting" and "Retry failed pages: retrying". Visible labels: "Starting", "Retrying". | `SCREENS-AND-STATES.md` Test hooks |
 | 6 | Drop place corners | 22 px everywhere. The "Add a book" tile was 12 px. | `DESIGN.md` Shapes |
 | 7 | Designer copy | Kept. Listed below. Cast names, beats, coverage and timings come from real API data. | this file |
@@ -91,7 +91,7 @@ Source: `chat-log/RUN-LOG.md`, section "Open points for the owner". "Default" me
 
 | # | Round | Point | Status |
 |---|---|---|---|
-| 1 | Choice 1 | Dark drawn segments #B4B5B8 instead of paper #ECEBE6 (not answered) | Open (owner question 1) |
+| 1 | Choice 1 | Dark drawn segments #B4B5B8 instead of paper #ECEBE6 | Owner (11 October 2026): yes, grey #B4B5B8 (`app-seg-drawn`) |
 | 2 | 2a | A cover with no art: text on the sheet (Round 2a) or none (Choice 2, item 5) | Default 1 |
 | 3 | 2a | Two shorter band labels: "MiniMax: key refused", "MiniMax: no answer" | Default 7 (kept, listed below) |
 | 4 | 2a | Earlier frames not rebuilt from the new components; the ink focus ring in the yellow band is left for the build | Build task. `tokens.css` has `--app-focus-on-moment` |
@@ -102,7 +102,7 @@ Source: `chat-log/RUN-LOG.md`, section "Open points for the owner". "Default" me
 | 9 | 2c | 11 Andersen thumbnails are cut from the v0.1 screenshot and are soft | Design only. The build uses the real sample pages |
 | 10 | 2c | Copy changes: the MiniMax stop has no "Title" line; one short sentence at 390; the retry and read buttons sit above the failure panel | Default 7 (kept) |
 | 11 | 2c | Invented text: "Left out on purpose" points, raw error texts, server reasons, the 8 min 40 s run time | Default 7. The build shows real data only |
-| 12 | 2d | A drawing segment next to a waiting one is under 3:1 by colour alone; outline-only waiting segments in dark | Open (owner question 2) |
+| 12 | 2d | A drawing segment next to a waiting one is under 3:1 by colour alone; outline-only waiting segments in dark | Owner (11 October 2026): yes, outline only (`app-seg-wait-tone` is transparent in dark) |
 | 13 | 2d | Test hooks "Generate manga: starting" and "Retry failed pages: retrying"; no "Generate manga" once a run exists; the `&from=` link form is only in the reader | Default 5 |
 | 14 | 3a | Opening phrase "Your book's PDF, drawn as a manga" | Default 7 (listed below) |
 | 15 | 3a | GitHub link target | Default 10 |
@@ -137,9 +137,11 @@ Keep this copy in the build. The owner has not approved it yet. The exact words 
 - The limits line on the landing page. Its frame text says "Choosing sections of a longer book is planned". Sections are built in v0.2, so the words need a change.
 - Every other string marked **[suggested]** in `SCREENS-AND-STATES.md`.
 
-## Open owner questions
+**Accepted by default in v0.3 (#94).** The owner has not answered the copy questions in #94, so the default applies: the shipped copy stays as it is, including every line of the list above (the opening phrase, the Not found, crash and tab-title lines, the No estimate line, "Four pages are drawn at the same time.", "MiniMax: key refused", "MiniMax: no answer", the first-run and sample sentences and the new `lib/words.ts` lines). The same default keeps "sections" in the scope label. Track U1, 2026-10-14.
 
-1. In the dark theme, should drawn tone-strip segments be grey #B4B5B8 instead of paper #ECEBE6?
-2. In the dark theme, should waiting tone-strip segments be outline-only with no dots? (A drawing segment next to a waiting one is under 3:1 by colour alone.)
+## Answered owner questions
 
-Until the owner answers, the build keeps the design as drawn: drawn is solid app-text, waiting is fine tone inside an edge.
+1. In the dark theme, should drawn tone-strip segments be grey #B4B5B8 instead of paper #ECEBE6? **Yes** (owner, 11 October 2026).
+2. In the dark theme, should waiting tone-strip segments be outline-only with no dots? (A drawing segment next to a waiting one is under 3:1 by colour alone.) **Yes** (owner, 11 October 2026).
+
+v0.2.0 shipped the design as drawn (drawn is solid app-text, waiting is fine tone inside an edge). The change is in `release/v0.3`: the roles `app-seg-drawn` and `app-seg-wait-tone` in `tokens.css`, used by `components/ui/ToneStrip.module.css`.

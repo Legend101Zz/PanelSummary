@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import type { BookDetail, EditionDetail } from "@/lib/api";
-import { plural, formatTokens, readableReason } from "@/lib/words";
+import type { BookDetail, BookParts, EditionDetail } from "@/lib/api";
+import { plural, formatTokens, readableReason, STAND_INS_NOTE, STAND_INS_TITLE, standInDetail } from "@/lib/words";
 import { Disclosure } from "@/components/ui";
-import { mangaRanges, pdfRange } from "./bookLogic";
+import { pdfRange, seriesRanges } from "./bookLogic";
 import styles from "./Book.module.css";
 
 /** E. Contents: one row for each section, with its PDF pages and, once the plan exists, its manga pages. */
-export function Contents({ bookId, book, edition }: { bookId: string; book: BookDetail; edition: EditionDetail | null }) {
+export function Contents({ bookId, book, edition, parts }: { bookId: string; book: BookDetail; edition: EditionDetail | null; parts?: BookParts | null }) {
   if (book.sections.length === 0) return null;
-  const ranges = edition ? mangaRanges(edition.pages) : new Map<string, [number, number]>();
+  const ranges = seriesRanges(parts, edition);
   // The plan names its own section ids (s1, s2 ...). They match the book's section ids when the run drew the whole book.
   return (
     <section className={styles.contents} aria-labelledby="contents-title">
@@ -54,6 +54,7 @@ export function About({ edition }: { edition: EditionDetail }) {
   const omitted = cov.omitted_by_plan ?? [];
   const lost = cov.lost_to_failed_pages ?? [];
   const notPlanned = cov.not_planned ?? [];
+  const standIns = edition.book?.stand_ins ?? [];
   return (
     <section className={styles.about}>
       <Disclosure label="About this adaptation">
@@ -100,6 +101,19 @@ export function About({ edition }: { edition: EditionDetail }) {
               ) : (
                 <p className={styles.none}>None. Every key point was planned into a page or left out with a reason.</p>
               )}
+            </>
+          ) : null}
+          {standIns.length ? (
+            <>
+              <h3>{STAND_INS_TITLE}</h3>
+              <p>{STAND_INS_NOTE}</p>
+              <ul>
+                {standIns.map((row, i) => (
+                  <li key={`${row.type}-${i}`}>
+                    <strong>{row.wanted}</strong> <span>({standInDetail(row)})</span>
+                  </li>
+                ))}
+              </ul>
             </>
           ) : null}
           <h3>How it was made</h3>

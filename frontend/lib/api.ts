@@ -160,6 +160,11 @@ export interface Edition {
   timings?: Timings;
   /** null or absent = the whole book. */
   scope?: EditionScope | null;
+  /** D38: the part this edition continues (null = a first part), its first page number in the book as a series, and the understanding versions it used and made. The reader still numbers each edition from 1. */
+  continues_edition_id?: string | null;
+  first_page_number?: number;
+  understanding_version?: number | null;
+  understanding_version_produced?: number | null;
   /** Seconds the jobs of this edition ran (a pause before a resume does not count). null when not recorded. */
   active_seconds?: number | null;
   /** Cost range to draw the planned pages. Set only while status is awaiting_plan_review. */
@@ -420,10 +425,14 @@ export interface GenerateBody {
   pdf_page_from?: number;
   pdf_page_to?: number;
   review_plan?: boolean;
+  /** D38: continue this finished edition with the scope above. 422 with a reason when the scope repeats a drawn scope. */
+  continue_from?: string;
 }
 
 /** A bad scope or a scope over the limit throws ApiError(422) with the reasons as its message. */
 export const generateEdition = (bookId: string, body?: GenerateBody) => post<GenerateResult>(`/books/${bookId}/editions`, body);
+/** D38: continue a finished edition with the next part. Same call as Generate, with `continue_from` and a scope. 422 carries the reason. */
+export const continueEdition = (bookId: string, body: GenerateBody) => post<GenerateResult>(`/books/${bookId}/editions`, body);
 export const listEditions = (bookId: string) => request<Edition[]>(`/books/${bookId}/editions`);
 export const getEdition = (editionId: string) => request<EditionDetail>(`/editions/${editionId}`);
 export const getEditionPage = (editionId: string, page: number) => request<EditionPage>(`/editions/${editionId}/pages/${page}`);
@@ -552,3 +561,66 @@ export interface SamplePreview {
 export const getSamplePreview = (id: string) => request<SamplePreview>(`/samples/${encodeURIComponent(id)}/preview`);
 /** A PDF page of the sample as a PNG, read from the package (no install). */
 export const samplePdfPageUrl = (id: string, page: number) => `${API_URL}/samples/${encodeURIComponent(id)}/pdf/page/${page}`;
+
+/** D30: a thing of the book that no drawing item fits, as the edition view reports it. */
+export interface StandIn {
+  type: "cast" | "place" | "prop";
+  name: string;
+  wanted: string;
+  used: string;
+  fit: "near" | "none";
+}
+
+// Declaration merging: the edition view's `book` carries the stand-ins (empty for most books; absent in older editions).
+export interface EditionBook {
+  stand_ins?: StandIn[];
+}
+
+// ---------------------------------------------------------------------------
+// Continue with the next section (D38, D39): the parts of a book as one series.
+// ---------------------------------------------------------------------------
+
+export interface BookPart {
+  /** 1-based, in the order the parts were drawn. */
+  part: number;
+  edition_id: string;
+  status: EditionStatus;
+  scope: EditionScope | null;
+  section_ids: string[];
+  section_titles: string[];
+  /** Numbers of the pages in the book as one series. The reader numbers each edition from 1. */
+  first_page_number: number;
+  /** null while the plan does not exist yet. */
+  last_page_number: number | null;
+  page_total: number;
+  pages_accepted: number;
+  pages_failed: number;
+}
+
+export interface BookRemaining {
+  id: string;
+  title: string;
+  page_start: number;
+  page_end: number;
+  word_count: number;
+}
+
+export interface BookParts {
+  book_id: string;
+  parts: BookPart[];
+  /** Sections after the last part that no part drew, in book order. */
+  remaining: BookRemaining[];
+  can_continue: boolean;
+  /** The edition to continue (the newest part) when can_continue. */
+  continue_from: string | null;
+}
+
+/** Null when the backend has no such endpoint or it fails: the parts list and the Continue control are then hidden. */
+export async function getBookParts(bookId: string): Promise<BookParts | null> {
+  try {
+    const p = await request<BookParts>(`/books/${bookId}/parts`);
+    return p && Array.isArray(p.parts) && Array.isArray(p.remaining) ? p : null;
+  } catch {
+    return null;
+  }
+}

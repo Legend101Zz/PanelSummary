@@ -1,6 +1,6 @@
 ---
 name: manga-page
-version: 1.11.0
+version: 1.15.0
 ---
 
 # Manga page
@@ -152,7 +152,9 @@ right, top to bottom; `panels` must be listed in that reading order.
   words. (CLAIM_TEXT_THIN.)
 - **Draw the key object or action of the beat**: put it in `props`, in a figure's `holding`, or
   in an `insert` panel. A claim that names a rose, a thorn or a sack needs it drawn.
-  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge.
+  (KEY_PROP_NOT_DRAWN.) New props: pot, stove, roast_goose, heart, angel, loom, sledge. Neutral shapes
+  for an object no named prop is: thing_long, thing_round, thing_block, thing_flat, thing_heap (see
+  "When no item fits").
 - **Words and picture agree.** Never letter what the panel does not draw (trees, birds, a
   crowd that is not in frame). Show the set-up before the climax, in the book's order.
 - **Put words where they belong.** A line that names or explains something goes in the
@@ -173,8 +175,16 @@ right, top to bottom; `panels` must be listed in that reading order.
   the renderer styles the letters.
 - **Never splice** two source spans in one balloon, and never trim a quote's punchline
   ("as beautiful as a weathercock... only not quite so useful"): split a long quote over two
-  balloons. A quote that stops 2-6 words before the end of its source sentence gets a
-  QUOTE_CLIPPED warning.
+  balloons.
+- **Cut a quote at the edges of a clause.** Start where a sentence or a clause starts, stop
+  where one stops, and write "..." at every cut. A quote that starts or stops in the middle
+  of a thought is the cut that judges name most. If the cut loses the point, quote a shorter
+  whole sentence, or paraphrase.
+- **Label by what you wrote.** Five or more words of the book in a row, in the book's order,
+  make a `quote`. A `paraphrase` is your own shorter words. `dramatized` is for a line the
+  source says was spoken but gives no words for, and judges name it more than any other
+  label: never use it for a planned claim, and never to turn the narrator's report into a
+  character's speech.
 - Every word must earn its place. When in doubt, cut.
 
 ## 7. Speakers and text kinds
@@ -241,6 +251,13 @@ Swallow alive in paradise, the grandmother in the match-girl's vision, a dream),
 `expected_looks`; letter a caption that says what the reader sees. A flashback to an earlier
 time still uses fx `flashback`. Never use `vision` to avoid a continuity error in the present.
 
+**Stage each panel where and when the source puts it.** Read the unit text for the panel:
+inside or outside, at the bank or on the road, by day or at night. Use the planned location
+that the text names for that panel. A panel "outside the house" does not use the house's
+interior location, and a character the source keeps outside is not drawn inside. A caption
+that names a time or a place ("that evening", "on the road") must come from the source and
+agree with the panel's `time` and `location`; if the source gives none, letter none.
+
 **Speakers must read as speakers.** Anyone who talks is drawn at `full`, `medium` or `close`
 size. A tiny figure in a wide shot cannot speak (SPEAKER_TOO_SMALL is an error): cut to a
 closer panel for the line. A small creature talking to a big one belongs in a close or
@@ -276,6 +293,28 @@ change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
 - **The statue is always on its column**: use a location with `statue_column`, never a street
   or a room (STATUE_LOCATION_SWAPPED).
 
+## When no item fits
+
+The vocabulary is closed. When the book needs an object, a creature or a place that no item is,
+draw a neutral stand-in and say so. Never draw a thing as another thing.
+
+- **Objects.** Never draw an object as another object (no named prop for a different thing).
+  Use the shape that matches it: `thing_long` (stick, pole, tool), `thing_round` (fruit, ball,
+  stone), `thing_block` (loaf, box, wedge), `thing_flat` (sheet, board), `thing_heap` (a pile).
+  Give it a `label`: the object's name in the book's words, at most 24 characters
+  (`{"prop": "thing_long", "label": "walking stick"}`). Keep the same shape and label every time
+  the object appears. A prop of the list is right only when it is that very object.
+- **Labels are for `thing_*` props only.** The renderer ignores a `label` on any other prop. The
+  colour or the name of a named prop goes in the art (`tone`) or in the dialogue, never in a
+  label. Three things the story tells apart (three trees of different colours) are three cast
+  members or props, each with its own `tone`, never one with a label on each.
+- **Creatures.** When a cast member is a neutral archetype (its `fit` is `none` in the
+  understanding), the renderer draws its name tag. Do not add a second one with a caption.
+  Use the member's cast `name` in the lettering as the book does; do not rename it.
+- **Places.** For a real place the vocabulary lacks, use the location the understanding gives
+  (a `generic_*` environment). Prefer it to `abstract`: a generic environment draws the
+  location's `features` (a high wall, a door), `abstract` does not.
+
 ## 9. FX
 
 - Use at most 2 `fx` per panel. `speed_lines` for movement. `focus_lines` for shock or
@@ -299,12 +338,24 @@ When the goal says this page OPENS a section, the first panel is an `establishin
 
 ## 10. Page turns
 
-- **When `page_turn_hook` is true**, the last panel holds a question, a threat, a decision,
-  or a face reacting to something not yet shown. Make that panel small or medium, never
+- **When `page_turn_hook` is true**, the last panel holds the hook: a question the page
+  leaves open, a reveal held back, or a change that is about to happen. Show it in words (a
+  line that stops before its answer) or in the picture (a face reacting to something not
+  yet shown, a door opening, a shape in the dark). Make that panel small or medium, never
   the page's big panel, and do not show the answer on this page.
+- **Never spend the hook early.** Do not put the question or the reveal in panels 1-3 and
+  then end on a quiet panel: the turn needs the open question to be the last thing the
+  reader sees. Take the hook from the book (a question a character asks, a sentence that
+  stops, a threat). Do not invent a thought or a line to make one.
 - **Last page of a section:** end on one large panel, then one small reaction panel.
 - **When the previous page ended on a hook**, open with the answer: the first panel is
-  large (about 40% of the page or more).
+  large (about 40% of the page or more), and it is not a copy of the previous page's last
+  panel.
+- **Never repeat across the turn.** The goal tells you whether the previous page ended on a
+  planned hook, and gives its beat. The pages are written in parallel and you cannot see that
+  page's spec. Your first panel never repeats the previous page's hook line or its last
+  picture: it answers the hook, or it moves on to the next event. On page 1 there is nothing
+  to answer.
 
 ## Truth
 
@@ -377,7 +428,7 @@ panel per page, for a pure idea or an inner moment, and not two pages in a row.
    too much of its panels: fix every named code in one edit and change the structure (more
    panels, fewer balloons, a closer shot, a ready template). Read PAGE_TOO_FULL and REPAIR_LOOP.
 6. **FIX BEFORE SUBMIT** items (CLAIM_TEXT_THIN, KEY_PROP_NOT_DRAWN, SPEECH_IN_NARRATION,
-   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
+   REPEAT_NAME_TAG, LOCATION_OFF_PLAN, HERO_TOO_SMALL, FIGURE_TOO_SMALL, STATUE_LOCATION_SWAPPED, PROSE_WALL)
    reject your FIRST submit only. Fix them
    in the same edit; if one cannot be fixed, submit again and it stays a warning.
 7. Fix problems, then `submit_page` with the complete JSON string. If it is rejected, fix

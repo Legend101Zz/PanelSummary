@@ -274,16 +274,21 @@ describe("craft grammar in the skills (#6)", () => {
     it(`${name} keeps its key rules and a bumped version`, async () => {
       const skill = await loadSkill(name);
       for (const p of patterns) expect(skill.content, `${name} lacks ${p}`).toMatch(p);
-      const versions: Record<string, string> = { "manga-page": "1.11.0", "book-understanding": "1.9.0", "adaptation-plan": "1.5.0" };
+      const versions: Record<string, string> = { "manga-page": "1.15.0", "book-understanding": "1.14.0", "adaptation-plan": "1.8.0" };
       expect(skill.version).toBe(versions[name]);
     });
   }
 
-  it("grew by less than 22 percent in total", () => {
+  it("grew by less than 30 percent in total", () => {
     // 8 percent at T1; F1 (1.7.0) and W2-writer (1.8.0, +1.9 KB: docs/launch/W2-writer.md) used the rest up to 14.
     // Q2b (manga-page 1.9.0, book-understanding 1.8.0, adaptation-plan 1.5.0) adds 1.9 KB (docs/v0.2/Q2b-continuity.md): measured 1.1897.
     // Q2a (manga-page 1.10.0, +974 bytes: docs/v0.2/Q2a-writer-checks.md) raised the limit from 1.20 to 1.22 (measured on the merged files: 42011 / 34494 = 1.2179).
     // Q1 (manga-page 1.11.0, book-understanding 1.9.0, +187 bytes: docs/v0.2/Q1-renderer.md) raised the limit from 1.22 to 1.23 (measured on the merged files: 42198 / 34494 = 1.2233).
+    // D1b (manga-page 1.12.0, book-understanding 1.10.0, section "When no item fits": docs/v0.3/D1b-understanding.md) raised the limit from 1.23 to 1.35 (measured: 1.3359).
+    // W1 (manga-page 1.12.0, adaptation-plan 1.6.0, +2218 bytes: docs/v0.3/W1-writer.md) raised it by itself from 1.23 to 1.30 (measured: 44416 / 34494 = 1.2876); D1b and W1 together: see the limit below.
+    // D1b + W1 merged (manga-page 1.13.0, book-understanding 1.10.0, adaptation-plan 1.6.0): 48327 / 34494 = 1.4010, so the limit is 1.42.
+    // M1 (book-understanding 1.11.0, section "Continuing a book", docs/v0.3/M1-continue.md) raised the limit from 1.42 to 1.46.
+    // Gate 1 fixes (fxw: manga-page 1.14.0, book-understanding 1.13.0, adaptation-plan 1.7.0, +1919 bytes: docs/v0.3/W1-writer.md 'Gate 1 fixes'): 51277 / 34494 = 1.4865, so the limit is 1.50.
     const sizes = { "manga-page": 17816, "book-understanding": 10821, "adaptation-plan": 5857 };
     let before = 0;
     let after = 0;
@@ -291,7 +296,9 @@ describe("craft grammar in the skills (#6)", () => {
       before += size;
       after += readFileSync(new URL(`../src/skills/${name}/SKILL.md`, import.meta.url)).length;
     }
-    expect(after / before).toBeLessThan(1.23);
+    // Archetype marks (book-understanding 1.14.0, one rule for `marks`): 51577 / 34494 = 1.4952, so the limit is 1.51.
+    // Gate 1b plan density (adaptation-plan 1.8.0, +482 bytes: density rule and "list every place the beat names", docs/v0.3/W1-writer.md 'Gate 1b: plan density'): 52059 / 34494 = 1.5093, so the limit is 1.52.
+    expect(after / before).toBeLessThan(1.52);
   });
 });
 

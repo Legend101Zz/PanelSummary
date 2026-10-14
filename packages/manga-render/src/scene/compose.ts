@@ -30,6 +30,7 @@
  *  5. draw back → mid → fore with seats, beds, ground bands, speaker halos,
  *     held props in the hand and ground props at the figures' scale.
  */
+import { NEUTRAL_PROPS } from "../contracts.js";
 import type {
   Angle,
   Box,
@@ -52,7 +53,7 @@ import type {
   ValidationIssue,
 } from "../contracts.js";
 import type { DrawContext, EnvironmentDrawing, FigureAnchors, FigureDrawing, FigureRequest, PropDrawing } from "../internal.js";
-import { rig } from "../rig/index.js";
+import { resolveLookScale, rig } from "../rig/index.js";
 import { environments } from "../env/index.js";
 import { props as propModule } from "../props/index.js";
 import { fx as fxModule } from "../fx/index.js";
@@ -63,6 +64,7 @@ import { adoptFragment, rescaleTones } from "./ids.js";
 import { castWithVariant } from "./looks.js";
 import { resolveLocation } from "./places.js";
 import { planProps, type HeldProp } from "./props.js";
+import { placePropLabel } from "./prop-label.js";
 import { clearShift, covers, shifted, type Placement } from "./safety.js";
 import {
   ADULT_SEAT_Y,
@@ -137,6 +139,8 @@ export interface PropPlacement {
   key: boolean;
   /** Held by this character (in the hand or arms). */
   heldBy?: string;
+  /** The name tag drawn beside the prop (PropSpec.label of a neutral prop). */
+  label?: string;
 }
 
 export interface ComposedPanel {
@@ -194,6 +198,18 @@ export const MAX_FX = 3;
 
 /** On-page head radius floors (page units). */
 export const SPEAKER_MIN_HEAD_RADIUS = 22;
+/** A planned figure whose head circle is less than this share inside the panel gets FIGURE_HEAD_PARTLY_CLIPPED (a warning, D31). */
+export const HEAD_PARTLY_CLIPPED_SHARE = 0.6;
+/**
+ * v0.3 (Gate 2a, docs/v0.3/D2-push.md): a planned figure whose body is under this share of the panel
+ * height, in any shot but an establishing, extreme close or insert shot, is flagged (FIGURE_TOO_SMALL).
+ * Calibrated on 370 judged pages (D26: E 53, P 83%, L +27 points, C 9%).
+ */
+export const FIGURE_MIN_HEIGHT_SHARE = 0.15;
+/** The shots where a small figure is on purpose (or the camera fills the panel), so FIGURE_TOO_SMALL does not apply. */
+export function figureSizeIsChecked(shot: string): boolean {
+  return shot !== "establishing" && shot !== "extreme_close" && shot !== "insert";
+}
 export const LOD_FULL_RADIUS = 30;
 export const LOD_REDUCED_RADIUS = 18;
 /** A figure staged on another's hand, shoulder or head must read at least this big (page units). */
@@ -251,6 +267,16 @@ const GESTURE_POSES = new Set<Pose>(["point", "reach", "wave", "hold", "carry"])
 const TALL_HEADWEAR = new Set(["top_hat", "crown", "wide_hat", "helmet", "hood", "wreath", "bonnet"]);
 const SPEAKING = new Set(["speech", "thought", "shout", "whisper"]);
 const SMALL_KINDS = new Set(["bird", "insect", "animal"]);
+/**
+ * v0.3 (#81): "small" (boosted near the camera, may perch, speaks only close) follows the figure's
+ * nominal height, not its kind: a creature (or any look with `scale`) under 45 figure units is small;
+ * a horse, a bear or a quad_large is not.
+ */
+const SMALL_NOMINAL = 45;
+export function isSmallFigure(look: CharacterLook, nominal: number): boolean {
+  const sized = SMALL_KINDS.has(look.kind) || resolveLookScale(look).applied !== undefined;
+  return sized && nominal < SMALL_NOMINAL;
+}
 
 /** Does this character wear headwear that rises well above the head circle? */
 function tallHat(cast: CastMember): boolean {
@@ -502,6 +528,22 @@ function zoomAbout(fr: Framing, p: Point, k: number): Framing {
   return { scale: fr.scale * k, originX: p.x + (fr.originX - p.x) * k, originY: p.y + (fr.originY - p.y) * k };
 }
 
+/** The share (0..1) of a circle that lies inside a box. Exact enough (64 strips) and deterministic. */
+export function circleShareInside(c: Point, r: number, b: Box): number {
+  if (r <= 0) return 0;
+  const N = 64;
+  let inside = 0;
+  let total = 0;
+  for (let i = 0; i < N; i += 1) {
+    const x = c.x - r + (2 * r * (i + 0.5)) / N;
+    const half = Math.sqrt(Math.max(0, r * r - (x - c.x) * (x - c.x)));
+    total += 2 * half;
+    if (x < b.x || x > b.x + b.w) continue;
+    inside += Math.max(0, Math.min(c.y + half, b.y + b.h) - Math.max(c.y - half, b.y));
+  }
+  return total > 0 ? inside / total : 0;
+}
+
 function boxArea(b: Box): number {
   return Math.max(0, b.w) * Math.max(0, b.h);
 }
@@ -588,7 +630,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       staging: { type: "ground" },
       mirror: (spec.facing === "left") !== rtl,
       lying,
-      small: SMALL_KINDS.has(cast.look.kind),
+      small: isSmallFigure(cast.look, nominal),
       ...(held ? { held } : {}),
     });
   });
@@ -1295,6 +1337,76 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     }
   }
 
+  // --- the camera push, one search for both pushes (D31) --------------------------
+  /**
+   * The largest push (from `kFrom` down in steps of `step`, never under 1.03) about `F` that keeps the
+   * head of every figure in `keep` inside the panel (translated if need be, with a 2.5 percent margin),
+   * a small creature in `whole` seen whole, the ground line in the panel, and every other figure of `live`
+   * at least half inside (or as inside as it was). Nothing is applied: it returns the factor and the
+   * translation, or undefined when no factor works (then the camera does not push).
+   */
+  const pushSearch = (F: Point, kFrom: number, step: number, keep: FigureInfo[], live: FigureInfo[], whole: FigureInfo[], kExtra?: number): { k: number; dx: number; dy: number } | undefined => {
+    const edge = { x: box.w * 0.025, y: box.h * 0.025 };
+    const framingNow = (f: FigureInfo): Placement => placementOf(f, framings.get(f.index) as Framing);
+    const tryPush = (k: number): { dx: number; dy: number } | undefined => {
+      let x0 = Infinity;
+      let x1 = -Infinity;
+      let y0 = Infinity;
+      let y1 = -Infinity;
+      for (const f of keep) {
+        const h = framingNow(f);
+        const hx = F.x + (h.head.x - F.x) * k;
+        const hy = F.y + (h.head.y - F.y) * k;
+        x0 = Math.min(x0, hx - h.r * k * 0.95);
+        x1 = Math.max(x1, hx + h.r * k * 0.95);
+        y0 = Math.min(y0, hy - h.r * k * 1.05);
+        y1 = Math.max(y1, hy + h.r * k * 1.1);
+      }
+      if (x1 - x0 > box.w * 0.95 || y1 - y0 > box.h * 0.95) return undefined;
+      let loX = box.x + edge.x - x0;
+      let hiX = box.x + box.w - edge.x - x1;
+      let loY = box.y + edge.y - y0;
+      let hiY = box.y + box.h - edge.y - y1;
+      // a small creature that is a subject is seen whole (a bird cut by the bottom edge is no hero)
+      for (const f of whole) {
+        if (!(f.small || f.nominal <= TINY_NOMINAL) || f.lying) continue;
+        const b = framingNow(f).body;
+        const bx0 = F.x + (b.x - F.x) * k;
+        const bx1 = F.x + (b.x + b.w - F.x) * k;
+        const by0 = F.y + (b.y - F.y) * k;
+        const by1 = F.y + (b.y + b.h - F.y) * k;
+        loX = Math.max(loX, box.x + edge.x - bx0);
+        hiX = Math.min(hiX, box.x + box.w - edge.x - bx1);
+        loY = Math.max(loY, box.y + edge.y - by0);
+        hiY = Math.min(hiY, box.y + box.h - edge.y - by1);
+      }
+      // the ground line stays in the panel, so what stands or lies on it (props) is still seen
+      if (groundModel) hiY = Math.min(hiY, box.y + box.h * 0.98 - (F.y + (groundModel.feet - F.y) * k));
+      if (loX > hiX || loY > hiY) return undefined;
+      const dx = clamp(0, loX, hiX);
+      const dy = clamp(0, loY, hiY);
+      for (const f of live) {
+        if (keep.includes(f)) continue;
+        const b = framingNow(f).body;
+        const before = overlapArea(b, box) / Math.max(1, boxArea(b));
+        const nb: Box = { x: F.x + (b.x - F.x) * k + dx, y: F.y + (b.y - F.y) * k + dy, w: b.w * k, h: b.h * k };
+        const after = overlapArea(nb, box) / Math.max(1, boxArea(nb));
+        if (after < Math.min(0.5, before)) return undefined;
+      }
+      return { dx, dy };
+    };
+    const ks: number[] = [];
+    for (let k = kFrom; k >= 1.03; k -= step) ks.push(k);
+    // a factor that is just enough for a floor (kExtra) is tried in its place in the order
+    if (kExtra !== undefined && kExtra >= 1.03 && kExtra < kFrom) ks.push(kExtra);
+    ks.sort((a, b) => b - a);
+    for (const k of ks) {
+      const t = tryPush(k);
+      if (t) return { k, ...t };
+    }
+    return undefined;
+  };
+
   // --- close-range: every head in frame, every speaker readable --------------
   if (!groundShot && shot !== "insert" && framings.size > 0) {
     const headOf = (f: FigureInfo) => placementOf(f, framings.get(f.index) as Framing);
@@ -1305,12 +1417,14 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       for (const [k, fr] of framings) framings.set(k, { ...fr, originX: fr.originX + dx, originY: fr.originY + dy });
     };
     /**
-     * Keep `must` heads fully inside the panel (with `nice` pulled in when that
-     * costs no `must` head); with `zoomOut`, shrink the group about its centre
-     * when the heads cannot fit side by side.
+     * Keep `must` heads fully inside the panel; with `zoomOut`, shrink the group about its centre
+     * when the heads cannot fit side by side. Fails loudly (D31): when no translation keeps every
+     * `must` head inside, it returns false and leaves the framings as they were. It never uses
+     * "the middle of an empty window" for a head that must be seen.
      */
-    const fitHeads = (must: FigureInfo[], nice: FigureInfo[], zoomOut: boolean) => {
-      if (must.length === 0) return;
+    const fitHeads = (must: FigureInfo[], zoomOut: boolean): boolean => {
+      if (must.length === 0) return true;
+      const before = new Map(framings);
       const bounds = (list: FigureInfo[]) => {
         let x0 = Infinity;
         let x1 = -Infinity;
@@ -1339,31 +1453,79 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       const dxHi = box.x + box.w - b.x1;
       const dyLo = box.y - b.y0;
       const dyHi = box.y + box.h - b.y1;
-      let dx = clamp(0, dxLo, dxHi);
-      let dy = clamp(0, dyLo, dyHi);
-      if (nice.length > 0) {
-        const nb = bounds([...must, ...nice]);
-        dx = clamp(clamp(0, box.x - nb.x0, box.x + box.w - nb.x1), dxLo, dxHi);
-        dy = clamp(clamp(0, box.y - nb.y0, box.y + box.h - nb.y1), dyLo, dyHi);
+      if (dxHi < dxLo - 1e-6 || dyHi < dyLo - 1e-6) {
+        framings.clear();
+        for (const [key, fr] of before) framings.set(key, fr);
+        return false;
       }
-      shiftAll(dx, dy);
+      shiftAll(clamp(0, dxLo, dxHi), clamp(0, dyLo, dyHi));
+      return true;
     };
-    fitHeads(visibleFigs, [], true);
-    // speakers reach the readable floor: push the camera in on the smallest one
+    fitHeads(visibleFigs, true);
+    // speakers reach the readable floor: push the camera in on the smallest one, as far as every
+    // planned figure keeps its head in the panel (D31). If the figures stand too wide apart for that,
+    // they are first moved closer together (same order, same facing); if the push still stops short,
+    // the speaker stays small and SPEAKER_TOO_SMALL tells the writer to fix the shot.
     const talking = visibleFigs.filter((f) => speakers.has(f.cast.id));
     if (talking.length > 0) {
       const smallest = talking.reduce((a, b) => (headOf(b).r < headOf(a).r ? b : a));
       const r = headOf(smallest).r;
       if (r < SPEAKER_MIN_HEAD_RADIUS + 0.5) {
-        const k = Math.min(3.5, (SPEAKER_MIN_HEAD_RADIUS + 0.5) / Math.max(0.5, r));
-        const c = headOf(smallest).head;
-        for (const [key, fr] of framings) framings.set(key, zoomAbout(fr, c, k));
-        fitHeads(talking, visibleFigs.filter((f) => !talking.includes(f)), false);
+        const k0 = Math.min(3.5, (SPEAKER_MIN_HEAD_RADIUS + 0.5) / Math.max(0.5, r));
+        const kReq = (SPEAKER_MIN_HEAD_RADIUS + 0.05) / Math.max(0.5, r); // just enough for the floor
+        const search = () => pushSearch(headOf(smallest).head, k0, 0.05, visibleFigs, visibleFigs, [], kReq);
+        let best = search();
+        if ((!best || best.k < k0 - 1e-6)) {
+          // make room: bring the figures closer together about the speaker, least first
+          const home = new Map(framings);
+          const pivot = headOf(smallest).head.x;
+          const rootIdx = (f: FigureInfo) => rootOf(f).index;
+          const coverPairs = () => {
+            const pairs = new Set<string>();
+            for (const a of visibleFigs) {
+              for (const b of visibleFigs) {
+                if (a === b) continue;
+                const pa = headOf(a);
+                const pb = headOf(b);
+                if (covers(pa, pb) || Math.hypot(pa.head.x - pb.head.x, pa.head.y - pb.head.y) < (pa.r + pb.r) * 1.1) pairs.add(`${a.index}>${b.index}`);
+              }
+            }
+            return pairs;
+          };
+          const baseline = coverPairs();
+          let chosen: { frames: Map<number, Framing>; k: number } = { frames: home, k: best ? best.k : 0 };
+          for (const c of [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]) {
+            framings.clear();
+            for (const [key, fr] of home) framings.set(key, fr);
+            const delta = new Map<number, number>();
+            for (const f of infos) {
+              const fr = home.get(f.index);
+              if (!fr || f.staging.type === "figure") continue;
+              delta.set(f.index, (fr.originX - pivot) * (c - 1));
+            }
+            for (const f of infos) {
+              const fr = home.get(f.index);
+              const dxf = delta.get(rootIdx(f)) ?? 0;
+              if (fr && dxf !== 0) framings.set(f.index, { ...fr, originX: fr.originX + dxf });
+            }
+            if ([...coverPairs()].some((pair) => !baseline.has(pair))) continue;
+            const t = search();
+            if (!t) continue;
+            if (t.k > chosen.k + 1e-6) chosen = { frames: new Map(framings), k: t.k };
+            if (t.k >= kReq - 1e-6) break;
+          }
+          framings.clear();
+          for (const [key, fr] of chosen.frames) framings.set(key, fr);
+          best = search();
+        }
+        if (best) {
+          const F = headOf(smallest).head;
+          for (const [key, fr] of framings) {
+            const z = zoomAbout(fr, F, best.k);
+            framings.set(key, { ...z, originX: z.originX + best.dx, originY: z.originY + best.dy });
+          }
+        }
       }
-    }
-    for (const f of visibleFigs) {
-      const p = headOf(f);
-      if (p.head.y + p.r < box.y || p.head.y - p.r > box.y + box.h || p.head.x + p.r < box.x || p.head.x - p.r > box.x + box.w) headCropped.add(f.index);
     }
     const mids = independents.filter((f) => depthOf(f.spec) === "mid" && framings.has(f.index));
     worldScale = framings.get((mids[0] ?? independents[0])?.index ?? -1)?.scale ?? worldScale;
@@ -1394,70 +1556,13 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         const want = Math.min(minSize / Math.max(0.01, size), shot === "establishing" ? SUBJECT_MAX_PUSH_ESTABLISHING : SUBJECT_MAX_PUSH);
         const sb = placementOf(smallest, framings.get(smallest.index) as Framing).body;
         const F: Point = { x: sb.x + sb.w / 2, y: sb.y + sb.h * 0.45 };
-        const edge = { x: box.w * 0.025, y: box.h * 0.025 };
-        const framingNow = (f: FigureInfo): Placement => placementOf(f, framings.get(f.index) as Framing);
-        /**
-         * A push of k about F that keeps every head of `keep` inside the panel (translated if need be),
-         * and every other figure at least half inside (one that was less inside than that stays as it was).
-         */
-        const tryPush = (k: number, keep: FigureInfo[]): { dx: number; dy: number } | undefined => {
-          let x0 = Infinity;
-          let x1 = -Infinity;
-          let y0 = Infinity;
-          let y1 = -Infinity;
-          for (const f of keep) {
-            const h = framingNow(f);
-            const hx = F.x + (h.head.x - F.x) * k;
-            const hy = F.y + (h.head.y - F.y) * k;
-            x0 = Math.min(x0, hx - h.r * k * 0.95);
-            x1 = Math.max(x1, hx + h.r * k * 0.95);
-            y0 = Math.min(y0, hy - h.r * k * 1.05);
-            y1 = Math.max(y1, hy + h.r * k * 1.1);
-          }
-          if (x1 - x0 > box.w * 0.95 || y1 - y0 > box.h * 0.95) return undefined;
-          let loX = box.x + edge.x - x0;
-          let hiX = box.x + box.w - edge.x - x1;
-          let loY = box.y + edge.y - y0;
-          let hiY = box.y + box.h - edge.y - y1;
-          // a small creature that is a subject is seen whole (a bird cut by the bottom edge is no hero)
-          for (const f of subjects) {
-            if (!(f.small || f.nominal <= TINY_NOMINAL) || f.lying) continue;
-            const b = framingNow(f).body;
-            const bx0 = F.x + (b.x - F.x) * k;
-            const bx1 = F.x + (b.x + b.w - F.x) * k;
-            const by0 = F.y + (b.y - F.y) * k;
-            const by1 = F.y + (b.y + b.h - F.y) * k;
-            loX = Math.max(loX, box.x + edge.x - bx0);
-            hiX = Math.min(hiX, box.x + box.w - edge.x - bx1);
-            loY = Math.max(loY, box.y + edge.y - by0);
-            hiY = Math.min(hiY, box.y + box.h - edge.y - by1);
-          }
-          // the ground line stays in the panel, so what stands or lies on it (props) is still seen
-          if (groundModel) hiY = Math.min(hiY, box.y + box.h * 0.98 - (F.y + (groundModel.feet - F.y) * k));
-          if (loX > hiX || loY > hiY) return undefined;
-          const dx = clamp(0, loX, hiX);
-          const dy = clamp(0, loY, hiY);
-          for (const f of live) {
-            if (keep.includes(f)) continue;
-            const b = framingNow(f).body;
-            const before = overlapArea(b, box) / Math.max(1, boxArea(b));
-            const nb: Box = { x: F.x + (b.x - F.x) * k + dx, y: F.y + (b.y - F.y) * k + dy, w: b.w * k, h: b.h * k };
-            const after = overlapArea(nb, box) / Math.max(1, boxArea(nb));
-            if (after < Math.min(0.5, before)) return undefined;
-          }
-          return { dx, dy };
-        };
-        /** The largest push (at most `want`) that works for `keep`, with its translation. */
-        const bestPush = (keep: FigureInfo[]): { k: number; dx: number; dy: number } | undefined => {
-          for (let k = want; k >= 1.03; k -= 0.04) {
-            const t = tryPush(k, keep);
-            if (t) return { k, ...t };
-          }
-          return undefined;
-        };
-        // every head if the push stays useful (a third more), else only the subjects' heads
-        const all = bestPush(live);
-        const mine = bestPush(must);
+        // every head if the push stays useful (a third more), else the heads that must be seen:
+        // the subjects, the labelled and, in a medium or close panel, every planned figure (D31);
+        // in a wide shot also every head that is inside the panel now (a push never removes a head)
+        const all = pushSearch(F, want, 0.04, live, live, subjects);
+        const headIsIn = (f: FigureInfo) => circleShareInside(placementOf(f, framings.get(f.index) as Framing).head, placementOf(f, framings.get(f.index) as Framing).r, box) >= 0.9;
+        const musts = groundShot ? [...new Set([...must, ...live.filter(headIsIn)])] : live;
+        const mine = pushSearch(F, want, 0.04, musts, live, subjects);
         const pick = all && all.k >= Math.min(want, 1.35) ? all : mine;
         if (pick) {
           const { k, dx, dy } = pick;
@@ -1518,11 +1623,6 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           break;
         }
       }
-    }
-    // an extra pushed out of frame is cropped on purpose (the subjects never are)
-    for (const f of live) {
-      const p = placementOf(f, framings.get(f.index) as Framing);
-      if (p.head.y + p.r < box.y || p.head.y - p.r > box.y + box.h || p.head.x + p.r < box.x || p.head.x - p.r > box.x + box.w) headCropped.add(f.index);
     }
   }
 
@@ -1643,7 +1743,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         const c1 = toPage({ x: ox - prop.width / 2, y: oy - prop.height });
         const c2 = toPage({ x: ox + prop.width / 2, y: oy });
         const pb = { x: Math.min(c1.x, c2.x), y: Math.min(c1.y, c2.y), w: Math.abs(c2.x - c1.x), h: Math.abs(c2.y - c1.y) };
-        propPlacements.push({ prop: f.held.prop, box: pb, key: propPlan.key.has(f.held.prop), heldBy: f.cast.id });
+        propPlacements.push({ prop: f.held.prop, box: pb, key: propPlan.key.has(f.held.prop), heldBy: f.cast.id, ...(f.held.source?.spec.label ? { label: f.held.source.spec.label } : {}) });
       }
     }
     const sx = f.mirror ? -fr.scale : fr.scale;
@@ -1818,7 +1918,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         code: "SPEAKER_TOO_SMALL",
         severity: "error",
         path: ipath,
-        message: `speaker "${fp.character}" is drawn with a head radius of ${Math.round(fp.headRadius)} units (under ${SPEAKER_MIN_HEAD_RADIUS}) in this ${shot} shot, too small to read as the speaker on a phone. Use a medium or close shot for dialogue (a full shot for a person), put a small creature that speaks at depth "fore", or move the line to a caption.`,
+        message: `speaker "${fp.character}" is drawn with a head radius of ${Math.round(fp.headRadius)} units (under ${SPEAKER_MIN_HEAD_RADIUS}) in this ${shot} shot, too small to read as the speaker on a phone. Show the speaker in a closer shot (a medium or close shot for dialogue, a full shot for a person), put fewer figures in this panel so the camera can come in, put a small creature that speaks at depth "fore", or move the line to a caption.`,
       });
     }
   }
@@ -1837,6 +1937,23 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       issues.push({ code: "FIGURE_CLIPPED", severity: "warning", path: ipath, message: `${Math.round((1 - inside) * 100)}% of "${fp.character}" falls outside the frame of this ${shot} panel. Use a slot nearer the centre or a wider shot.` });
     }
   }
+  // a head that is mostly cut by the panel edge (D31): a warning until it is calibrated on judged pages (D26)
+  if (shot !== "extreme_close") {
+    for (const fp of figures) {
+      const f = infos.find((g) => g.index === fp.figureIndex);
+      if (!f || (fp.headCropped === true && onColumnSet.has(f.index))) continue;
+      if (overlapArea(fp.body, box) / Math.max(1, boxArea(fp.body)) < 0.02) continue; // FIGURE_CLIPPED already
+      const share = circleShareInside(fp.head, fp.headRadius, box);
+      if (share > 0 && share < HEAD_PARTLY_CLIPPED_SHARE) {
+        issues.push({
+          code: "FIGURE_HEAD_PARTLY_CLIPPED",
+          severity: "warning",
+          path: ipath,
+          message: `only ${Math.round(share * 100)}% of the head of "${fp.character}" is inside the frame of this ${shot} panel, so the face is cut. Use a wider shot, another slot, or fewer figures so the face is seen.`,
+        });
+      }
+    }
+  }
   // the hero of the panel is still a speck after the floors (a warning: calibrated on 74 judged pages, see docs/launch/W2-renderer.md)
   if (shot !== "establishing") {
     for (const fp of figures) {
@@ -1849,6 +1966,24 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           severity: "warning",
           path: ipath,
           message: `"${fp.character}", the subject of this beat, fills only ${Math.round(share * 100)}% of this ${shot} panel (head radius ${Math.round(fp.headRadius)} units) even after the camera pushed in, and will not read. Use a medium or close shot for the subject, or a panel of its own.`,
+        });
+      }
+    }
+  }
+  // a planned figure that is a speck in a panel that is not an establishing shot (v0.3, Gate 2a): a warning that
+  // the writer repairs once (REPAIR_ONCE_CODES). A figure that HERO_TOO_SMALL or SPEAKER_TOO_SMALL already names is not named twice.
+  if (figureSizeIsChecked(shot)) {
+    for (const fp of figures) {
+      if (fp.headCropped) continue;
+      if (heroes.has(fp.figureIndex) && !speakers.has(fp.character) && issues.some((i) => i.code === "HERO_TOO_SMALL" && i.path === ipath && i.message.startsWith(`"${fp.character}"`))) continue;
+      if (speakers.has(fp.character) && fp.headRadius < SPEAKER_MIN_HEAD_RADIUS) continue;
+      const heightShare = Math.min(fp.body.h, box.h) / box.h;
+      if (heightShare < FIGURE_MIN_HEIGHT_SHARE) {
+        issues.push({
+          code: "FIGURE_TOO_SMALL",
+          severity: "warning",
+          path: ipath,
+          message: `"${fp.character}" is only ${Math.round(heightShare * 100)}% of the height of this ${shot} panel (head radius ${Math.round(fp.headRadius)} units) and will read as a speck. Use a closer shot for it, put fewer figures in the panel so the camera can come in, or give it a panel of its own.`,
         });
       }
     }
@@ -1902,7 +2037,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
           const ph = probe.height * scale;
           const pb = { x: ox - pw / 2, y: oy - ph, w: pw, h: ph };
           obstacles.push(pb);
-          propPlacements.push({ prop: propId, box: pb, key: true });
+          propPlacements.push({ prop: propId, box: pb, key: true, ...(first && first.prop === propId && first.label ? { label: first.label } : {}) });
         }
       }
     }
@@ -1978,7 +2113,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
       if (key) layers.fore.push(g);
       else layers[d].unshift(g);
       const pb = { x: x - w / 2, y: base - h, w, h };
-      propPlacements.push({ prop: p.prop, box: pb, key });
+      propPlacements.push({ prop: p.prop, box: pb, key, ...(p.label ? { label: p.label } : {}) });
       const inFrame = overlapArea(pb, box) / Math.max(1, boxArea(pb));
       const behind = key ? 0 : figures.reduce((sum, f) => sum + overlapArea(pb, f.body), 0) / Math.max(1, boxArea(pb));
       if (inFrame < 0.4 || behind > 0.75) {
@@ -1990,6 +2125,45 @@ export function composePanel(input: ComposeInput): ComposedPanel {
         });
       }
     }
+  }
+
+  // --- name tags of neutral props (PropSpec.label): beside the prop, clear of faces, lettering keeps off them
+  let labelSvg = "";
+  {
+    const taken: Box[] = [];
+    const faces = figures.filter((f) => !f.headCropped).map((f) => ({ center: f.head, radius: f.headRadius }));
+    propPlacements.forEach((pp, k) => {
+      if (!pp.label) return;
+      // v0.3 Gate 1 fix A3 (D29): a name tag is drawn only on the five neutral props; a named prop already has its look
+      if (!(NEUTRAL_PROPS as readonly string[]).includes(pp.prop)) {
+        issues.push({
+          code: "PROP_LABEL_IGNORED",
+          severity: "warning",
+          path: `${ipath} prop ${k}`,
+          message: `the label "${pp.label}" on the prop "${pp.prop}" is not drawn: only a neutral prop (thing_long, thing_round, thing_block, thing_flat, thing_heap) shows a name tag. Remove the label; to show a colour or a name, use a cast member with its own tone.`,
+        });
+        return;
+      }
+      const placed = placePropLabel(pp.label, pp.box, {
+        panel: box,
+        heads: faces,
+        bodies: figures.map((f) => f.body),
+        taken: [...propPlacements.filter((_, j) => j !== k).map((q) => q.box), ...taken],
+        seed: hashString(`${panel.id}|proplabel|${k}`),
+      });
+      if (!placed) {
+        issues.push({
+          code: "PROP_LABEL_DROPPED",
+          severity: "warning",
+          path: `${ipath} prop ${k}`,
+          message: `the name tag "${pp.label}" of the prop "${pp.prop}" has no free place beside it in this ${shot} panel (clear of faces and inside the frame), so it is not drawn. Use a wider shot or a panel with fewer figures.`,
+        });
+        return;
+      }
+      taken.push(placed.box);
+      labelSvg += placed.svg;
+    });
+    obstacles.push(...taken);
   }
 
   // --- where the panel's sound comes from (for SFX) ---------------------------
@@ -2045,6 +2219,7 @@ export function composePanel(input: ComposeInput): ComposedPanel {
     layers.mid.join(""),
     layers.fore.join(""),
     insertSvg,
+    labelSvg,
   ].join("");
   let overSvg = overFx.join("");
   let placedFigures = figures;

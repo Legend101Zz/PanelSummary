@@ -7,7 +7,9 @@ import {
   approvePlan,
   cancelEdition,
   generateEdition,
+  continueEdition,
   getBook,
+  getBookParts,
   getEdition,
   getPreflight,
   getStatus,
@@ -17,6 +19,7 @@ import {
   redrawPage,
   resumeEdition,
   type BookDetail,
+  type BookParts,
   type EditionDetail,
   type EditionScope,
   type GenerateBody,
@@ -26,7 +29,7 @@ import {
 import { useMedia, useNow, usePoll } from "@/lib/hooks";
 import { continuePage, readPosition } from "@/lib/position";
 import { readReviewPlan } from "@/lib/prefs";
-import { bookFacts } from "@/lib/words";
+import { bookFacts, readButton } from "@/lib/words";
 import { BottomBar, Button, Card, MomentBand, Notice, Skeleton, StepList, TextLink, PageFrame, RunCard } from "@/components/ui";
 import { SvgPage } from "@/components/SvgPage";
 import { BookSkeleton } from "@/components/book/BookSkeleton";
@@ -34,10 +37,13 @@ import { ChooseSections } from "@/components/book/ChooseSections";
 import { EstimateCard } from "@/components/book/EstimateCard";
 import { PlanReview, PlanReviewBarButton } from "@/components/book/PlanReview";
 import { PagesGrid } from "@/components/book/PagesGrid";
+import { ContinueNext, PartsList } from "@/components/book/Parts";
 import { About, Contents } from "@/components/book/ContentsAbout";
 import { MOMENT_TEXT, RunPanel, WAIT_FOR_PAGE_1, type Pending } from "@/components/book/RunPanel";
 import {
   actionErrorText,
+  continueBody,
+  showParts,
   generateOffReason,
   limitState,
   scopeOf,
@@ -71,6 +77,10 @@ export default function BookPage() {
   const [coverSvg, setCoverSvg] = useState<string | null>(null);
   const [lastRead, setLastRead] = useState<number | null>(null);
   const [localStop, setLocalStop] = useState(false);
+  // D39: the parts of the book as one series, and the Continue control.
+  const [parts, setParts] = useState<BookParts | null>(null);
+  const [continuing, setContinuing] = useState(false);
+  const [continueRefusal, setContinueRefusal] = useState<string | null>(null);
   const initialReady = useRef<boolean | null>(null);
   const chose = useRef(false);
 
@@ -177,6 +187,22 @@ export default function BookPage() {
   const overLimit = usage && limits ? !limitState(usage, limits).inside : false;
   const serverRefuses = preflight ? !preflight.within_limits : false;
 
+  // ---- parts of the book (D39) ---------------------------------------------------
+  // Asked again when the newest edition changes or finishes a page, so the list and Continue follow the run.
+  const partsKey = edition ? `${edition.id}:${edition.status}:${edition.pages_accepted}` : "";
+  useEffect(() => {
+    if (!edition) {
+      setParts(null);
+      return;
+    }
+    let live = true;
+    getBookParts(bookId).then((p) => live && setParts(p));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, partsKey]);
+
   // ---- after the run ---------------------------------------------------------
   const terminalWithResult = edition?.status === "complete" || edition?.status === "completed_with_failures";
   useEffect(() => {
@@ -249,6 +275,25 @@ export default function BookPage() {
       const result = await generateEdition(bookId, Object.keys(body).length ? body : undefined);
       await loadEdition(result.edition.id);
     });
+  const continueWith = async (continueFrom: string, sectionIds: string[]) => {
+    setContinuing(true);
+    setContinueRefusal(null);
+    try {
+      const review = readReviewPlan() ?? status?.plan_review_default;
+      const result = await continueEdition(bookId, continueBody(continueFrom, sectionIds, review));
+      await loadEdition(result.edition.id);
+    } catch (e) {
+      const reason = e instanceof Error ? e.message.trim().replace(/\.?$/, ".") : "";
+      const offline = e instanceof ApiError && e.status === 0;
+      setContinueRefusal(
+        offline
+          ? "Can’t reach the PanelSummary server. Check that it is running, then try again."
+          : `${reason} Nothing was started and nothing was spent. Choose other sections and try again.`.trim(),
+      );
+    } finally {
+      setContinuing(false);
+    }
+  };
   const stop = () =>
     run("cancel", async () => {
       if (!edition) return;
@@ -331,7 +376,7 @@ export default function BookPage() {
   const acceptedCount = edition?.pages.filter((p) => p.status === "accepted").length ?? 0;
   const canRead = !!edition && (page1?.status === "accepted" || (!isActive(edition.status) && acceptedCount > 0));
   const readHref = edition ? `/books/${bookId}/read?edition=${edition.id}&page=${lastRead ?? 1}` : "#";
-  const readLabel = lastRead && lastRead > 1 ? `Continue from page ${lastRead}` : "Start reading";
+  const { label: readLabel, hint: readHint } = readButton(lastRead);
   const awaiting = edition?.status === "awaiting_plan_review";
   const unreadable = book.status === "failed";
   const reading = book.status === "uploaded" || book.status === "parsing";
@@ -474,6 +519,7 @@ export default function BookPage() {
               pending={pending}
               readHref={readHref}
               readLabel={readLabel}
+              readHint={readHint}
               canRead={canRead}
               animateMoment={initialReady.current === false}
               narrow={narrow}
@@ -484,6 +530,12 @@ export default function BookPage() {
               onResume={() => resume("resume")}
               onRetry={() => resume("retry")}
             />
+          ) : null}
+
+          {edition && !awaiting && parts && showParts(parts.parts) ? <PartsList bookId={bookId} parts={parts} /> : null}
+
+          {edition && !awaiting && !active && parts?.can_continue ? (
+            <ContinueNext bookId={bookId} parts={parts} pending={continuing} refusal={continueRefusal} narrow={narrow} onContinue={continueWith} />
           ) : null}
 
           {!edition && actionError ? (
@@ -506,13 +558,13 @@ export default function BookPage() {
       ) : null}
 
       <div className={styles.lower}>
-        <Contents bookId={bookId} book={book} edition={edition} />
+        <Contents bookId={bookId} book={book} edition={edition} parts={parts} />
         {edition && !active && !awaiting && edition.pages_accepted + edition.pages_failed > 0 ? <About edition={edition} /> : null}
       </div>
 
       {showBar ? (
         <>
-          <BottomBar reserveSpace={false}>
+          <BottomBar>
             {reading || unreadable || showEstimate ? (
               generateButton
             ) : awaiting ? (
@@ -528,7 +580,6 @@ export default function BookPage() {
               </>
             )}
           </BottomBar>
-          <div className={styles.barSpacer} aria-hidden="true" />
         </>
       ) : null}
     </main>

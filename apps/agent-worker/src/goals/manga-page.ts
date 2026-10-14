@@ -12,7 +12,7 @@ import type {
 } from "@panelsummary/manga-render";
 import { svgToPng } from "@panelsummary/manga-render/raster";
 
-import { candidateParameters, dataBlock, FIX_BEFORE_SUBMIT, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
+import { candidateParameters, dataBlock, FIX_BEFORE_SUBMIT, errorsOf, formatIssues, parseCandidate, rejectedValueNote, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
 import { pageVocabulary } from "./vocabulary.js";
 import { claimEvidenceIssues } from "./claim-evidence.js";
@@ -41,7 +41,8 @@ export interface PageInput {
   total_pages: number;
   claims: Claim[];
   units: UnitText[];
-  previous?: { page_number: number; beat: string; template?: string; last_panel?: string };
+  /** `planned_hook` is the PLAN's page_turn_hook of the previous page (data from the plan, never from the model): pages are written in parallel and cannot see each other's spec. */
+  previous?: { page_number: number; beat: string; planned_hook: boolean; template?: string; last_panel?: string };
   next?: { page_number: number; beat: string };
   first_appearances: string[];
   /** Set on the first page of a section: its title must be lettered in a caption. */
@@ -391,7 +392,7 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
       total_pages: plan.pages.length,
       claims: understanding.claims.filter((claim) => page.claims.includes(claim.id)),
       units,
-      previous: prevPlanned ? { page_number: prevPlanned.page_number, beat: prevPlanned.beat, ...(previousRendered ?? {}) } : undefined,
+      previous: prevPlanned ? { page_number: prevPlanned.page_number, beat: prevPlanned.beat, planned_hook: prevPlanned.page_turn_hook === true, ...(previousRendered ?? {}) } : undefined,
       next: nextPlanned ? { page_number: nextPlanned.page_number, beat: nextPlanned.beat } : undefined,
       first_appearances: page.cast.filter((id) => !seenBefore.has(id)),
       order: unitOrder(understanding.sections ?? []),
@@ -460,7 +461,7 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
         if (render) parts.push(`Layout:\n${layoutReport(render)}`);
         const images = render && options.vision ? [{ data: svgToPng(render.svg, { width: 800 }).toString("base64"), mimeType: "image/png" as const }] : undefined;
         if (images) parts.push("The rendered page is attached. Judge it as a reader: reading order, who is speaking, legibility, whether the art carries the beat.");
-        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}${codesNote(issues)}` };
+        return { text: parts.join("\n\n"), images, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${rejectedValueNote(errorsOf(issues))}` };
       },
     };
 
@@ -479,7 +480,7 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
         if (render) repairChance = false;
         const once = chance ? checked.issues.filter(isRepairOnce).map((issue) => issue.code) : [];
         const onceNote = once.length ? ` repair_once=${[...new Set(once)].join(",")}` : "";
-        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${onceNote}` };
+        if (errorsOf(issues).length > 0 || !render) return { text: `${rejection(issues)}\n${TERSE_REPAIR}`, note: `errors=${errorsOf(issues).length}${codesNote(issues)}${rejectedValueNote(errorsOf(issues))}${onceNote}` };
         const spec = parsed.value as MangaPageSpec;
         lastRender = { spec, render: { ...render, issues } };
         const warnings = warningsOf(issues);
@@ -501,6 +502,9 @@ export const mangaPageGoal: GoalDefinition<PageInput> = {
       `Cast planned on this page: ${input.page.cast.join(", ") || "(none)"}. Locations: ${input.page.locations.join(", ")}.`,
       `End on a page-turn hook: ${input.page.page_turn_hook ? "yes" : "no"}.`,
       input.previous ? `Previous page ${input.previous.page_number}: ${input.previous.beat}${input.previous.last_panel ? ` (it ended on: ${input.previous.last_panel})` : ""}${input.previous.template ? ` [template ${input.previous.template}]` : ""}` : "This is the first page of the book.",
+      input.previous?.planned_hook
+        ? `Page ${input.previous.page_number} ENDS ON A PLANNED HOOK (its beat above names it). Your first panel must not repeat that hook line or its last picture: answer it or move on.`
+        : "",
       input.next ? `Next page ${input.next.page_number}: ${input.next.beat}` : "This is the last page of the book.",
       input.first_appearances.length ? `First appearance in the book on this page (introduce them by name): ${input.first_appearances.join(", ")}.` : "",
       input.opens_section ? `This page OPENS the section "${input.opens_section.title}": letter that title in a caption in the first panel.` : "",

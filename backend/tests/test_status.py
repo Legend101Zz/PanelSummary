@@ -89,7 +89,7 @@ def test_worker_up_with_key(tmp_path, monkeypatch):
     async def scenario(app):
         body = await _status(app)
         assert body["worker"] == {"reachable": True, "key_set": True, "replay": False}
-        assert body["api"] == "ok" and body["version"] == "0.2.0"
+        assert body["api"] == "ok" and body["version"] == "0.3.0"
 
     _with_stack(tmp_path, monkeypatch, _worker(True), scenario)
 

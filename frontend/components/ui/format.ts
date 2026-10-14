@@ -61,6 +61,16 @@ export function rangePosition(actual: number, low: number, high: number): { frac
   return { fraction, align: fraction < 0.2 ? "start" : fraction > 0.8 ? "end" : "center" };
 }
 
+/**
+ * Where the actual value is against the estimate range: faster than the low end, inside, or slower than the high end.
+ * The bar can only draw a mark inside the range, so a value outside is also said in words.
+ */
+export function rangeSide(actual: number, low: number, high: number): "below" | "within" | "above" {
+  if (actual < low) return "below";
+  if (actual > high) return "above";
+  return "within";
+}
+
 /** A meter value: the fill part and the over-limit part, as fractions of the track. */
 export function meterParts(value: number, limit: number): { fill: number; over: number; overBy: number; isOver: boolean } {
   if (limit <= 0) return { fill: 0, over: 0, overBy: 0, isOver: false };

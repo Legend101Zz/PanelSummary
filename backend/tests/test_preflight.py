@@ -18,11 +18,15 @@ import httpx
 import pytest
 
 from app.preflight import (
+    CURRENT_POLICY,
+    EARLIER_RUNS,
     FIT_RUNS,
+    MARGIN,
     UNDERSTANDING_S_PER_WORD_HIGH,
     UNDERSTANDING_TIMEOUT_S,
     build_preflight,
     check_limits,
+    draw_cost_range,
     estimate,
 )
 from app.settings import Settings
@@ -43,6 +47,20 @@ needs_mongo = pytest.mark.skipif(not _mongo_up(), reason="no MongoDB for the API
 # --- estimator: the ranges must contain every measured run ---
 
 
+def test_the_fit_has_the_v02_and_v03_runs_and_only_the_current_policy():
+    # 1 v0.1 run with Flash on every goal, 10 v0.2 runs (live lane 1-6 and 8, 2 final journeys, the v0.1.0
+    # hold-out journey), the owner's private book (numbers only) and 6 complete v0.3 runs (Gate 1, 1b, 2a).
+    # Nothing else may be in the ranges.
+    assert len(FIT_RUNS) == 18
+    assert sum(run.name.startswith("v0.3 ") for run in FIT_RUNS) == 6
+    assert {run.name for run in FIT_RUNS} >= {"understanding A/B, all Flash", "v0.2 private book (numbers only)"}
+    assert all(run.policy == CURRENT_POLICY for run in FIT_RUNS)
+    assert len({run.name for run in FIT_RUNS}) == len(FIT_RUNS)
+    # The earlier M3 runs stay on record, outside the ranges.
+    assert len(EARLIER_RUNS) == 11
+    assert all(run.policy != CURRENT_POLICY for run in EARLIER_RUNS)
+
+
 @pytest.mark.parametrize("run", FIT_RUNS, ids=lambda r: r.name)
 def test_ranges_contain_the_measured_run(run):
     est = estimate(run.words, run.sections)
@@ -56,6 +74,48 @@ def test_ranges_contain_the_measured_run(run):
     total_low, total_high = est["_seconds"]["total"]
     if run.finish_s is not None:
         assert total_low <= run.finish_s <= total_high
+    # The minutes the UI shows must contain the run too (floor and ceiling, never a smaller range).
+    minutes = est["estimated_minutes"]
+    assert minutes["first_page"]["low"] <= run.first_page_s / 60 <= minutes["first_page"]["high"]
+    assert minutes["total"]["low"] <= run.finish_s / 60 <= minutes["total"]["high"]
+
+
+@pytest.mark.parametrize("run", [r for r in FIT_RUNS if r.draw_cost_usd is not None], ids=lambda r: r.name)
+def test_the_draw_range_contains_the_page_receipts_of_the_run(run):
+    out = draw_cost_range(run.manga_pages)
+    assert out["low"] <= run.draw_cost_usd <= out["high"]
+
+
+def test_the_ranges_are_the_envelope_of_the_runs_widened_by_the_stated_margin():
+    # Not wider than the data allows: each bound is within the margin (plus a rounding slack of 5 %)
+    # of the extreme that was measured. A bound that moves further out must come with a new run.
+    from app import preflight as pf
+
+    slack = 1 + MARGIN + 0.05
+    per_kword = [run.manga_pages / run.words * 1000 for run in FIT_RUNS]
+    assert pf.PAGES_PER_KWORD_LOW <= min(per_kword) and pf.PAGES_PER_KWORD_LOW >= min(per_kword) / slack
+    assert pf.PAGES_PER_KWORD_HIGH >= max(per_kword) and pf.PAGES_PER_KWORD_HIGH <= max(per_kword) * slack
+    page_s = [(run.finish_s - run.first_page_s) / (run.manga_pages - 1) for run in FIT_RUNS]
+    assert pf.PAGE_S_LOW <= min(page_s) and pf.PAGE_S_LOW >= min(page_s) / slack
+    assert pf.PAGE_S_HIGH >= max(page_s) and pf.PAGE_S_HIGH <= max(page_s) * slack
+    draw = [run.draw_cost_usd / run.manga_pages for run in FIT_RUNS if run.draw_cost_usd is not None]
+    assert pf.DRAW_COST_PER_PAGE_LOW <= min(draw) and pf.DRAW_COST_PER_PAGE_LOW >= min(draw) / slack
+    assert pf.DRAW_COST_PER_PAGE_HIGH >= max(draw) and pf.DRAW_COST_PER_PAGE_HIGH <= max(draw) * slack
+    # First page: the base after the per-word term, over all fit runs (the slow v0.1 hour is inside it).
+    bases = [run.first_page_s - pf.FIRST_PAGE_S_PER_WORD * run.words for run in FIT_RUNS]
+    assert pf.FIRST_PAGE_BASE_S_LOW <= min(bases) and pf.FIRST_PAGE_BASE_S_HIGH >= max(bases)
+    assert min(bases) - 1 <= pf.FIRST_PAGE_BASE_S_LOW and pf.FIRST_PAGE_BASE_S_HIGH <= max(bases) + 1
+    # Cost factors: the smallest and the largest ratio of a measured cost to the cost model at the
+    # low and the high page count of the range, widened by the margin (rounded outward, 0.01 slack).
+    low, high = [], []
+    for run in FIT_RUNS:
+        kwords = run.words / 1000
+        pages = estimate(run.words, run.sections)["estimated_manga_pages"]
+        model = lambda n: pf.COST_PER_KWORD * kwords + pf.COST_PER_PAGE * n  # noqa: E731
+        low.append(run.cost_usd / model(pages["low"]))
+        high.append(run.cost_usd / model(pages["high"]))
+    assert pf.COST_LOW_FACTOR <= min(low) * (1 - MARGIN) + 0.005
+    assert pf.COST_HIGH_FACTOR >= max(high) * (1 + MARGIN) and pf.COST_HIGH_FACTOR <= max(high) * (1 + MARGIN) + 0.01
 
 
 def test_ranges_are_ordered_and_grow_with_the_book():
@@ -128,22 +188,19 @@ def test_build_preflight_shape_and_basis():
     assert out["within_limits"] is True and out["blocking_reasons"] == []
     assert "not a bill" in out["estimated_cost_usd"]["basis"]
     assert "not measured again" not in out["estimated_cost_usd"]["basis"]
-    # The basis says what the range rests on, and names the Flash policy runs.
+    # The basis says what the range rests on: the runs with Flash on every goal.
     basis = out["estimated_cost_usd"]["basis"]
-    assert f"{len(FIT_RUNS)} measured runs" in basis and "Flash" in basis
-    # The measured policies need no warning: all M3, M3 understanding with Flash plan and pages, and all Flash.
-    for models in (("MiniMax-M3",) * 3, ("MiniMax-M3", "MiniMax-M3", "MiniMax-M3.1-Flash-Preview"), ("MiniMax-M3.1-Flash-Preview",) * 3):
+    assert f"{len(FIT_RUNS)} measured runs with Flash on every goal" in basis
+    assert "9 books of 26 to 68 PDF pages" in basis
+    # The ranges are fitted on the all-Flash policy (D13). Any other policy must say it was not measured.
+    for models in (("MiniMax-M3",) * 3, ("MiniMax-M3", "MiniMax-M3", "MiniMax-M3.1-Flash-Preview")):
         s2 = Settings(_env_file=None, understanding_model=models[0], plan_model=models[1], page_model=models[2])
-        assert "not measured again" not in build_preflight("b1", 26, 5794, 2, s2)["estimated_cost_usd"]["basis"]
-    # A policy nobody measured (Flash understanding with M3 plan and pages) must say so.
-    other = Settings(_env_file=None, understanding_model="MiniMax-M3.1-Flash-Preview", plan_model="MiniMax-M3", page_model="MiniMax-M3")
-    assert "not measured again" in build_preflight("b1", 26, 5794, 2, other)["estimated_cost_usd"]["basis"]
+        assert "not measured again" in build_preflight("b1", 26, 5794, 2, s2)["estimated_cost_usd"]["basis"]
 
 
-def test_the_fit_includes_the_flash_policy_runs():
-    flash = [run for run in FIT_RUNS if "MiniMax-M3.1-Flash-Preview" in run.policy]
-    assert len(flash) == 5
-    assert sum(run.policy == ("MiniMax-M3.1-Flash-Preview",) * 3 for run in flash) == 1  # the all-Flash default (D13)
+def test_the_default_policy_is_the_measured_policy():
+    s = Settings(_env_file=None)
+    assert (s.understanding_model, s.plan_model, s.page_model) == CURRENT_POLICY  # the all-Flash default (D13)
 
 
 # --- API ---
@@ -241,26 +298,24 @@ def test_preflight_endpoint_and_generate_refusal(tmp_path, monkeypatch):
         db_module._client = None
 
 
-def test_the_basis_counts_each_policy_and_names_no_stale_claim():
+def test_the_basis_counts_the_runs_and_names_no_stale_claim():
     from app.preflight import cost_basis
     from app.settings import Settings
     text = cost_basis(Settings(_env_file=None))
-    flash = "MiniMax-M3.1-Flash-Preview"
-    n_all_flash = sum(1 for run in FIT_RUNS if run.policy == (flash,) * 3)
-    assert n_all_flash >= 1
-    assert f"and {n_all_flash} with Flash on every goal" in text
+    assert f"{len(FIT_RUNS)} measured runs with Flash on every goal" in text
     assert "M3 on the book understanding in all" not in text
+    assert "not measured again" not in text
 
 
 # --- scope (issue #40) and the plan-review cost range ---
 
 
 def test_draw_cost_range_for_sixteen_pages():
-    from app.preflight import COST_HIGH_FACTOR, COST_LOW_FACTOR, COST_PER_PAGE, draw_cost_range
+    from app.preflight import DRAW_COST_PER_PAGE_HIGH, DRAW_COST_PER_PAGE_LOW
 
     out = draw_cost_range(16)
-    assert out == {"low": round(16 * COST_PER_PAGE * COST_LOW_FACTOR, 2), "high": round(16 * COST_PER_PAGE * COST_HIGH_FACTOR, 2)}
-    assert out == {"low": 0.41, "high": 0.6}
+    assert out == {"low": round(16 * DRAW_COST_PER_PAGE_LOW, 2), "high": round(16 * DRAW_COST_PER_PAGE_HIGH, 2)}
+    assert out == {"low": 0.3, "high": 0.58}
     assert draw_cost_range(0) == {"low": 0.0, "high": 0.0}
 
 

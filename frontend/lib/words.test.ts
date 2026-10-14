@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { STAND_INS_NOTE, STAND_INS_TITLE, standInDetail, usedWords } from "./words";
 import { detailText } from "./api";
-import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
+import { CONTINUE_CHOOSE, CONTINUE_CHOOSE_DONE, CONTINUE_CHOOSE_LEGEND, CONTINUE_LEAD, CONTINUE_TITLE, PARTS_NOTE, PARTS_TITLE, continueLabel, partLabel, partStatusWord } from "./words";
+import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine, readButton } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
 describe("words", () => {
@@ -220,3 +222,65 @@ describe("readableReason, case", () => {
   });
 });
 
+
+describe("stand-ins (D30)", () => {
+  it("names a neutral item in plain words and falls back to the item's own name", () => {
+    expect(usedWords("quad_large")).toBe("a large four-legged figure");
+    expect(usedWords("generic_passage")).toBe("a plain passage");
+    expect(usedWords("thing_long")).toBe("a long shape");
+    expect(usedWords("city_square")).toBe("a city square");
+    expect(usedWords("")).toBe("a plain figure");
+  });
+  it("says a neutral figure or prop is labelled, a near match is drawn as, and a place has no label", () => {
+    expect(standInDetail({ type: "cast", name: "The Calf", wanted: "a young elephant", used: "quad_large", fit: "none" })).toBe("a large four-legged figure, labelled");
+    expect(standInDetail({ type: "prop", name: "", wanted: "a blade-bone", used: "thing_long", fit: "none" })).toBe("a long shape, labelled");
+    expect(standInDetail({ type: "cast", name: "The Mouse", wanted: "a mouse", used: "rat", fit: "near" })).toBe("drawn as a rat");
+    expect(standInDetail({ type: "place", name: "The Maze", wanted: "the maze", used: "generic_passage", fit: "none" })).toBe("a plain passage");
+  });
+  it("keeps the section title and note short and plain", () => {
+    expect(STAND_INS_TITLE).toBe("Drawn as stand-ins");
+    expect(STAND_INS_NOTE.length).toBeLessThan(200);
+  });
+});
+
+describe("readButton (one rule for the read button label)", () => {
+  it("says Continue only when this browser has a saved place on page 2 or later, and then says where it is kept", () => {
+    expect(readButton(5)).toEqual({ label: "Continue from page 5", hint: "Your place is saved in this browser only." });
+    expect(readButton(2).label).toBe("Continue from page 2");
+  });
+  it("says Start reading with no hint when this browser has no place or the place is page 1", () => {
+    expect(readButton(null)).toEqual({ label: "Start reading", hint: null });
+    expect(readButton(1)).toEqual({ label: "Start reading", hint: null });
+  });
+});
+
+describe("continue with the next section (M1)", () => {
+  it("labels a part with its pages in the series numbering", () => {
+    expect(partLabel(2, 23, 40)).toBe("Part 2 · pages 23–40");
+    expect(partLabel(1, 1, 1)).toBe("Part 1 · page 1");
+    expect(partLabel(3, 41, null)).toBe("Part 3 · from page 41");
+  });
+  it("labels the Continue button by the section or the count", () => {
+    expect(continueLabel(["Chapter Two"])).toBe("Continue with “Chapter Two”");
+    expect(continueLabel(["A", "B"])).toBe("Continue with 2 sections");
+    expect(continueLabel([])).toBe("Choose a section to continue");
+  });
+  it("never uses the words of the Generate button (the test hook is one button 'Generate manga')", () => {
+    const all = [CONTINUE_CHOOSE, CONTINUE_CHOOSE_DONE, CONTINUE_CHOOSE_LEGEND, CONTINUE_LEAD, CONTINUE_TITLE, PARTS_NOTE, PARTS_TITLE, continueLabel(["x"]), continueLabel(["x", "y"]), continueLabel([]), partLabel(2, 3, 4)];
+    for (const text of all) expect(text.toLowerCase()).not.toContain("generate");
+  });
+  it("says a part's status in one phrase, and nothing for a complete part", () => {
+    expect(partStatusWord("complete", 0)).toBeNull();
+    expect(partStatusWord("completed_with_failures", 2)).toBe("2 pages not drawn");
+    expect(partStatusWord("completed_with_failures", 0)).toBe("Some points are not covered");
+    expect(partStatusWord("drawing", 0)).toBe("Drawing");
+    expect(partStatusWord("failed", 0)).toBe("Stopped");
+  });
+});
+
+describe("version text", () => {
+  it("names v0.3 and the v0.2.0 release date", async () => {
+    const w = await import("./words");
+    expect(w.SETTINGS_VERSION).toBe("PanelSummary v0.3. Version 0.2.0 was released on 10 October 2026.");
+  });
+});

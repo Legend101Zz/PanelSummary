@@ -1,4 +1,4 @@
-// The shared UI components of PanelSummary v0.2. The contract is in README.md.
+// The shared UI components of PanelSummary v0.3. The contract is in README.md.
 export * from "./icons";
 export { cx } from "./cx";
 export * from "./format";
@@ -30,7 +30,7 @@ export { segmentsFromPages, describeSegments, summaryLine, formatPageList, count
 export type { SegmentState } from "./toneStripLogic";
 export { StepList } from "./StepList";
 export { stepStates } from "./steps";
-export { ResultLine } from "./ResultLine";
+export { ResultLine, OUTSIDE_ABOVE, OUTSIDE_BELOW, OUTSIDE_COST } from "./ResultLine";
 export { EstimatePanel } from "./EstimatePanel";
 export { Card } from "./Card";
 export { RunCard } from "./RunCard";

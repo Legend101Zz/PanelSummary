@@ -426,7 +426,7 @@ export const SETTINGS_LEAVES =
   "The book text and a PNG preview of each drawn page go to MiniMax (api.minimax.io). In the final v0.1 test run, the drawing service contacted no other host. No image-generation model is used. In your browser, the app talks only to your own PanelSummary server.";
 export const SETTINGS_COST = "Costs are estimates at MiniMax-M3 rates, because MiniMax publishes no price for the M3.1 Flash model. They are not a bill.";
 export const SETTINGS_DATA = "On your computer, in MongoDB and the stored PDFs.";
-export const SETTINGS_VERSION = "PanelSummary v0.2. Version 0.1.0 was released on 9 October 2026.";
+export const SETTINGS_VERSION = "PanelSummary v0.3. Version 0.2.0 was released on 10 October 2026.";
 export const SETTINGS_CREDITS =
   "The interface is set in Bricolage Grotesque. The manga lettering uses Comic Neue for balloons and captions and Bangers for sound effects. Bricolage Grotesque, Comic Neue and Bangers are all under the SIL Open Font License. The sample texts are from Project Gutenberg.";
 export const REVIEW_PLAN_NOTE = "When this is on, PanelSummary shows the plan of the pages before it draws, and you press the button to start the drawing. It is off until you turn it on.";
@@ -569,4 +569,98 @@ export function readableReason(reason: string, claimsById?: ClaimTexts): string 
   });
   out = out.replace(/^[a-z][a-z_-]*:\s+/i, "");
   return out ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+}
+
+/* ------------------------------------------------------------------ stand-ins (D30) */
+
+/** One thing of the book that no drawing item fits: the understanding reports it and the page shows it. */
+export interface StandInRow {
+  type: "cast" | "place" | "prop";
+  name: string;
+  wanted: string;
+  used: string;
+  fit: "near" | "none";
+}
+
+export const STAND_INS_TITLE = "Drawn as stand-ins";
+export const STAND_INS_NOTE = "These things have no matching picture in the drawing set. They are drawn as a plain stand-in of the same kind, and the page says so.";
+
+/** What a neutral drawing item looks like, in plain words. An item that is not here is shown by its own name. */
+const USED_WORDS: Record<string, string> = {
+  quad_small: "a small four-legged figure",
+  quad_medium: "a medium four-legged figure",
+  quad_large: "a large four-legged figure",
+  long_low: "a long low figure",
+  swimmer: "a swimming figure",
+  bird_tall: "a tall bird figure",
+  generic_room: "a plain room",
+  generic_hall: "a plain hall",
+  generic_passage: "a plain passage",
+  generic_rough: "a rough stone place",
+  generic_outdoor: "a plain open place",
+  thing_long: "a long shape",
+  thing_round: "a round shape",
+  thing_block: "a block shape",
+  thing_flat: "a flat shape",
+  thing_heap: "a heap",
+};
+
+export function usedWords(used: string): string {
+  const key = used.trim();
+  if (USED_WORDS[key]) return USED_WORDS[key];
+  const name = key.replace(/_/g, " ");
+  return name ? `${/^[aeiou]/i.test(name) ? "an" : "a"} ${name}` : "a plain figure";
+}
+
+/** "a young elephant" and "(a large four-legged figure, labelled)": the second part as one string. */
+export function standInDetail(row: StandInRow): string {
+  const used = usedWords(row.used);
+  if (row.fit === "near") return `drawn as ${used}`;
+  return row.type === "place" ? used : `${used}, labelled`;
+}
+
+/**
+ * The reading place is kept in this browser only (localStorage), so another browser or device says "Start reading".
+ * One rule, said in words: the book page offers "Continue from page N" only when this browser has a saved place, and then adds this line.
+ */
+export const READING_PLACE_HINT = "Your place is saved in this browser only.";
+
+/** The label of the read button, and the hint that goes with it. `lastRead` is the saved page of this browser (a drawn page 2 or later) or null. */
+export function readButton(lastRead: number | null): { label: string; hint: string | null } {
+  if (lastRead !== null && lastRead > 1) return { label: `Continue from page ${lastRead}`, hint: READING_PLACE_HINT };
+  return { label: "Start reading", hint: null };
+}
+
+// ---------------------------------------------------------------------------
+// M1: continue with the next section (D38, D39). None of these words is "Generate manga" (the test hook).
+// ---------------------------------------------------------------------------
+
+/** "Part 2 · pages 23–40": a part of the book in the series numbering. The reader numbers each edition from 1. */
+export function partLabel(part: number, first: number, last: number | null): string {
+  const pages = last === null ? `from page ${first}` : first === last ? `page ${first}` : `pages ${first}–${last}`;
+  return `Part ${part} · ${pages}`;
+}
+
+export const PARTS_TITLE = "Parts of the book";
+export const PARTS_NOTE = "Each part is read on its own, and its pages count from 1 in the reader. Here the pages continue from part to part.";
+export const CONTINUE_TITLE = "Continue with the next section";
+export const CONTINUE_LEAD = "The next part keeps the same cast, the same looks and the same places as the parts before it.";
+export const CONTINUE_CHOOSE = "Choose other sections";
+export const CONTINUE_CHOOSE_DONE = "Use the next section";
+export const CONTINUE_CHOOSE_LEGEND = "Sections after the last part";
+
+/** The label of the Continue button: one section by its title, or a count. Never "Generate manga". */
+export function continueLabel(titles: string[]): string {
+  if (titles.length === 0) return "Choose a section to continue";
+  return titles.length === 1 ? `Continue with “${titles[0]}”` : `Continue with ${titles.length} sections`;
+}
+
+/** The status of a part in one short phrase, for the parts list. A complete part has none. */
+export function partStatusWord(status: string, failed: number): string | null {
+  if (status === "complete") return null;
+  if (status === "completed_with_failures") return failed > 0 ? `${plural(failed, "page")} not drawn` : "Some points are not covered";
+  if (status === "failed") return "Stopped";
+  if (status === "cancelled") return "Cancelled";
+  if (status === "awaiting_plan_review") return "Waiting for your review";
+  return "Drawing";
 }

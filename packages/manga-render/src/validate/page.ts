@@ -15,7 +15,9 @@ import {
   ENV_FEATURES,
   EXPRESSIONS,
   MATERIALS,
+  NEUTRAL_PROPS,
   OUTFITS,
+  PROP_LABEL_MAX,
   PERCH_PARTS,
   POSES,
   PROPS,
@@ -66,12 +68,37 @@ const FIGURE_KEYS = ["character", "variant", "pose", "expression", "facing", "sl
 const VARIANT_KEYS = ["eyes", "bloom", "material", "outfit", "outfit_tone", "hair_tone", "tone"];
 /** Props too big to hold in a hand: draw them as a prop beside the figure. */
 const TOO_BIG_TO_HOLD = new Set(["wheelbarrow", "ballot_box", "coins_pile", "sign", "stove", "loom", "angel", "sledge"]);
-const PROP_KEYS = ["prop", "slot", "depth", "tone"];
+const PROP_KEYS = ["prop", "slot", "depth", "tone", "label"];
 const TEXT_KEYS = ["kind", "speaker", "about", "text", "fidelity", "source"];
 const ON_KEYS = ["target", "part"];
 
 /** Share of the page a first panel should take after a page-turn hook. */
 export const HOOK_PAYOFF_MIN_SHARE = 0.3;
+
+/** PropSpec.label: plain text, at most PROP_LABEL_MAX characters. A neutral thing_* prop without one is a warning. */
+function checkPropLabel(p: Record<string, unknown>, issues: Issues, ppath: string): void {
+  const neutral = typeof p.prop === "string" && (NEUTRAL_PROPS as readonly string[]).includes(p.prop);
+  const label = p.label;
+  if (label === undefined) {
+    if (neutral) {
+      issues.warn(
+        "NEUTRAL_PROP_UNLABELLED",
+        ppath,
+        `"${String(p.prop)}" is a neutral shape, so it needs a "label" that says what it is (at most ${PROP_LABEL_MAX} characters, plain text, e.g. "bone"). Without a label the reader sees an unnamed shape.`,
+      );
+    }
+    return;
+  }
+  if (typeof label !== "string") {
+    issues.error("FIELD_TYPE", ppath, `prop "label" must be a short plain text, got ${show(label)}.`);
+  } else if (label.trim() === "") {
+    issues.error("PROP_LABEL_EMPTY", ppath, `prop "label" is empty; write what the prop is (at most ${PROP_LABEL_MAX} characters), or remove "label".`);
+  } else if (label.length > PROP_LABEL_MAX) {
+    issues.error("PROP_LABEL_TOO_LONG", ppath, `prop "label" has ${label.length} characters; the maximum is ${PROP_LABEL_MAX}. Use a short name ("bone", "the sack").`);
+  } else if (/[<>&\u0000-\u001f]/.test(label)) {
+    issues.error("PROP_LABEL_MARKUP", ppath, `prop "label" must be plain text: remove < > & and control characters.`);
+  }
+}
 
 export interface PageCheckOptions {
   /** The previous page ended on a page-turn hook (enables FIRST_PANEL_SMALL_AFTER_HOOK). */
@@ -342,6 +369,19 @@ export function validatePage(spec: unknown, book: BookRefs, planned?: PlannedPag
         checkEnum(p, "slot", SLOTS, issues, ppath);
         checkEnum(p, "depth", DEPTHS, issues, ppath, false);
         checkEnum(p, "tone", TONES, issues, ppath, false);
+        checkPropLabel(p, issues, ppath);
+      });
+      // a neutral thing_* prop is a stand-in by shape: it needs a label that says what it is
+      figures?.forEach((f, fi) => {
+        if (!isRecord(f) || typeof f.holding !== "string" || !(NEUTRAL_PROPS as readonly string[]).includes(f.holding)) return;
+        const labelled = props?.some((p) => isRecord(p) && p.prop === f.holding && typeof p.label === "string" && p.label.trim() !== "");
+        if (!labelled) {
+          issues.warn(
+            "NEUTRAL_PROP_UNLABELLED",
+            `${path} figure ${fi}`,
+            `"${f.holding}" is held with no name tag, so a reader cannot tell what it is. List it in the panel's "props" with a "label" (at most ${PROP_LABEL_MAX} characters, e.g. "bone") instead of, or as well as, "holding".`,
+          );
+        }
       });
 
       // fx

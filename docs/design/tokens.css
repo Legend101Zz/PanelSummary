@@ -34,6 +34,8 @@
  * --app-needs-you            --redpen (text, failed segment, red-pen bar) and --redpen-wash (notice ground)
  * --app-moment               new
  * --app-tone                 --pencil (the hatch of the segment that is drawing; screentone dots replace it)
+ * --app-seg-drawn            new (a drawn tone-strip segment; grey in dark, owner 2026-10-11)
+ * --app-seg-wait-tone        new (the dots of a waiting tone-strip segment; none in dark, owner 2026-10-11)
  * --app-note                 --ink as an inverse block (.obi_ink in components/Paper.module.css)
  * --app-on-note              --sheet (the text colour of .obi_ink)
  * --app-page-edge            new (v0.1 gave page thumbnails a soft shadow, not an edge)
@@ -90,6 +92,8 @@
   --app-needs-you: #EE6A45;          /* Coral: something needs the person (fill only, never white text) */
   --app-moment: #F7DD5A;             /* Yellow: the page 1 moment only */
   --app-tone: #121212;               /* Screentone dots: tone strip, waiting and drawing tiles */
+  --app-seg-drawn: #121212;          /* A drawn tone-strip segment */
+  --app-seg-wait-tone: #121212;      /* The dots of a waiting tone-strip segment */
   --app-note: #121212;               /* Inverse note block ("This page updates itself") */
   --app-on-note: #FFFFFF;            /* Text on the note block */
   --app-page-edge: #121212;          /* Edge of a manga page on the ground (none on graphite) */
@@ -119,6 +123,8 @@
   --app-needs-you-dark: #E8704C;
   --app-moment-dark: #E2C752;
   --app-tone-dark: #ECEBE6;
+  --app-seg-drawn-dark: #B4B5B8;     /* Owner 2026-10-11: grey, so the manga pages stay the only paper-bright things */
+  --app-seg-wait-tone-dark: transparent; /* Owner 2026-10-11: a waiting segment is an outline only */
   --app-note-dark: #383A3F;
   --app-on-note-dark: #ECEBE6;
   --app-page-edge-dark: transparent;
@@ -190,6 +196,8 @@
   --app-needs-you: var(--app-needs-you-dark);
   --app-moment: var(--app-moment-dark);
   --app-tone: var(--app-tone-dark);
+  --app-seg-drawn: var(--app-seg-drawn-dark);
+  --app-seg-wait-tone: var(--app-seg-wait-tone-dark);
   --app-note: var(--app-note-dark);
   --app-on-note: var(--app-on-note-dark);
   --app-page-edge: var(--app-page-edge-dark);
@@ -224,6 +232,8 @@
     --app-needs-you: var(--app-needs-you-dark);
     --app-moment: var(--app-moment-dark);
     --app-tone: var(--app-tone-dark);
+    --app-seg-drawn: var(--app-seg-drawn-dark);
+    --app-seg-wait-tone: var(--app-seg-wait-tone-dark);
     --app-note: var(--app-note-dark);
     --app-on-note: var(--app-on-note-dark);
     --app-page-edge: var(--app-page-edge-dark);
@@ -259,6 +269,8 @@
   --app-needs-you: var(--app-needs-you-dark);
   --app-moment: var(--app-moment-dark);
   --app-tone: var(--app-tone-dark);
+  --app-seg-drawn: var(--app-seg-drawn-dark);
+  --app-seg-wait-tone: var(--app-seg-wait-tone-dark);
   --app-note: var(--app-note-dark);
   --app-on-note: var(--app-on-note-dark);
   --app-page-edge: var(--app-page-edge-dark);

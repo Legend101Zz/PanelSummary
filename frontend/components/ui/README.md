@@ -26,7 +26,7 @@ Look at every component in both themes at `/dev/components`. That page is only f
 |---|---|
 | `SkipLink` | "Skip to content". It moves focus to `<main id="main">`. Each screen has its own `<main id="main">`. |
 | `Header` | Wordmark with its mark (links to `/`), the links Shelf and Settings (the current page has a 2 px underline and 700 weight), "Add a book" (the only header button), and a 44 x 44 theme button. Below 768 px: wordmark, theme button and a menu button. The menu dims the page and makes it inert. Escape closes it. |
-| `Footer` | "PanelSummary v0.2", a "Settings / About" link and the line "PanelSummary runs on your computer. Only MiniMax gets the book text and page previews." |
+| `Footer` | "PanelSummary v0.3", a "Settings / About" link and the line "PanelSummary runs on your computer. Only MiniMax gets the book text and page previews." |
 | `ThemeButton` | Switches Light and Dark. `aria-pressed` is true when dark is on. |
 
 The reader and the PDF viewer are in `app/(reader)/`. They do not get this frame. The reader layout keeps the v0.1 skip link.
@@ -143,7 +143,7 @@ Board: Comp-RunCard.
 - `RunCard` is a layout shell. It holds no logic. Slots: `eyebrow`, `headline` (a polite live region), `notice`, `steps`, `strip`, `children`, `time`, `actions`, `notes`.
 
 ### BottomBar
-- Props: `children` (one primary action), `narrowOnly` (default true: hidden from 768 px), `reserveSpace` (default true: adds a spacer so the bar covers no content).
+- Props: `children` (one primary action), `narrowOnly` (default true: hidden from 768 px), `reserveSpace` (default true: the bar measures its height and sets `--app-bar-h` on the document; the app frame pads its bottom by that value, so the bar covers no content and not the footer, also when the bar is taller, for example the page 1 band with two buttons).
 - Fixed to the bottom, with the safe-area padding of a phone.
 
 ### DropZone

@@ -5,6 +5,7 @@ Collections (new names, so an older database's v1 documents never collide):
 - book_sources       — parsed sections and page-true source units (one per book)
 - editions           — one manga adaptation run of a book
 - edition_artifacts  — accepted book understanding and adaptation plan
+- book_understandings — each accepted understanding of a book, by version (D38)
 - edition_pages      — one row per planned page; unique (edition_id, page_number)
 - generation_jobs    — leased background jobs (parse, generate)
 - runner_heartbeat   — one document, written by the job runner on every poll
@@ -99,6 +100,15 @@ class Edition(Document):
     scope: Optional[dict[str, Any]] = None
     understanding_id: Optional[str] = None
     plan_id: Optional[str] = None
+    # Continue with the next section (D38). ``continues_edition_id`` is the earlier part this edition
+    # continues (None = a first part). ``first_page_number`` is the number of this part's first page in
+    # the book as one series (the reader still numbers each edition from 1). ``understanding_version`` is
+    # the version of the prior understanding it used (None = none); ``understanding_version_produced`` is
+    # the version it stored. Older editions have none of these.
+    continues_edition_id: Optional[str] = None
+    first_page_number: int = 1
+    understanding_version: Optional[int] = None
+    understanding_version_produced: Optional[int] = None
     page_total: int = 0
     pages_accepted: int = 0
     pages_failed: int = 0
@@ -137,6 +147,28 @@ class EditionArtifact(Document):
     class Settings:
         name = "edition_artifacts"
         indexes = [pymongo.IndexModel([("edition_id", 1), ("kind", 1)], unique=True)]
+
+
+class BookUnderstanding(Document):
+    """One accepted understanding of a book (D38). ``version`` counts from 1 for each book; it grows by one
+    for each edition that produces an understanding. A continuation reads the version of the edition it
+    continues. One row per edition, so a resumed job never stores a version twice."""
+
+    book_id: str
+    version: int
+    understanding: dict[str, Any]
+    edition_id: str
+    scope: Optional[dict[str, Any]] = None
+    # The version this understanding continued (None = made from the text alone).
+    prior_version: Optional[int] = None
+    created_at: datetime = Field(default_factory=utcnow)
+
+    class Settings:
+        name = "book_understandings"
+        indexes = [
+            pymongo.IndexModel([("book_id", 1), ("version", 1)], unique=True),
+            pymongo.IndexModel([("edition_id", 1)], unique=True),
+        ]
 
 
 class EditionPage(Document):
@@ -210,4 +242,4 @@ class RunnerHeartbeat(Document):
         indexes = [pymongo.IndexModel([("key", 1)], unique=True)]
 
 
-DOCUMENTS = [LibraryBook, BookSource, Edition, EditionArtifact, EditionPage, GenerationJob, RunnerHeartbeat]
+DOCUMENTS = [LibraryBook, BookSource, Edition, EditionArtifact, BookUnderstanding, EditionPage, GenerationJob, RunnerHeartbeat]

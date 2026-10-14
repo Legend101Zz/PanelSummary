@@ -5,7 +5,7 @@
 | `journey.mjs` | Live journey in Chrome (spends MiniMax tokens) |
 | `ui-retry.mjs` | Press "Retry failed pages" in the UI (`--web`, `--api`; default `http://127.0.0.1:3100` and `http://127.0.0.1:8000`) |
 | `export_run.py` | Export one edition for the judges (added by the CI track) |
-| `judge/` | Quality judge panel and aggregation (this page) |
+| `judge/` | Quality judge panel, aggregation, defect kinds and run comparison (this page) |
 
 Full guide: `docs/launch/EVAL.md`.
 
@@ -34,6 +34,55 @@ python3 scripts/acceptance/judge/aggregate.py DIR/judgments.json \
 
 `export_run.py` writes `understanding.json`, `plan.json`, `units.json`, `edition.json`,
 `receipts.json`, `egress.json` and `judge/page-NN.{json,svg}`.
+
+## Offline checks (no model call, no spend)
+
+```sh
+python3 -m unittest discover -s scripts/acceptance/judge -v   # aggregate, kinds, rates, comparison (CI runs this)
+node scripts/acceptance/judge/check-workflow.mjs               # the judge workflow with a fake agent
+python3 scripts/acceptance/judge/kinds_rates.py scripts/acceptance/judge/fixtures/*.json.gz
+```
+
+## Defect kinds and the v0.3 protocol
+
+`judge/kinds.py` sorts the defect texts of the judges into 21 kinds with keyword rules. These are the
+v0.1 rules, unchanged: every published defect rate is measured with them. Do not edit a rule (a changed
+rule breaks the comparison with old runs).
+
+`judge/kinds_rates.py` gives the rate of each kind: blocker plus major defects, divided by the number of
+judge-pages (one judge's judgment of one page). One defect can match several kinds. Options:
+`--kinds a,b` (select kinds), `--severity blocker,major,minor` (default `blocker,major`, the measure of the
+gates), `--json` (machine output). Input: `judgments.json` files or fixtures, optionally `LABEL=PATH`.
+
+| Gate measure (`docs/v0.2/GATES.md`) | Kind name |
+|---|---|
+| Hero, speaker or key prop a speck or cropped (figure clipped) | `hero_tiny` |
+| Key prop not drawn | `key_prop_not_drawn` |
+| Wrong setting | `setting_wrong` |
+| Tail at the wrong figure | `tail_wrong` |
+| Label clutter | `label_clutter` |
+| Repeated near-identical panels | `repeat_variety` |
+
+`judge/fixtures/` holds the judgments of the 13 runs behind the v0.1 and v0.2 numbers (see
+`fixtures/README.md`). `judge/make_fixture.py` makes a new one.
+
+`judge/compare_runs.py` is the table of the v0.3 hold-out protocol (issue #96). Each `--run` is a fixture
+or a `judgments.json` with `file=,label=,version=,book=` and, for failed pages, `judge_dir=` or
+`aggregate=`. It reuses `aggregate.py`, so a failed page counts as 0. It writes a Markdown and a JSON table
+per run and per book and version (runs pooled): pages, failed pages, mean, spread (min-max of the run
+means, 2 or more runs), strict ship-bar pages, the 8 criterion means and the six defect rates above. It
+then writes the delta against the base version (`--base-version`, default the first version in the input)
+per book and per `--group NAME=BOOK1,BOOK2`.
+
+```sh
+python3 scripts/acceptance/judge/compare_runs.py \
+  --run scripts/acceptance/judge/fixtures/v01-justso.json.gz \
+  --run scripts/acceptance/judge/fixtures/v02-justso-1.json.gz \
+  --run file=OUT/judgments.json,label=v0.3-justso-1,version=v0.3,book=just-so-three-tales,judge_dir=OUT/judge \
+  --group fiction=just-so-three-tales --out-md cmp.md --out-json cmp.json
+```
+
+A pooled strict count depends on the number of runs; read "strict per run" when the run counts differ.
 
 ## Check that the app calls no third party
 

@@ -2,7 +2,7 @@
  * Rig dispatcher: routes a CharacterLook to its kind's rig. Kind rigs live in
  * sibling files and may be replaced independently.
  */
-import type { CharacterLook, Expression, Facing, Point, Pose } from "../contracts.js";
+import { ARCHETYPE_SPECIES, LOOK_SCALE_MAX, LOOK_SCALE_MIN, type CharacterLook, type Expression, type Facing, type Point, type Pose } from "../contracts.js";
 import type { DrawContext, FigureAnchors, FigureDrawing, FigureRequest, RigModule } from "../internal.js";
 import { INK, STROKE, toneFill } from "../style.js";
 import { n } from "../svg.js";
@@ -146,23 +146,100 @@ function n4(v: number): string {
  * other pose or kind it is the ground point {0, 0}.
  */
 export function seatContact(look: CharacterLook, pose: Pose, facing: Facing, seed: number, expression: Expression = "neutral"): Point {
-  if (look.kind === "human" && pose === "sit") return humanSeatContact(look, facing, seed, expression);
+  if (look.kind === "human" && pose === "sit") {
+    const c = humanSeatContact(look, facing, seed, expression);
+    const k = drawFactor(look);
+    return k === 1 ? c : { x: c.x * k, y: c.y * k };
+  }
   return { x: 0, y: 0 };
+}
+
+/** Smallest scale that is drawn (v0.3 Gate 1 fix A2): a smaller applied scale is drawn at this value. */
+export const LOOK_SCALE_FLOOR = 0.12;
+
+/** What the renderer does with a look's `scale` (v0.3 Gate 1 fix A2, D29). */
+export interface LookScaleResolution {
+  /** The scale that is drawn; absent when the look keeps its usual size. */
+  applied?: number;
+  /** The look has a scale that the renderer ignores (a named species, or a person of normal size or bigger). */
+  ignored: boolean;
+  /** The scale was smaller than LOOK_SCALE_FLOOR and is drawn at the floor. */
+  floored: boolean;
+}
+
+/**
+ * `look.scale` is the size of a STAND-IN, not a real-world size. It applies only to
+ * (a) the six archetype species (quad_small, quad_medium, quad_large, long_low, swimmer, bird_tall) and
+ * (b) a human, and then only to make the person smaller (scale below 1; a bigger person uses `height: giant`).
+ * Every other look keeps its readable nominal size and the scale is ignored. An applied scale below
+ * LOOK_SCALE_FLOOR is drawn at the floor, so a stand-in is never a speck. The value is clamped to the
+ * allowed range first (validation reports a bad value).
+ */
+export function resolveLookScale(look: CharacterLook): LookScaleResolution {
+  const v = (look as { scale?: unknown }).scale;
+  if (typeof v !== "number" || !Number.isFinite(v)) return { ignored: false, floored: false };
+  const s = Math.min(LOOK_SCALE_MAX, Math.max(LOOK_SCALE_MIN, v));
+  const species = (look as { species?: unknown }).species;
+  const archetype = (look.kind === "animal" || look.kind === "bird") && typeof species === "string" && (ARCHETYPE_SPECIES as readonly string[]).includes(species);
+  const smallPerson = look.kind === "human" && s < 1;
+  if (!archetype && !smallPerson) return { ignored: true, floored: false };
+  if (s < LOOK_SCALE_FLOOR) return { applied: LOOK_SCALE_FLOOR, ignored: false, floored: true };
+  return { applied: s, ignored: false, floored: false };
+}
+
+function lookScale(look: CharacterLook): number | undefined {
+  return resolveLookScale(look).applied;
+}
+
+function targetHeight(look: CharacterLook): number {
+  const s = lookScale(look);
+  return s !== undefined ? 100 * s : rigFor(look).nominalHeight(look);
+}
+
+/** Factor from the height the rig draws at to the height the look has (1 for every look without scale or neutral reuse). */
+function drawFactor(look: CharacterLook): number {
+  const r = rigFor(look);
+  const native = r.nativeHeight ? r.nativeHeight(look) : r.nominalHeight(look);
+  const k = targetHeight(look) / native;
+  return Number.isFinite(k) && k > 0 && Math.abs(k - 1) > 1e-9 ? k : 1;
+}
+
+function scaleDrawing(d: FigureDrawing, k: number): FigureDrawing {
+  const a = d.anchors;
+  const p = (q: Point): Point => ({ x: q.x * k, y: q.y * k });
+  const anchors: FigureAnchors = {
+    head: p(a.head),
+    headRadius: a.headRadius * k,
+    mouth: p(a.mouth),
+    ...(a.hand ? { hand: p(a.hand) } : {}),
+    top: a.top * k,
+    left: a.left * k,
+    right: a.right * k,
+    waist: a.waist * k,
+    shoulders: a.shoulders * k,
+  };
+  return { ...d, svg: `<g transform="scale(${n4(k)})">${d.svg}</g>`, anchors };
 }
 
 export const rig: RigModule = {
   supportedPoses: (look: CharacterLook): readonly Pose[] => rigFor(look).supportedPoses(look),
   supportedExpressions: (look: CharacterLook): readonly Expression[] => rigFor(look).supportedExpressions(look),
-  nominalHeight: (look: CharacterLook): number => rigFor(look).nominalHeight(look),
+  nominalHeight: (look: CharacterLook): number => targetHeight(look),
   /**
    * Draw through the kind's rig, add creature acting, and compact the path
    * data (relative commands on a grid of 0.01 figure units, 0.1 when the
-   * figure is drawn at or below page scale).
+   * figure is drawn at or below page scale). A look with `scale` (and a neutral
+   * long_low or swimmer) is drawn at its own size and then scaled, with the line
+   * width divided by the factor so the outline keeps its weight.
    */
   draw: (request: FigureRequest, ctx: DrawContext): FigureDrawing => {
-    const d = actCreature(rigFor(request.look).draw(request, ctx), request);
-    const dec = request.lineWidth >= STROKE.figureOutline ? 1 : 2;
-    const svg = request.pose === "lie" ? contactShadow(d.anchors, request.lineWidth, ctx.idPrefix) + d.svg : d.svg;
-    return { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
+    const k = drawFactor(request.look);
+    const lineWidth = request.lineWidth / k;
+    const inner: FigureRequest = k === 1 ? request : { ...request, lineWidth };
+    const d = actCreature(rigFor(request.look).draw(inner, ctx), request);
+    const dec = lineWidth >= STROKE.figureOutline ? 1 : 2;
+    const svg = request.pose === "lie" ? contactShadow(d.anchors, lineWidth, ctx.idPrefix) + d.svg : d.svg;
+    const out: FigureDrawing = { svg: compactSvg(svg, dec), anchors: d.anchors, ...(d.blooms !== undefined ? { blooms: d.blooms } : {}), ...(d.members !== undefined ? { members: d.members } : {}) };
+    return k === 1 ? out : scaleDrawing(out, k);
   },
 };

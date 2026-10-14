@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.5.0
+version: 1.8.0
 ---
 
 # Adaptation plan
@@ -33,8 +33,12 @@ something to *see*.
    turns on an object (a rose, a thorn, a sack), the beat names that object, so the page
    writer draws it. Pages are the
    unit of pacing.
-2. **Density.** Put at most 3 claims on a page (4 only on a recap or summary page). A page
-   of fast dialogue carries 1-2 claims. A page may carry no claims when it establishes a
+2. **Density.** Prefer at most 2 claims on a page. A third is fine when the claims are short
+   `core` claims, or when the page budget leaves no room; 4 only on a recap or summary page. A page of
+   fast dialogue carries 1-2 claims. When the claims outnumber the pages, move a `supporting`
+   or `detail` claim to a neighbouring page with room, or omit it with a reason; never drop a
+   `core` claim. Measured: pages with 3 claims and 2 or more `supporting` or `detail` claims
+   score lower and carry more narration. A page may carry no claims when it establishes a
    place or holds a pause, but no more than 1 page in 6. Stay inside the page budget you
    are given, and never squeeze a section's claims into too few pages. If the essential
    content of a page's units would need more than about 90 lettered words, split it over
@@ -56,7 +60,9 @@ something to *see*.
    section's opening page establishes its setting and introduces its main characters. Keep
    to 4 or fewer speaking characters per page. A change of place or time starts a new
    page: do not plan two locations on one page unless the page is about the journey
-   between them. Pick locations whose `units` include the page's units (the locations list
+   between them. Name in the beat where the source puts the action and when: inside or
+   outside, at the bank or on the road, by day or at night. The page writer stages the beat
+   from that. List every place the beat names in `locations`. Pick locations whose `units` include the page's units (the locations list
    shows them). If the page needs a place the understanding lacks, say it in the beat. When
    a page shows the afterlife, a dream or a memory, write that word in the beat: the page
    writer flags those panels.
@@ -67,11 +73,17 @@ something to *see*.
 8. **Rhythm.**
    - Alternate quieter set-up pages with action or revelation pages. Never plan three
      high-intensity pages in a row, or more than three quiet ones.
-   - Mark `page_turn_hook: true` on pages that end on a question, a threat, a reveal or a
-     decision, so the reader turns the page to find out. Aim for a hook every 2-4 pages
-     and at the end of each section except the last.
-   - Put the hook on the page *before* the reveal. The next page's beat begins with the
-     answer.
+   - Plan a turn hook where the story has one: set `page_turn_hook: true` and write the hook in
+     the beat. A hook is a question the page leaves open, a reveal held back, or a change that
+     is about to happen. That is about one page in two to four, never forced and never on every
+     page. Measured: forcing a hook on every page (18 of 22 pages) did not raise the page-turn
+     score and made the next page repeat the hook line. A page that closes a section ends on
+     its landing instead (see the last bullet).
+   - The page after a hook ANSWERS it or MOVES ON. Its beat never repeats the hook line or the
+     picture the hook page ends on, and no two neighbouring pages have the same beat text. Pages
+     are written in parallel: the page writer sees only your beat of the previous page. Take the
+     hook from the book: a question a character asks, a threat, a sentence that stops before its
+     answer. Do not plan an invented line to make a hook.
    - Give big moments (a revelation, a death, a transformation, the climax) a page of
      their own. It may be a 1-2 panel page, so plan fewer claims there.
    - The book's last page, and the last page of each section, end on one strong image and a

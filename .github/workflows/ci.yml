@@ -2,9 +2,9 @@ name: ci
 
 on:
   pull_request:
-    branches: [release/v0.1, release/v0.2, main]
+    branches: [release/v0.1, release/v0.2, release/v0.3, main]
   push:
-    branches: [release/v0.1, release/v0.2, main]
+    branches: [release/v0.1, release/v0.2, release/v0.3, main]
   workflow_dispatch:
 
 permissions:
@@ -45,6 +45,8 @@ jobs:
       - name: Run backend tests
         working-directory: backend
         run: python -m pytest tests -q
+      - name: Run judge tool tests (stdlib only)
+        run: python3 -m unittest discover -s scripts/acceptance/judge
 
   typescript:
     name: typescript (tsc + vitest)

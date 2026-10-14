@@ -18,7 +18,7 @@ describe("bandForBook", () => {
     expect(bandForBook(book("failed")).family).toBe("needs");
     expect(bandForBook(book("parsed")).family).toBe("outline");
     expect(bandForBook(book("parsed", { status: "cancelled", page_total: 16, pages_accepted: 3 })).family).toBe("outline");
-    expect(bandForBook(book("parsed", { status: "awaiting_plan_review", page_total: 16, pages_accepted: 0 })).text).toBe("Plan ready to review");
+    expect(bandForBook(book("parsed", { status: "awaiting_plan_review", page_total: 16, pages_accepted: 0 }))).toEqual({ family: "review", text: "Plan ready to review" });
     expect(bandForBook(book("parsed", { status: "failed", page_total: 16, pages_accepted: 4, provider_stop: { code: "PROVIDER_AUTH" } })).family).toBe("needs");
   });
 });

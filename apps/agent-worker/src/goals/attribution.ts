@@ -386,7 +386,7 @@ export function loneSpeakers(
     for (const a of attributions(unit.text)) {
       if (isPlural(a.head) || /^the other\b/i.test(a.phrase)) continue;
       const hits = members.filter((m) => names(a.head, m));
-      if (hits.length === 0 || hits.some((m) => (m.look as { kind?: string }).kind !== "crowd")) continue;
+      if (hits.length === 0 || hits.some((m) => (m.look as { kind?: string } | undefined)?.kind !== "crowd")) continue;
       const key = `${unit.section_id}|${stem(a.head)}`;
       if (!out.has(key)) out.set(key, { section: unit.section_id, head: a.head, phrase: a.phrase, quote: a.quote, kind: "crowd_member", crowd: hits[0] });
     }

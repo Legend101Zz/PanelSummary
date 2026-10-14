@@ -9,6 +9,7 @@ import {
   groupBySection,
   limitState,
   mangaRanges,
+  seriesRanges,
   pageCounts,
   pagesSummary,
   queuedDrawKind,
@@ -17,6 +18,9 @@ import {
   tookSeconds,
   toggleSection,
   usageOf,
+  continueBody,
+  continueSelection,
+  showParts,
   WHOLE_BOOK,
 } from "./bookLogic";
 
@@ -139,5 +143,60 @@ describe("a queued run on an edition with a plan", () => {
   it("is neither without a plan or when not queued", () => {
     expect(queuedDrawKind(q([], undefined, { has_plan: false }))).toBeNull();
     expect(queuedDrawKind(q([], undefined, { status: "drawing" }))).toBeNull();
+  });
+});
+
+describe("continue with the next section", () => {
+  const remaining = [
+    { id: "s2", title: "Two", page_start: 3, page_end: 4, word_count: 300 },
+    { id: "s3", title: "Three", page_start: 5, page_end: 6, word_count: 300 },
+    { id: "s4", title: "Four", page_start: 7, page_end: 8, word_count: 300 },
+  ];
+  it("starts with the next section and keeps a chosen set in book order", () => {
+    expect(continueSelection(null, remaining)).toEqual(["s2"]);
+    expect(continueSelection(["s4", "s3"], remaining)).toEqual(["s3", "s4"]);
+    expect(continueSelection(["s1"], remaining)).toEqual([]);
+    expect(continueSelection(null, [])).toEqual([]);
+  });
+  it("builds the body with continue_from, the sections and the review preference only when it is set", () => {
+    expect(continueBody("e1", ["s2"])).toEqual({ continue_from: "e1", section_ids: ["s2"] });
+    expect(continueBody("e1", ["s2"], false)).toEqual({ continue_from: "e1", section_ids: ["s2"], review_plan: false });
+    expect(continueBody("e1", ["s2"], null)).toEqual({ continue_from: "e1", section_ids: ["s2"] });
+  });
+  it("shows the parts list from two parts", () => {
+    expect(showParts(undefined)).toBe(false);
+    expect(showParts([1])).toBe(false);
+    expect(showParts([1, 2])).toBe(true);
+  });
+});
+
+describe("Contents ranges of a continued book", () => {
+  const part = (n: number, edition_id: string, section_ids: string[], first: number, last: number | null) => ({
+    part: n, edition_id, status: "complete" as const, scope: null, section_ids, section_titles: [], first_page_number: first,
+    last_page_number: last, page_total: 0, pages_accepted: 0, pages_failed: 0,
+  });
+  const two = { book_id: "b", parts: [part(1, "e1", ["s1"], 1, 9), part(2, "e2", ["s2", "s3"], 10, 19)], remaining: [], can_continue: false, continue_from: null };
+  const e2 = { id: "e2", pages: [pg(1, "accepted", "s2"), pg(2, "accepted", "s2"), pg(3, "accepted", "s3"), pg(4, "accepted", "s3"), pg(5, "accepted", "s3"), pg(6, "accepted", "s3"), pg(7, "accepted", "s3"), pg(8, "accepted", "s3"), pg(9, "accepted", "s3"), pg(10, "accepted", "s3")] };
+  it("shows part 1's range under its section, in the series numbers", () => {
+    const r = seriesRanges(two, e2);
+    expect(r.get("s1")).toEqual([1, 9]);
+  });
+  it("moves the shown part's sections to the series numbers", () => {
+    const r = seriesRanges(two, e2);
+    expect(r.get("s2")).toEqual([10, 11]);
+    expect(r.get("s3")).toEqual([12, 19]);
+  });
+  it("uses the part range when the shown edition is not that part", () => {
+    expect(seriesRanges(two, { id: "e1", pages: [] }).get("s2")).toEqual([10, 19]);
+  });
+  it("skips a part whose plan does not exist yet", () => {
+    const p = { ...two, parts: [two.parts[0], part(2, "e2", ["s2"], 10, null)] };
+    expect(seriesRanges(p, { id: "e2", pages: [] }).has("s2")).toBe(false);
+  });
+  it("changes nothing for one edition or no parts data", () => {
+    const one = { ...two, parts: [two.parts[0]] };
+    const e1 = { id: "e1", pages: [pg(1, "accepted", "s1"), pg(2, "accepted", "s1")] };
+    expect(seriesRanges(one, e1).get("s1")).toEqual([1, 2]);
+    expect(seriesRanges(null, e1).get("s1")).toEqual([1, 2]);
   });
 });

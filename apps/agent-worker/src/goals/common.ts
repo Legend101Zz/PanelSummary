@@ -84,3 +84,22 @@ export function sourceBlock(units: readonly { id: string; page_start: number; pa
     .join("\n\n");
   return dataBlock("untrusted_source_text", body);
 }
+
+/**
+ * The first rejected field of a submission, for the tool-call note (ENUM_INVALID or FIELD_MISSING):
+ * `first_rejected=cast c1.look.species="elephant"`. The value is model output and untrusted:
+ * plain text only, at most 40 characters.
+ */
+export function rejectedValueNote(issues: readonly ValidationIssue[]): string {
+  const issue = issues.find((i) => i.severity === "error" && (i.code === "ENUM_INVALID" || i.code === "FIELD_MISSING"));
+  if (!issue) return "";
+  const plain = (text: string, max: number) => text.replace(/[^\p{L}\p{N} _.,'\u2019:-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  if (issue.code === "FIELD_MISSING") {
+    const key = /missing required field "([^"]{1,40})"/.exec(issue.message)?.[1];
+    return ` first_rejected=${plain(`${issue.path}${key ? `.${key}` : ""}`, 60)} (missing)`;
+  }
+  const m = /^(\S+) (.*) is not allowed/s.exec(issue.message);
+  if (!m) return ` first_rejected=${plain(issue.path, 60)}`;
+  const raw = m[2].replace(/^"(.*)"$/s, "$1");
+  return ` first_rejected=${plain(`${issue.path}.${m[1]}`, 60)}=${plain(raw, 40)}`;
+}

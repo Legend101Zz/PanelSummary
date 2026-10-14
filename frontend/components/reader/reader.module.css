@@ -236,7 +236,22 @@
   right: 16px;
   bottom: 16px;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
+}
+.viewButtons {
+  display: flex;
+  gap: 8px;
+}
+/* Beside the page, never over it: it shows only where the graphite beside the page is wide enough (camera.ts CHIP_ROOM). */
+.viewHint {
+  margin: 0;
+  max-width: 150px;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: right;
+  color: var(--on-graphite-2);
 }
 .fitBtn {
   display: inline-flex;

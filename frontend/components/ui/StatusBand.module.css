@@ -10,12 +10,17 @@
   font-variant-numeric: tabular-nums;
   color: var(--app-text);
 }
-.fill { padding: 6px 7px; min-height: 30px; }
+.fill { padding: 5px 6px; min-height: 30px; }
+/* A mint or coral fill on white or on the ground is under 3:1 as a shape (mint on white 2.09, mint on the ground 1.91, coral on the ground 2.83).
+   The ink edge is 17:1 on the ground and on white, so the band always has an edge that reaches 3:1 (#89). It is the outline of the outline band. */
+.drawn, .needs { border: var(--app-line-seg) solid var(--app-line-strong); }
 .icon { display: inline-block; vertical-align: -2px; margin-right: 5px; }
 .nowrap { white-space: nowrap; }
 .drawn { background: var(--app-done); color: var(--app-on-fill); }
 .needs { background: var(--app-needs-you); color: var(--app-on-fill); }
 .outline { border: var(--app-line-seg) solid var(--app-line-strong); padding: 5px 8px; min-height: 30px; }
+/* The plan waits for the viewer: not started, not failed. A heavy action-colour edge and the action wash, so it differs from the quiet outline band by shape and weight as well as colour. */
+.review { border: var(--app-line-control) solid var(--app-action); background: var(--app-action-wash); padding: 4px 7px; min-height: 30px; }
 .progress { padding: 0; }
 .text { display: block; }
 .line {

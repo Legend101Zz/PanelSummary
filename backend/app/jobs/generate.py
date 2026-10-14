@@ -19,8 +19,10 @@ import json
 import logging
 from typing import Any, Optional
 
+from app.continuation import store_understanding
 from app.documents import (
     BookSource,
+    BookUnderstanding,
     Totals,
     Edition,
     EditionArtifact,
@@ -317,19 +319,29 @@ async def run_generate_job(ctx: JobContext) -> tuple[str, str]:
     # 1. Book understanding (whole text, one MiniMax session).
     await _set_edition(edition, status="understanding", error=None)
     book_payload = _book_payload(book, source, edition.scope)
+    understanding_input: dict[str, Any] = {"book": book_payload}
+    if edition.continues_edition_id:
+        # Continue with the next section (D38): the understanding that the earlier part produced goes in as
+        # a prior. The worker keeps its cast, locations and looks. It is data from an earlier model output.
+        prior = await BookUnderstanding.find_one(BookUnderstanding.edition_id == edition.continues_edition_id)
+        if prior is None:
+            raise RuntimeError("the earlier part has no stored understanding to continue from")
+        understanding_input["prior"] = {"version": prior.version, "edition_id": prior.edition_id, "understanding": prior.understanding}
     understanding_artifact = await _artifact_stage(
         ctx,
         edition,
         "understanding",
         "BOOK_UNDERSTANDING",
-        {"book": book_payload},
+        understanding_input,
         model=policy["understanding_model"],
         thinking=policy["understanding_thinking"],
         retry_thinking=policy["understanding_retry_thinking"],
         extract=lambda result: result["understanding"],
     )
     understanding = understanding_artifact.content
-    await _set_edition(edition, understanding_id=str(understanding_artifact.id))
+    # D38: keep each accepted understanding with the book, by version (one row per edition).
+    stored = await store_understanding(edition, understanding, prior_version=edition.understanding_version)
+    await _set_edition(edition, understanding_id=str(understanding_artifact.id), understanding_version_produced=stored.version)
 
     # 2. Adaptation plan.
     await _set_edition(edition, status="planning")

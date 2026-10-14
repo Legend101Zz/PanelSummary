@@ -31,7 +31,7 @@ import {
 import { bars as barsRow, railing } from "./features.js";
 import type { Sites, WallSlot } from "./features.js";
 
-function sitesFor(room: Room, walls: Wall[], slots: [Wall["name"], number, number][], spots: { x: number; z: number }[], drawn: Sites["drawn"]): Sites {
+export function sitesFor(room: Room, walls: Wall[], slots: [Wall["name"], number, number][], spots: { x: number; z: number }[], drawn: Sites["drawn"]): Sites {
   const byName = (name: Wall["name"]): Wall => walls.find((w) => w.name === name) ?? walls[0];
   const wallSlots: WallSlot[] = slots.map(([name, u, w]) => ({ wall: byName(name), u, w }));
   return {

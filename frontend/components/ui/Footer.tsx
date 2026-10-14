@@ -1,7 +1,7 @@
 import { TextLink } from "./TextLink";
 import styles from "./Footer.module.css";
 
-export const APP_VERSION = "v0.2";
+export const APP_VERSION = "v0.3";
 export const PRIVACY_LINE = "PanelSummary runs on your computer. Only MiniMax gets the book text and page previews.";
 
 /** The version, a link to Settings / About, and the line about what leaves the computer. */

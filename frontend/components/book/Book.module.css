@@ -13,7 +13,7 @@
 .facts { margin: 0; font-size: 17px; color: var(--app-text-2); }
 .logline { grid-area: logline; align-self: start; margin: 0; font-size: 17px; line-height: 1.55; color: var(--app-text-2); max-width: 56ch; }
 .coverBand { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--app-text-2); }
-.coverBandNeeds { margin: 8px 0 0; padding: 4px 8px; font-size: 13px; font-weight: 700; background: var(--app-needs-you); color: var(--app-on-fill); border-radius: var(--app-radius-sm); display: inline-block; }
+.coverBandNeeds { margin: 8px 0 0; padding: 4px 8px; font-size: 13px; font-weight: 700; background: var(--app-needs-you); color: var(--app-on-fill); border: var(--app-line-seg) solid var(--app-line-strong); border-radius: var(--app-radius-sm); display: inline-block; }
 
 @media (max-width: 767px) {
   .top { grid-template-columns: minmax(0, 1fr); grid-template-areas: "text" "console" "logline" "cover"; grid-template-rows: none; gap: 16px; }
@@ -32,7 +32,8 @@
   .top[data-live="true"] { grid-template-columns: 120px minmax(0, 1fr); gap: 12px 32px; }
   .top[data-live="true"] .cover { width: 120px; }
   .top[data-live="true"] .title { font-size: clamp(32px, 3.4vw, 44px); }
-  .top[data-live="true"] .logline { font-size: 16px; line-height: 1.5; }
+  /* A two-line title pushed the page 1 band out of the first screen at 1440x820 (#89): the logline waits until the run is over. */
+  .top[data-live="true"] .logline { display: none; }
   .top[data-live="true"] .console { gap: 12px; }
   .liveCard { padding-top: 20px; padding-bottom: 20px; }
   .top .liveCard > :not(:first-child) { margin-top: 12px; }
@@ -176,7 +177,5 @@
 
 /* ----------------------------------------------------------------- phone bottom bar */
 .barText { margin: 0; font-size: 15px; color: var(--app-text-2); }
-.barSpacer { height: calc(112px + env(safe-area-inset-bottom, 0px)); }
-@media (min-width: 768px) { .barSpacer { display: none; } }
 
 .barActions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }

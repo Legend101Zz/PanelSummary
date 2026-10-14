@@ -1,6 +1,7 @@
 // Pure logic for the status band: the four families and the shelf states.
 
-export type BandFamily = "drawn" | "progress" | "needs" | "outline";
+/** review: the plan waits for the viewer (an outline band with a heavy action-colour edge). It is not a fault, so it is not "needs". */
+export type BandFamily = "drawn" | "progress" | "needs" | "outline" | "review";
 
 /** The tone names of lib/words.ts shelfStatus() map to the four families. */
 export function familyForTone(tone: "pencil" | "ink" | "redpen" | "quiet"): BandFamily {

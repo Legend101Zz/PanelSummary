@@ -13,7 +13,12 @@ import {
   HUMAN_FRAMES,
   HUMAN_HEIGHTS,
   INSECT_SPECIES,
+  ARCHETYPE_SPECIES,
   LOOK_KINDS,
+  LOOK_MARKS,
+  LOOK_MARKS_MAX,
+  LOOK_SCALE_MAX,
+  LOOK_SCALE_MIN,
   MATERIALS,
   OBJECT_SHAPES,
   OUTFITS,
@@ -90,7 +95,47 @@ export function validateLook(look: unknown, issues: Issues, path: string): look 
   if (kind === "crowd" && look.count !== undefined && !(typeof look.count === "number" && Number.isInteger(look.count) && look.count >= 1 && look.count <= 8)) {
     issues.error("FIELD_TYPE", path, `crowd look "count" must be a whole number from 1 to 8 (an exact head count), got ${show(look.count)}. Leave it out to let "size" decide.`);
   }
-  warnUnknownKeys(look, ["kind", ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : []), ...(kind === "crowd" ? ["count"] : [])], issues, path);
+  if (look.scale !== undefined && !(typeof look.scale === "number" && Number.isFinite(look.scale) && look.scale >= LOOK_SCALE_MIN && look.scale <= LOOK_SCALE_MAX)) {
+    issues.error(
+      "LOOK_SCALE_RANGE",
+      path,
+      `look "scale" is ${show(look.scale)}, which is not allowed; use a number from ${LOOK_SCALE_MIN} to ${LOOK_SCALE_MAX} (the figure height relative to an adult person: 1 is an adult, 0.5 is half as tall, 3 is three times as tall), or leave "scale" out for the usual size.`,
+    );
+  }
+  if (look.marks !== undefined) validateMarks(look, kind, issues, path);
+  warnUnknownKeys(look, ["kind", "scale", ...(look.marks !== undefined ? ["marks"] : []), ...Object.keys(fields), ...(kind === "plant" ? ["bloom"] : []), ...(kind === "crowd" ? ["count"] : [])], issues, path);
   const after = issues.list.filter((i) => i.severity === "error").length;
   return after === before;
+}
+
+/**
+ * look.marks (v0.3, #81): body marks of a neutral stand-in. Only on an archetype species of an animal or a bird
+ * (LOOK_MARKS_NOT_ARCHETYPE elsewhere); an unknown mark is ENUM_INVALID; at most LOOK_MARKS_MAX.
+ */
+function validateMarks(look: Record<string, unknown>, kind: string, issues: Issues, path: string): void {
+  const marks = look.marks;
+  if (!Array.isArray(marks)) {
+    issues.error("FIELD_TYPE", `${path}.marks`, `look "marks" must be an array of: ${listValues(LOOK_MARKS)}, got ${show(marks)}.`);
+    return;
+  }
+  const species = typeof look.species === "string" ? look.species : "";
+  const archetype = (kind === "animal" || kind === "bird") && (ARCHETYPE_SPECIES as readonly string[]).includes(species);
+  if (!archetype && marks.length > 0) {
+    issues.error(
+      "LOOK_MARKS_NOT_ARCHETYPE",
+      `${path}.marks`,
+      `look "marks" is only for a neutral stand-in species (${listValues(ARCHETYPE_SPECIES)}); ${kind === "animal" || kind === "bird" ? `"${species}"` : `a ${kind} look`} already has its own shape. Remove "marks", or use a neutral species that fits.`,
+    );
+  }
+  const seen = new Set<string>();
+  marks.forEach((m, i) => {
+    if (typeof m !== "string" || !(LOOK_MARKS as readonly string[]).includes(m)) {
+      issues.error("ENUM_INVALID", `${path}.marks[${i}]`, `mark ${show(m)} is not allowed; use one of: ${listValues(LOOK_MARKS)}.`);
+    } else if (seen.has(m)) {
+      issues.warn("DUPLICATE_VALUE", `${path}.marks[${i}]`, `mark "${m}" is listed twice; list it once.`);
+    } else seen.add(m);
+  });
+  if (marks.length > LOOK_MARKS_MAX) {
+    issues.error("LOOK_MARKS_TOO_MANY", `${path}.marks`, `look "marks" has ${marks.length} marks; use at most ${LOOK_MARKS_MAX} (the ones that tell this animal apart).`);
+  }
 }
