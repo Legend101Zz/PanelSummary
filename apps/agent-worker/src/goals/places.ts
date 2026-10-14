@@ -41,8 +41,12 @@ const list = (ids: readonly string[], max = 6) => `${ids.slice(0, max).join(", "
 /**
  * Understanding side. `expectUnits` is true for a new understanding: then a location
  * without `units` is a warning. A saved understanding passes false and gets no warning.
+ *
+ * `priorUnits` (a continuation, D38): the units that a prior location already had, by location id. They
+ * point to units of earlier parts and are valid by construction, so only the other units of that location
+ * are checked against `unitIds` (the new scope). A new location is checked against `unitIds` as before.
  */
-export function placeIssues(value: unknown, unitIds: readonly string[], expectUnits = true): ValidationIssue[] {
+export function placeIssues(value: unknown, unitIds: readonly string[], expectUnits = true, priorUnits?: ReadonlyMap<string, readonly string[]>): ValidationIssue[] {
   const locations = (value as { locations?: unknown })?.locations;
   if (!Array.isArray(locations)) return [];
   const known = new Set(unitIds);
@@ -57,7 +61,8 @@ export function placeIssues(value: unknown, unitIds: readonly string[], expectUn
       continue;
     }
     const units = raw.units;
-    const bad = Array.isArray(units) ? units.filter((u) => typeof u !== "string" || !known.has(u)) : [units];
+    const fromPrior = new Set<unknown>(priorUnits?.get(String(raw.id)) ?? []);
+    const bad = Array.isArray(units) ? units.filter((u) => !fromPrior.has(u) && (typeof u !== "string" || !known.has(u))) : [units];
     if (!Array.isArray(units) || units.length === 0 || bad.length > 0) {
       issues.push({
         code: "PLACE_UNITS_INVALID",

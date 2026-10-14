@@ -4,7 +4,8 @@
  * The prior came from an earlier model output, so it is DATA. It goes in its own escaped data block, never
  * in the instructions. The goal keeps every prior cast member and location exactly: the worker merges them
  * deterministically (prior members are copied unchanged, only new members come from the model). A prior
- * member may gain sections and states for the new scope; nothing else about it can change.
+ * member may gain sections and states for the new scope; a prior location may also gain `units` of the new
+ * scope (D38). Nothing else about it can change.
  */
 import type { ValidationIssue } from "@panelsummary/manga-render";
 
@@ -66,9 +67,10 @@ const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.str
 
 /** Every field of a member except the ones a continuation may extend. */
 function fixedPart(member: Record<string, unknown>): Record<string, unknown> {
-  const { sections: _s, states: _t, ...rest } = member;
+  const { sections: _s, states: _t, units: _u, ...rest } = member;
   void _s;
   void _t;
+  void _u;
   return rest;
 }
 
@@ -129,10 +131,16 @@ export function mergePrior(candidate: unknown, prior: PriorUnderstanding, option
 
   const locations: Record<string, unknown>[] = prior.locations.map((place) => {
     const entry = modelLocations.find((l) => l.id === place.id);
-    if (entry && Object.keys(entry).some((key) => !same(entry[key], place[key]))) {
-      issues.push({ code: "PRIOR_LOCATION_KEPT", severity: "warning", path: `location ${place.id}`, message: `${place.id} is a place of the earlier part. It stays exactly as it was.` });
+    if (entry && Object.keys(fixedPart(entry)).some((key) => !same(fixedPart(entry)[key], place[key]))) {
+      issues.push({ code: "PRIOR_LOCATION_KEPT", severity: "warning", path: `location ${place.id}`, message: `${place.id} is a place of the earlier part. Its name, kind and features stay as they were; only its "units" can grow with units of the new part.` });
     }
-    return JSON.parse(JSON.stringify(place));
+    const out: Record<string, unknown> = JSON.parse(JSON.stringify(place));
+    // The model may use a prior place again in the new part: its new-scope units are added to the prior units.
+    const oldUnits = Array.isArray(place.units) ? (place.units as unknown[]) : [];
+    const newUnits = Array.isArray(entry?.units) ? (entry.units as unknown[]) : entry?.units === undefined ? [] : [entry.units];
+    const units = [...oldUnits, ...newUnits.filter((u) => !oldUnits.includes(u))];
+    if (units.length) out.units = units;
+    return out;
   });
   for (const place of modelLocations) if (!(typeof place.id === "string" && priorLocationIds.has(place.id))) locations.push(place);
 

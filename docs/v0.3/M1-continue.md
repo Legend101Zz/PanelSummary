@@ -29,7 +29,7 @@ Track M1. Decisions: D38 and D39 in `docs/decisions.md`. Part of #80.
 ## The understanding with a prior
 
 - The worker input has `prior {version, edition_id, understanding}`. The prompt shows the prior cast, locations, earlier section titles and logline in `<prior_understanding>`, escaped like book text. The earlier claims are not shown.
-- The merge is described in D38. The checks run on the merged candidate. The states of a prior member are not checked again (their `at` points to units of an earlier part). A prior member may list the sections of earlier parts (`CAST_SECTIONS` accepts them).
+- The merge is described in D38. The checks run on the merged candidate. The states of a prior member are not checked again (their `at` points to units of an earlier part). A prior member may list the sections of earlier parts (`CAST_SECTIONS` accepts them). A prior location may gain `units` of the new scope; its prior units are valid by construction.
 - `sections`, `claims` and `themes` of the new understanding cover the new text only, so the plan and the coverage report are judged on the scope.
 
 ## Cost and time
@@ -53,3 +53,20 @@ The issue asks for page numbers that continue. The reader is frozen, so it numbe
 - The replay worker cannot serve a scoped run (its book check needs all sections), so the screenshots use a state seeded in the database from the installed Andersen sample (parts made from its edition, with the real API and the real page).
 - `allow_overlap` (a way to draw a scope again on purpose) is not built.
 - The Contents list still shows manga pages of the newest edition only, with its own numbering.
+
+## Live finding and fix (first live run, release/v0.3 at b02bc17)
+
+Part 1 (section s1) drew 9 pages. Part 2 (`continue_from` part 1, scope s2) failed with "understanding failed after 2 attempts: submit limit (3)".
+
+| Fault | Cause | Fix |
+|---|---|---|
+| Every submit had `PLACE_UNITS_INVALID` for `l_home`, `l_road`, `l_limpopo` | The merge copies the prior locations unchanged. Their `units` are part 1 unit ids (`s1u1`, ...). `placeIssues` checked every location against the unit ids of the new scope only, so they were "unknown". The model could not repair it, because the merge restored the prior value each time. | `placeIssues` takes the prior units by location id (`priorUnits`). Those are not checked again. Every other unit is checked against the new scope. The merge now adds the model's new-scope `units` for a prior location id to the prior units (no `PRIOR_LOCATION_KEPT` warning for `units`). A new location is checked as before. |
+| One submit crashed: "Cannot read properties of undefined (reading 'kind')" | A new cast member without a `look` reached `loneSpeakers` (`attribution.ts`), which read `m.look.kind`. `baseValue` (`continuity.ts`) had the same read on `look[field]`. | Both read the look with `?.`. The member without a look is now only the normal `LOOK_INVALID` or `FIELD_MISSING` error. |
+
+The plan check (`planPlaceIssues`) reads the merged understanding, so a prior location that gained new-scope units is found for a page of part 2. It is only a warning check (D26) and had no unit-id check against the scope.
+
+Resume: `POST /editions/{id}/resume` on a failed part 2 queues the same edition. The job sends the same prior again (the stored version of the earlier part) with the same scope. There is no overlap check on a resume, so no new 422. No backend change was needed. `backend/tests/test_continue.py::test_a_failed_continuation_can_be_resumed_with_the_same_prior` shows it with the fake worker.
+
+Tests that would have caught it: `apps/agent-worker/test/m1-continue-realistic.test.ts`. Its fixture, `test/fixtures/m1-part1-understanding.json`, is the real part 1 understanding of the tuning book (Kipling, public domain). Without the fix, 5 of its 8 tests fail, and the crash shows as the TypeError above.
+
+Not done: no live run after the fix. The orchestrator resumes part 2.

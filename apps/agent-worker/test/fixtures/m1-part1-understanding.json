@@ -1,0 +1,826 @@
+{
+ "schema": "book-understanding.v1",
+ "title": "The Elephant's Child (from Three Just So Stories)",
+ "author": "Rudyard Kipling",
+ "kind": "fiction",
+ "logline": "When a 'satiable Elephant's Child asks what the Crocodile has for dinner and is pulled onto the Crocodile's dinner-plate, his nose is stretched into a trunk, and all Africa must live with the consequences.",
+ "sections": [
+  {
+   "id": "s1",
+   "title": "The Elephant's Child",
+   "summary": "In the High and Far-Off Times an Elephant's Child with 'satiable curtiosity is spanked by every aunt and uncle for asking questions, until he asks what the Crocodile has for dinner and is sent to the banks of the great grey-green, greasy Limpopo River. There the Crocodile catches his boot-sized nose and pulls while he hauls back with the help of the Bi-Coloured-Python-Rock-Snake, so the nose is stretched into a trunk. He discovers what a trunk can do, goes home, and turns his own spanking into his favourite pursuit, until the whole family goes to the Crocodile for new noses and nobody spanks anybody any more.",
+   "units": [
+    "s1u1",
+    "s1u2",
+    "s1u3",
+    "s1u4",
+    "s1u5"
+   ]
+  }
+ ],
+ "cast": [
+  {
+   "id": "c_child",
+   "name": "The Elephant's Child",
+   "role": "the small new Elephant who asks all the questions most politely, kneeling on the bank to beg an answer",
+   "description": "A young elephant, smaller than the adults of his family, whose whole nature is 'satiable curtiosity. At first he has only a blackish, bulgy nose as big as a boot; after the Crocodile pulls it he carries a long five-foot trunk. Affable and undaunted: he is never astonished, always polite (''Scuse me), kneels down on the bank to ask his questions, and above all tidy - he picks up his own melon rinds.",
+   "look": {
+    "kind": "animal",
+    "species": "quad_large",
+    "tone": "mid",
+    "scale": 0.7
+   },
+   "fit": "near",
+   "wanted": "a baby elephant, before he has a trunk",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_snake",
+   "name": "The Bi-Coloured-Python-Rock-Snake",
+   "role": "the dretful snake curled on a rock who aids and advises him",
+   "description": "A long snake, small enough to coil round a rock and to knot himself twice round the Elephant's Child's hind legs; speaks in the drawled manner all his kind do. First spanks the Child with his 'scalesome, flailsome tail', then saves him from the Crocodile and counts his new nose's vantages.",
+   "look": {
+    "kind": "animal",
+    "species": "long_low",
+    "tone": "check",
+    "scale": 0.4
+   },
+   "fit": "near",
+   "wanted": "a bi-coloured python coiled round a rock",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_crocodile",
+   "name": "The Crocodile",
+   "role": "the creature of the Limpopo who eats Elephant's Children for dinner",
+   "description": "Lies at the very edge of the river in the mud and is mistaken for a log of wood; only as big as an adult elephant can pull him along. Winks one eye at a time, lifts half his tail out of the mud, has a musky, tusky mouth, and flounders in the water making it creamy with sweeps of his tail.",
+   "look": {
+    "kind": "animal",
+    "species": "long_low",
+    "tone": "dark",
+    "scale": 1.2
+   },
+   "fit": "near",
+   "wanted": "a crocodile",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_ostrich",
+   "name": "The Ostrich",
+   "role": "his tall aunt, who spanks him with a hard claw",
+   "description": "A very tall aunt whose tail-feathers the Child asks about; spanks him with her hard, hard claw, and later has her tail-feathers pulled out by him.",
+   "look": {
+    "kind": "bird",
+    "species": "bird_tall",
+    "tone": "mid",
+    "scale": 1.6
+   },
+   "fit": "near",
+   "wanted": "an ostrich",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_giraffe",
+   "name": "The Giraffe",
+   "role": "his tall uncle, who kicks hardest of all",
+   "description": "A spotty-skinned tall uncle who can kick ever so hard; spanks the Child with his hard, hard hoof and is later dragged by the hind-leg through a thorn-bush.",
+   "look": {
+    "kind": "animal",
+    "species": "quad_large",
+    "tone": "check",
+    "scale": 2.6
+   },
+   "fit": "near",
+   "wanted": "a giraffe",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_hippo",
+   "name": "The Hippopotamus",
+   "role": "his broad aunt with red eyes, who naps in the water",
+   "description": "A very broad aunt with red eyes who spanks with a broad, broad hoof; sleeps in the water after meals and has bubbles blown into her ear.",
+   "look": {
+    "kind": "animal",
+    "species": "quad_large",
+    "tone": "mid",
+    "scale": 1.8
+   },
+   "fit": "near",
+   "wanted": "a hippopotamus",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_baboon",
+   "name": "The Baboon",
+   "role": "his hairy uncle, who calls the new trunk ugly",
+   "description": "A hairy uncle who spanks with his hairy, hairy paw and comments on why melons taste just so; later lifted by one hairy leg and hove into a hornet's nest.",
+   "look": {
+    "kind": "animal",
+    "species": "quad_medium",
+    "tone": "dark",
+    "scale": 0.6
+   },
+   "fit": "none",
+   "wanted": "a hairy baboon",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_kolokolo",
+   "name": "Kolokolo Bird",
+   "role": "the bird sitting in the thorn-bush who gives directions",
+   "description": "A small bird sitting in the middle of a wait-a-bit thorn-bush, giving the mournful cry that sends the Elephant's Child to the Limpopo; the one creature the Child never touches again.",
+   "look": {
+    "kind": "bird",
+    "species": "bird_tall",
+    "tone": "dark",
+    "scale": 0.2
+   },
+   "fit": "none",
+   "wanted": "a Kolokolo bird",
+   "sections": [
+    "s1"
+   ]
+  },
+  {
+   "id": "c_families",
+   "name": "The Elephant's Dear Families",
+   "role": "his father, mother, aunts, uncles and brothers",
+   "description": "The whole family group, all of whom spank the Child for his curtiosity on his departure and again on his return; the two brothers who fall head over heels and cry 'O Bananas!' are of these.",
+   "look": {
+    "kind": "crowd",
+    "crowd": "townsfolk",
+    "size": "many"
+   },
+   "fit": "near",
+   "wanted": "a family of elephants",
+   "sections": [
+    "s1"
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "l_home",
+   "name": "The Elephant families' home in Africa",
+   "environment": "generic_outdoor",
+   "features": [
+    "trees",
+    "fence"
+   ],
+   "description": "The open African home ground of the Elephant's Child's family, warm even when he travels; the families live here in the High and Far-Off Times. Drawn with trees and scrub under a bright sky.",
+   "fit": "none",
+   "wanted": "the Elephants' home in Africa",
+   "units": [
+    "s1u1",
+    "s1u4",
+    "s1u5"
+   ]
+  },
+  {
+   "id": "l_road",
+   "name": "The long road east by north",
+   "environment": "country_road",
+   "features": [
+    "trees"
+   ],
+   "description": "The dusty travel route from Graham's Town to Kimberley and Khama's Country, east by north, under a hot sun.",
+   "units": [
+    "s1u2"
+   ]
+  },
+  {
+   "id": "l_limpopo",
+   "name": "The banks of the great grey-green, greasy Limpopo River",
+   "environment": "riverbank",
+   "features": [
+    "river",
+    "trees"
+   ],
+   "description": "The wide muddy river set about with fever-trees, in hot glaring sun; the Crocodile lies at the edge of the water and the Elephant's Child cools his nose in the stream here.",
+   "units": [
+    "s1u2",
+    "s1u3",
+    "s1u4",
+    "s1u5"
+   ]
+  }
+ ],
+ "claims": [
+  {
+   "id": "k1",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "core",
+   "text": "In the High and Far-Off Times all Elephants had no trunk, only a blackish bulgy nose as big as a boot that could not pick things up.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k2",
+   "section_id": "s1",
+   "kind": "idea",
+   "importance": "core",
+   "text": "There was one new Elephant, an Elephant's Child, who was full of 'satiable curtiosity - he asked ever so many questions.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k3",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Elephant's Child asked his tall aunt the Ostrich why her tail-feathers grew just so, and she spanked him with her hard, hard claw.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k4",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He asked his tall uncle the Giraffe what made his skin spotty, and the Giraffe spanked him with his hard, hard hoof.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k5",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He asked his broad aunt the Hippopotamus why her eyes were red, and she spanked him with her broad, broad hoof.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k6",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He asked his hairy uncle the Baboon why melons tasted just so, and the Baboon spanked him with his hairy, hairy paw.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k7",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Elephant's Child asked what the Crocodile has for dinner, and everybody said 'Hush!' and spanked him for a long time.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k8",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "'What does the Crocodile have for dinner?'",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 2
+    }
+   ]
+  },
+  {
+   "id": "k9",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "Kolokolo Bird, sitting in a wait-a-bit thorn-bush, told him to go to the banks of the great grey-green, greasy Limpopo River and find out.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k10",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "He set out carrying a hundred pounds of bananas, a hundred pounds of sugar-cane and seventeen melons, and his family spanked him once more for luck.",
+   "source": [
+    {
+     "unit": "s1u1",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k11",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He walked from Graham's Town to Kimberley and Khama's Country, east by north, eating melons and throwing the rind about because he could not pick it up.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 3
+    }
+   ]
+  },
+  {
+   "id": "k12",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "supporting",
+   "text": "Till that very week the Elephant's Child had never seen a Crocodile and did not know what one was like.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k13",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "He found a Bi-Coloured-Python-Rock-Snake curled round a rock and politely asked whether it had seen such a thing as a Crocodile.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k14",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "'What will you ask me next?' said the snake in a voice of dretful scorn.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k15",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The snake uncoiled very quickly and spanked the Elephant's Child with his scalesome, flailsome tail.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 4
+    }
+   ]
+  },
+  {
+   "id": "k16",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Elephant's Child coiled the snake back on the rock politely and went on eating melons.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k17",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "He trod on what he thought was a log of wood at the river's edge, but it was really the Crocodile, who winked one eye.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k18",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Elephant's Child said that if it was all the same to the Crocodile he did not want to be spanked any more.",
+   "source": [
+    {
+     "unit": "s1u2",
+     "page": 5
+    }
+   ]
+  },
+  {
+   "id": "k19",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "'I think to-day I will begin with Elephant's Child!' said the Crocodile between his teeth.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k20",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "The Crocodile caught the Elephant's Child by his little boot-sized nose and declared him the first course.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k21",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "'Led go! You are hurtig be!' said the Elephant's Child through his nose.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k22",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The Bi-Coloured-Python-Rock-Snake warned him to pull hard at once or the Crocodile would jerk him into the stream.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 6
+    }
+   ]
+  },
+  {
+   "id": "k23",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "As the Crocodile floundered in the water and both pulled, the Elephant's Child's nose stretched longer and longer and hurt him.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k24",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "The snake knotted himself in a double-clove-hitch round the Elephant's Child's hind legs and pulled hardest with him.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 7
+    }
+   ]
+  },
+  {
+   "id": "k25",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "At last the Crocodile let go of the Elephant's Child's nose with a plop that could be heard all up and down the Limpopo.",
+   "source": [
+    {
+     "unit": "s1u3",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k26",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He sat down hard, thanked the snake, and hung his badly out-of-shape nose in the river wrapped in cool banana leaves.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 8
+    }
+   ]
+  },
+  {
+   "id": "k27",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "'Some people do not know what is good for them,' said the snake.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k28",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "After three days his nose never shrank but had been pulled out into a really truly trunk, same as all Elephants have to-day.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k29",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "A fly stung him on the shoulder and he lifted up his trunk and hit the fly dead with the end of it.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k30",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He plucked a large bundle of grass with his trunk, dusted it against his fore-legs and stuffed it into his mouth.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k31",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "In the hot sun he schlooped up mud from the river bank with his trunk and slapped a cool mud-cap on his head.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 9
+    }
+   ]
+  },
+  {
+   "id": "k32",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "core",
+   "text": "'You will find that new nose of yours very useful to spank people with,' said the snake.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k33",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "He went home across Africa using his trunk to pull down fruit, pluck up grass, swat flies, make mud-caps and sing louder than several brass bands.",
+   "source": [
+    {
+     "unit": "s1u4",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k34",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He sought out a broad Hippopotamus who was no relation and spanked her hard, to prove the snake had told the truth.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k35",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "detail",
+   "text": "The rest of the time he picked up the melon rinds he had dropped on his way to the Limpopo, for he was a Tidy Pachyderm.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 10
+    }
+   ]
+  },
+  {
+   "id": "k36",
+   "section_id": "s1",
+   "kind": "quote",
+   "importance": "detail",
+   "text": "'Pooh ... I don't think you peoples know anything about spanking; but I do, and I'll show you.'",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k37",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "He uncoiled his trunk and knocked two of his dear brothers head over heels.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k38",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "His brothers asked what he had done to his nose, and he said he had got a new one from the Crocodile on the Limpopo to keep.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k39",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "When his hairy uncle the Baboon called his new nose ugly, he picked the Baboon up by one hairy leg and hove him into a hornet's nest.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k40",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "supporting",
+   "text": "He spanked all his dear families, pulled out the Ostrich aunt's tail-feathers, dragged the Giraffe through a thorn-bush and blew bubbles into the sleeping Hippopotamus's ear.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k41",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "detail",
+   "text": "He never let any one touch Kolokolo Bird.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k42",
+   "section_id": "s1",
+   "kind": "event",
+   "importance": "core",
+   "text": "His dear families went off to the banks of the Limpopo to borrow new noses from the Crocodile, and when they came back nobody spanked anybody any more.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  },
+  {
+   "id": "k43",
+   "section_id": "s1",
+   "kind": "fact",
+   "importance": "core",
+   "text": "Ever since that day all the Elephants you will ever see have trunks precisely like the trunk of the 'satiable Elephant's Child.",
+   "source": [
+    {
+     "unit": "s1u5",
+     "page": 11
+    }
+   ]
+  }
+ ],
+ "themes": [
+  "curiosity as the engine of the world",
+  "getting what you asked for",
+  "turning a punishment into a tool",
+  "the family that stops hitting one another"
+ ],
+ "unmapped": [
+  {
+   "type": "cast",
+   "ref": "c_baboon",
+   "wanted": "a hairy baboon",
+   "used": "animal quad_medium"
+  },
+  {
+   "type": "cast",
+   "ref": "c_kolokolo",
+   "wanted": "a Kolokolo bird",
+   "used": "bird bird_tall"
+  },
+  {
+   "type": "cast",
+   "ref": "c_child",
+   "wanted": "a baby elephant, no trunk until he gets one",
+   "used": "animal quad_large"
+  },
+  {
+   "type": "cast",
+   "ref": "c_families",
+   "wanted": "a family of elephants",
+   "used": "crowd townsfolk"
+  },
+  {
+   "type": "place",
+   "ref": "l_home",
+   "wanted": "the Elephants' home in Africa",
+   "used": "generic_outdoor"
+  },
+  {
+   "type": "prop",
+   "wanted": "a hornet's nest",
+   "used": "thing_heap"
+  }
+ ]
+}
