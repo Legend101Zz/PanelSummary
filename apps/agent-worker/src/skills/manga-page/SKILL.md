@@ -283,11 +283,11 @@ change a word, label it `paraphrase`. QUOTE_NOT_IN_SOURCE is an error.
 The vocabulary is closed. When the book needs an object, a creature or a place that no item is,
 draw a neutral stand-in and say so. Never draw a thing as another thing.
 
-- **Objects.** Never draw an object as another object (no bread for cheese, no sword for a bone).
-  Use the shape that matches it: `thing_long` (bone, spear, stick), `thing_round` (fruit, ball,
+- **Objects.** Never draw an object as another object (no named prop for a different thing).
+  Use the shape that matches it: `thing_long` (stick, pole, tool), `thing_round` (fruit, ball,
   stone), `thing_block` (loaf, box, wedge), `thing_flat` (sheet, board), `thing_heap` (a pile).
   Give it a `label`: the object's name in the book's words, at most 24 characters
-  (`{"prop": "thing_long", "label": "blade-bone"}`). Keep the same shape and label every time
+  (`{"prop": "thing_long", "label": "walking stick"}`). Keep the same shape and label every time
   the object appears. A prop of the list is right only when it is that very object.
 - **Creatures.** When a cast member is a neutral archetype (its `fit` is `none` in the
   understanding), the renderer draws its name tag. Do not add a second one with a caption.

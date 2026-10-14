@@ -12,20 +12,20 @@ const MEANINGS = {
   species: {
     quad_small: "a small four-legged body (cat to dog size)",
     quad_medium: "a medium four-legged body (sheep to deer size)",
-    quad_large: "a large four-legged body (cow to elephant size)",
-    long_low: "a long body close to the ground (snake, crocodile, lizard shape)",
+    quad_large: "a large four-legged body (cattle size or bigger)",
+    long_low: "a long body close to the ground (reptile shapes)",
     swimmer: "a body that lives in water (fish, whale, seal shape)",
     bird_tall: "a tall long-legged bird body",
   },
   environments: {
     generic_room: "any plain room: walls, floor, no fixed furniture",
     generic_hall: "a wide high plain hall, no furniture",
-    generic_passage: "a long narrow way: corridor, tunnel, maze",
-    generic_rough: "rough stone walls and a dark ceiling: cave, dungeon, burrow",
+    generic_passage: "a long narrow way: corridor, tunnel, alley",
+    generic_rough: "rough stone walls and a dark ceiling: an underground or rocky place",
     generic_outdoor: "open ground, horizon and sky: camp, clearing, field",
   },
   props: {
-    thing_long: "a long thin object (bone, spear, stick, tool)",
+    thing_long: "a long thin object (stick, pole, handle, tool)",
     thing_round: "a round object (fruit, ball, stone, wheel)",
     thing_block: "a block or box shape (loaf, crate, wedge)",
     thing_flat: "a flat object (sheet, board, bark)",
@@ -51,10 +51,10 @@ export function standInVocabulary() {
     props_by_shape: shown(MEANINGS.props, C.PROPS),
     // `scale` comes with the archetypes (D1a): show it only when the renderer has them.
     ...((C.ANIMAL_SPECIES as readonly string[]).includes("quad_large")
-      ? { look_scale: "optional number 0.05-4.0 on an animal, bird or human look: size relative to an adult human (0.15 = the size of a mouse beside a person). Leave it out for the usual size." }
+      ? { look_scale: "optional number 0.05-4.0 on an animal, bird or human look: size relative to an adult human (0.5 = half the height of a person, 2.0 = twice). Leave it out for the usual size." }
       : {}),
     fit: `optional on cast and locations: ${C.FITS.join(" | ")}. exact = the item is the thing; near = the same kind of thing; none = a neutral stand-in.`,
-    wanted: `needed when fit is near or none: the thing in the book's own words, at most ${C.WANTED_MAX} characters ("a young elephant").`,
+    wanted: `needed when fit is near or none: the thing in the book's own words, at most ${C.WANTED_MAX} characters ("an old camel").`,
     unmapped: 'optional top-level list of {"type": "cast" | "place" | "prop", "ref": "<cast or location id>", "wanted": "...", "used": "..."}: things that no item fits, and the neutral item used.',
   };
 }

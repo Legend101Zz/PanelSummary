@@ -193,7 +193,7 @@ export function standInIssues(value: unknown): ValidationIssue[] {
         code: "FIT_WANTED_MISSING",
         severity: "error",
         path,
-        message: `${entry.id} has fit "${entry.fit}" but no "wanted": add "wanted" with the thing in the book's own words (at most 40 characters, for example "a young elephant").`,
+        message: `${entry.id} has fit "${entry.fit}" but no "wanted": add "wanted" with the thing in the book's own words (at most 40 characters, for example "an old camel").`,
       });
     }
     if (neutral && entry.fit !== "none" && entry.fit !== "near") {

@@ -197,17 +197,17 @@ pick a wrong match and say nothing. A reader of the adaptation sees what was dra
 so report it.
 
 1. **Same kind of thing only.** Use the closest item only when it is the same kind of thing as the
-   book's (a mouse for a mouse, a rat for a rat). A near match like this gets `"fit": "near"` and
+   book's (a dog for a dog, an owl for an owl). A near match like this gets `"fit": "near"` and
    `"wanted"`. An exact match gets `"fit": "exact"` or no `fit`.
 2. **Otherwise a neutral stand-in.** For an animal with no species item, choose the neutral
    archetype for its body plan (`quad_small`, `quad_medium`, `quad_large`, `long_low`, `swimmer`,
    `bird_tall`; see `stand_in_vocabulary`). For a place, choose the generic environment for its
    kind of place (`generic_room`, `generic_hall`, `generic_passage`, `generic_rough`,
    `generic_outdoor`) and put what the scene needs in `features`. Set `"fit": "none"` and
-   `"wanted"`: the thing in the book's own words, at most 40 characters ("a young elephant",
-   "the maze"). The renderer draws a name tag for an archetype.
-3. **Size.** When the book gives a size that the usual size contradicts (a person "the size of a
-   mouse"), set `look.scale` (a factor of an adult human, 0.05-4.0). Leave it out otherwise.
+   `"wanted"`: the thing in the book's own words, at most 40 characters ("an old camel",
+   "a ruined tower"). The renderer draws a name tag for an archetype.
+3. **Size.** When the book gives a size that the usual size contradicts (a person "no taller than
+   a cup", a giant "as tall as a house"), set `look.scale` (a factor of an adult human, 0.05-4.0). Leave it out otherwise.
 4. **Never the wrong kind.** Never draw an animal as a person or a person as an animal. A
    stand-in of the right body plan is better than a close face of the wrong kind.
 5. **A group of animals is one animal member**, never a `crowd` (`crowd` draws people only).

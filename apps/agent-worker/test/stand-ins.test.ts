@@ -174,7 +174,7 @@ describe("the skills carry the rule, in general words", () => {
     const skill = await loadSkill("manga-page");
     expect(skill.content).toContain("## When no item fits");
     for (const id of NEUTRAL_PROPS) expect(skill.content).toContain(id);
-    expect(skill.content).toContain("no bread for cheese");
+    expect(skill.content).toContain("no named prop for a different thing");
     expect(skill.content).toContain("Do not add a second one");
   });
 });
