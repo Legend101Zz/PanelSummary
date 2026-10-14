@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { STAND_INS_NOTE, STAND_INS_TITLE, standInDetail, usedWords } from "./words";
 import { detailText } from "./api";
+import { CONTINUE_CHOOSE, CONTINUE_CHOOSE_DONE, CONTINUE_CHOOSE_LEGEND, CONTINUE_LEAD, CONTINUE_TITLE, PARTS_NOTE, PARTS_TITLE, continueLabel, partLabel, partStatusWord } from "./words";
 import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine, readButton } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
 
@@ -250,5 +251,29 @@ describe("readButton (one rule for the read button label)", () => {
   it("says Start reading with no hint when this browser has no place or the place is page 1", () => {
     expect(readButton(null)).toEqual({ label: "Start reading", hint: null });
     expect(readButton(1)).toEqual({ label: "Start reading", hint: null });
+  });
+});
+
+describe("continue with the next section (M1)", () => {
+  it("labels a part with its pages in the series numbering", () => {
+    expect(partLabel(2, 23, 40)).toBe("Part 2 · pages 23–40");
+    expect(partLabel(1, 1, 1)).toBe("Part 1 · page 1");
+    expect(partLabel(3, 41, null)).toBe("Part 3 · from page 41");
+  });
+  it("labels the Continue button by the section or the count", () => {
+    expect(continueLabel(["Chapter Two"])).toBe("Continue with “Chapter Two”");
+    expect(continueLabel(["A", "B"])).toBe("Continue with 2 sections");
+    expect(continueLabel([])).toBe("Choose a section to continue");
+  });
+  it("never uses the words of the Generate button (the test hook is one button 'Generate manga')", () => {
+    const all = [CONTINUE_CHOOSE, CONTINUE_CHOOSE_DONE, CONTINUE_CHOOSE_LEGEND, CONTINUE_LEAD, CONTINUE_TITLE, PARTS_NOTE, PARTS_TITLE, continueLabel(["x"]), continueLabel(["x", "y"]), continueLabel([]), partLabel(2, 3, 4)];
+    for (const text of all) expect(text.toLowerCase()).not.toContain("generate");
+  });
+  it("says a part's status in one phrase, and nothing for a complete part", () => {
+    expect(partStatusWord("complete", 0)).toBeNull();
+    expect(partStatusWord("completed_with_failures", 2)).toBe("2 pages not drawn");
+    expect(partStatusWord("completed_with_failures", 0)).toBe("Some points are not covered");
+    expect(partStatusWord("drawing", 0)).toBe("Drawing");
+    expect(partStatusWord("failed", 0)).toBe("Stopped");
   });
 });

@@ -1,0 +1,31 @@
+/* Parts of the book and Continue with the next section (D39). App tokens only (--app-*); same card, rules and type as the book page. */
+
+.card { display: flex; flex-direction: column; gap: 14px; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.title { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 800; letter-spacing: var(--app-tracking-heading); }
+.meta, .lead, .estimate, .next { margin: 0; font-size: 15px; line-height: 1.5; color: var(--app-text-2); }
+.next { color: var(--app-text); font-size: 17px; }
+.estimate { color: var(--app-text); }
+
+.list { list-style: none; margin: 0; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; min-height: 44px; padding: 8px 0; border-bottom: var(--app-line-hair) solid var(--app-line); box-sizing: border-box; }
+.row:last-child { border-bottom: 0; }
+.what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.label { font-weight: 800; font-size: 17px; }
+.sections { font-size: 15px; color: var(--app-text-2); overflow-wrap: anywhere; }
+.status { font-size: 14px; font-weight: 700; color: var(--app-needs-you); }
+.read { min-height: 44px; display: inline-flex; align-items: center; }
+
+.choose { display: flex; flex-direction: column; gap: 4px; }
+.sub { margin: 0; font-size: 15px; font-weight: 800; }
+.choose ul { list-style: none; margin: 8px 0 4px; padding: 0; border-top: var(--app-line-hair) solid var(--app-line); }
+.choose li { border-bottom: var(--app-line-hair) solid var(--app-line); }
+.sectionLabel { display: flex; flex-direction: column; gap: 2px; }
+.sectionPages { font-size: 14px; color: var(--app-text-2); }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+
+@media (max-width: 767px) {
+  .title { font-size: 22px; }
+  .actions { flex-direction: column; align-items: stretch; }
+}

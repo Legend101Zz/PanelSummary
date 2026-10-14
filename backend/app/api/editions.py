@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from app.api.library import _check_id, get_book_or_404
+from app.continuation import ContinuationError, check_continue, parts_view
 from app.documents import BookSource, Edition, EditionArtifact, EditionPage, GenerationJob, utcnow
 from app.preflight import check_limits, draw_cost_range
 from app.scope import ScopeError, resolve_scope
@@ -32,6 +33,9 @@ class GenerateBody(BaseModel):
     pdf_page_from: Optional[int] = None
     pdf_page_to: Optional[int] = None
     review_plan: Optional[bool] = None
+    # Continue with the next section (D38): the id of the finished edition this one continues. It needs a
+    # scope (sections or a page range) that does not repeat a scope the series already drew.
+    continue_from: Optional[str] = None
 
 
 def policy_snapshot(review_plan: bool = False) -> dict:
@@ -90,6 +94,12 @@ def edition_view(edition: Edition) -> dict:
         "pages_failed": edition.pages_failed,
         "coverage": edition.coverage,
         "scope": edition.scope,
+        # D38: the part this one continues, its first page number in the book as a series, and the
+        # understanding versions it used and produced. The reader numbers each edition from 1.
+        "continues_edition_id": edition.continues_edition_id,
+        "first_page_number": edition.first_page_number,
+        "understanding_version": edition.understanding_version,
+        "understanding_version_produced": edition.understanding_version_produced,
         "totals": edition.totals.model_dump(),
         "policy": edition.policy,
         "error": edition.error,
@@ -112,6 +122,13 @@ async def generate(book_id: str, body: Optional[GenerateBody] = None) -> dict:
 
     No body: the whole book, drawn without a plan review (the v0.1 behaviour). With a body the
     edition draws a scope (D19, amended) and may stop after the plan (D24).
+
+    ``continue_from`` (D38) continues a finished edition of the same book with the next part. The body must
+    also give a scope (``section_ids`` or a page range). The new edition reads only its own scope. It gets the
+    understanding of the earlier edition as a prior, so the cast, the places and the looks stay the same. The
+    answer is 422, with a plain reason, when the scope is missing, the earlier edition is not finished, or the
+    scope overlaps a scope that the earlier edition or the parts before it drew (an overlap is a source unit
+    in both scopes). The size limits (D19) apply to the new scope. Without ``continue_from`` nothing changes.
     """
     book = await get_book_or_404(book_id)
     if book.status != "parsed":
@@ -122,6 +139,8 @@ async def generate(book_id: str, body: Optional[GenerateBody] = None) -> dict:
     settings = get_settings()
     body = body or GenerateBody()
     scope: Optional[dict] = None
+    if body.continue_from is not None and body.section_ids is None and body.pdf_page_from is None and body.pdf_page_to is None:
+        raise HTTPException(status_code=422, detail="Continue needs a scope: choose the sections or the PDF pages of the next part.")
     if body.section_ids is None and body.pdf_page_from is None and body.pdf_page_to is None:
         # v0.1 size limits (D19): refuse before any edition, job or spend exists.
         reasons = check_limits(book.page_count, book.word_count, settings.max_pdf_pages, settings.max_source_words)
@@ -147,12 +166,33 @@ async def generate(book_id: str, body: Optional[GenerateBody] = None) -> dict:
         raise HTTPException(status_code=422, detail=" ".join(reasons))
     review = settings.plan_review_default if body.review_plan is None else body.review_plan
     edition = Edition(book_id=book_id, policy=policy_snapshot(review), scope=scope)
+    if body.continue_from is not None:
+        earlier = await Edition.get(_check_id(body.continue_from))
+        if earlier is None:
+            raise HTTPException(status_code=404, detail="The edition to continue was not found")
+        try:
+            prior, first_page = await check_continue(earlier, book_id, resolved, source.sections, source.units, book.page_count)
+        except ContinuationError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        edition.continues_edition_id = str(earlier.id)
+        edition.first_page_number = first_page
+        edition.understanding_version = prior.version
     await edition.insert()
     job = GenerationJob(kind="generate", book_id=book_id, edition_id=str(edition.id), message="Waiting for the generator")
     await job.insert()
     edition.job_id = str(job.id)
     await edition.save()
     return {"edition": edition_view(edition), "job": await job_view(edition.job_id), "already_running": False}
+
+
+@router.get("/books/{book_id}/parts")
+async def book_parts(book_id: str) -> dict:
+    """The parts of the book as one series, and the sections that remain after the last part (D38)."""
+    book = await get_book_or_404(book_id)
+    source = await BookSource.find_one(BookSource.book_id == book_id)
+    if source is None:
+        return {"book_id": book_id, "parts": [], "remaining": [], "can_continue": False, "continue_from": None}
+    return await parts_view(book_id, book.page_count, source.sections, source.units)
 
 
 @router.get("/books/{book_id}/editions")
