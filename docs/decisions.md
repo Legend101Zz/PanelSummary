@@ -192,6 +192,17 @@ To change a decision, edit its entry in the same change as the code, and give th
 - `HERO_TOO_SMALL` (warning) now uses the same measure: under 25 percent of the panel after the push. Calibration: `docs/v0.2/Q1-renderer.md`.
 - Status: accepted for the next live run. Skills: `manga-page` 1.11.0 and `book-understanding` 1.9.0.
 
+### D35. No wall-clock limit for a failing page attempt (2026-10-14, issue #84, track O1)
+- Statement: PanelSummary adds no new limit on the duration of one page attempt. The existing limit stays (`PAGE_LIMITS.timeoutMs`, 720 s, and the submit limit of 8). `settings.py` gets no new value.
+- Why: The measurement of 11 v0.2 runs (388 page attempts, all Flash) found a longest attempt of 126 s (385 accepted: median 34 s, P90 60 s; 3 failed: 93 to 126 s, all stopped by the submit limit). A limit of 180 s or more changes no attempt and saves 0 s in every run. A limit of 120 s would cut one accepted page (126 s, score 3.75) to save 6 s. The earlier tail (failed attempts of 199 to 611 s) was in M3 runs before the F1 fix and did not come back. Data: `docs/v0.3/O1-ops.md` section 2.
+- Status: accepted. Re-open if a measured run has a page attempt above 300 s that then fails.
+
+### D36. No second host in v0.3: the plan headroom endpoint is not called (2026-10-14, issue #85, track O1)
+- Statement: The worker talks only to `api.minimax.io` (D2). It does not call `GET https://www.minimax.io/v1/token_plan/remains`, and the preflight shows no plan headroom. The claim "the app talks only to api.minimax.io" stays.
+- Why: The endpoint is on a second host (`www.minimax.io`). The owner did not approve a second host for v0.3. MiniMax still publishes no price for MiniMax-M3.1-Flash-Preview (checked 2026-10-14 on the pay-as-you-go page, the rate-limit page and the M Plan pages), so costs stay estimates at M3 rates (the recorded cost equals the M3 Standard rates to the cent). Data: `docs/v0.3/O1-ops.md` section 3.
+- For v0.4 the owner decides: (1) whether a second host is acceptable, with the egress claim changed to name it and say it is read-only for the plan endpoint; (2) if yes, the call goes in the worker only, uses the existing key handling, never logs the key or headers, and its host appears in `/internal/v2/egress`; (3) if no, the preflight stays an estimate.
+- Status: accepted for v0.3.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.

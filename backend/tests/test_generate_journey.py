@@ -536,7 +536,7 @@ def test_plan_review_stops_before_drawing_and_approve_completes_it(tmp_path, mon
         assert waiting["page_total"] == 3 and [p["status"] for p in waiting["pages"]] == ["pending"] * 3
         assert [p["beat"] for p in waiting["pages"]] == ["beat 1", "beat 2", "beat 3"]  # the review screen reads these
         assert [c["goal_type"] for c in worker.calls] == ["BOOK_UNDERSTANDING", "ADAPTATION_PLAN"]  # 0 drawing calls
-        assert waiting["draw_estimate_usd"] == {"low": 0.08, "high": 0.11}  # 3 pages
+        assert waiting["draw_estimate_usd"] == {"low": 0.06, "high": 0.11}  # 3 pages
         assert waiting["plan_omitted"] == []
         assert len(waiting["book"]["claims"]) == 3  # claim text for the review, sent while the plan waits
         assert waiting["totals"]["calls"] == 2 and waiting["totals"]["cost_usd"] == 0.002  # spent so far is live
