@@ -270,7 +270,7 @@ describe("MANGA_PAGE parseInput", () => {
 
     const fourth = mangaPageGoal.parseInput(pageInput(4, { previous: { template: "establish_3", last_panel: "tears fall" } }));
     expect(fourth.first_appearances).toEqual(["seamstress", "boy"]);
-    expect(fourth.previous).toEqual({ page_number: 3, beat: PLAN.pages[2].beat, template: "establish_3", last_panel: "tears fall" });
+    expect(fourth.previous).toEqual({ page_number: 3, beat: PLAN.pages[2].beat, planned_hook: PLAN.pages[2].page_turn_hook === true, template: "establish_3", last_panel: "tears fall" });
     expect(fourth.next).toEqual({ page_number: 5, beat: PLAN.pages[4].beat });
 
     const third = mangaPageGoal.parseInput(pageInput(3));

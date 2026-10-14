@@ -51,7 +51,7 @@ export function standInVocabulary() {
     props_by_shape: shown(MEANINGS.props, C.PROPS),
     // `scale` comes with the archetypes (D1a): show it only when the renderer has them.
     ...((C.ANIMAL_SPECIES as readonly string[]).includes("quad_large")
-      ? { look_scale: "optional number 0.05-4.0 on an animal, bird or human look: size relative to an adult human (0.5 = half the height of a person, 2.0 = twice). Leave it out for the usual size." }
+      ? { look_scale: "optional number 0.05-4.0. Leave it out by default. The renderer uses it only on a neutral archetype species (size relative to an adult human: 0.5 = half the height of a person) and on a human below 1.0 (a person the book says is tiny). It ignores it on a named animal or bird species (each is drawn at a readable size already) and on a human of 1.0 or more (use height: giant for a big person)." }
       : {}),
     fit: `optional on cast and locations: ${C.FITS.join(" | ")}. exact = the item is the thing; near = the same kind of thing; none = a neutral stand-in.`,
     wanted: `needed when fit is near or none: the thing in the book's own words, at most ${C.WANTED_MAX} characters ("an old camel").`,

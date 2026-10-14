@@ -31,3 +31,15 @@ The look vocabulary is closed and a free value is rejected. The model therefore 
 - The page goal note (`codesNote` in `goals/manga-page.ts`) does not yet record the first rejected value. Track W1 owns that file.
 - The names of the neutral values are the D1a contract. Until D1a merges, a model that uses them gets `ENUM_INVALID`.
 - No live run. Whether the model uses `fit` and `unmapped` well is for a measured run (the owner starts it).
+
+## Gate 1 fixes (track fxw, issue #81)
+
+Source: `Book-Reel-scratch/v03/gate1-analysis-public.md` (A2 scale, the `unmapped` finding) and the M1 live part 1 understanding of the Just So book.
+
+1. `book-understanding` 1.13.0, rule "Size": leave `look.scale` out by default. Use it only on a neutral archetype stand-in (size relative to a person) or on a human the book says is tiny (below 1.0). Never the real-world size of a named animal or bird. A big person is `height: giant`. The vocabulary text `look_scale` (`src/goals/vocabulary.ts`) says the same. A parallel renderer track (fxr) ignores `scale` except on the six archetype species and on humans below 1.0.
+2. Warning `SCALE_NOT_USED`: `scale` is set where the renderer ignores it (a named species, a human of 1.0 or more, any other kind). On the saved two-tale Gate 1 understanding it names 7 cast members (Prince, Swallow, other swallows, sparrows, Nightingale, Lizard, Butterfly), exactly the 7 that the analysis counted.
+3. Error `CROWD_STAND_IN`: a `crowd` with `fit` near or none. A crowd draws people only. The repair: one animal member, an archetype if no species fits. No word list. On the saved M1 part 1 understanding it names `c_families`. A prior (continuation) cast member is not judged: the worker copies it unchanged and the model cannot repair it.
+4. Warning `UNMAPPED_HAS_ITEM`: an `unmapped` prop whose `wanted` has a word of the renderer's `PROP_WORDS` for a named prop (`thing_*` words are skipped). On the saved Gate 1 understanding it names 3 entries (ruby, sapphire eyes, leaden heart). The sun-dial, the one real gap, is not named. `PROP_WORDS` is now exported from the `@panelsummary/manga-render` root (one line in `src/index.ts`).
+5. `book-understanding` 1.13.0, cast rule: things that the story tells apart by colour (three kites, one red, one white, one gold) are one cast member each with its own `tone`.
+
+Tests: `test/gate1-fixes.test.ts`. Not measured: the effect on a live understanding.
