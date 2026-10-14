@@ -8,7 +8,7 @@ import { placeIssues } from "./places.js";
 import { parseBook, totalWords, unitIndex, type BookInput } from "./book-input.js";
 import { candidateParameters, CANDIDATE_ARG, dataBlock, errorsOf, formatIssues, parseCandidate, rejection, sourceBlock, warningsOf } from "./common.js";
 import { InputError, requireObject, type GoalDefinition } from "./types.js";
-import { lookVocabulary } from "./vocabulary.js";
+import { ARCHETYPE_SPECIES, GENERIC_ENVIRONMENTS, lookVocabulary, standInVocabulary } from "./vocabulary.js";
 
 /**
  * Looks that contradict the character's own description. A statue (or carving,
@@ -170,6 +170,99 @@ export function issueNote(issues: readonly ValidationIssue[]): string {
   return [...byCode.entries()].slice(0, 5).map(([code, paths]) => `${code}(${paths.slice(0, 3).join("|")}${paths.length > 3 ? `+${paths.length - 3}` : ""})`).join(",");
 }
 
+
+// ---------------------------------------------------------------------------
+// D30: the understanding says what it could not map (fit, wanted, unmapped)
+// ---------------------------------------------------------------------------
+
+type FitEntry = { id?: string; name?: string; fit?: unknown; wanted?: unknown; look?: { kind?: string; species?: string }; environment?: string };
+
+/**
+ * Checks on `fit` and `wanted`. No word lists: whether a look suits a description cannot be
+ * checked by words in general, so the model reports it (D30) and the reader sees it.
+ * - `fit` near or none needs `wanted`: the thing in the book's own words (error).
+ * - A neutral archetype or generic environment without `fit` near or none is unreported (warning).
+ */
+export function standInIssues(value: unknown): ValidationIssue[] {
+  const u = value as { cast?: FitEntry[]; locations?: FitEntry[] };
+  const issues: ValidationIssue[] = [];
+  const hasWanted = (entry: FitEntry) => typeof entry.wanted === "string" && entry.wanted.trim() !== "";
+  const check = (entry: FitEntry, path: string, neutral: string | undefined) => {
+    if ((entry.fit === "near" || entry.fit === "none") && !hasWanted(entry)) {
+      issues.push({
+        code: "FIT_WANTED_MISSING",
+        severity: "error",
+        path,
+        message: `${entry.id} has fit "${entry.fit}" but no "wanted": add "wanted" with the thing in the book's own words (at most 40 characters, for example "an old camel").`,
+      });
+    }
+    if (neutral && entry.fit !== "none" && entry.fit !== "near") {
+      issues.push({
+        code: "ARCHETYPE_WITHOUT_FIT",
+        severity: "warning",
+        path,
+        message: `${entry.id} uses the neutral item "${neutral}" without "fit": set "fit": "none" (or "near") and "wanted" so readers see that it is a stand-in.`,
+      });
+    }
+  };
+  for (const member of Array.isArray(u?.cast) ? u.cast : []) {
+    if (!member || typeof member !== "object") continue;
+    const species = member.look?.species;
+    check(member, `cast ${member.id ?? "?"}`, species && (ARCHETYPE_SPECIES as readonly string[]).includes(species) ? species : undefined);
+  }
+  for (const place of Array.isArray(u?.locations) ? u.locations : []) {
+    if (!place || typeof place !== "object") continue;
+    const env = place.environment;
+    check(place, `location ${place.id ?? "?"}`, env && (GENERIC_ENVIRONMENTS as readonly string[]).includes(env) ? env : undefined);
+  }
+  return issues;
+}
+
+/**
+ * A look or environment error shows what the book wanted next to what was chosen, so the repair
+ * can see a stand-in that does not match (D30). The text is model output: it is clipped and kept to plain characters.
+ */
+export function withWantedContext(issues: ValidationIssue[], value: unknown): ValidationIssue[] {
+  const u = value as { cast?: FitEntry[]; locations?: FitEntry[] };
+  const plain = (text: unknown) => String(text ?? "").replace(/[^\p{L}\p{N} _.,'\u2019-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+  return issues.map((issue) => {
+    if (issue.severity !== "error") return issue;
+    const cast = /^cast ([^.\s]+)\.look/.exec(issue.path);
+    const place = /^location ([^.\s]+)(?:\.|$)/.exec(issue.path);
+    if (cast) {
+      const member = (Array.isArray(u?.cast) ? u.cast : []).find((c) => c?.id === cast[1]);
+      if (!member) return issue;
+      const wanted = member.wanted ? ` wanted "${plain(member.wanted)}",` : ` description "${plain((member as { description?: unknown }).description)}",`;
+      return { ...issue, message: `${issue.message} [${cast[1]}:${wanted} kind "${plain(member.look?.kind)}", species "${plain(member.look?.species)}". If no item fits this thing, use a neutral stand-in by body plan, set "fit": "none" and "wanted"; never a person for an animal.]` };
+    }
+    if (place && /environment/.test(issue.message)) {
+      const loc = (Array.isArray(u?.locations) ? u.locations : []).find((l) => l?.id === place[1]);
+      if (!loc) return issue;
+      return { ...issue, message: `${issue.message} [${place[1]}: wanted "${plain(loc.wanted ?? loc.name)}", environment "${plain(loc.environment)}". If no environment fits, use the generic one for this kind of place, set "fit": "none" and "wanted".]` };
+    }
+    return issue;
+  });
+}
+
+/**
+ * The first rejected field of a submission, for the tool-call note (ENUM_INVALID or FIELD_MISSING):
+ * `first_rejected=cast c1.look.species="elephant"`. The value is model output and untrusted:
+ * plain text only, at most 40 characters.
+ */
+export function rejectedValueNote(issues: readonly ValidationIssue[]): string {
+  const issue = issues.find((i) => i.severity === "error" && (i.code === "ENUM_INVALID" || i.code === "FIELD_MISSING"));
+  if (!issue) return "";
+  const plain = (text: string, max: number) => text.replace(/[^\p{L}\p{N} _.,'\u2019:-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max);
+  if (issue.code === "FIELD_MISSING") {
+    const key = /missing required field "([^"]{1,40})"/.exec(issue.message)?.[1];
+    return ` first_rejected=${plain(`${issue.path}${key ? `.${key}` : ""}`, 60)} (missing)`;
+  }
+  const m = /^(\S+) (.*) is not allowed/s.exec(issue.message);
+  if (!m) return ` first_rejected=${plain(issue.path, 60)}`;
+  const raw = m[2].replace(/^"(.*)"$/s, "$1");
+  return ` first_rejected=${plain(`${issue.path}.${m[1]}`, 60)}=${plain(raw, 40)}`;
+}
+
 /** Books above this size need a chunked understanding pass (not implemented: fail visibly). */
 const MAX_WORDS_SINGLE_PASS = 250_000;
 
@@ -202,11 +295,11 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     const order = unitOrder(book.sections.map((section) => ({ units: section.unit_ids })));
     const stickyStatues = new Set<string>();
     const judge = (value: unknown) => {
-      const issues = [...validateUnderstanding(value, unitIds), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds), ...sectionCoverageIssues(value, book)];
+      const issues = [...withWantedContext(validateUnderstanding(value, unitIds), value), ...lookSenseIssues(value, stickyStatues), ...speakerCastIssues(value, book.units), ...loneSpeakerIssues(value, book.units), ...stateIssues(value, unitIds, order), ...placeIssues(value, unitIds), ...sectionCoverageIssues(value, book), ...standInIssues(value)];
       if (errorsOf(issues).length > 0) {
         return {
           text: `${rejection(issues)}\nTo fix a few entries, call revise_understanding with only the changed entries instead of resending everything.`,
-          note: `errors=${errorsOf(issues).length} ${issueNote(errorsOf(issues))}`,
+          note: `errors=${errorsOf(issues).length} ${issueNote(errorsOf(issues))}${rejectedValueNote(errorsOf(issues))}`,
         };
       }
       const warnings = warningsOf(issues);
@@ -239,7 +332,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
     const revise = {
       name: "revise_understanding",
       description:
-        'Fix the last submitted BookUnderstanding without resending it: a JSON string {"cast": [...], "locations": [...], "claims": [...], "sections": [...], "remove": {"cast": [ids], "locations": [ids], "claims": [ids]}, "logline": "...", "themes": [...]}. Entries are upserted by id (a full replacement of that entry). Replies ACCEPTED or lists every remaining error.',
+        'Fix the last submitted BookUnderstanding without resending it: a JSON string {"cast": [...], "locations": [...], "claims": [...], "sections": [...], "remove": {"cast": [ids], "locations": [ids], "claims": [ids]}, "logline": "...", "themes": [...], "unmapped": [...]}. Entries are upserted by id (a full replacement of that entry). Replies ACCEPTED or lists every remaining error.',
       parameters: candidateParameters,
       async execute(args: Record<string, unknown>) {
         if (!current) return { text: "REJECTED: submit the complete understanding with submit_understanding first.", note: "no_base" };
@@ -258,7 +351,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
           }
           merged[key] = kept;
         }
-        for (const key of ["logline", "themes", "title", "author", "kind"] as const) {
+        for (const key of ["logline", "themes", "title", "author", "kind", "unmapped"] as const) {
           if (patch[key] !== undefined) merged[key] = patch[key];
         }
         current = merged;
@@ -273,6 +366,7 @@ export const bookUnderstandingGoal: GoalDefinition<Input> = {
       unitIndex(book),
       "</goal>",
       dataBlock("trusted_vocabulary", lookVocabulary()),
+      dataBlock("stand_in_vocabulary", standInVocabulary()),
       dataBlock("trusted_state_fields", { fields_per_look_kind: catalog().variants.fields, eyes: catalog().variants.eyes }),
       ...(() => {
         const speakers = speakerList(book.units);

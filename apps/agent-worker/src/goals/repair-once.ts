@@ -67,7 +67,8 @@ const allTexts = (spec: MangaPageSpec) =>
     (panel.text ?? []).map((text, index) => ({ panel, text, index, path: `panel ${panel.id} text ${index}` })).filter((x) => typeof x.text?.text === "string"),
   );
 
-function wordsOf(text: string): string[] {
+/** Words of a text, a hyphenated word split in its parts ("well-known" gives "well", "known"). */
+function splitWords(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[‘’'`]/g, "")
@@ -76,7 +77,22 @@ function wordsOf(text: string): string[] {
     .filter(Boolean);
 }
 
-const norm = (text: string): string => wordsOf(text).join(" ");
+/**
+ * Words of a text, a hyphenated word kept whole ("blade-bone" is one word, not "blade" and "bone").
+ * Used where a word is looked up in a trigger list (D30); the checks calibrated on split words keep splitWords.
+ */
+export function wordsOf(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[‘’'`]/g, "")
+    .replace(/-{2,}/g, " ")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .map((w) => w.replace(/^-+|-+$/g, ""))
+    .filter(Boolean);
+}
+
+const norm = (text: string): string => splitWords(text).join(" ");
 
 // ---------------------------------------------------------------------------
 // CLAIM_TEXT_THIN: the facts of a core claim are not in the lettering
@@ -92,7 +108,7 @@ export const CLAIM_TEXT_MIN_FACTS = 6;
  * of the claim is usually on the page as a drawn figure; the facts about the subject are not).
  */
 export function claimFacts(claim: Claim, cast: BookUnderstanding["cast"]): string[] {
-  const subject = new Set(cast.flatMap((c) => wordsOf(`${c.name} ${c.role ?? ""}`)).map(stemWord));
+  const subject = new Set(cast.flatMap((c) => splitWords(`${c.name} ${c.role ?? ""}`)).map(stemWord));
   return salientWords(claim.text).filter((w) => !subject.has(stemWord(w)));
 }
 
@@ -104,7 +120,7 @@ export function claimTextThinIssues(
   const minRatio = options.minRatio ?? CLAIM_TEXT_MIN_RATIO;
   const minFacts = options.minFacts ?? CLAIM_TEXT_MIN_FACTS;
   const importance = options.importance ?? ["core"];
-  const lettering = new Set(allTexts(spec).flatMap(({ text }) => wordsOf(text.text).map(stemWord)));
+  const lettering = new Set(allTexts(spec).flatMap(({ text }) => splitWords(text.text).map(stemWord)));
   const issues: ValidationIssue[] = [];
   for (const claim of ctx.claims) {
     if (!importance.includes(claim.importance) || claim.kind === "quote") continue;
@@ -131,7 +147,7 @@ export function claimTextThinIssues(
  * stone, king, money) are left out on purpose: they name a material or a mood, not an object.
  */
 const PROP_TRIGGERS: Record<string, string[]> = {
-  sword: ["sword", "sword-hilt", "hilt", "blade"],
+  sword: ["sword", "sword-hilt", "hilt"],
   gem: ["ruby", "sapphire", "sapphires", "jewel", "jewels", "diamond", "emerald", "gem", "gems"],
   coin: ["coin", "coins", "penny", "pennies"],
   money_bag: ["purse"],
@@ -182,6 +198,28 @@ const PROP_GROUPS: string[][] = [
 const TRIGGER_TO_PROP = new Map<string, string>();
 for (const [prop, words] of Object.entries(PROP_TRIGGERS)) for (const w of words) TRIGGER_TO_PROP.set(stemWord(w), prop);
 
+/** The neutral shape that is nearest to a named prop's own shape, for the repair hint (D30). General shapes, not book words. */
+const NEUTRAL_SHAPE: Record<string, string> = {
+  sword: "thing_long", staff: "thing_long", spade: "thing_long", axe: "thing_long", key: "thing_long", needle: "thing_long", feather: "thing_long", thorn: "thing_long",
+  gem: "thing_round", coin: "thing_round", bell: "thing_round", clock: "thing_round", cup: "thing_round", bottle: "thing_round",
+  bread: "thing_block", book: "thing_block", ballot_box: "thing_block", basket: "thing_block", bag: "thing_block", money_bag: "thing_block",
+  paper: "thing_flat", letter: "thing_flat", scroll: "thing_flat", sign: "thing_flat", flag: "thing_flat",
+  coins_pile: "thing_heap",
+};
+const NEUTRAL_PROPS = ["thing_long", "thing_round", "thing_block", "thing_flat", "thing_heap"];
+
+/** Words (as stems) of the labels of neutral `thing_*` props on the page: a labelled neutral prop draws the object it names. */
+export function drawnLabelWords(spec: MangaPageSpec): Set<string> {
+  const out = new Set<string>();
+  for (const panel of spec.panels ?? []) {
+    for (const prop of panel.props ?? []) {
+      const label = (prop as { prop?: string; label?: unknown })?.label;
+      if (NEUTRAL_PROPS.includes(prop?.prop ?? "") && typeof label === "string") for (const w of wordsOf(label)) out.add(stemWord(w));
+    }
+  }
+  return out;
+}
+
 /** Prop ids drawn on the page (panel props and held props). */
 export function drawnProps(spec: MangaPageSpec): Set<string> {
   const drawn = new Set<string>();
@@ -195,7 +233,8 @@ export function drawnProps(spec: MangaPageSpec): Set<string> {
 export function keyPropNotDrawnIssues(spec: MangaPageSpec, ctx: Pick<RepairOnceContext, "claims" | "cast">): ValidationIssue[] {
   const drawn = drawnProps(spec);
   // A trigger word that is part of a cast name ("Rose-tree", "Rocket") names a character, not an object.
-  const castWords = new Set(ctx.cast.flatMap((c) => wordsOf(`${c.name} ${c.role ?? ""}`)).map(stemWord));
+  const castWords = new Set(ctx.cast.flatMap((c) => [...wordsOf(`${c.name} ${c.role ?? ""}`), ...splitWords(`${c.name} ${c.role ?? ""}`)]).map(stemWord));
+  const labelled = drawnLabelWords(spec);
   const has = (prop: string) => drawn.has(prop) || PROP_GROUPS.some((g) => g.includes(prop) && g.some((other) => drawn.has(other)));
   const issues: ValidationIssue[] = [];
   for (const claim of ctx.claims) {
@@ -205,7 +244,7 @@ export function keyPropNotDrawnIssues(spec: MangaPageSpec, ctx: Pick<RepairOnceC
       const prop = castWords.has(stemWord(w)) ? undefined : TRIGGER_TO_PROP.get(stemWord(w));
       if (prop && !wanted.has(prop)) wanted.set(prop, w);
     }
-    const missing = [...wanted].filter(([prop]) => !has(prop));
+    const missing = [...wanted].filter(([prop, word]) => !has(prop) && !labelled.has(stemWord(word)));
     // One missing object is a clear gap. A claim with several objects of which the page draws some is not flagged.
     if (missing.length === 0 || missing.length < wanted.size) continue;
     const [prop, word] = missing[0];
@@ -213,7 +252,11 @@ export function keyPropNotDrawnIssues(spec: MangaPageSpec, ctx: Pick<RepairOnceC
       code: "KEY_PROP_NOT_DRAWN",
       severity: "warning",
       path: "page.claims",
-      message: `core claim ${claim.id} names "${word}", but no panel draws it (no prop or holding "${prop}"). Add {"prop": "${prop}"} to the panel that shows it, or let the figure hold it; an insert panel of the object is fine.`,
+      message:
+        `core claim ${claim.id} names "${word}", but no panel draws it (no prop or holding "${prop}"). ` +
+        `If the list has a prop that is this very object, add {"prop": "${prop}"} to the panel that shows it, or let the figure hold it; an insert panel of the object is fine. ` +
+        `If no prop of the list is this object (only a similar one), do not use the nearest named prop: draw the neutral shape that matches it, {"prop": "${NEUTRAL_SHAPE[prop] ?? "thing_block"}", "label": "<its name in the book's words, at most 24 characters>"} ` +
+        `(shapes: thing_long, thing_round, thing_block, thing_flat, thing_heap).`,
     });
   }
   return issues;
@@ -247,8 +290,8 @@ export function duplicateCaptionIssues(spec: MangaPageSpec): ValidationIssue[] {
   const seen = new Set<string>();
   boxes.forEach((a, i) => {
     for (const b of boxes.slice(i + 1)) {
-      const wa = new Set(wordsOf(a.text.text));
-      const wb = new Set(wordsOf(b.text.text));
+      const wa = new Set(splitWords(a.text.text));
+      const wb = new Set(splitWords(b.text.text));
       if (wa.size === 0 || wb.size === 0) continue;
       const shared = [...wa].filter((w) => wb.has(w)).length;
       const overlap = shared / (wa.size + wb.size - shared);
@@ -424,7 +467,7 @@ export function sourceWords(units: readonly { text: string }[]): SourceWord[] {
     const tokens = unit.text.replace(/[\uFB00-\uFB06]/g, (m) => m.normalize("NFKC")).split(/\s+/).filter(Boolean);
     for (const token of tokens) {
       const end = /[.!?\u2026][)\]]?["\u201d\u2019']*$/.test(token) || /[\u201d"]$/.test(token);
-      const norm = wordsOf(token).join(" ");
+      const norm = splitWords(token).join(" ");
       if (norm === "") {
         if (end && out.length > 0) out[out.length - 1].end = true;
         continue;
@@ -460,7 +503,7 @@ export function quoteClippedIssues(
   const issues: ValidationIssue[] = [];
   for (const { text, path } of allTexts(spec)) {
     if (text.fidelity !== "quote") continue;
-    const fragments = text.text.split(/\.\.\.|\u2026|--|\u2014/).map((f) => wordsOf(f)).filter((f) => f.length >= 4);
+    const fragments = text.text.split(/\.\.\.|\u2026|--|\u2014/).map((f) => splitWords(f)).filter((f) => f.length >= 4);
     const last = fragments[fragments.length - 1];
     if (!last) continue;
     const at = findSequence(words, last);

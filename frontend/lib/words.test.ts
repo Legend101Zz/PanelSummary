@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { STAND_INS_NOTE, STAND_INS_TITLE, standInDetail, usedWords } from "./words";
 import { detailText } from "./api";
 import { DRAWING_AGAIN, DRAWING_STARTING, UNKNOWN_PAGE_REASON, stoppedLine, stoppedNote, bookFacts, failedStageLine, moneyRange, plainReason, readableReason, providerStopHeadline, providerStopLines, scopeLabel, shelfStatus, stageLine } from "./words";
 import { FALLBACK_LIMITS, addBookLede, limitItems, limitsSentence, limitsSettingsLine, notPdfText, readSummary, sampleEstimateSentence, sampleLandingSentence, sampleRealSentence, sampleRunFacts, tooLargeText, withNextStep } from "./words";
@@ -220,3 +221,23 @@ describe("readableReason, case", () => {
   });
 });
 
+
+describe("stand-ins (D30)", () => {
+  it("names a neutral item in plain words and falls back to the item's own name", () => {
+    expect(usedWords("quad_large")).toBe("a large four-legged figure");
+    expect(usedWords("generic_passage")).toBe("a plain passage");
+    expect(usedWords("thing_long")).toBe("a long shape");
+    expect(usedWords("city_square")).toBe("a city square");
+    expect(usedWords("")).toBe("a plain figure");
+  });
+  it("says a neutral figure or prop is labelled, a near match is drawn as, and a place has no label", () => {
+    expect(standInDetail({ type: "cast", name: "The Calf", wanted: "a young elephant", used: "quad_large", fit: "none" })).toBe("a large four-legged figure, labelled");
+    expect(standInDetail({ type: "prop", name: "", wanted: "a blade-bone", used: "thing_long", fit: "none" })).toBe("a long shape, labelled");
+    expect(standInDetail({ type: "cast", name: "The Mouse", wanted: "a mouse", used: "rat", fit: "near" })).toBe("drawn as a rat");
+    expect(standInDetail({ type: "place", name: "The Maze", wanted: "the maze", used: "generic_passage", fit: "none" })).toBe("a plain passage");
+  });
+  it("keeps the section title and note short and plain", () => {
+    expect(STAND_INS_TITLE).toBe("Drawn as stand-ins");
+    expect(STAND_INS_NOTE.length).toBeLessThan(200);
+  });
+});

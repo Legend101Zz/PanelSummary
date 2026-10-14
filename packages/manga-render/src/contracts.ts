@@ -686,6 +686,10 @@ export interface CastMember {
   look: CharacterLook;
   /** Section ids this character appears in (multi-story books keep casts apart). */
   sections?: string[];
+  /** How well the look fits the thing the book describes (D30). Absent = not reported. */
+  fit?: Fit;
+  /** The thing in the book's own words, at most 40 characters ("a young elephant"). */
+  wanted?: string;
 }
 
 export interface LocationSpec {
@@ -694,6 +698,24 @@ export interface LocationSpec {
   environment: Environment;
   features: EnvFeature[];
   description: string;
+  /** How well the environment fits the place the book describes (D30). */
+  fit?: Fit;
+  /** The place in the book's own words, at most 40 characters. */
+  wanted?: string;
+}
+
+/** `exact` = the item is the thing; `near` = the same kind of thing; `none` = a neutral stand-in. */
+export const FITS = ["exact", "near", "none"] as const;
+export type Fit = (typeof FITS)[number];
+export const WANTED_MAX = 40;
+
+/** A thing of the book that no item fits, and the item used instead (D30). */
+export interface UnmappedItem {
+  type: "cast" | "place" | "prop";
+  /** The cast or location id (not used for props). */
+  ref?: string;
+  wanted: string;
+  used: string;
 }
 
 export const CLAIM_KINDS = ["event", "idea", "fact", "relationship", "argument", "quote"] as const;
@@ -726,6 +748,8 @@ export interface BookUnderstanding {
   locations: LocationSpec[];
   claims: Claim[];
   themes: string[];
+  /** Things of the book that no item fits, with the neutral item used (D30). Optional. */
+  unmapped?: UnmappedItem[];
 }
 
 export interface PlannedPage {

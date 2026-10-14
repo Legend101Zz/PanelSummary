@@ -17,6 +17,7 @@ import {
   duplicateCaptionIssues,
   isRepairOnce,
   keyPropNotDrawnIssues,
+  wordsOf,
   locationOffPlanIssues,
   QUOTE_CLIP_MAX_TAIL,
   QUOTE_CLIP_MIN_TAIL,
@@ -72,7 +73,7 @@ describe("REPAIR_ONCE_CODES", () => {
     const skill = await loadSkill("manga-page");
     const step = /FIX BEFORE SUBMIT\*\* items \(([^)]*)\)/.exec(skill.content)?.[1] ?? "";
     expect(step.split(",").map((c) => c.trim()).sort()).toEqual([...REPAIR_ONCE_CODES].sort());
-    expect(skill.version).toBe("1.11.0");
+    expect(skill.version).toBe("1.12.0");
     expect(skill.contentHash).toMatch(/^[0-9a-f]{64}$/);
   });
 
@@ -271,6 +272,49 @@ describe("KEY_PROP_NOT_DRAWN", () => {
   it("does not flag a claim of which the page draws one of several objects", () => {
     const two = claim("k6", "The Swallow carries the ruby to the seamstress, who sits with her thimble.");
     expect(keyPropNotDrawnIssues(page([panel("p1", { props: [{ prop: "gem", slot: "center" }] })]), { claims: [two], cast })).toEqual([]);
+  });
+});
+
+// D30 (#81): a compound word is one word, and "blade" is not a sword.
+describe("KEY_PROP_NOT_DRAWN: stand-ins instead of the nearest prop (D30)", () => {
+  it("keeps a hyphenated word whole", () => {
+    expect(wordsOf("The blade-bone, a well-known tool -- and 'x' - y")).toEqual(["the", "blade-bone", "a", "well-known", "tool", "and", "x", "y"]);
+  });
+
+  it("does not ask for a sword when a core claim says blade-bone (or blade)", () => {
+    const bone = claim("k1", "The hunter carves a blade-bone from the old find.");
+    expect(keyPropNotDrawnIssues(page([panel("p1")]), { claims: [bone], cast })).toEqual([]);
+    expect(keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k2", "A blade of grass bends in the wind.")], cast })).toEqual([]);
+  });
+
+  it("still asks for a sword when the claim names a sword, also as sword-hilt", () => {
+    expect(keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k3", "The prince guards his sword-hilt.")], cast })[0].message).toContain('"sword"');
+  });
+
+  it("the repair hint asks for a labelled neutral thing_* prop, not the nearest named prop", () => {
+    const message = keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k4", "The student wants a red rose for the dance.")], cast })[0].message;
+    expect(message).toContain("do not use the nearest named prop");
+    expect(message).toContain('"label"');
+    expect(message).toContain("thing_flat, thing_heap");
+    const bread = keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k5", "The family lives on a loaf of bread.")], cast })[0].message;
+    expect(bread).toContain('{"prop": "thing_block", "label"');
+    const sword = keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k6", "He draws his sword and waits.")], cast })[0].message;
+    expect(sword).toContain('{"prop": "thing_long", "label"');
+  });
+
+  it("a labelled neutral prop that names the object counts as drawing it; an unlabelled one does not", () => {
+    const rose = claim("k7", "The student wants a red rose for the dance.");
+    const labelled = page([panel("p1", { props: [{ prop: "thing_round", slot: "center", label: "rose" }] })]);
+    expect(keyPropNotDrawnIssues(labelled, { claims: [rose], cast })).toEqual([]);
+    const other = page([panel("p1", { props: [{ prop: "thing_round", slot: "center", label: "stone" }] })]);
+    expect(keyPropNotDrawnIssues(other, { claims: [rose], cast })).toHaveLength(1);
+    const bare = page([panel("p1", { props: [{ prop: "thing_round", slot: "center" }] })]);
+    expect(keyPropNotDrawnIssues(bare, { claims: [rose], cast })).toHaveLength(1);
+  });
+
+  it("a cast name with a compound word still hides its parts from the object check", () => {
+    const treeCast = [{ id: "tree", name: "The Rose-tree", role: "plant", description: "", look: { kind: "plant" }, sections: [] }] as unknown as BookUnderstanding["cast"];
+    expect(keyPropNotDrawnIssues(page([panel("p1")]), { claims: [claim("k8", "The rose-tree blooms and the roses fall.")], cast: treeCast })).toEqual([]);
   });
 });
 

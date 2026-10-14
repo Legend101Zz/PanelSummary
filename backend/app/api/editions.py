@@ -12,6 +12,7 @@ from app.documents import BookSource, Edition, EditionArtifact, EditionPage, Gen
 from app.preflight import check_limits, draw_cost_range
 from app.scope import ScopeError, resolve_scope
 from app.settings import get_settings
+from app.stand_ins import stand_ins
 from app import worker_client
 
 router = APIRouter()
@@ -190,6 +191,8 @@ async def get_edition(edition_id: str) -> dict:
             "kind": u.get("kind"),
             "sections": [{"id": s["id"], "title": s["title"]} for s in u.get("sections", [])],
             "cast": [{"id": c["id"], "name": c["name"], "role": c.get("role", "")} for c in u.get("cast", [])],
+            # D30: what no item of the vocabulary fit, drawn as a stand-in. Empty for most books.
+            "stand_ins": stand_ins(u),
         }
         # The claim text behind the coverage lists and the plan review. A long book has many claims,
         # so they are sent only when there is something to show them for.

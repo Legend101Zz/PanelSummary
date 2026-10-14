@@ -210,6 +210,15 @@ To change a decision, edit its entry in the same change as the code, and give th
 - Why: On 290 judged pages the old speaker push lost or cut 19 of 21 figures (hero, speaker and other planned figures), and a prototype showed the trade-off: bounded pushes leave small-headed speakers small. Measured numbers: `docs/v0.3/D2-push.md`.
 - Status: proposed in the D2 pull request (renderer 0.6.1). The residual `SPEAKER_TOO_SMALL` (13 of 290 pages) is for the orchestrator to accept.
 
+### D30. The understanding reports stand-ins (2026-10-14, issue #81, track D1b)
+- D4 stays (deterministic SVG) and the vocabulary stays closed. When no item fits a thing of the book, the understanding chooses a neutral stand-in (D1a draws it) and says so. It never picks a near item silently, and it never draws an animal as a person or a person as an animal.
+- Additive and optional fields (the schema stays `book-understanding.v1`): `cast[].fit` and `locations[].fit` (`exact`, `near`, `none`), `wanted` (the thing in the book's words, at most 40 characters), and a top-level `unmapped` list of `{type: cast|place|prop, ref?, wanted, used}`.
+- Checks: `fit` near or none without `wanted` is an error (`FIT_WANTED_MISSING`). A neutral archetype or generic environment without `fit` near or none is a warning (`ARCHETYPE_WITHOUT_FIT`). A look error shows `wanted`, kind and species together.
+- No word list for one book: no word test for a kind of animal or place. Whether a look suits a description is reported by the model and shown to the reader (book page, "Drawn as stand-ins"), not guessed by code. `CROWD_NOT_PEOPLE` gets no new words.
+- `KEY_PROP_NOT_DRAWN`: "blade" is no longer a trigger for `sword`, and a hyphenated word is one word in this check. The repair hint asks for a neutral `thing_*` prop with a `label`, never the nearest named prop. A labelled neutral prop counts as drawing the object it names.
+- Receipts: the note of a rejected understanding submission names the first rejected field and value (plain text, 40 characters at most).
+- Status: accepted. Skills: `manga-page` 1.12.0 and `book-understanding` 1.10.0. Notes: `docs/v0.3/D1b-understanding.md`.
+
 ## Superseded (history only)
 
 - ADR-001: an OpenAI model for the agent path, and OpenRouter as an image-only credential. Replaced by D2 and D3.
