@@ -90,7 +90,7 @@ describe("decisions kept from the measurements (docs/v0.3/W1-writer.md)", () => 
 
 describe("skills carry the W1 rules", () => {
   const rules: Array<[string, string, RegExp[]]> = [
-    ["adaptation-plan", "1.7.0", [/Plan a turn hook where the story has one/, /ANSWERS it or MOVES ON/, /Do not plan an invented line to make a hook/, /inside or\s+outside, at the bank or on the road, by day or at night/]],
+    ["adaptation-plan", "1.8.0", [/Plan a turn hook where the story has one/, /ANSWERS it or MOVES ON/, /Do not plan an invented line to make a hook/, /inside or\s+outside, at the bank or on the road, by day or at night/]],
     ["manga-page", "1.14.0", [/Never repeat across the turn/, /Labels are for `thing_\*` props only/, /Never spend the hook early/, /Cut a quote at the edges of a clause/, /Label by what you wrote/, /Stage each panel where and when the source puts it/, /not a copy of the previous page's last\s+panel/]],
   ];
   for (const [name, version, patterns] of rules) {

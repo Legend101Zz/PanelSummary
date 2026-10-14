@@ -1,6 +1,6 @@
 ---
 name: adaptation-plan
-version: 1.7.0
+version: 1.8.0
 ---
 
 # Adaptation plan
@@ -33,8 +33,12 @@ something to *see*.
    turns on an object (a rose, a thorn, a sack), the beat names that object, so the page
    writer draws it. Pages are the
    unit of pacing.
-2. **Density.** Put at most 3 claims on a page (4 only on a recap or summary page). A page
-   of fast dialogue carries 1-2 claims. A page may carry no claims when it establishes a
+2. **Density.** Prefer at most 2 claims on a page. A third is fine when the claims are short
+   `core` claims, or when the page budget leaves no room; 4 only on a recap or summary page. A page of
+   fast dialogue carries 1-2 claims. When the claims outnumber the pages, move a `supporting`
+   or `detail` claim to a neighbouring page with room, or omit it with a reason; never drop a
+   `core` claim. Measured: pages with 3 claims and 2 or more `supporting` or `detail` claims
+   score lower and carry more narration. A page may carry no claims when it establishes a
    place or holds a pause, but no more than 1 page in 6. Stay inside the page budget you
    are given, and never squeeze a section's claims into too few pages. If the essential
    content of a page's units would need more than about 90 lettered words, split it over
@@ -58,7 +62,7 @@ something to *see*.
    page: do not plan two locations on one page unless the page is about the journey
    between them. Name in the beat where the source puts the action and when: inside or
    outside, at the bank or on the road, by day or at night. The page writer stages the beat
-   from that. Pick locations whose `units` include the page's units (the locations list
+   from that. List every place the beat names in `locations`. Pick locations whose `units` include the page's units (the locations list
    shows them). If the page needs a place the understanding lacks, say it in the beat. When
    a page shows the afterlife, a dream or a memory, write that word in the beat: the page
    writer flags those panels.

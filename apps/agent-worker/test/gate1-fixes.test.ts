@@ -122,14 +122,14 @@ describe("vocabulary and skills", () => {
     expect(v.look_scale).toMatch(/Leave it out by default/);
     expect(v.look_scale).toMatch(/ignores it on a named/);
   });
-  it("book-understanding 1.14.0 limits scale and names the crowd error; adaptation-plan 1.7.0 hooks only where the story has one", async () => {
+  it("book-understanding 1.14.0 limits scale and names the crowd error; adaptation-plan 1.8.0 hooks only where the story has one", async () => {
     const bu = await loadSkill("book-understanding");
     expect(bu.version).toBe("1.14.0");
     expect(bu.content).toMatch(/Leave `look.scale` out by default/);
     expect(bu.content).toMatch(/CROWD_STAND_IN/);
     expect(bu.content).toMatch(/UNMAPPED_HAS_ITEM/);
     const plan = await loadSkill("adaptation-plan");
-    expect(plan.version).toBe("1.7.0");
+    expect(plan.version).toBe("1.8.0");
     expect(plan.content).toMatch(/never forced and never on every\s+page/);
     expect(plan.content).not.toMatch(/Give every page that does not close a section a turn hook/);
     const page = await loadSkill("manga-page");
