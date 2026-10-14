@@ -244,7 +244,7 @@ export function gate1Issues(value: unknown, skipCastIds: ReadonlySet<string> = n
         code: "CROWD_STAND_IN",
         severity: "error",
         path,
-        message: `${member.id} is a "crowd" with fit "${member.fit}": a crowd draws people only, so it is the wrong match for this group (it is not people, or not these people). For a group of animals use one animal member (a neutral archetype such as quad_small, quad_medium, quad_large, long_low, swimmer or bird_tall if no species fits) with fit and wanted. Keep "crowd" for a group of people that the book says are a crowd.`,
+        message: `${member.id} is a "crowd" with fit "${member.fit}": a crowd draws people only, so it is the wrong match for this group (it is not people, or not these people). For a group of animals use one animal member (a neutral archetype such as quad_small, quad_medium, quad_large, long_low, swimmer or bird_tall if no species fits) with fit and wanted. Keep "crowd" for a group of people that the book says are a crowd: when the group is people and only the crowd type is a close choice, keep the crowd and set fit "exact".`,
       });
     }
     if (look && look.scale !== undefined) {
