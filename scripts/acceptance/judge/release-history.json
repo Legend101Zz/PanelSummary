@@ -1,0 +1,132 @@
+[
+ {
+  "file": "scripts/acceptance/judge/fixtures/v01-gate2b.json.gz",
+  "version": "v0.1",
+  "note": "68-page tuning book, complete run (release/v0.1 d19dca9)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-gate2.json.gz",
+  "version": "v0.2",
+  "note": "68-page tuning book, v0.2 Gate 2"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-gate2-tuning68.json.gz",
+  "version": "v0.3",
+  "note": "68-page tuning book, v0.3 Gate 2 guard (final code)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v01-gate1-flash.json.gz",
+  "version": "v0.1",
+  "note": "two-tale tuning book"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v01-uab-flash.json.gz",
+  "version": "v0.1",
+  "note": "two-tale tuning book"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-gate1.json.gz",
+  "version": "v0.2",
+  "note": "two-tale tuning book, v0.2 Gate 1"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-gate1-two-tale.json.gz",
+  "version": "v0.3",
+  "note": "two-tale tuning book, v0.3 Gate 1"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-gate1b-two-tale.json.gz",
+  "version": "v0.3",
+  "note": "two-tale tuning book, v0.3 Gate 1b"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v01-justso.json.gz",
+  "version": "v0.1",
+  "note": "Just So Stories, tag v0.1.0 (not tuned on)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-justso-1.json.gz",
+  "version": "v0.2",
+  "note": "Just So Stories (v0.2 hold-out)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-justso-2.json.gz",
+  "version": "v0.2",
+  "note": "Just So Stories (v0.2 hold-out)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-justso-3.json.gz",
+  "version": "v0.2",
+  "note": "Just So Stories (v0.2 hold-out)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-gate1b-justso.json.gz",
+  "version": "v0.3",
+  "note": "Just So Stories (the v0.3 #81 diagnosis book)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-jataka-1.json.gz",
+  "version": "v0.2",
+  "note": "Jataka Tales, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-jataka-2.json.gz",
+  "version": "v0.2",
+  "note": "Jataka Tales, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-indian-why-1.json.gz",
+  "version": "v0.2",
+  "note": "Indian Why Stories, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-indian-why-2.json.gz",
+  "version": "v0.2",
+  "note": "Indian Why Stories, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-chalk-1.json.gz",
+  "version": "v0.2",
+  "note": "On a Piece of Chalk, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v020-chalk-2.json.gz",
+  "version": "v0.2",
+  "note": "On a Piece of Chalk, tag v0.2.0 (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-jataka-1.json.gz",
+  "version": "v0.3",
+  "note": "Jataka Tales, f58801b (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-jataka-2.json.gz",
+  "version": "v0.3",
+  "note": "Jataka Tales, final code, the v0.3 final journey"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-indian-why-1.json.gz",
+  "version": "v0.3",
+  "note": "Indian Why Stories, f58801b (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v03-chalk-1.json.gz",
+  "version": "v0.3",
+  "note": "On a Piece of Chalk, f58801b (sealed during v0.3)"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-selfreliance-1.json.gz",
+  "version": "v0.2",
+  "note": "Self-Reliance"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-selfreliance-2.json.gz",
+  "version": "v0.2",
+  "note": "Self-Reliance"
+ },
+ {
+  "file": "scripts/acceptance/judge/fixtures/v02-civil-disobedience.json.gz",
+  "version": "v0.2",
+  "note": "Civil Disobedience"
+ }
+]

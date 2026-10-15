@@ -31,6 +31,23 @@ and the aggregate labels.
 | `v02-justso-2` | v0.2 final journey | just-so-three-tales | v0.2 | 35 (105) | `v02/final-journey` | `release/v0.2` `a5b4a5c`, local, real worker |
 | `v02-justso-3` | v0.2 final journey 2 | just-so-three-tales | v0.2 | 29 (87) | `v02/final-journey-2` | `release/v0.2` `3113fc3`, local, real worker |
 | `v01-justso` | v0.1.0 controlled baseline | just-so-three-tales | v0.1.0 | 30 (90) | `v02/v01-holdout` | tag `v0.1.0` `ae959fa`, local |
+| `v03-gate1-two-tale` | v0.3 Gate 1 | happy-prince-two-tales | v0.3 | 22 (66) | `v03/gates/gate1/two-tale` | `release/v0.3` `b02bc17`, CI run 38576965161 |
+| `v03-gate1b-two-tale` | v0.3 Gate 1b | happy-prince-two-tales | v0.3 | 22 (66) | `v03/gates/gate1b/two-tale` | `release/v0.3` `839d032`, CI run 38585510402 |
+| `v03-gate1b-justso` | v0.3 Gate 1b | just-so-three-tales | v0.3 | 35 (105) | `v03/gates/gate1b/justso` | `release/v0.3` `839d032`, CI run 38585554450 |
+| `v03-gate2-tuning68` | v0.3 Gate 2 tuning guard | happy-prince-and-other-tales | v0.3 | 61 (183) | `v03/gates/gate2/tuning68-r2` | `release/v0.3` `26dfd3b` (final code), CI run 38616099546 |
+| `v020-jataka-1` | v0.3 hold-out baseline, run 1 | jataka-tales-thirteen | v0.2.0 | 34 (102) | `v03/baseline/f1-v020-r1` | tag `v0.2.0`, local |
+| `v020-jataka-2` | v0.3 hold-out baseline, run 2 | jataka-tales-thirteen | v0.2.0 | 28 (84) | `v03/baseline/f1-v020-r2` | tag `v0.2.0`, local |
+| `v020-indian-why-1` | v0.3 hold-out baseline, run 1 | indian-why-stories-eight | v0.2.0 | 41 (123) | `v03/baseline/f2-v020-r1` | tag `v0.2.0`, local |
+| `v020-indian-why-2` | v0.3 hold-out baseline, run 2 | indian-why-stories-eight | v0.2.0 | 36 (108) | `v03/baseline/f2-v020-r2` | tag `v0.2.0`, local |
+| `v020-chalk-1` | v0.3 hold-out baseline, run 1 | on-a-piece-of-chalk | v0.2.0 | 33 (99) | `v03/baseline/n1-v020-r1` | tag `v0.2.0`, local |
+| `v020-chalk-2` | v0.3 hold-out baseline, run 2 | on-a-piece-of-chalk | v0.2.0 | 28 (84) | `v03/baseline/n1-v020-r2` | tag `v0.2.0`, local |
+| `v03-jataka-1` | v0.3 Gate 2a | jataka-tales-thirteen | v0.3 | 28 (84) | `v03/gates/gate2/f1-v03-r1` | `release/v0.3` `f58801b`, local |
+| `v03-jataka-2` | v0.3 final journey (27 of 28 pages judged) | jataka-tales-thirteen | v0.3 | 27 (81) | `v03/gates/final-journey-2` | `release/v0.3` `26dfd3b`, local, real worker, through the UI |
+| `v03-indian-why-1` | v0.3 Gate 2a | indian-why-stories-eight | v0.3 | 41 (123) | `v03/gates/gate2/f2-v03-r1` | `release/v0.3` `f58801b`, local |
+| `v03-chalk-1` | v0.3 Gate 2a | on-a-piece-of-chalk | v0.3 | 31 (93) | `v03/gates/gate2/n1-v03-r1` | `release/v0.3` `f58801b`, local |
+
+The three sealed books of v0.3 are public-domain books that are now in `scripts/acceptance/books/`.
+`scripts/acceptance/judge/release-history.json` lists the fixtures that `docs/METRICS.md` uses.
 
 Not here on purpose: the run on *Who Moved My Cheese?* (an owner's private, copyrighted book; its
 defect texts quote it).
