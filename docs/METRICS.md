@@ -188,8 +188,8 @@ From the edition records. "First page" is the first accepted page (often not pag
 ⁶ This v0.1 run used MiniMax-M3 for the understanding step (a model A/B arm), which is slower.
 
 Per page on the same six books, v0.3 used +16% tokens and +13% cost against v0.2 (pooled). The page step uses 96% of the
-tokens. It went from 164k to 190k tokens per page with the same number of turns (6.6 for each page call), so each turn
-sends more text. The understanding and the plan steps together use less than 4%.
+tokens. It went from 164k to 190k tokens per page with about the same number of turns (6.59 and 6.65 for each page call),
+so each turn sends more text. The understanding and the plan steps together use less than 4%.
 
 ## How to update this file
 
