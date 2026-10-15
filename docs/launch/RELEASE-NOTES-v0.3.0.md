@@ -81,9 +81,37 @@ and the second runs of two sealed books (#126). The owner decided to release v0.
 - 25 paid run starts and 2 resumes during the build, about $17.77 at MiniMax-M3 rates (not a bill; MiniMax publishes no price for
   the Flash model, D36). The binding limit was the MiniMax token plan: it stopped 7 runs (the runs show the stop and can
   be resumed).
-- v0.3 runs use 30–60% more tokens than v0.2 runs (longer skill text, more repair rounds). A 34-page book cost
-  $0.89–1.18; the 68-page book $1.98. The estimates were re-fitted on 18 Flash runs (#88): for a 9,419-word book,
+- Per page, v0.3 used 16% more tokens than v0.2 on the same six books (from −6% to +28% per book; two single runs
+  used 48% and 56% more). The page step uses 96% of the tokens. A 34-page book cost $0.89–1.18; the 68-page book $1.98. The estimates were re-fitted on 18 Flash runs (#88): for a 9,419-word book,
   first page 1–9 min, all pages 4–27 min, cost $0.68–1.85.
+
+## Metrics: what changed since v0.2.0
+
+Same books, same 3-judge panel. The history of all releases is in `docs/METRICS.md`.
+
+| Metric | v0.2.0 | v0.3.0 |
+|---|---|---|
+| Sealed fiction (2 books): mean | 3.45 (4 runs) | **3.51** (3 runs) |
+| Sealed fiction: key prop not drawn | 0.76 | **0.58** (−24%) |
+| Sealed fiction: wrong setting | 0.19 | **0.13** (−32%) |
+| Sealed fiction: key figure a speck or cropped | 0.69 | 0.70 |
+| Sealed fiction: continuity | 2.74 | **2.85** |
+| Sealed fiction: fidelity | 3.41 | **3.59** |
+| Sealed fiction: legibility | 3.44 | 3.32 |
+| *Jataka Tales*: mean | 3.46 (2 runs) | **3.57** (2 runs) |
+| 68-page book: mean | 3.55 | 3.54 |
+| 68-page book: pages at the strict bar | 20 of 61 | 9 of 61 |
+| 68-page book: pages accepted | 60 of 61 | **61 of 61** |
+| 68-page book: all pages | 14.7 min | **13.1 min** |
+| Figures cut by a camera push (290 judged pages) | 21 | **0** |
+| Tokens per page (six books, pooled) | 170k | 197k (+16%) |
+| Cost per page (six books, pooled) | $0.029 | $0.033 (+13%) |
+
+- **Better:** fewer undrawn key props and wrong settings on books nobody tuned on (neutral stand-ins); better continuity
+  and fidelity there; the animal-fable book is clearly better; the camera push never crops a planned figure; every page
+  of the 68-page book was accepted, faster.
+- **Not better:** the v0.3 bar was not met; tiny or cropped key figures are flat; legibility on the sealed books is
+  lower; fewer pages of the 68-page book pass the strict bar; more tokens per page.
 
 ## Known limits
 

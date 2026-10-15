@@ -110,6 +110,32 @@ about $9.4 for 10 paid runs (cap $50).
 
 The full gate record, with the evidence, is in `docs/v0.2/GATES.md`.
 
+## Metrics: what changed since v0.1
+
+Same books, same 3-judge panel. The history of all releases is in `docs/METRICS.md`.
+
+| Metric | v0.1 | v0.2.0 |
+|---|---|---|
+| 68-page book: mean | 3.54 | 3.55 |
+| 68-page book: pages at the strict bar | 12 of 60 | **20 of 61** |
+| 68-page book: key figure a speck or cropped | 0.48 | **0.35** |
+| 68-page book: tail at the wrong figure | 0.20 | **0.11** |
+| 68-page book: label clutter | 0.16 | **0.08** |
+| 68-page book: page turn | 3.51 | 3.35 |
+| 68-page book: all pages | 15.6 min | **14.7 min** |
+| 68-page book: cost (estimate) | $1.72 | $1.88 |
+| Two-tale book: mean | 3.46 (2 runs) | **3.60** |
+| *Just So Stories* (not tuned on): mean | 3.38 | 3.42 (3 runs) |
+| *Just So Stories*: key prop not drawn | 0.59 | 0.75 |
+| Reader balloon text at 1440×900 | 9–11 px | **16.8 px** |
+
+- **Better:** more pages pass the strict bar on the tuning books; fewer tiny or cropped heroes, wrong tails and label
+  clutter (renderer 0.6.0, writer checks calibrated by D26); the reader text is readable on a desktop; the new app.
+- **Not better:** on a book that was not tuned on, the mean is the same within noise and more key props are left
+  undrawn; page turn is lower; cost per run is a little higher.
+- The "hero a speck or cropped 0.62 → 0.35" above compares with the v0.1 run that the token plan cut at 46 pages.
+  Against the complete v0.1 run (60 pages) it is 0.48 → 0.35.
+
 ## Known limits
 
 - On a book that was not used for tuning (fiction), v0.2 is not yet better than v0.1 (see above).

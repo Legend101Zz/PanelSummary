@@ -60,6 +60,26 @@ On the final journey, all 18 pages were accepted, 51 of 54 claims were shown (3 
 reason), the reader showed the stored SVG on every page, and the worker talked only to
 `api.minimax.io` (zero image-model calls).
 
+## Metrics: what changed since run 8
+
+The 68-page book, judged by the same 3-judge panel. Times are from the edition record (the table above uses the walk
+clock: 5.6 and 16.4 min). The history of all releases is in `docs/METRICS.md`.
+
+| Metric | Run 8 (Sept. rebuild) | v0.1.0 |
+|---|---|---|
+| Mean (1–5) | 3.47 | **3.54** |
+| Pages at the strict bar | 7 of 46 | **12 of 60** |
+| Continuity | 2.88 | **3.02** |
+| Fidelity | 3.34 | **3.51** |
+| First page | 30 min | **5.0 min** |
+| All pages | 48.5 min | **15.6 min** |
+| Cost (estimate) | $1.65 | $1.72 |
+
+- **Better:** the first page comes 6 times sooner and all pages 3 times sooner (one Flash model on every step, D13; four
+  pages drawn at the same time). More pages pass the strict bar. Every call has a receipt; failures and provider stops
+  are visible, and **Resume drawing** continues a stopped run.
+- **Not better:** cost is about the same. Continuity and pages told in captions are still the weakest areas.
+
 ## Known limits
 
 - **Size:** a book over 75 PDF pages or 17,500 words is refused before any spend (D19). Chapter scoping

@@ -161,8 +161,9 @@ Architecture (all 28 pages): the parse and generate jobs with stage events; rece
 - 14:12: MiniMax "server cluster under high load" (2064/529) stopped the first Gate 1 run of *Just So* at page 20.
 - 17:40: the MiniMax token plan limit (2062, "Token Plan rate limit reached") stopped every run in flight: the first
   final journey (11 of 38 pages), two Gate 2b runs, the 68-page guard and *Self-Reliance*. Each edition stopped with the
-  visible message "Resume when the limit resets"; no failure was hidden (D11). v0.3 runs use 30–60% more tokens than v0.2
-  runs (longer skill text and more repair rounds), so the plan window filled faster than the run count suggested.
+  visible message "Resume when the limit resets"; no failure was hidden (D11). Per page, v0.3 used 16% more tokens than v0.2
+  on the same six books (from −6% to +28% per book; two single runs used 48% and 56% more; `docs/METRICS.md`), so the
+  plan window filled faster than the run count suggested.
 
 ## 7. Spend
 
