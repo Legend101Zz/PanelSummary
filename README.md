@@ -6,7 +6,7 @@
 
 **Turn a book PDF into a manga that you read in your browser.**
 
-<a href="https://github.com/Legend101Zz/PanelSummary/releases/tag/v0.2.0"><img alt="Release v0.2.0" src="https://img.shields.io/github/v/release/Legend101Zz/PanelSummary?label=release&color=2F43D9"></a>
+<a href="https://github.com/Legend101Zz/PanelSummary/releases/tag/v0.3.0"><img alt="Release v0.3.0" src="https://img.shields.io/github/v/release/Legend101Zz/PanelSummary?label=release&color=2F43D9"></a>
 <a href="https://github.com/Legend101Zz/PanelSummary/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Legend101Zz/PanelSummary/actions/workflows/ci.yml/badge.svg"></a>
 <a href="LICENSE.md"><img alt="License: PolyForm Noncommercial 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-EE6A45"></a>
 <a href="#how-it-works"><img alt="Art: deterministic SVG, no image models" src="https://img.shields.io/badge/art-deterministic%20SVG%2C%20no%20image%20models-121212"></a>
@@ -46,29 +46,52 @@ which parts of the book it adapts, and the reader can show them.
 
 ## Features
 
-- **A whole book in one run.** Up to 75 PDF pages and 17,500 words per run. In the v0.2 runs a book took 6 to 15
-  minutes, and page 1 was ready after about 2 to 5 minutes. A longer book can be drawn one part at a time.
+- **A whole book in one run.** Up to 75 PDF pages and 17,500 words per run. In the v0.3 runs a book took 8 to 14
+  minutes, and the first page was ready after about 3 to 8 minutes.
+- **Continue with the next section.** A longer book is drawn one part at a time. The next part keeps the same cast,
+  looks and places, and the book page numbers the pages of all parts as one series.
 - **Drawn by code, not by an image model.** The art is deterministic SVG: the same page plan always gives the same
   page. The only model is a text model (MiniMax), and it goes through one sealed worker.
+- **Neutral stand-ins, not wrong guesses.** When a book needs an animal, a place or a prop that the renderer cannot
+  draw, the page shows a neutral stand-in: an animal by its body plan, a generic place, or a prop by its shape, with a
+  name tag. "About this adaptation" lists the stand-ins.
 - **Faithful to the book.** Every lettered line is labelled quote, paraphrase, dramatized or metaphor. Every panel
   cites its PDF pages. The reader's Sources drawer shows them.
 - **Honest about failure.** A page that cannot be drawn is shown as failed, with its reason. "Retry failed pages"
-  redraws only those pages. Nothing accepted is paid for twice.
+  redraws only those pages. Nothing accepted is paid for twice. If MiniMax stops a run (for example at a usage
+  limit), the run card says so and "Resume drawing" continues it later.
 - **A reader made for manga.** Page mode on a desktop, panel-by-panel mode on a phone, a page picker for long books,
   and a light and a dark theme.
 - **Runs on your computer.** Your books and pages stay in a local database. Only the book text and page previews go
   to MiniMax, through the worker. The app makes no other third-party request and has no telemetry.
-- **Low cost.** A whole book cost about $0.70 to $1.90 in the v0.2 runs (estimates at MiniMax-M3 rates, not a bill).
+- **Low cost.** A whole book cost about $0.70 to $2.00 in the v0.3 runs (estimates at MiniMax-M3 rates, not a bill).
+- **Measured, release by release.** [`docs/METRICS.md`](docs/METRICS.md) shows the quality, the time, the cost and the
+  tokens of every release on the same books, with what got better and what got worse.
 
-**Version 0.2** ([release notes](docs/launch/RELEASE-NOTES-v0.2.0.md)) added the new app interface, a choice of what
-part of the book to draw, an optional review of the plan before drawing, a built-in sample, a larger reader page on
-desktop and a page picker. [`docs/v0.2/README.md`](docs/v0.2/README.md) lists the v0.2 documents.
+**Version 0.3** ([release notes](docs/launch/RELEASE-NOTES-v0.3.0.md)) added neutral stand-ins for books outside the
+drawing vocabulary, a camera push that keeps every planned figure in the panel, "Continue with the next section",
+writer and interface fixes, re-fitted estimates, and the evaluation tools. [`docs/v0.3/README.md`](docs/v0.3/README.md)
+lists the v0.3 documents. **Version 0.2** ([release notes](docs/launch/RELEASE-NOTES-v0.2.0.md)) added the new app
+interface, a choice of what part of the book to draw, an optional review of the plan before drawing, a built-in sample,
+a larger reader page on desktop and a page picker.
 
 ## Examples
 
-These are real pages from real v0.2 runs. Nothing is retouched: each image is the SVG page that the app
-stored, drawn to an image. Each run drew the whole book in one go. Costs are estimates at MiniMax-M3 rates,
-not a bill.
+These are real pages from real runs: the first book is a v0.3 run, the others are v0.2 runs. Nothing is retouched:
+each image is the SVG page that the app stored, drawn to an image. Each run drew the whole book in one go. Costs are
+estimates at MiniMax-M3 rates, not a bill.
+
+### *Thirteen Jataka Tales*, Ellen C. Babbitt (1912)
+
+39 PDF pages → 28 manga pages, about $0.97. This book was sealed during the v0.3 build: the code was never tuned on it.
+The MiniMax usage limit stopped the run at page 18, and one "Resume drawing" press finished it.
+
+| "Why the Owl Is Not King of the Birds" | "The Foolish, Timid Rabbit" |
+|---|---|
+| ![The birds choose the Owl as king; the Old Crow asks how he will look when he is angry.](docs/images/examples/babbitt-jataka-tales-p28.webp) | ![A coconut falls behind the Rabbit; the rabbits, the deer, the fox and the elephant run.](docs/images/examples/babbitt-jataka-tales-p14.webp) |
+
+On the right, the deer and the elephant are neutral stand-ins with name tags, and the coconut is a neutral prop. They
+are not wrong, but some are hard to read: the elephant has no trunk. That is [#121](https://github.com/Legend101Zz/PanelSummary/issues/121) for v0.4.
 
 ### *The Happy Prince and Other Tales*, Oscar Wilde (1888)
 
@@ -118,11 +141,12 @@ The pages show 114 of the book's 129 key points; the plan left out 15 on purpose
 > owner's own copy, only to show what the app does with a modern nonfiction book. They are not licensed for reuse.
 > The other books on this page are in the public domain.
 
-**What still goes wrong.** The drawing vocabulary is closed. When a book needs something that is not in it, the app
-can choose a confident wrong match: in *Just So Stories* a cave became a modern room, and in *Who Moved My Cheese?*
-the cheese is a loaf of bread on several pages and the Maze is an empty plain. Issue
-[#81](https://github.com/Legend101Zz/PanelSummary/issues/81) holds the fix for v0.3. The fix is a neutral fallback, not a
-list of new objects.
+**What still goes wrong.** The drawing vocabulary is closed. In the v0.2 runs, when a book needed something that is
+not in it, the app chose a confident wrong match: in *Just So Stories* a cave became a modern room, and in *Who Moved
+My Cheese?* the cheese is a loaf of bread on several pages and the Maze is an empty plain. v0.3 draws a neutral
+stand-in instead ([#81](https://github.com/Legend101Zz/PanelSummary/issues/81)). Three problems remain for v0.4: a key figure is often tiny or cropped
+([#120](https://github.com/Legend101Zz/PanelSummary/issues/120)), many stand-ins are hard to read ([#121](https://github.com/Legend101Zz/PanelSummary/issues/121)), and places outside Europe are drawn
+as European towns ([#122](https://github.com/Legend101Zz/PanelSummary/issues/122)).
 
 ## The app
 
@@ -137,7 +161,8 @@ list of new objects.
 ![The reader on a desktop at 1440 pixels wide: page 1, the Page, Panels and Sources modes, and All pages.](docs/images/v0.2/reader.png)
 
 These screenshots are from a real v0.2 run of "Three Just So Stories" (35 pages), on a desktop
-browser at 1440 pixels wide. [Using PanelSummary](#using-panelsummary) describes each screen.
+browser at 1440 pixels wide. The v0.3 screens are the same, with small changes (see the v0.3 release notes).
+[Using PanelSummary](#using-panelsummary) describes each screen.
 
 ## How it works
 
@@ -169,35 +194,49 @@ Reader: shows the persisted SVG; panel mode moves the camera over the stored geo
 - **Faithfulness.** Every lettered line is labelled `quote`, `paraphrase`, `dramatized` or
   `metaphor`, and every panel cites its source units and PDF pages. The reader's Sources
   drawer shows them.
+- **Stand-ins.** The understanding says what the book wanted and what it could not map. A
+  figure, place or prop that the renderer cannot draw becomes a neutral stand-in with a name
+  tag (decisions D29 and D30).
+- **Continue.** A new part reads the stored understanding of the earlier part as data and keeps
+  its cast, looks and places (D38). The book page numbers the parts as one series (D39).
 
 The generation policy (models per goal, thinking levels, retries) came from measured
 experiments: [`docs/rebuild/EXPERIMENTS.md`](docs/rebuild/EXPERIMENTS.md). The current policy is
 decision D13 in [`docs/decisions.md`](docs/decisions.md). That file also holds every other
 decision and its reason. The launch notes are indexed in
-[`docs/launch/README.md`](docs/launch/README.md). The v0.2 documents are indexed in
-[`docs/v0.2/README.md`](docs/v0.2/README.md).
+[`docs/launch/README.md`](docs/launch/README.md). The v0.2 and v0.3 documents are indexed in
+[`docs/v0.2/README.md`](docs/v0.2/README.md) and [`docs/v0.3/README.md`](docs/v0.3/README.md). The metrics
+of every release are in [`docs/METRICS.md`](docs/METRICS.md).
 
 ## Quality
 
 A panel of three AI judges (Claude Sonnet, the same prompt and rubric for every run) scores every page from 1 to 5
 on eight criteria, such as legibility, fidelity to the book and continuity. A page passes the strict ship bar when no
 criterion is below 3, legibility and fidelity are 4 or more, and the mean is 3.5 or more. A failed page counts as 0.
-The judges are AI, not readers, and each book has one or two runs. The full results are in
-[`docs/v0.2/GATES.md`](docs/v0.2/GATES.md).
+The judges are AI, not readers. Each book has one to three runs, and two runs of the same code can differ by up to
+about 0.15. [`docs/METRICS.md`](docs/METRICS.md) compares every release on the same books;
+[`docs/v0.3/GATES.md`](docs/v0.3/GATES.md) has the v0.3 gates.
 
-| Book | v0.1.0 | v0.2.0 |
-|---|---|---|
-| Two Wilde tales (used for tuning) | 2–4 of 22 pages at the strict bar, mean 3.42–3.49 | **6 of 22, mean 3.60** |
-| *The Happy Prince and Other Tales* (used for tuning) | 7 of 46, mean 3.52 | **20 of 61, mean 3.55** |
-| *Self-Reliance* (never used for tuning) | — | 11 of 38 and 8 of 36, means 3.55 and 3.60 |
-| *Civil Disobedience* | — | 11 of 36, mean 3.53 |
-| *Just So Stories* (never used for tuning) | 4 of 30, mean 3.38 | 1–2 per run, means 3.40–3.44 (three runs) |
-| *Who Moved My Cheese?* (never used for tuning) | — | 8 of 44, mean 3.56 |
+| Book | v0.1.0 | v0.2.0 | v0.3.0 |
+|---|---|---|---|
+| *The Happy Prince and Other Tales*, 68 pages (used for tuning) | 12 of 60 at the strict bar, mean 3.54 | **20 of 61, mean 3.55** | 9 of 61, mean 3.54 |
+| Two Wilde tales (used for tuning) | 2 and 4 of 22, means 3.42 and 3.49 | **6 of 22, mean 3.60** | 4 and 4 of 22, means 3.53 and 3.43 |
+| *Just So Stories* (the v0.3 diagnosis book) | 4 of 30, mean 3.38 | 1–2 per run, means 3.40–3.44 (three runs) | 4 of 35, mean 3.46 |
+| *Thirteen Jataka Tales* (sealed during v0.3) | — | 1 of 34 and 7 of 28, means 3.48 and 3.44 | **6 of 28 and 4 of 27, means 3.59 and 3.54** |
+| *Indian Why Stories* (sealed during v0.3) | — | 6 of 41 and 5 of 36, means 3.44 and 3.44 | 1 of 41, mean 3.43 |
+| *On a Piece of Chalk*, nonfiction (sealed during v0.3) | — | 6 of 33 and 2 of 28, means 3.49 and 3.35 | 3 of 31, mean 3.37 |
+| *Self-Reliance* | — | 11 of 38 and 8 of 36, means 3.55 and 3.60 | not measured |
+| *Civil Disobedience* | — | 11 of 36, mean 3.53 | not measured |
+| *Who Moved My Cheese?* | — | 8 of 44, mean 3.56 | not measured |
 
-On the long Wilde book, the defects that v0.2 aimed at fell by half or more (blocker and major defects per
-judge-page): a hero drawn as a speck or cut off 0.62 → 0.35, a balloon tail at the wrong figure 0.22 → 0.11,
-label clutter 0.20 → 0.08, repeated panels 0.17 → 0.08. **On fiction that it was never tuned on, v0.2 is not yet
-better than v0.1**, because of the closed vocabulary (see [Examples](#examples)). That is the first aim of v0.3.
+**v0.3 on books that nobody tuned on.** On the two sealed fiction books, v0.3 left fewer key props undrawn (−24%) and
+drew fewer wrong settings (−32%) than v0.2.0, and the mean went from 3.45 to 3.51. On the animal fables (*Jataka
+Tales*) it is better in both runs. **The v0.3 bar was not met:** it asked for +0.08 and a quarter fewer tiny or cropped
+key figures, and tiny or cropped figures did not go down. On the 68-page tuning book the mean holds, but fewer pages
+pass the strict bar (9 against 20). Tiny or cropped figures are the first aim of v0.4.
+
+v0.2 cut the defects that it aimed at on the 68-page book (blocker and major defects per judge-page): a hero drawn as
+a speck or cut off 0.48 → 0.35, a balloon tail at the wrong figure 0.20 → 0.11, label clutter 0.16 → 0.08.
 
 ## Quick start
 
@@ -220,7 +259,7 @@ better than v0.1**, because of the closed vocabulary (see [Examples](#examples))
 ```sh
 git clone https://github.com/Legend101Zz/PanelSummary
 cd PanelSummary
-git checkout v0.2.0                                         # the v0.2 release; main has the same code
+git checkout v0.3.0                                         # the v0.3 release; main has the same code
 
 # 1. Install the workspace and the frontend (start.sh does this too if you skip it)
 pnpm install --frozen-lockfile
@@ -328,7 +367,9 @@ In replay mode the first-run status line and Settings say "Replay worker: no Min
    v0.1 runs took up to 30 minutes, depending on MiniMax output speed at the time.
 6. **Choose what to draw.** "Draw only part of the book" opens a control. Choose one or more
    sections, or a range of PDF pages. The estimate and the limits follow your choice. A book over
-   the limits can be drawn in parts: choose one part, then run the next part later.
+   the limits can be drawn in parts. When a part is drawn, "Continue with the next section" draws
+   the next sections as a new part with the same cast, looks and places. "Parts of the book" on the
+   book page numbers the pages of all parts as one series; the reader numbers each part from 1.
 7. **Review the plan (optional).** Turn on "Review the plan before drawing" in Settings. Generate
    then reads the book and makes the plan, and stops. The screen shows the page count, a cost
    range for drawing, the cast, one line for each page and the key points that the plan leaves
@@ -375,6 +416,7 @@ repository root.
 (cd packages/agent-runtime && npx tsc --noEmit && npx vitest run)
 (cd packages/manga-render && npx tsc --noEmit && npx vitest run)
 (cd frontend && npx tsc --noEmit && npm test)
+python3 -m unittest discover -s scripts/acceptance/judge    # the judge tools (no model call)
 ./stop.sh                                                  # the build below must not run while the stack runs
 (cd frontend && npm run build)
 ```
@@ -383,7 +425,8 @@ repository root.
 `npm run build` only after `./stop.sh`. The backend tests need the MongoDB, so run them before
 `./stop.sh` (or start your own `mongod`).
 
-GitHub Actions runs the same checks on every pull request into `release/v0.1`, `release/v0.2` and `main`. It
+GitHub Actions runs the same checks on every pull request into `release/v0.1`, `release/v0.2`, `release/v0.3` and
+`main`. It
 also has a manual lane for a live run with real MiniMax calls. See
 [`docs/launch/CI.md`](docs/launch/CI.md).
 
@@ -399,6 +442,8 @@ also has a manual lane for a live run with real MiniMax calls. See
 - A live acceptance check against a running stack (real MiniMax calls) is described in
   [`docs/rebuild/ACCEPTANCE.md`](docs/rebuild/ACCEPTANCE.md). The quality judge harness is in
   [`docs/launch/EVAL.md`](docs/launch/EVAL.md).
+- `scripts/acceptance/judge/` holds the judge tools and a fixture of every judged gate run.
+  [`docs/METRICS.md`](docs/METRICS.md) says how to recompute the metrics of every release.
 
 
 ### Repository layout
@@ -414,14 +459,15 @@ frontend/           Next.js: app screens in app/(app), reader and PDF viewer in 
 scripts/acceptance/ live journey, run export, test books and the quality judge harness
 scripts/fixtures/   state seeder (seed_states.py) and the saved runs for the replay worker
 .github/workflows/  CI (ci.yml) and the manual live lane (live-journey.yml)
-docs/               decisions.md, design/ (v0.2 design), v0.2/ (v0.2 track notes), launch/ (v0.1 notes),
-                    rebuild/ (evidence), images/v0.2/ (README screenshots), images/examples/ (README example pages)
+docs/               decisions.md, METRICS.md (every release), design/ (v0.2 design), v0.2/ and v0.3/ (track notes),
+                    launch/ (release notes), rebuild/ (evidence), images/v0.2/ (README screenshots),
+                    images/examples/ (README example pages)
 ```
 
 ## Limits
 
 The limits that the tracks measured are listed here. The detail is in
-[`docs/launch/`](docs/launch/README.md) and [`docs/v0.2/`](docs/v0.2/README.md).
+[`docs/launch/`](docs/launch/README.md), [`docs/v0.2/`](docs/v0.2/README.md) and [`docs/v0.3/`](docs/v0.3/README.md).
 
 - **Book size.** A run draws up to 75 PDF pages and 17,500 words (decision D19). The limit
   applies to the part you choose. A longer book can be drawn in parts: choose sections or a range
@@ -435,33 +481,35 @@ The limits that the tracks measured are listed here. The detail is in
   varied from 31 to 324 tokens per second across the runs. An estimate is not a bill.
 - Born-digital PDFs only (no OCR).
 - The drawn vocabulary is closed: characters, places, props and effects must map to what the
-  renderer can draw. The model is told the vocabulary and validation rejects anything else.
+  renderer can draw. The model is told the vocabulary and validation rejects anything else. What
+  it cannot draw becomes a neutral stand-in with a name tag. Stand-ins are often hard to read
+  ([#121](https://github.com/Legend101Zz/PanelSummary/issues/121)), and places outside Europe are drawn as European towns ([#122](https://github.com/Legend101Zz/PanelSummary/issues/122)).
 - English, left-to-right pages by default (the layout compiler also supports right-to-left).
-- A new section is not drawn on top of an earlier run. "Continue with the next section" is not in
-  v0.2. Each run makes its own edition.
+- "Continue with the next section" makes a new edition for each part. A part cannot repeat text
+  that an earlier part drew. The reader numbers each part from 1 ([#128](https://github.com/Legend101Zz/PanelSummary/issues/128)); the book
+  page shows the series numbers.
 - **Page quality is uneven.** In the acceptance runs a panel of judge agents rated a minority of
-  pages at the strict ship bar. The common faults are claims only partly shown, a character's state
+  pages at the strict ship bar. The largest fault on every book is a key figure that is tiny or
+  cropped ([#120](https://github.com/Legend101Zz/PanelSummary/issues/120)). Other faults are claims only partly shown, a character's state
   across pages, and props that the closed vocabulary draws loosely. See
   [`docs/rebuild/ACCEPTANCE.md`](docs/rebuild/ACCEPTANCE.md) and the track notes in `docs/launch/`
-  and `docs/v0.2/`. The built-in sample is a v0.1 run, not a v0.2 run.
+  `docs/v0.2/` and `docs/v0.3/`. The built-in sample is a v0.1 run, not a v0.3 run.
 - **What leaves the computer.** Only the book text and page previews go to MiniMax, through the
   worker. The app makes no other third-party request: the fonts are in the repository and
   Next.js telemetry is off.
 
 ## Roadmap
 
-v0.3 has one goal: **better manga on books that nobody tuned on**, measured on new books that nobody has seen
-before, against v0.2.0, with the same judge panel. The first issues:
+v0.4 has one goal: **make the figures and the stand-ins readable on books that nobody tuned on**, measured on new
+sealed books against v0.3.0 with the same judge panel, with no more tokens per page than v0.3. The first issues:
 
-- [#81](https://github.com/Legend101Zz/PanelSummary/issues/81): when a book needs a place, a prop or an animal that
-  the drawing vocabulary does not have, draw a neutral fallback, not a confident wrong match.
-- [#90](https://github.com/Legend101Zz/PanelSummary/issues/90): the camera push-in must not crop a figure out of a panel.
-- [#96](https://github.com/Legend101Zz/PanelSummary/issues/96): sealed hold-out books and one protocol to measure
-  the result.
-- [#80](https://github.com/Legend101Zz/PanelSummary/issues/80): continue with the next section of a longer book,
-  with the same cast and looks.
+- [#120](https://github.com/Legend101Zz/PanelSummary/issues/120): a key figure is often tiny or cropped (the largest judged defect on every book).
+- [#121](https://github.com/Legend101Zz/PanelSummary/issues/121): stand-ins that are easier to read (an animal, a prop).
+- [#122](https://github.com/Legend101Zz/PanelSummary/issues/122): places outside Europe and before modern times.
+- [#124](https://github.com/Legend101Zz/PanelSummary/issues/124): tokens per page and the MiniMax plan limit.
+- [#130](https://github.com/Legend101Zz/PanelSummary/issues/130): a new set of sealed books.
 
-All open v0.3 work has the label [`v0.3`](https://github.com/Legend101Zz/PanelSummary/issues?q=is%3Aissue+is%3Aopen+label%3Av0.3).
+All open v0.4 work has the label [`v0.4`](https://github.com/Legend101Zz/PanelSummary/issues?q=is%3Aissue+is%3Aopen+label%3Av0.4).
 
 ## Contributing
 
